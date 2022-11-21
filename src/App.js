@@ -1,7 +1,7 @@
 import { createArrowTex } from "./note/NoteTexture.js";
 import { createOptionsWindow } from "./gui/view/OptionsView.js";
 import { FileSystem } from "./util/FileSystem.js";
-import { getBrowser } from "./util/util.js";
+import { getBrowser } from "./util/Util.js";
 
 if (getBrowser().includes("Safari")) {
   document.querySelector("body").innerHTML = "<div class='browser-unsupported'><div class='browser-unsupported-item'><h1>Safari is currently not supported!</h1><div>Please use another browser instead</div></div></div>"

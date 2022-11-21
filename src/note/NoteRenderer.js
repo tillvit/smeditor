@@ -1,4 +1,4 @@
-import { getQuant, getRotFromArrow } from "../util/util.js";
+import { getQuant, getRotFromArrow } from "../util/Util.js";
 import { getMine, getSpriteWithQuant } from "./NoteTexture.js";
 
 const arrow_frame_texture = PIXI.Texture.from('assets/noteskin/tap/frame.png');

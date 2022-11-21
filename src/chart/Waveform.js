@@ -1,4 +1,4 @@
-import { app } from "../index.js";
+import { app } from "../App.js";
 
 var rawData
 var sampleRate

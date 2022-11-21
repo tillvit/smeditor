@@ -1,11 +1,9 @@
-import { reloadData } from "../gui/view/OptionsView.js";
-import { app } from "../index.js";
+import { app } from "../App.js";
 import { OffsetHowler } from "../util/OffsetHowler.js";
-import { parseSM } from "../util/parseSM.js";
-import { getBeat, getFont, getFPS, getSeconds, roundDigit } from "../util/util.js";
+import { parseSM } from "../util/ParseSM.js";
+import { getFont, getFPS, getSeconds, roundDigit } from "../util/Util.js";
 import { buildChart } from "./ChartRenderer.js";
 
-var sm;
 var audio;
 let chart = window.chart
 var playing = false

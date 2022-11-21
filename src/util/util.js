@@ -1,4 +1,4 @@
-import { app } from "../index.js";
+import { app } from "../App.js";
 
 const ROTS = [0,-90,90,180]
 export function getRotFromArrow(col) {

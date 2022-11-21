@@ -1,7 +1,7 @@
-import { app } from "../index.js";
+import { app } from "../App.js";
 import { createArrow, setData, setHoldEnd, setMineTime } from "../note/NoteRenderer.js";
 import { setArrowTexTime } from "../note/NoteTexture.js";
-import { getBeat, getBPM, getRotFromArrow, getSeconds, getSecondsNoTiming, isWarped, rgbtoHex, roundDigit } from "../util/util.js";
+import { getBeat, getRotFromArrow, getSeconds, isWarped, rgbtoHex, roundDigit } from "../util/Util.js";
 import { createWaveform, loadAudio, renderWaveform, setWaveformZoom } from "./Waveform.js";
 
 const receptor_tex = PIXI.Texture.from('assets/noteskin/receptor.png');

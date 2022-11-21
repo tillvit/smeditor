@@ -1,4 +1,4 @@
-import { clamp } from "../util/util.js";
+import { clamp } from "../util/Util.js";
 
 var dragging;
 

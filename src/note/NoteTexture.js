@@ -1,4 +1,4 @@
-import { app } from "../index.js";
+import { app } from "../App.js";
 
 const arrow_tex = PIXI.RenderTexture.create({ width: 192, height: 192, resolution: 4 })
 const arrow_container = new PIXI.Container();

@@ -1,4 +1,4 @@
-import { createOptionsWindow } from "./view/OptionsView";
+import { createOptionsWindow } from "./view/OptionsView.js";
 
 const NavBarData = {
   file: {

@@ -1,7 +1,4 @@
-import { buildTimingEventCache, getBPM, getSeconds } from "./util"
-
-const sm_regex = /#([A-Z]+):([^;]*);/g
-const notes_regex = /([\w\d\-]+):[\s ]*([\w\d\-]*):[\s ]*([\w\d\-]+):[\s ]*([\d]+):[\s ]*([\d.,]+):[\s ]*([\w\d\s, ]+)/g
+import { buildTimingEventCache, getBPM, getSeconds } from "./Util.js"
 
 export async function parseSM(file) {
   let sm = await window.files.getFile(file).text()
@@ -10,7 +7,7 @@ export async function parseSM(file) {
   try {
     //Remove Comments
     sm = sm.replaceAll(/\/\/.+/g, "")
-    let arr = [...sm.matchAll(sm_regex)]
+    let arr = [...sm.matchAll(/#([A-Z]+):([^;]*);/g)]
     let ssc_pair = false
     let ssc_notedata = {}
     for (let i = 0; i < arr.length; i++) {
