@@ -205,13 +205,13 @@ document.addEventListener("keydown", function(e) {
       sn.play()
     }
   }
-  if (e.code == "MetaLeft" || e.code == "MetaRight") cmdPressed++
+  if (e.code == "MetaLeft" || e.code == "MetaRight" || e.code == "ControlLeft" || e.code == "ControlRight") cmdPressed++
   if (e.code == "Digit7") options.audio.assistTick = !options.audio.assistTick
   if (e.code == "KeyC") options.chart.CMod = !options.chart.CMod
 })
 
 document.addEventListener("keyup", function(e) {
-  if (e.code == "MetaLeft" || e.code == "MetaRight") cmdPressed = Math.max(cmdPressed-1,0)
+  if (e.code == "MetaLeft" || e.code == "MetaRight" || e.code == "ControlLeft" || e.code == "ControlRight") cmdPressed = Math.max(cmdPressed-1,0)
 })
 document.addEventListener("wheel", function (e) {
   if (window.sm == undefined || window.chart == undefined|| audio == undefined) return

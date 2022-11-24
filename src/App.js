@@ -49,7 +49,7 @@ console.log(`Keybinds:
 space: start/stop playback
 left/right: change snap
 up/down, scroll: seek through music
-cmd+left/right, cmd+scroll: change speed (sorry if cmd doesn't work on windows)
+cmd+left/right, cmd+scroll (ctrl works too): change speed 
 7: toggle assistTick
 C: toggle CMod`)
 
