@@ -181,7 +181,7 @@ export class TimingData {
     let beat = event.beat
     let time_left_over = seconds - event.second
     let curbpm = this.getTimingEventAtBeat("BPMS",event.beat).value
-    if (event.type == "STOPS" || event.type == "DELAYS") time_left_over -= event.value
+    if (event.type == "STOPS"|| event.type == "DELAYS") time_left_over -= event.value
     if (event.type == "BPMS") curbpm = event.value
     beat += Math.max(0,time_left_over) * curbpm/60
     return beat
@@ -198,7 +198,7 @@ export class TimingData {
     let seconds = event.second
     let beats_left_over = beat - event.beat
     let curbpm = this.getTimingEventAtBeat("BPMS",event.beat).value
-    if (event.type == "STOPS") return seconds + Math.max(0,Math.max(0,beats_left_over * 60/curbpm) + event.value)
+    if (event.type == "STOPS" && beat > event.beat || event.type == "DELAYS") return seconds + Math.max(0,Math.max(0,beats_left_over * 60/curbpm) + event.value)
     if (event.type == "WARPS") return seconds
     if (event.type == "BPMS") curbpm = event.value
     seconds += beats_left_over * 60/curbpm
