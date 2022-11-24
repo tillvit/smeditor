@@ -1,4 +1,4 @@
-import { app } from "../App.js";
+import { app } from "../../App.js";
 
 var rawData
 var sampleRate
@@ -24,9 +24,7 @@ export function loadAudio(url) {
 function filterWaveForm() {
   if (rawData == undefined)
     return
-  const blockSize = sampleRate / (ch.speed*4); // Number of samples in each subdivision
-  let time = Date.now()
-  
+  const blockSize = sampleRate / (window.options.chart.speed*4); // Number of samples in each subdivision
   const samples = Math.floor(rawData.length / blockSize);
   const filteredData = [];
   for (let i = 0; i < samples; i++) {
@@ -37,7 +35,6 @@ function filterWaveForm() {
     }
     filteredData.push(sum / blockSize); // divide the sum by the block size to get the average
   }
-  // console.log(Date.now() - time)
   waveform = filteredData
 }
 
@@ -55,13 +52,11 @@ export function setWaveformZoom() {
 export function renderWaveform() {
   if (waveform) {
     graphic.clear()
-    graphic.lineStyle(1, 0x404152);
-
-    for (var i = 0; i < app.screen.height; i++) {
+    graphic.lineStyle(1, window.options.waveform.color);
+    for (let i = 0; i < app.screen.height; i++) {
       let calcTime = ch.getTimeFromYPos(i-graphic.parent.y)
-      // let calcTime = getSeconds2(calcBeat, ch.sm)
       
-      let samp = Math.floor(calcTime * ch.speed*4)
+      let samp = Math.floor(calcTime * window.options.chart.speed*4)
 
       let v = (waveform[samp]);
       graphic.moveTo(-v*192-32, i-graphic.parent.y);

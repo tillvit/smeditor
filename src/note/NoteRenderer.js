@@ -45,9 +45,9 @@ export function setData(arrow, note) {
   for (let i = 0; i < hold_container.children.length; i++)
     hold_container.children[i].destroy()
     hold_container.removeChildren()
-  let beat = note[0]
-  let col = note[1]
-  let type = note[2]
+  let beat = note.beat
+  let col = note.col
+  let type = note.type
   
   if (type == "Tap" || type == "Fake" || type == "Hold" || type == "Roll") {
     let arrow_frame = new PIXI.Sprite(arrow_frame_texture)

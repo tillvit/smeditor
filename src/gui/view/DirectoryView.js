@@ -1,4 +1,4 @@
-import { loadSM } from "../../chart/ChartManager.js"
+import { loadSM } from "../chart/ChartManager.js"
 import { createWindow } from "../BaseWindow.js"
 import { reloadData } from "./OptionsView.js"
 
@@ -159,14 +159,6 @@ function getDragHandler(view) {
     view.querySelector(".outlined")?.classList.remove("outlined")
     view.highlightedPath = ""
   }
-}
-
-window.load = function() {
-  createDirectoryWindow("Select an sm/ssc file...",["sm","ssc"], true, "", (file) => {
-    window.selected_sm = file
-    loadSM()
-    reloadData("song_properties")
-  })
 }
 
 function traverseFileTree(prefix, item, path) {
@@ -564,4 +556,12 @@ function searchForAcceptableFile(view, prefix) {
     }
   }
   select(view, suggested)
+}
+
+window.openSM = function() {
+  createDirectoryWindow("Select an sm/ssc file...",["sm","ssc"], true, "", (file) => {
+    window.selected_sm = file
+    loadSM()
+    reloadData("song_properties")
+  })
 }

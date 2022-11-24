@@ -1,7 +1,7 @@
-import { app } from "../App.js";
-import { createArrow, setData, setHoldEnd, setMineTime } from "../note/NoteRenderer.js";
-import { setArrowTexTime } from "../note/NoteTexture.js";
-import { getBeat, getRotFromArrow, getSeconds, isWarped, rgbtoHex, roundDigit } from "../util/Util.js";
+import { app } from "../../App.js";
+import { createArrow, setData, setHoldEnd, setMineTime } from "../../note/NoteRenderer.js";
+import { setArrowTexTime } from "../../note/NoteTexture.js";
+import { getRotFromArrow, rgbtoHex, roundDigit } from "../../util/Util.js";
 import { createWaveform, loadAudio, renderWaveform, setWaveformZoom } from "./Waveform.js";
 
 const receptor_tex = PIXI.Texture.from('assets/noteskin/receptor.png');
@@ -22,35 +22,12 @@ const snapNumbers = {
   fill: ['#ffffff']
 }
 
-const snapColors = {
-  4: 0xE74827,
-  8: 0x3D89F7,
-  12:0xAA2DF4,
-  16:0x82E247,
-  24:0xAA2DF4,
-  32:0xEAA138,
-  48:0xAA2DF4,
-  64:0x6BE88E,
-  96:0x6BE88E,
-  192:0x6BE88E
-}
 
-const timingData = {
-  "BPMS": ["right",0x661320],
-  "STOPS": ["left",0x9ea106],
-  "WARPS": ["right",0x800b55],
-}
-
-export class Chart {
-  constructor(sm, chartIndex) {
-    this.sm = sm;
-    this.chartIndex = chartIndex
-    this.speed = 250
+export class ChartRenderer {
+  constructor(chart) {
+    this.chart = chart
     this.beat = 0
     this.time = 0
-    this.receptorYPos = -200
-    this.snap = 1
-    this.hideWarpedArrows = false
 
     this.waveform = createWaveform(this)
     this.view = new PIXI.Container();
@@ -65,8 +42,6 @@ export class Chart {
     this.snap_display = new PIXI.Container();
     this.lastReZoom = 0
     this.lastZoom = 250
-    this.CMod = true
-    this.assistTick = false
     for (let i = 0; i < 4; i ++) {
       let receptor = new PIXI.Sprite(receptor_tex)
       receptor.width = 69
@@ -78,7 +53,7 @@ export class Chart {
       let container = new PIXI.Container()
       let graphic = new PIXI.Graphics()
       let text = new PIXI.BitmapText("4", snapNumbers)
-      container.y = this.receptorYPos
+      container.y = window.options.chart.receptorYPos
       container.x = (i-0.5)*318-32
       graphic.rotation = Math.PI / 4
       text.anchor.set(0.5)
@@ -106,27 +81,20 @@ export class Chart {
 
   setTime(time) {
     this.time = time
-    this.beat = getBeat(this.time, this.sm)
-    // this.render()
+    this.beat = this.chart.getBeat(this.time)
   }
 
   setBeat(beat) {
     this.beat = beat
-    // if (this.CMod) {
-    //   this.time = getSeconds(this.beat, this.sm)
-    // }else{
-    //   this.time = getSecondsNoTiming(this.beat, this.sm)
-    // }
-    this.time = getSeconds(this.beat, this.sm)
-    // this.render()
+    this.time = this.chart.getSeconds(this.beat)
   }
 
   setZoom(zoom) {
-    this.speed = zoom
-    // this.render()
+    window.options.chart.speed = zoom
   }
 
   addFlash(col) {
+    if (!window.options.chart.drawNoteFlash) return
     let f;
     for (let i = 0; i < this.flashes.children.length; i++) { 
       let flash = this.flashes.children[i]
@@ -146,7 +114,7 @@ export class Chart {
     }
     f.rotation = getRotFromArrow(col)
     f.x = col*64-128
-    f.y = this.receptorYPos
+    f.y = window.options.chart.receptorYPos
     f.alpha = 1.3
   }
 
@@ -160,23 +128,26 @@ export class Chart {
       square.clear()
       square.lineStyle(1, 0x000000, 1);
       let col = 0x707070
-      if (snapColors[4/this.snap])
-        col = snapColors[4/this.snap]
+      if (window.options.chart.snapColors[4/window.options.chart.snap])
+        col = window.options.chart.snapColors[4/window.options.chart.snap]
       square.beginFill(col);
       square.drawRect(-12, -12, 24, 24);
       square.endFill();
       let text = container.children[1]
-      text.text = "" + ((this.snap == 0 || 4/this.snap%1 != 0) ? "" : (4/this.snap))
+      text.text = "" + ((window.options.chart.snap == 0 || 4/window.options.chart.snap%1 != 0) ? "" : (4/window.options.chart.snap))
     }
 
-    //Update Waveform
-    if (Date.now() - this.lastReZoom > 40 && this.lastZoom != this.speed) {
-      this.lastZoom = this.speed
-      this.lastReZoom = Date.now()
-      setWaveformZoom(this.speed)
-    }
+    //Update Waveform 
+    if (window.options.waveform.enabled) {
+      if (Date.now() - this.lastReZoom > 40 && this.lastZoom != window.options.chart.speed) {
+        this.lastZoom = window.options.chart.speed
+        this.lastReZoom = Date.now()
+        setWaveformZoom(window.options.chart.speed)
+      }
 
-    renderWaveform()
+      renderWaveform()
+    }
+    this.waveform.visible = window.options.waveform.enabled
 
     //Draw Noteflash
     for (let i = 0; i < this.flashes.children.length; i++) { 
@@ -191,7 +162,7 @@ export class Chart {
     for (let i = 0; i < this.receptors.children.length; i++) { 
       let receptor = this.receptors.children[i]
       receptor.x = i*64-128
-      receptor.y = this.receptorYPos
+      receptor.y = window.options.chart.receptorYPos
       receptor.rotation = getRotFromArrow(i)
       let col = Math.max((1 - (this.beat % 1)), 0.5) * 255
       receptor.tint = rgbtoHex(col, col, col)
@@ -202,11 +173,13 @@ export class Chart {
 
     //Draw Timing Text
     let num_timing = 0
-    for (let en of this.sm._events) { 
-      let b = en[0]
-      let value = en[1]
-      let type = en[2]
-      if (this.getYPos(b) < -32 - this.view.y || this.getYPos(b) > app.screen.height-this.view.y+32 || type=="WARP_DEST") {
+    let same_beat = -1
+    let last_length_left = 0
+    let last_length_right = 0
+    for (let event of this.chart.timingData.getTimingData()) { 
+      if (Math.abs(this.chart.getSeconds(event.beat) - this.time)>window.options.chart.maxDrawSeconds)
+        continue
+      if (this.getYPos(event.beat) < -32 - this.view.y || this.getYPos(event.beat) > app.screen.height-this.view.y+32) {
         continue;
       }
       if (num_timing >= this.timings.children.length) {
@@ -220,59 +193,62 @@ export class Chart {
         this.timings.addChild(container)
       }
       let bp = this.timings.children[num_timing++]
-      let td = timingData[type]
+      let td = window.options.chart.timingData[event.type] ?? ["right", 0x000000]
       let x = td[0] == "right" ? 196 : -240
-      let y = this.getYPos(b)
+      if (same_beat != event.beat) {
+        last_length_left = 0
+        last_length_right = 0
+      }
+      if (td[0] == "left") x -= last_length_left
+      if (td[0] == "right") x += last_length_right
+      let y = this.getYPos(event.beat)
       bp.x = x
       bp.y = y
-      bp.getChildByName("bpm").text = roundDigit(value,3);
+      let label = roundDigit(event.value,3) ?? JSON.stringify(event);
+      if (event.type == "LABELS") label = event.value
+      if (event.type == "TIMESIGNATURES") label = event.upper + "/" + event.lower
+      if (event.type == "SPEEDS") label = event.value + "/" + event.delay + "/" + event.unit
+      if (event.type == "COMBOS") label = event.hitMult + "/" + event.missMult
+      bp.getChildByName("bpm").text = label;
       bp.getChildByName("bpm").anchor.x = td[0] == "right" ? 0 : 1
       this.timingBoxes.beginFill(td[1]); 
       this.timingBoxes.lineStyle(1, 0x000000, 1);
       this.timingBoxes.drawRoundedRect(-5+x - (td[0] == "right" ? 0 : bp.getChildByName("bpm").width),-10+y, bp.getChildByName("bpm").width + 10, 25,5);
+      if (td[0] == "left") last_length_left += bp.getChildByName("bpm").width + 15
+      if (td[0] == "right") last_length_right += bp.getChildByName("bpm").width + 15 
+      same_beat = event.beat
       this.timingBoxes.endFill();
-      // bp.getChildByName("box").width = bp.getChildByName("bpm").width + 10
-      
       bp.visible = true
     }
     for (let i=num_timing; i < this.timings.children.length;i ++) {
       this.timings.children[i].visible = false
     }
 
-    for (let en of this.sm._events) { 
-      if (!((!this.CMod && en[2] == "STOPS" && en[1] < 0) || (this.CMod && en[2] == "STOPS") || (!this.CMod && en[2] == "WARPS"))) {
-        continue;
-      } 
-      let y_start = this.getYPos(en[0])
-      let length = en[1]*this.speed/100*64*4
-      if (en[2] == "WARPS") {
-        length =en[1]*this.speed/100*64
+    for (let event of this.chart.timingData.getTimingData("STOPS", "WARPS", "DELAYS", "FAKES")) { 
+      if (event.type == "STOPS" || event.type == "DELAYS") {
+        if (!((!window.options.chart.CMod && event.value < 0) || (window.options.chart.CMod && event.value > 0))) continue
       }
-      if (!this.CMod && en[2] == "STOPS" && en[1] < 0) {
-        length =  this.getYPos(getBeat(en[3]+0.0001,this.sm))-y_start
-      }
-      // console.log(en[0],y_start,y_end)
-      if (y_start+length < -32 - this.view.y) {
-        continue
-      }
-      if (y_start > app.screen.height-this.view.y+32) {
-        break
-      }
-      let td = timingData[en[2]]
+      if (event.type == "WARPS" && window.options.chart.CMod) continue 
+      let y_start = this.getYPos(event.beat)
+      let length = this.getYPos(event.beat + event.value) - y_start
+      if (event.type == "STOPS" || event.type == "DELAYS") length = this.getYPos(this.chart.getBeat(event.second+0.0001))-y_start
+      if (y_start+length < -32 - this.view.y) continue
+      if (y_start > app.screen.height-this.view.y+32) break
+      let td = window.options.chart.timingData[event.type] ?? ["right", 0x000000]
       this.timingBoxes.beginFill(td[1], 0.2); 
       this.timingBoxes.drawRect(-224,y_start,384,length);
       this.timingBoxes.endFill();
     }
 
-
     let bar_beat = 0
     let num_bar = 0
-    let num_lines = 0
     while(this.getYPos(bar_beat+1) < -32 - this.view.y) {
       bar_beat++
     }
     while(true) {
-      if (!isWarped(bar_beat, this.sm) || !this.CMod) {
+      if (Math.abs(this.chart.getSeconds(bar_beat) - this.time)>window.options.chart.maxDrawSeconds)
+        break
+      if (!this.chart.isBeatWarped(bar_beat) || !window.options.chart.CMod) {
         if (bar_beat % 4 == 0) {
           if (num_bar >= this.texts.children.length) {
             this.texts.addChild(new PIXI.BitmapText(bar_beat/4, measureNumbers))
@@ -293,41 +269,39 @@ export class Chart {
         this.graphics.moveTo(-128-32-64, this.getYPos(bar_beat));
         this.graphics.lineTo(128-32+64, this.getYPos(bar_beat));
         this.graphics.closePath()
-        num_lines++
       }
       if (this.getYPos(bar_beat) > app.screen.height-this.view.y+32){
         break
       }
       bar_beat++
     }
-    for (let i=num_bar; i < this.texts.children.length;i ++) {
+    for (let i=num_bar; i < this.texts.children.length; i++) {
       this.texts.children[i].visible = false
     }
 
     let childIndex = 0
-    let nd = this.getNoteData()
-    for (let i = 0; i < nd.length; i++) { 
-      let note = nd[i]
-      let beat = note[0]
-      if (nd[i].warped && this.hideWarpedArrows)
+    for (let note of this.chart.notedata) { 
+      if (Math.abs(this.chart.getSeconds(note.beat + (note.hold ?? 0)) - this.time)>window.options.chart.maxDrawSeconds)
         continue
-      if (!(nd[i][2] == "Hold" || nd[i][2] == "Roll")  && (this.getYPos(beat) < -32 - this.view.y || this.getYPos(beat) > app.screen.height-this.view.y+32)) {
+      if (note.warped && window.options.chart.hideWarpedArrows && !window.options.chart.CMod)
+        continue
+      if (!(note.type == "Hold" || note.type == "Roll")  && (this.getYPos(note.beat) < -32 - this.view.y || this.getYPos(note.beat) > app.screen.height-this.view.y+32)) {
         continue;
       }
-      if ((nd[i][2] == "Hold" || nd[i][2] == "Roll")  && (this.getYPos(beat+nd[i].hold) < -32 - this.view.y || this.getYPos(beat) > app.screen.height-this.view.y+32)) {
+      if ((note.type == "Hold" || note.type == "Roll")  && (this.getYPos(note.beat+note.hold) < -32 - this.view.y || this.getYPos(note.beat) > app.screen.height-this.view.y+32)) {
         continue;
       }
       if (childIndex >= this.arrows.children.length) {
-        this.arrows.addChild(createArrow(nd[i]))
+        this.arrows.addChild(createArrow(note))
       }
       let arrow = this.arrows.children[childIndex++]
       setData(arrow, note)
-      arrow.x = nd[i][1]*64-128
-      arrow.y = this.getYPos(beat)
-      if (nd[i][2] == "Hold" || nd[i][2] == "Roll") {
-        setHoldEnd(arrow, this.getYPos(beat+nd[i].hold))
+      arrow.x = note.col*64-128
+      arrow.y = this.getYPos(note.beat)
+      if (note.type == "Hold" || note.type == "Roll") {
+        setHoldEnd(arrow, this.getYPos(note.beat+note.hold))
       }
-      if (nd[i][2] == "Mine") {
+      if (note.type == "Mine") {
         setMineTime(arrow, this.time)
       }
       arrow.visible = true
@@ -336,36 +310,27 @@ export class Chart {
       this.arrows.children[i].visible = false
     }
     
-    setArrowTexTime(this.beat, getSeconds(this.beat, this.sm))
+    setArrowTexTime(this.beat, this.chart.getSeconds(this.beat))
   }
 
   getYPos(beat) {
-    if (this.CMod) {
-      return (getSeconds(beat, this.sm)-this.time)*this.speed/100*64*4 + this.receptorYPos
+    if (window.options.chart.CMod) {
+      return (this.chart.getSeconds(beat)-this.time)*window.options.chart.speed/100*64*4 + window.options.chart.receptorYPos
     }
-    return (beat - this.beat)*this.speed/100*64 + this.receptorYPos
+    if (window.options.chart.doSpeedChanges) return (chart.timingData.getEffectiveBeat(beat) - chart.timingData.getEffectiveBeat(this.beat)) * window.options.chart.speed/100*64 * chart.timingData.getSpeedMult(this.beat) + window.options.chart.receptorYPos
+    return (beat - this.beat)*window.options.chart.speed/100*64 + window.options.chart.receptorYPos
   }
 
 
   getTimeFromYPos(yp) {
-    if (this.CMod) {
-      let seconds = (yp - this.receptorYPos)/this.speed*100/64/4 + this.time
+    if (window.options.chart.CMod) {
+      let seconds = (yp - window.options.chart.receptorYPos)/window.options.chart.speed*100/64/4 + this.time
       return seconds
     }
-    return getSeconds((yp - this.receptorYPos)/64*100/this.speed+this.beat,this.sm)
+    // bokren: if (window.options.chart.doSpeedChanges) return this.chart.getSeconds((yp - window.options.chart.receptorYPos)/64*100/window.options.chart.speed / chart.timingData.getSpeedMult(this.beat)+chart.timingData.getEffectiveBeat(this.beat))
+    //less bokrne:
+    if (window.options.chart.doSpeedChanges) return this.chart.getSeconds((yp - window.options.chart.receptorYPos)/64*100/window.options.chart.speed/chart.timingData.getSpeedMult(this.beat)+this.beat)
+    return this.chart.getSeconds((yp - window.options.chart.receptorYPos)/64*100/window.options.chart.speed+this.beat)
   }
 
-  getNoteData() {
-    return this.sm["NOTES"][this.chartIndex]["Notedata"]
-  }
-}
-
-
-
-
-export function buildChart(sm, chartIndex) {
-  if (sm["NOTES"][chartIndex]) {
-    return new Chart(sm, chartIndex)
-  }
-  return null
 }

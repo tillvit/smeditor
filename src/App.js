@@ -2,6 +2,7 @@ import { createArrowTex } from "./note/NoteTexture.js";
 import { createOptionsWindow } from "./gui/view/OptionsView.js";
 import { FileSystem } from "./util/FileSystem.js";
 import { getBrowser } from "./util/Util.js";
+import { Options } from "./util/Options.js";
 
 if (getBrowser().includes("Safari")) {
   document.querySelector("body").innerHTML = "<div class='browser-unsupported'><div class='browser-unsupported-item'><h1>Safari is currently not supported!</h1><div>Please use another browser instead</div></div></div>"
@@ -19,6 +20,7 @@ export const app = new PIXI.Application(
   });
 
 window.app = app
+window.options = new Options()
 
 setTimeout(()=>{
   PIXI.BitmapFont.from('Assistant', {
@@ -26,7 +28,7 @@ setTimeout(()=>{
     fontSize: 20,
     fill: 'white'
   }, { 
-    chars: [['a','z'],['A','Z'],"!@#$%^&*()~{}[] :.-","0123456789"], 
+    chars: [['a','z'],['A','Z'],"!@#$%^&*()~{}[] :.-","0123456789/"], 
     resolution: window.devicePixelRatio
   });
 })
@@ -37,6 +39,19 @@ window.files = new FileSystem()
 window.selected_sm = ""
 
 createOptionsWindow("select_sm_initial")
+
+console.log(`smeditor is currently a work in progress. editing isn't ready yet, so i guess its smviewer??
+here are some things you might need to know (temporary stuff before i make them accessible)`)
+console.log(`openSM(): opens the sm selector
+loadChart(x): loads the chart with index x (0: Beginner, 1: Easy, ... 5+: Edit), pass in nothing to load the most difficult non-edit chart 
+options: an object containing a lot of options (do speed changes, hide warped notes, etc)`)
+console.log(`Keybinds:
+space: start/stop playback
+left/right: change snap
+up/down, scroll: seek through music
+cmd+left/right, cmd+scroll: change speed (sorry if cmd doesn't work on windows)
+7: toggle assistTick
+C: toggle CMod`)
 
 
 window.addEventListener("resize", function(){

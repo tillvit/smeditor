@@ -98,7 +98,7 @@ export function getSeconds(beat, sm) {
   let curbpm = getBPM(sm._events[i][0], sm)
   let event = sm._events[i]
   if (event[2] == "STOPS"){
-    if (beat >= event[0]+event[1]){
+    if (beat > event[0]){
       seconds += Math.max(0,Math.max(0,beats * 60/curbpm) +event[1])
       beats = 0
     }else{
@@ -238,6 +238,7 @@ export function getBPM(beat, sm) {
 // }
 
 export function roundDigit(g, v) {
+  if (typeof g != "number") return undefined
   return parseFloat(g.toFixed(v))
 }
 

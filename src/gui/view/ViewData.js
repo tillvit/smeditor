@@ -1,4 +1,4 @@
-import { loadAudio, loadSM } from "../../chart/ChartManager.js";
+import { loadAudio, loadSM } from "../chart/ChartManager.js";
 import { FileSystem } from "../../util/FileSystem.js";
 import { closeWindow } from "../BaseWindow.js";
 import { createDirectoryWindow } from "./DirectoryView.js";
