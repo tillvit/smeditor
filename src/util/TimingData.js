@@ -127,6 +127,7 @@ export class TimingData {
     let lastbeat = 0
     let curbpm = this.getTimingData("BPMS")[0].value
     let warping = false
+    let offset = this.getTimingData("OFFSET")
     for (let i = 0; i < cache.length; i++) {
       let event = cache[i]
       let time_to_event = (event.beat - lastbeat) * 60/curbpm
@@ -135,9 +136,10 @@ export class TimingData {
       if (event.type == "WARPS") warping = true
       if (event.type == "WARP_DEST") warping = false
       if (event.type == "BPMS") curbpm = event.value
-      cache[i].second = seconds - this.getTimingData("OFFSET")
-      if (event.type == "STOPS" || event.type == "DELAY") seconds += event.value //Do these behave the same?
+      cache[i].second = seconds - offset
+      if (event.type == "STOPS" || event.type == "DELAY") seconds += event.value;
     }
+    
     this._cache.beatTiming = cache
   }
 
@@ -168,6 +170,9 @@ export class TimingData {
 
   buildTimingDataCache() {
     this._cache.events = TIMING_PROPS.slice(1).reduce((data, p) => data.concat(this[p] ?? this._fallback?.[p] ?? []),[]).sort((a,b)=>a.beat-b.beat)
+    for (let i = 0; i < this._cache.events.length-1; i++) {
+      if (this._cache.events[i].second == undefined) this._cache.events[i].second = this.getSeconds(this._cache.events[i].beat)
+    }
   }
 
   getBeat(seconds) {

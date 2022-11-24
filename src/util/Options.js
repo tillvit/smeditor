@@ -7,6 +7,7 @@ export class Options {
     receptorYPos: -200,
     snap: 1,
     maxDrawSeconds: 10,
+    maxDrawSecondsBack: 2,
     drawNoteFlash: true,
     snapColors: {
       4: 0xE74827,
