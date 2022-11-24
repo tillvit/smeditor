@@ -57,7 +57,7 @@ export const ViewData = {
       }]
     },
     {
-      title: "New",
+      title: "New (not implemented)",
       options: [{
           label: "Create a new song",
           content: "New Song",
@@ -66,6 +66,7 @@ export const ViewData = {
           attributes: {},
           listeners: {
             click: (e) => {
+              return
               let folder = "New Song"
               if (window.files.file_tree[folder]) {
                 let i = 2
