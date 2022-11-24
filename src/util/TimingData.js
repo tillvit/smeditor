@@ -1,4 +1,4 @@
-import { clamp } from "./Util";
+import { clamp } from "./Util.js";
 
 export const TIMING_PROPS = [
   "OFFSET", "BPMS", "STOPS", "WARPS", "DELAYS", "LABELS",
