@@ -241,7 +241,7 @@ export class TimingData {
     return effBeat 
   }
 
-  getSpeedMult(beat) {
+  getSpeedMult(beat, seconds) {
     if (this._cache.speeds == undefined) this.buildSpeedsTimingDataCache()
     let cache = this._cache.speeds
     if (cache.length == 0) return beat
@@ -250,7 +250,7 @@ export class TimingData {
     let event = cache[i]
     if (event == undefined) return 1
     let time = beat - event.beat
-    if (event.unit == "T") time = this.getSeconds(beat) - event.second
+    if (event.unit == "T") time = seconds - event.second
     let progress = clamp(time/event.delay,0,1)
     if (event.delay == 0) progress = 1
     let prev = cache[i-1]?.value ?? 1

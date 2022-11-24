@@ -42,6 +42,7 @@ export class ChartRenderer {
     this.snap_display = new PIXI.Container();
     this.lastReZoom = 0
     this.lastZoom = 250
+    this.speedMult = 1
     for (let i = 0; i < 4; i ++) {
       let receptor = new PIXI.Sprite(receptor_tex)
       receptor.width = 69
@@ -119,6 +120,8 @@ export class ChartRenderer {
   }
 
   render() {
+    this.speedMult = this.chart.timingData.getSpeedMult(this.beat, this.time)
+
     let renderBeatLimit = this.chart.getBeat(this.time + window.options.chart.maxDrawSeconds)
     let renderBeatLowerLimit = this.chart.getBeat(this.time - window.options.chart.maxDrawSeconds)
 
@@ -325,7 +328,7 @@ export class ChartRenderer {
     if (window.options.chart.CMod) {
       return (this.chart.getSeconds(beat)-this.time)*window.options.chart.speed/100*64*4 + window.options.chart.receptorYPos
     }
-    if (window.options.chart.doSpeedChanges) return (chart.timingData.getEffectiveBeat(beat) - chart.timingData.getEffectiveBeat(this.beat)) * window.options.chart.speed/100*64 * chart.timingData.getSpeedMult(this.beat) + window.options.chart.receptorYPos
+    if (window.options.chart.doSpeedChanges) return (chart.timingData.getEffectiveBeat(beat) - chart.timingData.getEffectiveBeat(this.beat)) * window.options.chart.speed/100*64 * this.speedMult + window.options.chart.receptorYPos
     return (beat - this.beat)*window.options.chart.speed/100*64 + window.options.chart.receptorYPos
   }
 
@@ -335,9 +338,9 @@ export class ChartRenderer {
       let seconds = (yp - window.options.chart.receptorYPos)/window.options.chart.speed*100/64/4 + this.time
       return seconds
     }
-    // bokren: if (window.options.chart.doSpeedChanges) return this.chart.getSeconds((yp - window.options.chart.receptorYPos)/64*100/window.options.chart.speed / chart.timingData.getSpeedMult(this.beat)+chart.timingData.getEffectiveBeat(this.beat))
+    // bokren: if (window.options.chart.doSpeedChanges) return this.chart.getSeconds((yp - window.options.chart.receptorYPos)/64*100/window.options.chart.speed / this.speedMult+chart.timingData.getEffectiveBeat(this.beat))
     //less bokrne:
-    if (window.options.chart.doSpeedChanges) return this.chart.getSeconds((yp - window.options.chart.receptorYPos)/64*100/window.options.chart.speed/chart.timingData.getSpeedMult(this.beat)+this.beat)
+    if (window.options.chart.doSpeedChanges) return this.chart.getSeconds((yp - window.options.chart.receptorYPos)/64*100/window.options.chart.speed/this.speedMult+this.beat)
     return this.chart.getSeconds((yp - window.options.chart.receptorYPos)/64*100/window.options.chart.speed+this.beat)
   }
 
