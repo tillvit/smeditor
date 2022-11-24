@@ -53,7 +53,7 @@ export class Chart {
         this.difficulty = match[3] ?? ""
         this.meter = parseInt(match[4]) ?? ""
         this.radarValues = match[5] ?? ""
-        this.notedata = this.parseNotedata(match[6], dict) ?? {}
+        this.notedata = this.parseNotedata(match[6]) ?? {}
         this.credit = ""
         this.chartName = ""
         this.chartStyle = ""

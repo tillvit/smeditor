@@ -32,10 +32,12 @@ export async function loadAudio() {
   let a_file = window.files.getFileRelativeTo(window.selected_sm,window.sm["MUSIC"])
   if (window.sm["MUSIC"] == "") {
     console.log("No Audio File!")
+    audio = undefined
     return
   }
   if (a_file == undefined) {
     console.log("Failed to load audio file " + window.sm["MUSIC"])
+    audio = undefined
     return
   }
   audio_url = await URL.createObjectURL(a_file)
@@ -60,8 +62,8 @@ export async function loadSM() {
   let sm = await parseSM(window.selected_sm)
   window.sm = sm
   
-  loadChart()
   loadAudio()
+  loadChart()
 
   if (update == false) {
     info = new PIXI.BitmapText("debug",{
@@ -79,7 +81,7 @@ export async function loadSM() {
       if (chartView == undefined || window.chart == undefined)
         return
 
-      let time = audio.seek()
+      let time = audio?.seek() ?? 0
   
       info.text = "Time: " + roundDigit(chartView.time,3) + "\n" + "Beat: " + roundDigit(chartView.beat,3) + "\nFPS: " + getFPS() 
 
@@ -94,8 +96,8 @@ export async function loadSM() {
       }
 
       tick.volume(options.audio.soundEffectVolume)
-      audio.volume(options.audio.songVolume)
-      audio.rate(options.audio.rate)
+      audio?.volume(options.audio.songVolume)
+      audio?.rate(options.audio.rate)
     })
     update = true
   }
@@ -134,13 +136,15 @@ export function loadChart(chartIndex) {
   chartView.view.x = app.screen.width/2
   chartView.view.y = app.screen.height/2
   window.chartView = chartView
+  seekBack()
 }
 
 window.loadChart = loadChart
 
 function seekBack() {
-  let time = audio.seek()
+  let time = audio?.seek() ?? 0
   let nd = window.chart.notedata
+  if (noteIndex > nd.length) noteIndex = nd.length - 1
   while(noteIndex > 0 && time < nd[noteIndex-1].second) {
     noteIndex--
     if (playing && (nd[noteIndex].type != "Fake" && nd[noteIndex].type != "Mine")) {
@@ -163,7 +167,7 @@ function onResize() {
 var cmdPressed = 0
 document.addEventListener("keydown", function(e) {
   let sm = window.sm
-  if (sm == undefined || window.chart == undefined) return
+  if (sm == undefined || window.chart == undefined || audio == undefined) return
   if (e.code == "Space") {
     if (playing) audio.pause()
     else audio.play()
@@ -207,10 +211,10 @@ document.addEventListener("keydown", function(e) {
 })
 
 document.addEventListener("keyup", function(e) {
-  if (e.code == "MetaLeft" || e.code == "MetaRight") cmdPressed--
+  if (e.code == "MetaLeft" || e.code == "MetaRight") cmdPressed = Math.max(cmdPressed-1,0)
 })
 document.addEventListener("wheel", function (e) {
-  if (window.sm == undefined || window.chart == undefined) return
+  if (window.sm == undefined || window.chart == undefined|| audio == undefined) return
   if (cmdPressed > 0) {
     let newSpeed = Math.max(10,options.chart.speed*Math.pow(1.01,e.deltaY/5))
     chartView.setZoom(newSpeed)

@@ -119,6 +119,8 @@ export class ChartRenderer {
   }
 
   render() {
+    let renderBeatLimit = this.chart.getBeat(this.time + window.options.chart.maxDrawSeconds)
+    let renderBeatLowerLimit = this.chart.getBeat(this.time - window.options.chart.maxDrawSeconds)
 
     //Draw Snap Indicators
     for (let i = 0; i < 2; i++) {
@@ -177,11 +179,14 @@ export class ChartRenderer {
     let last_length_left = 0
     let last_length_right = 0
     for (let event of this.chart.timingData.getTimingData()) { 
-      if (Math.abs(this.chart.getSeconds(event.beat) - this.time)>window.options.chart.maxDrawSeconds)
-        continue
-      if (this.getYPos(event.beat) < -32 - this.view.y || this.getYPos(event.beat) > app.screen.height-this.view.y+32) {
+      if (this.getYPos(event.beat) < -32 - this.view.y) {
         continue;
       }
+      if (this.getYPos(event.beat) > app.screen.height-this.view.y+32) {
+        break
+      }
+      if (event.beat > renderBeatLimit)
+        break
       if (num_timing >= this.timings.children.length) {
         let container = new PIXI.Container()
         let text = new PIXI.BitmapText("", timingNumbers)
@@ -225,6 +230,8 @@ export class ChartRenderer {
     }
 
     for (let event of this.chart.timingData.getTimingData("STOPS", "WARPS", "DELAYS", "FAKES")) { 
+      if (event.beat > renderBeatLimit)
+        break
       if (event.type == "STOPS" || event.type == "DELAYS") {
         if (!((!window.options.chart.CMod && event.value < 0) || (window.options.chart.CMod && event.value > 0))) continue
       }
@@ -236,6 +243,7 @@ export class ChartRenderer {
       if (y_start > app.screen.height-this.view.y+32) break
       let td = window.options.chart.timingData[event.type] ?? ["right", 0x000000]
       this.timingBoxes.beginFill(td[1], 0.2); 
+      this.timingBoxes.lineStyle(0, 0x000000);
       this.timingBoxes.drawRect(-224,y_start,384,length);
       this.timingBoxes.endFill();
     }
@@ -245,9 +253,7 @@ export class ChartRenderer {
     while(this.getYPos(bar_beat+1) < -32 - this.view.y) {
       bar_beat++
     }
-    while(true) {
-      if (Math.abs(this.chart.getSeconds(bar_beat) - this.time)>window.options.chart.maxDrawSeconds)
-        break
+    while(bar_beat < renderBeatLimit) {
       if (!this.chart.isBeatWarped(bar_beat) || !window.options.chart.CMod) {
         if (bar_beat % 4 == 0) {
           if (num_bar >= this.texts.children.length) {
@@ -281,16 +287,18 @@ export class ChartRenderer {
 
     let childIndex = 0
     for (let note of this.chart.notedata) { 
-      if (Math.abs(this.chart.getSeconds(note.beat + (note.hold ?? 0)) - this.time)>window.options.chart.maxDrawSeconds)
+      if (note.warped && window.options.chart.hideWarpedArrows && window.options.chart.CMod)
         continue
-      if (note.warped && window.options.chart.hideWarpedArrows && !window.options.chart.CMod)
+      if (note.beat < renderBeatLowerLimit && note.hold == undefined)
         continue
-      if (!(note.type == "Hold" || note.type == "Roll")  && (this.getYPos(note.beat) < -32 - this.view.y || this.getYPos(note.beat) > app.screen.height-this.view.y+32)) {
+      if (this.getYPos(note.beat + (note.hold ?? 0)) < -32 - this.view.y) {
         continue;
       }
-      if ((note.type == "Hold" || note.type == "Roll")  && (this.getYPos(note.beat+note.hold) < -32 - this.view.y || this.getYPos(note.beat) > app.screen.height-this.view.y+32)) {
-        continue;
+      if (this.getYPos(note.beat) > app.screen.height-this.view.y+32) {
+        break;
       }
+      if (note.beat + (note.hold ?? 0) > renderBeatLimit)
+        break
       if (childIndex >= this.arrows.children.length) {
         this.arrows.addChild(createArrow(note))
       }
