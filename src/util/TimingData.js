@@ -33,7 +33,7 @@ export class TimingData {
     if (this[prop] == undefined) {
       this[prop] = []
     }
-    let entries = data.replaceAll(/[\s]/g,"").split(",")
+    let entries = data.replaceAll(/[\n\r\t]/g,"").split(",")
     for (let str of entries) {
       let event = {}
       let temp = str.split("=")
@@ -160,6 +160,7 @@ export class TimingData {
       beat: e.beat, 
       value: e.value,
       delay: e.delay,
+      unit: e.unit,
       second: this.getSeconds(e.beat)
     }))
     this._cache.speeds = cache
@@ -213,6 +214,16 @@ export class TimingData {
         let bpmatstop = this.getTimingEventAtBeat("BPMS",event.beat).value
         if (beat < event.beat+event.value*-1*bpmatstop/60) return true
       }
+    }
+    return false
+  }
+
+  isBeatFaked(beat) {
+    if (this.isBeatWarped(beat)) return true
+    let fakes = this.getTimingData("FAKES")
+    if (fakes == undefined) return false
+    for (let event of fakes) {
+      if (beat >= event.beat && beat < event.beat+event.value) return true
     }
     return false
   }

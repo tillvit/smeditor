@@ -77,6 +77,7 @@ export class Chart {
               col: col, 
               type: NOTE_TYPES[row[col]],
               warped: this.timingData.isBeatWarped(beat),
+              fake: this.timingData.isBeatFaked(beat),
               second: this.timingData.getSeconds(beat)
             }
             if (item.type == undefined) {
@@ -115,6 +116,10 @@ export class Chart {
 
   isBeatWarped(beat) {
     return this.timingData.isBeatWarped(beat)
+  }
+
+  isBeatFaked(beat) {
+    return this.timingData.isBeatFaked(beat)
   }
   
 } 

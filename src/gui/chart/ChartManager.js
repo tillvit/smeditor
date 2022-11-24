@@ -88,7 +88,7 @@ export async function loadSM() {
       if (playing) chartView.setTime(time) 
       let nd = window.chart.notedata
       while(noteIndex < nd.length && time > nd[noteIndex].second-0.036+options.audio.assistTickOffset) {
-        if (playing && (nd[noteIndex].type != "Fake" && nd[noteIndex].type != "Mine") && !nd[noteIndex].warped) {
+        if (playing && (nd[noteIndex].type != "Fake" && nd[noteIndex].type != "Mine") && !nd[noteIndex].fake) {
           chartView.addFlash(nd[noteIndex].col)
           if (options.audio.assistTick) tick.play()
         }
@@ -147,7 +147,7 @@ function seekBack() {
   if (noteIndex > nd.length) noteIndex = nd.length - 1
   while(noteIndex > 0 && time < nd[noteIndex-1].second) {
     noteIndex--
-    if (playing && (nd[noteIndex].type != "Fake" && nd[noteIndex].type != "Mine")) {
+    if (playing && (nd[noteIndex].type != "Fake" && nd[noteIndex].type != "Mine") && !nd[noteIndex].fake) {
       chartView.addFlash(nd[noteIndex].col)
     }
   }

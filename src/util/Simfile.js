@@ -36,7 +36,7 @@ export class Simfile {
     for (let prop of props) {
       if ((prop[1] == "NOTEDATA" && type == "ssc") || ssc_pair) {
         ssc_pair = true
-        ssc_notedata[prop[1]] = (prop[2])
+        ssc_notedata[prop[1]] = prop[2]
         if (prop[1] == "NOTES") {
           temp_charts.push(ssc_notedata)
           ssc_notedata = {}, ssc_pair = false
