@@ -113,10 +113,12 @@ export function loadChart(chartIndex) {
         break
       }
     }
-    for (let i = 5; i < charts.length; i++) {
-      if (charts[i] != undefined) {
-        chartIndex = i
-        break
+    if (charts[chartIndex] == undefined) {
+      for (let i = 5; i < charts.length; i++) {
+        if (charts[i] != undefined) {
+          chartIndex = i
+          break
+        }
       }
     }
     if (chartIndex == undefined) return;

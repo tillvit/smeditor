@@ -156,6 +156,8 @@ export class ChartRenderer {
     let renderSecondLimit = this.chart.getSeconds(renderBeatLimit)
     let renderSecondLowerLimit = this.chart.getSeconds(renderBeatLowerLimit)
 
+    let negScroll = window.options.chart.doSpeedChanges && (this.speedMult < 0 || (this.chart.timingData.getTimingEventAtBeat("SCROLLS",this.beat)?.value ?? 1) < 0)
+
     if (window.options.chart.CMod) {
       renderBeatLimit = this.chart.getBeat(this.getTimeFromYPos(app.screen.height-this.view.y+32))
       renderBeatLowerLimit = this.chart.getBeat(this.getTimeFromYPos(-32 - this.view.y))
@@ -211,17 +213,14 @@ export class ChartRenderer {
     let last_length_left = 0
     let last_length_right = 0
     for (let event of this.chart.timingData.getTimingData(...Object.keys(window.options.chart.renderTimingEvent).filter(key=>window.options.chart.renderTimingEvent[key]))) { 
-      if (renderBeatLowerLimit > event.beat)
-        continue
-      if (renderBeatLimit < event.beat)
-        break
+      if (renderBeatLowerLimit > event.beat) continue
+      if (renderBeatLimit < event.beat) break
       let y = this.getYPos(event.beat)
       if (event.type == "ATTACKS" && window.options.chart.CMod) y = (event.second-this.time)*window.options.chart.speed/100*64*4 + window.options.chart.receptorYPos
-      if (y < -32 - this.view.y) {
-        continue;
-      }
+      if (y < -32 - this.view.y) continue;
       if (y > app.screen.height-this.view.y+32) {
-        break
+        if (negScroll || event.beat < this.beat) continue
+        else break
       }
       if (num_timing >= this.timings.children.length) {
         let container = new PIXI.Container()
@@ -272,8 +271,7 @@ export class ChartRenderer {
         continue
       if ((event.type == "WARPS" || event.type == "FAKES") && event.beat + event.value < renderBeatLowerLimit)
         continue
-      if (event.beat > renderBeatLimit)
-        break
+      if (event.beat > renderBeatLimit) break
       
       
       if (event.type == "STOPS" || event.type == "DELAYS") {
@@ -288,7 +286,10 @@ export class ChartRenderer {
         else length = event.value*window.options.chart.speed/100*64*4
       }
       if (y_start+length < -32 - this.view.y) continue
-      if (y_start > app.screen.height-this.view.y+32) break
+      if (y_start > app.screen.height-this.view.y+32) {
+        if (negScroll || event.beat < this.beat) continue
+        else break
+      }
       let td = TIMING_EVENT_DATA[event.type] ?? ["right", 0x000000]
       this.timingBoxes.beginFill(td[1], 0.2); 
       this.timingBoxes.lineStyle(0, 0x000000);
@@ -304,6 +305,11 @@ export class ChartRenderer {
         if (y < -32 - this.view.y){
           bar_beat++
           continue
+        }
+        if (y > app.screen.height-this.view.y+32) {
+          bar_beat++
+          if (negScroll || bar_beat < this.beat) continue
+          else break
         }
         if (bar_beat % 4 == 0) {
           if (num_bar >= this.texts.children.length) {
@@ -326,9 +332,6 @@ export class ChartRenderer {
         this.graphics.moveTo(-128-32-64, y);
         this.graphics.lineTo(128-32+64, y);
         this.graphics.closePath()
-        if (y > app.screen.height-this.view.y+32){
-          break
-        }
       }
       bar_beat++
     }
@@ -338,20 +341,16 @@ export class ChartRenderer {
 
     let childIndex = 0
     for (let note of this.chart.notedata) { 
-      if (note.warped && window.options.chart.hideWarpedArrows && window.options.chart.CMod)
-        continue
-      if (note.beat + (note.hold ?? 0) < renderBeatLowerLimit )
-        continue
-      if (note.beat > renderBeatLimit)
-        break
+      if (note.warped && window.options.chart.hideWarpedArrows && window.options.chart.CMod) continue
+      if (note.beat + (note.hold ?? 0) < renderBeatLowerLimit) continue
+      if (note.beat > renderBeatLimit) break
       let y = this.getYPos(note.beat)
       let y_hold = this.getYPos(note.beat + (note.hold ?? 0))
-      if (y_hold < -32 - this.view.y) {
-        continue;
-      }
+      if (y_hold < -32 - this.view.y) continue
       if (y > app.screen.height-this.view.y+32) {
-        break;
-      }
+        if (negScroll || note.beat < this.beat) continue
+        else break
+      } 
       if (childIndex >= this.arrows.children.length) {
         this.arrows.addChild(createArrow(note))
       }

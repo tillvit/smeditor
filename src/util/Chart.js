@@ -73,30 +73,36 @@ export class Chart {
       let rows = measures[measure_num].trim().split("\n")
       for (let row_index = 0; row_index < rows.length; row_index++) { 
         let row = rows[row_index].trim()
-        for (let col = 0; col < row.length; col++) { 
+        let col = 0
+        for (let c = 0; c < row.length; c++) { 
           let beat = measure_num*4 + row_index / rows.length * 4
-          if (row[col] != "0" && row[col] != "3") {
+          let type = row[c]
+          if (type == "D" && row[c+1] == "L") { //why
+            type = "3"
+            c++
+          }
+          if (type != "0" && type != "3") {
             let item = {
               beat: beat,
               col: col, 
-              type: NOTE_TYPES[row[col]],
+              type: NOTE_TYPES[type],
               warped: this.timingData.isBeatWarped(beat),
               fake: this.timingData.isBeatFaked(beat),
               second: this.timingData.getSeconds(beat)
             }
             if (item.type == undefined) {
-              console.log("Unknown note type " + row[col] + " at beat " + beat + " col " + col)
+              console.log("Unknown note type " + type + " at beat " + beat + " col " + col)
               continue
             } 
-            if (row[col] == "2" || row[col] == "4") {
+            if (type == "2" || type == "4") {
               if (holds[col] != null) {
-                console.log("Missing end of hold/roll for note " + holds[col])
+                console.log("Missing end of hold/roll for note " + JSON.stringify(holds[col]))
               }
               holds[col] = item
             }
             notedata.push(item)
           }
-          if (row[col] == "3") {
+          if (type == "3") {
             if (holds[col] == null) {
               console.log("Extra end of hold/roll at beat " + beat + " col " + col)
             }else{
@@ -104,6 +110,7 @@ export class Chart {
               holds[col] = null
             }
           }
+          col++
         }
       }
     }

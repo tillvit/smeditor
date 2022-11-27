@@ -7,7 +7,7 @@ export class Options {
     receptorYPos: -200,
     snap: 1,
     maxDrawBeats: 20,
-    maxDrawBeatsBack: 5,
+    maxDrawBeatsBack: 10,
     drawNoteFlash: true,
     renderTimingEvent: {
       "BPMS": true,
