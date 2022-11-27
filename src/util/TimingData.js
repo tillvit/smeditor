@@ -2,7 +2,8 @@ import { clamp } from "./Util.js";
 
 export const TIMING_PROPS = [
   "OFFSET", "BPMS", "STOPS", "WARPS", "DELAYS", "LABELS",
-  "SPEEDS", "SCROLLS", "TICKCOUNTS", "TIMESIGNATURES", "COMBOS", "FAKES"
+  "SPEEDS", "SCROLLS", "TICKCOUNTS", "TIMESIGNATURES", "COMBOS", "FAKES",
+  "ATTACKS", "BGCHANGES", "FGCHANGES"
 ]
 
 export const BEAT_TIMING_PROPS = [
@@ -34,14 +35,31 @@ export class TimingData {
       this[prop] = []
     }
     let entries = data.replaceAll(/[\n\r\t]/g,"").split(",")
+    if (prop == "ATTACKS") entries = [data.replaceAll(/[\n\r\t]/g,"")]
     for (let str of entries) {
-      let event = {}
+      if (prop == "ATTACKS"){
+        let match;
+        let regex = /TIME=([\d.]+):(END|LEN)=([\d.]+):MODS=([^:]+):/g
+        while ((match = regex.exec(str)) != null) {
+          let event = {
+            type: "ATTACKS",
+            second: parseFloat(match[1]),
+            endType: match[2],
+            value: parseFloat(match[3]),
+            mods: match[4]
+          }
+          this.insert("ATTACKS", event, false)
+        }
+        return
+      }
       let temp = str.split("=")
       if (temp.length < 2)
         continue
-      event.type = prop
-      event.beat = parseFloat(temp[0])
-      event.value = parseFloat(temp[1])
+      let event = {
+        type: prop,
+        beat: parseFloat(temp[0]),
+        value: parseFloat(temp[1])
+      }
       if (prop == "SPEEDS") {
         event.delay = parseFloat(temp[2])
         if (temp[3] == "0") {
@@ -62,6 +80,18 @@ export class TimingData {
       }
       if (prop == "LABELS") {
         event.value = temp[1]
+      }
+      if (prop == "BGCHANGES" || prop == "FGCHANGES") {
+        event.value = temp[1]
+        event.updateRate = parseFloat(temp[2])
+        event.crossFade = temp[3] == "1"
+        event.stretchRewind = temp[4] == "1"
+        event.stretchNoLoop = temp[5] == "1"
+        event.effect = temp[6]
+        event.file2 = temp[7]
+        event.transition = temp[8]
+        event.color1 = temp[9]
+        event.color2 = temp[10]
       }
       this.insert(prop, event, false)
     }
@@ -141,6 +171,11 @@ export class TimingData {
     }
     
     this._cache.beatTiming = cache
+
+    this._cache.stopBeats = {}
+    this.getTimingData("STOPS").forEach(x => {
+      this._cache.stopBeats[x.beat] = x
+    });
   }
 
   buildEffectiveBeatTimingDataCache() {
@@ -169,10 +204,12 @@ export class TimingData {
   }
 
   buildTimingDataCache() {
-    this._cache.events = TIMING_PROPS.slice(1).reduce((data, p) => data.concat(this[p] ?? this._fallback?.[p] ?? []),[]).sort((a,b)=>a.beat-b.beat)
-    for (let i = 0; i < this._cache.events.length-1; i++) {
-      if (this._cache.events[i].second == undefined) this._cache.events[i].second = this.getSeconds(this._cache.events[i].beat)
+    this._cache.events = TIMING_PROPS.slice(1).reduce((data, p) => data.concat(this[p] ?? this._fallback?.[p] ?? []),[])
+    for (let event of this._cache.events) {
+      if (!TIMING_PROPS.includes(event.type)) event.second = this.getSeconds(event.beat)
+      if (event.type == "ATTACKS") event.beat = this.getBeat(event.second)
     }
+    this._cache.events.sort((a,b)=>a.beat-b.beat)
   }
 
   getBeat(seconds) {
@@ -185,7 +222,7 @@ export class TimingData {
     let event = cache[i]
     let beat = event.beat
     let time_left_over = seconds - event.second
-    let curbpm = this.getTimingEventAtBeat("BPMS",event.beat).value
+    let curbpm = this.getBPM(event.beat)
     if (event.type == "STOPS"|| event.type == "DELAYS") time_left_over -= event.value
     if (event.type == "BPMS") curbpm = event.value
     beat += Math.max(0,time_left_over) * curbpm/60
@@ -202,7 +239,7 @@ export class TimingData {
     let event = cache[i]
     let seconds = event.second
     let beats_left_over = beat - event.beat
-    let curbpm = this.getTimingEventAtBeat("BPMS",event.beat).value
+    let curbpm = this.getBPM(event.beat)
     if (event.type == "STOPS" && beat > event.beat || event.type == "DELAYS") return seconds + Math.max(0,Math.max(0,beats_left_over * 60/curbpm) + event.value)
     if (event.type == "WARPS") return seconds
     if (event.type == "BPMS") curbpm = event.value
@@ -216,7 +253,7 @@ export class TimingData {
       if (beat < event.beat) continue
       if (event.type == "WARPS" && beat < event.beat+event.value) return true
       if ((event.type == "STOPS" || event.type == "DELAYS") && (event.value < 0)) {
-        let bpmatstop = this.getTimingEventAtBeat("BPMS",event.beat).value
+        let bpmatstop = this.getBPM(event.beat)
         if (beat < event.beat+event.value*-1*bpmatstop/60) return true
       }
     }
@@ -262,6 +299,19 @@ export class TimingData {
     return progress * (event.value - prev) + prev 
   }
 
+  getBPM(beat) {
+    if (this._cache.stopBeats == undefined) this.buildBeatTimingDataCache()
+    let bpms = this.getTimingData("BPMS")
+    for (let i = 0; i < bpms.length; i++) {
+      if (beat < bpms[i].beat) {
+        // console.log(bpms[i-1])
+        if (beat == bpms[i-1].beat && this._cache.stopBeats[bpms[i-1].beat]) i = Math.max(1,i-1)
+        return bpms[i-1].value
+      }
+    }
+    return bpms[bpms.length-1].value
+  }
+
   getTimingEventAtBeat(prop, beat) {
     let entries = this.getTimingData(prop)
     if (!Array.isArray(entries)) return {}
@@ -286,7 +336,7 @@ export class TimingData {
 
     while (low < high) {
       let mid = (low + high) >>> 1;
-      if (this[prop][mid].beat < item.beat) low = mid + 1;
+      if (item.beat == undefined ? this[prop][mid].second < item.second : this[prop][mid].beat < item.beat) low = mid + 1;
       else high = mid;
     }
     this[prop].splice(low, 0, item);
@@ -297,9 +347,15 @@ export class TimingData {
     let low = 0, high = array.length;
     while (low <= high ){
       let mid = (low + high) >>> 1;
-      if (this[prop][mid].beat == item.beat) return mid
-      if (this[prop][mid].beat < item.beat) low = mid + 1;
-      if (this[prop][mid].beat < item.beat) high = mid - 1;
+      if (item.beat == undefined) {
+        if (this[prop][mid].beat == item.beat) return mid
+        if (this[prop][mid].beat < item.beat) low = mid + 1;
+        if (this[prop][mid].beat < item.beat) high = mid - 1;
+      } else {
+        if (this[prop][mid].second == item.second) return mid
+        if (this[prop][mid].second < item.second) low = mid + 1;
+        if (this[prop][mid].second < item.second) high = mid - 1;
+      }
     }
     return -1
   }

@@ -22,6 +22,35 @@ const snapNumbers = {
   fill: ['#ffffff']
 }
 
+const SNAP_COLORS = {
+  4: 0xE74827,
+  8: 0x3D89F7,
+  12:0xAA2DF4,
+  16:0x82E247,
+  24:0xAA2DF4,
+  32:0xEAA138,
+  48:0xAA2DF4,
+  64:0x6BE88E,
+  96:0x6BE88E,
+  192:0x6BE88E
+}
+const TIMING_EVENT_DATA = {
+  "BPMS": ["right",0x661320],
+  "STOPS": ["left",0x9ea106],
+  "DELAYS": ["left",0x06a2d6],
+  "WARPS": ["right",0x800b55],
+  "FAKES": ["left",0x888888],
+  "COMBOS": ["right",0x0f5c25],
+  "SPEEDS": ["right",0x2d4c75],
+  "LABELS": ["right",0x6e331d],
+  "SCROLLS": ["left",0x161f45],
+  "TIMESIGNATURES": ["left",0x756941],
+  "TICKCOUNTS": ["right",0x339c37],
+  "BGCHANGES": ["left",0xad511c],
+  "FGCHANGES": ["left",0xcf302d],
+  "ATTACKS": ["left",0x08bf88],
+}
+
 
 export class ChartRenderer {
   constructor(chart) {
@@ -74,6 +103,16 @@ export class ChartRenderer {
     this.view.addChild(this.timings)
     app.stage.addChild(this.view)
     this.render()
+
+    //Draw Noteflash
+    app.ticker.add(()=>{
+      for (let flash of this.flashes.children) { 
+        flash.alpha *= 0.87
+        if (flash.alpha < 0.01) {
+          this.flashes.removeChild(flash)
+        }
+      }
+    })
   }
 
   loadAudio(url) {
@@ -96,35 +135,33 @@ export class ChartRenderer {
 
   addFlash(col) {
     if (!window.options.chart.drawNoteFlash) return
-    let f;
-    for (let i = 0; i < this.flashes.children.length; i++) { 
-      let flash = this.flashes.children[i]
-      if (flash.alpha == 0) {
-        f = flash
-        break;
-      }
-    }
-    if (f == undefined) {
-      let flash = new PIXI.Sprite(flash_tex)
-      flash.width = 108
-      flash.height = 108
-      flash.anchor.set(0.5)
-      flash.blendMode = PIXI.BLEND_MODES.ADD
-      this.flashes.addChild(flash)
-      f = flash
-    }
-    f.rotation = getRotFromArrow(col)
-    f.x = col*64-128
-    f.y = window.options.chart.receptorYPos
-    f.alpha = 1.3
+    let flash = new PIXI.Sprite(flash_tex)
+    flash.width = 108
+    flash.height = 108
+    flash.anchor.set(0.5)
+    flash.blendMode = PIXI.BLEND_MODES.ADD
+    this.flashes.addChild(flash)
+    flash.rotation = getRotFromArrow(col)
+    flash.x = col*64-128
+    flash.y = window.options.chart.receptorYPos
+    flash.alpha = 1.3
   }
 
   render() {
 
     this.speedMult = this.chart.timingData.getSpeedMult(this.beat, this.time)
 
-    let renderBeatLimit = this.chart.getBeat(this.time + window.options.chart.maxDrawSeconds)
-    let renderBeatLowerLimit = this.chart.getBeat(this.time - window.options.chart.maxDrawSecondsBack)
+    let renderBeatLimit = this.beat + window.options.chart.maxDrawBeats
+    let renderBeatLowerLimit = this.beat - window.options.chart.maxDrawBeatsBack
+    let renderSecondLimit = this.chart.getSeconds(renderBeatLimit)
+    let renderSecondLowerLimit = this.chart.getSeconds(renderBeatLowerLimit)
+
+    if (window.options.chart.CMod) {
+      renderBeatLimit = this.chart.getBeat(this.getTimeFromYPos(app.screen.height-this.view.y+32))
+      renderBeatLowerLimit = this.chart.getBeat(this.getTimeFromYPos(-32 - this.view.y))
+    }
+
+    let time = new Date()
 
     //Draw Snap Indicators
     for (let i = 0; i < 2; i++) {
@@ -134,8 +171,8 @@ export class ChartRenderer {
       square.clear()
       square.lineStyle(1, 0x000000, 1);
       let col = 0x707070
-      if (window.options.chart.snapColors[4/window.options.chart.snap])
-        col = window.options.chart.snapColors[4/window.options.chart.snap]
+      if (SNAP_COLORS[4/window.options.chart.snap])
+        col = SNAP_COLORS[4/window.options.chart.snap]
       square.beginFill(col);
       square.drawRect(-12, -12, 24, 24);
       square.endFill();
@@ -154,15 +191,6 @@ export class ChartRenderer {
       renderWaveform()
     }
     this.waveform.visible = window.options.waveform.enabled
-
-    //Draw Noteflash
-    for (let i = 0; i < this.flashes.children.length; i++) { 
-      let flash = this.flashes.children[i]
-      flash.alpha *= 0.87
-      if (flash.alpha < 0.01) {
-        flash.alpha = 0
-      }
-    }
     
     //Draw Receptors
     for (let i = 0; i < this.receptors.children.length; i++) { 
@@ -182,12 +210,13 @@ export class ChartRenderer {
     let same_beat = -1
     let last_length_left = 0
     let last_length_right = 0
-    for (let event of this.chart.timingData.getTimingData()) { 
+    for (let event of this.chart.timingData.getTimingData(...Object.keys(window.options.chart.renderTimingEvent).filter(key=>window.options.chart.renderTimingEvent[key]))) { 
       if (renderBeatLowerLimit > event.beat)
         continue
       if (renderBeatLimit < event.beat)
         break
       let y = this.getYPos(event.beat)
+      if (event.type == "ATTACKS" && window.options.chart.CMod) y = (event.second-this.time)*window.options.chart.speed/100*64*4 + window.options.chart.receptorYPos
       if (y < -32 - this.view.y) {
         continue;
       }
@@ -205,7 +234,7 @@ export class ChartRenderer {
         this.timings.addChild(container)
       }
       let bp = this.timings.children[num_timing++]
-      let td = window.options.chart.timingData[event.type] ?? ["right", 0x000000]
+      let td = TIMING_EVENT_DATA[event.type] ?? ["right", 0x000000]
       let x = td[0] == "right" ? 196 : -240
       if (same_beat != event.beat) {
         last_length_left = 0
@@ -215,11 +244,13 @@ export class ChartRenderer {
       if (td[0] == "right") x += last_length_right
       bp.x = x
       bp.y = y
+      bp.dirtyTime = time
       let label = roundDigit(event.value,3) ?? JSON.stringify(event);
-      if (event.type == "LABELS") label = event.value
+      if (event.type == "LABELS" || event.type == "BGCHANGES" || event.type == "FGCHANGES") label = event.value
       if (event.type == "TIMESIGNATURES") label = event.upper + "/" + event.lower
       if (event.type == "SPEEDS") label = event.value + "/" + event.delay + "/" + event.unit
       if (event.type == "COMBOS") label = event.hitMult + "/" + event.missMult
+      if (event.type == "ATTACKS") label = event.mods + " (" + event.endType + "=" + event.value + ")"
       bp.getChildByName("bpm").text = label;
       bp.getChildByName("bpm").anchor.x = td[0] == "right" ? 0 : 1
       this.timingBoxes.beginFill(td[1]); 
@@ -236,12 +267,14 @@ export class ChartRenderer {
     }
 
     for (let event of this.chart.timingData.getTimingData("STOPS", "WARPS", "DELAYS", "FAKES")) { 
-      if ((event.type == "STOPS" || event.type == "DELAYS") && event.second + Math.abs(event.value)< this.time - window.options.chart.maxDrawSecondsBack)
+      if (!window.options.chart.renderTimingEvent[event.type]) continue
+      if ((event.type == "STOPS" || event.type == "DELAYS") && event.second + Math.abs(event.value) < renderSecondLowerLimit)
         continue
       if ((event.type == "WARPS" || event.type == "FAKES") && event.beat + event.value < renderBeatLowerLimit)
         continue
       if (event.beat > renderBeatLimit)
         break
+      
       
       if (event.type == "STOPS" || event.type == "DELAYS") {
         if (!((!window.options.chart.CMod && event.value < 0) || (window.options.chart.CMod && event.value > 0))) continue
@@ -256,7 +289,7 @@ export class ChartRenderer {
       }
       if (y_start+length < -32 - this.view.y) continue
       if (y_start > app.screen.height-this.view.y+32) break
-      let td = window.options.chart.timingData[event.type] ?? ["right", 0x000000]
+      let td = TIMING_EVENT_DATA[event.type] ?? ["right", 0x000000]
       this.timingBoxes.beginFill(td[1], 0.2); 
       this.timingBoxes.lineStyle(0, 0x000000);
       this.timingBoxes.drawRect(-224,y_start,384,length);
@@ -283,6 +316,7 @@ export class ChartRenderer {
           text.x = -128-32-64-16
           text.y = y
           text.visible = true
+          text.dirtyTime = time
         }
         if (bar_beat % 4 == 0) {
           this.graphics.lineStyle(4, 0xffffff, 1);
@@ -325,6 +359,7 @@ export class ChartRenderer {
       setData(arrow, note)
       arrow.x = note.col*64-128
       arrow.y = y
+      arrow.dirtyTime = time
       if (note.type == "Hold" || note.type == "Roll") {
         setHoldEnd(arrow, y_hold)
       }
@@ -339,6 +374,13 @@ export class ChartRenderer {
     
     setArrowTexTime(this.beat, this.chart.getSeconds(this.beat))
 
+    //Prune
+    this.prune(this.texts, this.arrows, this.timings)
+  }
+
+  prune(...parents) {
+    let time = new Date()
+    parents.forEach(parent=>parent.children.filter(item => (time - item.dirtyTime > 5000)).forEach(x=>parent.removeChild(x)))
   }
 
   getYPos(beat) {

@@ -28,7 +28,7 @@ setTimeout(()=>{
     fontSize: 20,
     fill: 'white'
   }, { 
-    chars: [['a','z'],['A','Z'],"!@#$%^&*()~{}[]:.-?","0123456789/"," "], 
+    chars: [['a','z'],['A','Z'],"!@#$%^&*()~{}[]:.-?=,","0123456789/"," "], 
     resolution: window.devicePixelRatio
   });
 })

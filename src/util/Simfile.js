@@ -7,7 +7,7 @@ const PROP_WHITELIST = [
   "GENRE", "CREDIT", "ORIGIN", 
   "BACKGROUND", "BANNER", "MUSIC", "JACKET", "PREVIEW", "LYRICSPATH",
   "SAMPLESTART", "SAMPLELENGTH", "SELECTABLE", 
-  "BGCHANGES", "FGCHANGES", "ATTACKS"
+
 ]
 
 export async function parseSM(file) {
@@ -66,14 +66,15 @@ export class Simfile {
    
     for (let data of temp_charts) {
       let chart = new Chart(data, type, this.timingData)
+      if (chart == undefined) continue
       if (Object.keys(CHART_DIFFICULTIES).includes(chart.difficulty)) {
-        if (chart.difficulty == "Edit") {
-          this.charts.push(chart)
-          continue
-        }
         if (!(chart.type in this.charts)) {
           this.charts[chart.type] = []
           for (let i = 0; i < 5; i ++) this.charts[chart.type].push(undefined)
+        }
+        if (chart.difficulty == "Edit") {
+          this.charts[chart.type].push(chart)
+          continue
         }
         this.charts[chart.type][CHART_DIFFICULTIES[chart.difficulty]] = chart
       }else{

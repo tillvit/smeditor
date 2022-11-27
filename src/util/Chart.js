@@ -14,6 +14,7 @@ export const NOTE_TYPES = {
   "2": "Hold",
   "4": "Roll",
   "M": "Mine",
+  "F": "Fake",
 }
 
 export class Chart {
@@ -46,7 +47,7 @@ export class Chart {
       this.chartName = data["CHARTNAME"] ?? ""
       this.chartStyle= data["CHARTSTYLE"] ?? ""
     }else if (type == "sm") {
-      let match = /([\w\d\-]+):[\s ]*([\w\d\- \'\"?.]*):[\s ]*([\w\d\-]+):[\s ]*([\d]+):[\s ]*([\d.,]+):[\s ]*([\w\d\s, ]+)/g.exec(data.trim())
+      let match = /([\w\d\-]+):[\s ]*([^:]*):[\s ]*([\w\d]+):[\s ]*([\d]+):[\s ]*([\d.,]+):[\s ]*([\w\d\s, ]+)/g.exec(data.trim())
       if (match != null) {
         this.type = match[1] ?? ""
         this.description = match[2] ?? ""
@@ -57,6 +58,9 @@ export class Chart {
         this.credit = ""
         this.chartName = ""
         this.chartStyle = ""
+      }else{
+        console.log("Failed to load chart")
+        return undefined
       }
     }
   }
