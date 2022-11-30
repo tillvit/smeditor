@@ -10,6 +10,11 @@ const hold_cap_texture = PIXI.Texture.from('assets/noteskin/hold/cap.png');
 const roll_body_texture = PIXI.Texture.from('assets/noteskin/roll/body.png');
 const roll_cap_texture = PIXI.Texture.from('assets/noteskin/roll/cap.png');
 
+const icons = {
+  Fake: PIXI.Texture.from('assets/noteskin/icon/fake.png'),
+  Lift: PIXI.Texture.from('assets/noteskin/icon/lift.png')
+}
+
 export function createArrow(note) {
   let arrow = new PIXI.Container();
   let item_container = new PIXI.Container();
@@ -19,6 +24,7 @@ export function createArrow(note) {
   arrow.addChild(hold_container)
   arrow.addChild(item_container)
   setData(arrow, note)
+  arrow.data = {}
   return arrow
 }
 
@@ -37,6 +43,8 @@ export function setHoldEnd(arrow, yp) {
 }
 
 export function setData(arrow, note) {
+  if (arrow.data == note) return
+  else arrow.data = note
   let item_container = arrow.getChildByName("item")
   for (let i = 0; i < item_container.children.length; i++)
     item_container.children[i].destroy()
@@ -49,17 +57,26 @@ export function setData(arrow, note) {
   let col = note.col
   let type = note.type
   
-  if (type == "Tap" || type == "Fake" || type == "Hold" || type == "Roll") {
+  if (type == "Tap" || type == "Fake" || type == "Hold" || type == "Roll" || type == "Lift") {
     let arrow_frame = new PIXI.Sprite(arrow_frame_texture)
-    let arrow_body = getSpriteWithQuant(getQuant(beat))
     arrow_frame.width = 64
     arrow_frame.height = 64
     arrow_frame.anchor.set(0.5)
-    arrow_body.name = "body"
     arrow_frame.name = "frame"
     item_container.addChild(arrow_frame);
+    let arrow_body = getSpriteWithQuant(getQuant(beat))
+    arrow_body.name = "body"
     item_container.addChild(arrow_body);
     item_container.rotation = getRotFromArrow(col)
+    if (type == "Fake" || type == "Lift") {
+      let icon = new PIXI.Sprite(icons[type])
+      icon.width = 32
+      icon.height = 32
+      icon.anchor.set(0.5)
+      icon.name = "icon"
+      icon.opacity = 0.5
+      item_container.addChild(icon);
+    }
     if (type == "Hold" || type == "Roll") {
       let hold_body = new PIXI.TilingSprite(
         type == "Hold" ? hold_body_texture : roll_body_texture,

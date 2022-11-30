@@ -70,13 +70,12 @@ export class Simfile {
       if (Object.keys(CHART_DIFFICULTIES).includes(chart.difficulty)) {
         if (!(chart.type in this.charts)) {
           this.charts[chart.type] = []
-          for (let i = 0; i < 5; i ++) this.charts[chart.type].push(undefined)
         }
-        if (chart.difficulty == "Edit") {
-          this.charts[chart.type].push(chart)
-          continue
-        }
-        this.charts[chart.type][CHART_DIFFICULTIES[chart.difficulty]] = chart
+        this.charts[chart.type].push(chart)
+        this.charts[chart.type].sort((a,b)=>{
+          if (CHART_DIFFICULTIES[a.difficulty] == CHART_DIFFICULTIES[b.difficulty]) return a.meter-b.meter
+          return CHART_DIFFICULTIES[a.difficulty] - CHART_DIFFICULTIES[b.difficulty]
+        })
       }else{
         console.log("Unknown chart difficulty " + chart.difficulty)
       }

@@ -38,10 +38,6 @@ export function createArrowTex() {
   mine_body.x = 128
   mine_body.y = 128
   arrow_container.addChild(mine_body)
-  // let tt = new PIXI.Sprite(arrow_tex)
-  // tt.x = app.screen.width/2
-  // tt.y = app.screen.height/2
-  // app.stage.addChild(tt)
   app.ticker.add(() => {
     app.renderer.render(arrow_container, {renderTexture: arrow_tex});
   });

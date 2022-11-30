@@ -29,7 +29,8 @@ export class Options {
   }
   audio = {
     assistTick: false,
-    assistTickOffset: 0,
+    metronome: false,
+    effectOffset: 0,
     soundEffectVolume: 0.5,
     songVolume: 0.2,
     rate: 1,

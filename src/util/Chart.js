@@ -15,6 +15,7 @@ export const NOTE_TYPES = {
   "4": "Roll",
   "M": "Mine",
   "F": "Fake",
+  "L": "Lift",
 }
 
 export class Chart {

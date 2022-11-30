@@ -107,7 +107,7 @@ function clampPosition(win) {
   let w = win.clientWidth
   let h = win.clientHeight
   win.style.left = clamp(x,0,window.innerWidth-w)
-  win.style.top = clamp(y,0,window.innerHeight-h)
+  win.style.top = clamp(y,document.getElementById("menubar").clientHeight,window.innerHeight-h)
 }
 
 function hasWindowsNearPoint(x,y,dist) {

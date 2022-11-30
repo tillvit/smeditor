@@ -1,4 +1,5 @@
 import { app } from "../../App.js";
+import { isOsx } from "../../util/Keybinds.js";
 import { OffsetHowler } from "../../util/OffsetHowler.js";
 import { parseSM } from "../../util/Simfile.js";
 import { getFPS, roundDigit } from "../../util/Util.js";
@@ -87,41 +88,39 @@ export async function loadSM() {
 
       if (playing) chartView.setTime(time) 
       let nd = window.chart.notedata
-      while(noteIndex < nd.length && time > nd[noteIndex].second-0.036+options.audio.assistTickOffset) {
+      while(noteIndex < nd.length && time > nd[noteIndex].second-0.036+options.audio.effectOffset) {
         if (playing && (nd[noteIndex].type != "Fake" && nd[noteIndex].type != "Mine") && !nd[noteIndex].fake) {
           chartView.addFlash(nd[noteIndex].col)
           if (options.audio.assistTick) tick.play()
         }
         noteIndex++
       }
-
-      tick.volume(options.audio.soundEffectVolume)
-      audio?.volume(options.audio.songVolume)
-      audio?.rate(options.audio.rate)
     })
     update = true
   }
+}
+
+export function setRate(rate) {
+  options.audio.rate = rate
+  audio?.rate(options.audio.rate)
+}
+
+export function setVolume(vol) {
+  options.audio.songVolume = vol
+  audio?.volume(options.audio.songVolume)
+}
+
+export function setEffectVolume(vol) {
+  options.audio.soundEffectVolume = vol
+  tick?.volume(options.audio.vol)
 }
 
 export function loadChart(chartIndex) {
   let charts = window.sm.charts[options.chart.stepsType]
   if (charts == undefined) return
   if (chartIndex == undefined) {
-    for (let i = 4; i >= 0; i--) {
-      if (charts[i] != undefined) {
-        chartIndex = i
-        break
-      }
-    }
-    if (charts[chartIndex] == undefined) {
-      for (let i = 5; i < charts.length; i++) {
-        if (charts[i] != undefined) {
-          chartIndex = i
-          break
-        }
-      }
-    }
-    if (chartIndex == undefined) return;
+    chartIndex = charts.length - 1
+    if (chartIndex < 0) return
   }
   window.chart = charts[chartIndex]
   if (charts[chartIndex] == null) {
@@ -166,58 +165,85 @@ function onResize() {
   }
 }
 
-var cmdPressed = 0
-document.addEventListener("keydown", function(e) {
-  let sm = window.sm
-  if (sm == undefined || window.chart == undefined || audio == undefined) return
-  if (e.code == "Space") {
-    if (playing) audio.pause()
-    else audio.play()
-    playing = !playing
-  }
-  let snap = window.options.chart.snap==0?0.001:window.options.chart.snap
-  if (e.code == "ArrowUp") {
-    let beat = chartView.beat
-    let newbeat = Math.round((beat-snap)/snap)*snap
-    newbeat = Math.max(0,newbeat)
-    audio.seek(window.chart.getSeconds(newbeat))
-    chartView.setBeat(newbeat)
-    seekBack()
-  }
-  if (e.code == "ArrowDown") {
-    let beat = chartView.beat
-    let newbeat = Math.round((beat+snap)/snap)*snap
-    newbeat = Math.max(0,newbeat)
-    audio.seek(window.chart.getSeconds(newbeat))
-    chartView.setBeat(newbeat)
-    seekBack()
-  }
-  if (cmdPressed > 0) {
-    if (e.code == "ArrowLeft") chartView.setZoom(Math.max(10,options.chart.speed*Math.pow(1.01,-30)))
-    if (e.code == "ArrowRight") chartView.setZoom(Math.max(10,options.chart.speed*Math.pow(1.01,30)))
-  }else{
-    if (e.code == "ArrowLeft") {
-      snapIndex = ((snapIndex-1) + snaps.length) % snaps.length
-      options.chart.snap = snaps[snapIndex]==-1?0:1/snaps[snapIndex]
-      sn.play()
-    }
-    if (e.code == "ArrowRight") {
-      snapIndex = (snapIndex+1) % snaps.length
-      options.chart.snap = snaps[snapIndex]==-1?0:1/snaps[snapIndex]
-      sn.play()
-    }
-  }
-  if (e.code == "MetaLeft" || e.code == "MetaRight" || e.code == "ControlLeft" || e.code == "ControlRight") cmdPressed++
-  if (e.code == "Digit7") options.audio.assistTick = !options.audio.assistTick
-  if (e.code == "KeyC") options.chart.CMod = !options.chart.CMod
-})
+export function playPause() {
+  if (playing) audio.pause()
+  else audio.play()
+  playing = !playing
+}
 
-document.addEventListener("keyup", function(e) {
-  if (e.code == "MetaLeft" || e.code == "MetaRight" || e.code == "ControlLeft" || e.code == "ControlRight") cmdPressed = Math.max(cmdPressed-1,0)
-})
+export function setAndSnapBeat(beat) {
+  let snap = window.options.chart.snap==0?0.001:window.options.chart.snap
+  let newbeat = Math.round((beat)/snap)*snap
+  newbeat = Math.max(0,newbeat)
+  audio.seek(window.chart.getSeconds(newbeat))
+  chartView.setBeat(newbeat)
+  seekBack()
+}
+
+export function previousSnap(){
+  snapIndex = ((snapIndex-1) + snaps.length) % snaps.length
+  options.chart.snap = snaps[snapIndex]==-1?0:1/snaps[snapIndex]
+  sn.play()
+}
+
+export function nextSnap(){
+  snapIndex = ((snapIndex+1) + snaps.length) % snaps.length
+  options.chart.snap = snaps[snapIndex]==-1?0:1/snaps[snapIndex]
+  sn.play()
+}
+
+var cmdPressed = 0
+// document.addEventListener("keydown", function(e) {
+//   let sm = window.sm
+//   if (sm == undefined || window.chart == undefined || audio == undefined) return
+//   if (e.code == "Space") {
+//     if (playing) audio.pause()
+//     else audio.play()
+//     playing = !playing
+//   }
+//   let snap = window.options.chart.snap==0?0.001:window.options.chart.snap
+//   if (e.code == "ArrowUp") {
+//     let beat = chartView.beat
+//     let newbeat = Math.round((beat-snap)/snap)*snap
+//     newbeat = Math.max(0,newbeat)
+//     audio.seek(window.chart.getSeconds(newbeat))
+//     chartView.setBeat(newbeat)
+//     seekBack()
+//   }
+//   if (e.code == "ArrowDown") {
+//     let beat = chartView.beat
+//     let newbeat = Math.round((beat+snap)/snap)*snap
+//     newbeat = Math.max(0,newbeat)
+//     audio.seek(window.chart.getSeconds(newbeat))
+//     chartView.setBeat(newbeat)
+//     seekBack()
+//   }
+//   if (cmdPressed > 0) {
+//     if (e.code == "ArrowLeft") chartView.setZoom(Math.max(10,options.chart.speed*Math.pow(1.01,-30)))
+//     if (e.code == "ArrowRight") chartView.setZoom(Math.max(10,options.chart.speed*Math.pow(1.01,30)))
+//   }else{
+//     if (e.code == "ArrowLeft") {
+//       snapIndex = ((snapIndex-1) + snaps.length) % snaps.length
+//       options.chart.snap = snaps[snapIndex]==-1?0:1/snaps[snapIndex]
+//       sn.play()
+//     }
+//     if (e.code == "ArrowRight") {
+//       snapIndex = (snapIndex+1) % snaps.length
+//       options.chart.snap = snaps[snapIndex]==-1?0:1/snaps[snapIndex]
+//       sn.play()
+//     }
+//   }
+//   if (e.code == "MetaLeft" || e.code == "MetaRight" || e.code == "ControlLeft" || e.code == "ControlRight") cmdPressed++
+//   if (e.code == "Digit7") options.audio.assistTick = !options.audio.assistTick
+//   if (e.code == "KeyC") options.chart.CMod = !options.chart.CMod
+// })
+
+// document.addEventListener("keyup", function(e) {
+//   if (e.code == "MetaLeft" || e.code == "MetaRight" || e.code == "ControlLeft" || e.code == "ControlRight") cmdPressed = Math.max(cmdPressed-1,0)
+// })
 document.addEventListener("wheel", function (e) {
-  if (window.sm == undefined || window.chart == undefined|| audio == undefined) return
-  if (cmdPressed > 0) {
+  if (window.sm == undefined || window.chart == undefined || audio == undefined) return
+  if ((isOsx && e.metaKey) || (!isOsx && e.ctrlKey)) {
     let newSpeed = Math.max(10,options.chart.speed*Math.pow(1.01,e.deltaY/5))
     chartView.setZoom(newSpeed)
   }else{

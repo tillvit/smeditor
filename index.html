@@ -5,7 +5,7 @@
     <script>
       WebFont.load({
         google: {
-          families: ['Assistant']
+          families: ['Assistant:200,300,400,500,600,700,800']
         }
       });
     </script>
@@ -15,7 +15,10 @@
     <script type="module" src="src/App.js"></script>
   </head>
   <body>
-    <canvas id="pixi"></canvas>
+    <div id="view-wrapper"> 
+      <div id="menubar"></div>
+      <canvas id="pixi"></canvas>
+    </div>
     <div id="windows"></div>
   </body>
 </html>

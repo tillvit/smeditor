@@ -181,6 +181,10 @@ export class TimingData {
   buildEffectiveBeatTimingDataCache() {
     let cache = this.getTimingData("SCROLLS")
     let effBeat = 0
+    if (cache.length == 0) {
+      this._cache.effBeatTiming = []
+      return
+    }
     for (let i = 0; i < cache.length-1; i++) {
       let event = cache[i]
       let beats = (cache[i+1].beat - event.beat)
@@ -210,15 +214,37 @@ export class TimingData {
       if (event.type == "ATTACKS") event.beat = this.getBeat(event.second)
     }
     this._cache.events.sort((a,b)=>a.beat-b.beat)
+    for (let type of TIMING_PROPS) {
+      this._cache[type] = this.getTimingData(type)
+    }
+  }
+
+  searchCache(cache, property, value) {
+    if (!isFinite(value)) return 0
+    if (cache == undefined) return -1
+    if (cache.length == 0) return -1
+    if (value >= cache[cache.length-1][property]) {
+      let mid = cache.length - 1
+      while (mid > 0 && cache[mid-1][property] == value) mid--
+      return mid
+    }
+    let low = 0, high = cache.length;
+    while (low <= high) {
+      let mid = (low + high) >>> 1;
+      if (cache[mid][property] == value) {
+        while (mid > 0 && cache[mid-1][property] == value) mid--
+        return mid
+      }
+      if (cache[mid][property] < value) low = mid + 1;
+      if (cache[mid][property] > value) high = mid - 1;
+    }
+    return Math.max(0,high)
   }
 
   getBeat(seconds) {
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
     let cache = this._cache.beatTiming
-    let i = 0
-    while (i+1 < cache.length && seconds > cache[i+1].second) i++
-    if (i+1 < cache.length && seconds == cache[i+1].second) i++
-    i = Math.max(0,i)
+    let i = this.searchCache(cache, "second", seconds)
     let event = cache[i]
     let beat = event.beat
     let time_left_over = seconds - event.second
@@ -230,12 +256,10 @@ export class TimingData {
   }
 
   getSeconds(beat) {
+    if (!isFinite(beat)) return 0
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
     let cache = this._cache.beatTiming
-    let i = -1
-    while (i+1 < cache.length && beat > cache[i+1].beat) i++
-    if (i+1 < cache.length && beat == cache[i+1].beat) i++
-    i = Math.max(0,i)
+    let i = this.searchCache(cache, "beat", beat)
     let event = cache[i]
     let seconds = event.second
     let beats_left_over = beat - event.beat
@@ -248,6 +272,7 @@ export class TimingData {
   }
 
   isBeatWarped(beat) {
+    if (!isFinite(beat)) return 0
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
     for (let event of this._cache.beatTiming) {
       if (beat < event.beat) continue
@@ -261,6 +286,7 @@ export class TimingData {
   }
 
   isBeatFaked(beat) {
+    if (!isFinite(beat)) return 0
     if (this.isBeatWarped(beat)) return true
     let fakes = this.getTimingData("FAKES")
     if (fakes == undefined) return false
@@ -271,11 +297,13 @@ export class TimingData {
   }
 
   getEffectiveBeat(beat) {
+    if (!isFinite(beat)) return 0
     if (this._cache.effBeatTiming == undefined) this.buildEffectiveBeatTimingDataCache()
     let cache = this._cache.effBeatTiming
     if (cache.length == 0) return beat
-    let i = 0
-    while (i+1 < cache.length && beat > cache[i+1].beat) i++
+    let i = this.searchCache(cache, "beat", beat)
+    // let i = 0
+    // while (i+1 < cache.length && beat > cache[i+1].beat) i++
     let event = cache[i]
     let effBeat = event.effBeat
     let beats_left_over = beat - event.beat
@@ -284,11 +312,14 @@ export class TimingData {
   }
 
   getSpeedMult(beat, seconds) {
+    if (!isFinite(beat) || !isFinite(seconds)) return 0
     if (this._cache.speeds == undefined) this.buildSpeedsTimingDataCache()
     let cache = this._cache.speeds
-    if (cache.length == 0) return beat
-    let i = 0
-    while (i+1 < cache.length && beat > cache[i+1].beat) i++
+    if (cache.length == 0) return 1
+    let i = this.searchCache(cache, "beat", beat)
+  
+    // let i = 0
+    // while (i+1 < cache.length && beat > cache[i+1].beat) i++
     let event = cache[i]
     if (event == undefined) return 1
     let time = beat - event.beat
@@ -300,11 +331,14 @@ export class TimingData {
   }
 
   getBPM(beat) {
+    if (!isFinite(beat)) return 1
     if (this._cache.stopBeats == undefined) this.buildBeatTimingDataCache()
     let bpms = this.getTimingData("BPMS")
+    // let i = this.searchCache(bpms, "beat", beat)
+    // if (beat == bpms[i].beat && this._cache.stopBeats[bpms[i].beat]) i = Math.max(1,i-1)
+    // return bpms[i-1].value
     for (let i = 0; i < bpms.length; i++) {
       if (beat < bpms[i].beat) {
-        // console.log(bpms[i-1])
         if (beat == bpms[i-1].beat && this._cache.stopBeats[bpms[i-1].beat]) i = Math.max(1,i-1)
         return bpms[i-1].value
       }
@@ -315,6 +349,7 @@ export class TimingData {
   getTimingEventAtBeat(prop, beat) {
     let entries = this.getTimingData(prop)
     if (!Array.isArray(entries)) return {}
+    return entries[this.searchCache(entries, "beat", beat)]
     for (let i = 0; i < entries.length; i++) {
       if (beat < entries[i].beat) {
         return entries[i-1]
@@ -325,8 +360,8 @@ export class TimingData {
 
   reloadCache(prop) {
     if (prop == undefined || prop == "OFFSET" || BEAT_TIMING_PROPS.includes(prop)) this.buildBeatTimingDataCache()
-    if (prop == "SCROLLS") this.buildEffectiveBeatTimingDataCache()
-    if (prop == "SPEEDS") this.buildSpeedsTimingDataCache()
+    if (prop == undefined || prop == "SCROLLS") this.buildEffectiveBeatTimingDataCache()
+    if (prop == undefined || prop == "SPEEDS") this.buildSpeedsTimingDataCache()
     this.buildTimingDataCache()
   }
 
@@ -350,11 +385,11 @@ export class TimingData {
       if (item.beat == undefined) {
         if (this[prop][mid].beat == item.beat) return mid
         if (this[prop][mid].beat < item.beat) low = mid + 1;
-        if (this[prop][mid].beat < item.beat) high = mid - 1;
+        if (this[prop][mid].beat > item.beat) high = mid - 1;
       } else {
         if (this[prop][mid].second == item.second) return mid
         if (this[prop][mid].second < item.second) low = mid + 1;
-        if (this[prop][mid].second < item.second) high = mid - 1;
+        if (this[prop][mid].second > item.second) high = mid - 1;
       }
     }
     return -1
@@ -363,7 +398,9 @@ export class TimingData {
   getTimingData(...props) {
     if (props.length == 0) return this._cache.events
     if (props.includes("OFFSET")) return this.OFFSET ?? this._fallback?.OFFSET ?? 0
+    if (props.length == 1 && props[0] in this._cache) return this._cache[props[0]]
     if (this._cache.events == undefined) this.buildTimingDataCache()
-    return this._cache.events.filter(x=>props.includes(x.type))
+    let ev = this._cache.events.filter(x=>props.includes(x.type))
+    return ev
   }
 }

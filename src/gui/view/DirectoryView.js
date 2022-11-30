@@ -53,6 +53,7 @@ export function createDirectoryWindow(title, accepted_file_types, closeable, ini
   cancel.innerText = "Cancel"
   cancel.onclick = ()=>{
     view.parentElement.classList.add("exiting"); 
+    document.removeEventListener("keydown", view.keyHandler, true)
     setTimeout(()=>document.getElementById("windows").removeChild(view.parentElement),40)
   }
   
@@ -80,7 +81,7 @@ export function createDirectoryWindow(title, accepted_file_types, closeable, ini
     select(view, initial_select)
   
   //Drag & drop
-  document.addEventListener("keydown", view.keyHandler)
+  document.addEventListener("keydown", view.keyHandler, true)
   scroll.addEventListener('dragover', function(e) {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'copy';
@@ -211,9 +212,9 @@ function createDiv(view, object, path) {
   let items = []
   //Folders first, then other files
   let keys = Object.keys(object).filter(x=>x.indexOf(".")==-1)
-  keys.sort()
+  keys.sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()))
   let files = Object.keys(object).filter(x=>x.indexOf(".")>-1)
-  files.sort()
+  files.sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()))
   keys = keys.concat(files)
   for (let item of keys) {
     let new_div = document.createElement("div")
@@ -406,6 +407,7 @@ function confirm(view) {
     view.callback(path)
     let win = view.parentElement
     win.classList.add("exiting")
+    document.removeEventListener("keydown", view.keyHandler, true)
     setTimeout(function() {
       document.getElementById("windows").removeChild(win)
     },40)
@@ -428,13 +430,15 @@ function getIcon(name) {
 
 function getKeyHandler(view) {
   return e => {
+    if (!view.parentElement.classList.contains("focused")) return
     let selected = view.querySelector(".info.selected")
     if (selected == undefined) { 
       view.querySelector(".info")?.classList.add("selected") 
-      return false
+      return
     }
     if (e.code == "ArrowUp") {
       e.preventDefault();
+      e.stopImmediatePropagation()
       let item = selected.parentElement
       let prev = item.previousSibling?.querySelector(".info")
       if (prev && !prev.parentElement.classList.contains("collapsed") && prev.parentElement.classList.contains("folder")) {
@@ -452,6 +456,7 @@ function getKeyHandler(view) {
     }
     if (e.code == "ArrowDown") {
       e.preventDefault();
+      e.stopImmediatePropagation()
       let item = selected.parentElement
       let next = undefined
       if (item.classList.contains("folder") && !item.classList.contains("collapsed")) {
@@ -471,32 +476,35 @@ function getKeyHandler(view) {
     }
     if (e.code == "ArrowLeft") {
       e.preventDefault();
+      e.stopImmediatePropagation()
       if (selected.parentElement.classList.contains("folder")) {
         selected.parentElement.classList.add("collapsed")
       }
     }
     if (e.code == "ArrowRight") {
       e.preventDefault();
+      e.stopImmediatePropagation()
       if (selected.parentElement.classList.contains("folder")) {
         selected.parentElement.classList.remove("collapsed")
       }
     }
     if (e.code == "Enter") {
       e.preventDefault();
+      e.stopImmediatePropagation()
       startEditing(view,selected.parentElement.querySelector(".title"))
     }
   }
 }
 
 function startEditing(view, title) {
-  document.removeEventListener("keydown", view.keyHandler)
+  document.removeEventListener("keydown", view.keyHandler, true)
   title.disabled = false
   title.style.pointerEvents = ""
   title.value = title.parentElement.dataset.path.split("/").pop()
   title.focus()
-  title.addEventListener("keypress", textAreaKeyHandler)
+  title.addEventListener("keypress", textAreaKeyHandler, true)
   title.addEventListener("blur", ()=>{
-    document.addEventListener("keydown", view.keyHandler)
+    document.addEventListener("keydown", view.keyHandler, true)
     title.disabled = true
     title.style.pointerEvents = "none"
     let path = title.parentElement.dataset.path.split("/")
@@ -515,6 +523,7 @@ function startEditing(view, title) {
 function textAreaKeyHandler(e) {
   if (e.code == "Enter") {
     e.preventDefault();
+    e.stopImmediatePropagation()
     e.target.blur()
   }
 }

@@ -149,7 +149,7 @@ export class ChartRenderer {
 
   render() {
 
-    this.speedMult = this.chart.timingData.getSpeedMult(this.beat, this.time)
+    this.speedMult = window.options.chart.doSpeedChanges ? this.chart.timingData.getSpeedMult(this.beat, this.time) : 1
 
     let renderBeatLimit = this.beat + window.options.chart.maxDrawBeats
     let renderBeatLowerLimit = this.beat - window.options.chart.maxDrawBeatsBack
@@ -300,7 +300,7 @@ export class ChartRenderer {
     let bar_beat = Math.max(0,Math.floor(renderBeatLowerLimit))
     let num_bar = 0
     while(bar_beat < renderBeatLimit) {
-      if (!this.chart.isBeatWarped(bar_beat) || !window.options.chart.CMod) {
+      if (!window.options.chart.CMod || !this.chart.isBeatWarped(bar_beat)) {
         let y = this.getYPos(bar_beat)
         if (y < -32 - this.view.y){
           bar_beat++
@@ -341,7 +341,7 @@ export class ChartRenderer {
 
     let childIndex = 0
     for (let note of this.chart.notedata) { 
-      if (note.warped && window.options.chart.hideWarpedArrows && window.options.chart.CMod) continue
+      if (window.options.chart.CMod && window.options.chart.hideWarpedArrows && note.warped) continue
       if (note.beat + (note.hold ?? 0) < renderBeatLowerLimit) continue
       if (note.beat > renderBeatLimit) break
       let y = this.getYPos(note.beat)
@@ -398,6 +398,7 @@ export class ChartRenderer {
     }
     // bokren: if (window.options.chart.doSpeedChanges) return this.chart.getSeconds((yp - window.options.chart.receptorYPos)/64*100/window.options.chart.speed / this.speedMult+chart.timingData.getEffectiveBeat(this.beat))
     //less bokrne:
+    // console.log((yp - window.options.chart.receptorYPos)/64*100/window.options.chart.speed/this.speedMult+this.beat)
     if (window.options.chart.doSpeedChanges) return this.chart.getSeconds((yp - window.options.chart.receptorYPos)/64*100/window.options.chart.speed/this.speedMult+this.beat)
     return this.chart.getSeconds((yp - window.options.chart.receptorYPos)/64*100/window.options.chart.speed+this.beat)
   }
