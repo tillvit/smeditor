@@ -18,6 +18,22 @@ const MENU_BAR_DATA = {
       id: "save",
     }]
   },
+  chart: {
+    type: "menu",
+    title: "Chart",
+    options: [{
+      type: "selection",
+      id: "newChart",
+    },{
+      type: "selection",
+      id: "openChart",
+    },{
+      type: "seperator",
+    },{
+      type: "selection",
+      id: "chartProperties",
+    }]
+  },
   audio: {
     type: "menu",
     title: "Audio",
@@ -64,19 +80,6 @@ const MENU_BAR_DATA = {
         type: "selection",
         id: "rateDown",
       }]
-    },]
-  },
-  chart: {
-    type: "menu",
-    title: "Chart",
-    options: [{
-      type: "selection",
-      id: "chartList",
-    },{
-      type: "selection",
-      id: "chartProperties",
-    },{
-      type: "seperator",
     },]
   },
   view: {

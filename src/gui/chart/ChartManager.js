@@ -1,6 +1,6 @@
 import { app } from "../../App.js";
+import { AudioWrapper } from "../../util/AudioWrapper.js";
 import { isOsx } from "../../util/Keybinds.js";
-import { OffsetHowler } from "../../util/OffsetHowler.js";
 import { parseSM } from "../../util/Simfile.js";
 import { getFPS, roundDigit } from "../../util/Util.js";
 import { ChartRenderer } from "./ChartRenderer.js";
@@ -8,9 +8,8 @@ import { ChartRenderer } from "./ChartRenderer.js";
 const snaps = [1,2,3,4,6,8,12,16,24,48, -1]
 
 var options;
-var audio;
+var audio; 
 var chartView;
-var playing = false
 var update = false
 var snapIndex = 0
 var audio_url;
@@ -53,24 +52,20 @@ export async function loadAudio() {
     return
   }
   audio_url = await URL.createObjectURL(a_file)
-  audio = new OffsetHowler({
-    src: [audio_url],
-    volume: 0.2,
-    html5: true,
-    preload: true,
-    format: [a_file.name.split(".").pop()]
-  });
-  audio.once("load", function(){
+  audio = new AudioWrapper(audio_url, ()=>{
     audio.seek(window.chart.getSeconds(0))
     chartView.setTime(window.chart.getSeconds(0)) 
+    chartView.loadAudio(audio)
+    setEffectVolume(options.audio.soundEffectVolume)
+    setVolume(options.audio.songVolume)
+    setRate(options.audio.rate)
   })
-  chartView.loadAudio(audio_url)
+  window.audio = audio
   seekBack()
 }
 
 export async function loadSM() {
   options = window.options
-  playing = false
   let sm = await parseSM(window.selected_sm)
   window.sm = sm
   
@@ -97,18 +92,18 @@ export async function loadSM() {
   
       info.text = "Time: " + roundDigit(chartView.time,3) + "\n" + "Beat: " + roundDigit(chartView.beat,3) + "\nFPS: " + getFPS() 
 
-      if (playing) chartView.setTime(time) 
+      if (audio._isPlaying) chartView.setTime(time) 
       let nd = window.chart.notedata
-      while(noteIndex < nd.length && time > nd[noteIndex].second-0.036+options.audio.effectOffset) {
-        if (playing && (nd[noteIndex].type != "Fake" && nd[noteIndex].type != "Mine") && !nd[noteIndex].fake) {
+      while(noteIndex < nd.length && time > nd[noteIndex].second+options.audio.effectOffset) {
+        if (audio._isPlaying && (nd[noteIndex].type != "Fake" && nd[noteIndex].type != "Mine") && !nd[noteIndex].fake) {
           chartView.addFlash(nd[noteIndex].col)
           if (options.audio.assistTick) tick.play()
         }
         noteIndex++
       }
-      if (Math.floor(chart.getBeat(chartView.time+0.036+options.audio.effectOffset)) != lastBeat) {
-        lastBeat = Math.floor(chart.getBeat(chartView.time+0.036+options.audio.effectOffset))
-        if (playing && options.audio.metronome) {
+      if (Math.floor(chart.getBeat(chartView.time+options.audio.effectOffset)) != lastBeat) {
+        lastBeat = Math.floor(chart.getBeat(chartView.time+options.audio.effectOffset))
+        if (audio._isPlaying && options.audio.metronome) {
           if (lastBeat % 4 == 0) me_high.play()
           else me_low.play()
         }
@@ -168,7 +163,7 @@ function seekBack() {
   if (noteIndex > nd.length) noteIndex = nd.length - 1
   while(noteIndex > 0 && time < nd[noteIndex-1].second) {
     noteIndex--
-    if (playing && (nd[noteIndex].type != "Fake" && nd[noteIndex].type != "Mine") && !nd[noteIndex].fake) {
+    if (audio._isPlaying && (nd[noteIndex].type != "Fake" && nd[noteIndex].type != "Mine") && !nd[noteIndex].fake) {
       chartView.addFlash(nd[noteIndex].col)
     }
   }
@@ -186,9 +181,8 @@ function onResize() {
 }
 
 export function playPause() {
-  if (playing) audio.pause()
+  if (audio._isPlaying) audio.pause()
   else audio.play()
-  playing = !playing
 }
 
 export function setAndSnapBeat(beat) {
@@ -211,56 +205,6 @@ export function nextSnap(){
   options.chart.snap = snaps[snapIndex]==-1?0:1/snaps[snapIndex]
   sn.play()
 }
-
-var cmdPressed = 0
-// document.addEventListener("keydown", function(e) {
-//   let sm = window.sm
-//   if (sm == undefined || window.chart == undefined || audio == undefined) return
-//   if (e.code == "Space") {
-//     if (playing) audio.pause()
-//     else audio.play()
-//     playing = !playing
-//   }
-//   let snap = window.options.chart.snap==0?0.001:window.options.chart.snap
-//   if (e.code == "ArrowUp") {
-//     let beat = chartView.beat
-//     let newbeat = Math.round((beat-snap)/snap)*snap
-//     newbeat = Math.max(0,newbeat)
-//     audio.seek(window.chart.getSeconds(newbeat))
-//     chartView.setBeat(newbeat)
-//     seekBack()
-//   }
-//   if (e.code == "ArrowDown") {
-//     let beat = chartView.beat
-//     let newbeat = Math.round((beat+snap)/snap)*snap
-//     newbeat = Math.max(0,newbeat)
-//     audio.seek(window.chart.getSeconds(newbeat))
-//     chartView.setBeat(newbeat)
-//     seekBack()
-//   }
-//   if (cmdPressed > 0) {
-//     if (e.code == "ArrowLeft") chartView.setZoom(Math.max(10,options.chart.speed*Math.pow(1.01,-30)))
-//     if (e.code == "ArrowRight") chartView.setZoom(Math.max(10,options.chart.speed*Math.pow(1.01,30)))
-//   }else{
-//     if (e.code == "ArrowLeft") {
-//       snapIndex = ((snapIndex-1) + snaps.length) % snaps.length
-//       options.chart.snap = snaps[snapIndex]==-1?0:1/snaps[snapIndex]
-//       sn.play()
-//     }
-//     if (e.code == "ArrowRight") {
-//       snapIndex = (snapIndex+1) % snaps.length
-//       options.chart.snap = snaps[snapIndex]==-1?0:1/snaps[snapIndex]
-//       sn.play()
-//     }
-//   }
-//   if (e.code == "MetaLeft" || e.code == "MetaRight" || e.code == "ControlLeft" || e.code == "ControlRight") cmdPressed++
-//   if (e.code == "Digit7") options.audio.assistTick = !options.audio.assistTick
-//   if (e.code == "KeyC") options.chart.CMod = !options.chart.CMod
-// })
-
-// document.addEventListener("keyup", function(e) {
-//   if (e.code == "MetaLeft" || e.code == "MetaRight" || e.code == "ControlLeft" || e.code == "ControlRight") cmdPressed = Math.max(cmdPressed-1,0)
-// })
 document.addEventListener("wheel", function (e) {
   if (window.sm == undefined || window.chart == undefined || audio == undefined) return
   if ((isOsx && e.metaKey) || (!isOsx && e.ctrlKey)) {

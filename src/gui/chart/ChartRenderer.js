@@ -115,8 +115,8 @@ export class ChartRenderer {
     })
   }
 
-  loadAudio(url) {
-    loadAudio(url)
+  loadAudio(aw) {
+    loadAudio(aw)
   }
 
   setTime(time) {

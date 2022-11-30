@@ -32,7 +32,6 @@ canvas {
 	flex: 1 1 auto;
 }
 .window {
-	border: 1px solid black;
 	border-radius: 5px;
 	position: fixed;
 }

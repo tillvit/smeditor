@@ -3,8 +3,9 @@ import { app } from "../../App.js";
 var rawData
 var sampleRate
 var waveform
+var filteredWaveform
+var audioWrapper
 let graphic;
-let ac = new AudioContext()
 let ch
 
 export function createWaveform(chart) {
@@ -13,15 +14,14 @@ export function createWaveform(chart) {
   return graphic
 }
 
-export function loadAudio(url) {
-  getData(url).then(function(result) {
-    rawData = result.getChannelData(0)
-    sampleRate = result.sampleRate
-    filterWaveForm()
-  });
+export function loadAudio(wrapper) {
+  rawData = wrapper._buffer.getChannelData(0)
+  sampleRate = wrapper._buffer.sampleRate
+  waveform = filterWaveForm(rawData)
+  audioWrapper = wrapper
 }
 
-function filterWaveForm() {
+function filterWaveForm(rawData) {
   if (rawData == undefined)
     return
   const blockSize = sampleRate / (window.options.chart.speed*4); // Number of samples in each subdivision
@@ -35,18 +35,16 @@ function filterWaveForm() {
     }
     filteredData.push(sum / blockSize); // divide the sum by the block size to get the average
   }
-  waveform = filteredData
-}
-
-async function getData(url) {
-  let result = await fetch(url)
-  .then(response => response.arrayBuffer())
-  .then(arrayBuffer => ac.decodeAudioData(arrayBuffer))
-  return result;
+  return filteredData
 }
 
 export function setWaveformZoom() {
-  filterWaveForm()
+  waveform = filterWaveForm(rawData)
+  if (audioWrapper.filteredRawData) filteredWaveform = filterWaveForm(audioWrapper.filteredRawData)
+}
+
+export function recalcFilter() {
+  if (audioWrapper.filteredRawData) filteredWaveform = filterWaveForm(audioWrapper.filteredRawData)
 }
 
 export function renderWaveform() {
@@ -59,6 +57,20 @@ export function renderWaveform() {
       let samp = Math.floor(calcTime * window.options.chart.speed*4)
 
       let v = (waveform[samp]);
+      graphic.moveTo(-v*192-32, i-graphic.parent.y);
+      graphic.lineTo(v*192-32, i-graphic.parent.y);
+      graphic.closePath()
+
+    }
+  }
+  if (filteredWaveform) {
+    graphic.lineStyle(1, 0x00ff00, 0.2);
+    for (let i = 0; i < app.screen.height; i++) {
+      let calcTime = ch.getTimeFromYPos(i-graphic.parent.y)
+      
+      let samp = Math.floor(calcTime * window.options.chart.speed*4)
+
+      let v = (filteredWaveform[samp]);
       graphic.moveTo(-v*192-32, i-graphic.parent.y);
       graphic.lineTo(v*192-32, i-graphic.parent.y);
       graphic.closePath()

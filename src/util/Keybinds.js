@@ -87,8 +87,14 @@ export const KEYBIND_OPTIONS = {
     mods: [defMod],
     disabled: true,
   },
-  chartList: {
-    label: "New/Open Chart...",
+  newChart: {
+    label: "New Chart...",
+    keybind: "N",
+    mods: [defMod,"shift"],
+    disabled: true,
+  },
+  openChart: {
+    label: "Open Chart...",
     keybind: "O",
     mods: [defMod,"shift"],
     disabled: true,
