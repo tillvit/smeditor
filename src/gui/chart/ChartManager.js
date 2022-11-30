@@ -17,7 +17,17 @@ var audio_url;
 var partialScroll = 0
 
 var tick = new Howl({
-  src: 'assets/sound/assist_tick.wav',
+  src: 'assets/sound/assist_tick.ogg',
+  volume: 0.5
+});
+
+var me_high = new Howl({
+  src: 'assets/sound/metronome_high.ogg',
+  volume: 0.5
+});
+
+var me_low = new Howl({
+  src: 'assets/sound/metronome_low.ogg',
   volume: 0.5
 });
 
@@ -28,6 +38,7 @@ var sn = new Howl({
 
 var info;
 var noteIndex = 0
+var lastBeat = -1
 
 export async function loadAudio() {
   let a_file = window.files.getFileRelativeTo(window.selected_sm,window.sm["MUSIC"])
@@ -95,6 +106,13 @@ export async function loadSM() {
         }
         noteIndex++
       }
+      if (Math.floor(chart.getBeat(chartView.time+0.036+options.audio.effectOffset)) != lastBeat) {
+        lastBeat = Math.floor(chart.getBeat(chartView.time+0.036+options.audio.effectOffset))
+        if (playing && options.audio.metronome) {
+          if (lastBeat % 4 == 0) me_high.play()
+          else me_low.play()
+        }
+      }
     })
     update = true
   }
@@ -112,7 +130,9 @@ export function setVolume(vol) {
 
 export function setEffectVolume(vol) {
   options.audio.soundEffectVolume = vol
-  tick?.volume(options.audio.vol)
+  tick?.volume(options.audio.soundEffectVolume)
+  me_high?.volume(options.audio.soundEffectVolume)
+  me_low?.volume(options.audio.soundEffectVolume)
 }
 
 export function loadChart(chartIndex) {

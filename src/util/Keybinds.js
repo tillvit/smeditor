@@ -184,8 +184,8 @@ export const KEYBIND_OPTIONS = {
     label: "Metronome",
     keybind: "F7",
     mods: ["alt"],
-    disabled: true,
-    callback: () => {}
+    disabled: false,
+    callback: () => options.audio.metronome = !options.audio.metronome
   },
   renderWaveform: {
     label: "Render waveform",
