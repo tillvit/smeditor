@@ -67,11 +67,11 @@ export class BiquadFilter {
         a2 = (A + 1) - (A - 1) * cs - beta * sn;
     }
 
-    this.a0 = b0 /a0;
-    this.a1 = b1 /a0;
-    this.a2 = b2 /a0;
-    this.a3 = a1 /a0;
-    this.a4 = a2 /a0;
+    this.b0 = b0 / a0;
+    this.b1 = b1 / a0;
+    this.b2 = b2 / a0;
+    this.a1 = a1 / a0;
+    this.a2 = a2 / a0;
 
     this.reset()
   }
@@ -82,13 +82,24 @@ export class BiquadFilter {
 
 
   process(sample) {
-    let y = this.a0 * sample + this.a1 * this.x1 + this.a2 * this.x2 - this.a3 * this.y1 - this.a4 * this.y2;
+    let y = this.b0 * sample + this.b1 * this.x1 + this.b2 * this.x2 - this.a1 * this.y1 - this.a2 * this.y2;
     this.x2 = this.x1;
     this.x1 = sample;
 
     this.y2 = this.y1;
     this.y1 = y;
     return y
+  }
+
+  magnitude(freqs, sampleRate) {
+    freqs.forEach(x => {
+      let freq = x.freq
+      let w = 2.0*Math.PI*freq / sampleRate;  
+      let numerator = this.b0*this.b0 + this.b1*this.b1 + this.b2*this.b2 + 2.0*(this.b0*this.b1 + this.b1*this.b2)*Math.cos(w) + 2.0*this.b0*this.b2*Math.cos(2.0*w);
+      let denominator = 1.0 + this.a1*this.a1 + this.a2*this.a2 + 2.0*(this.a1 + this.a1*this.a2)*Math.cos(w) + 2.0*this.a2*Math.cos(2.0*w);
+      
+      x.val *= Math.sqrt(numerator / denominator);  
+    })
   }
 }
 

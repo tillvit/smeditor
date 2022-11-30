@@ -73,6 +73,38 @@ export async function loadSM() {
   loadChart()
 
   if (update == false) {
+    app.view.addEventListener("wheel", function (e) {
+      if (window.sm == undefined || window.chart == undefined || audio == undefined) return
+      if ((isOsx && e.metaKey) || (!isOsx && e.ctrlKey)) {
+        let newSpeed = Math.max(10,options.chart.speed*Math.pow(1.01,e.deltaY/5))
+        chartView.setZoom(newSpeed)
+      }else{
+        let beat = chartView.beat
+        let newbeat = beat
+        let snap = options.chart.snap
+        let speed = options.chart.speed
+        if (snap == 0) {
+          partialScroll = 0
+          newbeat = beat + e.deltaY/speed
+        }else{
+          partialScroll += e.deltaY/speed
+          if (Math.abs(partialScroll) > snap) {
+            if (partialScroll < 0) {
+              newbeat = Math.round((beat+Math.ceil(partialScroll/snap)*snap)/snap)*snap
+            }else{
+              newbeat = Math.round((beat+Math.floor(partialScroll/snap)*snap)/snap)*snap
+            }
+            partialScroll %= snap
+          }
+        }
+        newbeat = Math.max(0,newbeat)
+        if (newbeat != beat) {
+          chartView.setBeat(newbeat)
+          audio.seek(window.chart.getSeconds(newbeat))
+        }
+        seekBack()
+      }
+    }, true);
     info = new PIXI.BitmapText("debug",{
       fontName: "Assistant",
       fontSize: 20,
@@ -205,35 +237,3 @@ export function nextSnap(){
   options.chart.snap = snaps[snapIndex]==-1?0:1/snaps[snapIndex]
   sn.play()
 }
-document.addEventListener("wheel", function (e) {
-  if (window.sm == undefined || window.chart == undefined || audio == undefined) return
-  if ((isOsx && e.metaKey) || (!isOsx && e.ctrlKey)) {
-    let newSpeed = Math.max(10,options.chart.speed*Math.pow(1.01,e.deltaY/5))
-    chartView.setZoom(newSpeed)
-  }else{
-    let beat = chartView.beat
-    let newbeat = beat
-    let snap = options.chart.snap
-    let speed = options.chart.speed
-    if (snap == 0) {
-      partialScroll = 0
-      newbeat = beat + e.deltaY/speed
-    }else{
-      partialScroll += e.deltaY/speed
-      if (Math.abs(partialScroll) > snap) {
-        if (partialScroll < 0) {
-          newbeat = Math.round((beat+Math.ceil(partialScroll/snap)*snap)/snap)*snap
-        }else{
-          newbeat = Math.round((beat+Math.floor(partialScroll/snap)*snap)/snap)*snap
-        }
-        partialScroll %= snap
-      }
-    }
-    newbeat = Math.max(0,newbeat)
-    if (newbeat != beat) {
-      chartView.setBeat(newbeat)
-      audio.seek(window.chart.getSeconds(newbeat))
-    }
-    seekBack()
-  }
-}, true);

@@ -1,5 +1,7 @@
 import { loadSM, nextSnap, playPause, previousSnap, setAndSnapBeat, setEffectVolume, setRate, setVolume } from "../gui/chart/ChartManager.js";
+import { createChartListWindow } from "../gui/view/ChartListView.js";
 import { createDirectoryWindow } from "../gui/view/DirectoryView.js";
+import { createEQWindow } from "../gui/view/EQView.js";
 import { reloadData } from "../gui/view/OptionsView.js";
 
 export const isOsx = ~navigator.userAgent.indexOf('Mac OS X');
@@ -97,7 +99,8 @@ export const KEYBIND_OPTIONS = {
     label: "Open Chart...",
     keybind: "O",
     mods: [defMod,"shift"],
-    disabled: true,
+    disabled: ()=>window.selected_sm == "",
+    callback: ()=> createChartListWindow()
   },
   chartProperties: {
     label: "Chart Properties...",
@@ -164,6 +167,13 @@ export const KEYBIND_OPTIONS = {
     mods: ["shift"],
     disabled: false,
     callback: () => setRate(Math.max(options.audio.rate-0.1,0.1))
+  },
+  rateDefault: {
+    label: "Reset playback rate",
+    keybind: "",
+    mods: [""],
+    disabled: false,
+    callback: () => setRate(1)
   },
   previousMeasure: {
     label: "Previous measure",
@@ -241,6 +251,13 @@ export const KEYBIND_OPTIONS = {
     mods: [],
     disabled: true,
     callback: () => {}
+  },
+  showEq: {
+    label: "Equalizer",
+    keybind: "E",
+    mods: ["shift","alt"],
+    disabled: ()=>window.audio == undefined,
+    callback: () => createEQWindow()
   },
 }
 const SPECIAL_KEYS = {

@@ -47,7 +47,16 @@ initKeybinds()
 document.getElementById("menubar").appendChild(createMenuBar())
 
 console.log(`smeditor is currently a work in progress. editing isn't ready yet, so i guess its smviewer?? please be patient !`)
-
+console.log(`audio filtering is working (hopefully) but not yet implemented into UI`)
+console.log(`use audio.filters = [new BiquadFilter(options)...] and then audio.processFilters()`)
+console.log(`syntax: new BiquadFilter(type, gain, freq, sampleRate, bandwidth)
+type: lowpass, highpass, bandpass, peaking, notch, lowshelf, highshelf
+gain: change in dB (used for peaking, lowshelf, highshelf)
+freq: where the filter frequency center is (or end if it is a lowpass/highpass)
+sampleRate: usually 44100
+bandwidth: width of the effect in octaves (used for lowpass, highpass, bandpass, peaking, notch)`)
+console.log(`i could have been working on chart loading UI but instead i worked on this so:
+loadChart(i): loads chart with index i. use sm.charts["dance-single"] to see charts`)
 
 window.addEventListener("resize", function(){
   onResize()

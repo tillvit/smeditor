@@ -79,8 +79,20 @@ const MENU_BAR_DATA = {
       {
         type: "selection",
         id: "rateDown",
+      },
+      {
+        type: "seperator",
+      },
+      {
+        type: "selection",
+        id: "rateDefault",
       }]
-    },]
+    },{
+      type: "seperator",
+    },{
+      type: "selection",
+      id: "showEq",
+    }]
   },
   view: {
     type: "menu",
