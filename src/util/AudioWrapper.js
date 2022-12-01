@@ -158,7 +158,7 @@ export class AudioWrapper {
 
   rate(rate) {
     this._rate = rate 
-    this._playbackTime += (this._audioContext.currentTime - this._startTimestamp) * this._source.playbackRate.value
+    if (this._isPlaying) this._playbackTime += (this._audioContext.currentTime - this._startTimestamp) * this._source.playbackRate.value
     this._startTimestamp = this._audioContext.currentTime
     this._source.playbackRate.value = rate
   }
@@ -196,7 +196,8 @@ export class AudioWrapper {
       this._playbackTime = playbackTime;
       this.play(); 
     } else {
-      this._playbackTime = playbackTime;
+      this._playbackTime = playbackTime
+      
     }
   }
 
@@ -216,4 +217,5 @@ export class AudioWrapper {
     }
     this._playbackTime = pause ? (this._audioContext.currentTime - this._startTimestamp) + this._playbackTime : 0;
   }
+
 }
