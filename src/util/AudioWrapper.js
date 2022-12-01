@@ -17,42 +17,56 @@ export class AudioWrapper {
     this._rate = 1
     this._magnitude = []
     for (let x = 0; x < 1200; x++) {
-      this._magnitude[x] = {freq:Math.pow(10,3/1170*x)*20, val: 0}
+      this._magnitude[x] = 0
     } 
-    this.getData(url).then((result)=> {
-      let rawData = result.getChannelData(0)
-      this.rawData = rawData
-      let sampleRate = result.sampleRate
-      this._buffer = this._audioContext.createBuffer(1, rawData.length, sampleRate);
-      this._buffer.copyToChannel(rawData, 0)
+    if (url != undefined) {
+      this.getData(url).then((result)=> {
+        let rawData = result.getChannelData(0)
+        this.rawData = rawData
+        let sampleRate = result.sampleRate
+        this._buffer = this._audioContext.createBuffer(1, rawData.length, sampleRate);
+        this._buffer.copyToChannel(rawData, 0)
+        this.initSource()
+        if (onload) onload(this)
+      });
+    } else {
+      this.rawData = new Float32Array(1024)
+      this._buffer = this._audioContext.createBuffer(1, this.rawData.length, 44100);
       this.initSource()
-      if (onload) onload()
-    });
+      if (onload) onload(this)
+    }
   }
 
   getFreqData() {
     this._audioAnalyzer.getByteFrequencyData(this._freqData);
   }
 
-  processFilters() {
+  async processFilters() {
     let dat = this.rawData
-    let arr = []
-    for (let x = 0; x < 1200; x++) {
-      arr[x] = {freq:Math.pow(10,3/1170*x)*20, val: 1}
-    } 
     this.filters.forEach(filter=>{
       filter.reset()
       dat = dat.map(samp=>filter.process(samp))
-      filter.magnitude(arr, this._buffer.sampleRate)
     })
-    arr.forEach(x => {
-      x.val = 10*Math.log(x.val);
-    });
     this._buffer.copyToChannel(dat, 0)
     this.filteredRawData = dat
+    if (this.filters.length == 0) this.filteredRawData = undefined
     recalcFilter()
-    this._magnitude = arr
+    this.calcMags()
 
+  }
+
+  async calcMags() {
+    let arr = []
+    for (let x = 0; x < 1200; x++) {
+      arr[x] = 1
+    } 
+    this.filters.forEach(filter=>{
+      filter.magnitude(arr, this._buffer.sampleRate)
+    })
+    console.log(arr)
+    arr = arr.map(x => 10*Math.log(x));
+    // console.log(arr)
+    this._magnitude = arr
   }
 
   async getData(url) { 
@@ -116,8 +130,8 @@ export class AudioWrapper {
   }
 
   testFindBPM() {
-    let LOWPASS = new BiquadFilter("lowpass",10,150,44100,1)
-    let HIGHPASS = new BiquadFilter("highpass",10,100,44100,1)
+    let LOWPASS = new BiquadFilter("lowpass",10,150,44100,2)
+    let HIGHPASS = new BiquadFilter("highpass",10,100,44100,2)
     let data = this.rawData.map(x=>LOWPASS.process(x))
     data = data.map(x=>HIGHPASS.process(x))
     let peaks = this.getPeaks(data)

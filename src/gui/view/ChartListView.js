@@ -1,4 +1,4 @@
-import { createWindow, getWindowById } from "../BaseWindow.js";
+import { createWindow } from "../BaseWindow.js";
 
 export function createChartListWindow() {
   let window = createWindow("Select a chart...", 500, 300, "chartList", true)
@@ -8,6 +8,7 @@ export function createChartListWindow() {
 
 
 function makeChartListView(view) {
+  view.replaceChildren()
   let padding = document.createElement("div")
   padding.classList.add("padding")
   let wrapper = document.createElement("div")

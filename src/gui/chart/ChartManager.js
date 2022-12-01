@@ -43,16 +43,28 @@ export async function loadAudio() {
   let a_file = window.files.getFileRelativeTo(window.selected_sm,window.sm["MUSIC"])
   if (window.sm["MUSIC"] == "") {
     console.log("No Audio File!")
-    audio = undefined
+    audio = new AudioWrapper(undefined, (audio)=>{
+      audio.seek(window.chart.getSeconds(0))
+      setEffectVolume(options.audio.soundEffectVolume)
+      setVolume(options.audio.songVolume)
+      setRate(options.audio.rate)
+    })
+    window.audio = audio
     return
   }
   if (a_file == undefined) {
     console.log("Failed to load audio file " + window.sm["MUSIC"])
-    audio = undefined
+    audio = new AudioWrapper(undefined, (audio)=>{
+      audio.seek(window.chart.getSeconds(0))
+      setEffectVolume(options.audio.soundEffectVolume)
+      setVolume(options.audio.songVolume)
+      setRate(options.audio.rate)
+    })
+    window.audio = audio
     return
   }
   audio_url = await URL.createObjectURL(a_file)
-  audio = new AudioWrapper(audio_url, ()=>{
+  audio = new AudioWrapper(audio_url, (audio)=>{
     audio.seek(window.chart.getSeconds(0))
     chartView.setTime(window.chart.getSeconds(0)) 
     chartView.loadAudio(audio)
@@ -69,8 +81,9 @@ export async function loadSM() {
   let sm = await parseSM(window.selected_sm)
   window.sm = sm
   
-  loadAudio()
   loadChart()
+  loadAudio()
+  
 
   if (update == false) {
     app.view.addEventListener("wheel", function (e) {

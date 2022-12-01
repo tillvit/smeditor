@@ -6,6 +6,7 @@ import { reloadData } from "./OptionsView.js"
 export function createDirectoryWindow(title, accepted_file_types, closeable, initial_select, callback) {
   // Create the window
   let view = createWindow(title, 500, 400, "file_selector"+Math.random(), closeable) 
+  view.replaceChildren()
   view.accepted_file_types = accepted_file_types
   view.callback = callback
   view.keyHandler = getKeyHandler(view)

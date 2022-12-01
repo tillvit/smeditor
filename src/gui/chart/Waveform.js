@@ -63,8 +63,8 @@ export function renderWaveform() {
 
     }
   }
-  if (filteredWaveform) {
-    graphic.lineStyle(1, 0x00ff00, 0.2);
+  if (audioWrapper?.filteredRawData) {
+    graphic.lineStyle(1, 0x00ff66, 0.4);
     for (let i = 0; i < app.screen.height; i++) {
       let calcTime = ch.getTimeFromYPos(i-graphic.parent.y)
       

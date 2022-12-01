@@ -1,4 +1,5 @@
 export class BiquadFilter {
+  enabled = true
   constructor(type, gain, freq, sampleRate, bandwidth){
     let A = Math.pow(10, gain/40);
     let omega = 2 * Math.PI * freq /sampleRate;
@@ -82,6 +83,7 @@ export class BiquadFilter {
 
 
   process(sample) {
+    if (!this.enabled) return sample
     let y = this.b0 * sample + this.b1 * this.x1 + this.b2 * this.x2 - this.a1 * this.y1 - this.a2 * this.y2;
     this.x2 = this.x1;
     this.x1 = sample;
@@ -92,14 +94,15 @@ export class BiquadFilter {
   }
 
   magnitude(freqs, sampleRate) {
-    freqs.forEach(x => {
-      let freq = x.freq
+    if (!this.enabled) return freqs
+    for (let i = 0; i < freqs.length; i ++) {
+      let freq = Math.pow(10,3/1170*i)*20
       let w = 2.0*Math.PI*freq / sampleRate;  
       let numerator = this.b0*this.b0 + this.b1*this.b1 + this.b2*this.b2 + 2.0*(this.b0*this.b1 + this.b1*this.b2)*Math.cos(w) + 2.0*this.b0*this.b2*Math.cos(2.0*w);
       let denominator = 1.0 + this.a1*this.a1 + this.a2*this.a2 + 2.0*(this.a1 + this.a1*this.a2)*Math.cos(w) + 2.0*this.a2*Math.cos(2.0*w);
-      
-      x.val *= Math.sqrt(numerator / denominator);  
-    })
+      freqs[i] *= Math.sqrt(numerator / denominator);  
+    }
+    return freqs
   }
 }
 
