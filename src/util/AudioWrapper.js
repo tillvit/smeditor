@@ -7,6 +7,7 @@ export class AudioWrapper {
     this._audioContext = new (window.AudioContext || window.webkitAudioContext)();
     this._audioAnalyzer = this._audioContext.createAnalyser()
     this._audioAnalyzer.fftSize = 8192;
+    this._audioAnalyzer.maxDecibels = 0;
     this._freqData = new Uint8Array(this._audioAnalyzer.frequencyBinCount);
     this._source; // AudioBufferSourceNode
     this._playbackTime = 0; // time of the audio playback, seconds
@@ -215,7 +216,7 @@ export class AudioWrapper {
         this._source.stop(); 
       } catch {}
     }
-    this._playbackTime = pause ? (this._audioContext.currentTime - this._startTimestamp) + this._playbackTime : 0;
+    this._playbackTime = pause ? (this._audioContext.currentTime - this._startTimestamp) * this._source.playbackRate.value + this._playbackTime : 0;
   }
 
 }

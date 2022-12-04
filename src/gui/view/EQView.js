@@ -36,9 +36,9 @@ function drawEQ(canvas){
       let freq = Math.pow(10,3/1170*x)*20
       let bin = freq/window.audio._buffer.sampleRate*2*window.audio._audioAnalyzer.fftSize
       let y = freqData[Math.floor(bin)]/255
-      ctx.fillRect(x, 400-y*360, 1, y*360);
+      ctx.fillRect(x, 400-y*500, 1, y*500);
     }
-    ctx.fillStyle = "rgb(0, 100, 150,0.7)";
+    ctx.fillStyle = "rgba(0, 100, 150, 1)";
     ctx.font = '22px Assistant';
     for (let i = 0; i < freqLines.length; i ++) {
       let x = freqLinesX[i]
@@ -52,7 +52,7 @@ function drawEQ(canvas){
       if (i != 0) ctx.fillText(i, 0, y);
     }
     ctx.fillRect(0, 200, 1200, 1);
-    ctx.fillStyle = "rgba(0, 100, 150,0.7)";
+    ctx.fillStyle = "rgba(0, 100, 150,0.5)";
     for (let x = 0; x < 1200; x++) {
       let gain = window.audio._magnitude[x]
       ctx.fillRect(x, 200, 1, -gain*(400/20));

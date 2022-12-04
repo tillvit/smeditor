@@ -41,14 +41,14 @@ export const KEYBIND_OPTIONS = {
     keybind: "Up",
     mods: [],
     disabled: () => window.chartView == undefined,
-    callback: () => setAndSnapBeat(chartView.beat-options.chart.snap)
+    callback: () => setAndSnapBeat(chartView.beat-Math.max(0.001,options.chart.snap))
   },
   cursorDown: {
     label: "Move cursor down",
     keybind: "Down",
     mods: [],
     disabled: () => window.chartView == undefined,
-    callback: () => setAndSnapBeat(chartView.beat+options.chart.snap)
+    callback: () => setAndSnapBeat(chartView.beat+Math.max(0.001,options.chart.snap))
   },
   increaseScrollSpeed: {
     label: "Increase scroll speed",
@@ -131,42 +131,42 @@ export const KEYBIND_OPTIONS = {
     keybind: "Up",
     mods: ["shift"],
     disabled: false,
-    callback: () => setVolume(Math.min(options.audio.songVolume+0.1,1))
+    callback: () => setVolume(Math.min(options.audio.songVolume+0.05,1))
   },
   volumeDown: {
     label: "Decrease volume",
     keybind: "Down",
     mods: ["shift"],
     disabled: false,
-    callback: () => setVolume(Math.max(options.audio.songVolume-0.1,0))
+    callback: () => setVolume(Math.max(options.audio.songVolume-0.05,0))
   },
   effectvolumeUp: {
     label: "Increase sound effect volume",
     keybind: "Up",
     mods: ["shift","alt"],
     disabled: false,
-    callback: () => setEffectVolume(Math.min(options.audio.soundEffectVolume+0.1,1))
+    callback: () => setEffectVolume(Math.min(options.audio.soundEffectVolume+0.05,1))
   },
   effectvolumeDown: {
     label: "Decrease sound effect volume",
     keybind: "Down",
     mods: ["shift","alt"],
     disabled: false,
-    callback: () => setEffectVolume(Math.max(options.audio.soundEffectVolume-0.1,0))
+    callback: () => setEffectVolume(Math.max(options.audio.soundEffectVolume-0.05,0))
   },
   rateUp: {
     label: "Increase playback rate",
     keybind: "Right",
     mods: ["shift"],
     disabled: false,
-    callback: () => setRate(options.audio.rate += 0.1)
+    callback: () => setRate(options.audio.rate += 0.05)
   },
   rateDown: {
     label: "Decrease playback rate",
     keybind: "Left",
     mods: ["shift"],
     disabled: false,
-    callback: () => setRate(Math.max(options.audio.rate-0.1,0.1))
+    callback: () => setRate(Math.max(options.audio.rate-0.05,0.1))
   },
   rateDefault: {
     label: "Reset playback rate",

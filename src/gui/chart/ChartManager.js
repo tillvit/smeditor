@@ -231,7 +231,7 @@ export function playPause() {
 }
 
 export function setAndSnapBeat(beat) {
-  let snap = window.options.chart.snap==0?0.001:window.options.chart.snap
+  let snap = Math.max(0.001,options.chart.snap)
   let newbeat = Math.round((beat)/snap)*snap
   newbeat = Math.max(0,newbeat)
   audio.seek(window.chart.getSeconds(newbeat))
