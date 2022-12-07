@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+
+    "target": "ES2021",                                 
+    "outDir": "./dist/",       
+    "forceConsistentCasingInFileNames": true,                      
+    "strict": true,                                   
+    "noImplicitAny": true,                      
+    "allowJs": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "./src/**/*"
+  ]
+}
