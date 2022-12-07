@@ -6,6 +6,8 @@ import { Howl } from 'howler';
 import { IS_OSX } from "../data/KeybindData"
 import { Chart } from "./sm/Chart"
 import { NoteTexture } from "./note/NoteTexture"
+import { BitmapText } from "pixi.js"
+import { getFPS, roundDigit } from "../util/Util"
 
 const SNAPS = [1,2,3,4,6,8,12,16,24,48,-1]
 
@@ -15,6 +17,7 @@ export class ChartManager {
 
   songAudio: ChartAudio = new ChartAudio()
   chartView?: ChartRenderer
+  info: BitmapText
   assistTick: Howl = new Howl({
     src: 'assets/sound/assist_tick.ogg',
     volume: 0.5
@@ -67,19 +70,21 @@ export class ChartManager {
         if (newbeat != this.beat)  this.setBeat(newbeat)
       }
     });
-    // info = new PIXI.BitmapText("debug",{
-    //   fontName: "Assistant",
-    //   fontSize: 20,
-    //   fill: ['#ffffff']
-    // })
-    // info.x = 0
-    // info.y = 0
-    // app.stage.addChild(info)
-    this.app.pixi.ticker.add(() => {
-      this.chartView?.render();
-    });
-    // info.text = "Time: " + roundDigit(chartView.time,3) + "\n" + "Beat: " + roundDigit(chartView.beat,3) + "\nFPS: " + getFPS() 
 
+    this.info = new BitmapText("", {
+      fontName: "Assistant",
+      fontSize: 20,
+    })
+    this.info.x = 0
+    this.info.y = 0
+    this.app.pixi.stage.addChild(this.info)
+    this.app.pixi.ticker.add(() => {
+      if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
+      this.chartView?.render();
+      this.info.text = "Time: " + roundDigit(this.time,3) + "\n" + "Beat: " + roundDigit(this.beat,3) + "\nFPS: " + getFPS(this.app.pixi) 
+
+    });
+    
     setInterval(()=>{
       if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
       let time = this.songAudio.seek()

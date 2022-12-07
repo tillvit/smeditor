@@ -9,10 +9,10 @@ type TimingPropertyCollection = {
 
 type TimingCache = {
   events: TimingPropertyCollection
-  beatTiming: BeatCacheTimingEvent[]
-  effectiveBeatTiming: ScrollCacheTimingEvent[]
-  speeds: SpeedTimingEvent[]
-  stopBeats: {[key: number]: StopTimingEvent}
+  beatTiming?: BeatCacheTimingEvent[]
+  effectiveBeatTiming?: ScrollCacheTimingEvent[]
+  speeds?: SpeedTimingEvent[]
+  stopBeats?: {[key: number]: StopTimingEvent}
   sortedEvents?: TimingEvent[]
 }
 
@@ -23,10 +23,6 @@ export class TimingData {
   _fallback?: TimingData
   _cache: TimingCache = {
     events: {},
-    beatTiming: [],
-    effectiveBeatTiming: [],
-    speeds: [],
-    stopBeats: {},
   }
   events: TimingPropertyCollection = {}
   offset?: number
@@ -175,7 +171,7 @@ export class TimingData {
     })
     let seconds = 0
     let lastbeat = 0
-    let curbpm = this.getTimingData("BPMS")[0].value
+    let curbpm = this.getTimingData("BPMS")[0]?.value ?? 120
     let warping = false
     let offset = this.getTimingData("OFFSET")
     for (let i = 0; i < cache.length; i++) {
@@ -237,7 +233,6 @@ export class TimingData {
     for (let type of TIMING_EVENT_NAMES) {
       this._cache.events[type] = this.getTimingData(type) as any
     }
-    console.log(JSON.parse(JSON.stringify(this._cache)))
   }
 
   searchCache<Type, Prop extends keyof Type>(cache: Type[], property: Prop, value: number) {
@@ -264,7 +259,7 @@ export class TimingData {
 
   getBeat(seconds: number): number {
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
-    let cache = this._cache.beatTiming
+    let cache = this._cache.beatTiming!
     let i = this.searchCache(cache, "second", seconds)
     let event = cache[i]
     let beat = event.beat
@@ -279,7 +274,7 @@ export class TimingData {
   getSeconds(beat: number): number {
     if (!isFinite(beat)) return 0
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
-    let cache = this._cache.beatTiming
+    let cache = this._cache.beatTiming!
     let i = this.searchCache(cache, "beat", beat)
     let event = cache[i]
     let seconds = event.second!
@@ -295,7 +290,7 @@ export class TimingData {
   isBeatWarped(beat: number): boolean {
     if (!isFinite(beat)) return false
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
-    for (let event of this._cache.beatTiming) {
+    for (let event of this._cache.beatTiming!) {
       if (beat < event.beat) continue
       if (event.type == "WARPS" && beat < event.beat+event.value) return true
       if ((event.type == "STOPS" || event.type == "DELAYS") && (event.value < 0)) {
@@ -320,7 +315,7 @@ export class TimingData {
   getEffectiveBeat(beat: number): number {
     if (!isFinite(beat)) return 0
     if (this._cache.effectiveBeatTiming == undefined) this.buildEffectiveBeatTimingDataCache()
-    let cache = this._cache.effectiveBeatTiming
+    let cache = this._cache.effectiveBeatTiming!
     if (cache.length == 0) return beat
     let i = this.searchCache(cache, "beat", beat)
     let event = cache[i]
@@ -333,7 +328,7 @@ export class TimingData {
   getSpeedMult(beat: number, seconds: number): number {
     if (!isFinite(beat) || !isFinite(seconds)) return 0
     if (this._cache.speeds == undefined) this.buildSpeedsTimingDataCache()
-    let cache = this._cache.speeds
+    let cache = this._cache.speeds!
     if (cache.length == 0) return 1
     let i = this.searchCache(cache, "beat", beat)
     let event = cache[i]
@@ -350,9 +345,10 @@ export class TimingData {
     if (!isFinite(beat)) return 1
     if (this._cache.stopBeats == undefined) this.buildBeatTimingDataCache()
     let bpms = this.getTimingData("BPMS")
+    if (bpms.length == 0) return 120
     for (let i = 0; i < bpms.length; i++) {
       if (beat < bpms[i].beat) {
-        if (beat == bpms[i-1].beat && this._cache.stopBeats[bpms[i-1].beat]) i = Math.max(1,i-1)
+        if (beat == bpms[i-1].beat && this._cache.stopBeats![bpms[i-1].beat]) i = Math.max(1,i-1)
         return bpms[i-1].value
       }
     }

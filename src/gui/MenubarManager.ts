@@ -78,7 +78,7 @@ export class MenubarManager {
       title.classList.add("title", "unselectable")
       menuitem.classList.add("menu-item","menu-main")
       title.classList.add("menu-hover")
-      dropdown.classList.add("dropdown")
+      dropdown.classList.add("dropdown", "unselectable")
       menuitem.onmouseenter = () => { 
         dropdown.replaceChildren(...data.options.map(x=>this.createElement(x)))
       }

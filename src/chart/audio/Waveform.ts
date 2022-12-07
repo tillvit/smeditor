@@ -42,7 +42,6 @@ export class Waveform {
   refilter() {
     this.strippedWaveform = this.stripWaveform(this.chartAudio.getRawData())
     this.strippedFilteredWaveform = this.stripWaveform(this.chartAudio.getFilteredRawData())
-    console.log(this)
   }
 
   render() {

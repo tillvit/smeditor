@@ -9,7 +9,6 @@ import { getBrowser } from './util/Util';
 import { OptionsWindow } from './window/OptionsWindow'
 import { WindowManager } from './window/WindowManager'
 
-
 export class App {
 
   pixi: Application
