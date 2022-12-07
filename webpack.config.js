@@ -1,5 +1,6 @@
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const WebpackBarPlugin = require('webpackbar');
 const path = require('path');
 
 module.exports = {
@@ -38,13 +39,13 @@ module.exports = {
   },
   plugins: [
     new CopyWebpackPlugin({
-        patterns: [
-            { from: 'static' }
-        ]
+      patterns: [
+        { from: 'static' }
+      ]
     }),
     new CleanWebpackPlugin({
       root: path.resolve('.'),
-      verbose: true,
-    })
-  ]
+    }),
+    new WebpackBarPlugin()
+  ],
 };
