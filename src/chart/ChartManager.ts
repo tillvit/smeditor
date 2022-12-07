@@ -158,6 +158,8 @@ export class ChartManager {
       if (charts!.length == 0) return
       chart = charts![charts!.length - 1]
     }
+    this.time = 0
+    this.beat = 0
     this.chart = chart
   
     if (this.chartView) this.app.pixi.stage.removeChild(this.chartView.view)
@@ -171,6 +173,7 @@ export class ChartManager {
 
   async loadAudio() {
     if (!this.sm) return
+    this.songAudio.stop()
     let audio_onload = (audio: ChartAudio) => {
       audio.seek(this.chart?.getSeconds(0) ?? this.sm!.timingData.getSeconds(0))
       this.setTime(this.chart?.getSeconds(0) ?? this.sm!.timingData.getSeconds(0)) 

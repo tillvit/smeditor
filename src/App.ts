@@ -88,7 +88,6 @@ export class App {
     window.addEventListener("resize", ()=>{
       let screenWidth = window.innerWidth 
       let screenHeight = window.innerHeight - document.getElementById("menubar")!.clientHeight
-      console.log(screenWidth, screenHeight)
       this.pixi.screen.width = screenWidth;
       this.pixi.screen.height = screenHeight;
       this.view.width = screenWidth * this.pixi.renderer.resolution;

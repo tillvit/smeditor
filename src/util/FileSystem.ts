@@ -16,6 +16,7 @@ export class FileSystem {
   }
 
   rename(path: string, name: string) {
+    if (path.split("/").pop() == name) return
     let file = this.getFile(path)
     if (file) {
       file = new File([file], name, {type: file.type});
