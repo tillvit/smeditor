@@ -7,6 +7,7 @@ export interface WindowOptions {
   height: number,
   win_id?: string,
   disableClose?: boolean
+  blocking?: boolean
 }
 
 export abstract class Window {
@@ -68,6 +69,7 @@ export abstract class Window {
     navbarTitleElement.classList.add("title")
 
     windowElement.addEventListener('mousedown', () => this.focus());
+    if (options.blocking) document.addEventListener('mousedown', this.block, true);
   
     navbarTitleElement.addEventListener('mousedown', () => {
       window.addEventListener('mousemove', this.handleDrag)
@@ -92,6 +94,7 @@ export abstract class Window {
     if (this.windowManager) {
       this.windowManager.removeWindow(this)
       this.windowElement.classList.add("exiting")
+      document.removeEventListener('mousedown', this.block, true);
       setTimeout(() => this.windowManager!.view.removeChild(this.windowElement),40)
     }
   }
@@ -111,7 +114,13 @@ export abstract class Window {
     this.windowElement.classList.remove("focused")
   }
 
-  handleDrag = (event: MouseEvent) => {
+  private block = (event: MouseEvent) => {
+    if (!event.target || this.windowElement.contains(<Node>event.target)) return
+    event.stopImmediatePropagation()
+    event.preventDefault()
+  }
+
+  private handleDrag = (event: MouseEvent) => {
     let x = parseInt(this.windowElement.style.left.slice(0,-2)) + event.movementX
     let y = parseInt(this.windowElement.style.top.slice(0,-2)) + event.movementY
     this.windowElement.style.left = x + "px"
@@ -119,7 +128,7 @@ export abstract class Window {
     this.clampPosition()
   }
 
-  clampPosition() {
+  private clampPosition() {
     if (this.windowManager == undefined) return
     let x = parseInt(this.windowElement.style.left.slice(0,-2))
     let y = parseInt(this.windowElement.style.top.slice(0,-2))

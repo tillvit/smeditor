@@ -40,7 +40,12 @@ module.exports = {
   plugins: [
     new CopyWebpackPlugin({
       patterns: [
-        { from: 'static' }
+        { 
+          from: 'static',
+          globOptions: {
+            ignore: ["**/.DS_Store"],
+          },
+        }
       ]
     }),
     new CleanWebpackPlugin({
