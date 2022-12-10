@@ -1,4 +1,4 @@
-name: Bundle webpack
+name: Bundle js
 
 on:
   workflow_dispatch:
