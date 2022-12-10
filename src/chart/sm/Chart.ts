@@ -28,7 +28,7 @@ export class Chart {
       if (STEPS_TYPES.includes(dict["STEPSTYPE"] as StepsType)) this.type = dict["STEPSTYPE"] as StepsType
       else console.log("Unknown step type " + dict["STEPSTYPE"])
       this.description = dict["DESCRIPTION"] ?? ""
-      if (CHART_DIFFICULTIES.includes(dict["STEPSTYPE"] as ChartDifficulty)) this.difficulty = dict["DIFFICULTY"] as ChartDifficulty
+      if (CHART_DIFFICULTIES.includes(dict["DIFFICULTY"] as ChartDifficulty)) this.difficulty = dict["DIFFICULTY"] as ChartDifficulty
       else console.log("Unknown chart difficulty " + dict["DIFFICULTY"])
       this.meter = parseInt(dict["METER"]) ?? 0
       this.radarValues = dict["RADARVALUES"] ?? ""

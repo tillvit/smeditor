@@ -1,4 +1,4 @@
-const DEFAULT_SM = `#TITLE:New Song;
+export const DEFAULT_SM = `#TITLE:New Song;
 #SUBTITLE:;
 #ARTIST:;
 #TITLETRANSLIT:;
