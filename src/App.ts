@@ -117,12 +117,25 @@ document.querySelector("body")!.innerHTML =
 <div id="windows"></div>
 `
 
-if (getBrowser().includes("Safari")) {
+// Check WebGL
+
+let canvas = document.createElement("canvas")
+let gl = (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) as WebGLRenderingContext;
+
+if (!gl) {
   document.querySelector("body")!.innerHTML = 
   `<div class='browser-unsupported'>
     <div class='browser-unsupported-item'>
-    <h1>Safari is currently not supported!</h1>
-    <div>Please use Chrome instead.</div>
+    <h1>WebGL is not enabled</h1>
+    <div>Please visit your browser settings and enable WebGL.</div>
+    </div>
+  </div>`
+}else if (getBrowser().includes("Safari")) {
+  document.querySelector("body")!.innerHTML = 
+  `<div class='browser-unsupported'>
+    <div class='browser-unsupported-item'>
+    <h1>Safari is currently not supported</h1>
+    <div>Please use Chrome/Firefox instead.</div>
     <div class='browser-unsupported-detail'>Check the console for more info.</div>
     </div>
   </div>`
