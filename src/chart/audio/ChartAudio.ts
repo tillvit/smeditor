@@ -15,7 +15,7 @@ export class ChartAudio {
   private _rawData: Float32Array = new Float32Array(1024)
   private _filteredRawData?: Float32Array
   private _buffer: AudioBuffer
-  private _delay?: NodeJS.Timer
+  private _delay?: number
   private _listeners: Waveform[] = []
 
   filters: BiquadFilter[] = []
@@ -90,6 +90,10 @@ export class ChartAudio {
     return this._buffer.sampleRate
   }
 
+  getFFTSize(): number {
+    return this._audioAnalyzer.fftSize
+  }
+
   getRawData(): Float32Array {
     return this._rawData
   }
@@ -159,7 +163,6 @@ export class ChartAudio {
       this.play(); 
     } else {
       this._playbackTime = playbackTime
-      
     }
   }
 

@@ -85,32 +85,64 @@ export class App {
       }
     })
 
-    window.addEventListener("resize", ()=>{
-      let screenWidth = window.innerWidth 
-      let screenHeight = window.innerHeight - document.getElementById("menubar")!.clientHeight
-      this.pixi.screen.width = screenWidth;
-      this.pixi.screen.height = screenHeight;
-      this.view.width = screenWidth * this.pixi.renderer.resolution;
-      this.view.height = screenHeight * this.pixi.renderer.resolution;
-      this.view.style.width = `${screenWidth}px`;
-      this.view.style.height = `${screenHeight}px`;
-      this.pixi.render()
-    })
+    window.addEventListener("resize", this.onResize)
+    this.onResize()
+  }
+
+  onResize = () => {
+    let screenWidth = window.innerWidth 
+    let screenHeight = window.innerHeight - document.getElementById("menubar")!.clientHeight
+    this.pixi.screen.width = screenWidth;
+    this.pixi.screen.height = screenHeight;
+    this.view.width = screenWidth * this.pixi.renderer.resolution;
+    this.view.height = screenHeight * this.pixi.renderer.resolution;
+    this.view.style.width = `${screenWidth}px`;
+    this.view.style.height = `${screenHeight}px`;
+    this.pixi.render()
   }
 }
 
 declare global {
-  interface Window { app: App }
+  interface Window { 
+    app: App
+    runSafari?: Function
+  }
 }
+
+document.querySelector("body")!.innerHTML = 
+`<div id="view-wrapper"> 
+  <div id="menubar"></div>
+    <canvas id="pixi"></canvas>
+  </div>
+<div id="windows"></div>
+`
 
 if (getBrowser().includes("Safari")) {
   document.querySelector("body")!.innerHTML = 
   `<div class='browser-unsupported'>
     <div class='browser-unsupported-item'>
     <h1>Safari is currently not supported!</h1>
-    <div>Please use another browser instead</div>
+    <div>Please use Chrome instead.</div>
+    <div class='browser-unsupported-detail'>Check the console for more info.</div>
     </div>
   </div>`
+  console.log(
+    `SMEditor is not supported for Safari due to various issues involving rendering and sound.
+    PIXI.js, the library used in SMEditor, takes an extremely long time to load and does not perform well on Safari.
+    Additionally, ogg audio files cannot be played in Safari.
+    If you still want to try loading SMEditor, run the command runSafari()`
+    )
+    window.runSafari = () => {
+      document.querySelector("body")!.innerHTML = 
+      `<div id="view-wrapper"> 
+        <div id="menubar"></div>
+          <canvas id="pixi"></canvas>
+        </div>
+      <div id="windows"></div>
+      `
+      window.app = new App()
+      window.runSafari = undefined
+    }
 } else {
   window.app = new App()
 }

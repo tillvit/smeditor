@@ -2,8 +2,6 @@ import { WindowOptions } from "../window/Window"
 import { App } from "../App"
 import { DirectoryWindow } from "../window/DirectoryWindow"
 
-
-
 type OptionsWindowOption = {
   label: string | ((app: App) => string),
   element: (app: App) => HTMLElement,

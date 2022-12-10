@@ -142,6 +142,8 @@ export class ChartManager {
 
   async loadSM(path: string) {
     this.sm_path = path
+    this.time = 0
+    this.beat = 0
 
     let smFile = await this.app.files.getFile(path)
     this.sm = new Simfile(smFile)
@@ -158,16 +160,16 @@ export class ChartManager {
       if (charts!.length == 0) return
       chart = charts![charts!.length - 1]
     }
-    this.time = 0
-    this.beat = 0
+    
     this.chart = chart
   
     if (this.chartView) this.app.pixi.stage.removeChild(this.chartView.view)
       
+    this.seekBack()
     this.chartView = new ChartRenderer(this)
     this.chartView.view.x = this.app.pixi.screen.width/2
     this.chartView.view.y = this.app.pixi.screen.height/2
-    this.seekBack()
+    
   }
   
 

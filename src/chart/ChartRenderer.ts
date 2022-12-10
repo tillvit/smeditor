@@ -158,7 +158,7 @@ export class ChartRenderer {
 
     let renderBeatLimit = beat + this.options.chart.maxDrawBeats
     let renderBeatLowerLimit = beat - this.options.chart.maxDrawBeatsBack
-    let renderSecondLimit = this.chart.getSeconds(renderBeatLimit)
+    // let renderSecondLimit = this.chart.getSeconds(renderBeatLimit)
     let renderSecondLowerLimit = this.chart.getSeconds(renderBeatLowerLimit)
 
     let negScroll = this.options.chart.doSpeedChanges && (this.speedMult < 0 || (this.chart.timingData.getTimingEventAtBeat("SCROLLS",beat)?.value ?? 1) < 0)

@@ -1,5 +1,7 @@
 import { App } from "../App"
+import { ChartListWindow } from "../window/ChartListWindow"
 import { DirectoryWindow } from "../window/DirectoryWindow"
+import { EQWindow } from "../window/EQWindow"
 
 export interface Keybind {
   label: string,
@@ -129,8 +131,8 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     label: "Open Chart...",
     keybind: "O",
     mods: [DEF_MOD, Modifier.SHIFT],
-    disabled: true,
-    callback: () => 0
+    disabled: false,
+    callback: (app) => app.windowManager.openWindow(new ChartListWindow(app))
   },
   chartProperties: {
     label: "Chart Properties...",
@@ -290,7 +292,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     label: "Equalizer",
     keybind: "E",
     mods: [Modifier.SHIFT, Modifier.ALT],
-    disabled: true,
-    callback: () => 0
+    disabled: (app) => !app.chartManager.songAudio,
+    callback: (app) => app.windowManager.openWindow(new EQWindow(app))
   },
 }
