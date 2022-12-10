@@ -32,7 +32,8 @@ export class DirectoryWindow extends Window {
       width: 500,
       height: 400,
       disableClose: options.disableClose,
-      win_id: "file_selector"+Math.random()
+      win_id: "file_selector"+Math.random(),
+      blocking: true
     })
     this.app = app
     this.dirOptions = options

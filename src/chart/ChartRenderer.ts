@@ -241,13 +241,13 @@ export class ChartRenderer {
         case "STOPS":
         case "WARPS":
         case "DELAYS":
-        case "SCROLLS":
         case "TICKCOUNTS":
         case "FAKES":
+        case "SCROLLS":
           label = roundDigit(event.value,3).toString()
           break
         case "SPEEDS":
-          label = roundDigit(event.value,3).toString() + "/" + roundDigit(event.delay,3).toString() + "/" + event.unit
+          label = roundDigit(event.value,3) + "/" + roundDigit(event.delay,3).toString() + "/" + event.unit
           break
         case "LABELS":
           label = event.value
