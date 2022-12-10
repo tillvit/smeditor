@@ -45,7 +45,7 @@ export class MenubarManager {
         title_bar_right = document.createElement("img")
         title_bar_right.classList.add("icon")
         title_bar_right.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAAlklEQVRIie3UsQ3CUAyE4U/MQKCCYUCipSFMEwYKFYvAFCAhGCIUoUieoLMrOMmddb98z8/8FaQlLrhhnQFo0L3rgSoasBkAOhyjAdAWkDoaMMV9AHhiHg3ZGk9xigbQ558aVaXfpNStqo2nOHxrnESTI5QeUeoj7wvzNtL800ebRQLKaHaR5unHLv1cL3DGFato8x/XCwFMPpf5ayxcAAAAAElFTkSuQmCC"
-        title.innerText = data.title
+        title.innerText = typeof data.title == "function" ? data.title(this.app) : data.title
       }
   
       title_bar.appendChild(title)

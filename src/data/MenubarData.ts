@@ -19,7 +19,7 @@ export interface MenuMain {
 
 export interface MenuDropdown {
   type: "dropdown",
-  title: string,
+  title: string | ((app: App) => string),
   options: MenuOption[]
 }
 
@@ -78,7 +78,7 @@ export const MENUBAR_DATA: {[key: string]: MenuMain} = {
       type: "seperator",
     },{
       type: "dropdown",
-      title: "Volume",
+      title: (app: App) => "Volume (" + Math.round(app.options.audio.songVolume*100) + "%)",
       options: [{
         type: "selection",
         id: "volumeUp",
@@ -89,7 +89,7 @@ export const MENUBAR_DATA: {[key: string]: MenuMain} = {
       }]
     },{
       type: "dropdown",
-      title: "Effect Volume",
+      title: (app: App) => "Effect Volume (" + Math.round(app.options.audio.soundEffectVolume*100) + "%)",
       options: [{
         type: "selection",
         id: "effectvolumeUp",
@@ -100,7 +100,7 @@ export const MENUBAR_DATA: {[key: string]: MenuMain} = {
       }]
     },{
       type: "dropdown",
-      title: "Rate",
+      title: (app: App) => "Rate (" + Math.round(app.options.audio.rate*100) + "%)",
       options: [{
         type: "selection",
         id: "rateUp",

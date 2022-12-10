@@ -26,11 +26,11 @@ export class EQWindow extends Window {
     
   drawEQ(canvas: HTMLCanvasElement){
     let ctx = canvas.getContext("2d")!
-    let freqLines = [20,30,40,50,60,70,80,90,100,200,300,400,500,600,700,800,900,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000,20000]
-    let freqLabels = ["20","30","40","50","60","","80","","100","200","300","400","500","600","","800","","1k","2k","3k","4k","5k","6k","","8k","","10k","20k"]
+    let freqLines = [20,30,40,50,60,70,80,90,100,200,300,400,500,600,700,800,900,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]
+    let freqLabels = ["20","30","40","50","60","","80","","100","200","300","400","500","600","","800","","1k","2k","3k","4k","5k","6k","","8k","","10k"]
     let freqLinesX: number[] = []
     for (let freq of freqLines) {
-      freqLinesX.push(Math.floor(Math.log10(freq/20)*1170/3))
+      freqLinesX.push(Math.floor(Math.log(freq/20)/Math.log(500)*1170))
     }
     ctx.canvas.width  = 1200;
     ctx.canvas.height = 400;
@@ -41,7 +41,7 @@ export class EQWindow extends Window {
       let freqData = this.app.chartManager.songAudio.getFrequencyData()
       ctx.fillStyle = "rgb(0, 50, 150)";
       for (let x = 0; x < 1200; x++) {
-        let freq = Math.pow(10,3/1170*x)*20
+        let freq = Math.pow(500,x/1170)*20
         let bin = freq/this.app.chartManager.songAudio.getSampleRate()*2*this.app.chartManager.songAudio.getFFTSize() 
         let y = freqData[Math.floor(bin)]/255
         ctx.fillRect(x, 400-y*500, 1, y*500);

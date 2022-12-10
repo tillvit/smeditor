@@ -29,19 +29,18 @@ export class ChartAudio {
     this._gainNode = this._audioContext.createGain();
 
     this._buffer = this._audioContext.createBuffer(1, this._rawData.length, 44100);
-    if (url != undefined) {
-      this.getData(url).then((buffer: AudioBuffer) => {
-        this._rawData = buffer.getChannelData(0)
-        this._buffer = this._audioContext.createBuffer(1, this._rawData.length, buffer.sampleRate);
-        this._buffer.copyToChannel(this._rawData, 0)
-        this.initSource()
-        this.callListeners()
-        if (onload) onload(this)
-      })
-    } else {
+    this.getData(url).then((buffer) => {
+      if (!buffer) return
+      this._rawData = buffer.getChannelData(0)
+      this._buffer = this._audioContext.createBuffer(1, this._rawData.length, buffer.sampleRate);
+      this._buffer.copyToChannel(this._rawData, 0)
+    })
+    .catch(reason=>console.error(reason))
+    .finally(() => {
       this.initSource()
+      this.callListeners()
       if (onload) onload(this)
-    }
+    })
   }
 
   addWaveform(waveform: Waveform) {
@@ -79,11 +78,14 @@ export class ChartAudio {
     return bodePlot
   }
 
-  async getData(url: string): Promise<AudioBuffer> { 
-    let result = await fetch(url)
-    .then(response => response.arrayBuffer())
-    .then(arrayBuffer => this._audioContext.decodeAudioData(arrayBuffer))
-    return result;
+  async getData(url?: string): Promise<AudioBuffer | void> { 
+    return new Promise((resolve, reject) => {
+      if (!url) resolve()
+      fetch(url!).then(response => response.arrayBuffer())
+        .then(data => this._audioContext.decodeAudioData(data))
+        .then(buffer => resolve(buffer))
+        .catch(reason => reject(reason))
+    })
   }
 
   getSampleRate(): number {

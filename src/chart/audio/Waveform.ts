@@ -2,6 +2,8 @@ import { Graphics } from "pixi.js"
 import { ChartRenderer } from "../ChartRenderer"
 import { ChartAudio } from "./ChartAudio"
 
+const MAX_ZOOM = 3500
+
 export class Waveform {
 
   chartAudio: ChartAudio
@@ -17,7 +19,7 @@ export class Waveform {
   constructor(renderer: ChartRenderer) {
     this.chartRenderer = renderer
     this.chartAudio = this.chartRenderer.chartManager.songAudio
-    this.lastZoom = this.chartRenderer.options.chart.speed
+    this.lastZoom = this.getZoom()
     this.lastReZoom = Date.now()
     this.chartAudio.addWaveform(this)
     this.refilter()
@@ -25,7 +27,7 @@ export class Waveform {
 
   stripWaveform(rawData: Float32Array | undefined): number[] | undefined {
     if (rawData == undefined) return
-    let blockSize = this.chartAudio.getSampleRate() / (this.chartRenderer.options.chart.speed*4); // Number of samples in each subdivision
+    let blockSize = this.chartAudio.getSampleRate() / (this.getZoom()*4); // Number of samples in each subdivision
     let samples = Math.floor(rawData.length / blockSize);
     let filteredData = [];
     for (let i = 0; i < samples; i++) {
@@ -50,8 +52,8 @@ export class Waveform {
       this.refilter()
       this.chartAudio.addWaveform(this)
     }
-    if (Date.now() - this.lastReZoom > 40 && this.lastZoom != this.chartRenderer.options.chart.speed) {
-      this.lastZoom = this.chartRenderer.options.chart.speed
+    if (Date.now() - this.lastReZoom > 40 && this.lastZoom != this.getZoom()) {
+      this.lastZoom = this.getZoom()
       this.lastReZoom = Date.now()
       this.refilter()
     }
@@ -60,7 +62,7 @@ export class Waveform {
       this.view.lineStyle(1, this.chartRenderer.options.waveform.color, this.chartRenderer.options.waveform.opacity);
       for (let i = 0; i < this.chartRenderer.chartManager.app.pixi.screen.height; i++) {
         let calcTime = this.chartRenderer.getTimeFromYPos(i-this.view.parent.y)
-        let samp = Math.floor(calcTime * this.chartRenderer.options.chart.speed*4)
+        let samp = Math.floor(calcTime * this.getZoom()*4)
         let v = (this.strippedWaveform[samp]);
         this.view.moveTo(-v*192-32, i-this.view.parent.y);
         this.view.lineTo(v*192-32, i-this.view.parent.y);
@@ -71,14 +73,17 @@ export class Waveform {
       this.view.lineStyle(1, this.chartRenderer.options.waveform.filteredColor, this.chartRenderer.options.waveform.filteredOpacity);
       for (let i = 0; i < this.chartRenderer.chartManager.app.pixi.screen.height; i++) {
         let calcTime = this.chartRenderer.getTimeFromYPos(i-this.view.parent.y)
-        let samp = Math.floor(calcTime * this.chartRenderer.options.chart.speed*4)
+        let samp = Math.floor(calcTime * this.getZoom()*4)
         let v = (this.strippedFilteredWaveform[samp]);
         this.view.moveTo(-v*192-32, i-this.view.parent.y);
         this.view.lineTo(v*192-32, i-this.view.parent.y);
         this.view.closePath()
       }
     }
+  }
 
+  private getZoom(): number {
+    return Math.min(this.chartRenderer.options.chart.speed, MAX_ZOOM)
   }
 }
 

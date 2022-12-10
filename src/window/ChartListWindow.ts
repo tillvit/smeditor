@@ -1,10 +1,22 @@
 import { App } from "../App"
 import { Chart } from "../chart/sm/Chart"
+import { NotedataCount } from "../chart/sm/NoteTypes"
 import { StepsType } from "../chart/sm/SimfileTypes"
 import { Window } from "./Window"
 
 type ChartListItem = HTMLDivElement & {
   chart: Chart
+}
+
+const NOTE_TYPE_LABELS: {[key in keyof NotedataCount]?: string} = {
+  taps: "Taps",
+  holds: "Holds",
+  jumps: "Jumps",
+  rolls: "Rolls",
+  hands: "Hands",
+  mines: "Mines",
+  fakes: "Fakes",
+  lifts: "Lifts",
 }
 
 export class ChartListWindow extends Window {
@@ -16,7 +28,7 @@ export class ChartListWindow extends Window {
     super({
       title: "Chart List", 
       width: 500,
-      height: 400,
+      height: 250,
       win_id: "chart_list"
     })
     this.app = app
@@ -57,6 +69,13 @@ export class ChartListWindow extends Window {
         chartListItem.classList.add("selected")
       }
 
+      chartListItem.onmouseenter = () => {
+        this.loadChartDetails(chartInfo, chartListItem.chart)
+      }
+      chartListItem.onmouseleave = () => {
+        this.loadChartDetails(chartInfo)
+      }
+
       let title = document.createElement("div")
       title.innerText = chart.difficulty + " " + chart.meter
       title.classList.add("title", chart.difficulty)
@@ -76,12 +95,50 @@ export class ChartListWindow extends Window {
       chartListItem.appendChild(attributes)
       chartList.appendChild(chartListItem)
     });
+
+
     viewElement.appendChild(padding) 
-    this.loadChartDetails()
+    this.loadChartDetails(chartInfo)
   }
 
-  loadChartDetails() {
-    
+  private loadChartDetails(chartInfo: HTMLDivElement, chart?: Chart) {
+    chart = chart ?? this.app.chartManager.chart!
+    if (!chart) return
+    let main = document.createElement("div")
+    main.classList.add("chart-info-main")
+    let difficulty = document.createElement("div")
+    difficulty.innerText = chart.difficulty
+    difficulty.classList.add("title", "chart-difficulty")
+    let meter = document.createElement("div")
+    meter.innerText = chart.meter + ""
+    meter.classList.add("title", "chart-meter")
+
+    main.appendChild(difficulty)
+    main.appendChild(meter)
+
+    let credit = document.createElement("div")
+    credit.innerText = chart.credit
+    credit.classList.add("title", "chart-credit")
+
+    let noteCounts = chart.getNoteCounts()
+
+    let grid = document.createElement("div")
+    grid.classList.add("chart-info-grid")
+    Object.entries(NOTE_TYPE_LABELS).forEach(entry => {
+      let item = document.createElement("div")
+      item.classList.add("chart-info-grid-item")
+      let label = document.createElement("div")
+      label.innerText = entry[1]
+      label.classList.add("title", "chart-info-grid-label")
+      let count = document.createElement("div")
+      count.innerText = noteCounts[entry[0] as keyof NotedataCount] + ""
+      count.classList.add("title", "chart-info-grid-count")
+      item.appendChild(label)
+      item.appendChild(count)
+      grid.appendChild(item)
+    })
+
+    chartInfo.replaceChildren(main,credit,grid)
   }
 }
 

@@ -1,5 +1,5 @@
 import { ChartDifficulty, CHART_DIFFICULTIES } from "./ChartTypes"
-import { Notedata, NotedataEntry, NOTE_TYPE_LOOKUP } from "./NoteTypes"
+import { Notedata, NotedataCount, NotedataEntry, NOTE_TYPE_LOOKUP } from "./NoteTypes"
 import { StepsType, STEPS_TYPES } from "./SimfileTypes"
 import { TimingData } from "./TimingData";
 import { TimingEventProperty, TimingProperty, TIMING_EVENT_NAMES } from "./TimingTypes"
@@ -14,7 +14,9 @@ export class Chart {
   chartStyle: string = ""
   credit: string = ""
   timingData: TimingData
+
   notedata: Notedata = [];
+  private _notedataCount?: NotedataCount
 
 
   constructor(data: string | {[key: string]: string}, type: "sm"|"ssc", fallbackTimingData: TimingData) {
@@ -26,10 +28,10 @@ export class Chart {
       }
       this.timingData.reloadCache()
       if (STEPS_TYPES.includes(dict["STEPSTYPE"] as StepsType)) this.type = dict["STEPSTYPE"] as StepsType
-      else console.log("Unknown step type " + dict["STEPSTYPE"])
+      else throw Error("Unknown step type " + dict["STEPSTYPE"])
       this.description = dict["DESCRIPTION"] ?? ""
       if (CHART_DIFFICULTIES.includes(dict["DIFFICULTY"] as ChartDifficulty)) this.difficulty = dict["DIFFICULTY"] as ChartDifficulty
-      else console.log("Unknown chart difficulty " + dict["DIFFICULTY"])
+      else throw Error("Unknown chart difficulty " + dict["DIFFICULTY"])
       this.meter = parseInt(dict["METER"]) ?? 0
       this.radarValues = dict["RADARVALUES"] ?? ""
       this.notedata = this.parseNotedata(dict["NOTES"]) ?? []
@@ -40,22 +42,22 @@ export class Chart {
       let match = /([\w\d\-]+):[\s ]*([^:]*):[\s ]*([\w\d]+):[\s ]*([\d]+):[\s ]*([\d.,]+):[\s ]*([\w\d\s, ]+)/g.exec((<string>data).trim())
       if (match != null) {
         if (STEPS_TYPES.includes(match[1] as StepsType)) this.type = match[1] as StepsType
-        else console.log("Unknown step type " + match[1])
+        else throw Error("Unknown step type " + match[1])
         this.description = match[2] ?? ""
         if (CHART_DIFFICULTIES.includes(match[3] as ChartDifficulty)) this.difficulty = match[3] as ChartDifficulty
-        else console.log("Unknown chart difficulty " + match[3])
+        else throw Error("Unknown chart difficulty " + match[3])
         this.meter = parseInt(match[4]) ?? 0
         this.radarValues = match[5] ?? ""
         this.notedata = this.parseNotedata(match[6]) ?? []
       }else{
-        console.log("Failed to load sm chart!")
-        return
+        throw Error("Failed to load sm chart!")
       }
     }
+    this._notedataCount = this.countNotes()
     console.log("Loading chart " + this.difficulty + " " + this.meter + " " + this.type)
   }
 
-  parseNotedata(data: string): Notedata {
+  private parseNotedata(data: string): Notedata {
     let measures = data.split(",")
     let notedata: Notedata = []
     let holds: (NotedataEntry | undefined)[] = [undefined, undefined, undefined, undefined]
@@ -77,7 +79,7 @@ export class Chart {
               col: col, 
               type: NOTE_TYPE_LOOKUP[type],
               warped: this.timingData.isBeatWarped(beat),
-              fake: this.timingData.isBeatFaked(beat),
+              fake: NOTE_TYPE_LOOKUP[type] == "Fake" || this.timingData.isBeatFaked(beat),
               second: this.timingData.getSeconds(beat)
             }
             if (entry.type == undefined) {
@@ -105,6 +107,64 @@ export class Chart {
       }
     }
     return notedata
+  }
+
+  getNoteCounts() {
+    return this._notedataCount!
+  }
+
+  private countNotes(): NotedataCount {
+    let count: NotedataCount = {
+      peakNps: 0,
+      taps: 0,
+      jumps: 0,
+      hands: 0,
+      holds: 0,
+      rolls: 0,
+      mines: 0,
+      fakes: 0,
+      lifts: 0
+    }
+    let row = -1
+    let cols = 0
+    let holdBeats: (number | undefined)[] = [undefined, undefined, undefined, undefined]
+    for (let entry of this.notedata) {
+      if (entry.beat != row) {
+        let holdCols = 0
+        for (let i = 0; i < holdBeats.length; i ++) {
+          if (holdBeats[i]) {
+            if (row > holdBeats[i]!) holdBeats[i] = undefined
+            else if (holdBeats[i]! < entry.beat) holdCols++
+          }
+        }
+        if (cols > 1) count.jumps++
+        if (cols + holdCols > 2) count.hands++
+        cols = 0
+        row = entry.beat
+      }
+      if (entry.type != "Mine" && !entry.fake) cols++
+      if (entry.fake) {
+        count.fakes++
+        continue
+      }
+      switch (entry.type) {
+        case "Tap": count.taps++; break
+        case "Hold": count.holds++; break
+        case "Roll": count.rolls++; break
+        case "Lift": count.lifts++; break
+        case "Mine": count.mines++; break
+      }
+      if (entry.hold) {
+        holdBeats[entry.col] = entry.beat + entry.hold
+      }
+    }
+    let holdCols = 0
+    for (let i = 0; i < holdBeats.length; i ++) {
+      if (holdBeats[i] && holdBeats[i]! < this.notedata[this.notedata.length - 1].beat) holdCols++
+    }
+    if (cols > 1) count.jumps++
+    if (cols + holdCols > 2) count.hands++
+    return count
   }
 
   getSeconds(beat: number): number {

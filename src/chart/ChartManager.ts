@@ -162,6 +162,7 @@ export class ChartManager {
     }
     
     this.chart = chart
+    this.beat = this.chart.getBeat(this.time)
   
     if (this.chartView) this.app.pixi.stage.removeChild(this.chartView.view)
       

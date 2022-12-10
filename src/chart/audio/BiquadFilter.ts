@@ -133,7 +133,7 @@ export class BiquadFilter {
   magnitude(bodePlot: number[]) {
     if (!this.enabled) return bodePlot
     for (let i = 0; i < bodePlot.length; i ++) {
-      let freq = Math.pow(10,3/1170*i)*20
+      let freq = Math.pow(5000,i/1170)*20
       let w = 2.0*Math.PI*freq / this.options.sampleRate;  
       let numerator = this.b0*this.b0 + this.b1*this.b1 + this.b2*this.b2 + 2.0*(this.b0*this.b1 + this.b1*this.b2)*Math.cos(w) + 2.0*this.b0*this.b2*Math.cos(2.0*w);
       let denominator = 1.0 + this.a1*this.a1 + this.a2*this.a2 + 2.0*(this.a1 + this.a1*this.a2)*Math.cos(w) + 2.0*this.a2*Math.cos(2.0*w);

@@ -24,6 +24,7 @@ export class App {
     this.registerFonts()
     
     this.view = document.getElementById("pixi") as HTMLCanvasElement
+    
     this.pixi = new Application({ 
       backgroundColor: 0x18191c, 
       antialias: true, 
@@ -33,7 +34,7 @@ export class App {
       autoDensity: true,
       view: this.view
     });
-
+    
     this.options = new Options()
     this.files = new FileSystem()
     this.keybinds = new Keybinds(this)
@@ -43,7 +44,7 @@ export class App {
 
     this.registerListeners()
     
-    console.log(`smeditor is currently a work in progress. editing isn't ready yet, so i guess its smviewer?? please be patient !`)
+    console.log(`smeditor is currently a work in progress. editing is almost start since the viewer is almost done!`)
     console.log(`audio filtering is working (hopefully) but not yet implemented into UI`)
     console.log(`use audio.filters = [new BiquadFilter(options)...] and then audio.processFilters()`)
     console.log(`syntax: new BiquadFilter(type, gain, freq, sampleRate, bandwidth)
@@ -52,10 +53,9 @@ export class App {
     freq: where the filter frequency center is (or end if it is a lowpass/highpass)
     sampleRate: usually 44100
     bandwidth: width of the effect in octaves (used for lowpass, highpass, bandpass, peaking, notch)`)
-    console.log(`i could have been working on chart loading UI but instead i worked on this so:
-    loadChart(i): loads chart with index i. use sm.charts["dance-single"] to see charts`)
 
     this.windowManager.openWindow(new OptionsWindow(this, "select_sm_initial"))
+    
   }
 
   registerFonts() {
@@ -129,10 +129,10 @@ if (getBrowser().includes("Safari")) {
   console.log(
     `SMEditor is not supported for Safari due to various issues involving rendering and sound.
     PIXI.js, the library used in SMEditor, takes an extremely long time to load and does not perform well on Safari.
-    Additionally, ogg audio files cannot be played in Safari.
+    Additionally, many audio files cannot be played in Safari.
     If you still want to try loading SMEditor, run the command runSafari()`
     )
-    window.runSafari = () => {
+    window.runSafari = async () => {
       document.querySelector("body")!.innerHTML = 
       `<div id="view-wrapper"> 
         <div id="menubar"></div>
@@ -140,6 +140,7 @@ if (getBrowser().includes("Safari")) {
         </div>
       <div id="windows"></div>
       `
+      
       window.app = new App()
       window.runSafari = undefined
     }

@@ -55,8 +55,13 @@ export class Simfile {
         this.charts = {}
       
         for (let data of temp_charts) {
-          let chart = new Chart(data, type as "sm"|"ssc", this.timingData)
-          if (chart == undefined) continue
+          let chart
+          try {
+            chart = new Chart(data, type as "sm"|"ssc", this.timingData)
+          } catch(error) {
+            console.warn(error)
+            continue
+          }
           this.charts[chart.type] ||= []
           this.charts[chart.type]!.push(chart)
           this.charts[chart.type]!.sort((a, b)=>{

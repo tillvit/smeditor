@@ -24,3 +24,15 @@ export type NotedataEntry = {
   second: number,
   hold?: number
 }
+
+export type NotedataCount = {
+  peakNps: number,
+  taps: number,
+  jumps: number,
+  hands: number,
+  holds: number,
+  rolls: number,
+  mines: number,
+  fakes: number,
+  lifts: number
+}
