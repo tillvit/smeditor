@@ -235,16 +235,12 @@ export class ChartManager {
   }
 
   seekBack() {
-    if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) {
+    if (this.sm == undefined || this.chart == undefined || this.chartView == undefined || this.chart.notedata.length == 0) {
       this.noteIndex = 0
       return
     }
-    this.noteIndex = bsearch(this.chart.notedata, this.time, a => a.second)
-    // let notedata = this.chart.notedata
-    // if (this.noteIndex > notedata.length) this.noteIndex = notedata.length - 1
-    // while(this.noteIndex > 0 && this.time < notedata[this.noteIndex-1].second) {
-    //   this.noteIndex--
-    // }
+    this.noteIndex = bsearch(this.chart.notedata, this.time, a => a.second) + 1
+    if (this.noteIndex == 1 && this.time < this.chart.notedata[0].second) this.noteIndex = 0
   }
 
   playPause() {

@@ -243,7 +243,12 @@ export const KEYBINDS: {[key: string]: Keybind} = {
 			{key: ";", mods: []}
 		],
     disabled: (app) => !app.chartManager.chartView,
-    callback: (app) => app.chartManager.setBeat(Math.max(0,app.chartManager.getBeat() - 4))
+    callback: (app) => {
+      let beat = app.chartManager.getBeat()
+      let snapped = Math.floor(beat/4)*4
+      if (beat == snapped) snapped -= 4
+      app.chartManager.setBeat(Math.max(0,snapped))
+    }
   },
   nextMeasure: {
     label: "Next measure",
@@ -252,7 +257,11 @@ export const KEYBINDS: {[key: string]: Keybind} = {
 			{key: "'", mods: []}
 		],
     disabled: (app) => !app.chartManager.chartView,
-    callback: (app) => app.chartManager.setBeat(app.chartManager.getBeat() + 4)
+    callback: (app) =>  {
+      let beat = app.chartManager.getBeat()
+      let snapped = Math.floor(beat/4)*4 + 4
+      app.chartManager.setBeat(Math.max(0,snapped))
+    }
   },
   previousNote: {
     label: "Previous note",
