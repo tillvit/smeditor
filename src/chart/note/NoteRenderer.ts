@@ -3,7 +3,6 @@ import { getQuant, getRotFromArrow } from "../../util/Util";
 import { NotedataEntry } from "../sm/NoteTypes"
 import { NoteTexture } from "./NoteTexture"
 
-const arrow_frame_texture = Texture.from('assets/noteskin/tap/frame.png');
 const mine_frame_texture = Texture.from('assets/noteskin/mine/frame.png');
 
 const hold_body_texture = Texture.from('assets/noteskin/hold/body.png');
@@ -44,6 +43,7 @@ export class NoteRenderer {
     let hold_cap = hold_container.getChildAt(1) as Sprite
     hold_cap.y = yp-arrow.y
   }
+
   static setData(arrow: ArrowContainer, note: NotedataEntry) {
     if (arrow.data == note) return
     else arrow.data = note
@@ -60,14 +60,8 @@ export class NoteRenderer {
     let type = note.type
     
     if (type == "Tap" || type == "Fake" || type == "Hold" || type == "Roll" || type == "Lift") {
-      let arrow_frame = new Sprite(arrow_frame_texture)
-      arrow_frame.width = 64
-      arrow_frame.height = 64
-      arrow_frame.anchor.set(0.5)
-      let arrow_body = NoteTexture.getSpriteWithQuant(getQuant(beat))
-  
-      item_container.addChild(arrow_frame);
-      item_container.addChild(arrow_body);
+      let arrow = NoteTexture.getSpriteWithQuant(getQuant(beat))
+      item_container.addChild(arrow);
       item_container.rotation = getRotFromArrow(col)
       if (type == "Fake" || type == "Lift") {
         let icon = new Sprite(icons[type])

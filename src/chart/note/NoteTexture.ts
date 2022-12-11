@@ -1,75 +1,124 @@
 import { RenderTexture, Container, Geometry, Texture, Shader, Mesh, Sprite, Rectangle, BaseTexture } from "pixi.js"
 import { App } from "../../App"
 
-const arrow_tex = RenderTexture.create({ width: 192, height: 192, resolution: 4 })
-const arrow_container = new Container();
-const arrow_geometry = new Geometry()
-.addAttribute('aVertexPosition',[0, 0, 64, 0, 64, 64, 0, 64], 2)
-.addAttribute('aUvs', [0, 0, 1, 0, 1, 1, 0, 1], 2)
-.addIndex([0, 1, 2, 0, 2, 3]);
-const mine_geometry = new Geometry()
-.addAttribute('aVertexPosition',[0, 0, 24, 0, 24, 24, 0, 24], 2)
-.addAttribute('aUvs', [0, 0, 1, 0, 1, 1, 0, 1], 2)
-.addIndex([0, 1, 2, 0, 2, 3]);
-
 export class NoteTexture {
  
+  static noop_frag: string
   static noop_vert: string
   static arrow_gradient_frag: string
   static mine_gradient_frag: string
 
-  static arrow_body_texture = BaseTexture.from('assets/noteskin/tap/body.png');
-  static arrow_parts_texture = BaseTexture.from('assets/noteskin/tap/parts.png');
+  static arrow_parts_texture = BaseTexture.from('assets/noteskin/tap/parts.png')
+  static mine_parts_texture = BaseTexture.from('assets/noteskin/mine/parts.png')
+
+  static arrow_body_geometry: Geometry
+  static arrow_frame_geometry: Geometry
+
+  static mine_body_geometry: Geometry
   
-  static mine_body_texture = BaseTexture.from('assets/noteskin/mine/body.png');
-  static mine_parts_texture = BaseTexture.from('assets/noteskin/mine/parts.png');
-  
+  static arrow_tex = RenderTexture.create({ width: 192, height: 192, resolution: 4 })
+  static arrow_container = new Container();
+  static mine_tex = RenderTexture.create({ width: 64, height: 64, resolution: 4 })
+  static mine_container = new Container();
+
   static async initArrowTex(app: App) {
+    this.noop_frag = await fetch('assets/noteskin/shader/noop.frag').then(response => response.text())
     this.noop_vert = await fetch('assets/noteskin/shader/noop.vert').then(response => response.text())
     this.arrow_gradient_frag = await fetch('assets/noteskin/shader/arrow_gradient.frag').then(response => response.text())
     this.mine_gradient_frag = await fetch('assets/noteskin/shader/mine_gradient.frag').then(response => response.text())
 
-    for (let i = 0; i < 8; i ++) {
-      let shader_body = Shader.from(this.noop_vert, this.arrow_gradient_frag, 
-        {sampler0: this.arrow_body_texture, 
-        sampler1: this.arrow_parts_texture, 
-        time: 0, quant: i})
-      let arrow_body = new Mesh(arrow_geometry, shader_body);
-      arrow_body.x = (i % 3) * 64
-      arrow_body.y = Math.floor(i/3) * 64
-      arrow_container.addChild(arrow_body)
+    this.arrow_body_geometry = await this.loadGeometry('assets/noteskin/tap/body.txt')
+    this.arrow_frame_geometry = await this.loadGeometry('assets/noteskin/tap/frame.txt')
+    this.mine_body_geometry = await this.loadGeometry('assets/noteskin/mine/body.txt')
+    
+    {
+      for (let i = 0; i < 8; i ++) {
+        let shader_body = Shader.from(this.noop_vert, this.arrow_gradient_frag, 
+          {sampler0: this.arrow_parts_texture, time: 0, quant: i}) 
+        let arrow_body = new Mesh(NoteTexture.arrow_body_geometry, shader_body);
+        arrow_body.x = (i % 3) * 64 + 32
+        arrow_body.y = Math.floor(i/3) * 64 + 32
+        arrow_body.rotation = -Math.PI/2
+        NoteTexture.arrow_container.addChild(arrow_body)
+      }
+      let shader_frame = Shader.from(this.noop_vert, this.noop_frag, 
+        {sampler0: this.arrow_parts_texture}) 
+      let arrow_frame = new Mesh(NoteTexture.arrow_frame_geometry, shader_frame);
+      arrow_frame.x = 2 * 64 + 32
+      arrow_frame.y = 2 * 64 + 32
+      arrow_frame.rotation = -Math.PI/2
+      NoteTexture.arrow_container.addChild(arrow_frame)
     }
-    let shader_body = Shader.from(this.noop_vert, this.mine_gradient_frag, 
-      {sampler0: this.mine_body_texture, 
-      sampler1: this.mine_parts_texture, 
-      time: 0})
-    let mine_body = new Mesh(mine_geometry, shader_body);
-    mine_body.x = 128
-    mine_body.y = 128
-    arrow_container.addChild(mine_body)
+    {
+      let shader_body = Shader.from(this.noop_vert, this.mine_gradient_frag, 
+        {sampler0: this.mine_parts_texture, time: 0})
+      let mine_body = new Mesh(NoteTexture.mine_body_geometry, shader_body);
+      mine_body.x = 32
+      mine_body.y = 32
+      NoteTexture.mine_container.addChild(mine_body)
+    }
+    
     app.pixi.ticker.add(() => {
-      app.pixi.renderer.render(arrow_container, {renderTexture: arrow_tex});
+      app.pixi.renderer.render(NoteTexture.arrow_container, {renderTexture: NoteTexture.arrow_tex});
+      app.pixi.renderer.render(NoteTexture.mine_container, {renderTexture: NoteTexture.mine_tex});
     });
+  }
+
+  static async loadGeometry(url: string): Promise<Geometry> {
+    try {
+      let text = await fetch(url).then(response => response.text())
+      let lines = text.split("\n")
+      let numVertices = parseInt(lines[0])
+      let numTriangles = parseInt(lines[numVertices+1])
+      let vPos = []
+      let vUvs = []
+      let vIndex = []
+      for (let i = 0; i < numVertices; i++) {
+        let match = /(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)/.exec(lines[i+1])
+        if (match) {
+          vPos.push(parseFloat(match[1]))
+          vPos.push(parseFloat(match[2]))
+          vUvs.push(parseFloat(match[3]))
+          vUvs.push(parseFloat(match[4]))
+        }else throw Error("Failed to load vertex " + lines[i+1])
+      }
+      for (let i = 0; i < numTriangles; i++) {
+        let match = /(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)/.exec(lines[i+2+numVertices])
+        if (match) {
+          vIndex.push(parseFloat(match[1]))
+          vIndex.push(parseFloat(match[2]))
+          vIndex.push(parseFloat(match[3]))
+        }else throw Error("Failed to load triangle " + lines[i+2+numVertices])
+      }
+      console.log(vPos,vUvs,vIndex)
+      return new Geometry().addAttribute('aVertexPosition', vPos, 2).addAttribute('aUvs', vUvs, 2).addIndex(vIndex)
+    } catch (err) {
+      console.error(err)
+      return new Geometry()
+    }
   }
 
   static setArrowTexTime(beat: number, second: number) {
     for (let i = 0; i < 8; i ++) {
-      (<Mesh>arrow_container.children[i]).shader.uniforms.time = beat
+      (<Mesh>NoteTexture.arrow_container.children[i]).shader.uniforms.time = beat
     }
-    (<Mesh>arrow_container.children[8]).shader.uniforms.time = second
+    (<Mesh>NoteTexture.mine_container.children[0]).shader.uniforms.time = second
   }
 
   static getSpriteWithQuant(i: number) {
     i = Math.min(i,7)
-    let tt = new Sprite(new Texture(arrow_tex.baseTexture, new Rectangle((i % 3) * 64, Math.floor(i/3) * 64, 64, 64)))
-    tt.rotation = 0
-    tt.anchor.set(0.5)
-    // tt.scale.set(1/4)
-    return tt
+    let arrow = new Container()
+    let body = new Sprite(new Texture(NoteTexture.arrow_tex.baseTexture, new Rectangle((i % 3) * 64, Math.floor(i/3) * 64, 64, 64)))
+    let frame = new Sprite(new Texture(NoteTexture.arrow_tex.baseTexture, new Rectangle(128, 128, 64, 64)))
+    body.anchor.set(0.5)
+    frame.anchor.set(0.5)
+    arrow.addChild(body)
+    arrow.addChild(frame)
+    return arrow
   }
 
   static getMine() {
-    let tt = new Sprite(new Texture(arrow_tex.baseTexture, new Rectangle(128, 128, 24, 24)))
+    let tt = new Sprite(NoteTexture.mine_tex)
     tt.anchor.set(0.5)
     return tt
   }
