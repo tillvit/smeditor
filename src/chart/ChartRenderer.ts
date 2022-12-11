@@ -76,6 +76,7 @@ export class ChartRenderer {
   private snap_display: Container = new Container()
 
   private speedMult: number = 1
+  private negScroll: boolean = false
 
   view: Container = new Container()
  
@@ -150,8 +151,8 @@ export class ChartRenderer {
 
   render() {
 
-    let beat = this.chartManager.beat
-    let time = this.chartManager.time
+    let beat = this.chartManager.getBeat()
+    let time = this.chartManager.getTime()
     let currentMillis = Date.now()
 
     this.speedMult = this.options.chart.doSpeedChanges ? this.chart.timingData.getSpeedMult(beat, time) : 1
@@ -161,7 +162,7 @@ export class ChartRenderer {
     // let renderSecondLimit = this.chart.getSeconds(renderBeatLimit)
     let renderSecondLowerLimit = this.chart.getSeconds(renderBeatLowerLimit)
 
-    let negScroll = this.options.chart.doSpeedChanges && (this.speedMult < 0 || (this.chart.timingData.getTimingEventAtBeat("SCROLLS",beat)?.value ?? 1) < 0)
+    this.negScroll = this.options.chart.doSpeedChanges && (this.speedMult < 0 || (this.chart.timingData.getTimingEventAtBeat("SCROLLS",beat)?.value ?? 1) < 0)
 
     if (this.options.chart.CMod) {
       renderBeatLimit = this.chart.getBeat(this.getTimeFromYPos(this.chartManager.app.pixi.screen.height-this.view.y+32))
@@ -213,7 +214,7 @@ export class ChartRenderer {
       if (event.type == "ATTACKS" && this.options.chart.CMod) y = (event.second-time)*this.options.chart.speed/100*64*4 + this.options.chart.receptorYPos
       if (y < -32 - this.view.y) continue;
       if (y > this.chartManager.app.pixi.screen.height-this.view.y+32) {
-        if (negScroll || event.beat! < beat) continue
+        if (this.negScroll || event.beat! < beat) continue
         else break
       }
       if (num_timing >= this.timings.children.length) {
@@ -302,7 +303,7 @@ export class ChartRenderer {
       }
       if (y_start+length < -32 - this.view.y) continue
       if (y_start > this.chartManager.app.pixi.screen.height-this.view.y+32) {
-        if (negScroll || event.beat < beat) continue
+        if (this.negScroll || event.beat < beat) continue
         else break
       }
       let td = TIMING_EVENT_DATA[event.type] ?? ["right", 0x000000]
@@ -323,7 +324,7 @@ export class ChartRenderer {
         }
         if (y > this.chartManager.app.pixi.screen.height-this.view.y+32) {
           bar_beat++
-          if (negScroll || bar_beat < beat) continue
+          if (this.negScroll || bar_beat < beat) continue
           else break
         }
         if (bar_beat % 4 == 0) {
@@ -363,7 +364,7 @@ export class ChartRenderer {
       let y_hold = this.getYPos(note.beat + (note.hold ?? 0))
       if (y_hold < -32 - this.view.y) continue
       if (y > this.chartManager.app.pixi.screen.height-this.view.y+32) {
-        if (negScroll || note.beat < beat) continue
+        if (this.negScroll || note.beat < beat) continue
         else break
       } 
       if (childIndex >= this.arrows.children.length) {
@@ -403,8 +404,8 @@ export class ChartRenderer {
   }
 
   getYPos(beat: number): number {
-    let currentTime = this.chartManager.time 
-    let currentBeat = this.chartManager.beat 
+    let currentTime = this.chartManager.getTime() 
+    let currentBeat = this.chartManager.getBeat() 
     if (this.options.chart.CMod) {
       return (this.chart.getSeconds(beat)-currentTime)*this.options.chart.speed/100*64*4 + this.options.chart.receptorYPos
     }
@@ -414,8 +415,8 @@ export class ChartRenderer {
 
 
   getTimeFromYPos(yp: number): number {
-    let currentTime = this.chartManager.time 
-    let currentBeat = this.chartManager.beat
+    let currentTime = this.chartManager.getTime()
+    let currentBeat = this.chartManager.getBeat()
     if (this.options.chart.CMod) {
       let seconds = (yp - this.options.chart.receptorYPos)/this.options.chart.speed*100/64/4 + currentTime
       return seconds
@@ -424,4 +425,7 @@ export class ChartRenderer {
     return this.chart.getSeconds((yp - this.options.chart.receptorYPos)/64*100/this.options.chart.speed+currentBeat)
   }
 
+  isNegScroll() {
+    return this.negScroll
+  }
 }

@@ -34,8 +34,8 @@ export class ChartManager {
   sm_path: string = ""
   chart?: Chart
 
-  beat: number = 0
-  time: number = 0
+  private beat: number = 0
+  private time: number = 0
 
   private snapIndex: number = 0
   private partialScroll: number = 0
@@ -91,10 +91,14 @@ export class ChartManager {
       if (this.songAudio.isPlaying()) this.setTime(time) 
 
       let notedata = this.chart.notedata
+      let hasPlayed = false
       while(this.noteIndex < notedata.length && time > notedata[this.noteIndex].second + app.options.audio.effectOffset) {
         if (this.songAudio.isPlaying() && (notedata[this.noteIndex].type != "Fake" && notedata[this.noteIndex].type != "Mine") && !notedata[this.noteIndex].fake) {
           this.chartView.addFlash(notedata[this.noteIndex].col)
-          if (app.options.audio.assistTick) this.assistTick.play()
+          if (!hasPlayed && app.options.audio.assistTick) {
+            this.assistTick.play()
+            hasPlayed = true
+          }
         }
         this.noteIndex++
       }
@@ -251,7 +255,7 @@ export class ChartManager {
     let snap = Math.max(0.001,this.app.options.chart.snap)
     let newbeat = Math.round((beat)/snap)*snap
     newbeat = Math.max(0,newbeat)
-    this.setBeat(beat)
+    this.setBeat(newbeat)
   }
   
   previousSnap(){

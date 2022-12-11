@@ -1,5 +1,6 @@
 import { Graphics } from "pixi.js"
 import { ChartRenderer } from "../ChartRenderer"
+import { ScrollTimingEvent } from "../sm/TimingTypes"
 import { ChartAudio } from "./ChartAudio"
 
 const MAX_ZOOM = 3500
@@ -60,21 +61,88 @@ export class Waveform {
     if (this.strippedWaveform) {
       this.view.clear()
       this.view.lineStyle(1, this.chartRenderer.options.waveform.color, this.chartRenderer.options.waveform.opacity);
-      for (let i = 0; i < this.chartRenderer.chartManager.app.pixi.screen.height; i++) {
-        let calcTime = this.chartRenderer.getTimeFromYPos(i-this.view.parent.y)
-        let samp = Math.floor(calcTime * this.getZoom()*4)
-        let v = (this.strippedWaveform[samp]);
-        this.view.moveTo(-v*192-32, i-this.view.parent.y);
-        this.view.lineTo(v*192-32, i-this.view.parent.y);
-        this.view.closePath()
-      }
+      this.renderData(this.strippedWaveform)
     }
     if (this.strippedFilteredWaveform) {
       this.view.lineStyle(1, this.chartRenderer.options.waveform.filteredColor, this.chartRenderer.options.waveform.filteredOpacity);
+      this.renderData(this.strippedFilteredWaveform)
+    }
+  }
+
+  private findScrollIndex(arr: ScrollTimingEvent[], beat: number): number {
+    if (arr.length == 0) return -1
+    if (beat >= arr[arr.length-1].beat) {
+      let mid = arr.length - 1
+      while (mid > 0 && arr[mid-1].beat == beat) mid--
+      return mid
+    }
+    let low = 0, high = arr.length;
+    while (low <= high) {
+      let mid = (low + high) >>> 1;
+      if (arr[mid].beat == beat) {
+        while (mid > 0 && arr[mid-1].beat == beat) mid--
+        return mid
+      }
+      if (arr[mid].beat < beat) low = mid + 1;
+      if (arr[mid].beat > beat) high = mid - 1;
+    }
+    return Math.max(0,high)
+  }
+
+  private renderData(data: number[]) {
+    if (this.chartRenderer.options.experimental.speedChangeWaveform && !this.chartRenderer.options.chart.CMod && this.chartRenderer.options.chart.doSpeedChanges) {
+      let chartSpeed = this.chartRenderer.options.chart.speed
+      let speedMult = this.chartRenderer.chart.timingData.getSpeedMult(this.chartRenderer.chartManager.getBeat(), this.chartRenderer.chartManager.getTime())
+      let curBeat = this.chartRenderer.chartManager.getBeat() - this.chartRenderer.options.chart.maxDrawBeatsBack
+      let beatLimit = this.chartRenderer.chartManager.getBeat() + this.chartRenderer.options.chart.maxDrawBeats
+      let scrolls = this.chartRenderer.chart.timingData.getTimingData("SCROLLS")
+      let scrollIndex = this.findScrollIndex(scrolls, curBeat)
+      while (curBeat < beatLimit) {
+        let scroll = scrolls[scrollIndex] ?? {beat: 0,value: 1}
+        let scrollBeatLimit = scrolls[scrollIndex + 1]?.beat ?? beatLimit
+        let y_test = this.chartRenderer.getYPos(curBeat) + this.view.parent.y 
+        if (scrolls[scrollIndex + 1] && ((scroll.value < 0 && y_test > this.chartRenderer.chartManager.app.pixi.screen.height) ||
+            scroll.value <= 0)) {
+          scrollIndex++
+          curBeat = scrolls[scrollIndex]!.beat
+          continue
+        }
+        while (curBeat < scrollBeatLimit) {
+          let y = Math.round(this.chartRenderer.getYPos(curBeat) + this.view.parent.y)
+          if (y < 0) {
+            if (scroll.value < 0) {
+              curBeat = scrollBeatLimit
+              break
+            }
+            curBeat += 100/chartSpeed/speedMult/64/Math.abs(scroll.value) * -y
+            continue
+          }
+          if (y > this.chartRenderer.chartManager.app.pixi.screen.height) {
+            if (scroll.value > 0) {
+              curBeat = scrollBeatLimit
+              break
+            }
+            curBeat += 100/chartSpeed/speedMult/64/Math.abs(scroll.value) * (y-this.chartRenderer.chartManager.app.pixi.screen.height)
+            continue
+          }
+          curBeat += 100/chartSpeed/speedMult/64/Math.abs(scroll.value)
+          let calcTime = this.chartRenderer.chart.getSeconds(curBeat)
+          if (calcTime < 0) continue
+          let samp = Math.floor(calcTime * this.getZoom()*4)
+          let v = (data[samp]);
+          this.view.moveTo(-v*192-32, y-this.view.parent.y);
+          this.view.lineTo(v*192-32, y-this.view.parent.y);
+          this.view.closePath()
+          
+        }
+        scrollIndex++
+        curBeat = scrollBeatLimit
+      }
+    }else{
       for (let i = 0; i < this.chartRenderer.chartManager.app.pixi.screen.height; i++) {
         let calcTime = this.chartRenderer.getTimeFromYPos(i-this.view.parent.y)
         let samp = Math.floor(calcTime * this.getZoom()*4)
-        let v = (this.strippedFilteredWaveform[samp]);
+        let v = (data[samp]);
         this.view.moveTo(-v*192-32, i-this.view.parent.y);
         this.view.lineTo(v*192-32, i-this.view.parent.y);
         this.view.closePath()

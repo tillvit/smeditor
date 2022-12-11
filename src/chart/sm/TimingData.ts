@@ -158,7 +158,7 @@ export class TimingData {
     }
   }
 
-  buildBeatTimingDataCache() {
+  private buildBeatTimingDataCache() {
     let cache: BeatCacheTimingEvent[] = this.getTimingData("BPMS", "STOPS", "WARPS", "DELAYS")
     cache = cache.concat(this.getTimingData("WARPS").map((event: WarpTimingEvent) => ({
       type: "WARP_DEST", 
@@ -194,7 +194,7 @@ export class TimingData {
     });
   }
 
-  buildEffectiveBeatTimingDataCache() {
+  private buildEffectiveBeatTimingDataCache() {
     let cache: ScrollCacheTimingEvent[] = this.getTimingData("SCROLLS")
     let effBeat = 0
     if (cache.length == 0) {
@@ -211,7 +211,7 @@ export class TimingData {
     this._cache.effectiveBeatTiming = cache
   }
 
-  buildSpeedsTimingDataCache() {
+  private buildSpeedsTimingDataCache() {
     let cache: SpeedTimingEvent[] = this.getTimingData("SPEEDS").map(e => ({
       type: e.type,
       beat: e.beat, 
@@ -223,7 +223,7 @@ export class TimingData {
     this._cache.speeds = cache
   }
 
-  buildTimingDataCache() {
+  private buildTimingDataCache() {
     this._cache.sortedEvents = TIMING_EVENT_NAMES.reduce((data, type) => data.concat(this.events[type] ?? this._fallback?.events[type] ?? []),[] as any)
     for (let event of this._cache.sortedEvents!) {
       if (!TIMING_EVENT_NAMES.includes(event.type)) event.second = this.getSeconds(event.beat!)
@@ -235,7 +235,7 @@ export class TimingData {
     }
   }
 
-  searchCache<Type, Prop extends keyof Type>(cache: Type[], property: Prop, value: number) {
+  private searchCache<Type, Prop extends keyof Type>(cache: Type[], property: Prop, value: number) {
     if (!isFinite(value)) return 0
     if (cache == undefined) return -1
     if (cache.length == 0) return -1
@@ -348,7 +348,8 @@ export class TimingData {
     if (bpms.length == 0) return 120
     for (let i = 0; i < bpms.length; i++) {
       if (beat < bpms[i].beat) {
-        if (beat == bpms[i-1].beat && this._cache.stopBeats![bpms[i-1].beat]) i = Math.max(1,i-1)
+        if (i == 0) return bpms[i].value
+        // if (beat == bpms[i-1].beat && this._cache.stopBeats![bpms[i-1].beat]) i = Math.max(1,i-1)
         return bpms[i-1].value
       }
     }
@@ -368,7 +369,7 @@ export class TimingData {
     if (prop == undefined) this.buildTimingDataCache()
   }
 
-  binsert<Type extends TimingEventProperty>(type: Type, event: Extract<TimingEvent, {type: Type}>) {
+  private binsert<Type extends TimingEventProperty>(type: Type, event: Extract<TimingEvent, {type: Type}>) {
     let key = "beat" as keyof TimingEventBase;
     let arr = this.events[type]!
     if (type == "ATTACKS") key = "seconds" as keyof TimingEventBase;
@@ -381,7 +382,7 @@ export class TimingData {
     arr.splice(low, 0, event);
   }
 
-  bindex(type: TimingEventProperty, event: TimingEventBase): number {
+  private bindex(type: TimingEventProperty, event: TimingEventBase): number {
     let key = "beat" as keyof TimingEventBase;
     let arr = this.events[type]!
     if (type == "ATTACKS") key = "seconds" as keyof TimingEventBase;

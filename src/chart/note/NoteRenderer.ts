@@ -75,6 +75,7 @@ export class NoteRenderer {
         icon.height = 32
         icon.anchor.set(0.5)
         icon.alpha = 0.5
+        icon.rotation = -getRotFromArrow(col)
         item_container.addChild(icon);
       }
       if (type == "Hold" || type == "Roll") {

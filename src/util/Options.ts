@@ -48,4 +48,7 @@ export class Options {
   input = {
     scrollSensitivity: 1
   }
+  experimental = {
+    speedChangeWaveform: true
+  }
 }
