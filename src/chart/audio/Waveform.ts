@@ -1,6 +1,6 @@
 import { Graphics } from "pixi.js"
+import { bsearch } from "../../util/Util"
 import { ChartRenderer } from "../ChartRenderer"
-import { ScrollTimingEvent } from "../sm/TimingTypes"
 import { ChartAudio } from "./ChartAudio"
 
 const MAX_ZOOM = 3500
@@ -69,26 +69,6 @@ export class Waveform {
     }
   }
 
-  private findScrollIndex(arr: ScrollTimingEvent[], beat: number): number {
-    if (arr.length == 0) return -1
-    if (beat >= arr[arr.length-1].beat) {
-      let mid = arr.length - 1
-      while (mid > 0 && arr[mid-1].beat == beat) mid--
-      return mid
-    }
-    let low = 0, high = arr.length;
-    while (low <= high) {
-      let mid = (low + high) >>> 1;
-      if (arr[mid].beat == beat) {
-        while (mid > 0 && arr[mid-1].beat == beat) mid--
-        return mid
-      }
-      if (arr[mid].beat < beat) low = mid + 1;
-      if (arr[mid].beat > beat) high = mid - 1;
-    }
-    return Math.max(0,high)
-  }
-
   private renderData(data: number[]) {
     if (this.chartRenderer.options.experimental.speedChangeWaveform && !this.chartRenderer.options.chart.CMod && this.chartRenderer.options.chart.doSpeedChanges) {
       let chartSpeed = this.chartRenderer.options.chart.speed
@@ -96,7 +76,7 @@ export class Waveform {
       let curBeat = this.chartRenderer.chartManager.getBeat() - this.chartRenderer.options.chart.maxDrawBeatsBack
       let beatLimit = this.chartRenderer.chartManager.getBeat() + this.chartRenderer.options.chart.maxDrawBeats
       let scrolls = this.chartRenderer.chart.timingData.getTimingData("SCROLLS")
-      let scrollIndex = this.findScrollIndex(scrolls, curBeat)
+      let scrollIndex = bsearch(scrolls, curBeat, a => a.beat)
       while (curBeat < beatLimit) {
         let scroll = scrolls[scrollIndex] ?? {beat: 0,value: 1}
         let scrollBeatLimit = scrolls[scrollIndex + 1]?.beat ?? beatLimit

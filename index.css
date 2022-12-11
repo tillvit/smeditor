@@ -307,7 +307,7 @@ button:disabled {
 .menu-item-title .keybind, .menu-item-title .icon {
   margin-right: 10px;
   color: #aaa;
-  flex: 0;
+  white-space: nowrap;
 }
 
 .menu-item.disabled .menu-item-title .title {

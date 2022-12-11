@@ -26,7 +26,7 @@ export class Options {
       "TICKCOUNTS": true,
       "BGCHANGES": true,
       "FGCHANGES": true,
-      "ATTACKS": false,
+      "ATTACKS": true,
     } as {[key in TimingEventProperty]: boolean},
     stepsType: "dance-single" as StepsType,
   }

@@ -33,7 +33,8 @@ export class App {
       resolution: window.devicePixelRatio, 
       autoDensity: true,
       view: this.view
-    });
+    })
+    this.pixi.stage.sortableChildren = true
     
     this.options = new Options()
     this.files = new FileSystem()

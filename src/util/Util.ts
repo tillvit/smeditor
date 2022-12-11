@@ -6,7 +6,7 @@ export function getRotFromArrow(col: number): number {
 }
 
 const QUANTS = [1, 1/2, 1/3, 1/4, 1/6, 1/8, 1/12, 1/16, 1/24]
-export function getQuant(beat: number): number {
+export function getQuant(beat: number) {
   for (let i = 0; i < QUANTS.length; i++) {
     if (Math.abs(beat-Math.round(beat/QUANTS[i])*QUANTS[i]) < 0.01) {
       return i
@@ -81,3 +81,25 @@ export function getBrowser() {
 
   return match.join(' ')
 }
+
+export function bsearch<T>(arr: T[], value: number, property?: (a: T) => number): number {
+  property = property ?? (a => (a as number))
+  if (arr.length == 0) return -1
+  if (value >= property(arr[arr.length-1])) {
+    let mid = arr.length - 1
+    while (mid > 0 && property(arr[mid-1]) == value) mid--
+    return mid
+  }
+  let low = 0, high = arr.length;
+  while (low <= high) {
+    let mid = (low + high) >>> 1;
+    if (property(arr[mid]) == value) {
+      while (mid > 0 && property(arr[mid-1]) == value) mid--
+      return mid
+    }
+    if (property(arr[mid]) < value) low = mid + 1;
+    if (property(arr[mid]) > value) high = mid - 1;
+  }
+  return Math.max(0,high)
+}
+

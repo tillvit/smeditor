@@ -140,10 +140,34 @@ export const MENUBAR_DATA: {[key: string]: MenuMain} = {
         type: "seperator",
       },{
         type: "selection",
+        id: "previousNote",
+      },{
+        type: "selection",
+        id: "nextNote",
+      },{
+        type: "seperator",
+      },{
+        type: "selection",
         id: "previousMeasure",
       },{
         type: "selection",
         id: "nextMeasure",
+      },{
+        type: "seperator",
+      },{
+        type: "selection",
+        id: "jumpChartStart",
+      },{
+        type: "selection",
+        id: "jumpChartEnd",
+      },{
+        type: "seperator",
+      },{
+        type: "selection",
+        id: "jumpSongStart",
+      },{
+        type: "selection",
+        id: "jumpSongEnd",
       },{
         type: "seperator",
       },{

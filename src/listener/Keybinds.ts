@@ -24,7 +24,12 @@ export class Keybinds {
       if (key.startsWith("Key")) key = key.slice(3)
       if (key in SPECIAL_KEYS) key = SPECIAL_KEYS[key]
     
-      let matches = Object.values(KEYBINDS).filter(x=>this.compareModifiers(x.mods, mods) && x.keybind == key)
+      let matches = Object.values(KEYBINDS).filter(value => {
+        for (let keybind of value.keybinds) {
+          if (this.compareModifiers(keybind.mods, mods) && keybind.key == key) return true
+        }
+        return false
+      })
       if (matches.length > 0) { 
         let disabled = matches[0].disabled
         if (disabled instanceof Function) disabled = disabled(this.app)
@@ -41,9 +46,10 @@ export class Keybinds {
       return ""
     }
     let item = KEYBINDS[id]
-    if (item == undefined) console.log(id)
-    let mods = MODORDER.filter(x => item.mods.includes(x)).join("+")
-    return mods + (mods != "" ? "+" : "") + item.keybind;
+    return item.keybinds.map(keybind => {
+      let mods = MODORDER.filter(x => keybind.mods.includes(x)).join("+")
+      return mods + (mods != "" ? "+" : "") + keybind.key;
+    }).join(" / ")
   }
 
   private compareModifiers(mod1: Modifier[], mod2: Modifier[]) {

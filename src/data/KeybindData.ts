@@ -5,10 +5,14 @@ import { EQWindow } from "../window/EQWindow"
 
 export interface Keybind {
   label: string,
-  keybind: string,
-  mods: Modifier[],
+  keybinds: KeyCombo[],
   disabled: boolean | ((app: App) => boolean),
   callback: (app: App) => void
+}
+
+export interface KeyCombo {
+  key: string,
+  mods: Modifier[],
 }
 
 export enum Modifier {
@@ -43,64 +47,73 @@ export const SPECIAL_KEYS: {[key: string]: string} = {
 export const KEYBINDS: {[key: string]: Keybind} = {
   playback: {
     label: "Play/Pause",
-    keybind: "Space",
-    mods: [],
+    keybinds: [
+      {key: "Space", mods: []}
+    ],
     disabled: (app) => !app.chartManager.chartView,
     callback: (app) => app.chartManager.playPause()
   },
   decreaseSnap: {
     label: "Decrease snap",
-    keybind: "Left",
-    mods: [],
+    keybinds: [
+			{key: "Left", mods: []}
+		],
     disabled: (app) => !app.chartManager.chartView,
     callback: (app) => app.chartManager.previousSnap()
   },
   increaseSnap: {
     label: "Increase snap",
-    keybind: "Right",
-    mods: [],
+    keybinds: [
+			{key: "Right", mods: []}
+		],
     disabled: (app) => !app.chartManager.chartView,
     callback: (app) => app.chartManager.nextSnap()
   },
   cursorUp: {
     label: "Move cursor up",
-    keybind: "Up",
-    mods: [],
+    keybinds: [
+			{key: "Up", mods: []}
+		],
     disabled: (app) => !app.chartManager.chartView,
     callback: (app) => app.chartManager.setAndSnapBeat(app.chartManager.getBeat()-Math.max(0.001,app.options.chart.snap))
   },
   cursorDown: {
     label: "Move cursor down",
-    keybind: "Down",
-    mods: [],
+    keybinds: [
+			{key: "Down", mods: []}
+		],
     disabled: (app) => !app.chartManager.chartView,
     callback: (app) => app.chartManager.setAndSnapBeat(app.chartManager.getBeat()+Math.max(0.001,app.options.chart.snap))
   },
   increaseScrollSpeed: {
     label: "Increase scroll speed",
-    keybind: "Up",
-    mods: [DEF_MOD],
+    keybinds: [
+			{key: "Up", mods: [DEF_MOD]}
+		],
     disabled: (app) => !app.chartManager.chartView,
     callback: (app) => app.options.chart.speed = Math.max(10,app.options.chart.speed*Math.pow(1.01,30))
   },
   decreaseScrollSpeed: {
     label: "Decrease scroll speed",
-    keybind: "Down",
-    mods: [DEF_MOD],
+    keybinds: [
+			{key: "Down", mods: [DEF_MOD]}
+		],
     disabled: (app) => !app.chartManager.chartView,
     callback: (app) => app.options.chart.speed = Math.max(10,app.options.chart.speed*Math.pow(1.01,-30))
   },
   newSong: {
     label: "New Song...",
-    keybind: "N",
-    mods: [DEF_MOD],
+    keybinds: [
+			{key: "N", mods: [DEF_MOD]}
+		],
     disabled: true,
     callback: () => 0
   },
   openSong: {
     label: "Open Song...",
-    keybind: "O",
-    mods: [DEF_MOD],
+    keybinds: [
+			{key: "O", mods: [DEF_MOD]}
+		],
     disabled: (app) => !app.chartManager.sm,
     callback: (app)=> {
       app.windowManager.openWindow(new DirectoryWindow(app, {
@@ -115,183 +128,253 @@ export const KEYBINDS: {[key: string]: Keybind} = {
   },
   save: {
     label: "Save...",
-    keybind: "S",
-    mods: [DEF_MOD],
+    keybinds: [
+			{key: "S", mods: [DEF_MOD]}
+		],
     disabled: true,
     callback: () => 0
   },
   newChart: {
     label: "New Chart...",
-    keybind: "N",
-    mods: [DEF_MOD, Modifier.SHIFT],
+    keybinds: [
+			{key: "N", mods: [DEF_MOD, Modifier.SHIFT]}
+		],
     disabled: true,
     callback: () => 0
   },
   openChart: {
     label: "Open Chart...",
-    keybind: "O",
-    mods: [DEF_MOD, Modifier.SHIFT],
+    keybinds: [
+			{key: "O", mods: [DEF_MOD, Modifier.SHIFT]}
+		],
     disabled: false,
     callback: (app) => app.windowManager.openWindow(new ChartListWindow(app))
   },
   chartProperties: {
     label: "Chart Properties...",
-    keybind: "P",
-    mods: [Modifier.SHIFT, Modifier.ALT],
+    keybinds: [
+			{key: "P", mods: [Modifier.SHIFT, Modifier.ALT]}
+		],
     disabled: true,
     callback: () => 0
   },
   adjustSync: {
     label: "Adjust Sync...",
-    keybind: "S",
-    mods: [Modifier.SHIFT, Modifier.ALT],
+    keybinds: [
+			{key: "S", mods: [Modifier.SHIFT, Modifier.ALT]}
+		],
     disabled: true,
     callback: () => 0
   },
   adjustTiming: {
     label: "Adjust Timing Changes...",
-    keybind: "T",
-    mods: [Modifier.SHIFT, Modifier.ALT],
+    keybinds: [
+			{key: "T", mods: [Modifier.SHIFT, Modifier.ALT]}
+		],
     disabled: true,
     callback: () => 0
   },
   selectRegion: {
     label: "Select Region",
-    keybind: "Tab",
-    mods: [],
+    keybinds: [
+			{key: "Tab", mods: []}
+		],
     disabled: true,
     callback: () => 0
   },
   volumeUp: {
     label: "Increase volume",
-    keybind: "Up",
-    mods: [Modifier.SHIFT],
+    keybinds: [
+			{key: "Up", mods: [Modifier.SHIFT]}
+		],
     disabled: false,
     callback: (app) => app.chartManager.setVolume(Math.min(app.options.audio.songVolume+0.05,1))
   },
   volumeDown: {
     label: "Decrease volume",
-    keybind: "Down",
-    mods: [Modifier.SHIFT],
+    keybinds: [
+			{key: "Down", mods: [Modifier.SHIFT]}
+		],
     disabled: false,
     callback: (app) => app.chartManager.setVolume(Math.max(app.options.audio.songVolume-0.05,0))
   },
   effectvolumeUp: {
     label: "Increase sound effect volume",
-    keybind: "Up",
-    mods: [Modifier.SHIFT, Modifier.ALT],
+    keybinds: [
+			{key: "Up", mods: [Modifier.SHIFT, Modifier.ALT]}
+		],
     disabled: false,
     callback: (app) => app.chartManager.setEffectVolume(Math.min(app.options.audio.soundEffectVolume+0.05,1))
   },
   effectvolumeDown: {
     label: "Decrease sound effect volume",
-    keybind: "Down",
-    mods: [Modifier.SHIFT, Modifier.ALT],
+    keybinds: [
+			{key: "Down", mods: [Modifier.SHIFT, Modifier.ALT]}
+		],
     disabled: false,
     callback: (app) => app.chartManager.setEffectVolume(Math.max(app.options.audio.soundEffectVolume-0.05,0))
   },
   rateUp: {
     label: "Increase playback rate",
-    keybind: "Right",
-    mods: [Modifier.SHIFT],
+    keybinds: [
+			{key: "Right", mods: [Modifier.SHIFT]}
+		],
     disabled: false,
     callback: (app) => app.chartManager.setRate(app.options.audio.rate += 0.05)
   },
   rateDown: {
     label: "Decrease playback rate",
-    keybind: "Left",
-    mods: [Modifier.SHIFT],
+    keybinds: [
+			{key: "Left", mods: [Modifier.SHIFT]}
+		],
     disabled: false,
     callback: (app) => app.chartManager.setRate(Math.max(app.options.audio.rate-0.05,0.1))
   },
   rateDefault: {
     label: "Reset playback rate",
-    keybind: "",
-    mods: [],
+    keybinds: [],
     disabled: false,
     callback: (app) => app.chartManager.setRate(1)
   },
   previousMeasure: {
     label: "Previous measure",
-    keybind: ";",
-    mods: [],
+    keybinds: [
+      {key: "PageUp", mods: []},
+			{key: ";", mods: []}
+		],
     disabled: (app) => !app.chartManager.chartView,
     callback: (app) => app.chartManager.setBeat(Math.max(0,app.chartManager.getBeat() - 4))
   },
   nextMeasure: {
     label: "Next measure",
-    keybind: "'",
-    mods: [],
+    keybinds: [
+      {key: "PageDown", mods: []},
+			{key: "'", mods: []}
+		],
     disabled: (app) => !app.chartManager.chartView,
     callback: (app) => app.chartManager.setBeat(app.chartManager.getBeat() + 4)
   },
+  previousNote: {
+    label: "Previous note",
+    keybinds: [
+			{key: ",", mods: []}
+		],
+    disabled: (app) => !app.chartManager.chartView,
+    callback: (app) => app.chartManager.previousNote()
+  },
+  nextNote: {
+    label: "Next note",
+    keybinds: [
+			{key: ".", mods: []}
+		],
+    disabled: (app) => !app.chartManager.chartView,
+    callback: (app) => app.chartManager.nextNote()
+  },
+  jumpChartStart: {
+    label: "Jump to first note",
+    keybinds: [
+			{key: "Home", mods: []}
+		],
+    disabled: (app) => !app.chartManager.chartView,
+    callback: (app) => app.chartManager.firstNote()
+  },
+  jumpChartEnd: {
+    label: "Jump to last note",
+    keybinds: [
+			{key: "End", mods: []}
+		],
+    disabled: (app) => !app.chartManager.chartView,
+    callback: (app) => app.chartManager.lastNote()
+  },
+  jumpSongStart: {
+    label: "Jump to song start",
+    keybinds: [
+			{key: "Home", mods: [Modifier.SHIFT]}
+		],
+    disabled: (app) => !app.chartManager.chartView,
+    callback: (app) => app.chartManager.setBeat(app.chartManager.chart!.getBeat(0))
+  },
+  jumpSongEnd: {
+    label: "Jump to song end",
+    keybinds: [
+			{key: "End", mods: [Modifier.SHIFT]}
+		],
+    disabled: (app) => !app.chartManager.chartView,
+    callback: (app) => app.chartManager.setBeat(app.chartManager.chart!.getBeat(app.chartManager.songAudio.getSongLength()))
+  },
   assistTick: {
     label: "Assist Tick",
-    keybind: "F7",
-    mods: [],
+    keybinds: [
+			{key: "F7", mods: []}
+		],
     disabled: false,
     callback: (app) => app.options.audio.assistTick = !app.options.audio.assistTick
   },
   metronome: {
     label: "Metronome",
-    keybind: "F7",
-    mods: [Modifier.ALT],
+    keybinds: [
+			{key: "F7", mods: [Modifier.ALT]}
+		],
     disabled: false,
     callback: (app) => app.options.audio.metronome = !app.options.audio.metronome
   },
   renderWaveform: {
     label: "Render waveform",
-    keybind: "W",
-    mods: [Modifier.SHIFT, Modifier.ALT],
+    keybinds: [
+			{key: "W", mods: [Modifier.SHIFT, Modifier.ALT]}
+		],
     disabled: false,
     callback: (app) => app.options.waveform.enabled = !app.options.waveform.enabled
   },
   waveformOptions: {
     label: "Waveform options...",
-    keybind: "",
-    mods: [],
+    keybinds: [],
     disabled: true,
     callback: () => 0
   },
   XMod: {
     label: "XMod (Beat-based)",
-    keybind: "X",
-    mods: [Modifier.SHIFT],
+    keybinds: [
+			{key: "X", mods: [Modifier.SHIFT]}
+		],
     disabled: false,
     callback: (app) => app.options.chart.CMod = false
   },
   CMod: {
     label: "CMod (Time-based)",
-    keybind: "C",
-    mods: [Modifier.SHIFT],
+    keybinds: [
+			{key: "C", mods: [Modifier.SHIFT]}
+		],
     disabled: false,
     callback: (app) => app.options.chart.CMod = true
   },
   hideWarpedArrows: {
     label: "Hide warped arrows (CMod only)",
-    keybind: "W",
-    mods: [Modifier.SHIFT],
+    keybinds: [
+			{key: "W", mods: [Modifier.SHIFT]}
+		],
     disabled: false,
     callback: (app) => app.options.chart.hideWarpedArrows = !app.options.chart.hideWarpedArrows
   },
   doSpeedChanges: {
     label: "Do speed changes (XMod only)",
-    keybind: "S",
-    mods: [Modifier.SHIFT],
+    keybinds: [
+			{key: "S", mods: [Modifier.SHIFT]}
+		],
     disabled: false,
     callback: (app) => app.options.chart.doSpeedChanges = !app.options.chart.doSpeedChanges
   },
   jumpBeat: {
     label: "Jump to beat...",
-    keybind: "",
-    mods: [],
+    keybinds: [],
     disabled: true,
     callback: () => {}
   },
   showEq: {
     label: "Equalizer",
-    keybind: "E",
-    mods: [Modifier.SHIFT, Modifier.ALT],
+    keybinds: [
+			{key: "E", mods: [Modifier.SHIFT, Modifier.ALT]}
+		],
     disabled: (app) => !app.chartManager.songAudio,
     callback: (app) => app.windowManager.openWindow(new EQWindow(app))
   },

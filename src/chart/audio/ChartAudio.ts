@@ -47,6 +47,10 @@ export class ChartAudio {
     this._listeners.push(waveform)
   }
 
+  getSongLength(): number {
+    return this._rawData.length/this._buffer.sampleRate
+  }
+
   private callListeners() {
     this._listeners.forEach(waveform => waveform.refilter())
   }

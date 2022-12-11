@@ -7,7 +7,7 @@ import { IS_OSX } from "../data/KeybindData"
 import { Chart } from "./sm/Chart"
 import { NoteTexture } from "./note/NoteTexture"
 import { BitmapText } from "pixi.js"
-import { getFPS, roundDigit } from "../util/Util"
+import { bsearch, getFPS, roundDigit } from "../util/Util"
 
 const SNAPS = [1,2,3,4,6,8,12,16,24,48,-1]
 
@@ -77,12 +77,12 @@ export class ChartManager {
     })
     this.info.x = 0
     this.info.y = 0
+    this.info.zIndex = 1
     this.app.pixi.stage.addChild(this.info)
     this.app.pixi.ticker.add(() => {
       if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
       this.chartView?.render();
-      this.info.text = "Time: " + roundDigit(this.time,3) + "\n" + "Beat: " + roundDigit(this.beat,3) + "\nFPS: " + getFPS(this.app.pixi) 
-
+      this.info.text = "Time: " + roundDigit(this.time,3) + "\n" + "Beat: " + roundDigit(this.beat,3) + "\nFPS: " + getFPS(this.app.pixi)
     });
     
     setInterval(()=>{
@@ -127,8 +127,10 @@ export class ChartManager {
   getTime(): number {
     return this.time
   }
+
   setBeat(beat: number) {
     if (!this.chart) return
+    beat = Math.max(0, beat)
     let seekBack = this.beat > beat
     this.beat = beat
     this.time = this.chart.getSeconds(this.beat)
@@ -141,6 +143,7 @@ export class ChartManager {
     let seekBack = this.time > time
     this.time = time
     this.beat = this.chart.getBeat(this.time)
+    if (this.beat < 0) this.setBeat(0)
     if (seekBack) this.seekBack()
   }
 
@@ -188,13 +191,13 @@ export class ChartManager {
     }
 
     if (!this.sm.properties.MUSIC || this.sm.properties.MUSIC == "") {
-      console.log("No Audio File!")
+      console.warn("No Audio File!")
       this.songAudio = new ChartAudio(undefined, audio_onload)
       return
     }
     let audioFile: File | undefined = this.app.files.getFileRelativeTo(this.sm_path,this.sm.properties.MUSIC)
     if (audioFile == undefined) {
-      console.log("Failed to load audio file " + this.sm.properties.MUSIC)
+      console.warn("Failed to load audio file " + this.sm.properties.MUSIC)
       this.songAudio = new ChartAudio(undefined, audio_onload)
       return
     }
@@ -236,14 +239,12 @@ export class ChartManager {
       this.noteIndex = 0
       return
     }
-    let notedata = this.chart.notedata
-    if (this.noteIndex > notedata.length) this.noteIndex = notedata.length - 1
-    while(this.noteIndex > 0 && this.time < notedata[this.noteIndex-1].second) {
-      this.noteIndex--
-      if (this.songAudio.isPlaying() && (notedata[this.noteIndex].type != "Fake" && notedata[this.noteIndex].type != "Mine") && !notedata[this.noteIndex].fake) {
-        this.chartView.addFlash(notedata[this.noteIndex].col)
-      }
-    }
+    this.noteIndex = bsearch(this.chart.notedata, this.time, a => a.second)
+    // let notedata = this.chart.notedata
+    // if (this.noteIndex > notedata.length) this.noteIndex = notedata.length - 1
+    // while(this.noteIndex > 0 && this.time < notedata[this.noteIndex-1].second) {
+    //   this.noteIndex--
+    // }
   }
 
   playPause() {
@@ -268,6 +269,51 @@ export class ChartManager {
     this.app.options.chart.snap = SNAPS[this.snapIndex]==-1?0:1/SNAPS[this.snapIndex]
   }
 
+  private removeDuplicateBeats(arr: number[]): number[] {
+    if (arr.length === 0) return arr;
+    var ret = [arr[0]];
+    for (var i = 1; i < arr.length; i++) { 
+      if (arr[i-1] !== arr[i]) {
+        ret.push(arr[i]);
+      }
+    }
+    return ret;
+  }
+
+  previousNote() {
+    if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
+    if (this.chart.notedata.length == 0) return
+    let holdTails = this.chart.notedata.filter(note => note.hold).map(note => note.beat + note.hold!)
+    let beats = this.chart.notedata.map(note => note.beat).concat(holdTails).sort((a,b)=>a-b)
+    beats = this.removeDuplicateBeats(beats)
+    let index = bsearch(beats, this.beat)
+    if (this.beat == beats[index]) index--
+    this.setBeat(beats[Math.max(0, index)])
+  }
+
+  nextNote() {
+    if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
+    if (this.chart.notedata.length == 0) return
+    let holdTails = this.chart.notedata.filter(note => note.hold).map(note => note.beat + note.hold!)
+    let beats = this.chart.notedata.map(note => note.beat).concat(holdTails).sort((a,b)=>a-b)
+    beats = this.removeDuplicateBeats(beats)
+    let index = bsearch(beats, this.beat)
+    if (this.beat >= beats[index]) index++
+    this.setBeat(beats[Math.min(beats.length - 1, index)])
+  }
+
+  firstNote() {
+    if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
+    if (this.chart.notedata.length == 0) return
+    this.setBeat(this.chart.notedata[0].beat)
+  }
+
+  lastNote() {
+    if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
+    if (this.chart.notedata.length == 0) return
+    let note = this.chart.notedata[this.chart.notedata.length-1]
+    this.setBeat(note.beat + (note.hold ?? 0))
+  }
 }
 
 

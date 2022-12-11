@@ -1,5 +1,5 @@
 
-import { clamp } from "../../util/Util"
+import { bsearch, clamp } from "../../util/Util"
 import { TimingEvent, WarpTimingEvent, StopTimingEvent, AttackTimingEvent, TIMING_EVENT_NAMES, BeatCacheTimingEvent, SpeedTimingEvent, TimingProperty, TimingEventProperty, TimingEventBase, ScrollCacheTimingEvent } from "./TimingTypes"
 
 
@@ -236,25 +236,7 @@ export class TimingData {
   }
 
   private searchCache<Type, Prop extends keyof Type>(cache: Type[], property: Prop, value: number) {
-    if (!isFinite(value)) return 0
-    if (cache == undefined) return -1
-    if (cache.length == 0) return -1
-    if (value >= cache[cache.length-1][property]) {
-      let mid = cache.length - 1
-      while (mid > 0 && cache[mid-1][property] == value) mid--
-      return mid
-    }
-    let low = 0, high = cache.length;
-    while (low <= high) {
-      let mid = (low + high) >>> 1;
-      if (cache[mid][property] == value) {
-        while (mid > 0 && cache[mid-1][property] == value) mid--
-        return mid
-      }
-      if (cache[mid][property] < value) low = mid + 1;
-      if (cache[mid][property] > value) high = mid - 1;
-    }
-    return Math.max(0,high)
+    return bsearch(cache, value, a => a[property] as number)
   }
 
   getBeat(seconds: number): number {
