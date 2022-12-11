@@ -90,7 +90,6 @@ export class NoteTexture {
           vIndex.push(parseFloat(match[3]))
         }else throw Error("Failed to load triangle " + lines[i+2+numVertices])
       }
-      console.log(vPos,vUvs,vIndex)
       return new Geometry().addAttribute('aVertexPosition', vPos, 2).addAttribute('aUvs', vUvs, 2).addIndex(vIndex)
     } catch (err) {
       console.error(err)
