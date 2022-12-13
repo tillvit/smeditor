@@ -357,6 +357,7 @@ export class ChartRenderer {
 
     let childIndex = 0
     for (let note of this.chart.notedata) { 
+      note = JSON.parse(JSON.stringify(note))
       if (this.options.chart.CMod && this.options.chart.hideWarpedArrows && note.warped) continue
       if (note.beat + (note.hold ?? 0) < renderBeatLowerLimit) continue
       if (note.beat > renderBeatLimit) break

@@ -1,6 +1,7 @@
 import { App } from "../App"
 import { KEYBINDS } from "../data/KeybindData"
 import { MENUBAR_DATA, MenuOption } from "../data/MenubarData"
+import { Keybinds } from "../listener/Keybinds"
 
 export class MenubarManager {
 
@@ -28,7 +29,7 @@ export class MenubarManager {
       if (data.type == "selection" || data.type == "checkbox"){
         let meta = KEYBINDS[data.id]
         title_bar_right = document.createElement("div")
-        title_bar_right.innerText = this.app.keybinds.getKeybindString(data.id)
+        title_bar_right.innerText = Keybinds.getKeybindString(data.id)
         title_bar_right.classList.add("keybind", "unselectable")
         title.innerText = meta.label
   

@@ -39,12 +39,13 @@ export class App {
     
     this.options = new Options()
     this.files = new FileSystem()
-    this.keybinds = new Keybinds(this)
     this.chartManager = new ChartManager(this)
     this.menubarManager = new MenubarManager(this, document.getElementById("menubar") as HTMLDivElement)
     this.windowManager = new WindowManager(this, document.getElementById("windows") as HTMLDivElement)
-
+    
     this.registerListeners()
+    this.keybinds = new Keybinds(this)
+
     
     console.log(`smeditor is currently a work in progress. editing is almost start since the viewer is almost done!`)
     console.log(`audio filtering is working (hopefully) but not yet implemented into UI`)

@@ -15,7 +15,7 @@ export const NOTE_TYPE_LOOKUP: Record<string, NoteType> = {
 
 export type Notedata = NotedataEntry[]
 
-export type NotedataEntry = {
+export interface NotedataEntry {
   beat: number,
   col: number, 
   type: NoteType,
@@ -25,7 +25,7 @@ export type NotedataEntry = {
   hold?: number
 }
 
-export type NotedataCount = {
+export interface NotedataCount {
   peakNps: number,
   taps: number,
   jumps: number,

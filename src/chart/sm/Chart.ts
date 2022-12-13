@@ -1,5 +1,6 @@
+import { bsearch } from "../../util/Util"
 import { ChartDifficulty, CHART_DIFFICULTIES } from "./ChartTypes"
-import { Notedata, NotedataCount, NotedataEntry, NOTE_TYPE_LOOKUP } from "./NoteTypes"
+import { Notedata, NotedataCount, NotedataEntry, NoteType, NOTE_TYPE_LOOKUP } from "./NoteTypes"
 import { StepsType, STEPS_TYPES } from "./SimfileTypes"
 import { TimingData } from "./TimingData";
 import { TimingEventProperty, TimingProperty, TIMING_EVENT_NAMES } from "./TimingTypes"
@@ -167,6 +168,26 @@ export class Chart {
     return count
   }
 
+  getNPSPerMeasure(): number[] {
+    let chartEnd = this.notedata[this.notedata.length-1]?.beat ?? 0
+    let nps = []
+    let noteIndex = 0
+    for (let beat = 0; beat < chartEnd; beat += 4) {
+      let deltaTime = this.getSeconds(beat + 4) - this.getSeconds(beat)
+      if (deltaTime <= 0.05) {
+        nps.push(0)
+        continue
+      }
+      let noteCount = 0
+      while(this.notedata[noteIndex] && this.notedata[noteIndex].beat < beat + 4) {
+        noteIndex++
+        noteCount++
+      }
+      nps.push(noteCount/deltaTime)
+    }
+    return nps
+  }
+
   getSeconds(beat: number): number {
     return this.timingData.getSeconds(beat)
   }
@@ -181,6 +202,41 @@ export class Chart {
 
   isBeatFaked(beat: number): boolean {
     return this.timingData.isBeatFaked(beat)
+  }
+
+  addNote(note: {beat: number, col: number, type: "Tap"|"Mine"|"Fake"|"Lift"}): NotedataEntry
+  addNote(note: {beat: number, col: number, type: "Hold"|"Roll", hold: number}): NotedataEntry
+  addNote(note: {beat: number, col: number, type: NoteType, hold?: number}): NotedataEntry {
+    note.beat = Math.round(note.beat*192)/192
+    if (note.hold) note.hold = Math.round(note.hold*192)/192
+    let computedNote: NotedataEntry = {
+      beat: note.beat,
+      col: note.col,
+      type: note.type,
+      warped: this.timingData.isBeatWarped(note.beat),
+      fake: note.type == "Fake" || this.timingData.isBeatFaked(note.beat),
+      second: this.timingData.getSeconds(note.beat),
+      hold: note.hold
+    }
+    let index = bsearch(this.notedata, note.beat, a => a.beat) + 1
+    if (index >= 1 && this.notedata[index-1].beat > note.beat) index--
+    this.notedata.splice(index, 0, computedNote)
+    this.countNotes()
+    return computedNote
+  }
+
+  modifyNote(note: NotedataEntry, properties: Partial<NotedataEntry>) {
+    Object.assign(note, properties)
+    this.notedata.splice(this.notedata.indexOf(note), 1)
+    let index = bsearch(this.notedata, note.beat, a => a.beat) + 1
+    if (index >= 1 && this.notedata[index-1].beat > note.beat) index--
+    this.notedata.splice(index, 0, note)
+    this.countNotes()
+  }
+
+  removeNote(note: NotedataEntry) {
+    this.notedata.splice(this.notedata.indexOf(note), 1)
+    this.countNotes()
   }
   
 } 

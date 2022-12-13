@@ -19,10 +19,7 @@ export class Keybinds {
       for (let i = 0; i < MODPROPS.length; i++) {
         if (e[MODPROPS[i]]) mods.push(MODORDER[i])
       }
-      let key = e.code
-      if (key.startsWith("Digit")) key = key.slice(5)
-      if (key.startsWith("Key")) key = key.slice(3)
-      if (key in SPECIAL_KEYS) key = SPECIAL_KEYS[key]
+      let key = Keybinds.getKeyNameFromCode(e.code)
     
       let matches = Object.values(KEYBINDS).filter(value => {
         for (let keybind of value.keybinds) {
@@ -37,10 +34,18 @@ export class Keybinds {
         matches[0].callback(this.app)
         e.preventDefault() 
       };
-    }, false)
+    })
   }
 
-  getKeybindString(id: string): string {
+  static getKeyNameFromCode(code: string): string {
+    let key = code
+    if (key.startsWith("Digit")) key = key.slice(5)
+    if (key.startsWith("Key")) key = key.slice(3)
+    if (key in SPECIAL_KEYS) key = SPECIAL_KEYS[key]
+    return key
+  }
+
+  static getKeybindString(id: string): string {
     if (!(id in KEYBINDS)){
       console.log("Couldn't find keybind with id " + id)
       return ""

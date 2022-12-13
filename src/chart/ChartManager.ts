@@ -3,13 +3,22 @@ import { Simfile } from "./sm/Simfile";
 import { ChartRenderer } from "./ChartRenderer";
 import { ChartAudio } from "./audio/ChartAudio"
 import { Howl } from 'howler';
-import { IS_OSX } from "../data/KeybindData"
+import { IS_OSX, KEYBINDS } from "../data/KeybindData"
 import { Chart } from "./sm/Chart"
 import { NoteTexture } from "./note/NoteTexture"
 import { BitmapText } from "pixi.js"
 import { bsearch, getFPS, roundDigit } from "../util/Util"
+import { Keybinds } from "../listener/Keybinds"
+import { NotedataEntry } from "./sm/NoteTypes"
 
 const SNAPS = [1,2,3,4,6,8,12,16,24,48,-1]
+
+interface PartialHold {
+  startBeat: number,
+  endBeat: number,
+  roll: boolean,
+  originalNote: NotedataEntry | undefined
+}
 
 export class ChartManager {
 
@@ -36,6 +45,7 @@ export class ChartManager {
 
   private beat: number = 0
   private time: number = 0
+  private holdEditing: (PartialHold | undefined)[] = []
 
   private snapIndex: number = 0
   private partialScroll: number = 0
@@ -67,7 +77,16 @@ export class ChartManager {
           }
         }
         newbeat = Math.max(0,newbeat)
-        if (newbeat != this.beat)  this.setBeat(newbeat)
+        if (newbeat != this.beat) this.setBeat(newbeat)
+        if (!this.holdEditing.every(x => x == undefined)) {
+          for (let hold of this.holdEditing) {
+            if (hold == undefined) continue
+            hold.startBeat = Math.min(this.beat, hold.startBeat)
+            hold.endBeat = Math.max(this.beat, hold.endBeat)
+            hold.roll ||= event.shiftKey
+          }
+          this.setHolds()
+        }
       }
     });
 
@@ -83,6 +102,10 @@ export class ChartManager {
       if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
       this.chartView?.render();
       this.info.text = "Time: " + roundDigit(this.time,3) + "\n" + "Beat: " + roundDigit(this.beat,3) + "\nFPS: " + getFPS(this.app.pixi)
+      for (let hold of this.holdEditing) {
+        if (hold != undefined)
+        this.info.text += "\n" + JSON.stringify(hold)
+      }
     });
     
     setInterval(()=>{
@@ -112,12 +135,61 @@ export class ChartManager {
       }
     })
 
-    window.addEventListener("resize", ()=>{
+    document.addEventListener("resize", ()=>{
       if (this.chartView) {
         this.chartView.view.x = this.app.pixi.screen.width/2
         this.chartView.view.y = this.app.pixi.screen.height/2
       }
     })
+
+    document.addEventListener("keydown", (event: KeyboardEvent)=>{
+      if (event.code.startsWith("Digit") && !event.repeat) {
+        let col = parseInt(event.code.slice(5))-1
+        if (col < 4) {
+          
+          this.holdEditing[col] = {
+            startBeat: this.beat,
+            endBeat: this.beat,
+            roll: false,
+            originalNote: this.setNote(col)
+          }
+          event.preventDefault()
+          event.stopImmediatePropagation()
+        }
+      }
+    }, true)
+
+    document.addEventListener("keyup", (event: KeyboardEvent)=>{
+      if (event.code.startsWith("Digit")) {
+        let col = parseInt(event.code.slice(5))-1
+        this.holdEditing[col] = undefined
+      }
+    }, true)
+
+    // Override any move+key combos when editing a hold
+    document.addEventListener("keydown", (event: KeyboardEvent) => {
+      if (!this.holdEditing.every(x => x == undefined)) {
+        let keyName = Keybinds.getKeyNameFromCode(event.code)
+        let keybinds = ["cursorUp","cursorDown","previousNote", "nextNote", "previousMeasure", "nextMeasure","jumpChartStart","jumpChartEnd","jumpSongStart","jumpSongEnd"]
+        for (let keybind of keybinds) {
+          if (KEYBINDS[keybind].keybinds.map(x=>x.key).includes(keyName)) {
+            event.preventDefault()
+            event.stopImmediatePropagation()
+            KEYBINDS[keybind].callback(this.app)
+            for (let hold of this.holdEditing) {
+              if (hold == undefined) continue
+              hold.startBeat = Math.min(this.beat, hold.startBeat)
+              hold.endBeat = Math.max(this.beat, hold.endBeat)
+              hold.roll ||= event.shiftKey
+            }
+            this.setHolds()
+            return
+          }
+        }
+      }
+    }, true)
+
+
   }
 
   getBeat(): number {
@@ -240,7 +312,7 @@ export class ChartManager {
       return
     }
     this.noteIndex = bsearch(this.chart.notedata, this.time, a => a.second) + 1
-    if (this.noteIndex == 1 && this.time < this.chart.notedata[0].second) this.noteIndex = 0
+    if (this.noteIndex >= 1 && this.time <= this.chart.notedata[this.noteIndex-1].second) this.noteIndex--
   }
 
   playPause() {
@@ -309,6 +381,55 @@ export class ChartManager {
     if (this.chart.notedata.length == 0) return
     let note = this.chart.notedata[this.chart.notedata.length-1]
     this.setBeat(note.beat + (note.hold ?? 0))
+  }
+
+  private setNote(col: number): NotedataEntry | undefined {
+    if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
+    let conflictingNote = this.chart.notedata.filter(note => {
+      if (note.col != col) return false
+      if (Math.abs(note.beat-this.beat) < 0.001) return true
+      return (note.hold && note.beat <= this.beat && note.beat + note.hold! >= this.beat)
+    })
+    if (conflictingNote.length > 0) {
+      this.chart.removeNote(conflictingNote[0])
+      return
+    }
+    let note = this.chart.addNote({
+      beat: this.beat,
+      col: col,
+      type: "Tap"
+    })
+    this.seekBack()
+    return note
+  }
+
+  private setHolds() {
+    if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
+    for (let col = 0; col < this.holdEditing.length; col++) {
+      let hold = this.holdEditing[col]
+      if (hold == undefined) continue
+      if (!hold.originalNote) {
+        hold.originalNote = this.chart.addNote({
+          beat: hold.startBeat,
+          col: col,
+          type: hold.roll ? "Roll" : "Hold",
+          hold: hold.endBeat - hold.startBeat
+        })
+      }else{
+        this.chart.modifyNote(hold.originalNote, {
+          beat: hold.startBeat,
+          type: hold.roll ? "Roll" : "Hold",
+          hold: hold.endBeat - hold.startBeat
+        })
+      }
+      let conflictingNotes = this.chart.notedata.filter(note => {
+        if (note == hold!.originalNote) return false
+        if (note.col != col) return false
+        if (note.beat >= hold!.startBeat && note.beat <= hold!.endBeat) return true
+        return (note.hold && (note.beat + note.hold >= hold!.startBeat && note.beat + note.hold <= hold!.endBeat))
+      })
+      conflictingNotes.forEach(note => this.chart!.removeNote(note))
+    }
   }
 }
 
