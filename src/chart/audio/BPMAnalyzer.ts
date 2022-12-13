@@ -25,7 +25,6 @@ export class BPMAnalyzer {
     return groups
   }
 
-
   static getPeaks(data: Float32Array, sampleRate: number): Peak[] {
     let partSize = sampleRate/2
     let parts = data.length / partSize
@@ -64,6 +63,4 @@ export class BPMAnalyzer {
     });
     return groups;
   }
-
-  
 }

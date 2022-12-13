@@ -57,16 +57,14 @@ export const OPTIONS_WINDOW_DATA: {[key: string]: OptionsWindowData} = {
             el.innerHTML = "New Song"
             // el.onclick = () => {
             //   let folder = "New Song"
-            //   if (window.files.file_tree[folder]) {
+            //   if (app.files.file_tree[folder]) {
             //     let i = 2
-            //     while (window.files.file_tree[folder + " " + i]) i++
+            //     while (app.files.file_tree[folder + " " + i]) i++
             //   }
-            //   var file = new File([DEFAULT_SM], "song.sm", {type: ""});
-            //   window.files.addFile(folder + "/song.sm",file)
-            //   window.selected_sm = folder + "/song.sm"
-            //   closeWindow("select_sm_initial")
-            //   loadSM()
-            //   createOptionsWindow("song_properties")
+            //   let file = new File([DEFAULT_SM], "song.sm", {type: ""});
+            //   app.files.addFile(folder + "/song.sm",file)
+            //   app.chartManager.loadSM(folder + "/song.sm")
+            //   app.windowManager.getWindowById("select_sm_initial")!.closeWindow()
             // }
             return el
           }

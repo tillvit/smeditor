@@ -69,7 +69,7 @@ export abstract class Window {
     navbarTitleElement.classList.add("title")
 
     windowElement.addEventListener('mousedown', () => this.focus());
-    if (options.blocking) document.addEventListener('mousedown', this.block, true);
+    if (options.blocking) window.addEventListener('mousedown', this.block, true);
   
     navbarTitleElement.addEventListener('mousedown', () => {
       window.addEventListener('mousemove', this.handleDrag)
@@ -95,7 +95,7 @@ export abstract class Window {
     if (this.windowManager) {
       this.windowManager.removeWindow(this)
       this.windowElement.classList.add("exiting")
-      document.removeEventListener('mousedown', this.block, true);
+      window.removeEventListener('mousedown', this.block, true);
       setTimeout(() => this.windowManager!.view.removeChild(this.windowElement),40)
     }
   }

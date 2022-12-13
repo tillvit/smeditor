@@ -228,8 +228,8 @@ export class DirectoryWindow extends Window {
     let cancel = document.createElement("button")
     cancel.innerText = "Cancel"
     cancel.onclick = ()=>{
-      document.removeEventListener("keydown", this.keyHandler!, true)
-      document.removeEventListener('drop', this.dropHandler!, true);
+      window.removeEventListener("keydown", this.keyHandler!, true)
+      window.removeEventListener('drop', this.dropHandler!, true);
       this.closeWindow()
     }
     
@@ -256,7 +256,7 @@ export class DirectoryWindow extends Window {
     if (this.dirOptions.initial_select) this.select(viewElement, this.dirOptions.initial_select)
     
     //Drag & drop
-    document.addEventListener("keydown", this.keyHandler, true)
+    window.addEventListener("keydown", this.keyHandler, true)
   
     viewElement.addEventListener('dragover', this.dragHandler);
     viewElement.addEventListener('dragend',()=>{
@@ -264,7 +264,7 @@ export class DirectoryWindow extends Window {
       this.highlightedPath = ""
     })
   
-    document.addEventListener('drop', this.dropHandler, true);
+    window.addEventListener('drop', this.dropHandler, true);
   } 
   
   traverseFileTree(prefix: string, item: FileSystemEntry, path?: string): Promise<void> {
@@ -520,8 +520,8 @@ export class DirectoryWindow extends Window {
     if (!path) return
     if (this.dirOptions.accepted_file_types!.includes(path.split(".").pop()!)) {
       this.dirOptions.callback?.(path)
-      document.removeEventListener("keydown", this.keyHandler!, true)
-      document.removeEventListener('drop', this.dropHandler!, true);
+      window.removeEventListener("keydown", this.keyHandler!, true)
+      window.removeEventListener('drop', this.dropHandler!, true);
       this.closeWindow()
     }
   }
@@ -541,14 +541,14 @@ export class DirectoryWindow extends Window {
   }
 
   startEditing(title: HTMLTextAreaElement) {
-    document.removeEventListener("keydown", this.keyHandler!, true)
+    window.removeEventListener("keydown", this.keyHandler!, true)
     title.disabled = false
     title.style.pointerEvents = ""
     title.value = title.parentElement!.dataset.path!.split("/").pop()!
     title.focus()
     title.addEventListener("keypress", this.textAreaKeyHandler, true)
     title.addEventListener("blur", ()=>{
-      document.addEventListener("keydown", this.keyHandler!, true)
+      window.addEventListener("keydown", this.keyHandler!, true)
       title.disabled = true
       title.style.pointerEvents = "none"
       let path = title.parentElement!.dataset.path!.split("/")

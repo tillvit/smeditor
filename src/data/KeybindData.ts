@@ -387,4 +387,20 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     disabled: (app) => !app.chartManager.songAudio,
     callback: (app) => app.windowManager.openWindow(new EQWindow(app))
   },
+  previousNoteType: {
+    label: "Previous note type",
+    keybinds: [
+			{key: "N", mods: []}
+		],
+    disabled: (app) => !app.chartManager.chartView,
+    callback: (app) => app.chartManager.previousNoteType()
+  },
+  nextNoteType: {
+    label: "Next Note Type",
+    keybinds: [
+			{key: "M", mods: []}
+		],
+    disabled: (app) => !app.chartManager.chartView,
+    callback: (app) => app.chartManager.nextNoteType()
+  },
 }

@@ -24,11 +24,7 @@ export class BiquadFilter {
 
   private options: BiquadOptions
   private type: BiquadType
-/*`syntax: new BiquadFilter(type, gain, freq, sampleRate, bandwidth)
-    type: lowpass, highpass, bandpass, peaking, notch, lowshelf, highshelf
-    gain: change in dB (used for peaking, lowshelf, highshelf)
-    freq: where the filter frequency center is (or end if it is a lowpass/highpass)
-    sampleRate: usually 44100`)*/
+
   constructor(type: "lowpass"|"highpass"|"bandpass"|"notch", options: {sampleRate: number, frequency: number, bandwidth: number})
   constructor(type: "peaking"|"lowshelf"|"highshelf", options: BiquadOptions)
   constructor(type: BiquadType, options: BiquadOptions){
@@ -117,7 +113,6 @@ export class BiquadFilter {
   reset() {
     this.x1 = this.x2 = this.y1 = this.y2 = 0
   }
-
 
   process(sample: number) {
     if (!this.enabled) return sample

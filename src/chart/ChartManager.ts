@@ -9,9 +9,10 @@ import { NoteTexture } from "./note/NoteTexture"
 import { BitmapText } from "pixi.js"
 import { bsearch, getFPS, roundDigit } from "../util/Util"
 import { Keybinds } from "../listener/Keybinds"
-import { NotedataEntry } from "./sm/NoteTypes"
+import { NotedataEntry, NoteType } from "./sm/NoteTypes"
 
 const SNAPS = [1,2,3,4,6,8,12,16,24,48,-1]
+const ADDABLE_NOTE_TYPES: NoteType[] = ["Tap", "Mine", "Fake", "Lift"]
 
 interface PartialHold {
   startBeat: number,
@@ -45,7 +46,9 @@ export class ChartManager {
 
   private beat: number = 0
   private time: number = 0
+
   private holdEditing: (PartialHold | undefined)[] = []
+  private editNoteTypeIndex: number = 0
 
   private snapIndex: number = 0
   private partialScroll: number = 0
@@ -101,11 +104,11 @@ export class ChartManager {
     this.app.pixi.ticker.add(() => {
       if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
       this.chartView?.render();
-      this.info.text = "Time: " + roundDigit(this.time,3) + "\n" + "Beat: " + roundDigit(this.beat,3) + "\nFPS: " + getFPS(this.app.pixi)
-      for (let hold of this.holdEditing) {
-        if (hold != undefined)
-        this.info.text += "\n" + JSON.stringify(hold)
-      }
+      this.info.text = "Time: " + roundDigit(this.time,3) 
+                     + "\nBeat: " + roundDigit(this.beat,3)
+                     + "\nFPS: " + getFPS(this.app.pixi)
+                     + "\nNote Type: " + ADDABLE_NOTE_TYPES[this.editNoteTypeIndex]
+
     });
     
     setInterval(()=>{
@@ -135,14 +138,14 @@ export class ChartManager {
       }
     })
 
-    document.addEventListener("resize", ()=>{
+    window.addEventListener("resize", ()=>{
       if (this.chartView) {
         this.chartView.view.x = this.app.pixi.screen.width/2
         this.chartView.view.y = this.app.pixi.screen.height/2
       }
     })
 
-    document.addEventListener("keydown", (event: KeyboardEvent)=>{
+    window.addEventListener("keydown", (event: KeyboardEvent)=>{
       if (event.code.startsWith("Digit") && !event.repeat) {
         let col = parseInt(event.code.slice(5))-1
         if (col < 4) {
@@ -159,7 +162,7 @@ export class ChartManager {
       }
     }, true)
 
-    document.addEventListener("keyup", (event: KeyboardEvent)=>{
+    window.addEventListener("keyup", (event: KeyboardEvent)=>{
       if (event.code.startsWith("Digit")) {
         let col = parseInt(event.code.slice(5))-1
         this.holdEditing[col] = undefined
@@ -167,7 +170,7 @@ export class ChartManager {
     }, true)
 
     // Override any move+key combos when editing a hold
-    document.addEventListener("keydown", (event: KeyboardEvent) => {
+    window.addEventListener("keydown", (event: KeyboardEvent) => {
       if (!this.holdEditing.every(x => x == undefined)) {
         let keyName = Keybinds.getKeyNameFromCode(event.code)
         let keybinds = ["cursorUp","cursorDown","previousNote", "nextNote", "previousMeasure", "nextMeasure","jumpChartStart","jumpChartEnd","jumpSongStart","jumpSongEnd"]
@@ -236,7 +239,7 @@ export class ChartManager {
     if (this.sm == undefined) return
     if (chart == undefined) {
       let charts = this.sm.charts[this.app.options.chart.stepsType]
-      if (charts!.length == 0) return
+      if (!charts || charts!.length == 0) return
       chart = charts![charts!.length - 1]
     }
     
@@ -249,7 +252,6 @@ export class ChartManager {
     this.chartView = new ChartRenderer(this)
     this.chartView.view.x = this.app.pixi.screen.width/2
     this.chartView.view.y = this.app.pixi.screen.height/2
-    
   }
   
 
@@ -387,7 +389,7 @@ export class ChartManager {
     if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
     let conflictingNote = this.chart.notedata.filter(note => {
       if (note.col != col) return false
-      if (Math.abs(note.beat-this.beat) < 0.001) return true
+      if (Math.abs(note.beat-this.beat) < 0.003) return true
       return (note.hold && note.beat <= this.beat && note.beat + note.hold! >= this.beat)
     })
     if (conflictingNote.length > 0) {
@@ -397,7 +399,7 @@ export class ChartManager {
     let note = this.chart.addNote({
       beat: this.beat,
       col: col,
-      type: "Tap"
+      type: ADDABLE_NOTE_TYPES[this.editNoteTypeIndex]
     })
     this.seekBack()
     return note
@@ -431,6 +433,14 @@ export class ChartManager {
       conflictingNotes.forEach(note => this.chart!.removeNote(note))
       this.seekBack()
     }
+  }
+
+  previousNoteType() {
+    this.editNoteTypeIndex = ((this.editNoteTypeIndex-1) + ADDABLE_NOTE_TYPES.length) % ADDABLE_NOTE_TYPES.length
+  }
+  
+  nextNoteType() {
+    this.editNoteTypeIndex = ((this.editNoteTypeIndex+1) + ADDABLE_NOTE_TYPES.length) % ADDABLE_NOTE_TYPES.length
   }
 }
 

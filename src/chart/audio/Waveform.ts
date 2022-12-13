@@ -26,7 +26,7 @@ export class Waveform {
     this.refilter()
   }
 
-  stripWaveform(rawData: Float32Array | undefined): number[] | undefined {
+  private stripWaveform(rawData: Float32Array | undefined): number[] | undefined {
     if (rawData == undefined) return
     let blockSize = this.chartAudio.getSampleRate() / (this.getZoom()*4); // Number of samples in each subdivision
     let samples = Math.floor(rawData.length / blockSize);

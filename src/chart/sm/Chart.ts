@@ -116,7 +116,7 @@ export class Chart {
 
   private countNotes(): NotedataCount {
     let count: NotedataCount = {
-      peakNps: 0,
+      peakNps: Math.max(...this.getNPSPerMeasure()),
       taps: 0,
       jumps: 0,
       hands: 0,
@@ -179,8 +179,10 @@ export class Chart {
         continue
       }
       let noteCount = 0
-      while(this.notedata[noteIndex] && this.notedata[noteIndex].beat < beat + 4) {
+      while(this.notedata[noteIndex+1] && this.notedata[noteIndex].beat < beat + 4) {
+        let type = this.notedata[noteIndex].type
         noteIndex++
+        if (!this.notedata[noteIndex].fake && !this.notedata[noteIndex].warped && (type == "Hold" || type == "Roll" || type == "Tap" || type == "Lift"))
         noteCount++
       }
       nps.push(noteCount/deltaTime)
@@ -204,8 +206,6 @@ export class Chart {
     return this.timingData.isBeatFaked(beat)
   }
 
-  addNote(note: {beat: number, col: number, type: "Tap"|"Mine"|"Fake"|"Lift"}): NotedataEntry
-  addNote(note: {beat: number, col: number, type: "Hold"|"Roll", hold: number}): NotedataEntry
   addNote(note: {beat: number, col: number, type: NoteType, hold?: number}): NotedataEntry {
     note.beat = Math.round(note.beat*192)/192
     if (note.hold) note.hold = Math.round(note.hold*192)/192
@@ -221,12 +221,14 @@ export class Chart {
     let index = bsearch(this.notedata, note.beat, a => a.beat) + 1
     if (index >= 1 && this.notedata[index-1].beat > note.beat) index--
     this.notedata.splice(index, 0, computedNote)
-    this.countNotes()
+    this._notedataCount = this.countNotes()
     return computedNote
   }
 
   modifyNote(note: NotedataEntry, properties: Partial<NotedataEntry>) {
     Object.assign(note, properties)
+    note.beat = Math.round(note.beat*192)/192
+    if (note.hold) note.hold = Math.round(note.hold*192)/192
     note.warped = this.timingData.isBeatWarped(note.beat),
     note.fake =  note.type == "Fake" || this.timingData.isBeatFaked(note.beat),
     note.second = this.timingData.getSeconds(note.beat),
@@ -234,12 +236,12 @@ export class Chart {
     let index = bsearch(this.notedata, note.beat, a => a.beat) + 1
     if (index >= 1 && this.notedata[index-1].beat > note.beat) index--
     this.notedata.splice(index, 0, note)
-    this.countNotes()
+    this._notedataCount = this.countNotes()
   }
 
   removeNote(note: NotedataEntry) {
     this.notedata.splice(this.notedata.indexOf(note), 1)
-    this.countNotes()
+    this._notedataCount = this.countNotes()
   }
   
 } 

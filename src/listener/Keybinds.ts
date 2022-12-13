@@ -11,7 +11,7 @@ export class Keybinds {
   constructor(app: App) {
     this.app = app
 
-    document.addEventListener("keydown",(e: KeyboardEvent) => {
+    window.addEventListener("keydown",(e: KeyboardEvent) => {
       if (e.target instanceof HTMLTextAreaElement) return
       if (["Meta", "Control", "Shift", "Alt"].includes(e.key)) return
       

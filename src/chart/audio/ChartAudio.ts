@@ -112,7 +112,7 @@ export class ChartAudio {
     return this._isPlaying
   }
 
-  initSource() {
+  private initSource() {
     this._source = this._audioContext.createBufferSource();
     this._source.buffer = this._buffer;
     this._source.connect(this._audioAnalyzer);

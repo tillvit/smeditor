@@ -64,7 +64,7 @@ export class NoteTexture {
     });
   }
 
-  static async loadGeometry(url: string): Promise<Geometry> {
+  private static async loadGeometry(url: string): Promise<Geometry> {
     try {
       let text = await fetch(url).then(response => response.text())
       let lines = text.split("\n")
