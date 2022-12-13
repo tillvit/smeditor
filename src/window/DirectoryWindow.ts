@@ -24,6 +24,7 @@ export class DirectoryWindow extends Window {
   dirOptions: DirectoryWindowOptions
   keyHandler?: (event: KeyboardEvent) => void
   dragHandler?: (event: MouseEvent) => void
+  dropHandler?: (event: DragEvent) => void
   highlightedPath: string = ""
 
   constructor(app: App, options: DirectoryWindowOptions) {
@@ -143,6 +144,49 @@ export class DirectoryWindow extends Window {
       viewElement.querySelector(".outlined")?.classList.remove("outlined")
       this.highlightedPath = ""
     }
+
+    this.dropHandler = async (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (!(<HTMLElement>event.target!).closest(".dir-selector")) {
+        return
+      }
+      let prefix = this.highlightedPath
+      let items = event.dataTransfer!.items;
+      if (prefix == "") {
+        for (var i=0; i<items.length; i++) {
+          let item = items[i].webkitGetAsEntry()
+          if (item && item.isFile) {
+            if (item.name.endsWith(".sm") || item.name.endsWith(".ssc")) {
+              prefix = "New Song"
+              break
+            }
+          }
+        }
+      }
+  
+      let queue = [];
+      for (var i=0; i < items.length; i++) {
+        let item = items[i].webkitGetAsEntry()
+        queue.push(this.traverseFileTree(prefix, item!))
+      }
+      await Promise.all(queue);
+      let scroll = viewElement.querySelector(".dir-selector")?.querySelector("div[data-path='"+prefix+"']")?.parentElement!.querySelector(".children")
+      if (prefix == "") {
+        scroll = viewElement.querySelector(".dir-selector")
+      }
+      let s_path = prefix.split("/")
+      while (scroll == undefined) {
+        s_path.pop()
+        viewElement.querySelector(".dir-selector")?.querySelector("div[data-path='"+s_path.join("/")+"']")?.parentElement!.querySelector(".children")
+        if (s_path.length == 0) {
+          scroll = viewElement.querySelector(".dir-selector")
+        }
+      }
+      this.reloadView(viewElement,s_path.join("/"))
+      this.searchForAcceptableFile(viewElement, s_path.join("/"))
+  
+    }
     
     //Padding container
     let padding = document.createElement("div")
@@ -185,6 +229,7 @@ export class DirectoryWindow extends Window {
     cancel.innerText = "Cancel"
     cancel.onclick = ()=>{
       document.removeEventListener("keydown", this.keyHandler!, true)
+      document.removeEventListener('drop', this.dropHandler!, true);
       this.closeWindow()
     }
     
@@ -212,10 +257,6 @@ export class DirectoryWindow extends Window {
     
     //Drag & drop
     document.addEventListener("keydown", this.keyHandler, true)
-    scroll.addEventListener('dragover', (event) => {
-      event.preventDefault()
-      event.dataTransfer!.dropEffect = 'copy';
-    });
   
     viewElement.addEventListener('dragover', this.dragHandler);
     viewElement.addEventListener('dragend',()=>{
@@ -223,45 +264,7 @@ export class DirectoryWindow extends Window {
       this.highlightedPath = ""
     })
   
-    scroll.addEventListener('drop', async (event) => {
-      event.stopPropagation();
-      event.preventDefault();
-      let prefix = this.highlightedPath
-      let items = event.dataTransfer!.items;
-      if (prefix == "") {
-        for (var i=0; i<items.length; i++) {
-          let item = items[i].webkitGetAsEntry()
-          if (item && item.isFile) {
-            if (item.name.endsWith(".sm") || item.name.endsWith(".ssc")) {
-              prefix = "New Song"
-              break
-            }
-          }
-        }
-      }
-  
-      let queue = [];
-      for (var i=0; i < items.length; i++) {
-        let item = items[i].webkitGetAsEntry()
-        queue.push(this.traverseFileTree(prefix, item!))
-      }
-      await Promise.all(queue);
-      let scroll = viewElement.querySelector(".dir-selector")?.querySelector("div[data-path='"+prefix+"']")?.parentElement!.querySelector(".children")
-      if (prefix == "") {
-        scroll = viewElement.querySelector(".dir-selector")
-      }
-      let s_path = prefix.split("/")
-      while (scroll == undefined) {
-        s_path.pop()
-        viewElement.querySelector(".dir-selector")?.querySelector("div[data-path='"+s_path.join("/")+"']")?.parentElement!.querySelector(".children")
-        if (s_path.length == 0) {
-          scroll = viewElement.querySelector(".dir-selector")
-        }
-      }
-      this.reloadView(viewElement,s_path.join("/"))
-      this.searchForAcceptableFile(viewElement, s_path.join("/"))
-  
-    });
+    document.addEventListener('drop', this.dropHandler, true);
   } 
   
   traverseFileTree(prefix: string, item: FileSystemEntry, path?: string): Promise<void> {
@@ -282,7 +285,6 @@ export class DirectoryWindow extends Window {
         });
       }
     })
-    
   }
   
   
@@ -519,6 +521,7 @@ export class DirectoryWindow extends Window {
     if (this.dirOptions.accepted_file_types!.includes(path.split(".").pop()!)) {
       this.dirOptions.callback?.(path)
       document.removeEventListener("keydown", this.keyHandler!, true)
+      document.removeEventListener('drop', this.dropHandler!, true);
       this.closeWindow()
     }
   }

@@ -7,6 +7,7 @@ import { Keybinds } from './listener/Keybinds'
 import { FileSystem } from './util/FileSystem';
 import { Options } from './util/Options';
 import { getBrowser } from './util/Util';
+import { DirectoryWindow } from './window/DirectoryWindow'
 import { OptionsWindow } from './window/OptionsWindow'
 import { WindowManager } from './window/WindowManager'
 
@@ -42,7 +43,7 @@ export class App {
     this.chartManager = new ChartManager(this)
     this.menubarManager = new MenubarManager(this, document.getElementById("menubar") as HTMLDivElement)
     this.windowManager = new WindowManager(this, document.getElementById("windows") as HTMLDivElement)
-    
+
     this.registerListeners()
     this.keybinds = new Keybinds(this)
 
@@ -90,6 +91,63 @@ export class App {
 
     window.addEventListener("resize", this.onResize)
     this.onResize()
+
+    window.addEventListener('dragover', (event) => {
+      event.preventDefault()
+      event.dataTransfer!.dropEffect = 'copy';
+    });
+
+    window.addEventListener('drop', async (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      let prefix = ""
+      let items = event.dataTransfer!.items;
+      for (var i=0; i<items.length; i++) {
+        let item = items[i].webkitGetAsEntry()
+        if (item && item.isFile) {
+          if (item.name.endsWith(".sm") || item.name.endsWith(".ssc")) {
+            prefix = "New Song"
+            break
+          }
+        }
+      }
+  
+      let queue = [];
+      for (var i=0; i < items.length; i++) {
+        let item = items[i].webkitGetAsEntry()
+        queue.push(this.traverseFileTree(prefix, item!))
+      }
+      await Promise.all(queue);
+      this.windowManager.openWindow(new DirectoryWindow(this, {
+        title: "Select an sm/ssc file...",
+        accepted_file_types: ["sm","ssc"],
+        disableClose: !this.chartManager.sm,
+        callback: (path: string) => {
+          this.chartManager.loadSM(path)
+          this.windowManager.getWindowById("select_sm_initial")?.closeWindow()
+        }
+      }))
+    });
+  }
+
+  private traverseFileTree(prefix: string, item: FileSystemEntry, path?: string): Promise<void> {
+    return new Promise((resolve) => {
+      path = path || "";
+      if (item.isFile) {
+        (<FileSystemFileEntry>item).file((file) => {
+          this.files.addFile(prefix + "/" + path + file.name, file)
+          resolve()
+        })
+      } else if (item.isDirectory) {
+        var dirReader = (<FileSystemDirectoryEntry>item).createReader();
+        dirReader.readEntries(async (entries) => {
+          for (var i=0; i<entries.length; i++) {
+            await this.traverseFileTree(prefix, entries[i], path + item.name + "/");
+          }
+          resolve()
+        });
+      }
+    })
   }
 
   onResize = () => {
