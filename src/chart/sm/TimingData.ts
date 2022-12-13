@@ -1,5 +1,5 @@
 
-import { bsearch, clamp } from "../../util/Util"
+import { bsearch, clamp, roundDigit } from "../../util/Util"
 import { TimingEvent, WarpTimingEvent, StopTimingEvent, AttackTimingEvent, TIMING_EVENT_NAMES, BeatCacheTimingEvent, SpeedTimingEvent, TimingProperty, TimingEventProperty, TimingEventBase, ScrollCacheTimingEvent } from "./TimingTypes"
 
 
@@ -257,12 +257,12 @@ export class TimingData {
     if (!isFinite(beat)) return 0
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
     let cache = this._cache.beatTiming!
-    let i = this.searchCache(cache, "beat", beat)
+    let i = this.searchCache(cache, "beat", roundDigit(beat,3))
     let event = cache[i]
     let seconds = event.second!
     let beats_left_over = beat - event.beat
     let curbpm = this.getBPM(event.beat)
-    if (event.type == "STOPS" && beat > event.beat || event.type == "DELAYS") return seconds + Math.max(0,Math.max(0,beats_left_over * 60/curbpm) + event.value)
+    if (event.type == "STOPS" && roundDigit(beat,3) > event.beat || event.type == "DELAYS") return seconds + Math.max(0,Math.max(0,beats_left_over * 60/curbpm) + event.value)
     if (event.type == "WARPS") return seconds
     if (event.type == "BPMS") curbpm = event.value
     seconds += beats_left_over * 60/curbpm

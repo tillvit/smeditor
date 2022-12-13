@@ -36,11 +36,11 @@ export class MenubarManager {
         if (typeof disabled == "function") disabled = disabled(this.app)
         if (disabled) item.classList.add("disabled")
   
-        item.onclick = () => {
+        item.addEventListener("click", () => {
           meta.callback(this.app)
           let dropdown = item.closest(".menu-main")!.querySelector(".dropdown")!
           dropdown.replaceChildren()
-        }
+        })
       } else {
         title_bar_right = document.createElement("img")
         title_bar_right.classList.add("icon")

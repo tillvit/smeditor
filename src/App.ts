@@ -1,5 +1,6 @@
 
 import { Application, BitmapFont } from 'pixi.js';
+import { BiquadFilter } from './chart/audio/BiquadFilter'
 import { ChartManager } from './chart/ChartManager'
 import { MenubarManager } from './gui/MenubarManager'
 import { Keybinds } from './listener/Keybinds'
@@ -47,13 +48,13 @@ export class App {
     
     console.log(`smeditor is currently a work in progress. editing is almost start since the viewer is almost done!`)
     console.log(`audio filtering is working (hopefully) but not yet implemented into UI`)
-    console.log(`use audio.filters = [new BiquadFilter(options)...] and then audio.processFilters()`)
-    console.log(`syntax: new BiquadFilter(type, gain, freq, sampleRate, bandwidth)
-    type: lowpass, highpass, bandpass, peaking, notch, lowshelf, highshelf
-    gain: change in dB (used for peaking, lowshelf, highshelf)
-    freq: where the filter frequency center is (or end if it is a lowpass/highpass)
-    sampleRate: usually 44100
-    bandwidth: width of the effect in octaves (used for lowpass, highpass, bandpass, peaking, notch)`)
+    // console.log(`use audio.filters = [new BiquadFilter(options)...] and then audio.processFilters()`)
+    // console.log(`syntax: new BiquadFilter(type, gain, freq, sampleRate, bandwidth)
+    // type: lowpass, highpass, bandpass, peaking, notch, lowshelf, highshelf
+    // gain: change in dB (used for peaking, lowshelf, highshelf)
+    // freq: where the filter frequency center is (or end if it is a lowpass/highpass)
+    // sampleRate: usually 44100
+    // bandwidth: width of the effect in octaves (used for lowpass, highpass, bandpass, peaking, notch)`)
 
     this.windowManager.openWindow(new OptionsWindow(this, "select_sm_initial"))
     
@@ -107,8 +108,10 @@ declare global {
   interface Window { 
     app: App
     runSafari?: Function
+    BiquadFilter: BiquadFilter
   }
 }
+
 
 document.querySelector("body")!.innerHTML = 
 `<div id="view-wrapper"> 
@@ -160,6 +163,7 @@ if (!gl) {
     }
 } else {
   window.app = new App()
+  window.BiquadFilter = BiquadFilter as any;
 }
 
 
