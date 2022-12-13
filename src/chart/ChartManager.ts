@@ -429,6 +429,7 @@ export class ChartManager {
         return (note.hold && (note.beat + note.hold >= hold!.startBeat && note.beat + note.hold <= hold!.endBeat))
       })
       conflictingNotes.forEach(note => this.chart!.removeNote(note))
+      this.seekBack()
     }
   }
 }

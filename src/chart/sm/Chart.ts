@@ -227,6 +227,9 @@ export class Chart {
 
   modifyNote(note: NotedataEntry, properties: Partial<NotedataEntry>) {
     Object.assign(note, properties)
+    note.warped = this.timingData.isBeatWarped(note.beat),
+    note.fake =  note.type == "Fake" || this.timingData.isBeatFaked(note.beat),
+    note.second = this.timingData.getSeconds(note.beat),
     this.notedata.splice(this.notedata.indexOf(note), 1)
     let index = bsearch(this.notedata, note.beat, a => a.beat) + 1
     if (index >= 1 && this.notedata[index-1].beat > note.beat) index--
