@@ -3,11 +3,12 @@ import { ArrowContainer, NoteRenderer} from "./note/NoteRenderer";
 import { getRotFromArrow, rgbtoHex, roundDigit } from "../util/Util";
 import { Waveform } from "./audio/Waveform";
 import { ChartManager } from "./ChartManager"
-import { BitmapText, BLEND_MODES, Container, Graphics, Sprite, Texture } from "pixi.js"
+import { BitmapText, BLEND_MODES, Container, Graphics, Point, Rectangle, Sprite, Texture } from "pixi.js"
 import { Options } from "../util/Options"
 import { TimingEventProperty, TIMING_EVENT_NAMES } from "./sm/TimingTypes"
 import { Chart } from "./sm/Chart"
 import { NoteTexture } from "./note/NoteTexture"
+import { NoteType } from "./sm/NoteTypes"
 
 type TimedDisplayObject = (BitmapText | Container) & {dirtyTime: number}
 
@@ -78,6 +79,13 @@ export class ChartRenderer {
   private speedMult: number = 1
   private negScroll: boolean = false
 
+  private lastMousePos?: Point
+  private lastMouseBeat: number = -1
+  private lastMouseCol: number = -1
+  private lastNoteType: NoteType = "Tap"
+  private editingCol: number = -1
+  private editingArrow: Container
+
   view: Container = new Container()
  
 
@@ -88,6 +96,9 @@ export class ChartRenderer {
 
     this.waveform = new Waveform(this)
     this.graphics.lineStyle(2, 0x0000FF, 1);
+
+    this.editingArrow = NoteRenderer.createArrow({beat: 0, col: 1, type: "Tap"})
+    this.editingArrow.alpha = 0.6
 
     for (let i = 0; i < 4; i ++) {
       let receptor = new Sprite(receptor_tex)
@@ -115,6 +126,7 @@ export class ChartRenderer {
     this.view.addChild(this.texts)
     this.view.addChild(this.timingBoxes)
     this.view.addChild(this.receptors)
+    this.view.addChild(this.editingArrow)
     this.view.addChild(this.arrows)
     this.view.addChild(this.flashes)
 
@@ -122,6 +134,40 @@ export class ChartRenderer {
     this.view.addChild(this.timings)
     this.chartManager.app.pixi.stage.addChild(this.view)
     this.render()
+
+    this.view.x = this.chartManager.app.pixi.screen.width/2
+    this.view.y = this.chartManager.app.pixi.screen.height/2
+
+    this.view.interactive = true
+    this.view.hitArea = new Rectangle(-1e5, -1e5, 2e5, 2e5);
+
+    this.view.on("mousemove", (event) =>{
+      this.lastMousePos = this.view.toLocal(event.global)
+      if (this.editingCol != -1) {
+        let snap = this.options.chart.snap == 0 ? 1/48 : this.options.chart.snap
+        let snapBeat = Math.round(this.getBeatFromYPos(this.lastMousePos.y)/snap)*snap
+        this.chartManager.editHoldBeat(this.editingCol, snapBeat, event.shiftKey)
+      }
+    })
+    window.addEventListener("keydown", event =>{
+      if (this.editingCol != -1) {
+        let snap = this.options.chart.snap == 0 ? 1/48 : this.options.chart.snap
+        let snapBeat = Math.round(this.getBeatFromYPos(this.lastMousePos!.y)/snap)*snap
+        this.chartManager.editHoldBeat(this.editingCol, snapBeat, event.shiftKey)
+      }
+    })
+    this.view.on("mousedown", () => {
+      if (this.options.editor.mousePlacement && this.lastMouseBeat != -1 && this.lastMouseCol != -1) {
+        this.editingCol = this.lastMouseCol
+        this.chartManager.setNote(this.lastMouseCol, "mouse", this.lastMouseBeat)
+      }
+    })
+    this.view.on("mouseup", () => {
+      if (this.editingCol != -1) {
+        this.chartManager.endEditing(this.editingCol)
+        this.editingCol = -1
+      }
+    })
 
     //Draw Noteflash
     this.chartManager.app.pixi.ticker.add(()=>{
@@ -165,8 +211,9 @@ export class ChartRenderer {
     this.negScroll = this.options.chart.doSpeedChanges && (this.speedMult < 0 || (this.chart.timingData.getTimingEventAtBeat("SCROLLS",beat)?.value ?? 1) < 0)
 
     if (this.options.chart.CMod) {
-      renderBeatLimit = this.chart.getBeat(this.getTimeFromYPos(this.chartManager.app.pixi.screen.height-this.view.y+32))
-      renderBeatLowerLimit = this.chart.getBeat(this.getTimeFromYPos(-32 - this.view.y))
+      renderBeatLimit = this.getBeatFromYPos(this.chartManager.app.pixi.screen.height-this.view.y+32)
+      renderBeatLowerLimit = this.getBeatFromYPos(-32 - this.view.y)
+      renderSecondLowerLimit = (-32 - this.view.y - this.options.chart.receptorYPos)/4/64*100/this.options.chart.speed + time
     }
 
 
@@ -283,7 +330,7 @@ export class ChartRenderer {
 
     for (let event of this.chart.timingData.getTimingData("STOPS", "WARPS", "DELAYS", "FAKES")) { 
       if (!this.options.chart.renderTimingEvent[event.type]) continue
-      if ((event.type == "STOPS" || event.type == "DELAYS") && event.second! + Math.abs(event.value) < renderSecondLowerLimit)
+      if ((event.type == "STOPS" || event.type == "DELAYS") && event.second! + Math.abs(event.value) <= renderSecondLowerLimit)
         continue
       if ((event.type == "WARPS" || event.type == "FAKES") && event.beat + event.value < renderBeatLowerLimit)
         continue
@@ -390,6 +437,40 @@ export class ChartRenderer {
     
     NoteTexture.setArrowTexTime(beat, this.chart.getSeconds(beat))
 
+    if (this.lastMousePos) {
+      let snap = this.options.chart.snap == 0 ? 1/48 : this.options.chart.snap
+      let snapBeat = Math.round(this.getBeatFromYPos(this.lastMousePos.y)/snap)*snap
+      let col = Math.round((this.lastMousePos.x+128)/64)
+      if (snapBeat != this.lastMouseBeat || col != this.lastMouseCol || this.chartManager.getEditingNoteType() != this.lastNoteType)  {
+        this.lastMouseBeat = snapBeat
+        this.lastMouseCol = col
+        this.lastNoteType = this.chartManager.getEditingNoteType()
+        if (this.editingCol != -1) {
+          this.chartManager.editHoldBeat(this.editingCol, snapBeat, false)
+        }
+        if (col > 3 || col < 0) {
+          this.lastMouseBeat = -1
+          this.lastMouseCol = -1
+        } else {
+          
+          NoteRenderer.setData(this.editingArrow as ArrowContainer, {
+            beat: snapBeat,
+            col: this.lastMouseCol,
+            type: this.chartManager.getEditingNoteType()
+          })
+        }
+      }
+    }
+
+    this.editingArrow.visible = this.options.editor.mousePlacement && this.lastMouseCol != -1 && this.lastMouseBeat != -1 && this.editingCol == -1 && this.lastMouseBeat >= renderBeatLowerLimit && this.lastMouseBeat <= renderBeatLimit && this.lastMouseBeat >= 0 
+    this.editingArrow.x = this.lastMouseCol*64-128
+    this.editingArrow.y = this.getYPos(this.lastMouseBeat)
+    if (this.chartManager.getEditingNoteType() == "Mine") {
+      NoteRenderer.setMineTime(this.editingArrow as ArrowContainer, time)
+    }
+
+
+
     //Prune
     this.prune(this.texts, this.arrows, this.timings)
   }
@@ -417,13 +498,20 @@ export class ChartRenderer {
 
   getTimeFromYPos(yp: number): number {
     let currentTime = this.chartManager.getTime()
-    let currentBeat = this.chartManager.getBeat()
     if (this.options.chart.CMod) {
       let seconds = (yp - this.options.chart.receptorYPos)/this.options.chart.speed*100/64/4 + currentTime
       return seconds
     }
-    if (this.options.chart.doSpeedChanges) return this.chart.getSeconds((yp - this.options.chart.receptorYPos)/64*100/this.options.chart.speed/this.speedMult+currentBeat)
-    return this.chart.getSeconds((yp - this.options.chart.receptorYPos)/64*100/this.options.chart.speed+currentBeat)
+    return this.chart.getSeconds(this.getBeatFromYPos(yp))
+  }
+
+  getBeatFromYPos(yp: number): number {
+    let currentBeat = this.chartManager.getBeat()
+    if (this.options.chart.CMod) {
+      return this.chart.getBeat(this.getTimeFromYPos(yp))
+    }
+    if (this.options.chart.doSpeedChanges) return this.chart.getBeatFromEffectiveBeat((yp - this.options.chart.receptorYPos)/64*100/this.options.chart.speed/this.speedMult+this.chart.timingData.getEffectiveBeat(currentBeat))
+    return (yp - this.options.chart.receptorYPos)/64*100/this.options.chart.speed+currentBeat
   }
 
   isNegScroll() {

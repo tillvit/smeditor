@@ -1,6 +1,6 @@
 import { Container, Sprite, Texture, TilingSprite } from "pixi.js"
 import { getQuant, getRotFromArrow } from "../../util/Util";
-import { NotedataEntry } from "../sm/NoteTypes"
+import { PartialNotedataEntry } from "../sm/NoteTypes"
 import { NoteTexture } from "./NoteTexture"
 
 const mine_frame_texture = Texture.from('assets/noteskin/mine/frame.png');
@@ -17,17 +17,19 @@ const icons = {
 }
 
 export interface ArrowContainer extends Container {
-  data: NotedataEntry
+  data: PartialNotedataEntry
 }
 
+
 export class NoteRenderer {
-  static createArrow(note: NotedataEntry): Container {
+  static createArrow(note: PartialNotedataEntry): Container {
     let arrow = new Container();
     let hold_container = new Container();
     let item_container = new Container();
     arrow.addChild(hold_container)
     arrow.addChild(item_container)
     this.setData(arrow as ArrowContainer, note);
+    arrow.interactive = true
     return arrow
   }
   static setMineTime(arrow: ArrowContainer, seconds: number) {
@@ -44,7 +46,7 @@ export class NoteRenderer {
     hold_cap.y = yp-arrow.y
   }
 
-  static setData(arrow: ArrowContainer, note: NotedataEntry) {
+  static setData(arrow: ArrowContainer, note: PartialNotedataEntry) {
     if (arrow.data == note) return
     else arrow.data = note
     let item_container = arrow.getChildAt(1) as Container

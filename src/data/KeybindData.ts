@@ -2,6 +2,7 @@ import { App } from "../App"
 import { ChartListWindow } from "../window/ChartListWindow"
 import { DirectoryWindow } from "../window/DirectoryWindow"
 import { EQWindow } from "../window/EQWindow"
+import { TimingDataWindow } from "../window/TimingDataWindow"
 
 export interface Keybind {
   label: string,
@@ -147,7 +148,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: "O", mods: [DEF_MOD, Modifier.SHIFT]}
 		],
-    disabled: false,
+    disabled: (app) => !app.chartManager.sm,
     callback: (app) => app.windowManager.openWindow(new ChartListWindow(app))
   },
   chartProperties: {
@@ -158,13 +159,13 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     disabled: true,
     callback: () => 0
   },
-  adjustSync: {
-    label: "Adjust Sync...",
+  timingData: {
+    label: "Edit Timing Data...",
     keybinds: [
-			{key: "S", mods: [Modifier.SHIFT, Modifier.ALT]}
+			{key: "T", mods: [Modifier.SHIFT, Modifier.ALT]}
 		],
-    disabled: true,
-    callback: () => 0
+    disabled: (app) => !app.chartManager.chartView,
+    callback: (app) => app.windowManager.openWindow(new TimingDataWindow(app))
   },
   adjustTiming: {
     label: "Adjust Timing Changes...",
@@ -243,12 +244,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
 			{key: ";", mods: []}
 		],
     disabled: (app) => !app.chartManager.chartView,
-    callback: (app) => {
-      let beat = app.chartManager.getBeat()
-      let snapped = Math.floor(beat/4)*4
-      if (beat == snapped) snapped -= 4
-      app.chartManager.setBeat(Math.max(0,snapped))
-    }
+    callback: (app) => app.chartManager.setAndSnapBeat(Math.max(0,app.chartManager.getBeat()-4))
   },
   nextMeasure: {
     label: "Next measure",
@@ -257,11 +253,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
 			{key: "'", mods: []}
 		],
     disabled: (app) => !app.chartManager.chartView,
-    callback: (app) =>  {
-      let beat = app.chartManager.getBeat()
-      let snapped = Math.floor(beat/4)*4 + 4
-      app.chartManager.setBeat(Math.max(0,snapped))
-    }
+    callback: (app) => app.chartManager.setAndSnapBeat(app.chartManager.getBeat()+4)
   },
   previousNote: {
     label: "Previous note",
@@ -402,5 +394,29 @@ export const KEYBINDS: {[key: string]: Keybind} = {
 		],
     disabled: (app) => !app.chartManager.chartView,
     callback: (app) => app.chartManager.nextNoteType()
+  },
+  undo: {
+    label: "Undo",
+    keybinds: [
+			{key: "Z", mods: [DEF_MOD]}
+		],
+    disabled: (app) => !app.chartManager.chartView || !app.actionHistory.canUndo(),
+    callback: (app) => app.actionHistory.undo()
+  },
+  redo: {
+    label: "Redo",
+    keybinds: [
+			{key: "Y", mods: [DEF_MOD]}
+		],
+    disabled: (app) => !app.chartManager.chartView || !app.actionHistory.canRedo(),
+    callback: (app) => app.actionHistory.redo()
+  },
+  mousePlacement: {
+    label: "Enable Mouse Note Placement",
+    keybinds: [
+			{key: "M", mods: [Modifier.SHIFT]}
+		],
+    disabled: false,
+    callback: (app) => app.options.editor.mousePlacement = !app.options.editor.mousePlacement
   },
 }

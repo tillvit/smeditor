@@ -1,6 +1,6 @@
 import { bsearch } from "../../util/Util"
 import { ChartDifficulty, CHART_DIFFICULTIES } from "./ChartTypes"
-import { Notedata, NotedataCount, NotedataEntry, NoteType, NOTE_TYPE_LOOKUP } from "./NoteTypes"
+import { Notedata, NotedataCount, NotedataEntry, NoteType, NOTE_TYPE_LOOKUP, PartialNotedataEntry } from "./NoteTypes"
 import { StepsType, STEPS_TYPES } from "./SimfileTypes"
 import { TimingData } from "./TimingData";
 import { TimingEventProperty, TimingProperty, TIMING_EVENT_NAMES } from "./TimingTypes"
@@ -21,7 +21,7 @@ export class Chart {
 
 
   constructor(data: string | {[key: string]: string}, type: "sm"|"ssc", fallbackTimingData: TimingData) {
-    this.timingData = new TimingData(fallbackTimingData)
+    this.timingData = new TimingData(fallbackTimingData, this)
     if (type == "ssc") {
       let dict = data as {[key: string]: string}
       for (let property in dict) {
@@ -198,6 +198,10 @@ export class Chart {
     return this.timingData.getBeat(seconds)
   }
 
+  getBeatFromEffectiveBeat(effBeat: number): number {
+    return this.timingData.getBeatFromEffectiveBeat(effBeat)
+  }
+
   isBeatWarped(beat: number): boolean {
     return this.timingData.isBeatWarped(beat)
   }
@@ -206,10 +210,32 @@ export class Chart {
     return this.timingData.isBeatFaked(beat)
   }
 
-  addNote(note: {beat: number, col: number, type: NoteType, hold?: number}): NotedataEntry {
-    note.beat = Math.round(note.beat*192)/192
-    if (note.hold) note.hold = Math.round(note.hold*192)/192
-    let computedNote: NotedataEntry = {
+  private getNoteIndex(note: PartialNotedataEntry): number {
+    if (this.notedata.includes(note as NotedataEntry)) {
+      return this.notedata.indexOf(note as NotedataEntry)
+    }
+    for (let i = 0; i < this.notedata.length; i++) {
+      let n = this.notedata[i]
+      if (n.beat == note.beat && n.col == note.col && n.type == note.type) {
+        return i
+      }
+    }
+    return -1
+  }
+
+  addNote(note: PartialNotedataEntry): NotedataEntry {
+    note.beat = Math.round(note.beat*48)/48
+    if (note.hold) note.hold = Math.round(note.hold*48)/48
+    let computedNote = this.computeNote(note)
+    let index = bsearch(this.notedata, note.beat, a => a.beat) + 1
+    if (index >= 1 && this.notedata[index-1].beat > note.beat) index--
+    this.notedata.splice(index, 0, computedNote)
+    this._notedataCount = this.countNotes()
+    return computedNote
+  }
+
+  computeNote(note: NotedataEntry | {beat: number, col: number, type: NoteType, hold?: number}): NotedataEntry {
+    return {
       beat: note.beat,
       col: note.col,
       type: note.type,
@@ -218,30 +244,27 @@ export class Chart {
       second: this.timingData.getSeconds(note.beat),
       hold: note.hold
     }
-    let index = bsearch(this.notedata, note.beat, a => a.beat) + 1
-    if (index >= 1 && this.notedata[index-1].beat > note.beat) index--
-    this.notedata.splice(index, 0, computedNote)
-    this._notedataCount = this.countNotes()
-    return computedNote
   }
 
-  modifyNote(note: NotedataEntry, properties: Partial<NotedataEntry>) {
-    Object.assign(note, properties)
-    note.beat = Math.round(note.beat*192)/192
-    if (note.hold) note.hold = Math.round(note.hold*192)/192
-    note.warped = this.timingData.isBeatWarped(note.beat),
-    note.fake =  note.type == "Fake" || this.timingData.isBeatFaked(note.beat),
-    note.second = this.timingData.getSeconds(note.beat),
-    this.notedata.splice(this.notedata.indexOf(note), 1)
-    let index = bsearch(this.notedata, note.beat, a => a.beat) + 1
-    if (index >= 1 && this.notedata[index-1].beat > note.beat) index--
-    this.notedata.splice(index, 0, note)
-    this._notedataCount = this.countNotes()
+  modifyNote(note: PartialNotedataEntry, properties: Partial<NotedataEntry>) {
+    let i = this.getNoteIndex(note)
+    if (i == -1) return
+    let noteToModify = this.notedata[i]
+    this.notedata.splice(i, 1)
+    Object.assign(noteToModify, properties)
+    this.addNote(noteToModify)
   }
 
-  removeNote(note: NotedataEntry) {
-    this.notedata.splice(this.notedata.indexOf(note), 1)
+  removeNote(note: PartialNotedataEntry): NotedataEntry | undefined {
+    let i = this.getNoteIndex(note)
+    if (i == -1) return
+    let removedNote = this.notedata.splice(i, 1)
     this._notedataCount = this.countNotes()
+    return removedNote[0]
   }
   
+  recalculateNotes() {
+    console.log("Recalculated")
+    this.notedata = this.notedata.map(note => this.computeNote(note))
+  }
 } 

@@ -15,14 +15,17 @@ export const NOTE_TYPE_LOOKUP: Record<string, NoteType> = {
 
 export type Notedata = NotedataEntry[]
 
-export interface NotedataEntry {
+export interface PartialNotedataEntry {
   beat: number,
   col: number, 
   type: NoteType,
+  hold?: number
+}
+
+export interface NotedataEntry extends PartialNotedataEntry {
   warped: boolean,
   fake: boolean,
-  second: number,
-  hold?: number
+  second: number
 }
 
 export interface NotedataCount {

@@ -445,5 +445,33 @@ button:disabled {
   margin-top: 5px;
 }
 
+.timing-data > .padding {
+  display: grid;
+  row-gap: 3px;
+}
 
+.timing-data > .padding > .container {
+  display: flex;
+}
+.timing-data > .padding > .container > *:first-child {
+  flex: 1;
+}
+.timing-data > .padding > .container > *:last-child {
+  flex: 0;
+  display: flex
+}
+input {
+  background: #333;
+  border: 1px solid #272727;
+  border-radius: 3px;
+  padding: 0px 3px;
+  width: 100px;
+}
 
+input:focus {
+  outline: 1px solid rgb(16, 98, 156);
+}
+
+input.short {
+  width: 40px;
+}

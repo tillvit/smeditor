@@ -45,8 +45,9 @@ export class Options {
     filteredColor: 0x00ff66,
     filteredOpacity: 1
   }
-  input = {
-    scrollSensitivity: 1
+  editor = {
+    scrollSensitivity: 1,
+    mousePlacement: false
   }
   experimental = {
     speedChangeWaveform: true

@@ -1,5 +1,6 @@
 
 import { bsearch, clamp, roundDigit } from "../../util/Util"
+import { Chart } from "./Chart"
 import { TimingEvent, WarpTimingEvent, StopTimingEvent, AttackTimingEvent, TIMING_EVENT_NAMES, BeatCacheTimingEvent, SpeedTimingEvent, TimingProperty, TimingEventProperty, TimingEventBase, ScrollCacheTimingEvent } from "./TimingTypes"
 
 
@@ -20,15 +21,18 @@ const BEAT_TIMING_PRIORITY = ["WARPS", "WARP_DEST", "STOPS", "DELAYS", "BPMS"] a
 
 export class TimingData {
 
-  _fallback?: TimingData
-  _cache: TimingCache = {
+  private _fallback?: TimingData
+  private _cache: TimingCache = {
     events: {},
   }
+  private _chart?: Chart
   events: TimingPropertyCollection = {}
   offset?: number
+  
 
-  constructor(fallbackTimingData?: TimingData) {
+  constructor(fallbackTimingData?: TimingData, chart?: Chart) {
     this._fallback = fallbackTimingData
+    this._chart = chart
   }
 
   parse(type: TimingProperty, data: string) {
@@ -307,6 +311,19 @@ export class TimingData {
     return effBeat 
   }
 
+  getBeatFromEffectiveBeat(effBeat: number): number {
+    if (!isFinite(effBeat)) return 0
+    if (this._cache.effectiveBeatTiming == undefined) this.buildEffectiveBeatTimingDataCache()
+    let cache = this._cache.effectiveBeatTiming!
+    if (cache.length == 0) return effBeat
+    let i = 0
+    while (cache[i+1] && (cache[i].value <= 0 || cache[i+1].effectiveBeat! <= effBeat)) i++
+    let leftOverEffBeats = (effBeat - cache[i].effectiveBeat!)
+    let additionalBeats = leftOverEffBeats / cache[i].value
+    if (!isFinite(additionalBeats)) additionalBeats = 0
+    return cache[i].beat + additionalBeats
+  }
+
   getSpeedMult(beat: number, seconds: number): number {
     if (!isFinite(beat) || !isFinite(seconds)) return 0
     if (this._cache.speeds == undefined) this.buildSpeedsTimingDataCache()
@@ -341,7 +358,9 @@ export class TimingData {
   getTimingEventAtBeat<Type extends TimingEventProperty>(prop: Type, beat: number): Extract<TimingEvent, {type: Type}> | undefined {
     let entries = this.getTimingData(prop)
     if (!Array.isArray(entries)) return undefined
-    return entries[this.searchCache(entries, "beat", beat)]
+    let entry = entries[this.searchCache(entries, "beat", beat)]
+    if (entry && entry.beat && entry.beat > beat) return undefined
+    return entry
   }
 
   reloadCache(prop?: TimingProperty) {
@@ -349,6 +368,7 @@ export class TimingData {
     if (prop == undefined || prop == "SCROLLS") this.buildEffectiveBeatTimingDataCache()
     if (prop == undefined || prop == "SPEEDS") this.buildSpeedsTimingDataCache()
     if (prop == undefined) this.buildTimingDataCache()
+    this._chart?.recalculateNotes()
   }
 
   private binsert<Type extends TimingEventProperty>(type: Type, event: Extract<TimingEvent, {type: Type}>) {
@@ -388,5 +408,12 @@ export class TimingData {
     if (this._cache.sortedEvents == undefined) this.buildTimingDataCache()
     let events = this._cache.sortedEvents!.filter((event) => props.includes(event.type))
     return events
+  }
+
+  isEmpty(): boolean {
+    for (let value of Object.values(this.events)) {
+      if (value) return false
+    }
+    return true
   }
 }

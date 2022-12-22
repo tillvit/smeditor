@@ -13,6 +13,7 @@ export class Keybinds {
 
     window.addEventListener("keydown",(e: KeyboardEvent) => {
       if (e.target instanceof HTMLTextAreaElement) return
+      if (e.target instanceof HTMLInputElement) return
       if (["Meta", "Control", "Shift", "Alt"].includes(e.key)) return
       
       let mods: Modifier[] = []
@@ -28,11 +29,11 @@ export class Keybinds {
         return false
       })
       if (matches.length > 0) { 
+        e.preventDefault() 
         let disabled = matches[0].disabled
         if (disabled instanceof Function) disabled = disabled(this.app)
         if (disabled) return
         matches[0].callback(this.app)
-        e.preventDefault() 
       };
     })
   }

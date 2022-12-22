@@ -47,80 +47,21 @@ export const MENUBAR_DATA: {[key: string]: MenuMain} = {
       id: "save",
     }]
   },
-  chart: {
+  edit: {
     type: "menu",
-    title: "Chart",
+    title: "Edit",
     options: [{
       type: "selection",
-      id: "newChart",
+      id: "undo",
     },{
       type: "selection",
-      id: "openChart",
+      id: "redo",
     },{
       type: "seperator",
-    },{
-      type: "selection",
-      id: "chartProperties",
-    }]
-  },
-  audio: {
-    type: "menu",
-    title: "Audio",
-    options: [{
-      type: "checkbox",
-      id: "assistTick",
-      checked: (app) => app.options.audio.assistTick,
     },{
       type: "checkbox",
-      id: "metronome",
-      checked: (app) => app.options.audio.metronome,
-    },{
-      type: "seperator",
-    },{
-      type: "dropdown",
-      title: (app: App) => "Volume (" + Math.round(app.options.audio.songVolume*100) + "%)",
-      options: [{
-        type: "selection",
-        id: "volumeUp",
-      },
-      {
-        type: "selection",
-        id: "volumeDown",
-      }]
-    },{
-      type: "dropdown",
-      title: (app: App) => "Effect Volume (" + Math.round(app.options.audio.soundEffectVolume*100) + "%)",
-      options: [{
-        type: "selection",
-        id: "effectvolumeUp",
-      },
-      {
-        type: "selection",
-        id: "effectvolumeDown",
-      }]
-    },{
-      type: "dropdown",
-      title: (app: App) => "Rate (" + Math.round(app.options.audio.rate*100) + "%)",
-      options: [{
-        type: "selection",
-        id: "rateUp",
-      },
-      {
-        type: "selection",
-        id: "rateDown",
-      },
-      {
-        type: "seperator",
-      },
-      {
-        type: "selection",
-        id: "rateDefault",
-      }]
-    },{
-      type: "seperator",
-    },{
-      type: "selection",
-      id: "showEq",
+      id: "mousePlacement",
+      checked: (app) => app.options.editor.mousePlacement,
     }]
   },
   view: {
@@ -229,6 +170,85 @@ export const MENUBAR_DATA: {[key: string]: MenuMain} = {
       type: "checkbox",
       id: "doSpeedChanges",
       checked: (app) => app.options.chart.doSpeedChanges
+    }]
+  },
+  chart: {
+    type: "menu",
+    title: "Chart",
+    options: [{
+      type: "selection",
+      id: "newChart",
+    },{
+      type: "selection",
+      id: "openChart",
+    },{
+      type: "seperator",
+    },{
+      type: "selection",
+      id: "chartProperties",
+    },{
+      type: "selection",
+      id: "timingData",
+    }]
+  },
+  audio: {
+    type: "menu",
+    title: "Audio",
+    options: [{
+      type: "checkbox",
+      id: "assistTick",
+      checked: (app) => app.options.audio.assistTick,
+    },{
+      type: "checkbox",
+      id: "metronome",
+      checked: (app) => app.options.audio.metronome,
+    },{
+      type: "seperator",
+    },{
+      type: "dropdown",
+      title: (app: App) => "Volume (" + Math.round(app.options.audio.songVolume*100) + "%)",
+      options: [{
+        type: "selection",
+        id: "volumeUp",
+      },
+      {
+        type: "selection",
+        id: "volumeDown",
+      }]
+    },{
+      type: "dropdown",
+      title: (app: App) => "Effect Volume (" + Math.round(app.options.audio.soundEffectVolume*100) + "%)",
+      options: [{
+        type: "selection",
+        id: "effectvolumeUp",
+      },
+      {
+        type: "selection",
+        id: "effectvolumeDown",
+      }]
+    },{
+      type: "dropdown",
+      title: (app: App) => "Rate (" + Math.round(app.options.audio.rate*100) + "%)",
+      options: [{
+        type: "selection",
+        id: "rateUp",
+      },
+      {
+        type: "selection",
+        id: "rateDown",
+      },
+      {
+        type: "seperator",
+      },
+      {
+        type: "selection",
+        id: "rateDefault",
+      }]
+    },{
+      type: "seperator",
+    },{
+      type: "selection",
+      id: "showEq",
     }]
   }
 }

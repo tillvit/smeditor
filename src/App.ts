@@ -4,6 +4,7 @@ import { BiquadFilter } from './chart/audio/BiquadFilter'
 import { ChartManager } from './chart/ChartManager'
 import { MenubarManager } from './gui/MenubarManager'
 import { Keybinds } from './listener/Keybinds'
+import { ActionHistory } from './util/ActionHistory'
 import { FileSystem } from './util/FileSystem';
 import { Options } from './util/Options';
 import { getBrowser } from './util/Util';
@@ -21,6 +22,7 @@ export class App {
   chartManager: ChartManager
   windowManager: WindowManager
   menubarManager: MenubarManager
+  actionHistory: ActionHistory
 
   constructor() {
     this.registerFonts()
@@ -43,6 +45,7 @@ export class App {
     this.chartManager = new ChartManager(this)
     this.menubarManager = new MenubarManager(this, document.getElementById("menubar") as HTMLDivElement)
     this.windowManager = new WindowManager(this, document.getElementById("windows") as HTMLDivElement)
+    this.actionHistory = new ActionHistory(this)
 
     this.registerListeners()
     this.keybinds = new Keybinds(this)
