@@ -11,7 +11,7 @@ export class Keybinds {
   constructor(app: App) {
     this.app = app
 
-    window.addEventListener("keydown",(e: KeyboardEvent) => {
+    window.addEventListener("keydown", (e: KeyboardEvent) => {
       if (e.target instanceof HTMLTextAreaElement) return
       if (e.target instanceof HTMLInputElement) return
       if (["Meta", "Control", "Shift", "Alt"].includes(e.key)) return
@@ -34,7 +34,38 @@ export class Keybinds {
           let disabled = match.disabled
           if (disabled instanceof Function) disabled = disabled(this.app)
           if (disabled) continue
+          if (match.disableRepeat && e.repeat) continue
           match.callback(this.app)
+          return
+        }
+      };
+    })
+
+    window.addEventListener("keyup", (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLTextAreaElement) return
+      if (e.target instanceof HTMLInputElement) return
+      if (["Meta", "Control", "Shift", "Alt"].includes(e.key)) return
+      
+      let mods: Modifier[] = []
+      for (let i = 0; i < MODPROPS.length; i++) {
+        if (e[MODPROPS[i]]) mods.push(MODORDER[i])
+      }
+      let key = Keybinds.getKeyNameFromCode(e.code)
+    
+      let matches = Object.values(KEYBINDS).filter(value => {
+        for (let keybind of value.keybinds) {
+          if (this.compareModifiers(keybind.mods, mods) && keybind.key == key) return true
+        }
+        return false
+      })
+      if (matches.length > 0) { 
+        e.preventDefault() 
+        for (let match of matches) {
+          let disabled = match.disabled
+          if (disabled instanceof Function) disabled = disabled(this.app)
+          if (disabled) continue
+          if (match.disableRepeat && e.repeat) continue
+          match.callbackKeyUp?.(this.app)
           return
         }
       };

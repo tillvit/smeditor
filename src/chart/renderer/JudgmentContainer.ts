@@ -1,4 +1,4 @@
-import { Assets, Rectangle, Sprite, Texture } from "pixi.js"
+import { Assets, Rectangle, Sprite } from "pixi.js"
 import { ChartRenderer } from "../ChartRenderer"
 import { Judgment } from "../play/Judgment"
 

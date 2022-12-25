@@ -1,4 +1,5 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
+import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 
 interface Barline extends Sprite {
@@ -16,8 +17,6 @@ interface BarlineLabel extends BitmapText {
   marked: boolean,
   dirtyTime: number
 }
-
-
 
 type BarlineObject = Barline | BarlineLabel
 
@@ -41,6 +40,8 @@ export class BarlineContainer extends Container {
   }
 
   renderThis(beat: number, fromBeat: number, toBeat: number) {
+
+    this.visible = this.renderer.chartManager.getMode() != EditMode.Play || !this.renderer.options.play.hideBarlines
 
     //Reset mark of old objects
     this.children.forEach(child => child.marked = false)

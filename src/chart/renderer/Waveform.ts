@@ -2,6 +2,7 @@ import { Graphics } from "pixi.js"
 import { bsearch } from "../../util/Util"
 import { ChartRenderer } from "../ChartRenderer"
 import { ChartAudio } from "../audio/ChartAudio"
+import { EditMode } from "../ChartManager"
 
 const MAX_ZOOM = 3500
 
@@ -48,7 +49,8 @@ export class Waveform extends Graphics {
   }
 
   renderThis(beat: number) {
-    this.visible = this.chartRenderer.options.waveform.enabled
+    this.visible = this.chartRenderer.options.waveform.enabled && (this.chartRenderer.chartManager.getMode() != EditMode.Play || !this.chartRenderer.options.play.hideBarlines)
+
     if (!this.chartRenderer.options.waveform.enabled) return
     if (this.chartAudio != this.chartRenderer.chartManager.getAudio()) {
       this.chartAudio = this.chartRenderer.chartManager.getAudio()

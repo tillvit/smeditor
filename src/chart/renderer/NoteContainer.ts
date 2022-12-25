@@ -67,8 +67,11 @@ export class NoteContainer extends Container {
   }
 
   private checkBounds(note: NotedataEntry, beat: number): [boolean, boolean, number, number] {
-    let y = this.renderer.getYPos(note.beat)
+    let y = this.renderer.options.chart.receptorYPos
+    if (!note.lastActivation || note.lastActivation == -1) y = this.renderer.getYPos(note.beat)
+    if (note.droppedBeat) y = this.renderer.getYPos(note.droppedBeat)
     let y_hold = this.renderer.getYPos(note.beat + (note.hold ?? 0))
+    if (note.hold && !note.droppedBeat && note.lastActivation != -1 && note.beat + note.hold < beat) return [true, false, y, y_hold]
     if (y_hold < -32 - this.renderer.y) return [true, false, y, y_hold]
     if (y > this.renderer.chartManager.app.pixi.screen.height-this.renderer.y+32) {
       if (this.renderer.isNegScroll() || note.beat < beat) [true, false, y, y_hold]

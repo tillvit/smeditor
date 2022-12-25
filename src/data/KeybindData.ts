@@ -11,6 +11,7 @@ export interface Keybind {
   disabled: boolean | ((app: App) => boolean),
   disableRepeat?: boolean,
   callback: (app: App) => void
+  callbackKeyUp?: (app: App) => void
 }
 
 export interface KeyCombo {
@@ -56,7 +57,8 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     ],
     disableRepeat: true,
     disabled: (app) => app.chartManager.getMode() != EditMode.Play,
-    callback: (app) => app.chartManager.judgeCol(0)
+    callback: (app) => app.chartManager.judgeCol(0),
+    callbackKeyUp: (app) => app.chartManager.judgeColUp(0)
   },
   down: {
     label: "Down",
@@ -66,7 +68,8 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     ],
     disableRepeat: true,
     disabled: (app) => app.chartManager.getMode() != EditMode.Play,
-    callback: (app) => app.chartManager.judgeCol(1)
+    callback: (app) => app.chartManager.judgeCol(1),
+    callbackKeyUp: (app) => app.chartManager.judgeColUp(1)
   },
   up: {
     label: "Up",
@@ -76,7 +79,8 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     ],
     disableRepeat: true,
     disabled: (app) => app.chartManager.getMode() != EditMode.Play,
-    callback: (app) => app.chartManager.judgeCol(2)
+    callback: (app) => app.chartManager.judgeCol(2),
+    callbackKeyUp: (app) => app.chartManager.judgeColUp(2)
   },
   right: {
     label: "Right",
@@ -86,7 +90,8 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     ],
     disableRepeat: true,
     disabled: (app) => app.chartManager.getMode() != EditMode.Play,
-    callback: (app) => app.chartManager.judgeCol(3)
+    callback: (app) => app.chartManager.judgeCol(3),
+    callbackKeyUp: (app) => app.chartManager.judgeColUp(3)
   },
   playback: {
     label: "Play/Pause",
@@ -101,7 +106,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: "Left", mods: []}
 		],
-    disabled: (app) => !app.chartManager.chartView,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.previousSnap()
   },
   increaseSnap: {
@@ -109,7 +114,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: "Right", mods: []}
 		],
-    disabled: (app) => !app.chartManager.chartView,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.nextSnap()
   },
   cursorUp: {
@@ -117,7 +122,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: "Up", mods: []}
 		],
-    disabled: (app) => !app.chartManager.chartView,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.setAndSnapBeat(app.chartManager.getBeat()-Math.max(0.001,app.options.chart.snap))
   },
   cursorDown: {
@@ -125,7 +130,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: "Down", mods: []}
 		],
-    disabled: (app) => !app.chartManager.chartView,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.setAndSnapBeat(app.chartManager.getBeat()+Math.max(0.001,app.options.chart.snap))
   },
   increaseScrollSpeed: {
@@ -285,7 +290,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
       {key: "PageUp", mods: []},
 			{key: ";", mods: []}
 		],
-    disabled: (app) => !app.chartManager.chartView,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.setAndSnapBeat(Math.max(0,app.chartManager.getBeat()-4))
   },
   nextMeasure: {
@@ -294,7 +299,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
       {key: "PageDown", mods: []},
 			{key: "'", mods: []}
 		],
-    disabled: (app) => !app.chartManager.chartView,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.setAndSnapBeat(app.chartManager.getBeat()+4)
   },
   previousNote: {
@@ -302,7 +307,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: ",", mods: []}
 		],
-    disabled: (app) => !app.chartManager.chartView,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.previousNote()
   },
   nextNote: {
@@ -310,7 +315,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: ".", mods: []}
 		],
-    disabled: (app) => !app.chartManager.chartView,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.nextNote()
   },
   jumpChartStart: {
@@ -318,7 +323,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: "Home", mods: []}
 		],
-    disabled: (app) => !app.chartManager.chartView,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.firstNote()
   },
   jumpChartEnd: {
@@ -326,7 +331,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: "End", mods: []}
 		],
-    disabled: (app) => !app.chartManager.chartView,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.lastNote()
   },
   jumpSongStart: {
@@ -334,7 +339,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: "Home", mods: [Modifier.SHIFT]}
 		],
-    disabled: (app) => !app.chartManager.chartView,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.setBeat(app.chartManager.chart!.getBeat(0))
   },
   jumpSongEnd: {
@@ -342,7 +347,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: "End", mods: [Modifier.SHIFT]}
 		],
-    disabled: (app) => !app.chartManager.chartView,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.setBeat(app.chartManager.chart!.getBeat(app.chartManager.songAudio.getSongLength()))
   },
   assistTick: {
@@ -426,7 +431,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: "N", mods: []}
 		],
-    disabled: (app) => !app.chartManager.chartView,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.previousNoteType()
   },
   nextNoteType: {
@@ -434,7 +439,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: "M", mods: []}
 		],
-    disabled: (app) => !app.chartManager.chartView,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.nextNoteType()
   },
   undo: {
@@ -442,7 +447,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: "Z", mods: [DEF_MOD]}
 		],
-    disabled: (app) => !app.chartManager.chartView || !app.actionHistory.canUndo(),
+    disabled: (app) => !app.chartManager.chartView || !app.actionHistory.canUndo() || app.chartManager.getMode() != EditMode.Edit,
     callback: (app) => app.actionHistory.undo()
   },
   redo: {
@@ -450,7 +455,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: "Y", mods: [DEF_MOD]}
 		],
-    disabled: (app) => !app.chartManager.chartView || !app.actionHistory.canRedo(),
+    disabled: (app) => !app.chartManager.chartView || !app.actionHistory.canRedo() || app.chartManager.getMode() != EditMode.Edit,
     callback: (app) => app.actionHistory.redo()
   },
   mousePlacement: {
@@ -466,7 +471,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
     keybinds: [
 			{key: "P", mods: [DEF_MOD]}
 		],
-    disabled: (app) => !app.chartManager.chartView ,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.setMode(EditMode.Play)
   },
 }

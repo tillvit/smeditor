@@ -54,6 +54,7 @@ export class Options {
   }
   play = {
     faEnabled: false,
-    offset: -0.044
+    offset: -0.044,
+    hideBarlines: true,
   }
 }

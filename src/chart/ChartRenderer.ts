@@ -14,6 +14,7 @@ import { NoteContainer } from "./renderer/NoteContainer"
 import { Judgment } from "./play/Judgment"
 import { NoteFlashContainer } from "./renderer/NoteFlashContainer"
 import { JudgmentContainer } from "./renderer/JudgmentContainer"
+import { HoldJudgment } from "./play/HoldJudgment"
 
 export class ChartRenderer extends Container {
 
@@ -112,6 +113,14 @@ export class ChartRenderer extends Container {
       this.judgment.doJudge(error, judgment)
   }
 
+  doHoldInProgressJudgment(note: NotedataEntry) {
+    this.noteFlashes.addHoldFlash(note.col)
+  }
+
+  doHoldJudgment(note: NotedataEntry, judgment: HoldJudgment) {
+    if (judgment != HoldJudgment.DROPPED) this.noteFlashes.addFlash(note.col, Judgment.EXCELLENT)
+  }
+
   renderThis() {
 
     let beat = this.getBeat()
@@ -141,7 +150,7 @@ export class ChartRenderer extends Container {
     this.noteFlashes.renderThis()
     this.judgment.renderThis()
 
-    if (this.lastMousePos) {
+    if (this.lastMousePos && this.chartManager.getMode() != EditMode.Play) {
       let snap = this.options.chart.snap == 0 ? 1/48 : this.options.chart.snap
       let snapBeat = Math.round(this.getBeatFromYPos(this.lastMousePos.y)/snap)*snap
       let col = Math.round((this.lastMousePos.x+96)/64)

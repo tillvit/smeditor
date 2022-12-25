@@ -1,4 +1,5 @@
 import { Container, Sprite, Texture } from "pixi.js"
+import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { DelayTimingEvent, FakeTimingEvent, StopTimingEvent, TimingEventProperty, WarpTimingEvent } from "../sm/TimingTypes"
 
@@ -39,6 +40,8 @@ export class TimingAreaContainer extends Container {
   }
 
   renderThis(beat: number, fromBeat: number, toBeat: number, fromSecond: number) {
+
+    this.visible = this.renderer.chartManager.getMode() != EditMode.Play || !this.renderer.options.play.hideBarlines
 
     //Reset mark of old objects
     this.children.forEach(child => child.marked = false)

@@ -1,5 +1,6 @@
 import { BitmapText, Container, Graphics } from "pixi.js"
 import { roundDigit } from "../../util/Util"
+import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { TimingEvent, TIMING_EVENT_NAMES } from "../sm/TimingTypes"
 import { TIMING_EVENT_DATA } from "./TimingAreaContainer"
@@ -36,6 +37,8 @@ export class TimingBoxContainer extends Container {
   }
 
   renderThis(beat: number, fromBeat: number, toBeat: number) {
+
+    this.visible = this.renderer.chartManager.getMode() != EditMode.Play || !this.renderer.options.play.hideBarlines
 
     //Reset mark of old objects
     this.children.forEach(child => child.marked = false)

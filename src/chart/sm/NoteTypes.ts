@@ -30,6 +30,8 @@ export interface NotedataEntry extends PartialNotedataEntry {
   hit?: boolean,
   judged?: boolean,
   lastActivation?: number,
+  lastFlash?: number,
+  droppedBeat?: number
 }
 
 export interface NotedataCount {

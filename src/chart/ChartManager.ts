@@ -11,6 +11,7 @@ import { bsearch, getFPS, roundDigit } from "../util/Util"
 import { Keybinds } from "../listener/Keybinds"
 import { NotedataEntry, NoteType, PartialNotedataEntry } from "./sm/NoteTypes"
 import { Judgment } from "./play/Judgment"
+import { HoldJudgment } from "./play/HoldJudgment"
 
 const SNAPS = [1,2,3,4,6,8,12,16,24,48,-1]
 const ADDABLE_NOTE_TYPES: NoteType[] = ["Tap", "Mine", "Fake", "Lift"]
@@ -68,6 +69,9 @@ export class ChartManager {
   private lastMode: EditMode = EditMode.Edit
 
   private chordCohesion: Map<number, NotedataEntry[]> = new Map
+  private missNoteIndex: number = 0
+  private holdProgress: NotedataEntry[] = []
+  private heldCols: boolean[] = []
 
   constructor(app: App) {
 
@@ -158,6 +162,42 @@ export class ChartManager {
         if (this.songAudio.isPlaying() && app.options.audio.metronome) {
           if (this.lastBeat % 4 == 0) this.me_high.play()
           else this.me_low.play()
+        }
+      }
+      if (this.mode == EditMode.Play) {
+        let hitTime = this.time + this.app.options.play.offset
+        let hitWindowStart = hitTime - Judgment.timingWindows[Judgment.timingWindows.length-1].getTimingWindow()/1000
+        let doneMiss = false
+        while (this.chart.notedata[this.missNoteIndex] && this.chart.notedata[this.missNoteIndex].second < hitWindowStart) {
+          let note = this.chart.notedata[this.missNoteIndex]
+          if (!doneMiss && note.type != "Mine" && !note.fake && !note.judged) {
+            this.chartView.doJudgment(note, 0, Judgment.MISS)
+            doneMiss = true
+          }
+          this.missNoteIndex++
+        }
+
+        for (let hold of this.holdProgress) {
+          if (!hold.hold || !hold.lastActivation) continue
+          if (this.heldCols[hold.col] && hold.type == "Hold") hold.lastActivation = Date.now()
+          let unheldTime = Date.now() - hold.lastActivation 
+          let window = HoldJudgment.HOLD_HELD.getTimingWindow()
+          if (hold.type == "Roll") HoldJudgment.ROLL_HELD.getTimingWindow()
+          if (!hold.lastFlash ||  Date.now() - hold.lastFlash > 30) {
+            this.chartView.doHoldInProgressJudgment(hold)
+            hold.lastFlash = Date.now()
+          }
+          if (unheldTime >= window) {
+            this.chartView.doHoldJudgment(hold, HoldJudgment.DROPPED)
+            hold.droppedBeat = this.beat
+            this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
+            continue
+          }
+          if (this.beat >= hold.beat + hold.hold!) {
+            if (hold.type == "Hold") this.chartView.doHoldJudgment(hold, HoldJudgment.HOLD_HELD)
+            else this.chartView.doHoldJudgment(hold, HoldJudgment.ROLL_HELD)
+            this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
+          }
         }
       }
     })
@@ -535,6 +575,13 @@ export class ChartManager {
         if (!this.chordCohesion.has(note.beat)) this.chordCohesion.set(note.beat, [])
         this.chordCohesion.get(note.beat)!.push(note)
       }
+      let hitTime = this.time + this.app.options.play.offset
+      let hitWindowStart = hitTime - Judgment.timingWindows[Judgment.timingWindows.length-1].getTimingWindow()/1000
+      let firstHittableNote = bsearch(this.chart.notedata, hitWindowStart, a => a.second) + 1
+      if (firstHittableNote >= 1 && hitWindowStart <= this.chart.notedata[firstHittableNote-1].second) firstHittableNote--
+      this.missNoteIndex = firstHittableNote
+      this.holdProgress = []
+      this.heldCols.map(_ => false)
       this.songAudio.seek(this.time - 1)
       this.songAudio.play()
     }else{
@@ -549,14 +596,58 @@ export class ChartManager {
   judgeCol(col: number) {
     if (!this.chart || !this.chartView || this.mode != EditMode.Play) return
     let hitTime = this.time + this.app.options.play.offset
-    let hitWindowStart = hitTime - Judgment.timingWindows[Judgment.timingWindows.length-1].timingWindowMS/1000
-    let hitWindowEnd = hitTime + Judgment.timingWindows[Judgment.timingWindows.length-1].timingWindowMS/1000
+    let hitWindowStart = hitTime - Judgment.timingWindows[Judgment.timingWindows.length-1].getTimingWindow()/1000
+    let hitWindowEnd = hitTime + Judgment.timingWindows[Judgment.timingWindows.length-1].getTimingWindow()/1000
     let firstHittableNote = bsearch(this.chart.notedata, hitWindowStart, a => a.second) + 1
     if (firstHittableNote >= 1 && hitWindowStart <= this.chart.notedata[firstHittableNote-1].second) firstHittableNote--
     let closestNote: NotedataEntry | undefined = undefined
+    this.heldCols[col] = true
+    for (let hold of this.holdProgress) {
+      if (hold.type == "Roll" && hold.col == col) hold.lastActivation = Date.now()
+    }
     while (this.chart.notedata[firstHittableNote] && this.chart.notedata[firstHittableNote].second <= hitWindowEnd) {
       let note = this.chart.notedata[firstHittableNote]
-      if (note.judged || note.col != col || note.type == "Mine" || note.fake) {
+      if (note.judged || note.col != col || note.type == "Mine" || note.type == "Lift" || note.fake) {
+        firstHittableNote++
+        continue
+      }
+      if (!closestNote || Math.abs(note.second-hitTime) < Math.abs(closestNote.second-hitTime)) {
+        closestNote = note
+      }
+      firstHittableNote++
+    }
+    if (closestNote) {
+      closestNote.hit = true
+      if (closestNote.hold) {
+        closestNote.lastActivation = Date.now()
+        this.holdProgress.push(closestNote)
+      }
+      let chord = this.chordCohesion.get(closestNote.beat)!
+      if (chord.every(note => note.hit)) {
+        chord.forEach(note => note.judged = true)
+        for (let judgment of Judgment.timingWindows) {
+          if (judgment.getTimingWindow()/1000 >= Math.abs(hitTime-closestNote.second)) {
+            if (judgment.order < 4) chord.forEach(note => {if (!note.hold) note.hide = true})
+            chord.forEach(note => this.chartView!.doJudgment(note, hitTime-note.second, judgment))
+            break
+          }
+        }
+      }
+    }
+  }
+
+  judgeColUp(col: number) {
+    if (!this.chart || !this.chartView || this.mode != EditMode.Play) return
+    let hitTime = this.time + this.app.options.play.offset
+    let hitWindowStart = hitTime - Judgment.timingWindows[Judgment.timingWindows.length-1].getTimingWindow()/1000
+    let hitWindowEnd = hitTime + Judgment.timingWindows[Judgment.timingWindows.length-1].getTimingWindow()/1000
+    let firstHittableNote = bsearch(this.chart.notedata, hitWindowStart, a => a.second) + 1
+    if (firstHittableNote >= 1 && hitWindowStart <= this.chart.notedata[firstHittableNote-1].second) firstHittableNote--
+    let closestNote: NotedataEntry | undefined = undefined
+    this.heldCols[col] = false
+    while (this.chart.notedata[firstHittableNote] && this.chart.notedata[firstHittableNote].second <= hitWindowEnd) {
+      let note = this.chart.notedata[firstHittableNote]
+      if (note.judged || note.col != col || note.type != "Lift" || note.fake) {
         firstHittableNote++
         continue
       }
@@ -571,7 +662,7 @@ export class ChartManager {
       if (chord.every(note => note.hit)) {
         chord.forEach(note => note.judged = true)
         for (let judgment of Judgment.timingWindows) {
-          if (judgment.timingWindowMS/1000 >= Math.abs(hitTime-closestNote.second)) {
+          if (judgment.getTimingWindow()/1000 >= Math.abs(hitTime-closestNote.second)) {
             if (judgment.order < 4) chord.forEach(note => {if (!note.hold) note.hide = true})
             chord.forEach(note => this.chartView!.doJudgment(note, hitTime-note.second, judgment))
             break

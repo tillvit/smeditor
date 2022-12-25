@@ -1,5 +1,6 @@
 import { BitmapText, Container, Graphics, Sprite, Texture } from "pixi.js"
 import { getRotFromArrow, rgbtoHex } from "../../util/Util"
+import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 
 const receptor_tex = Texture.from('assets/noteskin/receptor.png');
@@ -75,6 +76,7 @@ export class ReceptorContainer extends Container {
       (<Sprite>child).tint = rgbtoHex(col, col, col)
     }
 
+    this.snapDisplay.visible = this.renderer.chartManager.getMode() == EditMode.Edit
     for (let i = 0; i < 2; i++) {
       let container = this.snapDisplay.children[i] as Container
       let square = container.children[0] as Graphics

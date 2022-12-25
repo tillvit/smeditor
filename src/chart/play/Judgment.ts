@@ -8,6 +8,8 @@ export class Judgment {
   private static wID = 0
 
   static timingWindows: Judgment[] = []
+  static timingWindowAdd = 0.0015
+  static timingWindowScale = 1
 
   static FANTASTIC = new Judgment("Fantastic", 0x21cce8, 15)
   static WHITE_FANTASTIC = new Judgment("Fantastic", 0xffffff, 23)
@@ -23,6 +25,10 @@ export class Judgment {
     this.timingWindowMS = timingWindowMS
     this.order = Judgment.wID++
     Judgment.timingWindows.push(this)
+  }
+
+  getTimingWindow(){
+    return this.timingWindowMS * Judgment.timingWindowScale + Judgment.timingWindowAdd
   }
 }
 

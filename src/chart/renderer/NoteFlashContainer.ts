@@ -3,7 +3,7 @@ import { getRotFromArrow } from "../../util/Util"
 import { ChartRenderer } from "../ChartRenderer"
 import { Judgment } from "../play/Judgment"
 
-export const FLASH_TEX: Map<Judgment, Texture> = new Map([
+const FLASH_TEX: Map<Judgment, Texture> = new Map([
   [Judgment.FANTASTIC, Texture.from('assets/noteskin/flash/fantastic.png')],
   [Judgment.WHITE_FANTASTIC, Texture.from('assets/noteskin/flash/white_fantastic.png')],
   [Judgment.EXCELLENT, Texture.from('assets/noteskin/flash/excellent.png')],
@@ -11,6 +11,8 @@ export const FLASH_TEX: Map<Judgment, Texture> = new Map([
   [Judgment.DECENT, Texture.from('assets/noteskin/flash/decent.png')],
   [Judgment.WAY_OFF, Texture.from('assets/noteskin/flash/way_off.png')]
 ])
+
+const HOLD_TEX = Texture.from('assets/noteskin/flash/hold.png')
 
 interface NoteFlashObject extends Sprite {
   createTime: number,
@@ -43,6 +45,18 @@ export class NoteFlashContainer extends Container {
     if (!this.renderer.options.chart.drawNoteFlash) return
     if (!this.renderer.options.play.faEnabled && judgment == Judgment.WHITE_FANTASTIC) judgment = Judgment.FANTASTIC
     let flash = new Sprite(FLASH_TEX.get(judgment)) as NoteFlashObject
+    flash.width = 106
+    flash.height = 106
+    flash.anchor.set(0.5)
+    flash.rotation = getRotFromArrow(col)
+    flash.x = col*64-96
+    flash.createTime = Date.now()
+    this.addChild(flash)
+  }
+
+  addHoldFlash(col: number) {
+    if (!this.renderer.options.chart.drawNoteFlash) return
+    let flash = new Sprite(HOLD_TEX) as NoteFlashObject
     flash.width = 106
     flash.height = 106
     flash.anchor.set(0.5)
