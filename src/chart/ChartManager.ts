@@ -10,6 +10,7 @@ import { BitmapText } from "pixi.js"
 import { bsearch, getFPS, roundDigit } from "../util/Util"
 import { Keybinds } from "../listener/Keybinds"
 import { NoteType, PartialNotedataEntry } from "./sm/NoteTypes"
+import { Judgment } from "./play/Judgment"
 
 const SNAPS = [1,2,3,4,6,8,12,16,24,48,-1]
 const ADDABLE_NOTE_TYPES: NoteType[] = ["Tap", "Mine", "Fake", "Lift"]
@@ -21,6 +22,12 @@ interface PartialHold {
   type: "mouse"|"key",
   originalNote: PartialNotedataEntry | undefined
   removedNotes: PartialNotedataEntry[]
+}
+
+export enum EditMode {
+  View = "View Mode",
+  Edit = "Edit Mode",
+  Play = "Play Mode (Press Esacpe to exit)"
 }
 
 export class ChartManager {
@@ -57,6 +64,9 @@ export class ChartManager {
   private noteIndex: number = 0
   private lastBeat: number = -1
 
+  private mode: EditMode = EditMode.Edit
+  private lastMode: EditMode = EditMode.Edit
+
   constructor(app: App) {
 
     this.app = app
@@ -90,7 +100,7 @@ export class ChartManager {
           }
         }
       }
-    });
+    }, {passive: true});
 
     this.info = new BitmapText("", {
       fontName: "Assistant",
@@ -102,7 +112,7 @@ export class ChartManager {
     this.app.pixi.stage.addChild(this.info)
     this.app.pixi.ticker.add(() => {
       if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
-      this.chartView?.render();
+      this.chartView?.renderThis();
       this.info.text = "Time: " + roundDigit(this.time,3) 
                      + "\nBeat: " + roundDigit(this.beat,3)
                      + "\nFPS: " + getFPS(this.app.pixi)
@@ -130,7 +140,7 @@ export class ChartManager {
       let hasPlayed = false
       while(this.noteIndex < notedata.length && time > notedata[this.noteIndex].second + app.options.audio.effectOffset) {
         if (this.songAudio.isPlaying() && (notedata[this.noteIndex].type != "Fake" && notedata[this.noteIndex].type != "Mine") && !notedata[this.noteIndex].fake) {
-          this.chartView.addFlash(notedata[this.noteIndex].col)
+          this.chartView.addFlash(notedata[this.noteIndex].col, Judgment.FANTASTIC)
           if (!hasPlayed && app.options.audio.assistTick) {
             this.assistTick.play()
             hasPlayed = true
@@ -150,25 +160,10 @@ export class ChartManager {
 
     window.addEventListener("resize", ()=>{
       if (this.chartView) {
-        this.chartView.view.x = this.app.pixi.screen.width/2
-        this.chartView.view.y = this.app.pixi.screen.height/2
+        this.chartView.x = this.app.pixi.screen.width/2
+        this.chartView.y = this.app.pixi.screen.height/2
       }
     })
-
-    window.addEventListener("keydown", (event: KeyboardEvent)=>{
-      if (event.target instanceof HTMLTextAreaElement) return
-      if (event.target instanceof HTMLInputElement) return
-      if (event.code.startsWith("Digit") && !event.repeat) {
-        let col = parseInt(event.code.slice(5))-1
-        if (col < 4) {
-          let snap = this.app.options.chart.snap == 0 ? 1/48 : this.app.options.chart.snap
-          let snapBeat = Math.round(this.beat/snap)*snap
-          this.setNote(col, "key", snapBeat)
-          event.preventDefault()
-          event.stopImmediatePropagation()
-        }
-      }
-    }, true)
 
     window.addEventListener("keyup", (event: KeyboardEvent)=>{
       if (event.code.startsWith("Digit")) {
@@ -181,6 +176,17 @@ export class ChartManager {
     window.addEventListener("keydown", (event: KeyboardEvent) => {
       if (event.target instanceof HTMLTextAreaElement) return
       if (event.target instanceof HTMLInputElement) return
+      //Start editing note
+      if (event.code.startsWith("Digit") && !event.repeat) {
+        let col = parseInt(event.code.slice(5))-1
+        if (col < 4) {
+          let snap = this.app.options.chart.snap == 0 ? 1/48 : this.app.options.chart.snap
+          let snapBeat = Math.round(this.beat/snap)*snap
+          this.setNote(col, "key", snapBeat)
+          event.preventDefault()
+          event.stopImmediatePropagation()
+        }
+      }
       if (!this.holdEditing.every(x => x == undefined)) {
         let keyName = Keybinds.getKeyNameFromCode(event.code)
         // Override any move+key combos when editing a hold
@@ -261,32 +267,32 @@ export class ChartManager {
     this.chart = chart
     this.beat = this.chart.getBeat(this.time)
   
-    if (this.chartView) this.app.pixi.stage.removeChild(this.chartView.view)
+    if (this.chartView) this.app.pixi.stage.removeChild(this.chartView)
       
     this.seekBack()
     this.chartView = new ChartRenderer(this)
-    this.chartView.view.x = this.app.pixi.screen.width/2
-    this.chartView.view.y = this.app.pixi.screen.height/2
+    this.chartView.x = this.app.pixi.screen.width/2
+    this.chartView.y = this.app.pixi.screen.height/2
   }
   
 
   async loadAudio() {
-    if (!this.sm) return
+    if (!this.sm || !this.chart) return
     this.songAudio.stop()
     let audio_onload = (audio: ChartAudio) => {
       audio.seek(this.chart?.getSeconds(0) ?? this.sm!.timingData.getSeconds(0))
       this.setTime(this.chart?.getSeconds(0) ?? this.sm!.timingData.getSeconds(0)) 
       this.updateSoundProperties()
     }
-
-    if (!this.sm.properties.MUSIC || this.sm.properties.MUSIC == "") {
+    let musicPath = this.chart.getMusicPath()
+    if (musicPath == "") {
       console.warn("No Audio File!")
       this.songAudio = new ChartAudio(undefined, audio_onload)
       return
     }
-    let audioFile: File | undefined = this.app.files.getFileRelativeTo(this.sm_path,this.sm.properties.MUSIC)
+    let audioFile: File | undefined = this.app.files.getFileRelativeTo(this.sm_path, musicPath)
     if (audioFile == undefined) {
-      console.warn("Failed to load audio file " + this.sm.properties.MUSIC)
+      console.warn("Failed to load audio file " + musicPath)
       this.songAudio = new ChartAudio(undefined, audio_onload)
       return
     }
@@ -495,6 +501,15 @@ export class ChartManager {
 
   getEditingNoteType(): NoteType {
     return ADDABLE_NOTE_TYPES[this.editNoteTypeIndex]
+  }
+
+  getMode(): EditMode {
+    return this.mode
+  }
+
+  setMode(mode: EditMode) {
+    this.lastMode = this.mode
+    this.mode = mode
   }
 }
 

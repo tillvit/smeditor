@@ -1,5 +1,5 @@
 import { BiquadFilter } from "./BiquadFilter"
-import { Waveform } from "./Waveform"
+import { Waveform } from "../renderer/Waveform"
 
 export class ChartAudio {
 

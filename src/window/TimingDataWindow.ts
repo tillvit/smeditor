@@ -1,5 +1,5 @@
 import { App } from "../App"
-import { TIMING_WINDOW_DATA } from "../data/TimingWindowData"
+import { TIMING_WINDOW_DATA } from "../data/TimingDataWindowData"
 import { Window } from "./Window"
 
 export class TimingDataWindow extends Window {
@@ -12,7 +12,7 @@ export class TimingDataWindow extends Window {
     super({
       title: "Edit Timing Data", 
       width: 250,
-      height: 330,
+      height: 370,
       disableClose: false,
       win_id: "timing_data",
       blocking: false

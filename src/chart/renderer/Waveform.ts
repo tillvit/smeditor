@@ -1,15 +1,14 @@
 import { Graphics } from "pixi.js"
 import { bsearch } from "../../util/Util"
 import { ChartRenderer } from "../ChartRenderer"
-import { ChartAudio } from "./ChartAudio"
+import { ChartAudio } from "../audio/ChartAudio"
 
 const MAX_ZOOM = 3500
 
-export class Waveform {
+export class Waveform extends Graphics {
 
   chartAudio: ChartAudio
   chartRenderer: ChartRenderer
-  view: Graphics = new Graphics()
 
   strippedWaveform: number[] | undefined
   strippedFilteredWaveform: number[] | undefined
@@ -18,6 +17,7 @@ export class Waveform {
   private lastZoom: number
 
   constructor(renderer: ChartRenderer) {
+    super()
     this.chartRenderer = renderer
     this.chartAudio = this.chartRenderer.chartManager.songAudio
     this.lastZoom = this.getZoom()
@@ -26,7 +26,7 @@ export class Waveform {
     this.refilter()
   }
 
-  private stripWaveform(rawData: Float32Array | undefined): number[] | undefined {
+  private async stripWaveform(rawData: Float32Array | undefined): Promise<number[] | undefined> {
     if (rawData == undefined) return
     let blockSize = this.chartAudio.getSampleRate() / (this.getZoom()*4); // Number of samples in each subdivision
     let samples = Math.floor(rawData.length / blockSize);
@@ -43,11 +43,13 @@ export class Waveform {
   }
 
   refilter() {
-    this.strippedWaveform = this.stripWaveform(this.chartAudio.getRawData())
-    this.strippedFilteredWaveform = this.stripWaveform(this.chartAudio.getFilteredRawData())
+    this.stripWaveform(this.chartAudio.getRawData()).then(data => this.strippedWaveform = data)
+    this.stripWaveform(this.chartAudio.getFilteredRawData()).then(data => this.strippedFilteredWaveform = data)
   }
 
-  render() {
+  renderThis(beat: number) {
+    this.visible = this.chartRenderer.options.waveform.enabled
+    if (!this.chartRenderer.options.waveform.enabled) return
     if (this.chartAudio != this.chartRenderer.chartManager.getAudio()) {
       this.chartAudio = this.chartRenderer.chartManager.getAudio()
       this.refilter()
@@ -59,28 +61,28 @@ export class Waveform {
       this.refilter()
     }
     if (this.strippedWaveform) {
-      this.view.clear()
-      this.view.lineStyle(1, this.chartRenderer.options.waveform.color, this.chartRenderer.options.waveform.opacity);
-      this.renderData(this.strippedWaveform)
+      this.clear()
+      this.lineStyle(1, this.chartRenderer.options.waveform.color, this.chartRenderer.options.waveform.opacity);
+      this.renderData(beat, this.strippedWaveform)
     }
     if (this.strippedFilteredWaveform) {
-      this.view.lineStyle(1, this.chartRenderer.options.waveform.filteredColor, this.chartRenderer.options.waveform.filteredOpacity);
-      this.renderData(this.strippedFilteredWaveform)
+      this.lineStyle(1, this.chartRenderer.options.waveform.filteredColor, this.chartRenderer.options.waveform.filteredOpacity);
+      this.renderData(beat, this.strippedFilteredWaveform)
     }
   }
 
-  private renderData(data: number[]) {
+  private renderData(beat: number, data: number[]) {
     if (this.chartRenderer.options.experimental.speedChangeWaveform && !this.chartRenderer.options.chart.CMod && this.chartRenderer.options.chart.doSpeedChanges) {
       let chartSpeed = this.chartRenderer.options.chart.speed
-      let speedMult = this.chartRenderer.chart.timingData.getSpeedMult(this.chartRenderer.chartManager.getBeat(), this.chartRenderer.chartManager.getTime())
-      let curBeat = this.chartRenderer.chartManager.getBeat() - this.chartRenderer.options.chart.maxDrawBeatsBack
-      let beatLimit = this.chartRenderer.chartManager.getBeat() + this.chartRenderer.options.chart.maxDrawBeats
+      let speedMult = this.chartRenderer.chart.timingData.getSpeedMult(beat, this.chartRenderer.chartManager.getTime())
+      let curBeat = beat - this.chartRenderer.options.chart.maxDrawBeatsBack
+      let beatLimit = beat + this.chartRenderer.options.chart.maxDrawBeats
       let scrolls = this.chartRenderer.chart.timingData.getTimingData("SCROLLS")
       let scrollIndex = bsearch(scrolls, curBeat, a => a.beat)
       while (curBeat < beatLimit) {
         let scroll = scrolls[scrollIndex] ?? {beat: 0,value: 1}
         let scrollBeatLimit = scrolls[scrollIndex + 1]?.beat ?? beatLimit
-        let y_test = this.chartRenderer.getYPos(curBeat) + this.view.parent.y 
+        let y_test = this.chartRenderer.getYPos(curBeat) + this.parent.y 
         if (scrolls[scrollIndex + 1] && ((scroll.value < 0 && y_test > this.chartRenderer.chartManager.app.pixi.screen.height) ||
             scroll.value <= 0)) {
           scrollIndex++
@@ -88,7 +90,7 @@ export class Waveform {
           continue
         }
         while (curBeat < scrollBeatLimit) {
-          let y = Math.round(this.chartRenderer.getYPos(curBeat) + this.view.parent.y)
+          let y = Math.round(this.chartRenderer.getYPos(curBeat) + this.parent.y)
           if (y < 0) {
             if (scroll.value < 0) {
               curBeat = scrollBeatLimit
@@ -110,9 +112,9 @@ export class Waveform {
           if (calcTime < 0) continue
           let samp = Math.floor(calcTime * this.getZoom()*4)
           let v = (data[samp]);
-          this.view.moveTo(-v*192-32, y-this.view.parent.y);
-          this.view.lineTo(v*192-32, y-this.view.parent.y);
-          this.view.closePath()
+          this.moveTo(-v*192, y-this.parent.y);
+          this.lineTo(v*192, y-this.parent.y);
+          this.closePath()
           
         }
         scrollIndex++
@@ -120,12 +122,12 @@ export class Waveform {
       }
     }else{
       for (let i = 0; i < this.chartRenderer.chartManager.app.pixi.screen.height; i++) {
-        let calcTime = this.chartRenderer.getTimeFromYPos(i-this.view.parent.y)
+        let calcTime = this.chartRenderer.getTimeFromYPos(i-this.parent.y)
         let samp = Math.floor(calcTime * this.getZoom()*4)
         let v = (data[samp]);
-        this.view.moveTo(-v*192-32, i-this.view.parent.y);
-        this.view.lineTo(v*192-32, i-this.view.parent.y);
-        this.view.closePath()
+        this.moveTo(-v*192, i-this.parent.y);
+        this.lineTo(v*192, i-this.parent.y);
+        this.closePath()
       }
     }
   }

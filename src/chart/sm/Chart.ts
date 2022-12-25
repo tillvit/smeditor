@@ -1,6 +1,7 @@
 import { bsearch } from "../../util/Util"
 import { ChartDifficulty, CHART_DIFFICULTIES } from "./ChartTypes"
 import { Notedata, NotedataCount, NotedataEntry, NoteType, NOTE_TYPE_LOOKUP, PartialNotedataEntry } from "./NoteTypes"
+import { Simfile } from "./Simfile"
 import { StepsType, STEPS_TYPES } from "./SimfileTypes"
 import { TimingData } from "./TimingData";
 import { TimingEventProperty, TimingProperty, TIMING_EVENT_NAMES } from "./TimingTypes"
@@ -14,15 +15,18 @@ export class Chart {
   chartName: string = ""
   chartStyle: string = ""
   credit: string = ""
+  music?: string
   timingData: TimingData
+  sm: Simfile
 
   notedata: Notedata = [];
   private _notedataCount?: NotedataCount
 
 
-  constructor(data: string | {[key: string]: string}, type: "sm"|"ssc", fallbackTimingData: TimingData) {
-    this.timingData = new TimingData(fallbackTimingData, this)
-    if (type == "ssc") {
+  constructor(sm: Simfile, data: string | {[key: string]: string}) {
+    this.timingData = new TimingData(sm.timingData, this)
+    this.sm = sm
+    if (sm._type == "ssc") {
       let dict = data as {[key: string]: string}
       for (let property in dict) {
         if (property == "OFFSET" || TIMING_EVENT_NAMES.includes(property as TimingEventProperty)) this.timingData.parse(property as TimingProperty, dict[property])
@@ -38,7 +42,8 @@ export class Chart {
       this.notedata = this.parseNotedata(dict["NOTES"]) ?? []
       this.credit = dict["CREDIT"] ?? ""
       this.chartName = dict["CHARTNAME"] ?? ""
-      this.chartStyle= dict["CHARTSTYLE"] ?? ""
+      this.chartStyle = dict["CHARTSTYLE"] ?? ""
+      this.music = dict["MUSIC"]
     }else{
       let match = /([\w\d\-]+):[\s ]*([^:]*):[\s ]*([\w\d]+):[\s ]*([\d]+):[\s ]*([\d.,]+):[\s ]*([\w\d\s, ]+)/g.exec((<string>data).trim())
       if (match != null) {
@@ -264,7 +269,10 @@ export class Chart {
   }
   
   recalculateNotes() {
-    console.log("Recalculated")
     this.notedata = this.notedata.map(note => this.computeNote(note))
+  }
+
+  getMusicPath(): string {
+    return this.music ?? this.sm.properties.MUSIC ?? ""
   }
 } 

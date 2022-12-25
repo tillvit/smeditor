@@ -16,10 +16,6 @@ const icons = {
   Lift: Texture.from('assets/noteskin/icon/lift.png')
 }
 
-export interface ArrowContainer extends Container {
-  data: PartialNotedataEntry
-}
-
 
 export class NoteRenderer {
   static createArrow(note: PartialNotedataEntry): Container {
@@ -28,16 +24,16 @@ export class NoteRenderer {
     let item_container = new Container();
     arrow.addChild(hold_container)
     arrow.addChild(item_container)
-    this.setData(arrow as ArrowContainer, note);
+    this.setData(arrow, note);
     arrow.interactive = true
     return arrow
   }
-  static setMineTime(arrow: ArrowContainer, seconds: number) {
+  static setMineTime(arrow: Container, seconds: number) {
     let item = arrow.getChildAt(1)
     item.rotation = seconds % 1 * Math.PI * 2
   }
 
-  static setHoldEnd(arrow: ArrowContainer, yp: number) {
+  static setHoldEnd(arrow: Container, yp: number) {
     let hold_container = arrow.getChildAt(0) as Container
     let hold_body = hold_container.getChildAt(0) as TilingSprite
     hold_body.height = yp - arrow.y
@@ -46,9 +42,7 @@ export class NoteRenderer {
     hold_cap.y = yp-arrow.y
   }
 
-  static setData(arrow: ArrowContainer, note: PartialNotedataEntry) {
-    if (arrow.data == note) return
-    else arrow.data = note
+  static setData(arrow: Container, note: PartialNotedataEntry) {
     let item_container = arrow.getChildAt(1) as Container
     for (let i = 0; i < item_container.children.length; i++)
       item_container.children[i].destroy()

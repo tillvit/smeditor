@@ -1,5 +1,6 @@
 
 import { Application, BitmapFont } from 'pixi.js';
+import WebFont from 'webfontloader'
 import { BiquadFilter } from './chart/audio/BiquadFilter'
 import { ChartManager } from './chart/ChartManager'
 import { MenubarManager } from './gui/MenubarManager'
@@ -185,50 +186,57 @@ document.querySelector("body")!.innerHTML =
 
 // Check WebGL
 
-let canvas = document.createElement("canvas")
-let gl = (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) as WebGLRenderingContext;
+WebFont.load({
+  google: {
+    families: ['Assistant:200,300,400,500,600,700,800']
+  },
+  active: init,
+  inactive: init,
+  classes: false
+});
 
-if (!gl) {
-  document.querySelector("body")!.innerHTML = 
-  `<div class='browser-unsupported'>
-    <div class='browser-unsupported-item'>
-    <h1>WebGL is not enabled</h1>
-    <div>Please visit your browser settings and enable WebGL.</div>
-    </div>
-  </div>`
-}else if (getBrowser().includes("Safari")) {
-  document.querySelector("body")!.innerHTML = 
-  `<div class='browser-unsupported'>
-    <div class='browser-unsupported-item'>
-    <h1>Safari is currently not supported</h1>
-    <div>Please use Chrome/Firefox instead.</div>
-    <div class='browser-unsupported-detail'>Check the console for more info.</div>
-    </div>
-  </div>`
-  console.log(
-    `SMEditor is not supported for Safari due to various issues involving rendering and sound.
-    PIXI.js, the library used in SMEditor, takes an extremely long time to load and does not perform well on Safari.
-    Additionally, many audio files cannot be played in Safari.
-    If you still want to try loading SMEditor, run the command runSafari()`
-    )
-    window.runSafari = async () => {
-      document.querySelector("body")!.innerHTML = 
-      `<div id="view-wrapper"> 
-        <div id="menubar"></div>
-          <canvas id="pixi"></canvas>
-        </div>
-      <div id="windows"></div>
-      `
-      
-      window.app = new App()
-      window.runSafari = undefined
-    }
-} else {
-  window.app = new App()
-  window.BiquadFilter = BiquadFilter as any;
+function init() {
+  let canvas = document.createElement("canvas")
+  let gl = (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) as WebGLRenderingContext;
+
+  if (!gl) {
+    document.querySelector("body")!.innerHTML = 
+    `<div class='browser-unsupported'>
+      <div class='browser-unsupported-item'>
+      <h1>WebGL is not enabled</h1>
+      <div>Please visit your browser settings and enable WebGL.</div>
+      </div>
+    </div>`
+  }else if (getBrowser().includes("Safari")) {
+    document.querySelector("body")!.innerHTML = 
+    `<div class='browser-unsupported'>
+      <div class='browser-unsupported-item'>
+      <h1>Safari is currently not supported</h1>
+      <div>Please use Chrome/Firefox instead.</div>
+      <div class='browser-unsupported-detail'>Check the console for more info.</div>
+      </div>
+    </div>`
+    console.log(
+      `SMEditor is not supported for Safari due to various issues involving rendering and sound.
+      PIXI.js, the library used in SMEditor, takes an extremely long time to load and does not perform well on Safari.
+      Additionally, many audio files cannot be played in Safari.
+      If you still want to try loading SMEditor, run the command runSafari()`
+      )
+      window.runSafari = async () => {
+        document.querySelector("body")!.innerHTML = 
+        `<div id="view-wrapper"> 
+          <div id="menubar"></div>
+            <canvas id="pixi"></canvas>
+          </div>
+        <div id="windows"></div>
+        `
+        window.app = new App()
+        window.runSafari = undefined
+      }
+  } else {
+    window.app = new App()
+  }
 }
-
-
 
 
 

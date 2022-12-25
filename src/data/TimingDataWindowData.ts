@@ -2,20 +2,23 @@ import { Parser } from "expr-eval"
 import { App } from "../App"
 import { TimingData } from "../chart/sm/TimingData"
 
-type TimingWindowElement<T extends HTMLElement> = {
-  create: (app: App) => T,
+
+type TimingDataWindowElement<T extends HTMLElement> = {
+  create: (app: App) => T;
   update: (element: T, timingData: TimingData, beat: number) => void,
 }
 
-type TimingWindowData = {
+type TimingDataWindowData = {
   title: string,
-  element: TimingWindowElement<any>
+  element: TimingDataWindowElement<any>
 }
 
-export const TIMING_WINDOW_DATA: {[key: string]: TimingWindowData} = {
+const createElement = <T extends HTMLElement>(element: TimingDataWindowElement<T>) => element;
+
+export const TIMING_WINDOW_DATA: {[key: string]: TimingDataWindowData} = {
   beat: {
     title: "Beat",
-    element: {
+    element: createElement({
       create: (app) => {
         let input = document.createElement("input")
         input.onchange = () => {
@@ -24,19 +27,26 @@ export const TIMING_WINDOW_DATA: {[key: string]: TimingWindowData} = {
           input.value = beat.toFixed(3)
           input.blur()
         }
+        input.onkeydown = (ev) => {
+          if (ev.key == "Enter") input.blur()
+        }
         input.oninput = () => {
           input.value = input.value.replaceAll(/[^.0-9+-]/g,"")
         }
         return input
       },
       update: (element, _, beat) => {
-        element.value = beat.toFixed(3)
+        let val = element.value = beat.toFixed(3)
+        if (element.dataset.lastValue != val) {
+          element.value = val
+          element.dataset.lastValue = val
+        }
       }
-    }
+    })
   },
   offset: {
     title: "Offset",
-    element: {
+    element: createElement({
       create: (app) => {
         let input = document.createElement("input")
         input.onchange = () => {
@@ -46,32 +56,46 @@ export const TIMING_WINDOW_DATA: {[key: string]: TimingWindowData} = {
           input.value = offset.toFixed(3)
           input.blur()
         }
+        input.onkeydown = (ev) => {
+          if (ev.key == "Enter") input.blur()
+        }
         input.oninput = () => {
           input.value = input.value.replaceAll(/[^.0-9+-]/g,"")
         }
         return input
       },
       update: (element, timingData) => {
-        element.value = timingData.getTimingData("OFFSET")
+        let val = timingData.getTimingData("OFFSET").toFixed(3)
+        if (element.dataset.lastValue != val) {
+          element.value = val
+          element.dataset.lastValue = val
+        }
       }
-    }
+    })
   },
   label: {
     title: "Label",
-    element: {
+    element: createElement({
       create: () => {
         let input = document.createElement("input")
+        input.onkeydown = (ev) => {
+          if (ev.key == "Enter") input.blur()
+        }
         return input
       },
       update: (element, timingData, beat) => {
         let event = timingData.getTimingEventAtBeat("LABELS", beat)
-        element.value = event?.value ?? ""
+        let val = event?.value ?? ""
+        if (element.dataset.lastValue != val) {
+          element.value = val
+          element.dataset.lastValue = val
+        }
       }
-    }
+    })
   },
   timeSig: {
     title: "Time Signature",
-     element: {
+    element: createElement({
       create: () => {
         let container = document.createElement("div")
         let top = document.createElement("input")
@@ -87,69 +111,89 @@ export const TIMING_WINDOW_DATA: {[key: string]: TimingWindowData} = {
       },
       update: (element, timingData, beat) => {
         let event = timingData.getTimingEventAtBeat("TIMESIGNATURES", beat)
-        element.children[0].value = event?.upper ?? "4"
-        element.children[2].value = event?.lower ?? "4"
+        let val = (event?.upper ?? "4") + "/" + (event?.lower ?? "4")
+        if (element.dataset.lastValue != val) {
+          (<HTMLInputElement>element.children[0]).value = event?.upper.toString() ?? "4";
+          (<HTMLInputElement>element.children[2]).value = event?.lower.toString() ?? "4";
+          element.dataset.lastValue = val
+        }
       }
-    }
+    })
   },
   bpm: {
     title: "BPM",
-     element: {
+    element: createElement({
       create: () => {
         let input = document.createElement("input")
         return input
       },
       update: (element, timingData, beat) => {
         let event = timingData.getTimingEventAtBeat("BPMS", beat)
-        element.value = event?.value.toFixed(3) ?? "120.000"
+        let val = event?.value.toFixed(3) ?? "120.000"
+        if (element.dataset.lastValue != val) {
+          element.value = val
+          element.dataset.lastValue = val
+        }
       }
-    }
+    })
   },
   stop: {
     title: "Stop",
-     element: {
+    element: createElement({
       create: () => {
         let input = document.createElement("input")
         return input
       },
       update: (element, timingData, beat) => {
         let event = timingData.getTimingEventAtBeat("STOPS", beat)
-        element.value = event?.value.toFixed(3) ?? "0.000"
-        if (event && event.beat != beat) element.value = "0.000"
+        let val = event?.value.toFixed(3) ?? "0.000"
+        if (event && event.beat != beat) val = "0.000"
+        if (element.dataset.lastValue != val) {
+          element.value = val
+          element.dataset.lastValue = val
+        }
       }
-    }
+    })
   },
   delay: {
     title: "Delay",
-     element: {
+    element: createElement({
       create: () => {
         let input = document.createElement("input")
         return input
       },
       update: (element, timingData, beat) => {
         let event = timingData.getTimingEventAtBeat("DELAYS", beat)
-        element.value = event?.value.toFixed(3) ?? "0.000"
-        if (event && event.beat != beat) element.value = "0.000"
+        let val = event?.value.toFixed(3) ?? "0.000"
+        if (event && event.beat != beat) val = "0.000"
+        if (element.dataset.lastValue != val) {
+          element.value = val
+          element.dataset.lastValue = val
+        }
       }
-    }
+    })
   },
   warp: {
     title: "Warp",
-     element: {
+    element: createElement({
       create: () => {
         let input = document.createElement("input")
         return input
       },
       update: (element, timingData, beat) => {
         let event = timingData.getTimingEventAtBeat("WARPS", beat)
-        element.value = event?.value.toFixed(3) ?? "0.000"
-        if (event && event.beat != beat) element.value = "0.000"
+        let val = event?.value.toFixed(3) ?? "0.000"
+        if (event && event.beat != beat) val = "0.000"
+        if (element.dataset.lastValue != val) {
+          element.value = val
+          element.dataset.lastValue = val
+        }
       }
-    }
+    })
   },
   speed: {
     title: "Speed",
-     element: {
+    element: createElement({
       create: () => {
         let container = document.createElement("div")
         let speed = document.createElement("input")
@@ -171,46 +215,57 @@ export const TIMING_WINDOW_DATA: {[key: string]: TimingWindowData} = {
       },
       update: (element, timingData, beat) => {
         let event = timingData.getTimingEventAtBeat("SPEEDS", beat)
-        element.children[0].value = event?.value ?? "1"
-        element.children[2].value = event?.delay ?? "0"
-        element.children[4].value = event?.unit ?? "B"
+        let val = (event?.value ?? "1") + "/" + (event?.delay ?? "0") + "/" + (event?.unit ?? "B")
         if (event && event.beat != beat) {
-          element.children[2].value = "0"
-          element.children[4].value = "B"
+          val =  (event?.value ?? "1") + "/0/B"
+        }
+        if (element.dataset.lastValue != val) {
+          (<HTMLInputElement>element.children[0]).value = event?.value.toString() ?? "1";
+          (<HTMLInputElement>element.children[2]).value = event?.delay.toString() ?? "0";
+          (<HTMLInputElement>element.children[4]).value = event?.unit ?? "B";
+          element.dataset.lastValue = val
         }
       }
-    }
+    })
   },
   scroll: {
     title: "Scroll",
-     element: {
+    element: createElement({
       create: () => {
         let input = document.createElement("input")
         return input
       },
       update: (element, timingData, beat) => {
         let event = timingData.getTimingEventAtBeat("SCROLLS", beat)
-        element.value = event?.value.toFixed(3) ?? "1.000"
+        let val = event?.value.toFixed(3) ?? "1.000"
+        if (element.dataset.lastValue != val) {
+          element.value = val
+          element.dataset.lastValue = val
+        }
       }
-    }
+    })
   },
   fake: {
     title: "Fake",
-     element: {
+    element: createElement({
       create: () => {
         let input = document.createElement("input")
         return input
       },
       update: (element, timingData, beat) => {
         let event = timingData.getTimingEventAtBeat("FAKES", beat)
-        element.value = event?.value.toFixed(3) ?? "0.000"
-        if (event && event.beat != beat) element.value = "0.000"
+        let val = event?.value.toFixed(3) ?? "0.000"
+        if (event && event.beat != beat) val = "0.000"
+        if (element.dataset.lastValue != val) {
+          element.value = val
+          element.dataset.lastValue = val
+        }
       }
-    }
+    })
   },
   combo: {
     title: "Combo",
-     element: {
+    element: createElement({
       create: () => {
         let container = document.createElement("div")
         let hit = document.createElement("input")
@@ -226,14 +281,18 @@ export const TIMING_WINDOW_DATA: {[key: string]: TimingWindowData} = {
       },
       update: (element, timingData, beat) => {
         let event = timingData.getTimingEventAtBeat("COMBOS", beat)
-        element.children[0].value = event?.hitMult ?? 1
-        element.children[2].value = event?.missMult ?? 1
+        let val = (event?.hitMult ?? "1") + "/" + (event?.missMult ?? "1")
+        if (element.dataset.lastValue != val) {
+          (<HTMLInputElement>element.children[0]).value = event?.hitMult.toString() ?? "1";
+          (<HTMLInputElement>element.children[2]).value = event?.missMult.toString() ?? "1";
+          element.dataset.lastValue = val
+        }
       }
-    }
+    })
   },
   tick: {
     title: "Tickcount",
-     element: {
+    element: createElement({
       create: () => {
         let input = document.createElement("input")
         input.classList.add("short")
@@ -241,8 +300,12 @@ export const TIMING_WINDOW_DATA: {[key: string]: TimingWindowData} = {
       },
       update: (element, timingData, beat) => {
         let event = timingData.getTimingEventAtBeat("TICKCOUNTS", beat)
-        element.value = event?.value ?? 4
+        let val = event?.value.toString() ?? "4"
+        if (element.dataset.lastValue != val) {
+          element.value = val
+          element.dataset.lastValue = val
+        }
       }
-    }
+    })
   },
 }

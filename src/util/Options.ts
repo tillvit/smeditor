@@ -52,4 +52,7 @@ export class Options {
   experimental = {
     speedChangeWaveform: true
   }
+  play = {
+    faEnabled: false
+  }
 }

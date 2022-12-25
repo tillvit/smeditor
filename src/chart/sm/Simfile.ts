@@ -57,7 +57,7 @@ export class Simfile {
         for (let data of temp_charts) {
           let chart
           try {
-            chart = new Chart(data, type as "sm"|"ssc", this.timingData)
+            chart = new Chart(this, data)
           } catch(error) {
             console.warn(error)
             continue
