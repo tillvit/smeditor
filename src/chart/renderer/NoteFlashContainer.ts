@@ -41,6 +41,7 @@ export class NoteFlashContainer extends Container {
 
   addFlash(col: number, judgment: Judgment) {
     if (!this.renderer.options.chart.drawNoteFlash) return
+    if (!this.renderer.options.play.faEnabled && judgment == Judgment.WHITE_FANTASTIC) judgment = Judgment.FANTASTIC
     let flash = new Sprite(FLASH_TEX.get(judgment)) as NoteFlashObject
     flash.width = 106
     flash.height = 106

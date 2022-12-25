@@ -1,4 +1,5 @@
 import { App } from "../App"
+import { EditMode } from "../chart/ChartManager"
 import { ChartListWindow } from "../window/ChartListWindow"
 import { DirectoryWindow } from "../window/DirectoryWindow"
 import { EQWindow } from "../window/EQWindow"
@@ -8,6 +9,7 @@ export interface Keybind {
   label: string,
   keybinds: KeyCombo[],
   disabled: boolean | ((app: App) => boolean),
+  disableRepeat?: boolean,
   callback: (app: App) => void
 }
 
@@ -46,6 +48,46 @@ export const SPECIAL_KEYS: {[key: string]: string} = {
 };
 
 export const KEYBINDS: {[key: string]: Keybind} = {
+  left: {
+    label: "Left",
+    keybinds: [
+      {key: "Left", mods: []},
+      {key: "A", mods: []}
+    ],
+    disableRepeat: true,
+    disabled: (app) => app.chartManager.getMode() != EditMode.Play,
+    callback: (app) => app.chartManager.judgeCol(0)
+  },
+  down: {
+    label: "Down",
+    keybinds: [
+      {key: "Down", mods: []},
+      {key: "S", mods: []}
+    ],
+    disableRepeat: true,
+    disabled: (app) => app.chartManager.getMode() != EditMode.Play,
+    callback: (app) => app.chartManager.judgeCol(1)
+  },
+  up: {
+    label: "Up",
+    keybinds: [
+      {key: "Up", mods: []},
+      {key: "W", mods: []}
+    ],
+    disableRepeat: true,
+    disabled: (app) => app.chartManager.getMode() != EditMode.Play,
+    callback: (app) => app.chartManager.judgeCol(2)
+  },
+  right: {
+    label: "Right",
+    keybinds: [
+      {key: "Right", mods: []},
+      {key: "D", mods: []}
+    ],
+    disableRepeat: true,
+    disabled: (app) => app.chartManager.getMode() != EditMode.Play,
+    callback: (app) => app.chartManager.judgeCol(3)
+  },
   playback: {
     label: "Play/Pause",
     keybinds: [
@@ -418,5 +460,13 @@ export const KEYBINDS: {[key: string]: Keybind} = {
 		],
     disabled: false,
     callback: (app) => app.options.editor.mousePlacement = !app.options.editor.mousePlacement
+  },
+  playMode: {
+    label: "Enter Play Mode",
+    keybinds: [
+			{key: "P", mods: [DEF_MOD]}
+		],
+    disabled: (app) => !app.chartManager.chartView ,
+    callback: (app) => app.chartManager.setMode(EditMode.Play)
   },
 }

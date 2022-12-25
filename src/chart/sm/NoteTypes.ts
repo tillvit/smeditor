@@ -25,7 +25,11 @@ export interface PartialNotedataEntry {
 export interface NotedataEntry extends PartialNotedataEntry {
   warped: boolean,
   fake: boolean,
-  second: number
+  second: number,
+  hide?: boolean,
+  hit?: boolean,
+  judged?: boolean,
+  lastActivation?: number,
 }
 
 export interface NotedataCount {

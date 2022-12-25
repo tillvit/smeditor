@@ -5,11 +5,11 @@ import { ChartAudio } from "./audio/ChartAudio"
 import { Howl } from 'howler';
 import { IS_OSX, KEYBINDS } from "../data/KeybindData"
 import { Chart } from "./sm/Chart"
-import { NoteTexture } from "./note/NoteTexture"
+import { NoteTexture } from "./renderer/NoteTexture"
 import { BitmapText } from "pixi.js"
 import { bsearch, getFPS, roundDigit } from "../util/Util"
 import { Keybinds } from "../listener/Keybinds"
-import { NoteType, PartialNotedataEntry } from "./sm/NoteTypes"
+import { NotedataEntry, NoteType, PartialNotedataEntry } from "./sm/NoteTypes"
 import { Judgment } from "./play/Judgment"
 
 const SNAPS = [1,2,3,4,6,8,12,16,24,48,-1]
@@ -27,7 +27,7 @@ interface PartialHold {
 export enum EditMode {
   View = "View Mode",
   Edit = "Edit Mode",
-  Play = "Play Mode (Press Esacpe to exit)"
+  Play = "Play Mode (Press Escape to exit)"
 }
 
 export class ChartManager {
@@ -67,12 +67,15 @@ export class ChartManager {
   private mode: EditMode = EditMode.Edit
   private lastMode: EditMode = EditMode.Edit
 
+  private chordCohesion: Map<number, NotedataEntry[]> = new Map
+
   constructor(app: App) {
 
     this.app = app
     NoteTexture.initArrowTex(app)
 
     app.view.addEventListener?.("wheel", (event: WheelEvent) => {
+      if (this.mode == EditMode.Play) return
       if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
       if ((IS_OSX && event.metaKey) || (!IS_OSX && event.ctrlKey)) {
         this.app.options.chart.speed = Math.max(10, app.options.chart.speed * Math.pow(1.01, event.deltaY / 5 * app.options.editor.scrollSensitivity))
@@ -113,7 +116,8 @@ export class ChartManager {
     this.app.pixi.ticker.add(() => {
       if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
       this.chartView?.renderThis();
-      this.info.text = "Time: " + roundDigit(this.time,3) 
+      this.info.text = this.mode
+                     + "\nTime: " + roundDigit(this.time,3) 
                      + "\nBeat: " + roundDigit(this.beat,3)
                      + "\nFPS: " + getFPS(this.app.pixi)
                      + "\nNote Type: " + ADDABLE_NOTE_TYPES[this.editNoteTypeIndex]
@@ -140,7 +144,7 @@ export class ChartManager {
       let hasPlayed = false
       while(this.noteIndex < notedata.length && time > notedata[this.noteIndex].second + app.options.audio.effectOffset) {
         if (this.songAudio.isPlaying() && (notedata[this.noteIndex].type != "Fake" && notedata[this.noteIndex].type != "Mine") && !notedata[this.noteIndex].fake) {
-          this.chartView.addFlash(notedata[this.noteIndex].col, Judgment.FANTASTIC)
+          if (this.mode != EditMode.Play) this.chartView.doJudgment(notedata[this.noteIndex], 0, Judgment.FANTASTIC)
           if (!hasPlayed && app.options.audio.assistTick) {
             this.assistTick.play()
             hasPlayed = true
@@ -165,7 +169,9 @@ export class ChartManager {
       }
     })
 
+
     window.addEventListener("keyup", (event: KeyboardEvent)=>{
+      if (this.mode != EditMode.Edit) return
       if (event.code.startsWith("Digit")) {
         let col = parseInt(event.code.slice(5))-1
         this.endEditing(col)
@@ -174,6 +180,7 @@ export class ChartManager {
 
     
     window.addEventListener("keydown", (event: KeyboardEvent) => {
+      if (this.mode != EditMode.Edit) return
       if (event.target instanceof HTMLTextAreaElement) return
       if (event.target instanceof HTMLInputElement) return
       //Start editing note
@@ -213,7 +220,13 @@ export class ChartManager {
       }
     }, true)
 
-
+    window.addEventListener("keydown", (event: KeyboardEvent) => {
+      if (this.mode != EditMode.Play) return
+      if (event.key == "Escape") {
+        this.setMode(this.lastMode)
+        this.songAudio.pause()
+      }
+    }, true)
   }
 
   getBeat(): number {
@@ -226,7 +239,6 @@ export class ChartManager {
 
   setBeat(beat: number) {
     if (!this.chart) return
-    beat = Math.max(0, beat)
     let seekBack = this.beat > beat
     this.beat = beat
     this.time = this.chart.getSeconds(this.beat)
@@ -239,7 +251,6 @@ export class ChartManager {
     let seekBack = this.time > time
     this.time = time
     this.beat = this.chart.getBeat(this.time)
-    if (this.beat < 0) this.setBeat(0)
     if (seekBack) this.seekBack()
   }
 
@@ -508,8 +519,66 @@ export class ChartManager {
   }
 
   setMode(mode: EditMode) {
+    if (!this.chart || !this.chartView) return
+    if (this.mode == mode) return
     this.lastMode = this.mode
     this.mode = mode
+    if (this.mode == EditMode.Play) {
+      this.chart?.notedata.forEach(note => {
+        note.lastActivation = -1
+        note.judged = note.second < this.time
+        note.hide = false
+      })
+      this.chordCohesion.clear()
+      for (let note of this.chart.notedata) {
+        if (note.type == "Mine" || note.fake) continue
+        if (!this.chordCohesion.has(note.beat)) this.chordCohesion.set(note.beat, [])
+        this.chordCohesion.get(note.beat)!.push(note)
+      }
+      this.songAudio.seek(this.time - 1)
+      this.songAudio.play()
+    }else{
+      this.chart?.notedata.forEach(note => {
+        note.lastActivation = -1
+        note.judged = false
+        note.hide = false
+      })
+    }
+  }
+
+  judgeCol(col: number) {
+    if (!this.chart || !this.chartView || this.mode != EditMode.Play) return
+    let hitTime = this.time + this.app.options.play.offset
+    let hitWindowStart = hitTime - Judgment.timingWindows[Judgment.timingWindows.length-1].timingWindowMS/1000
+    let hitWindowEnd = hitTime + Judgment.timingWindows[Judgment.timingWindows.length-1].timingWindowMS/1000
+    let firstHittableNote = bsearch(this.chart.notedata, hitWindowStart, a => a.second) + 1
+    if (firstHittableNote >= 1 && hitWindowStart <= this.chart.notedata[firstHittableNote-1].second) firstHittableNote--
+    let closestNote: NotedataEntry | undefined = undefined
+    while (this.chart.notedata[firstHittableNote] && this.chart.notedata[firstHittableNote].second <= hitWindowEnd) {
+      let note = this.chart.notedata[firstHittableNote]
+      if (note.judged || note.col != col || note.type == "Mine" || note.fake) {
+        firstHittableNote++
+        continue
+      }
+      if (!closestNote || Math.abs(note.second-hitTime) < Math.abs(closestNote.second-hitTime)) {
+        closestNote = note
+      }
+      firstHittableNote++
+    }
+    if (closestNote) {
+      closestNote.hit = true
+      let chord = this.chordCohesion.get(closestNote.beat)!
+      if (chord.every(note => note.hit)) {
+        chord.forEach(note => note.judged = true)
+        for (let judgment of Judgment.timingWindows) {
+          if (judgment.timingWindowMS/1000 >= Math.abs(hitTime-closestNote.second)) {
+            if (judgment.order < 4) chord.forEach(note => {if (!note.hold) note.hide = true})
+            chord.forEach(note => this.chartView!.doJudgment(note, hitTime-note.second, judgment))
+            break
+          }
+        }
+      }
+    }
   }
 }
 

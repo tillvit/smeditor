@@ -71,7 +71,7 @@ export class ReceptorContainer extends Container {
     this.y = this.renderer.options.chart.receptorYPos
 
     for (let child of this.receptors.children) { 
-      let col = Math.max((1 - (beat % 1)), 0.5) * 255;
+      let col = Math.max((1 - ((beat+100000) % 1)), 0.5) * 255;
       (<Sprite>child).tint = rgbtoHex(col, col, col)
     }
 
@@ -82,6 +82,5 @@ export class ReceptorContainer extends Container {
       let text = container.children[1] as BitmapText
       text.text = "" + ((this.renderer.options.chart.snap == 0 || 4/this.renderer.options.chart.snap%1 != 0) ? "" : (4/this.renderer.options.chart.snap))
     }
-    
   }
 }

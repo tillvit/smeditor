@@ -251,9 +251,9 @@ export class TimingData {
     let beat = event.beat
     let time_left_over = seconds - event.second!
     let curbpm = this.getBPM(event.beat)
-    if (event.type == "STOPS"|| event.type == "DELAYS") time_left_over -= event.value
+    if (event.type == "STOPS"|| event.type == "DELAYS") time_left_over = Math.max(0,time_left_over - event.value)
     if (event.type == "BPMS") curbpm = event.value
-    beat += Math.max(0,time_left_over) * curbpm/60
+    beat += time_left_over * curbpm/60
     return beat
   }
 

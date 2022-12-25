@@ -30,10 +30,13 @@ export class Keybinds {
       })
       if (matches.length > 0) { 
         e.preventDefault() 
-        let disabled = matches[0].disabled
-        if (disabled instanceof Function) disabled = disabled(this.app)
-        if (disabled) return
-        matches[0].callback(this.app)
+        for (let match of matches) {
+          let disabled = match.disabled
+          if (disabled instanceof Function) disabled = disabled(this.app)
+          if (disabled) continue
+          match.callback(this.app)
+          return
+        }
       };
     })
   }

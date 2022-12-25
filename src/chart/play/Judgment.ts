@@ -3,6 +3,9 @@ export class Judgment {
   name: string
   color: number
   timingWindowMS: number
+  order: number
+  
+  private static wID = 0
 
   static timingWindows: Judgment[] = []
 
@@ -18,6 +21,7 @@ export class Judgment {
     this.name = name
     this.color = color
     this.timingWindowMS = timingWindowMS
+    this.order = Judgment.wID++
     Judgment.timingWindows.push(this)
   }
 }

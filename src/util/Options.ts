@@ -53,6 +53,7 @@ export class Options {
     speedChangeWaveform: true
   }
   play = {
-    faEnabled: false
+    faEnabled: false,
+    offset: -0.044
   }
 }

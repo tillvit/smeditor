@@ -1,11 +1,11 @@
 
-import { NoteRenderer} from "./note/NoteRenderer";
+import { NoteRenderer} from "./renderer/NoteRenderer";
 import { Waveform } from "./renderer/Waveform";
-import { ChartManager } from "./ChartManager"
+import { ChartManager, EditMode } from "./ChartManager"
 import { Container, Point, Rectangle} from "pixi.js"
 import { Options } from "../util/Options"
 import { Chart } from "./sm/Chart"
-import { NoteType } from "./sm/NoteTypes"
+import { NotedataEntry, NoteType } from "./sm/NoteTypes"
 import { BarlineContainer } from "./renderer/BarlineContainer"
 import { TimingAreaContainer } from "./renderer/TimingAreaContainer"
 import { TimingBoxContainer } from "./renderer/TimingBoxContainer"
@@ -13,6 +13,7 @@ import { ReceptorContainer } from "./renderer/ReceptorContainer"
 import { NoteContainer } from "./renderer/NoteContainer"
 import { Judgment } from "./play/Judgment"
 import { NoteFlashContainer } from "./renderer/NoteFlashContainer"
+import { JudgmentContainer } from "./renderer/JudgmentContainer"
 
 export class ChartRenderer extends Container {
 
@@ -38,6 +39,7 @@ export class ChartRenderer extends Container {
   private editingArrow: Container
   private notes: NoteContainer
   private noteFlashes: NoteFlashContainer
+  private judgment: JudgmentContainer
  
   constructor(chartManager: ChartManager) {
     super()
@@ -54,6 +56,7 @@ export class ChartRenderer extends Container {
     this.editingArrow.alpha = 0.4
     this.notes = new NoteContainer(this)
     this.noteFlashes = new NoteFlashContainer(this)
+    this.judgment = new JudgmentContainer(this)
 
     this.addChild(this.waveform)
     this.addChild(this.barlines)
@@ -63,6 +66,7 @@ export class ChartRenderer extends Container {
     this.addChild(this.editingArrow)
     this.addChild(this.notes)
     this.addChild(this.noteFlashes)
+    this.addChild(this.judgment)
 
     this.chartManager.app.pixi.stage.addChild(this)
 
@@ -102,14 +106,16 @@ export class ChartRenderer extends Container {
   }
 
 
-  addFlash(col: number, judgment: Judgment) {
-    this.noteFlashes.addFlash(col, judgment)
+  doJudgment(note: NotedataEntry, error: number, judgment: Judgment) {
+    this.noteFlashes.addFlash(note.col, judgment)
+    if (this.chartManager.getMode() == EditMode.Play)
+      this.judgment.doJudge(error, judgment)
   }
 
   renderThis() {
 
-    let beat = this.chartManager.getBeat()
-    let time = this.chartManager.getTime()
+    let beat = this.getBeat()
+    let time = this.getTime()
 
     this.speedMult = this.options.chart.doSpeedChanges ? this.chart.timingData.getSpeedMult(beat, time) : 1
 
@@ -133,6 +139,7 @@ export class ChartRenderer extends Container {
     this.notes.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
     this.waveform.renderThis(beat)
     this.noteFlashes.renderThis()
+    this.judgment.renderThis()
 
     if (this.lastMousePos) {
       let snap = this.options.chart.snap == 0 ? 1/48 : this.options.chart.snap
@@ -167,10 +174,27 @@ export class ChartRenderer extends Container {
     }
   }
 
+  getTime(): number {
+    let time = this.chartManager.getTime()
+    if (this.chartManager.getMode() == EditMode.Play) {
+      time += this.options.play.offset
+    }
+    return time
+  }
+
+  getBeat(): number {
+    let beat = this.chartManager.getBeat()
+    if (this.chartManager.getMode() == EditMode.Play) {
+      beat = this.chart.getBeat(this.getTime())
+    }
+    return beat
+  }
+
+
 
   getYPos(beat: number): number {
-    let currentTime = this.chartManager.getTime() 
-    let currentBeat = this.chartManager.getBeat() 
+    let currentTime = this.getTime() 
+    let currentBeat = this.getBeat() 
     if (this.options.chart.CMod) {
       return (this.chart.getSeconds(beat)-currentTime)*this.options.chart.speed/100*64*4 + this.options.chart.receptorYPos
     }
@@ -180,7 +204,7 @@ export class ChartRenderer extends Container {
 
 
   getTimeFromYPos(yp: number): number {
-    let currentTime = this.chartManager.getTime()
+    let currentTime = this.getTime()
     if (this.options.chart.CMod) {
       let seconds = (yp - this.options.chart.receptorYPos)/this.options.chart.speed*100/64/4 + currentTime
       return seconds
@@ -189,7 +213,7 @@ export class ChartRenderer extends Container {
   }
 
   getBeatFromYPos(yp: number): number {
-    let currentBeat = this.chartManager.getBeat()
+    let currentBeat = this.getBeat()
     if (this.options.chart.CMod) {
       return this.chart.getBeat(this.getTimeFromYPos(yp))
     }

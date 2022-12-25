@@ -1,7 +1,7 @@
 import { Container } from "pixi.js"
 import { ChartRenderer } from "../ChartRenderer"
-import { NoteRenderer } from "../note/NoteRenderer"
-import { NoteTexture } from "../note/NoteTexture"
+import { NoteRenderer } from "./NoteRenderer"
+import { NoteTexture } from "./NoteTexture"
 import { NotedataEntry } from "../sm/NoteTypes"
 
 interface NoteObject extends Container {
@@ -32,6 +32,7 @@ export class NoteContainer extends Container {
     let time = this.renderer.chartManager.getTime()
     for (let note of this.renderer.chart.notedata) { 
       // note = JSON.parse(JSON.stringify(note))
+      if (note.hide) continue
       if (this.renderer.options.chart.CMod && this.renderer.options.chart.hideWarpedArrows && note.warped) continue
       if (note.beat + (note.hold ?? 0) < fromBeat) continue
       if (note.beat > toBeat) break
