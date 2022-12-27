@@ -4,6 +4,7 @@ import { NoteRenderer } from "./NoteRenderer"
 import { NoteTexture } from "./NoteTexture"
 import { NotedataEntry } from "../sm/NoteTypes"
 import { Options } from "../../util/Options"
+import { EditMode } from "../ChartManager"
 
 interface NoteObject extends Container {
   note: NotedataEntry,
@@ -44,9 +45,17 @@ export class NoteContainer extends Container {
       arrow.y = yPos;
       if (note.type == "Hold" || note.type == "Roll") {
         NoteRenderer.setHoldLength(arrow, holdLength)
+        if (note.lastActivation) {
+          let t = (time - note.lastActivation)/Options.play.timingCollection.getHeldJudgement(note).getTimingWindowMS()*1000
+          t = Math.min(1.2, t)
+          NoteRenderer.setHoldBrightness(arrow, 1-t*0.7)
+        }
       }
       if (note.type == "Mine") {
         NoteRenderer.setMineTime(arrow, time)
+      }
+      if (note.type == "Fake") {
+        NoteRenderer.hideFakeOverlay(arrow, this.renderer.chartManager.getMode() == EditMode.Play)
       }
     }
 
@@ -66,7 +75,7 @@ export class NoteContainer extends Container {
 
   private checkBounds(note: NotedataEntry, beat: number): [boolean, boolean, number, number] {
     let y = Options.chart.receptorYPos
-    if (!note.lastActivation || note.lastActivation == -1) y = this.renderer.getYPos(note.beat)
+    if (!note.lastActivation || beat < note.beat) y = this.renderer.getYPos(note.beat)
     if (note.droppedBeat) y = this.renderer.getYPos(note.droppedBeat)
     let y_hold = this.renderer.getYPos(note.beat + (note.hold ?? 0))
     if (note.hold && !note.droppedBeat && note.lastActivation && note.lastActivation != -1 && note.beat + note.hold < beat) return [true, false, y, y_hold - y]

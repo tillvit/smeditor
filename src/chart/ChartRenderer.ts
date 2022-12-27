@@ -118,7 +118,7 @@ export class ChartRenderer extends Container {
     if ((judgment as HoldTimingWindow).noteType) {
       this.holdJudgment.addJudge(note.col, judgment as HoldTimingWindow)
     }else{
-      if (this.chartManager.getMode() == EditMode.Play){
+      if (this.chartManager.getMode() == EditMode.Play && note.type != "Mine"){
         this.judgment.doJudge(error, judgment)
         this.timingBar.addBar(error, judgment)
       }

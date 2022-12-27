@@ -66,7 +66,7 @@ export class TimingBarContainer extends Container {
 
   addBar(error: number, judge: TimingWindow) {
     if (judge.name != "Miss") this.data.push(error)
-    if (this.data.length > 30) this.data.splice(0, 1)
+    if (this.data.length > 10) this.data.splice(0, 1)
     let bar = new Sprite(Texture.WHITE) as TimingBarObject
     bar.width = BAR_WIDTH
     bar.height = BAR_HEIGHT

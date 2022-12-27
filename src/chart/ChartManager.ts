@@ -51,6 +51,10 @@ export class ChartManager {
     src: 'assets/sound/metronome_low.ogg',
     volume: 0.5
   });
+  mine: Howl = new Howl({
+    src: 'assets/sound/mine.ogg',
+    volume: 0.5
+  });
   sm?: Simfile
   sm_path: string = ""
   chart?: Chart
@@ -191,7 +195,7 @@ export class ChartManager {
         for (let hold of this.holdProgress) {
           if (!hold.hold || !hold.lastActivation) continue
           if (this.heldCols[hold.col] && hold.type == "Hold") hold.lastActivation = this.time
-          if (!hold.lastFlash || Date.now() - hold.lastFlash > 30) {
+          if (this.beat >= hold.beat && (!hold.lastFlash || Date.now() - hold.lastFlash > 30)) {
             this.chartView.doHoldInProgressJudgment(hold)
             hold.lastFlash = Date.now()
           }
@@ -206,6 +210,19 @@ export class ChartManager {
             this.chartView.doJudgment(hold, 0, Options.play.timingCollection.getHeldJudgement(hold))
             this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
             this.gameStats?.addHoldDataPoint(hold, Options.play.timingCollection.getHeldJudgement(hold))
+          }
+        }
+
+        for (let i = 0; i < this.heldCols.length; i++) {
+          if (!this.heldCols[i]) continue
+          let mine = this.getClosestNote(this.time, i, ["Mine"], Options.play.timingCollection.getMineJudgment().getTimingWindowMS())
+          if (mine) {
+            mine.hit = true
+            mine.judged = true
+            mine.hide = true
+            this.chartView.doJudgment(mine, 0, Options.play.timingCollection.getMineJudgment())
+            this.gameStats?.addDataPoint([mine], Options.play.timingCollection.getMineJudgment(), 0)
+            this.mine.play()
           }
         }
       }
@@ -236,10 +253,8 @@ export class ChartManager {
       //Start editing note
       if (event.code.startsWith("Digit") && !event.repeat) {
         let col = parseInt(event.code.slice(5))-1
-        if (col < 4) {
-          let snap = Options.chart.snap == 0 ? 1/48 : Options.chart.snap
-          let snapBeat = Math.round(this.beat/snap)*snap
-          this.setNote(col, "key", snapBeat)
+        if (col < 4) { 
+          this.setNote(col, "key")
           event.preventDefault()
           event.stopImmediatePropagation()
         }
@@ -316,7 +331,7 @@ export class ChartManager {
 
     await this.sm.loaded
     await this.loadChart()
-    this.setBeat(0)
+    if (this.time == 0) this.setBeat(0)
   }
 
   async loadChart(chart?: Chart) {
@@ -418,6 +433,7 @@ export class ChartManager {
     this.assistTick.volume(volume)
     this.me_high.volume(volume)
     this.me_low.volume(volume)
+    this.mine.volume(volume)
   }
 
   seekBack() {
@@ -605,7 +621,6 @@ export class ChartManager {
     this.mode = mode
     if (this.mode == EditMode.Play) {
       this.chart?.notedata.forEach(note => {
-        note.lastActivation = -1
         note.judged = note.second < this.time
         note.hide = false
         note.hit = false
@@ -693,10 +708,11 @@ export class ChartManager {
     }
   }
 
-  private getClosestNote(hitTime: number, col: number, types: NoteType[]): NotedataEntry | undefined {
+  private getClosestNote(hitTime: number, col: number, types: NoteType[], windowMS?: number): NotedataEntry | undefined {
+    windowMS = windowMS ?? Options.play.timingCollection.maxWindowMS()
     if (!this.chart || !this.chartView || this.mode != EditMode.Play) return
-    let hitWindowStart = hitTime - Options.play.timingCollection.maxWindowMS()/1000
-    let hitWindowEnd = hitTime + Options.play.timingCollection.maxWindowMS()/1000
+    let hitWindowStart = hitTime - windowMS/1000
+    let hitWindowEnd = hitTime + windowMS/1000
     let firstHittableNote = bsearch(this.chart.notedata, hitWindowStart, a => a.second) + 1
     if (firstHittableNote >= 1 && hitWindowStart <= this.chart.notedata[firstHittableNote-1].second) firstHittableNote--
     let closestNote: NotedataEntry | undefined = undefined

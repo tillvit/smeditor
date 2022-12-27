@@ -1,5 +1,5 @@
 import { Container, Sprite, Texture, TilingSprite } from "pixi.js"
-import { getQuant, getRotFromArrow } from "../../util/Util";
+import { getQuant, getRotFromArrow, rgbtoHex } from "../../util/Util";
 import { PartialNotedataEntry } from "../sm/NoteTypes"
 import { NoteTexture } from "./NoteTexture"
 
@@ -42,6 +42,20 @@ export class NoteRenderer {
     hold_cap.y = length
   }
 
+  static setHoldBrightness(arrow: Container, brightness: number) {
+    let hold_container = arrow.getChildAt(0) as Container
+    let hold_body = hold_container.getChildAt(0) as TilingSprite
+    hold_body.tint = rgbtoHex(brightness * 255, brightness * 255, brightness * 255)
+    let hold_cap = hold_container.getChildAt(1) as Sprite
+    hold_cap.tint = rgbtoHex(brightness * 255, brightness * 255, brightness * 255)
+  }
+  
+  static hideFakeOverlay(arrow: Container, hide: boolean) {
+    let item = arrow.getChildAt(1) as Container
+    let overlay = item.getChildAt(1) as Container
+    overlay.visible = !hide
+  }
+
   static setData(arrow: Container, note: PartialNotedataEntry) {
     let item_container = arrow.getChildAt(1) as Container
     for (let i = 0; i < item_container.children.length; i++)
@@ -56,8 +70,8 @@ export class NoteRenderer {
     let type = note.type
     
     if (type == "Tap" || type == "Fake" || type == "Hold" || type == "Roll" || type == "Lift") {
-      let arrow = NoteTexture.getSpriteWithQuant(getQuant(beat))
-      item_container.addChild(arrow);
+      let note = NoteTexture.getSpriteWithQuant(getQuant(beat))
+      item_container.addChild(note);
       item_container.rotation = getRotFromArrow(col)
       if (type == "Fake" || type == "Lift") {
         let icon = new Sprite(icons[type])
@@ -85,8 +99,9 @@ export class NoteRenderer {
         hold_cap.height = 32
         hold_cap.anchor.x = 0.5
   
-        hold_container.addChild(hold_body);
+        hold_container.addChild(hold_body)
         hold_container.addChild(hold_cap)
+        NoteRenderer.setHoldBrightness(arrow, 0.8)
       }
     }else if (type == "Mine") {
       let mine_frame = new Sprite(mine_frame_texture)

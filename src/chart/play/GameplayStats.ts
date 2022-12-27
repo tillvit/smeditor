@@ -27,7 +27,7 @@ export class GameplayStats {
     if (!this.judgmentCounts.has(judge)) this.judgmentCounts.set(judge, 0)
     this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
     this.dancePoints += judge.dancePoints
-    this.maxCumulativeDancePoints += Options.play.timingCollection.getMaxDancePoints()
+    if (judge.name != "Mine") this.maxCumulativeDancePoints += Options.play.timingCollection.getMaxDancePoints()
     if (judge.name == "Miss") {
       this.maxCumulativeDancePoints += notes.filter(note => note.hold).reduce((totalDP, note) => {
         return totalDP + Options.play.timingCollection.getMaxHoldDancePoints(note.type)
