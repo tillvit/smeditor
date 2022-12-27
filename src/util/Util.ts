@@ -28,19 +28,31 @@ export function getFont() {
   return "Assistant, Helvetica, Arial"
 }
 
-let times = [1,2,3]
+let fpsTimes: number[] = []
 let fps = false
 export function getFPS(pixi: Application) {
   if (!fps) {
     fps = true
     pixi.ticker.add(()=>{
-      times.push(Date.now())
-      while (times.length > 0 && times[0] < Date.now() - 1000) {
-        times.shift()
+      fpsTimes.push(Date.now())
+      while (fpsTimes.length > 0 && fpsTimes[0] < Date.now() - 1000) {
+        fpsTimes.shift()
       }
     })
   }
-  return times.length
+  return fpsTimes.length
+}
+
+let tpsTimes: number[] = []
+export function getTPS() {
+  return tpsTimes.length
+}
+
+export function tpsUpdate() {
+  tpsTimes.push(Date.now())
+  while (tpsTimes.length > 0 && tpsTimes[0] < Date.now() - 1000) {
+    tpsTimes.shift()
+  }
 }
 
 export function clamp(val: number, low: number, high: number): number {

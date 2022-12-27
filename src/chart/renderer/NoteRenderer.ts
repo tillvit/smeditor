@@ -33,13 +33,13 @@ export class NoteRenderer {
     item.rotation = seconds % 1 * Math.PI * 2
   }
 
-  static setHoldEnd(arrow: Container, yp: number) {
+  static setHoldLength(arrow: Container, length: number) {
     let hold_container = arrow.getChildAt(0) as Container
     let hold_body = hold_container.getChildAt(0) as TilingSprite
-    hold_body.height = yp - arrow.y
-    hold_body.y = yp - arrow.y
+    hold_body.height = length
+    hold_body.y = length
     let hold_cap = hold_container.getChildAt(1) as Sprite
-    hold_cap.y = yp-arrow.y
+    hold_cap.y = length
   }
 
   static setData(arrow: Container, note: PartialNotedataEntry) {

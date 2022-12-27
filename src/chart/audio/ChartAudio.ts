@@ -5,12 +5,12 @@ export class ChartAudio {
 
   private _audioContext: AudioContext = new AudioContext()
   private _audioAnalyzer: AnalyserNode
-  private  _freqData: Uint8Array
+  private _freqData: Uint8Array
   private _gainNode: GainNode
   private _source?: AudioBufferSourceNode
   private _playbackTime: number = 0
   private _startTimestamp: number = 0
-  private _rate: number = 0
+  private _rate: number = 1
   private _isPlaying: boolean = false
   private _rawData: Float32Array = new Float32Array(1024)
   private _filteredRawData?: Float32Array
@@ -19,9 +19,10 @@ export class ChartAudio {
   private _listeners: Waveform[] = []
 
   filters: BiquadFilter[] = []
+  loaded: Promise<void>
   
 
-  constructor(url?: string, onload?: (audio: ChartAudio) => void) {
+  constructor(url?: string) {
     this._audioAnalyzer = this._audioContext.createAnalyser()
     this._audioAnalyzer.fftSize = 8192;
     this._audioAnalyzer.maxDecibels = 0;
@@ -29,17 +30,19 @@ export class ChartAudio {
     this._gainNode = this._audioContext.createGain();
 
     this._buffer = this._audioContext.createBuffer(1, this._rawData.length, 44100);
-    this.getData(url).then((buffer) => {
-      if (!buffer) return
-      this._rawData = buffer.getChannelData(0)
-      this._buffer = this._audioContext.createBuffer(1, this._rawData.length, buffer.sampleRate);
-      this._buffer.copyToChannel(this._rawData, 0)
-    })
-    .catch(reason=>console.error(reason))
-    .finally(() => {
-      this.initSource()
-      this.callListeners()
-      if (onload) onload(this)
+    this.loaded = new Promise((resolve) => {
+      this.getData(url).then((buffer) => {
+        if (!buffer) return
+        this._rawData = buffer.getChannelData(0)
+        this._buffer = this._audioContext.createBuffer(1, this._rawData.length, buffer.sampleRate);
+        this._buffer.copyToChannel(this._rawData, 0)
+      })
+      .catch(reason=>console.error(reason))
+      .finally(() => {
+        this.initSource()
+        this.callListeners()
+        resolve()
+      })
     })
   }
 
@@ -161,7 +164,7 @@ export class ChartAudio {
     if (!this._source) return
     if (playbackTime === undefined) {
       if (!this._isPlaying) return this._playbackTime;
-      return (this._audioContext.currentTime - this._startTimestamp) * this._source.playbackRate.value  + this._playbackTime;
+      return (this._audioContext.currentTime - this._startTimestamp) * this._source.playbackRate.value + this._playbackTime;
     }
     if (this._isPlaying) {
       this.stop(); 

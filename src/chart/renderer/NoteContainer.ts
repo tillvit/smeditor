@@ -3,13 +3,13 @@ import { ChartRenderer } from "../ChartRenderer"
 import { NoteRenderer } from "./NoteRenderer"
 import { NoteTexture } from "./NoteTexture"
 import { NotedataEntry } from "../sm/NoteTypes"
+import { Options } from "../../util/Options"
 
 interface NoteObject extends Container {
   note: NotedataEntry,
   deactivated: boolean,
   marked: boolean,
-  dirtyTime: number,
-  cachedNote: NotedataEntry
+  dirtyTime: number
 }
 
 export class NoteContainer extends Container {
@@ -31,21 +31,19 @@ export class NoteContainer extends Container {
 
     let time = this.renderer.chartManager.getTime()
     for (let note of this.renderer.chart.notedata) { 
-      // note = JSON.parse(JSON.stringify(note))
       if (note.hide) continue
-      if (this.renderer.options.chart.CMod && this.renderer.options.chart.hideWarpedArrows && note.warped) continue
+      if (Options.chart.CMod && Options.chart.hideWarpedArrows && note.warped) continue
       if (note.beat + (note.hold ?? 0) < fromBeat) continue
       if (note.beat > toBeat) break
 
-      let [outOfBounds, endSearch, yPos, y_hold] = this.checkBounds(note, beat)
+      let [outOfBounds, endSearch, yPos, holdLength] = this.checkBounds(note, beat)
       if (endSearch) break
       if (outOfBounds) continue
 
       let arrow = this.getNote(note)
-      if (JSON.stringify(arrow.cachedNote) != JSON.stringify(arrow.note)) this.buildObject(arrow)
       arrow.y = yPos;
       if (note.type == "Hold" || note.type == "Roll") {
-        NoteRenderer.setHoldEnd(arrow, y_hold)
+        NoteRenderer.setHoldLength(arrow, holdLength)
       }
       if (note.type == "Mine") {
         NoteRenderer.setMineTime(arrow, time)
@@ -67,17 +65,17 @@ export class NoteContainer extends Container {
   }
 
   private checkBounds(note: NotedataEntry, beat: number): [boolean, boolean, number, number] {
-    let y = this.renderer.options.chart.receptorYPos
+    let y = Options.chart.receptorYPos
     if (!note.lastActivation || note.lastActivation == -1) y = this.renderer.getYPos(note.beat)
     if (note.droppedBeat) y = this.renderer.getYPos(note.droppedBeat)
     let y_hold = this.renderer.getYPos(note.beat + (note.hold ?? 0))
-    if (note.hold && !note.droppedBeat && note.lastActivation != -1 && note.beat + note.hold < beat) return [true, false, y, y_hold]
-    if (y_hold < -32 - this.renderer.y) return [true, false, y, y_hold]
+    if (note.hold && !note.droppedBeat && note.lastActivation && note.lastActivation != -1 && note.beat + note.hold < beat) return [true, false, y, y_hold - y]
+    if (y_hold < -32 - this.renderer.y) return [true, false, y, y_hold - y]
     if (y > this.renderer.chartManager.app.pixi.screen.height-this.renderer.y+32) {
-      if (this.renderer.isNegScroll() || note.beat < beat) [true, false, y, y_hold]
-      else [true, true, y, y_hold]
+      if (this.renderer.isNegScroll() || note.beat < beat) [true, false, y, y_hold - y]
+      else [true, true, y, y_hold - y]
     } 
-    return [false, false, y, y_hold]
+    return [false, false, y, y_hold - y]
   }
 
   private getNote(note: NotedataEntry): NoteObject {
@@ -103,7 +101,6 @@ export class NoteContainer extends Container {
   }
 
   private buildObject(noteObj: Partial<NoteObject>) {
-    noteObj.cachedNote = JSON.parse(JSON.stringify(noteObj.note))
     NoteRenderer.setData(noteObj as NoteObject, noteObj.note!)
     noteObj.x = noteObj.note!.col*64-96
   }

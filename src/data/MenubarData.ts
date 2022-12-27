@@ -1,4 +1,5 @@
 import { App } from "../App"
+import { Options } from "../util/Options"
 
 export interface MenuSelection {
   type: "selection",
@@ -61,7 +62,7 @@ export const MENUBAR_DATA: {[key: string]: MenuMain} = {
     },{
       type: "checkbox",
       id: "mousePlacement",
-      checked: (app) => app.options.editor.mousePlacement,
+      checked: () => Options.editor.mousePlacement,
     }]
   },
   view: {
@@ -132,12 +133,12 @@ export const MENUBAR_DATA: {[key: string]: MenuMain} = {
       options: [{
         type: "checkbox",
         id: "XMod",
-        checked: (app) => !app.options.chart.CMod,
+        checked: () => !Options.chart.CMod,
       },
       {
         type: "checkbox",
         id: "CMod",
-        checked: (app) => app.options.chart.CMod
+        checked: () => Options.chart.CMod
       },{
         type: "seperator",
       },{
@@ -154,7 +155,7 @@ export const MENUBAR_DATA: {[key: string]: MenuMain} = {
       options: [{
         type: "checkbox",
         id: "renderWaveform",
-        checked: (app) => app.options.waveform.enabled
+        checked: () => Options.waveform.enabled
       },{
         type: "selection",
         id: "waveformOptions",
@@ -164,12 +165,12 @@ export const MENUBAR_DATA: {[key: string]: MenuMain} = {
     },{
       type: "checkbox",
       id: "hideWarpedArrows",
-      checked: (app) => app.options.chart.hideWarpedArrows
+      checked: () => Options.chart.hideWarpedArrows
     },
     {
       type: "checkbox",
       id: "doSpeedChanges",
-      checked: (app) => app.options.chart.doSpeedChanges
+      checked: () => Options.chart.doSpeedChanges
     }]
   },
   chart: {
@@ -197,16 +198,16 @@ export const MENUBAR_DATA: {[key: string]: MenuMain} = {
     options: [{
       type: "checkbox",
       id: "assistTick",
-      checked: (app) => app.options.audio.assistTick,
+      checked: () => Options.audio.assistTick,
     },{
       type: "checkbox",
       id: "metronome",
-      checked: (app) => app.options.audio.metronome,
+      checked: () => Options.audio.metronome,
     },{
       type: "seperator",
     },{
       type: "dropdown",
-      title: (app: App) => "Volume (" + Math.round(app.options.audio.songVolume*100) + "%)",
+      title: () => "Volume (" + Math.round(Options.audio.songVolume*100) + "%)",
       options: [{
         type: "selection",
         id: "volumeUp",
@@ -217,7 +218,7 @@ export const MENUBAR_DATA: {[key: string]: MenuMain} = {
       }]
     },{
       type: "dropdown",
-      title: (app: App) => "Effect Volume (" + Math.round(app.options.audio.soundEffectVolume*100) + "%)",
+      title: () => "Effect Volume (" + Math.round(Options.audio.soundEffectVolume*100) + "%)",
       options: [{
         type: "selection",
         id: "effectvolumeUp",
@@ -228,7 +229,7 @@ export const MENUBAR_DATA: {[key: string]: MenuMain} = {
       }]
     },{
       type: "dropdown",
-      title: (app: App) => "Rate (" + Math.round(app.options.audio.rate*100) + "%)",
+      title: () => "Rate (" + Math.round(Options.audio.rate*100) + "%)",
       options: [{
         type: "selection",
         id: "rateUp",

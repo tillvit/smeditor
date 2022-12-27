@@ -1,4 +1,5 @@
 import { Container, Sprite, Texture } from "pixi.js"
+import { Options } from "../../util/Options"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { DelayTimingEvent, FakeTimingEvent, StopTimingEvent, TimingEventProperty, WarpTimingEvent } from "../sm/TimingTypes"
@@ -41,14 +42,14 @@ export class TimingAreaContainer extends Container {
 
   renderThis(beat: number, fromBeat: number, toBeat: number, fromSecond: number) {
 
-    this.visible = this.renderer.chartManager.getMode() != EditMode.Play || !this.renderer.options.play.hideBarlines
+    this.visible = this.renderer.chartManager.getMode() != EditMode.Play || !Options.play.hideBarlines
 
     //Reset mark of old objects
     this.children.forEach(child => child.marked = false)
 
     //Add new objects
     for (let event of this.renderer.chart.timingData.getTimingData("STOPS", "WARPS", "DELAYS", "FAKES")) { 
-      if (!this.renderer.options.chart.renderTimingEvent[event.type]) continue
+      if (!Options.chart.renderTimingEvent[event.type]) continue
 
       //Check beat requirements
       if ((event.type == "STOPS" || event.type == "DELAYS") && event.second! + Math.abs(event.value) <= fromSecond) continue
@@ -57,9 +58,9 @@ export class TimingAreaContainer extends Container {
       
       //Check if box should be displayed
       if (event.type == "STOPS" || event.type == "DELAYS") {
-        if (!((!this.renderer.options.chart.CMod && event.value < 0) || (this.renderer.options.chart.CMod && event.value > 0))) continue
+        if (!((!Options.chart.CMod && event.value < 0) || (Options.chart.CMod && event.value > 0))) continue
       }
-      if (event.type == "WARPS" && this.renderer.options.chart.CMod) continue 
+      if (event.type == "WARPS" && Options.chart.CMod) continue 
 
 
       let [outOfBounds, endSearch, yPos, length] = this.checkBounds(event, beat)
@@ -91,7 +92,7 @@ export class TimingAreaContainer extends Container {
     let length = this.renderer.getYPos(event.beat + event.value) - y_start
     if (event.type == "STOPS" || event.type == "DELAYS") {
       if (event.value < 0) length = this.renderer.getYPos(this.renderer.chart.getBeat(event.second!+0.0001))-y_start
-      else length = event.value*this.renderer.options.chart.speed/100*64*4
+      else length = event.value*Options.chart.speed/100*64*4
     }
     if (y_start+length < -32 - this.renderer.y) return [true, false, y_start, length]
     if (y_start > this.renderer.chartManager.app.pixi.screen.height-this.renderer.y+32) {

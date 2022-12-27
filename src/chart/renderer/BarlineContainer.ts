@@ -1,4 +1,5 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
+import { Options } from "../../util/Options"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 
@@ -41,14 +42,14 @@ export class BarlineContainer extends Container {
 
   renderThis(beat: number, fromBeat: number, toBeat: number) {
 
-    this.visible = this.renderer.chartManager.getMode() != EditMode.Play || !this.renderer.options.play.hideBarlines
+    this.visible = this.renderer.chartManager.getMode() != EditMode.Play || !Options.play.hideBarlines
 
     //Reset mark of old objects
     this.children.forEach(child => child.marked = false)
 
     //Add new objects
     for (let bar_beat = Math.max(0,Math.floor(fromBeat)); bar_beat < toBeat; bar_beat++) {
-      if (this.renderer.options.chart.CMod && this.renderer.chart.isBeatWarped(bar_beat)) continue
+      if (Options.chart.CMod && this.renderer.chart.isBeatWarped(bar_beat)) continue
       let [outOfBounds, endSearch, yPos] = this.checkBounds(bar_beat, beat)
       if (endSearch) break
       if (outOfBounds) continue

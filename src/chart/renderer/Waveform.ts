@@ -3,13 +3,14 @@ import { bsearch } from "../../util/Util"
 import { ChartRenderer } from "../ChartRenderer"
 import { ChartAudio } from "../audio/ChartAudio"
 import { EditMode } from "../ChartManager"
+import { Options } from "../../util/Options"
 
 const MAX_ZOOM = 3500
 
 export class Waveform extends Graphics {
 
   chartAudio: ChartAudio
-  chartRenderer: ChartRenderer
+  renderer: ChartRenderer
 
   strippedWaveform: number[] | undefined
   strippedFilteredWaveform: number[] | undefined
@@ -19,8 +20,8 @@ export class Waveform extends Graphics {
 
   constructor(renderer: ChartRenderer) {
     super()
-    this.chartRenderer = renderer
-    this.chartAudio = this.chartRenderer.chartManager.songAudio
+    this.renderer = renderer
+    this.chartAudio = this.renderer.chartManager.songAudio
     this.lastZoom = this.getZoom()
     this.lastReZoom = Date.now()
     this.chartAudio.addWaveform(this)
@@ -49,11 +50,11 @@ export class Waveform extends Graphics {
   }
 
   renderThis(beat: number) {
-    this.visible = this.chartRenderer.options.waveform.enabled && (this.chartRenderer.chartManager.getMode() != EditMode.Play || !this.chartRenderer.options.play.hideBarlines)
+    this.visible = Options.waveform.enabled && (this.renderer.chartManager.getMode() != EditMode.Play || !Options.play.hideBarlines)
 
-    if (!this.chartRenderer.options.waveform.enabled) return
-    if (this.chartAudio != this.chartRenderer.chartManager.getAudio()) {
-      this.chartAudio = this.chartRenderer.chartManager.getAudio()
+    if (!Options.waveform.enabled) return
+    if (this.chartAudio != this.renderer.chartManager.getAudio()) {
+      this.chartAudio = this.renderer.chartManager.getAudio()
       this.refilter()
       this.chartAudio.addWaveform(this)
     }
@@ -64,35 +65,35 @@ export class Waveform extends Graphics {
     }
     if (this.strippedWaveform) {
       this.clear()
-      this.lineStyle(1, this.chartRenderer.options.waveform.color, this.chartRenderer.options.waveform.opacity);
+      this.lineStyle(1, Options.waveform.color, Options.waveform.opacity);
       this.renderData(beat, this.strippedWaveform)
     }
     if (this.strippedFilteredWaveform) {
-      this.lineStyle(1, this.chartRenderer.options.waveform.filteredColor, this.chartRenderer.options.waveform.filteredOpacity);
+      this.lineStyle(1, Options.waveform.filteredColor, Options.waveform.filteredOpacity);
       this.renderData(beat, this.strippedFilteredWaveform)
     }
   }
 
   private renderData(beat: number, data: number[]) {
-    if (this.chartRenderer.options.experimental.speedChangeWaveform && !this.chartRenderer.options.chart.CMod && this.chartRenderer.options.chart.doSpeedChanges) {
-      let chartSpeed = this.chartRenderer.options.chart.speed
-      let speedMult = this.chartRenderer.chart.timingData.getSpeedMult(beat, this.chartRenderer.chartManager.getTime())
-      let curBeat = beat - this.chartRenderer.options.chart.maxDrawBeatsBack
-      let beatLimit = beat + this.chartRenderer.options.chart.maxDrawBeats
-      let scrolls = this.chartRenderer.chart.timingData.getTimingData("SCROLLS")
+    if (Options.experimental.speedChangeWaveform && !Options.chart.CMod && Options.chart.doSpeedChanges) {
+      let chartSpeed = Options.chart.speed
+      let speedMult = this.renderer.chart.timingData.getSpeedMult(beat, this.renderer.chartManager.getTime())
+      let curBeat = beat - Options.chart.maxDrawBeatsBack
+      let beatLimit = beat + Options.chart.maxDrawBeats
+      let scrolls = this.renderer.chart.timingData.getTimingData("SCROLLS")
       let scrollIndex = bsearch(scrolls, curBeat, a => a.beat)
       while (curBeat < beatLimit) {
         let scroll = scrolls[scrollIndex] ?? {beat: 0,value: 1}
         let scrollBeatLimit = scrolls[scrollIndex + 1]?.beat ?? beatLimit
-        let y_test = this.chartRenderer.getYPos(curBeat) + this.parent.y 
-        if (scrolls[scrollIndex + 1] && ((scroll.value < 0 && y_test > this.chartRenderer.chartManager.app.pixi.screen.height) ||
+        let y_test = this.renderer.getYPos(curBeat) + this.parent.y 
+        if (scrolls[scrollIndex + 1] && ((scroll.value < 0 && y_test > this.renderer.chartManager.app.pixi.screen.height) ||
             scroll.value <= 0)) {
           scrollIndex++
           curBeat = scrolls[scrollIndex]!.beat
           continue
         }
         while (curBeat < scrollBeatLimit) {
-          let y = Math.round(this.chartRenderer.getYPos(curBeat) + this.parent.y)
+          let y = Math.round(this.renderer.getYPos(curBeat) + this.parent.y)
           if (y < 0) {
             if (scroll.value < 0) {
               curBeat = scrollBeatLimit
@@ -101,16 +102,16 @@ export class Waveform extends Graphics {
             curBeat += 100/chartSpeed/speedMult/64/Math.abs(scroll.value) * -y
             continue
           }
-          if (y > this.chartRenderer.chartManager.app.pixi.screen.height) {
+          if (y > this.renderer.chartManager.app.pixi.screen.height) {
             if (scroll.value > 0) {
               curBeat = scrollBeatLimit
               break
             }
-            curBeat += 100/chartSpeed/speedMult/64/Math.abs(scroll.value) * (y-this.chartRenderer.chartManager.app.pixi.screen.height)
+            curBeat += 100/chartSpeed/speedMult/64/Math.abs(scroll.value) * (y-this.renderer.chartManager.app.pixi.screen.height)
             continue
           }
           curBeat += 100/chartSpeed/speedMult/64/Math.abs(scroll.value)
-          let calcTime = this.chartRenderer.chart.getSeconds(curBeat)
+          let calcTime = this.renderer.chart.getSeconds(curBeat)
           if (calcTime < 0) continue
           let samp = Math.floor(calcTime * this.getZoom()*4)
           let v = (data[samp]);
@@ -123,8 +124,8 @@ export class Waveform extends Graphics {
         curBeat = scrollBeatLimit
       }
     }else{
-      for (let i = 0; i < this.chartRenderer.chartManager.app.pixi.screen.height; i++) {
-        let calcTime = this.chartRenderer.getTimeFromYPos(i-this.parent.y)
+      for (let i = 0; i < this.renderer.chartManager.app.pixi.screen.height; i++) {
+        let calcTime = this.renderer.getTimeFromYPos(i-this.parent.y)
         let samp = Math.floor(calcTime * this.getZoom()*4)
         let v = (data[samp]);
         this.moveTo(-v*192, i-this.parent.y);
@@ -135,7 +136,7 @@ export class Waveform extends Graphics {
   }
 
   private getZoom(): number {
-    return Math.min(this.chartRenderer.options.chart.speed, MAX_ZOOM)
+    return Math.min(Options.chart.speed, MAX_ZOOM)
   }
 }
 

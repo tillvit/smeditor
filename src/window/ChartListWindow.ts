@@ -2,6 +2,7 @@ import { App } from "../App"
 import { Chart } from "../chart/sm/Chart"
 import { NotedataCount } from "../chart/sm/NoteTypes"
 import { StepsType } from "../chart/sm/SimfileTypes"
+import { Options } from "../util/Options"
 import { Window } from "./Window"
 
 type ChartListItem = HTMLDivElement & {
@@ -32,7 +33,7 @@ export class ChartListWindow extends Window {
       win_id: "chart_list"
     })
     this.app = app
-    this.stepsType = stepsType ?? this.app.options.chart.stepsType
+    this.stepsType = stepsType ?? Options.chart.stepsType
     this.initView(this.viewElement)
   }
 

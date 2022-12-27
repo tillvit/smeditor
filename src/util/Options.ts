@@ -1,11 +1,12 @@
+import { TimingWindowCollection } from "../chart/play/TimingWindowCollection"
 import { StepsType } from "../chart/sm/SimfileTypes"
 import { TimingEventProperty } from "../chart/sm/TimingTypes"
 
 export class Options {
-  chart = {
+  static chart = {
     CMod: false,
     hideWarpedArrows: false,
-    doSpeedChanges: false,
+    doSpeedChanges: true,
     speed: 250,
     receptorYPos: -200,
     snap: 1,
@@ -30,7 +31,7 @@ export class Options {
     } as {[key in TimingEventProperty]: boolean},
     stepsType: "dance-single" as StepsType,
   }
-  audio = {
+  static audio = {
     assistTick: false,
     metronome: false,
     effectOffset: 0,
@@ -38,23 +39,26 @@ export class Options {
     songVolume: 0.2,
     rate: 1,
   }
-  waveform = {
+  static waveform = {
     enabled: true,
     color: 0x404152,
     opacity: 1,
     filteredColor: 0x00ff66,
     filteredOpacity: 1
   }
-  editor = {
+  static editor = {
     scrollSensitivity: 1,
     mousePlacement: false
   }
-  experimental = {
+  static experimental = {
     speedChangeWaveform: true
   }
-  play = {
-    faEnabled: false,
+  static play = {
     offset: -0.044,
     hideBarlines: true,
+    judgmentTilt: true,
+    timingWindowScale: 1,
+    timingWindowAdd: 0,
+    timingCollection: TimingWindowCollection.ITG
   }
 }

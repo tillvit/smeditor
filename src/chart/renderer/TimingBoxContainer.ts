@@ -1,4 +1,5 @@
 import { BitmapText, Container, Graphics } from "pixi.js"
+import { Options } from "../../util/Options"
 import { roundDigit } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
@@ -38,7 +39,7 @@ export class TimingBoxContainer extends Container {
 
   renderThis(beat: number, fromBeat: number, toBeat: number) {
 
-    this.visible = this.renderer.chartManager.getMode() != EditMode.Play || !this.renderer.options.play.hideBarlines
+    this.visible = this.renderer.chartManager.getMode() != EditMode.Play || !Options.play.hideBarlines
 
     //Reset mark of old objects
     this.children.forEach(child => child.marked = false)
@@ -46,7 +47,7 @@ export class TimingBoxContainer extends Container {
     this.same_beat = -1
     this.last_length_left = 0
     this.last_length_right = 0
-    for (let event of this.renderer.chart.timingData.getTimingData(...TIMING_EVENT_NAMES.filter((key) => this.renderer.options.chart.renderTimingEvent[key]))) { 
+    for (let event of this.renderer.chart.timingData.getTimingData(...TIMING_EVENT_NAMES.filter((key) => Options.chart.renderTimingEvent[key]))) { 
       if (fromBeat > event.beat!) continue
       if (toBeat < event.beat!) break
       
@@ -74,7 +75,7 @@ export class TimingBoxContainer extends Container {
 
   private checkBounds(event: TimingEvent, beat: number): [boolean, boolean, number] {
     let y = this.renderer.getYPos(event.beat!)
-    if (event.type == "ATTACKS" && this.renderer.options.chart.CMod) y = (event.second-this.renderer.chartManager.getTime())*this.renderer.options.chart.speed/100*64*4 + this.renderer.options.chart.receptorYPos
+    if (event.type == "ATTACKS" && Options.chart.CMod) y = (event.second-this.renderer.chartManager.getTime())*Options.chart.speed/100*64*4 + Options.chart.receptorYPos
     if (y < -32 - this.renderer.y) return [true, false, y]
     if (y > this.renderer.chartManager.app.pixi.screen.height-this.renderer.y+32) {
       if (this.renderer.isNegScroll() || event.beat! < beat) return [true, false, y]

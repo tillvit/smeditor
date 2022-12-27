@@ -41,7 +41,7 @@ export class App {
     })
     this.pixi.stage.sortableChildren = true
     
-    this.options = new Options()
+    this.options = Options
     this.files = new FileSystem()
     this.chartManager = new ChartManager(this)
     this.menubarManager = new MenubarManager(this, document.getElementById("menubar") as HTMLDivElement)
