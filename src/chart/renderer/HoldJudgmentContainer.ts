@@ -2,13 +2,6 @@ import { Assets, Container, Rectangle, Sprite, Texture } from "pixi.js"
 import { Options } from "../../util/Options"
 import { HoldTimingWindow } from "../play/HoldTimingWindow"
 
-let tHeight = 0
-let tWidth = 0
-const judge_tex = await Assets.load('assets/noteskin/hold_judgment.png')
-tHeight = judge_tex.height
-tWidth = judge_tex.width
-const held_tex = new Texture(judge_tex, new Rectangle(0, 0, tWidth, tHeight/2))
-const dropped_tex = new Texture(judge_tex, new Rectangle(0, tHeight/2, tWidth, tHeight/2))
 
 interface HoldJudgmentObject extends Sprite {
   createTime: number,
@@ -17,6 +10,24 @@ interface HoldJudgmentObject extends Sprite {
 export class HoldJudgmentContainer extends Container {
 
   children: HoldJudgmentObject[] = []
+
+  private held_tex?: Texture
+  private dropped_tex?: Texture
+
+  constructor() {
+    super()
+    this.loadTex()
+  }
+
+  async loadTex() {
+    let tHeight = 0
+    let tWidth = 0
+    const judge_tex = await Assets.load('assets/noteskin/hold_judgment.png')
+    tHeight = judge_tex.height
+    tWidth = judge_tex.width
+    this.held_tex = new Texture(judge_tex, new Rectangle(0, 0, tWidth, tHeight/2))
+    this.dropped_tex = new Texture(judge_tex, new Rectangle(0, tHeight/2, tWidth, tHeight/2))
+  }
 
   renderThis() {
     this.y = Options.chart.receptorYPos + 48
@@ -35,7 +46,7 @@ export class HoldJudgmentContainer extends Container {
   }
 
   addJudge(col: number, judgment: HoldTimingWindow) {
-    let judge = new Sprite(judgment.noteType == "Dropped" ? dropped_tex : held_tex) as HoldJudgmentObject
+    let judge = new Sprite(judgment.noteType == "Dropped" ? this.dropped_tex : this.held_tex) as HoldJudgmentObject
     judge.anchor.set(0.5)
     judge.x = col*64-96
     judge.createTime = Date.now()
