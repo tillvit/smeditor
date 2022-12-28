@@ -80,7 +80,7 @@ export class NoteContainer extends Container {
     let y_hold = this.renderer.getYPos(note.beat + (note.hold ?? 0))
     if (note.hold && !note.droppedBeat && note.lastActivation && note.lastActivation != -1 && note.beat + note.hold < beat) return [true, false, y, y_hold - y]
     if (y_hold < -32 - this.renderer.y) return [true, false, y, y_hold - y]
-    if (y > this.renderer.chartManager.app.pixi.screen.height-this.renderer.y+32) {
+    if (y > this.renderer.chartManager.app.renderer.screen.height-this.renderer.y+32) {
       if (this.renderer.isNegScroll() || note.beat < beat) [true, false, y, y_hold - y]
       else [true, true, y, y_hold - y]
     } 

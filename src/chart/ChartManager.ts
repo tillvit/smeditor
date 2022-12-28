@@ -124,14 +124,15 @@ export class ChartManager {
     this.info.x = 0
     this.info.y = 0
     this.info.zIndex = 1
-    this.app.pixi.stage.addChild(this.info)
-    this.app.pixi.ticker.add(() => {
+    this.app.stage.addChild(this.info)
+    this.app.ticker.add(() => {
       if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
       this.chartView?.renderThis();
       this.info.text = this.mode
                      + "\nTime: " + roundDigit(this.time,3) 
                      + "\nBeat: " + roundDigit(this.beat,3)
-                     + "\nFPS: " + getFPS(this.app.pixi)
+                     + "\nFrame Time: " + this.app.frameTime.toFixed(3) + "ms"
+                     + "\nFPS: " + getFPS(this.app)
                      + "\nTPS: " + getTPS()
                      + "\nNote Type: " + ADDABLE_NOTE_TYPES[this.editNoteTypeIndex]
       if (this.mode == EditMode.Play && this.gameStats) {
@@ -215,7 +216,7 @@ export class ChartManager {
 
         for (let i = 0; i < this.heldCols.length; i++) {
           if (!this.heldCols[i]) continue
-          let mine = this.getClosestNote(this.time, i, ["Mine"], Options.play.timingCollection.getMineJudgment().getTimingWindowMS())
+          let mine = this.getClosestNote(this.time-Options.play.timingCollection.getMineJudgment().getTimingWindowMS()/2000, i, ["Mine"], Options.play.timingCollection.getMineJudgment().getTimingWindowMS()/2)
           if (mine) {
             mine.hit = true
             mine.judged = true
@@ -227,12 +228,12 @@ export class ChartManager {
         }
       }
       tpsUpdate()
-    })
+    }, 5)
 
     window.addEventListener("resize", ()=>{
       if (this.chartView) {
-        this.chartView.x = this.app.pixi.screen.width/2
-        this.chartView.y = this.app.pixi.screen.height/2
+        this.chartView.x = this.app.renderer.screen.width/2
+        this.chartView.y = this.app.renderer.screen.height/2
       }
     })
 
@@ -345,12 +346,12 @@ export class ChartManager {
     this.chart = chart
     this.beat = this.chart.getBeat(this.time)
   
-    if (this.chartView) this.app.pixi.stage.removeChild(this.chartView)
+    if (this.chartView) this.app.stage.removeChild(this.chartView)
       
     this.seekBack()
     this.chartView = new ChartRenderer(this)
-    this.chartView.x = this.app.pixi.screen.width/2
-    this.chartView.y = this.app.pixi.screen.height/2
+    this.chartView.x = this.app.renderer.screen.width/2
+    this.chartView.y = this.app.renderer.screen.height/2
     if (this.mode == EditMode.Play) this.setMode(this.lastMode)
 
     if (this.chart.getMusicPath() != this.lastSong) {

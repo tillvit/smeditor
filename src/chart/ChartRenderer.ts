@@ -76,10 +76,10 @@ export class ChartRenderer extends Container {
     this.addChild(this.judgment)
     this.addChild(this.holdJudgment)
 
-    this.chartManager.app.pixi.stage.addChild(this)
+    this.chartManager.app.stage.addChild(this)
 
-    this.x = this.chartManager.app.pixi.screen.width/2
-    this.y = this.chartManager.app.pixi.screen.height/2
+    this.x = this.chartManager.app.renderer.screen.width/2
+    this.y = this.chartManager.app.renderer.screen.height/2
 
     this.interactive = true
     this.hitArea = new Rectangle(-1e5, -1e5, 2e5, 2e5);
@@ -157,7 +157,7 @@ export class ChartRenderer extends Container {
     this.negScroll = Options.chart.doSpeedChanges && (this.speedMult < 0 || (this.chart.timingData.getTimingEventAtBeat("SCROLLS",beat)?.value ?? 1) < 0)
 
     if (Options.chart.CMod) {
-      renderBeatLimit = this.getBeatFromYPos(this.chartManager.app.pixi.screen.height-this.y+32)
+      renderBeatLimit = this.getBeatFromYPos(this.chartManager.app.renderer.screen.height-this.y+32)
       renderBeatLowerLimit = this.getBeatFromYPos(-32 - this.y)
       renderSecondLowerLimit = (-32 - this.y - Options.chart.receptorYPos)/4/64*100/Options.chart.speed + time
     }

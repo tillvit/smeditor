@@ -95,7 +95,7 @@ export class TimingAreaContainer extends Container {
       else length = event.value*Options.chart.speed/100*64*4
     }
     if (y_start+length < -32 - this.renderer.y) return [true, false, y_start, length]
-    if (y_start > this.renderer.chartManager.app.pixi.screen.height-this.renderer.y+32) {
+    if (y_start > this.renderer.chartManager.app.renderer.screen.height-this.renderer.y+32) {
       if (this.renderer.isNegScroll() || event.beat < beat) return [true, false, y_start, length]
       else return [true, true, y_start, length]
     }

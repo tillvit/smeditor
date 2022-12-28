@@ -1,5 +1,5 @@
 
-import { Application, BitmapFont } from 'pixi.js';
+import { BitmapFont, Container, Renderer, Ticker } from 'pixi.js';
 import WebFont from 'webfontloader'
 import { BiquadFilter } from './chart/audio/BiquadFilter'
 import { ChartManager } from './chart/ChartManager'
@@ -15,7 +15,9 @@ import { WindowManager } from './window/WindowManager'
 
 export class App {
 
-  pixi: Application
+  renderer: Renderer
+  ticker: Ticker
+  stage: Container
   view: HTMLCanvasElement
   options: Options
   files: FileSystem
@@ -25,21 +27,32 @@ export class App {
   menubarManager: MenubarManager
   actionHistory: ActionHistory
 
+  frameTime = 0
+
   constructor() {
     this.registerFonts()
     
     this.view = document.getElementById("pixi") as HTMLCanvasElement
     
-    this.pixi = new Application({ 
+    this.stage = new Container()
+    this.renderer = new Renderer({ 
       backgroundColor: 0x18191c, 
-      antialias: true, 
+      antialias: false, 
       width: this.view.clientWidth, 
       height: this.view.clientHeight, 
       resolution: window.devicePixelRatio, 
       autoDensity: true,
-      view: this.view
+      view: this.view,
     })
-    this.pixi.stage.sortableChildren = true
+    this.ticker = new Ticker()
+    this.ticker.add(()=>{
+      let t = performance.now()
+      this.renderer.render(this.stage)
+      this.frameTime = performance.now() - t
+
+    })
+    this.ticker.start()
+    this.stage.sortableChildren = true
     
     this.options = Options
     this.files = new FileSystem()
@@ -157,13 +170,12 @@ export class App {
   onResize = () => {
     let screenWidth = window.innerWidth 
     let screenHeight = window.innerHeight - document.getElementById("menubar")!.clientHeight
-    this.pixi.screen.width = screenWidth;
-    this.pixi.screen.height = screenHeight;
-    this.view.width = screenWidth * this.pixi.renderer.resolution;
-    this.view.height = screenHeight * this.pixi.renderer.resolution;
+    this.renderer.screen.width = screenWidth;
+    this.renderer.screen.height = screenHeight;
+    this.view.width = screenWidth * this.renderer.resolution;
+    this.view.height = screenHeight * this.renderer.resolution;
     this.view.style.width = `${screenWidth}px`;
     this.view.style.height = `${screenHeight}px`;
-    this.pixi.render()
   }
 }
 

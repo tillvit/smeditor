@@ -1,4 +1,4 @@
-import { Application } from "pixi.js"
+import { App } from "../App"
 
 const ROTS = [0,-90,90,180]
 export function getRotFromArrow(col: number): number {
@@ -30,10 +30,10 @@ export function getFont() {
 
 let fpsTimes: number[] = []
 let fps = false
-export function getFPS(pixi: Application) {
+export function getFPS(app: App) {
   if (!fps) {
     fps = true
-    pixi.ticker.add(()=>{
+    app.ticker.add(()=>{
       fpsTimes.push(Date.now())
       while (fpsTimes.length > 0 && fpsTimes[0] < Date.now() - 1000) {
         fpsTimes.shift()

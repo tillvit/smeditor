@@ -58,9 +58,9 @@ export class NoteTexture {
       NoteTexture.mine_container.addChild(mine_body)
     }
     
-    app.pixi.ticker.add(() => {
-      app.pixi.renderer.render(NoteTexture.arrow_container, {renderTexture: NoteTexture.arrow_tex});
-      app.pixi.renderer.render(NoteTexture.mine_container, {renderTexture: NoteTexture.mine_tex});
+    app.ticker.add(() => {
+      app.renderer.render(NoteTexture.arrow_container, {renderTexture: NoteTexture.arrow_tex});
+      app.renderer.render(NoteTexture.mine_container, {renderTexture: NoteTexture.mine_tex});
     });
   }
 

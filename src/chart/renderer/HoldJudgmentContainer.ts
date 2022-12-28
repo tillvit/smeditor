@@ -11,12 +11,12 @@ export class HoldJudgmentContainer extends Container {
 
   children: HoldJudgmentObject[] = []
 
-  private held_tex?: Texture
-  private dropped_tex?: Texture
+  private static held_tex?: Texture
+  private static dropped_tex?: Texture
 
   constructor() {
     super()
-    this.loadTex()
+    if (!HoldJudgmentContainer.held_tex) this.loadTex()
   }
 
   async loadTex() {
@@ -25,8 +25,8 @@ export class HoldJudgmentContainer extends Container {
     const judge_tex = await Assets.load('assets/noteskin/hold_judgment.png')
     tHeight = judge_tex.height
     tWidth = judge_tex.width
-    this.held_tex = new Texture(judge_tex, new Rectangle(0, 0, tWidth, tHeight/2))
-    this.dropped_tex = new Texture(judge_tex, new Rectangle(0, tHeight/2, tWidth, tHeight/2))
+    HoldJudgmentContainer.held_tex = new Texture(judge_tex, new Rectangle(0, 0, tWidth, tHeight/2))
+    HoldJudgmentContainer.dropped_tex = new Texture(judge_tex, new Rectangle(0, tHeight/2, tWidth, tHeight/2))
   }
 
   renderThis() {
@@ -46,10 +46,11 @@ export class HoldJudgmentContainer extends Container {
   }
 
   addJudge(col: number, judgment: HoldTimingWindow) {
-    let judge = new Sprite(judgment.noteType == "Dropped" ? this.dropped_tex : this.held_tex) as HoldJudgmentObject
+    let judge = new Sprite(judgment.noteType == "Dropped" ? HoldJudgmentContainer.dropped_tex : HoldJudgmentContainer.held_tex) as HoldJudgmentObject
     judge.anchor.set(0.5)
     judge.x = col*64-96
     judge.createTime = Date.now()
+    judge.scale.set(0)
     this.addChild(judge)
   }
 }

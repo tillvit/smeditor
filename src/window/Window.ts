@@ -133,7 +133,7 @@ export abstract class Window {
     if (this.windowManager == undefined) return
     let x = parseInt(this.windowElement.style.left.slice(0,-2))
     let y = parseInt(this.windowElement.style.top.slice(0,-2))
-    let bounds = (<HTMLCanvasElement>this.windowManager.app.pixi.view).getBoundingClientRect()
+    let bounds = this.windowManager.app.view.getBoundingClientRect()
     this.windowElement.style.left = clamp(x, bounds.left, bounds.width - this.windowElement.clientWidth + bounds.left) + "px"
     this.windowElement.style.top = clamp(y, bounds.top, bounds.height - this.windowElement.clientHeight + bounds.top) + "px"
   }
