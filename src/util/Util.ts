@@ -1,10 +1,5 @@
 import { App } from "../App"
 
-const ROTS = [0,-90,90,180]
-export function getRotFromArrow(col: number): number {
-  return ROTS[col]/180*Math.PI;
-}
-
 const QUANTS = [1, 1/2, 1/3, 1/4, 1/6, 1/8, 1/12, 1/16, 1/24]
 export function getQuant(beat: number) {
   for (let i = 0; i < QUANTS.length; i++) {

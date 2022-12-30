@@ -1,11 +1,12 @@
 
-import { Texture } from "pixi.js"
 import { TimingWindow } from "./TimingWindow"
 
 export class MineTimingWindow extends TimingWindow {
 
-  constructor(color: number, timingWindowMS: number, dancePoints: number, lifeChange: number, noteFlashTexture?: Texture) {
-    super("Mine", color, timingWindowMS, dancePoints, lifeChange, undefined, noteFlashTexture)
+  readonly target = "mine"
+
+  constructor(timingWindowMS: number, dancePoints: number, lifeChange: number) {
+    super(timingWindowMS, dancePoints, lifeChange)
   }
 }
 

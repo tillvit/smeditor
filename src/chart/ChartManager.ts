@@ -5,17 +5,15 @@ import { ChartAudio } from "./audio/ChartAudio"
 import { Howl } from 'howler';
 import { IS_OSX, KEYBINDS } from "../data/KeybindData"
 import { Chart } from "./sm/Chart"
-import { NoteTexture } from "./renderer/NoteTexture"
 import { BitmapText } from "pixi.js"
 import { bsearch, getFPS, getTPS, roundDigit, tpsUpdate } from "../util/Util"
 import { Keybinds } from "../listener/Keybinds"
-import { NotedataEntry, NoteType, PartialNotedataEntry } from "./sm/NoteTypes"
-import { TimingWindow } from "./play/TimingWindow"
+import { isHoldNote, PartialNotedataEntry } from "./sm/NoteTypes"
 import { Options } from "../util/Options"
 import { GameplayStats } from "./play/GameplayStats"
+import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
 
 const SNAPS = [1,2,3,4,6,8,12,16,24,48,-1]
-const ADDABLE_NOTE_TYPES: NoteType[] = ["Tap", "Mine", "Fake", "Lift"]
 
 interface PartialHold {
   startBeat: number,
@@ -62,7 +60,7 @@ export class ChartManager {
   private beat: number = 0
   private time: number = 0
 
-  private holdEditing: (PartialHold | undefined)[] = [,,,,]
+  private holdEditing: (PartialHold | undefined)[] = []
   private editNoteTypeIndex: number = 0
 
   private snapIndex: number = 0
@@ -75,16 +73,11 @@ export class ChartManager {
   private mode: EditMode = EditMode.Edit
   private lastMode: EditMode = EditMode.Edit
 
-  private chordCohesion: Map<number, NotedataEntry[]> = new Map
-  private missNoteIndex: number = 0
-  private holdProgress: NotedataEntry[] = []
-  private heldCols: boolean[] = []
-  private gameStats?: GameplayStats
+  gameStats?: GameplayStats
 
   constructor(app: App) {
 
     this.app = app
-    NoteTexture.initArrowTex(app)
 
     app.view.addEventListener?.("wheel", (event: WheelEvent) => {
       if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
@@ -109,8 +102,8 @@ export class ChartManager {
         newbeat = Math.max(0,newbeat)
         if (newbeat != this.beat) this.setBeat(newbeat)
         if (!this.holdEditing.every(x => x == undefined)) {
-          for (let col = 0; col < 4; col++) {
-            if (this.holdEditing[col] == undefined || this.holdEditing[col]!.type == "mouse") continue
+          for (let col = 0; col < this.holdEditing.length; col++) {
+            if (!this.holdEditing[col] || this.holdEditing[col]!.type == "mouse") continue
             this.editHoldBeat(col, this.beat, event.shiftKey)
           }
         }
@@ -134,7 +127,7 @@ export class ChartManager {
                      + "\nFrame Time: " + this.app.frameTime.toFixed(3) + "ms"
                      + "\nFPS: " + getFPS(this.app)
                      + "\nTPS: " + getTPS()
-                     + "\nNote Type: " + ADDABLE_NOTE_TYPES[this.editNoteTypeIndex]
+                     + "\nNote Type: " + this.chart.gameType.editNoteTypes[this.editNoteTypeIndex]
       if (this.mode == EditMode.Play && this.gameStats) {
         this.info.text += "\nScore:" + (this.gameStats.getScore()*100).toFixed(2)
                         + "\nCumulative Score:" + (this.gameStats.getCumulativeScore()*100).toFixed(2)
@@ -149,9 +142,9 @@ export class ChartManager {
       let time = this.songAudio.seek()
       if (this.songAudio.isPlaying()) { 
         this.setTime(time) 
-        if (!this.holdEditing.every(x => x == undefined)) {
-          for (let col = 0; col < 4; col++) {
-            if (this.holdEditing[col] == undefined || this.holdEditing[col]!.type == "mouse") continue
+        if (!this.holdEditing.every(x => !x)) {
+          for (let col = 0; col < this.holdEditing.length; col++) {
+            if (!this.holdEditing[col] || this.holdEditing[col]!.type == "mouse") continue
             let snap = Options.chart.snap == 0 ? 1/48 : Options.chart.snap
             let snapBeat = Math.round(this.beat/snap)*snap
             this.editHoldBeat(col, snapBeat, false)
@@ -162,7 +155,7 @@ export class ChartManager {
       let hasPlayed = false
       while(this.noteIndex < notedata.length && time > notedata[this.noteIndex].second + Options.audio.effectOffset) {
         if (this.songAudio.isPlaying() && (notedata[this.noteIndex].type != "Fake" && notedata[this.noteIndex].type != "Mine") && !notedata[this.noteIndex].fake) {
-          if (this.mode != EditMode.Play) this.chartView.doJudgment(notedata[this.noteIndex], 0, TimingWindow.AUTOPLAY)
+          if (this.mode != EditMode.Play) this.chartView.doJudgment(notedata[this.noteIndex], 0, TIMING_WINDOW_AUTOPLAY)
           if (!hasPlayed && Options.audio.assistTick) {
             this.assistTick.play()
             hasPlayed = true
@@ -179,53 +172,7 @@ export class ChartManager {
         }
       }
       if (this.mode == EditMode.Play) {
-        let hitTime = this.time + Options.play.offset
-        let hitWindowStart = hitTime - Options.play.timingCollection.maxWindowMS()/1000
-        let lastChord = -1
-        while (this.chart.notedata[this.missNoteIndex] && this.chart.notedata[this.missNoteIndex].second < hitWindowStart) {
-          let note = this.chart.notedata[this.missNoteIndex]
-          if (note.beat != lastChord && note.type != "Mine" && !note.fake && !note.judged) {
-            lastChord = note.beat
-            this.chartView.doJudgment(note, 0, Options.play.timingCollection.getMissJudgment())
-            let chord = this.chordCohesion.get(note.beat)!
-            this.gameStats?.addDataPoint(chord, Options.play.timingCollection.getMissJudgment(), 0)
-          }
-          this.missNoteIndex++
-        }
-
-        for (let hold of this.holdProgress) {
-          if (!hold.hold || !hold.lastActivation) continue
-          if (this.heldCols[hold.col] && hold.type == "Hold") hold.lastActivation = this.time
-          if (this.beat >= hold.beat && (!hold.lastFlash || Date.now() - hold.lastFlash > 30)) {
-            this.chartView.doHoldInProgressJudgment(hold)
-            hold.lastFlash = Date.now()
-          }
-          if (Options.play.timingCollection.shouldDropHold(hold, this.time)) {
-            this.chartView.doJudgment(hold, 0, Options.play.timingCollection.getDroppedJudgment())
-            hold.droppedBeat = this.beat
-            this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
-            this.gameStats?.addHoldDataPoint(hold, Options.play.timingCollection.getDroppedJudgment())
-            continue
-          }
-          if (this.beat >= hold.beat + hold.hold!) {
-            this.chartView.doJudgment(hold, 0, Options.play.timingCollection.getHeldJudgement(hold))
-            this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
-            this.gameStats?.addHoldDataPoint(hold, Options.play.timingCollection.getHeldJudgement(hold))
-          }
-        }
-
-        for (let i = 0; i < this.heldCols.length; i++) {
-          if (!this.heldCols[i]) continue
-          let mine = this.getClosestNote(this.time-Options.play.timingCollection.getMineJudgment().getTimingWindowMS()/2000, i, ["Mine"], Options.play.timingCollection.getMineJudgment().getTimingWindowMS()/2)
-          if (mine) {
-            mine.hit = true
-            mine.judged = true
-            mine.hide = true
-            this.chartView.doJudgment(mine, 0, Options.play.timingCollection.getMineJudgment())
-            this.gameStats?.addDataPoint([mine], Options.play.timingCollection.getMineJudgment(), 0)
-            this.mine.play()
-          }
-        }
+        this.chart.gameType.gameLogic.update(this)
       }
       tpsUpdate()
     }, 5)
@@ -254,7 +201,7 @@ export class ChartManager {
       //Start editing note
       if (event.code.startsWith("Digit") && !event.repeat) {
         let col = parseInt(event.code.slice(5))-1
-        if (col < 4) { 
+        if (col < (this.chart?.gameType.numCols ?? 4)) { 
           this.setNote(col, "key")
           event.preventDefault()
           event.stopImmediatePropagation()
@@ -269,17 +216,17 @@ export class ChartManager {
             event.preventDefault()
             event.stopImmediatePropagation()
             KEYBINDS[keybind].callback(this.app)
-            for (let col = 0; col < 4; col++) {
-              if (this.holdEditing[col] == undefined || this.holdEditing[col]!.type == "mouse") continue
+            for (let col = 0; col < this.holdEditing.length; col++) {
+              if (!this.holdEditing[col] || this.holdEditing[col]!.type == "mouse") continue
               this.editHoldBeat(col, this.beat, event.shiftKey)
             }
             return
           }
         }
         // Stop editing when undo/redo pressed
-        for (let keybind of ["undo","redo"]) {
+        for (let keybind of ["undo", "redo"]) {
           if (KEYBINDS[keybind].keybinds.map(x=>x.key).includes(keyName)) {
-            for (let i = 0; i < 4; i++) this.holdEditing[i] = undefined
+            this.holdEditing = []
             return
           }
         }
@@ -338,9 +285,10 @@ export class ChartManager {
   async loadChart(chart?: Chart) {
     if (this.sm == undefined) return
     if (chart == undefined) {
-      let charts = this.sm.charts[Options.chart.stepsType]
-      if (!charts || charts!.length == 0) return
-      chart = charts![charts!.length - 1]
+      for (let charts of Object.values(this.sm.charts)) {
+        if (charts.length > 0) chart = charts.at(-1)
+      }
+      if (!chart) return
     }
     
     this.chart = chart
@@ -482,7 +430,7 @@ export class ChartManager {
   previousNote() {
     if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
     if (this.chart.notedata.length == 0) return
-    let holdTails = this.chart.notedata.filter(note => note.hold).map(note => note.beat + note.hold!)
+    let holdTails = this.chart.notedata.filter(isHoldNote).map(note => note.beat + note.hold)
     let beats = this.chart.notedata.map(note => note.beat).concat(holdTails).sort((a,b)=>a-b)
     beats = this.removeDuplicateBeats(beats)
     let index = bsearch(beats, this.beat)
@@ -493,7 +441,7 @@ export class ChartManager {
   nextNote() {
     if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
     if (this.chart.notedata.length == 0) return
-    let holdTails = this.chart.notedata.filter(note => note.hold).map(note => note.beat + note.hold!)
+    let holdTails = this.chart.notedata.filter(isHoldNote).map(note => note.beat + note.hold)
     let beats = this.chart.notedata.map(note => note.beat).concat(holdTails).sort((a,b)=>a-b)
     beats = this.removeDuplicateBeats(beats)
     let index = bsearch(beats, this.beat)
@@ -511,7 +459,7 @@ export class ChartManager {
     if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
     if (this.chart.notedata.length == 0) return
     let note = this.chart.notedata[this.chart.notedata.length-1]
-    this.setBeat(note.beat + (note.hold ?? 0))
+    this.setBeat(note.beat + (isHoldNote(note) ? note.hold : 0))
   }
 
   setNote(col: number, type: "mouse"|"key", beat?: number) {
@@ -521,7 +469,7 @@ export class ChartManager {
     let conflictingNote = this.chart.notedata.filter(note => {
       if (note.col != col) return false
       if (Math.abs(note.beat-beat!) < 0.003) return true
-      return (note.hold && note.beat <= beat! && note.beat + note.hold! >= beat!)
+      return (isHoldNote(note)  && note.beat <= beat! && note.beat + note.hold! >= beat!)
     })
 
     let holdEdit: PartialHold = {
@@ -538,7 +486,7 @@ export class ChartManager {
       holdEdit.originalNote = {
         beat: beat!,
         col: col,
-        type: ADDABLE_NOTE_TYPES[this.editNoteTypeIndex]
+        type: this.getEditingNoteType()
       }
     }
     this.seekBack()
@@ -588,7 +536,7 @@ export class ChartManager {
       if (note.beat == hold!.originalNote!.beat && note.col == hold!.originalNote!.col) return false
       if (note.col != col) return false
       if (note.beat >= hold!.startBeat && note.beat <= hold!.endBeat) return true
-      return (note.hold && (note.beat + note.hold >= hold!.startBeat && note.beat + note.hold <= hold!.endBeat))
+      return (isHoldNote(note) && (note.beat + note.hold >= hold!.startBeat && note.beat + note.hold <= hold!.endBeat))
     })
     hold.removedNotes = hold.removedNotes.concat(conflictingNotes)
     conflictingNotes.forEach(note => this.chart!.removeNote(note))
@@ -600,15 +548,17 @@ export class ChartManager {
   }
 
   previousNoteType() {
-    this.editNoteTypeIndex = ((this.editNoteTypeIndex-1) + ADDABLE_NOTE_TYPES.length) % ADDABLE_NOTE_TYPES.length
+    let numNoteTypes = this.chart?.gameType.editNoteTypes.length ?? 0
+    this.editNoteTypeIndex = ((this.editNoteTypeIndex-1) + numNoteTypes) % numNoteTypes
   }
   
   nextNoteType() {
-    this.editNoteTypeIndex = ((this.editNoteTypeIndex+1) + ADDABLE_NOTE_TYPES.length) % ADDABLE_NOTE_TYPES.length
+    let numNoteTypes = this.chart?.gameType.editNoteTypes.length ?? 0
+    this.editNoteTypeIndex = ((this.editNoteTypeIndex+1) + numNoteTypes) % numNoteTypes
   }
 
-  getEditingNoteType(): NoteType {
-    return ADDABLE_NOTE_TYPES[this.editNoteTypeIndex]
+  getEditingNoteType(): string {
+    return this.chart?.gameType.editNoteTypes[this.editNoteTypeIndex] ?? ""
   }
 
   getMode(): EditMode {
@@ -621,115 +571,33 @@ export class ChartManager {
     this.lastMode = this.mode
     this.mode = mode
     if (this.mode == EditMode.Play) {
-      this.chart?.notedata.forEach(note => {
-        note.judged = note.second < this.time
-        note.hide = false
-        note.hit = false
+      this.chart.notedata.forEach(note => {
+        note.gameplay = {
+          hideNote: false,
+          hasHit: false,
+        }
       })
-      this.chordCohesion.clear()
-      for (let note of this.chart.notedata) {
-        if (note.type == "Mine" || note.fake) continue
-        if (!this.chordCohesion.has(note.beat)) this.chordCohesion.set(note.beat, [])
-        this.chordCohesion.get(note.beat)!.push(note)
-      }
-      let hitTime = this.time + Options.play.offset
-      let hitWindowStart = hitTime - Options.play.timingCollection.maxWindowMS()/1000
-      let firstHittableNote = bsearch(this.chart.notedata, hitWindowStart, a => a.second) + 1
-      if (firstHittableNote >= 1 && hitWindowStart <= this.chart.notedata[firstHittableNote-1].second) firstHittableNote--
-      this.missNoteIndex = firstHittableNote
-      this.holdProgress = []
+      this.chart.gameType.gameLogic.reset(this)
       this.gameStats = new GameplayStats(this.chart.notedata)
-      this.heldCols.map(_ => false)
       this.chartView.resetPlay()
       this.songAudio.seek(this.time - 1)
       this.songAudio.play()
     }else{
-      this.chart?.notedata.forEach(note => {
-        note.lastActivation = undefined
-        note.judged = undefined
-        note.hide = undefined
-        note.droppedBeat = undefined
-        note.lastFlash = undefined
-        note.hit = undefined
-      })
+      this.chartView.endPlay()
+      this.chart?.notedata.forEach(note => note.gameplay = undefined)
     }
   }
 
   judgeCol(col: number) {
     if (!this.chart || !this.chartView || this.mode != EditMode.Play) return
-    let hitTime = this.time + Options.play.offset
-    let closestNote = this.getClosestNote(hitTime, col, ["Tap", "Hold", "Roll"])
-    this.heldCols[col] = true
-    for (let hold of this.holdProgress) {
-      if (hold.type == "Roll" && hold.col == col) hold.lastActivation = this.time
-    }
-    if (!this.songAudio.isPlaying()) return
-    if (closestNote) {
-      closestNote.hit = true
-      if (closestNote.hold) {
-        closestNote.lastActivation = this.time
-        this.holdProgress.push(closestNote)
-      }
-      let chord = this.chordCohesion.get(closestNote.beat)!
-      if (chord.every(note => note.hit)) {
-        chord.forEach(note => note.judged = true)
-        let judge = Options.play.timingCollection.judgeInput(hitTime-closestNote.second)
-        let hideNote = Options.play.timingCollection.shouldHideNote(judge)
-        chord.forEach(note => {
-          this.chartView!.doJudgment(note, hitTime-note.second, judge)
-          if (hideNote && !note.hold) note.hide = true
-        })
-        this.gameStats?.addDataPoint(chord, judge, hitTime-closestNote.second)
-      }
-    }else{
-      this.chartView.keyDown(col)
-    }
+    this.chart.gameType.gameLogic.keyDown(this, col)
   }
 
   judgeColUp(col: number) {
     if (!this.chart || !this.chartView || this.mode != EditMode.Play) return
-    let hitTime = this.time + Options.play.offset
-    let closestNote = this.getClosestNote(hitTime, col, ["Lift"])
-    this.heldCols[col] = false
-    this.chartView.keyUp(col)
-    if (!this.songAudio.isPlaying()) return
-    if (closestNote) {
-      closestNote.hit = true
-      let chord = this.chordCohesion.get(closestNote.beat)!
-      if (chord.every(note => note.hit)) {
-        chord.forEach(note => note.judged = true)
-        let judge = Options.play.timingCollection.judgeInput(hitTime-closestNote.second)
-        let hideNote = Options.play.timingCollection.shouldHideNote(judge)
-        chord.forEach(note => {
-          this.chartView!.doJudgment(note, hitTime-note.second, judge)
-          if (hideNote && !note.hold) note.hide = true
-        })
-        this.gameStats?.addDataPoint(chord, judge, hitTime-closestNote.second)
-      }
-    }
+    this.chart.gameType.gameLogic.keyUp(this, col)
   }
 
-  private getClosestNote(hitTime: number, col: number, types: NoteType[], windowMS?: number): NotedataEntry | undefined {
-    windowMS = windowMS ?? Options.play.timingCollection.maxWindowMS()
-    if (!this.chart || !this.chartView || this.mode != EditMode.Play) return
-    let hitWindowStart = hitTime - windowMS/1000
-    let hitWindowEnd = hitTime + windowMS/1000
-    let firstHittableNote = bsearch(this.chart.notedata, hitWindowStart, a => a.second) + 1
-    if (firstHittableNote >= 1 && hitWindowStart <= this.chart.notedata[firstHittableNote-1].second) firstHittableNote--
-    let closestNote: NotedataEntry | undefined = undefined
-    while (this.chart.notedata[firstHittableNote] && this.chart.notedata[firstHittableNote].second <= hitWindowEnd) {
-      let note = this.chart.notedata[firstHittableNote]
-      if (note.judged || note.col != col || note.fake || !types.includes(note.type) || note.hit) {
-        firstHittableNote++
-        continue
-      }
-      if (!closestNote || Math.abs(note.second-hitTime) < Math.abs(closestNote.second-hitTime)) {
-        closestNote = note
-      }
-      firstHittableNote++
-    }
-    return closestNote
-  }
 }
 
 

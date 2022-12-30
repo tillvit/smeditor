@@ -1,6 +1,8 @@
 import { Assets, Container, Rectangle, Sprite, Texture } from "pixi.js"
-import { Options } from "../../util/Options"
-import { HoldTimingWindow } from "../play/HoldTimingWindow"
+import { Options } from "../../../util/Options"
+import { TimingWindow } from "../../play/TimingWindow"
+import { isHoldDroppedTimingWindow, isHoldTimingWindow } from "../../play/TimingWindowCollection"
+import { DanceNotefield } from "./DanceNotefield"
 
 
 interface HoldJudgmentObject extends Sprite {
@@ -14,15 +16,18 @@ export class HoldJudgmentContainer extends Container {
   private static held_tex?: Texture
   private static dropped_tex?: Texture
 
-  constructor() {
+  private notefield: DanceNotefield
+
+  constructor(notefield: DanceNotefield) {
     super()
     if (!HoldJudgmentContainer.held_tex) this.loadTex()
+    this.notefield = notefield
   }
 
   async loadTex() {
     let tHeight = 0
     let tWidth = 0
-    const judge_tex = await Assets.load('assets/noteskin/hold_judgment.png')
+    const judge_tex = await Assets.load('assets/noteskin/dance/hold_judgment.png')
     tHeight = judge_tex.height
     tWidth = judge_tex.width
     HoldJudgmentContainer.held_tex = new Texture(judge_tex, new Rectangle(0, 0, tWidth, tHeight/2))
@@ -45,10 +50,11 @@ export class HoldJudgmentContainer extends Container {
     this.children.filter(child => Date.now() - child.createTime > 800).forEach(child => this.removeChild(child))  
   }
 
-  addJudge(col: number, judgment: HoldTimingWindow) {
-    let judge = new Sprite(judgment.noteType == "Dropped" ? HoldJudgmentContainer.dropped_tex : HoldJudgmentContainer.held_tex) as HoldJudgmentObject
+  addJudge(col: number, judgment: TimingWindow) {
+    if (!isHoldDroppedTimingWindow(judgment) || isHoldTimingWindow(judgment)) return
+    let judge = new Sprite(isHoldDroppedTimingWindow(judgment) ? HoldJudgmentContainer.dropped_tex : HoldJudgmentContainer.held_tex) as HoldJudgmentObject
     judge.anchor.set(0.5)
-    judge.x = col*64-96
+    judge.x = this.notefield.getColX(col)
     judge.createTime = Date.now()
     judge.scale.set(0)
     this.addChild(judge)

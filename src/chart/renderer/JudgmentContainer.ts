@@ -1,13 +1,15 @@
 import { Sprite } from "pixi.js"
 import { Options } from "../../util/Options"
 import { clamp } from "../../util/Util"
+import { StandardTimingWindow, TIMING_WINDOW_AUTOPLAY } from "../play/StandardTimingWindow"
 import { TimingWindow } from "../play/TimingWindow"
+import { isStandardTimingWindow } from "../play/TimingWindowCollection"
 
 export class JudgmentContainer extends Sprite {
 
   private createTime: number = -1
   private active: boolean = false
-  private type: TimingWindow = TimingWindow.AUTOPLAY
+  private type: StandardTimingWindow = TIMING_WINDOW_AUTOPLAY
 
   constructor() {
     super()
@@ -35,7 +37,8 @@ export class JudgmentContainer extends Sprite {
   }
 
   doJudge(error: number, judgment: TimingWindow) {
-    let tex = judgment.judgmentTexture?.getTexture(error, judgment)
+    if (!isStandardTimingWindow(judgment)) return
+    let tex = judgment.judgmentTexture.getTexture(error, judgment)
     if (!tex) return
     this.texture = tex
     this.texture.updateUvs()

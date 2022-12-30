@@ -1,13 +1,11 @@
 import { Chart } from "./Chart";
 import { CHART_DIFFICULTIES } from "./ChartTypes"
-import { StepsType, SimfileProperty, SIMFILE_PROPERTIES } from "./SimfileTypes"
+import { SimfileProperty, SIMFILE_PROPERTIES } from "./SimfileTypes"
 import { TimingData } from "./TimingData";
 import { TimingEventProperty, TimingProperty, TIMING_EVENT_NAMES } from "./TimingTypes"
 
-
-
 export class Simfile {
-  charts: {[key in StepsType]?: Chart[]} = {};
+  charts: Record<string, Chart[]> = {}
   _type?: "sm"|"ssc";
   other_properties : {[key: string]: string} = {};
   properties: {[key in SimfileProperty]?: string} = {}
@@ -62,9 +60,9 @@ export class Simfile {
             console.warn(error)
             continue
           }
-          this.charts[chart.type] ||= []
-          this.charts[chart.type]!.push(chart)
-          this.charts[chart.type]!.sort((a, b)=>{
+          this.charts[chart.gameType.id] ||= []
+          this.charts[chart.gameType.id]!.push(chart)
+          this.charts[chart.gameType.id]!.sort((a, b)=>{
             if (CHART_DIFFICULTIES.indexOf(a.difficulty) == CHART_DIFFICULTIES.indexOf(b.difficulty)) return a.meter-b.meter
             return CHART_DIFFICULTIES.indexOf(a.difficulty) - CHART_DIFFICULTIES.indexOf(b.difficulty)
           })

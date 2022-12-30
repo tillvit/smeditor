@@ -1,31 +1,18 @@
 import { App } from "../App"
 import { Chart } from "../chart/sm/Chart"
-import { NotedataCount } from "../chart/sm/NoteTypes"
-import { StepsType } from "../chart/sm/SimfileTypes"
-import { Options } from "../util/Options"
+import { GameType } from "../chart/types/GameTypeRegistry"
 import { Window } from "./Window"
 
 type ChartListItem = HTMLDivElement & {
   chart: Chart
 }
 
-const NOTE_TYPE_LABELS: {[key in keyof NotedataCount]?: string} = {
-  taps: "Taps",
-  holds: "Holds",
-  jumps: "Jumps",
-  rolls: "Rolls",
-  hands: "Hands",
-  mines: "Mines",
-  fakes: "Fakes",
-  lifts: "Lifts",
-}
-
 export class ChartListWindow extends Window {
 
   app: App
-  stepsType: StepsType
+  gameType: GameType
 
-  constructor(app: App, stepsType?: StepsType) {
+  constructor(app: App, gameType?: GameType) {
     super({
       title: "Chart List", 
       width: 500,
@@ -33,7 +20,7 @@ export class ChartListWindow extends Window {
       win_id: "chart_list"
     })
     this.app = app
-    this.stepsType = stepsType ?? Options.chart.stepsType
+    this.gameType = gameType ?? app.chartManager.chart!.gameType
     this.initView(this.viewElement)
   }
 
@@ -56,7 +43,7 @@ export class ChartListWindow extends Window {
     wrapper.appendChild(chartInfo)
 
 
-    let charts = this.app.chartManager.sm?.charts[this.stepsType] ?? []
+    let charts = this.app.chartManager.sm?.charts[this.gameType.id] ?? []
     charts.forEach(chart => {
       let chartListItem = document.createElement("div") as ChartListItem
       chartListItem.classList.add("chart-list-item")
@@ -121,18 +108,18 @@ export class ChartListWindow extends Window {
     credit.innerText = chart.credit
     credit.classList.add("title", "chart-credit")
 
-    let noteCounts = chart.getNoteCounts()
+    let notedataStats = chart.getNotedataStats()
 
     let grid = document.createElement("div")
     grid.classList.add("chart-info-grid")
-    Object.entries(NOTE_TYPE_LABELS).forEach(entry => {
+    Object.entries(notedataStats.counts).forEach(entry => {
       let item = document.createElement("div")
       item.classList.add("chart-info-grid-item")
       let label = document.createElement("div")
-      label.innerText = entry[1]
+      label.innerText = entry[0]
       label.classList.add("title", "chart-info-grid-label")
       let count = document.createElement("div")
-      count.innerText = noteCounts[entry[0] as keyof NotedataCount] + ""
+      count.innerText = entry[1] + ""
       count.classList.add("title", "chart-info-grid-count")
       item.appendChild(label)
       item.appendChild(count)

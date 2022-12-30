@@ -1,22 +1,16 @@
-
-import { NoteRenderer} from "./renderer/NoteRenderer";
 import { Waveform } from "./renderer/Waveform";
 import { ChartManager, EditMode } from "./ChartManager"
 import { Container, Point, Rectangle} from "pixi.js"
 import { Options } from "../util/Options"
 import { Chart } from "./sm/Chart"
-import { NotedataEntry, NoteType } from "./sm/NoteTypes"
+import { NotedataEntry } from "./sm/NoteTypes"
 import { BarlineContainer } from "./renderer/BarlineContainer"
 import { TimingAreaContainer } from "./renderer/TimingAreaContainer"
 import { TimingBoxContainer } from "./renderer/TimingBoxContainer"
-import { ReceptorContainer } from "./renderer/ReceptorContainer"
-import { NoteContainer } from "./renderer/NoteContainer"
 import { TimingWindow } from "./play/TimingWindow"
-import { NoteFlashContainer } from "./renderer/NoteFlashContainer"
 import { JudgmentContainer } from "./renderer/JudgmentContainer"
-import { HoldTimingWindow } from "./play/HoldTimingWindow"
-import { HoldJudgmentContainer } from "./renderer/HoldJudgmentContainer"
 import { TimingBarContainer } from "./renderer/TimingBarContainer"
+import { Notefield } from "./types/base/Notefield"
 
 export class ChartRenderer extends Container {
 
@@ -30,20 +24,17 @@ export class ChartRenderer extends Container {
   private lastMousePos?: Point
   private lastMouseBeat: number = -1
   private lastMouseCol: number = -1
-  private lastNoteType: NoteType = "Tap"
+  private lastNoteType: string = ""
   private editingCol: number = -1
 
   private waveform: Waveform
   private barlines: BarlineContainer
   private timingAreas: TimingAreaContainer
-  private receptors: ReceptorContainer
   private timingBoxes: TimingBoxContainer
   private timingBar: TimingBarContainer
-  private editingArrow: Container
-  private notes: NoteContainer
-  private noteFlashes: NoteFlashContainer
+  // private editingArrow: Container
+  private notefield: Notefield
   private judgment: JudgmentContainer
-  private holdJudgment: HoldJudgmentContainer
   
  
   constructor(chartManager: ChartManager) {
@@ -54,27 +45,21 @@ export class ChartRenderer extends Container {
     this.waveform = new Waveform(this)
     this.barlines = new BarlineContainer(this)
     this.timingAreas = new TimingAreaContainer(this)
-    this.receptors = new ReceptorContainer(this)
     this.timingBoxes = new TimingBoxContainer(this)
     this.timingBar = new TimingBarContainer(this)
-    this.editingArrow = NoteRenderer.createArrow({beat: 0, col: 1, type: "Tap"})
-    this.editingArrow.alpha = 0.4
-    this.notes = new NoteContainer(this)
-    this.noteFlashes = new NoteFlashContainer()
+    // this.editingArrow = DanceNoteRenderer.createArrow({beat: 0, col: 1, type: "Tap"})
+    // this.editingArrow.alpha = 0.4
+    this.notefield = new this.chart.gameType.notefield(this)
     this.judgment = new JudgmentContainer()
-    this.holdJudgment = new HoldJudgmentContainer()
 
     this.addChild(this.waveform)
     this.addChild(this.barlines)
     this.addChild(this.timingAreas)
-    this.addChild(this.receptors)
     this.addChild(this.timingBoxes)
     this.addChild(this.timingBar)
-    this.addChild(this.editingArrow)
-    this.addChild(this.notes)
-    this.addChild(this.noteFlashes)
+    // this.addChild(this.editingArrow)
+    this.addChild(this.notefield)
     this.addChild(this.judgment)
-    this.addChild(this.holdJudgment)
 
     this.chartManager.app.stage.addChild(this)
 
@@ -115,27 +100,27 @@ export class ChartRenderer extends Container {
 
 
   doJudgment(note: NotedataEntry, error: number, judgment: TimingWindow) {
-    if ((judgment as HoldTimingWindow).noteType) {
-      this.holdJudgment.addJudge(note.col, judgment as HoldTimingWindow)
-    }else{
-      if (this.chartManager.getMode() == EditMode.Play && note.type != "Mine"){
-        this.judgment.doJudge(error, judgment)
-        this.timingBar.addBar(error, judgment)
-      }
+    if (this.chartManager.getMode() == EditMode.Play){
+      this.judgment.doJudge(error, judgment)
+      this.timingBar.addBar(error, judgment)
     }
-    this.noteFlashes.addFlash(note.col, judgment)
+    this.notefield.doJudge(note.col, judgment)
   }
 
-  doHoldInProgressJudgment(note: NotedataEntry) {
-    this.noteFlashes.addHoldFlash(note.col)
+  activateHold(col: number) {
+    this.notefield.activateHold(col)
   }
 
   keyDown(col: number){
-    this.receptors.keyDown(col)
+    this.notefield.keyDown(col)
   }
 
   keyUp(col: number){
-    this.receptors.keyUp(col)
+    this.notefield.keyUp(col)
+  }
+
+  endPlay() {
+    this.notefield.reset()
   }
 
   resetPlay() {
@@ -162,16 +147,13 @@ export class ChartRenderer extends Container {
       renderSecondLowerLimit = (-32 - this.y - Options.chart.receptorYPos)/4/64*100/Options.chart.speed + time
     }
 
-    this.receptors.renderThis(beat)
     this.barlines.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
     this.timingAreas.renderThis(beat, renderBeatLowerLimit, renderBeatLimit, renderSecondLowerLimit)
     this.timingBoxes.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
     this.timingBar.renderThis()
-    this.notes.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
+    this.notefield.update(beat, renderBeatLowerLimit, renderBeatLimit)
     this.waveform.renderThis(beat)
-    this.noteFlashes.renderThis()
     this.judgment.renderThis()
-    this.holdJudgment.renderThis()
 
     if (this.lastMousePos && this.chartManager.getMode() != EditMode.Play) {
       let snap = Options.chart.snap == 0 ? 1/48 : Options.chart.snap
@@ -189,21 +171,21 @@ export class ChartRenderer extends Container {
           this.lastMouseCol = -1
         } else {
           
-          NoteRenderer.setData(this.editingArrow, {
-            beat: snapBeat,
-            col: this.lastMouseCol,
-            type: this.chartManager.getEditingNoteType()
-          })
+          // DanceNoteRenderer.setData(this.notefield, this.editingArrow, {
+          //   beat: snapBeat,
+          //   col: this.lastMouseCol,
+          //   type: this.chartManager.getEditingNoteType()
+          // })
         }
       }
     }
 
-    this.editingArrow.visible = Options.editor.mousePlacement && this.lastMouseCol != -1 && this.lastMouseBeat != -1 && this.editingCol == -1 && this.lastMouseBeat >= renderBeatLowerLimit && this.lastMouseBeat <= renderBeatLimit && this.lastMouseBeat >= 0 
-    this.editingArrow.x = this.lastMouseCol*64-96
-    this.editingArrow.y = this.getYPos(this.lastMouseBeat)
-    if (this.chartManager.getEditingNoteType() == "Mine") {
-      NoteRenderer.setMineTime(this.editingArrow, time)
-    }
+    // this.editingArrow.visible = Options.editor.mousePlacement && this.lastMouseCol != -1 && this.lastMouseBeat != -1 && this.editingCol == -1 && this.lastMouseBeat >= renderBeatLowerLimit && this.lastMouseBeat <= renderBeatLimit && this.lastMouseBeat >= 0 
+    // this.editingArrow.x = this.lastMouseCol*64-96
+    // this.editingArrow.y = this.getYPos(this.lastMouseBeat)
+    // if (this.chartManager.getEditingNoteType() == "Mine") {
+    //   DanceNoteRenderer.setMineTime(this.editingArrow, time)
+    // }
   }
 
   getTime(): number {

@@ -1,7 +1,9 @@
 import { Options } from "../../util/Options"
-import { Notedata, NotedataEntry, NoteType } from "../sm/NoteTypes"
+import { isHoldNote, Notedata, NotedataEntry } from "../sm/NoteTypes"
+import { HoldDroppedTimingWindow } from "./HoldDroppedTimingWindow"
 import { HoldTimingWindow } from "./HoldTimingWindow"
 import { TimingWindow } from "./TimingWindow"
+import { isMineTimingWindow, isStandardMissTimingWindow } from "./TimingWindowCollection"
 
 interface JudgmentDataPoint {
   second: number,
@@ -27,9 +29,9 @@ export class GameplayStats {
     if (!this.judgmentCounts.has(judge)) this.judgmentCounts.set(judge, 0)
     this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
     this.dancePoints += judge.dancePoints
-    if (judge.name != "Mine") this.maxCumulativeDancePoints += Options.play.timingCollection.getMaxDancePoints()
-    if (judge.name == "Miss") {
-      this.maxCumulativeDancePoints += notes.filter(note => note.hold).reduce((totalDP, note) => {
+    if (!isMineTimingWindow(judge)) this.maxCumulativeDancePoints += Options.play.timingCollection.getMaxDancePoints()
+    if (isStandardMissTimingWindow(judge)) {
+      this.maxCumulativeDancePoints += notes.filter(isHoldNote).reduce((totalDP, note) => {
         return totalDP + Options.play.timingCollection.getMaxHoldDancePoints(note.type)
       }, 0)
     }
@@ -41,7 +43,7 @@ export class GameplayStats {
     })
   }
 
-  addHoldDataPoint(note: NotedataEntry, judge: HoldTimingWindow) {
+  addHoldDataPoint(note: NotedataEntry, judge: HoldTimingWindow | HoldDroppedTimingWindow) {
     if (!this.judgmentCounts.has(judge)) this.judgmentCounts.set(judge, 0)
     this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
     this.dancePoints += judge.dancePoints
@@ -66,8 +68,7 @@ export class GameplayStats {
       if ((entry[0] as HoldTimingWindow).noteType) {
         let judge: HoldTimingWindow = (entry[0] as HoldTimingWindow)
         this.dancePoints += entry[0].dancePoints
-        if (judge.noteType != "Dropped")
-          this.maxCumulativeDancePoints += entry[1] + Options.play.timingCollection.getMaxHoldDancePoints(judge.noteType)
+        this.maxCumulativeDancePoints += entry[1] + Options.play.timingCollection.getMaxHoldDancePoints(judge.noteType)
       }
     }
     for (let dataPoint of this.dataPoints) {
@@ -76,8 +77,8 @@ export class GameplayStats {
       this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
       this.dancePoints += judge.dancePoints
       this.maxCumulativeDancePoints += Options.play.timingCollection.getMaxDancePoints()
-      if (judge.name == "Miss") {
-        this.maxCumulativeDancePoints += dataPoint.notes.filter(note => note.hold).reduce((totalDP, note) => {
+      if (isStandardMissTimingWindow(judge)) {
+        this.maxCumulativeDancePoints += dataPoint.notes.filter(isHoldNote).reduce((totalDP, note) => {
           return totalDP + Options.play.timingCollection.getMaxHoldDancePoints(note.type)
         }, 0)
       }
@@ -86,10 +87,10 @@ export class GameplayStats {
 
   private calculateMaxDP() {
     let chordCohesion: Map<number, NotedataEntry[]> = new Map
-    let numHoldsMap: Map<NoteType, number> = new Map
+    let numHoldsMap: Map<string, number> = new Map
     for (let note of this.notedata) {
       if (note.type == "Mine" || note.fake) continue
-      if (note.hold) {
+      if (isHoldNote(note)) {
         if (!numHoldsMap.has(note.type)) numHoldsMap.set(note.type, 0)
         numHoldsMap.set(note.type, numHoldsMap.get(note.type)! + 1)
       }

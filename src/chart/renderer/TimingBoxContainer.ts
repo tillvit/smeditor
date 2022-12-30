@@ -3,7 +3,7 @@ import { Options } from "../../util/Options"
 import { roundDigit } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
-import { TimingEvent, TIMING_EVENT_NAMES } from "../sm/TimingTypes"
+import { TimingEvent } from "../sm/TimingTypes"
 import { TIMING_EVENT_DATA } from "./TimingAreaContainer"
 
 interface TimingBoxObject extends Container {
@@ -47,9 +47,10 @@ export class TimingBoxContainer extends Container {
     this.same_beat = -1
     this.last_length_left = 0
     this.last_length_right = 0
-    for (let event of this.renderer.chart.timingData.getTimingData(...TIMING_EVENT_NAMES.filter((key) => Options.chart.renderTimingEvent[key]))) { 
-      if (fromBeat > event.beat!) continue
+    for (let event of this.renderer.chart.timingData.getTimingData()) { 
       if (toBeat < event.beat!) break
+      if (!Options.chart.renderTimingEvent[event.type]) continue
+      if (fromBeat > event.beat!) continue
       
       let [outOfBounds, endSearch, yPos] = this.checkBounds(event, beat)
       if (endSearch) break

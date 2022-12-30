@@ -1,15 +1,15 @@
 import { RenderTexture, Container, Geometry, Texture, Shader, Mesh, Sprite, Rectangle, BaseTexture } from "pixi.js"
-import { App } from "../../App"
+import { App } from "../../../App"
 
-export class NoteTexture {
+export class DanceNoteTexture {
  
   static noop_frag: string
   static noop_vert: string
   static arrow_gradient_frag: string
   static mine_gradient_frag: string
 
-  static arrow_parts_texture = BaseTexture.from('assets/noteskin/tap/parts.png')
-  static mine_parts_texture = BaseTexture.from('assets/noteskin/mine/parts.png')
+  static arrow_parts_texture = BaseTexture.from('assets/noteskin/dance/tap/parts.png')
+  static mine_parts_texture = BaseTexture.from('assets/noteskin/dance/mine/parts.png')
 
   static arrow_body_geometry: Geometry
   static arrow_frame_geometry: Geometry
@@ -21,47 +21,52 @@ export class NoteTexture {
   static mine_tex = RenderTexture.create({ width: 64, height: 64, resolution: 4 })
   static mine_container = new Container();
 
-  static async initArrowTex(app: App) {
-    this.noop_frag = await fetch('assets/noteskin/shader/noop.frag').then(response => response.text())
-    this.noop_vert = await fetch('assets/noteskin/shader/noop.vert').then(response => response.text())
-    this.arrow_gradient_frag = await fetch('assets/noteskin/shader/arrow_gradient.frag').then(response => response.text())
-    this.mine_gradient_frag = await fetch('assets/noteskin/shader/mine_gradient.frag').then(response => response.text())
+  private static loaded = false
 
-    this.arrow_body_geometry = await this.loadGeometry('assets/noteskin/tap/body.txt')
-    this.arrow_frame_geometry = await this.loadGeometry('assets/noteskin/tap/frame.txt')
-    this.mine_body_geometry = await this.loadGeometry('assets/noteskin/mine/body.txt')
+  static async initArrowTex(app: App) {
+    if (this.loaded) return
+    this.noop_frag = await fetch('assets/noteskin/dance/shader/noop.frag').then(response => response.text())
+    this.noop_vert = await fetch('assets/noteskin/dance/shader/noop.vert').then(response => response.text())
+    this.arrow_gradient_frag = await fetch('assets/noteskin/dance/shader/arrow_gradient.frag').then(response => response.text())
+    this.mine_gradient_frag = await fetch('assets/noteskin/dance/shader/mine_gradient.frag').then(response => response.text())
+
+    this.arrow_body_geometry = await this.loadGeometry('assets/noteskin/dance/tap/body.txt')
+    this.arrow_frame_geometry = await this.loadGeometry('assets/noteskin/dance/tap/frame.txt')
+    this.mine_body_geometry = await this.loadGeometry('assets/noteskin/dance/mine/body.txt')
     
     {
       for (let i = 0; i < 8; i ++) {
         let shader_body = Shader.from(this.noop_vert, this.arrow_gradient_frag, 
           {sampler0: this.arrow_parts_texture, time: 0, quant: i}) 
-        let arrow_body = new Mesh(NoteTexture.arrow_body_geometry, shader_body);
+        let arrow_body = new Mesh(DanceNoteTexture.arrow_body_geometry, shader_body);
         arrow_body.x = (i % 3) * 64 + 32
         arrow_body.y = Math.floor(i/3) * 64 + 32
         arrow_body.rotation = -Math.PI/2
-        NoteTexture.arrow_container.addChild(arrow_body)
+        DanceNoteTexture.arrow_container.addChild(arrow_body)
       }
       let shader_frame = Shader.from(this.noop_vert, this.noop_frag, 
         {sampler0: this.arrow_parts_texture}) 
-      let arrow_frame = new Mesh(NoteTexture.arrow_frame_geometry, shader_frame);
+      let arrow_frame = new Mesh(DanceNoteTexture.arrow_frame_geometry, shader_frame);
       arrow_frame.x = 2 * 64 + 32
       arrow_frame.y = 2 * 64 + 32
       arrow_frame.rotation = -Math.PI/2
-      NoteTexture.arrow_container.addChild(arrow_frame)
+      DanceNoteTexture.arrow_container.addChild(arrow_frame)
     }
     {
       let shader_body = Shader.from(this.noop_vert, this.mine_gradient_frag, 
         {sampler0: this.mine_parts_texture, time: 0})
-      let mine_body = new Mesh(NoteTexture.mine_body_geometry, shader_body);
+      let mine_body = new Mesh(DanceNoteTexture.mine_body_geometry, shader_body);
       mine_body.x = 32
       mine_body.y = 32
-      NoteTexture.mine_container.addChild(mine_body)
+      DanceNoteTexture.mine_container.addChild(mine_body)
     }
     
     app.ticker.add(() => {
-      app.renderer.render(NoteTexture.arrow_container, {renderTexture: NoteTexture.arrow_tex});
-      app.renderer.render(NoteTexture.mine_container, {renderTexture: NoteTexture.mine_tex});
+      app.renderer.render(DanceNoteTexture.arrow_container, {renderTexture: DanceNoteTexture.arrow_tex});
+      app.renderer.render(DanceNoteTexture.mine_container, {renderTexture: DanceNoteTexture.mine_tex});
     });
+
+    this.loaded = true
   }
 
   private static async loadGeometry(url: string): Promise<Geometry> {
@@ -98,17 +103,18 @@ export class NoteTexture {
   }
 
   static setArrowTexTime(beat: number, second: number) {
+    if (!this.loaded) return
     for (let i = 0; i < 8; i ++) {
-      (<Mesh>NoteTexture.arrow_container.children[i]).shader.uniforms.time = beat
+      (<Mesh>DanceNoteTexture.arrow_container.children[i]).shader.uniforms.time = beat
     }
-    (<Mesh>NoteTexture.mine_container.children[0]).shader.uniforms.time = second
+    (<Mesh>DanceNoteTexture.mine_container.children[0]).shader.uniforms.time = second
   }
 
   static getSpriteWithQuant(i: number) {
     i = Math.min(i,7)
     let arrow = new Container()
-    let body = new Sprite(new Texture(NoteTexture.arrow_tex.baseTexture, new Rectangle((i % 3) * 64, Math.floor(i/3) * 64, 64, 64)))
-    let frame = new Sprite(new Texture(NoteTexture.arrow_tex.baseTexture, new Rectangle(128, 128, 64, 64)))
+    let body = new Sprite(new Texture(DanceNoteTexture.arrow_tex.baseTexture, new Rectangle((i % 3) * 64, Math.floor(i/3) * 64, 64, 64)))
+    let frame = new Sprite(new Texture(DanceNoteTexture.arrow_tex.baseTexture, new Rectangle(128, 128, 64, 64)))
     body.anchor.set(0.5)
     frame.anchor.set(0.5)
     arrow.addChild(body)
@@ -117,7 +123,7 @@ export class NoteTexture {
   }
 
   static getMine() {
-    let tt = new Sprite(NoteTexture.mine_tex)
+    let tt = new Sprite(DanceNoteTexture.mine_tex)
     tt.anchor.set(0.5)
     return tt
   }

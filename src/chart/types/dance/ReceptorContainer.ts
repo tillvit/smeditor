@@ -1,10 +1,12 @@
 import { BitmapText, Container, Graphics, Sprite, Texture } from "pixi.js"
-import { Options } from "../../util/Options"
-import { getRotFromArrow, rgbtoHex } from "../../util/Util"
-import { EditMode } from "../ChartManager"
-import { ChartRenderer } from "../ChartRenderer"
+import { ColHeldTracker } from "../../../util/ColHeldTracker"
+import { Options } from "../../../util/Options"
+import { rgbtoHex } from "../../../util/Util"
+import { EditMode } from "../../ChartManager"
+import { ChartRenderer } from "../../ChartRenderer"
+import { DanceNotefield } from "./DanceNotefield"
 
-const receptor_tex = Texture.from('assets/noteskin/receptor.png');
+const receptor_tex = Texture.from('assets/noteskin/dance/receptor.png');
 
 const snapNumbers = {
   fontName: "Assistant",
@@ -32,22 +34,25 @@ interface Receptor extends Sprite {
 
 export class ReceptorContainer extends Container {
 
+  private notefield: DanceNotefield
   private renderer: ChartRenderer
   private receptors: Container = new Container()
   private snapDisplay: Container = new Container()
+  private pressedCols: ColHeldTracker = new ColHeldTracker()
 
   children: Sprite[] = []
 
-  constructor(renderer: ChartRenderer) {
+  constructor(notefield: DanceNotefield, renderer: ChartRenderer) {
     super()
+    this.notefield = notefield
     this.renderer = renderer
     for (let i = 0; i < 4; i ++) {
       let receptor = new Sprite(receptor_tex) as Receptor
       receptor.width = 69
       receptor.height = 69
       receptor.anchor.set(0.5)
-      receptor.x = i*64-96
-      receptor.rotation = getRotFromArrow(i)
+      receptor.x = this.notefield.getColX(i)
+      receptor.rotation = this.notefield.getRotFromCol(i)
       receptor.lastPressedTime = -1
       receptor.pressed = false
       this.receptors.addChild(receptor)
@@ -57,7 +62,7 @@ export class ReceptorContainer extends Container {
       let container = new Container()
       let graphic = new Graphics()
       let text = new BitmapText("4", snapNumbers)
-      container.x = (i-0.5)*300
+      container.x = (i-0.5)*(64*(this.notefield.getNumCols()+0.5)+16)
       
       graphic.rotation = Math.PI / 4
       graphic.lineStyle(1, 0x000000, 1);
@@ -99,13 +104,16 @@ export class ReceptorContainer extends Container {
   }
 
   keyDown(col: number) {
+    let wasPressed = this.pressedCols.isPressed(col)
+    this.pressedCols.keyDown(col)
     let receptor = this.receptors.children[col] as Receptor
     receptor.pressed = true
-    receptor.lastPressedTime = Date.now()
+    if (!wasPressed) receptor.lastPressedTime = Date.now()
   }
 
   keyUp(col: number) {
+    this.pressedCols.keyUp(col)
     let receptor = this.receptors.children[col] as Receptor
-    receptor.pressed = false
+    receptor.pressed = this.pressedCols.isPressed(col)
   }
 }

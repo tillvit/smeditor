@@ -1,16 +1,15 @@
-import { NoteType } from "../sm/NoteTypes"
 import { TimingWindow } from "./TimingWindow"
 
 export class HoldTimingWindow extends TimingWindow {
-
-  static HELD = new HoldTimingWindow("Hold", 0xe29c18, 0, 0, 0)
   
-  noteType: NoteType | "Dropped"
+  noteType: string
 
-  constructor(noteType: NoteType | "Dropped", color: number, timingWindowMS: number, dancePoints: number, lifeChange: number) {
-    super(noteType, color, timingWindowMS, dancePoints, lifeChange)
+  constructor(noteType: string, timingWindowMS: number, dancePoints: number, lifeChange: number) {
+    super(timingWindowMS, dancePoints, lifeChange)
     this.noteType = noteType
   }
 }
+
+export const TIMING_WINDOW_HELD = new HoldTimingWindow("Hold", 0, 0, 0)
 
 

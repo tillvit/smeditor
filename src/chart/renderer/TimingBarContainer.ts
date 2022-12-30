@@ -4,6 +4,7 @@ import { clamp } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { TimingWindow } from "../play/TimingWindow"
+import { isStandardMissTimingWindow, isStandardTimingWindow } from "../play/TimingWindowCollection"
 
 interface TimingBarObject extends Sprite {
   createTime: number,
@@ -65,7 +66,8 @@ export class TimingBarContainer extends Container {
   }
 
   addBar(error: number, judge: TimingWindow) {
-    if (judge.name != "Miss") this.data.push(error)
+    if (!isStandardMissTimingWindow(judge) && !isStandardTimingWindow(judge)) return
+    if (!isStandardMissTimingWindow(judge)) this.data.push(error)
     if (this.data.length > 10) this.data.splice(0, 1)
     let bar = new Sprite(Texture.WHITE) as TimingBarObject
     bar.width = BAR_WIDTH

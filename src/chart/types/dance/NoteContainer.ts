@@ -1,10 +1,11 @@
 import { Container } from "pixi.js"
-import { ChartRenderer } from "../ChartRenderer"
-import { NoteRenderer } from "./NoteRenderer"
-import { NoteTexture } from "./NoteTexture"
-import { NotedataEntry } from "../sm/NoteTypes"
-import { Options } from "../../util/Options"
-import { EditMode } from "../ChartManager"
+import { ChartRenderer } from "../../ChartRenderer"
+import { DanceNoteRenderer } from "./DanceNoteRenderer"
+import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
+import { Options } from "../../../util/Options"
+import { EditMode } from "../../ChartManager"
+import { DanceNotefield } from "./DanceNotefield"
+import { DanceNoteTexture } from "./DanceNoteTexture"
 
 interface NoteObject extends Container {
   note: NotedataEntry,
@@ -17,12 +18,14 @@ export class NoteContainer extends Container {
 
   children: NoteObject[] = []
 
+  private notefield: DanceNotefield
   private renderer: ChartRenderer
   private noteMap: Map<NotedataEntry, NoteObject> = new Map
 
-  constructor(renderer: ChartRenderer) {
+  constructor(notefield: DanceNotefield, renderer: ChartRenderer) {
     super()
     this.renderer = renderer
+    this.notefield = notefield
   }
 
   renderThis(beat: number, fromBeat: number, toBeat: number) {
@@ -32,9 +35,9 @@ export class NoteContainer extends Container {
 
     let time = this.renderer.chartManager.getTime()
     for (let note of this.renderer.chart.notedata) { 
-      if (note.hide) continue
+      if (note.gameplay?.hideNote) continue
       if (Options.chart.CMod && Options.chart.hideWarpedArrows && note.warped) continue
-      if (note.beat + (note.hold ?? 0) < fromBeat) continue
+      if (note.beat + (isHoldNote(note) ? note.hold : 0) < fromBeat) continue
       if (note.beat > toBeat) break
 
       let [outOfBounds, endSearch, yPos, holdLength] = this.checkBounds(note, beat)
@@ -43,23 +46,23 @@ export class NoteContainer extends Container {
 
       let arrow = this.getNote(note)
       arrow.y = yPos;
-      if (note.type == "Hold" || note.type == "Roll") {
-        NoteRenderer.setHoldLength(arrow, holdLength)
-        if (note.lastActivation) {
-          let t = (time - note.lastActivation)/Options.play.timingCollection.getHeldJudgement(note).getTimingWindowMS()*1000
+      if (isHoldNote(note)) {
+        DanceNoteRenderer.setHoldLength(arrow, holdLength)
+        if (note.gameplay?.lastHoldActivation) {
+          let t = (Date.now() - note.gameplay.lastHoldActivation)/Options.play.timingCollection.getHeldJudgement(note).getTimingWindowMS()
           t = Math.min(1.2, t)
-          NoteRenderer.setHoldBrightness(arrow, 1-t*0.7)
+          DanceNoteRenderer.setHoldBrightness(arrow, 1-t*0.7)
         }
       }
       if (note.type == "Mine") {
-        NoteRenderer.setMineTime(arrow, time)
+        DanceNoteRenderer.setMineTime(arrow, time)
       }
       if (note.type == "Fake") {
-        NoteRenderer.hideFakeOverlay(arrow, this.renderer.chartManager.getMode() == EditMode.Play)
+        DanceNoteRenderer.hideFakeOverlay(arrow, this.renderer.chartManager.getMode() == EditMode.Play)
       }
     }
 
-    NoteTexture.setArrowTexTime(beat, time)
+    DanceNoteTexture.setArrowTexTime(beat, time)
 
     //Remove old elements
     this.children.filter(child => !child.deactivated && !child.marked).forEach(child => {
@@ -75,10 +78,10 @@ export class NoteContainer extends Container {
 
   private checkBounds(note: NotedataEntry, beat: number): [boolean, boolean, number, number] {
     let y = Options.chart.receptorYPos
-    if (!note.lastActivation || beat < note.beat) y = this.renderer.getYPos(note.beat)
-    if (note.droppedBeat) y = this.renderer.getYPos(note.droppedBeat)
-    let y_hold = this.renderer.getYPos(note.beat + (note.hold ?? 0))
-    if (note.hold && !note.droppedBeat && note.lastActivation && note.lastActivation != -1 && note.beat + note.hold < beat) return [true, false, y, y_hold - y]
+    if (!isHoldNote(note) || (!note.gameplay?.lastHoldActivation || beat < note.beat)) y = this.renderer.getYPos(note.beat)
+    if (isHoldNote(note) && note.gameplay?.droppedHoldBeat) y = this.renderer.getYPos(note.gameplay.droppedHoldBeat)
+    let y_hold = this.renderer.getYPos(note.beat + (isHoldNote(note) ? note.hold : 0))
+    if (isHoldNote(note) && !note.gameplay?.droppedHoldBeat && note.gameplay?.lastHoldActivation && note.beat + note.hold < beat) return [true, false, y, y_hold - y]
     if (y_hold < -32 - this.renderer.y) return [true, false, y, y_hold - y]
     if (y > this.renderer.chartManager.app.renderer.screen.height-this.renderer.y+32) {
       if (this.renderer.isNegScroll() || note.beat < beat) [true, false, y, y_hold - y]
@@ -98,7 +101,7 @@ export class NoteContainer extends Container {
       }
     }
     if (!newChild) { 
-      newChild = NoteRenderer.createArrow(note) as NoteObject
+      newChild = DanceNoteRenderer.createArrow() as NoteObject
       this.addChild(newChild as NoteObject)
     }
     newChild.note = note
@@ -110,7 +113,7 @@ export class NoteContainer extends Container {
   }
 
   private buildObject(noteObj: Partial<NoteObject>) {
-    NoteRenderer.setData(noteObj as NoteObject, noteObj.note!)
-    noteObj.x = noteObj.note!.col*64-96
+    DanceNoteRenderer.setData(this.notefield, noteObj as NoteObject, noteObj.note!)
+    noteObj.x = this.notefield.getColX(noteObj.note!.col)
   }
 }

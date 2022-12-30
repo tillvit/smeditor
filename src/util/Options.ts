@@ -1,5 +1,4 @@
 import { TimingWindowCollection } from "../chart/play/TimingWindowCollection"
-import { StepsType } from "../chart/sm/SimfileTypes"
 import { TimingEventProperty } from "../chart/sm/TimingTypes"
 
 export class Options {
@@ -29,7 +28,6 @@ export class Options {
       "FGCHANGES": true,
       "ATTACKS": true,
     } as {[key in TimingEventProperty]: boolean},
-    stepsType: "dance-single" as StepsType,
   }
   static audio = {
     assistTick: false,
@@ -59,6 +57,9 @@ export class Options {
     judgmentTilt: true,
     timingWindowScale: 1,
     timingWindowAdd: 0,
-    timingCollection: TimingWindowCollection.ITG
+    timingCollection: TimingWindowCollection.ITG,
+    defaultTimingCollection: {
+      "dance-single": TimingWindowCollection.ITG
+    }
   }
 }
