@@ -1,7 +1,7 @@
 import { Container, FederatedPointerEvent, RenderTexture, Sprite, Texture } from "pixi.js"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
-import { getQuant } from "../../util/Util"
+import { clamp, getQuant } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { isHoldNote } from "../sm/NoteTypes"
@@ -18,8 +18,7 @@ export class NoteLayoutSprite extends Container {
 
   private renderer: ChartRenderer
   private lastHeight = 0
-  private lastCMod;
-  private zoomTimeout?: number
+  private lastCMod
   private mouseDown = false
 
   constructor(renderer: ChartRenderer) {
@@ -45,6 +44,7 @@ export class NoteLayoutSprite extends Container {
     this.populate()
 
     this.bars.interactive = true
+    this.overlay.interactive = true
     this.bars.on("mousedown", event => {
       this.mouseDown = true
       this.handleMouse(event)
@@ -67,6 +67,7 @@ export class NoteLayoutSprite extends Container {
   private handleMouse(event: FederatedPointerEvent) {
     if (this.renderer.chartManager.getMode() == EditMode.Play) return
     let t = (this.bars.toLocal(event.global).y + this.bars.height/2) / this.bars.height
+    t = clamp(t, 0, 1)
     let lastNote = this.renderer.chart.notedata.at(-1)
     if (!lastNote) return
     let lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
@@ -101,8 +102,9 @@ export class NoteLayoutSprite extends Container {
     if (this.renderer.chartManager.app.renderer.screen.height != this.lastHeight || this.lastCMod != Options.chart.CMod) {
       this.lastCMod = Options.chart.CMod
       this.lastHeight = this.renderer.chartManager.app.renderer.screen.height
-      clearTimeout(this.zoomTimeout)
-      this.zoomTimeout = setTimeout(() => this.populate(), 120)
+      // clearTimeout(this.zoomTimeout)
+      // this.zoomTimeout = setTimeout(() => this.populate(), 120)
+      this.populate()
     }
   }
 

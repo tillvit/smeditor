@@ -1,4 +1,3 @@
-import { BiquadFilter } from "./BiquadFilter"
 import { Waveform } from "../renderer/Waveform"
 
 export class ChartAudio {
@@ -12,13 +11,10 @@ export class ChartAudio {
   private _startTimestamp: number = 0
   private _rate: number = 1
   private _isPlaying: boolean = false
-  private _rawData: Float32Array = new Float32Array(1024)
-  private _filteredRawData?: Float32Array
   private _buffer: AudioBuffer
   private _delay?: number
   private _listeners: Waveform[] = []
 
-  filters: BiquadFilter[] = []
   loaded: Promise<void>
   
 
@@ -29,14 +25,12 @@ export class ChartAudio {
     this._freqData = new Uint8Array(this._audioAnalyzer.frequencyBinCount);
     this._gainNode = this._audioContext.createGain();
 
-    this._buffer = this._audioContext.createBuffer(1, this._rawData.length, 44100);
+    this._buffer = this._audioContext.createBuffer(2, 1, 44100);
     this.loaded = new Promise((resolve) => {
       this.getData(url).then((buffer) => {
         if (!buffer) return
-        this._rawData = buffer.getChannelData(0)
-        this._buffer = this._audioContext.createBuffer(1, this._rawData.length, buffer.sampleRate);
-        this._buffer.copyToChannel(this._rawData, 0)
-      })
+        return buffer
+      }).then(buffer => this.renderBuffer(buffer))
       .catch(reason=>console.error(reason))
       .finally(() => {
         this.initSource()
@@ -46,12 +40,26 @@ export class ChartAudio {
     })
   }
 
+  private async renderBuffer(buffer: AudioBuffer | undefined) {
+    if (!buffer) return
+    let offlineCtx = new OfflineAudioContext(buffer.numberOfChannels, buffer.length, buffer.sampleRate);
+    let source = offlineCtx.createBufferSource()
+    source.buffer = buffer;
+    source.connect(offlineCtx.destination);
+    source.start();
+    return await offlineCtx.startRendering().then((renderedBuffer) => {
+      this._buffer = renderedBuffer
+    }).catch((err) => {
+       console.error(`Rendering failed: ${err}`);
+    });
+  }
+
   addWaveform(waveform: Waveform) {
     this._listeners.push(waveform)
   }
 
   getSongLength(): number {
-    return this._rawData.length/this._buffer.sampleRate
+    return this._buffer.length/this._buffer.sampleRate
   }
 
   private callListeners() {
@@ -63,27 +71,15 @@ export class ChartAudio {
     return this._freqData
   }
 
-  async processFilters() {
-    let data = this._rawData
-    this.filters.forEach((filter: BiquadFilter) => {
-      filter.reset()
-      data = data.map(sample=>filter.process(sample))
-    })
-    this._buffer.copyToChannel(data, 0)
-    this._filteredRawData = data
-    if (this.filters.length == 0) this._filteredRawData = undefined
-    this.callListeners()
-  }
-
-  getBodePlot(numPixels: number): number[] {
-    let bodePlot: number[] = []
-    for (let x = 0; x < numPixels; x++) bodePlot[x] = 1
-    this.filters.forEach(filter=>{
-      filter.magnitude(bodePlot)
-    })
-    bodePlot = bodePlot.map(x => 10*Math.log(x));
-    return bodePlot
-  }
+  // getBodePlot(numPixels: number): number[] {
+  //   let bodePlot: number[] = []
+  //   for (let x = 0; x < numPixels; x++) bodePlot[x] = 1
+  //   this.filters.forEach(filter=>{
+  //     filter.magnitude(bodePlot)
+  //   })
+  //   bodePlot = bodePlot.map(x => 10*Math.log(x));
+  //   return bodePlot
+  // }
 
   async getData(url?: string): Promise<AudioBuffer | void> { 
     return new Promise((resolve, reject) => {
@@ -103,12 +99,10 @@ export class ChartAudio {
     return this._audioAnalyzer.fftSize
   }
 
-  getRawData(): Float32Array {
-    return this._rawData
-  }
-
-  getFilteredRawData(): Float32Array | undefined {
-    return this._filteredRawData
+  getRawData(): Float32Array[] {
+    let ret = []
+    for (let i = 0; i < this._buffer.numberOfChannels; i++) ret.push(this._buffer.getChannelData(i))
+    return ret
   }
 
   isPlaying(): boolean {
