@@ -2,6 +2,7 @@ import { Container, FederatedPointerEvent, RenderTexture, Sprite, Texture } from
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
 import { getQuant } from "../../util/Util"
+import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { isHoldNote } from "../sm/NoteTypes"
 
@@ -64,6 +65,7 @@ export class NoteLayoutSprite extends Container {
   }
 
   private handleMouse(event: FederatedPointerEvent) {
+    if (this.renderer.chartManager.getMode() == EditMode.Play) return
     let t = (this.bars.toLocal(event.global).y + this.bars.height/2) / this.bars.height
     let lastNote = this.renderer.chart.notedata.at(-1)
     if (!lastNote) return

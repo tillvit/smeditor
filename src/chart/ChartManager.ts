@@ -591,6 +591,10 @@ export class ChartManager {
           hasHit: false,
         }
       })
+      for (let note of this.chart.notedata) {
+        if (note.second < this.time) note.gameplay!.hasHit = true
+        else break
+      }
       this.chart.gameType.gameLogic.reset(this)
       this.gameStats = new GameplayStats(this.chart.notedata)
       this.chartView.resetPlay()

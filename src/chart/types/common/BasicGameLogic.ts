@@ -73,6 +73,9 @@ export class BasicGameLogic extends GameLogic {
     let firstHittableNote = bsearch(chartManager.chart.notedata, hitWindowStart, a => a.second) + 1
     if (firstHittableNote >= 1 && hitWindowStart <= chartManager.chart.notedata[firstHittableNote-1].second) firstHittableNote--
     this.missNoteIndex = firstHittableNote
+    for (let i = 0; i < this.missNoteIndex; i++) {
+      chartManager.chart.notedata[i].gameplay!.hasHit = true
+    }
     this.holdProgress = []
     this.heldCols.reset()
   }

@@ -121,7 +121,6 @@ export class ChartListWindow extends Window {
       chartListItem.appendChild(attributes)
       chartEls.push(chartListItem)
     });
-    console.log(chartEls)
     chartList.replaceChildren(...chartEls)
     this.loadChartDetails(chartInfo)
   }
