@@ -1,6 +1,5 @@
 import { BLEND_MODES, Container, Sprite, Texture } from "pixi.js"
 import { Options } from "../../../util/Options"
-import { ChartRenderer } from "../../ChartRenderer"
 import { TimingWindow } from "../../play/TimingWindow"
 import { isHoldDroppedTimingWindow, isHoldTimingWindow, isMineTimingWindow, isStandardTimingWindow } from "../../play/TimingWindowCollection"
 import { DanceNotefield } from "./DanceNotefield"
@@ -26,17 +25,15 @@ interface NoteFlashObject extends Sprite {
 export class NoteFlashContainer extends Container {
 
   private notefield: DanceNotefield
-  private renderer: ChartRenderer
   children: NoteFlashObject[] = []
 
-  constructor(notefield: DanceNotefield, renderer: ChartRenderer) {
+  constructor(notefield: DanceNotefield) {
     super()
     this.notefield = notefield
-    this.renderer = renderer
   }
 
   renderThis() {
-    this.y = this.renderer.getYPos(this.renderer.getBeat())
+    this.y = Options.chart.receptorYPos
 
     for (let child of this.children) { 
       switch(child.type) {

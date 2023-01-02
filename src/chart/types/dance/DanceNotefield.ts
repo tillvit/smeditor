@@ -26,9 +26,9 @@ export class DanceNotefield extends Notefield {
 
     DanceNoteTexture.initArrowTex(renderer.chartManager.app)
 
-    this.receptors = new ReceptorContainer(this, renderer)
+    this.receptors = new ReceptorContainer(this)
     this.notes = new NoteContainer(this, renderer)
-    this.flashes = new NoteFlashContainer(this, renderer)
+    this.flashes = new NoteFlashContainer(this)
     this.holdJudges = new HoldJudgmentContainer(this, renderer)
     this.ghostNote = DanceNoteRenderer.createArrow()
     this.ghostNote.visible = false

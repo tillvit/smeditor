@@ -1,4 +1,5 @@
 import { Assets, Container, Rectangle, Sprite, Texture } from "pixi.js"
+import { Options } from "../../../util/Options"
 import { ChartRenderer } from "../../ChartRenderer"
 import { TimingWindow } from "../../play/TimingWindow"
 import { isHoldDroppedTimingWindow, isHoldTimingWindow } from "../../play/TimingWindowCollection"
@@ -37,7 +38,7 @@ export class HoldJudgmentContainer extends Container {
   }
 
   renderThis() {
-    this.y = this.renderer.getYPos(this.renderer.getBeat()) + 48
+    this.y = Options.chart.receptorYPos + 48
 
     for (let child of this.children) { 
       let time = (Date.now() - child.createTime)/1000

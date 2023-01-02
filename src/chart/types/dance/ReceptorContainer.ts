@@ -1,7 +1,7 @@
 import { Container, Sprite, Texture } from "pixi.js"
 import { ColHeldTracker } from "../../../util/ColHeldTracker"
+import { Options } from "../../../util/Options"
 import { rgbtoHex } from "../../../util/Util"
-import { ChartRenderer } from "../../ChartRenderer"
 import { DanceNotefield } from "./DanceNotefield"
 
 const receptor_tex = Texture.from('assets/noteskin/dance/receptor.png');
@@ -14,16 +14,14 @@ interface Receptor extends Sprite {
 export class ReceptorContainer extends Container {
 
   private notefield: DanceNotefield
-  private renderer: ChartRenderer
   private receptors: Container = new Container()
   private pressedCols: ColHeldTracker = new ColHeldTracker()
 
   children: Sprite[] = []
 
-  constructor(notefield: DanceNotefield, renderer: ChartRenderer) {
+  constructor(notefield: DanceNotefield) {
     super()
     this.notefield = notefield
-    this.renderer = renderer
     for (let i = 0; i < this.notefield.getNumCols(); i ++) {
       let receptor = new Sprite(receptor_tex) as Receptor
       receptor.width = 69
@@ -40,8 +38,8 @@ export class ReceptorContainer extends Container {
   }
 
   renderThis(beat: number) {
-    this.y = this.renderer.getYPos(this.renderer.getBeat())
-
+    this.y = Options.chart.receptorYPos
+    
     for (let child of this.receptors.children) { 
       let receptor = child as Receptor
       let col = Math.min(1, Math.max((1 - ((beat+100000) % 1)), 0.5 + (receptor.pressed ? 0.1 : 0) )) * 255
