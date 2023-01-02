@@ -65,9 +65,9 @@ export class DanceNoteRenderer {
     let col = note.col
     let type = note.type
 
-    item_container.rotation = notefield.getRotFromCol(col)
     
     if (type == "Tap" || type == "Fake" || type == "Hold" || type == "Roll" || type == "Lift") {
+      item_container.rotation = notefield.getRotFromCol(col)
       let note = DanceNoteTexture.getSpriteWithQuant(getQuant(beat))
       item_container.addChild(note);
       if (type == "Fake" || type == "Lift") {
@@ -101,6 +101,7 @@ export class DanceNoteRenderer {
         DanceNoteRenderer.setHoldBrightness(arrow, 0.8)
       }
     }else if (type == "Mine") {
+      item_container.rotation = 0
       let mine = DanceNoteTexture.getMine()
       mine.width = 64
       mine.height = 64

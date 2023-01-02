@@ -17,7 +17,7 @@ export class BPMAnalyzer {
       sampleRate: audio.getSampleRate(),
       bandwidth: 2
     })
-    let data = audio.getRawData().map(sample => LOWPASS.process(sample))
+    let data = audio.getRawData()[0].map(sample => LOWPASS.process(sample))
     data = data.map(sample => HIGHPASS.process(sample))
     let peaks = this.getPeaks(data, audio.getSampleRate())
     let groups = this.getIntervals(peaks, audio.getSampleRate());

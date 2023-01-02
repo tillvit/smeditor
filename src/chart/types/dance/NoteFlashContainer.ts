@@ -69,7 +69,7 @@ export class NoteFlashContainer extends Container {
     if (isMineTimingWindow(judgment)) tex = FLASH_TEX_MAP["mine"]
     if (isHoldTimingWindow(judgment)) tex = FLASH_TEX_MAP["w2"]
     if (isHoldTimingWindow(judgment) || isHoldDroppedTimingWindow(judgment)) {
-      this.children.filter(child => child.type == "hold").forEach(child => {
+      this.children.filter(child => child.type == "hold" && child.col == col).forEach(child => {
         child.destroy()
         this.removeChild(child)
       }) 
@@ -96,6 +96,7 @@ export class NoteFlashContainer extends Container {
     flash.rotation = this.notefield.getRotFromCol(col)
     flash.x = this.notefield.getColX(col)
     flash.type = "hold"
+    flash.col = col
     this.addChild(flash)
   }
 

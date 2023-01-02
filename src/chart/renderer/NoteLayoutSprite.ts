@@ -102,6 +102,8 @@ export class NoteLayoutSprite extends Container {
       t_startY = unlerp(-this.renderer.chart.timingData.getTimingData("OFFSET"), lastSecond, start)
       t_endY = unlerp(-this.renderer.chart.timingData.getTimingData("OFFSET"), lastSecond, end)
     }
+    t_startY = clamp(t_startY, 0, 1)
+    t_endY = clamp(t_endY, 0, 1)
     let startY = (t_startY - 0.5) * (this.backing.height-10)
     let endY = (t_endY - 0.5) * (this.backing.height-10)
     this.overlay.y = startY
