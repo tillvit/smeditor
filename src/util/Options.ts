@@ -49,7 +49,7 @@ export class Options {
     mousePlacement: false
   }
   static experimental = {
-    speedChangeWaveform: true
+    speedChangeWaveform: true,
   }
   static play = {
     offset: -0.044,

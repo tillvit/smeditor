@@ -11,7 +11,7 @@ const NOTE_TYPE_LOOKUP: Record<string, string> = {
   "L": "Lift",
 } 
 
-export class DanceNotedataParser extends NotedataParser {
+export class BasicNotedataParser extends NotedataParser {
   
   fromString(data: string): PartialNotedata {
     let measures = data.split(",")
@@ -66,14 +66,14 @@ export class DanceNotedataParser extends NotedataParser {
     let stats: NotedataStats = {
       npsGraph: this.getNPSPerMeasure(notedata, timingData),
       counts: {
-        taps: 0,
-        jumps: 0,
-        hands: 0,
-        holds: 0,
-        rolls: 0,
-        mines: 0,
-        fakes: 0,
-        lifts: 0
+        Taps: 0,
+        Jumps: 0,
+        Hands: 0,
+        Holds: 0,
+        Rolls: 0,
+        Mines: 0,
+        Fakes: 0,
+        Lifts: 0
       }
     }
     let row = -1
@@ -88,22 +88,22 @@ export class DanceNotedataParser extends NotedataParser {
             else if (holdBeats[i]! < note.beat) holdCols++
           }
         }
-        if (cols > 1) stats.counts.jumps++
-        if (cols + holdCols > 2) stats.counts.hands++
+        if (cols > 1) stats.counts.Jumps++
+        if (cols + holdCols > 2) stats.counts.Hands++
         cols = 0
         row = note.beat
       }
       if (note.type != "Mine" && !note.fake) cols++
       if (note.fake) {
-        stats.counts.fakes++
+        stats.counts.Fakes++
         continue
       }
       switch (note.type) {
-        case "Tap": stats.counts.taps++; break
-        case "Hold": stats.counts.holds++; break
-        case "Roll": stats.counts.rolls++; break
-        case "Lift": stats.counts.lifts++; break
-        case "Mine": stats.counts.mines++; break
+        case "Tap": stats.counts.Taps++; break
+        case "Hold": stats.counts.Holds++; break
+        case "Roll": stats.counts.Rolls++; break
+        case "Lift": stats.counts.Lifts++; break
+        case "Mine": stats.counts.Mines++; break
       }
       if (isHoldNote(note)) {
         holdBeats[note.col] = note.beat + note.hold
@@ -113,8 +113,8 @@ export class DanceNotedataParser extends NotedataParser {
     for (let i = 0; i < holdBeats.length; i ++) {
       if (holdBeats[i] && holdBeats[i]! < notedata[notedata.length - 1].beat) holdCols++
     }
-    if (cols > 1) stats.counts.jumps++
-    if (cols + holdCols > 2) stats.counts.hands++
+    if (cols > 1) stats.counts.Jumps++
+    if (cols + holdCols > 2) stats.counts.Hands++
     return stats
   }
 

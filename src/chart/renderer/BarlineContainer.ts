@@ -76,6 +76,7 @@ export class BarlineContainer extends Container {
     })
 
     this.children.filter(child => Date.now() - child.dirtyTime > 5000).forEach(child => {
+      child.destroy()
       this.removeChild(child)
     })
   }
@@ -109,7 +110,7 @@ export class BarlineContainer extends Container {
     newChild.marked = true
     newChild.anchor!.x = 0.5
     newChild.anchor!.y = 0.5
-    newChild.width = 384
+    newChild.width = this.renderer.chart.gameType.notefieldWidth + 128
     newChild.height = this.isMeasureLine(beat) ? 4 : 1
     newChild.visible = true
     this.barlineMap.set(beat, newChild as Barline)
@@ -136,7 +137,7 @@ export class BarlineContainer extends Container {
     newChild.marked = true
     newChild.anchor!.x = 1
     newChild.anchor!.y = 0.5 
-    newChild.x = -192-16
+    newChild.x = (this.renderer.chart.gameType.notefieldWidth + 128)/(-2)-16
     newChild.visible = true
     newChild.text = "" + beat/4
     this.barlineLabelMap.set(beat, newChild as BarlineLabel)

@@ -6,6 +6,7 @@ import { ChartManager } from './chart/ChartManager'
 import { MenubarManager } from './gui/MenubarManager'
 import { Keybinds } from './listener/Keybinds'
 import { ActionHistory } from './util/ActionHistory'
+import { BetterRoundedRect } from './util/BetterRoundedRect'
 import { FileSystem } from './util/FileSystem';
 import { Options } from './util/Options';
 import { getBrowser } from './util/Util';
@@ -26,6 +27,9 @@ export class App {
   windowManager: WindowManager
   menubarManager: MenubarManager
   actionHistory: ActionHistory
+
+  private lastWidth = window.innerWidth
+  private lastHeight = window.innerHeight
 
   frameTime = 0
 
@@ -53,11 +57,13 @@ export class App {
     })
     this.ticker.start()
     this.stage.sortableChildren = true
+
+    BetterRoundedRect.init(this.renderer)
     
     this.options = Options
     this.files = new FileSystem()
     this.chartManager = new ChartManager(this)
-    this.menubarManager = new MenubarManager(this, document.getElementById("menubar") as HTMLDivElement)
+    this.menubarManager = new MenubarManager(this, document.getElementsByClassName("menubar")[0] as HTMLDivElement)
     this.windowManager = new WindowManager(this, document.getElementById("windows") as HTMLDivElement)
     this.actionHistory = new ActionHistory(this)
 
@@ -106,8 +112,14 @@ export class App {
       }
     })
 
-    window.addEventListener("resize", this.onResize)
-    this.onResize()
+    setInterval(()=>{
+      if (this.lastHeight != window.innerHeight || this.lastWidth != window.innerWidth) {
+        this.lastHeight = window.innerHeight
+        this.lastWidth = window.innerWidth
+        this.onResize()
+        window.postMessage("resize")
+      }
+    },100)
 
     window.addEventListener('dragover', (event) => {
       event.preventDefault()
@@ -167,9 +179,9 @@ export class App {
     })
   }
 
-  onResize = () => {
+  onResize(){
     let screenWidth = window.innerWidth 
-    let screenHeight = window.innerHeight - document.getElementById("menubar")!.clientHeight
+    let screenHeight = window.innerHeight - document.getElementsByClassName("menubar")[0]!.clientHeight
     this.renderer.screen.width = screenWidth;
     this.renderer.screen.height = screenHeight;
     this.view.width = screenWidth * this.renderer.resolution;
@@ -190,7 +202,7 @@ declare global {
 
 document.querySelector("body")!.innerHTML = 
 `<div id="view-wrapper"> 
-  <div id="menubar"></div>
+  <div class="menubar"></div>
     <canvas id="pixi"></canvas>
   </div>
 <div id="windows"></div>
@@ -237,7 +249,7 @@ function init() {
       window.runSafari = async () => {
         document.querySelector("body")!.innerHTML = 
         `<div id="view-wrapper"> 
-          <div id="menubar"></div>
+          <div class="menubar"></div>
             <canvas id="pixi"></canvas>
           </div>
         <div id="windows"></div>

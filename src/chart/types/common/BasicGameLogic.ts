@@ -5,7 +5,7 @@ import { ChartManager } from "../../ChartManager"
 import { HoldNotedataEntry, isHoldNote, isTapNote, Notedata, NotedataEntry } from "../../sm/NoteTypes"
 import { GameLogic } from "../base/GameLogic"
 
-export class DanceGameLogic extends GameLogic {
+export class BasicGameLogic extends GameLogic {
 
   private chordCohesion: Map<number, NotedataEntry[]> = new Map
   private missNoteIndex: number = 0
@@ -15,7 +15,7 @@ export class DanceGameLogic extends GameLogic {
   update(chartManager: ChartManager): void {
     if (!chartManager.chart || !chartManager.chartView) return
     let hitTime = chartManager.getTime() + Options.play.offset
-    let hitWindowStart = hitTime - Options.play.timingCollection.maxWindowMS()/1000
+    let hitWindowStart = hitTime - Options.play.timingCollection.maxWindowMS()/1000 * Options.audio.rate
     let lastChord = -1
     // Do Misses
     while (chartManager.chart.notedata[this.missNoteIndex] && chartManager.chart.notedata[this.missNoteIndex].second < hitWindowStart) {
@@ -69,7 +69,7 @@ export class DanceGameLogic extends GameLogic {
       this.chordCohesion.get(note.beat)!.push(note)
     }
     let hitTime = chartManager.getTime() + Options.play.offset
-    let hitWindowStart = hitTime - Options.play.timingCollection.maxWindowMS()/1000
+    let hitWindowStart = hitTime - Options.play.timingCollection.maxWindowMS()/1000 * Options.audio.rate
     let firstHittableNote = bsearch(chartManager.chart.notedata, hitWindowStart, a => a.second) + 1
     if (firstHittableNote >= 1 && hitWindowStart <= chartManager.chart.notedata[firstHittableNote-1].second) firstHittableNote--
     this.missNoteIndex = firstHittableNote
@@ -98,6 +98,10 @@ export class DanceGameLogic extends GameLogic {
     if (closestNote) this.hitNote(chartManager, closestNote, hitTime)
   }
 
+  shouldAssistTick(note: NotedataEntry): boolean {
+    return !note.fake && note.type != "Mine"
+  }
+
   private hitNote(chartManager: ChartManager, note: NotedataEntry, hitTime: number) {
     note.gameplay!.hasHit = true
     if (isHoldNote(note)) {
@@ -107,7 +111,7 @@ export class DanceGameLogic extends GameLogic {
     }
     let chord = this.chordCohesion.get(note.beat)!
     if (chord.every(note => note.gameplay!.hasHit)) {
-      let judge = Options.play.timingCollection.judgeInput(hitTime-note.second)
+      let judge = Options.play.timingCollection.judgeInput((hitTime-note.second)/Options.audio.rate)
       let hideNote = Options.play.timingCollection.shouldHideNote(judge)
       chord.forEach(note => {
         chartManager.chartView!.doJudgment(note, hitTime-note.second, judge)
@@ -119,6 +123,7 @@ export class DanceGameLogic extends GameLogic {
 
   private getClosestNote(notedata: Notedata, hitTime: number, col: number, types: string[], windowMS?: number): NotedataEntry | undefined {
     windowMS = windowMS ?? Options.play.timingCollection.maxWindowMS()
+    windowMS *= Options.audio.rate
     let hitWindowStart = hitTime - windowMS/1000
     let hitWindowEnd = hitTime + windowMS/1000
     let firstHittableNote = bsearch(notedata, hitWindowStart, a => a.second) + 1

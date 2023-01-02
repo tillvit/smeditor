@@ -1,6 +1,11 @@
+import { Container } from "pixi.js"
+import { Options } from "../../../util/Options"
+import { EditMode } from "../../ChartManager"
 import { ChartRenderer } from "../../ChartRenderer"
 import { TimingWindow } from "../../play/TimingWindow"
+import { PartialNotedataEntry } from "../../sm/NoteTypes"
 import { Notefield } from "../base/Notefield"
+import { DanceNoteRenderer } from "./DanceNoteRenderer"
 import { DanceNoteTexture } from "./DanceNoteTexture"
 import { HoldJudgmentContainer } from "./HoldJudgmentContainer"
 import { NoteContainer } from "./NoteContainer"
@@ -13,6 +18,8 @@ export class DanceNotefield extends Notefield {
   private notes: NoteContainer
   private flashes: NoteFlashContainer
   private holdJudges: HoldJudgmentContainer
+  private ghostNote: Container
+  private ghostNoteEntry?: PartialNotedataEntry
 
   constructor(renderer: ChartRenderer) {
     super(renderer)
@@ -21,9 +28,22 @@ export class DanceNotefield extends Notefield {
 
     this.receptors = new ReceptorContainer(this, renderer)
     this.notes = new NoteContainer(this, renderer)
-    this.flashes = new NoteFlashContainer(this)
-    this.holdJudges = new HoldJudgmentContainer(this)
-    this.addChild(this.receptors, this.notes, this.flashes, this.holdJudges)
+    this.flashes = new NoteFlashContainer(this, renderer)
+    this.holdJudges = new HoldJudgmentContainer(this, renderer)
+    this.ghostNote = DanceNoteRenderer.createArrow()
+    this.ghostNote.visible = false
+    this.ghostNote.alpha = 0.4
+    this.addChild(this.receptors, this.ghostNote, this.notes, this.flashes, this.holdJudges)
+  }
+
+  setGhostNote(note?: PartialNotedataEntry): void {
+    this.ghostNoteEntry = note
+    if (!note) {
+      this.ghostNote.visible = false
+      return
+    }
+    DanceNoteRenderer.setData(this, this.ghostNote, note)
+    this.ghostNote.x = this.getColX(note.col)
   }
 
   update(beat: number, fromBeat: number, toBeat: number): void {
@@ -31,6 +51,12 @@ export class DanceNotefield extends Notefield {
     this.notes.renderThis(beat, fromBeat, toBeat)
     this.flashes.renderThis()
     this.holdJudges.renderThis()
+
+    if (this.ghostNoteEntry) {
+      this.ghostNote.y = this.renderer.getYPos(this.ghostNoteEntry.beat)
+      this.ghostNote.visible = Options.editor.mousePlacement && this.renderer.chartManager.getMode() == EditMode.Edit &&
+            this.ghostNoteEntry.beat >= fromBeat && this.ghostNoteEntry.beat <= toBeat && this.ghostNoteEntry.beat >= 0
+    }
   }
 
   doJudge(col: number, judge: TimingWindow): void {
@@ -55,7 +81,7 @@ export class DanceNotefield extends Notefield {
   }
 
   getColX(col: number): number {
-    return (col-this.getNumCols()/2+0.5)*64
+    return (col-this.getNumCols()/2+0.5)*64 
   }
 
   getNumCols(): number {
@@ -64,7 +90,9 @@ export class DanceNotefield extends Notefield {
 
   getRotFromCol(col: number): number {
     let ROTS = [0,-90,90,180]
-    if (this.getNumCols() == 3) ROTS = [0,90,180]
-    return ROTS[col]/180*Math.PI;
+    if (this.getNumCols() == 3) ROTS = [45,-90,135]
+    if (this.getNumCols() == 6) ROTS = [0,45,-90,90,135,180]
+    if (this.getNumCols() == 8) ROTS = [0,-90,90,180,0,-90,90,180]
+    return ROTS[col % ROTS.length]/180*Math.PI;
   }
 }

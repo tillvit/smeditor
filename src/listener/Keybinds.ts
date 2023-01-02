@@ -1,4 +1,6 @@
 import { App } from "../App"
+import { EditMode } from "../chart/ChartManager"
+import { GAMEPLAY_KEYBINDS } from "../data/GameplayKeybindData"
 import { KEYBINDS, Modifier, SPECIAL_KEYS } from "../data/KeybindData";
 
 const MODPROPS: ['ctrlKey', 'altKey', 'shiftKey', 'metaKey'] = ['ctrlKey', 'altKey', 'shiftKey', 'metaKey']
@@ -21,6 +23,24 @@ export class Keybinds {
         if (e[MODPROPS[i]]) mods.push(MODORDER[i])
       }
       let key = Keybinds.getKeyNameFromCode(e.code)
+
+      if (app.chartManager.getMode() == EditMode.Play && app.chartManager.chart?.gameType) {
+        let kbds = GAMEPLAY_KEYBINDS[app.chartManager.chart?.gameType.id] ?? []
+        let gp_matches = Object.values(kbds).filter(value => {
+          for (let keybind of value.keybinds) {
+            if (this.compareModifiers(keybind.mods, mods) && keybind.key == key) return true
+          }
+          return false
+        })
+        if (gp_matches.length > 0) { 
+          e.preventDefault() 
+          for (let match of gp_matches) {
+            if (e.repeat) continue
+            app.chartManager.judgeCol(match.col)
+            return
+          }
+        }
+      }
     
       let matches = Object.values(KEYBINDS).filter(value => {
         for (let keybind of value.keybinds) {
@@ -51,6 +71,24 @@ export class Keybinds {
         if (e[MODPROPS[i]]) mods.push(MODORDER[i])
       }
       let key = Keybinds.getKeyNameFromCode(e.code)
+
+      if (app.chartManager.getMode() == EditMode.Play && app.chartManager.chart?.gameType) {
+        let kbds = GAMEPLAY_KEYBINDS[app.chartManager.chart?.gameType.id] ?? []
+        let gp_matches = Object.values(kbds).filter(value => {
+          for (let keybind of value.keybinds) {
+            if (this.compareModifiers(keybind.mods, mods) && keybind.key == key) return true
+          }
+          return false
+        })
+        if (gp_matches.length > 0) { 
+          e.preventDefault() 
+          for (let match of gp_matches) {
+            if (e.repeat) continue
+            app.chartManager.judgeColUp(match.col)
+            return
+          }
+        }
+      }
     
       let matches = Object.values(KEYBINDS).filter(value => {
         for (let keybind of value.keybinds) {

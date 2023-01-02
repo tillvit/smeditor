@@ -1,5 +1,6 @@
 import { BLEND_MODES, Container, Sprite, Texture } from "pixi.js"
 import { Options } from "../../../util/Options"
+import { ChartRenderer } from "../../ChartRenderer"
 import { TimingWindow } from "../../play/TimingWindow"
 import { isHoldDroppedTimingWindow, isHoldTimingWindow, isMineTimingWindow, isStandardTimingWindow } from "../../play/TimingWindowCollection"
 import { DanceNotefield } from "./DanceNotefield"
@@ -25,15 +26,17 @@ interface NoteFlashObject extends Sprite {
 export class NoteFlashContainer extends Container {
 
   private notefield: DanceNotefield
+  private renderer: ChartRenderer
   children: NoteFlashObject[] = []
 
-  constructor(notefield: DanceNotefield) {
+  constructor(notefield: DanceNotefield, renderer: ChartRenderer) {
     super()
     this.notefield = notefield
+    this.renderer = renderer
   }
 
   renderThis() {
-    this.y = Options.chart.receptorYPos
+    this.y = this.renderer.getYPos(this.renderer.getBeat())
 
     for (let child of this.children) { 
       switch(child.type) {
@@ -52,8 +55,14 @@ export class NoteFlashContainer extends Container {
       }
     }
 
-    this.children.filter(child => Date.now() - child.createTime > 150 && child.type == "flash").forEach(child => this.removeChild(child))  
-    this.children.filter(child => Date.now() - child.createTime > 600 && child.type == "hold").forEach(child => this.removeChild(child))  
+    this.children.filter(child => Date.now() - child.createTime > 150 && child.type == "flash").forEach(child => {
+      child.destroy()
+      this.removeChild(child)
+    })  
+    this.children.filter(child => Date.now() - child.createTime > 600 && child.type == "hold").forEach(child => {
+      child.destroy()
+      this.removeChild(child)
+    })  
   }
 
   addFlash(col: number, judgment: TimingWindow) {
@@ -63,7 +72,10 @@ export class NoteFlashContainer extends Container {
     if (isMineTimingWindow(judgment)) tex = FLASH_TEX_MAP["mine"]
     if (isHoldTimingWindow(judgment)) tex = FLASH_TEX_MAP["w2"]
     if (isHoldTimingWindow(judgment) || isHoldDroppedTimingWindow(judgment)) {
-      this.children.filter(child => child.type == "hold").forEach(child => this.removeChild(child)) 
+      this.children.filter(child => child.type == "hold").forEach(child => {
+        child.destroy()
+        this.removeChild(child)
+      }) 
     }
     if (!tex) return
     let flash = new Sprite(tex) as NoteFlashObject
@@ -91,6 +103,9 @@ export class NoteFlashContainer extends Container {
   }
 
   reset() {
-    this.children.filter(child => child.type == "hold").forEach(child => this.removeChild(child)) 
+    this.children.filter(child => child.type == "hold").forEach(child => {
+      child.destroy()
+      this.removeChild(child)
+    }) 
   }
 }

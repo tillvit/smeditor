@@ -50,56 +50,12 @@ export const SPECIAL_KEYS: {[key: string]: string} = {
 };
 
 export const KEYBINDS: {[key: string]: Keybind} = {
-  left: {
-    label: "Left",
-    keybinds: [
-      {key: "Left", mods: []},
-      {key: "A", mods: []}
-    ],
-    disableRepeat: true,
-    disabled: (app) => app.chartManager.getMode() != EditMode.Play,
-    callback: (app) => app.chartManager.judgeCol(0),
-    callbackKeyUp: (app) => app.chartManager.judgeColUp(0)
-  },
-  down: {
-    label: "Down",
-    keybinds: [
-      {key: "Down", mods: []},
-      {key: "S", mods: []}
-    ],
-    disableRepeat: true,
-    disabled: (app) => app.chartManager.getMode() != EditMode.Play,
-    callback: (app) => app.chartManager.judgeCol(1),
-    callbackKeyUp: (app) => app.chartManager.judgeColUp(1)
-  },
-  up: {
-    label: "Up",
-    keybinds: [
-      {key: "Up", mods: []},
-      {key: "W", mods: []}
-    ],
-    disableRepeat: true,
-    disabled: (app) => app.chartManager.getMode() != EditMode.Play,
-    callback: (app) => app.chartManager.judgeCol(2),
-    callbackKeyUp: (app) => app.chartManager.judgeColUp(2)
-  },
-  right: {
-    label: "Right",
-    keybinds: [
-      {key: "Right", mods: []},
-      {key: "D", mods: []}
-    ],
-    disableRepeat: true,
-    disabled: (app) => app.chartManager.getMode() != EditMode.Play,
-    callback: (app) => app.chartManager.judgeCol(3),
-    callbackKeyUp: (app) => app.chartManager.judgeColUp(3)
-  },
   playback: {
     label: "Play/Pause",
     keybinds: [
       {key: "Space", mods: []}
     ],
-    disabled: (app) => !app.chartManager.chartView,
+    disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.playPause()
   },
   decreaseSnap: {

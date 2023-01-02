@@ -256,7 +256,7 @@ button:disabled {
 	box-shadow: inset 0 0 3px 2px rgba(16, 98, 156, 0.8);
 }
 
-#menubar {
+.menubar {
   display: flex;
   background-color: #555;
 }
@@ -272,27 +272,23 @@ button:disabled {
   align-items: center;
 }
 
-#menubar > .menu-item > .title {
+.menubar > .menu-item > .title {
   padding: 4px 10px 4px 10px;
 }
 
 
-.dropdown {
+.menubar .menubar-dropdown {
   display: none;
   background-color: #555;
   border: 1px solid #444;
   position: absolute;
 }
 
-.dropdown > div {
-  clear: left;
-}
-
-.menu-item:not(.disabled):hover > .dropdown, .dropdown:not(.disabled):hover {
+.menu-item:not(.disabled):hover > .menubar-dropdown, .menubar-dropdown:not(.disabled):hover {
   display: block;
 }
 
-.menu-item .dropdown .dropdown {
+.menu-item .menubar-dropdown .menubar-dropdown {
   left: 100%;
   top: 0
 }
@@ -327,16 +323,13 @@ button:disabled {
   margin: 4px;
 }
 
-.dropdown {
-  display: none;
-}
 
 .check-icon {
   position: relative;
   right: 16px;
 }
 
-.chart-view-wrapper {
+.chart-view-scroller {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -474,4 +467,58 @@ input:focus {
 
 input.short {
   width: 40px;
+}
+
+.chart-view-type-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  column-gap: 10px;
+  margin-bottom: 10px;
+}
+
+.dropdown {
+  font-size: 12px;
+}
+
+.dropdown-selected {
+	background: linear-gradient(0deg, #333, #555);
+	border: 1px solid black;
+	border-radius: 5px;
+	padding: 3px;
+	padding-left: 7px;
+	padding-right: 7px;
+}
+.dropdown-selected::after {
+  content: "";
+  background: center center no-repeat;
+  background-size: contain;
+  display: block;
+  width: 20px;
+  height: 15px;
+  float: right;
+	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAAbklEQVRIie2PMQqAMAxFXwfP6qJVPIjYzcOKdUkhQ0BaCoLkLS3k818CjuN8ztApYzIDl7xvmalFsAIZuIFozKPMMrC0CAJwKIkuGVX5KdkmLEm3ci1JSlLKU49yLSmXVG1es0EANvnvInKcP/AA784fpjlWwNQAAAAASUVORK5CYII=");
+}
+.dropdown-selected:hover {
+	filter: brightness(1.3);
+}
+.dropdown-selected:active {
+	filter: brightness(0.9);
+}
+
+.dropdown-items { 
+  position: absolute;
+  background: #333;
+  max-height: 200px;
+  overflow: auto;
+}
+
+.dropdown-item { 
+  padding: 3px;
+	padding-left: 7px;
+	padding-right: 7px;
+}
+
+.dropdown-item:hover { 
+  background: #555;
 }

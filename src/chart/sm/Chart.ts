@@ -62,7 +62,7 @@ export class Chart {
       }
     }
     this.recalculateStats()
-    console.log("Loading chart " + this.difficulty + " " + this.meter + " " + this.gameType)
+    console.log("Loading chart " + this.difficulty + " " + this.meter + " " + this.gameType.id)
   }
 
   getNotedataStats() {
@@ -110,6 +110,7 @@ export class Chart {
     if (index >= 1 && this.notedata[index-1].beat > note.beat) index--
     this.notedata.splice(index, 0, computedNote)
     this.recalculateStats()
+    window.postMessage("chartModified")
     return computedNote
   }
 
@@ -128,6 +129,7 @@ export class Chart {
     this.notedata.splice(i, 1)
     Object.assign(noteToModify, properties)
     this.addNote(noteToModify)
+    window.postMessage("chartModified")
   }
 
   removeNote(note: PartialNotedataEntry): NotedataEntry | undefined {
@@ -135,6 +137,7 @@ export class Chart {
     if (i == -1) return
     let removedNote = this.notedata.splice(i, 1)
     this.recalculateStats()
+    window.postMessage("chartModified")
     return removedNote[0]
   }
   

@@ -1,6 +1,7 @@
 import { Container } from "pixi.js"
 import { ChartRenderer } from "../../ChartRenderer"
 import { TimingWindow } from "../../play/TimingWindow"
+import { PartialNotedataEntry } from "../../sm/NoteTypes"
 
 export abstract class Notefield extends Container {
 
@@ -12,6 +13,8 @@ export abstract class Notefield extends Container {
   }
 
   abstract update(beat: number, fromBeat: number, toBeat: number): void
+
+  abstract setGhostNote(note?: PartialNotedataEntry): void
 
   abstract reset(): void
 

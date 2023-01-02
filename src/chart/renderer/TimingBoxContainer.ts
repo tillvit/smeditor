@@ -1,4 +1,5 @@
-import { BitmapText, Container, Graphics } from "pixi.js"
+import { BitmapText, Container } from "pixi.js"
+import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
 import { roundDigit } from "../../util/Util"
 import { EditMode } from "../ChartManager"
@@ -11,14 +12,13 @@ interface TimingBoxObject extends Container {
   deactivated: boolean,
   marked: boolean,
   dirtyTime: number,
-  backgroundObj: Graphics,
+  backgroundObj: BetterRoundedRect,
   textObj: BitmapText,
 }
 
 const timingNumbers = {
   fontName: "Assistant",
-  fontSize: 15,
-  fill: ['#ffffff']
+  fontSize: 15
 }
 
 export class TimingBoxContainer extends Container {
@@ -70,6 +70,7 @@ export class TimingBoxContainer extends Container {
     })
 
     this.children.filter(child => Date.now() - child.dirtyTime > 5000).forEach(child => {
+      child.destroy()
       this.removeChild(child)
     })
   }
@@ -98,7 +99,7 @@ export class TimingBoxContainer extends Container {
     if (!newChild) { 
       newChild = new Container() as TimingBoxObject 
       newChild.textObj = new BitmapText("", timingNumbers)
-      newChild.backgroundObj = new Graphics()
+      newChild.backgroundObj = new BetterRoundedRect()
       newChild.addChild!(newChild.backgroundObj)
       newChild.addChild!(newChild.textObj)
       this.addChild(newChild as TimingBoxObject)
@@ -109,7 +110,7 @@ export class TimingBoxContainer extends Container {
     newChild.visible = true
 
     let text_style = TIMING_EVENT_DATA[event.type] ?? ["right", 0x000000]
-    let x = text_style[0] == "right" ? 208 : -208
+    let x = (text_style[0] == "right" ? 1 : -1) * (this.renderer.chart.gameType.notefieldWidth*0.5+64+16)
     if (this.same_beat != event.beat) {
       this.last_length_left = 0
       this.last_length_right = 0
@@ -152,11 +153,11 @@ export class TimingBoxContainer extends Container {
     newChild.textObj!.anchor!.x = text_style[0] == "right" ? 0 : 1
     newChild.textObj!.anchor!.y = 0.5
     newChild.visible = true
-    newChild.backgroundObj!.clear()
-    newChild.backgroundObj!.beginFill(text_style[1]); 
-    newChild.backgroundObj!.lineStyle(1, 0x000000, 1);
-    newChild.backgroundObj!.drawRoundedRect(-5 - (text_style[0] == "right" ? 0 : newChild.textObj!.width),-10, newChild.textObj!.width + 10, 25,5);
-    newChild.backgroundObj!.endFill();
+    newChild.backgroundObj!.width = newChild.textObj!.width + 10
+    newChild.backgroundObj!.height = 25 
+    newChild.backgroundObj!.position.x = -5 - (text_style[0] == "right" ? 0 : newChild.textObj!.width)
+    newChild.backgroundObj!.position.y = -10
+    newChild.backgroundObj!.tint = text_style[1]
     if (text_style[0] == "left") this.last_length_left += newChild.textObj!.width + 15
     if (text_style[0] == "right") this.last_length_right += newChild.textObj!.width + 15 
     this.same_beat = event.beat!

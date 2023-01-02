@@ -12,6 +12,7 @@ import { isHoldNote, PartialNotedataEntry } from "./sm/NoteTypes"
 import { Options } from "../util/Options"
 import { GameplayStats } from "./play/GameplayStats"
 import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
+import { GameTypeRegistry } from "./types/GameTypeRegistry"
 
 const SNAPS = [1,2,3,4,6,8,12,16,24,48,-1]
 
@@ -141,7 +142,7 @@ export class ChartManager {
       if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
       let time = this.songAudio.seek()
       if (this.songAudio.isPlaying()) { 
-        this.setTime(time) 
+        this.setTime(time, true) 
         if (!this.holdEditing.every(x => !x)) {
           for (let col = 0; col < this.holdEditing.length; col++) {
             if (!this.holdEditing[col] || this.holdEditing[col]!.type == "mouse") continue
@@ -154,7 +155,7 @@ export class ChartManager {
       let notedata = this.chart.notedata
       let hasPlayed = false
       while(this.noteIndex < notedata.length && time > notedata[this.noteIndex].second + Options.audio.effectOffset) {
-        if (this.songAudio.isPlaying() && (notedata[this.noteIndex].type != "Fake" && notedata[this.noteIndex].type != "Mine") && !notedata[this.noteIndex].fake) {
+        if (this.songAudio.isPlaying() && this.chart.gameType.gameLogic.shouldAssistTick(notedata[this.noteIndex])) {
           if (this.mode != EditMode.Play) this.chartView.doJudgment(notedata[this.noteIndex], 0, TIMING_WINDOW_AUTOPLAY)
           if (!hasPlayed && Options.audio.assistTick) {
             this.assistTick.play()
@@ -177,10 +178,12 @@ export class ChartManager {
       tpsUpdate()
     }, 5)
 
-    window.addEventListener("resize", ()=>{
-      if (this.chartView) {
-        this.chartView.x = this.app.renderer.screen.width/2
-        this.chartView.y = this.app.renderer.screen.height/2
+    window.addEventListener("message", (event)=>{
+      if (event.data == "resize" && event.source == window) {
+        if (this.chartView) {
+          this.chartView.x = this.app.renderer.screen.width/2
+          this.chartView.y = this.app.renderer.screen.height/2
+        }
       }
     })
 
@@ -259,11 +262,12 @@ export class ChartManager {
     if (seekBack) this.seekBack()
   }
 
-  setTime(time: number) {
+  setTime(time: number, ignoreSetSongTime?: boolean) {
     if (!this.chart) return
     let seekBack = this.time > time
     this.time = time
     this.beat = this.chart.getBeat(this.time)
+    if (!ignoreSetSongTime) this.songAudio.seek(this.time)
     if (seekBack) this.seekBack()
   }
 
@@ -278,6 +282,7 @@ export class ChartManager {
     this.sm = new Simfile(smFile)
 
     await this.sm.loaded
+    window.postMessage("smLoaded")
     await this.loadChart()
     if (this.time == 0) this.setBeat(0)
   }
@@ -285,16 +290,25 @@ export class ChartManager {
   async loadChart(chart?: Chart) {
     if (this.sm == undefined) return
     if (chart == undefined) {
-      for (let charts of Object.values(this.sm.charts)) {
-        if (charts.length > 0) chart = charts.at(-1)
+      for (let gameType of GameTypeRegistry.getPriority()) {
+        let charts = this.sm.charts[gameType.id]
+        if (charts && charts.length > 0) {
+          chart = charts.at(-1)
+          break
+        }
       }
       if (!chart) return
     }
     
     this.chart = chart
     this.beat = this.chart.getBeat(this.time)
+
+    window.postMessage("chartModified")
   
-    if (this.chartView) this.app.stage.removeChild(this.chartView)
+    if (this.chartView) {
+      this.chartView.destroy()
+      this.app.stage.removeChild(this.chartView)
+    }
       
     this.seekBack()
     this.chartView = new ChartRenderer(this)

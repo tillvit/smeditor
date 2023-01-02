@@ -1,6 +1,8 @@
 import { RenderTexture, Container, Geometry, Texture, Shader, Mesh, Sprite, Rectangle, BaseTexture } from "pixi.js"
 import { App } from "../../../App"
 
+const mine_frame_texture = Texture.from('assets/noteskin/dance/mine/frame.png');
+
 export class DanceNoteTexture {
  
   static noop_frag: string
@@ -56,9 +58,13 @@ export class DanceNoteTexture {
       let shader_body = Shader.from(this.noop_vert, this.mine_gradient_frag, 
         {sampler0: this.mine_parts_texture, time: 0})
       let mine_body = new Mesh(DanceNoteTexture.mine_body_geometry, shader_body);
-      mine_body.x = 32
-      mine_body.y = 32
+      let mine_frame = new Sprite(mine_frame_texture)
+      mine_frame.width = 64
+      mine_frame.height = 64
+      mine_frame.anchor.set(0.5)
+      DanceNoteTexture.mine_container.position.set(32)
       DanceNoteTexture.mine_container.addChild(mine_body)
+      DanceNoteTexture.mine_container.addChild(mine_frame)
     }
     
     app.ticker.add(() => {
@@ -108,6 +114,7 @@ export class DanceNoteTexture {
       (<Mesh>DanceNoteTexture.arrow_container.children[i]).shader.uniforms.time = beat
     }
     (<Mesh>DanceNoteTexture.mine_container.children[0]).shader.uniforms.time = second
+    DanceNoteTexture.mine_container.rotation = second % 1 * Math.PI * 2
   }
 
   static getSpriteWithQuant(i: number) {

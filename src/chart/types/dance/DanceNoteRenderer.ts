@@ -4,7 +4,6 @@ import { PartialNotedataEntry } from "../../sm/NoteTypes"
 import { DanceNotefield } from "./DanceNotefield"
 import { DanceNoteTexture } from "./DanceNoteTexture"
 
-const mine_frame_texture = Texture.from('assets/noteskin/dance/mine/frame.png');
 
 const hold_body_texture = Texture.from('assets/noteskin/dance/hold/body.png');
 const hold_cap_texture = Texture.from('assets/noteskin/dance/hold/cap.png');
@@ -28,10 +27,6 @@ export class DanceNoteRenderer {
     arrow.addChild(item_container)
     arrow.interactive = true
     return arrow
-  }
-  static setMineTime(arrow: Container, seconds: number) {
-    let item = arrow.getChildAt(1)
-    item.rotation = seconds % 1 * Math.PI * 2
   }
 
   static setHoldLength(arrow: Container, length: number) {
@@ -69,11 +64,12 @@ export class DanceNoteRenderer {
     let beat = note.beat
     let col = note.col
     let type = note.type
+
+    item_container.rotation = notefield.getRotFromCol(col)
     
     if (type == "Tap" || type == "Fake" || type == "Hold" || type == "Roll" || type == "Lift") {
       let note = DanceNoteTexture.getSpriteWithQuant(getQuant(beat))
       item_container.addChild(note);
-      item_container.rotation = notefield.getRotFromCol(col)
       if (type == "Fake" || type == "Lift") {
         let icon = new Sprite(icons[type])
         icon.width = 32
@@ -105,14 +101,12 @@ export class DanceNoteRenderer {
         DanceNoteRenderer.setHoldBrightness(arrow, 0.8)
       }
     }else if (type == "Mine") {
-      let mine_frame = new Sprite(mine_frame_texture)
-      let mine_body = DanceNoteTexture.getMine()
-      mine_frame.width = 64
-      mine_frame.height = 64
-      mine_frame.anchor.set(0.5)
+      let mine = DanceNoteTexture.getMine()
+      mine.width = 64
+      mine.height = 64
+      mine.anchor.set(0.5)
   
-      item_container.addChild(mine_body);
-      item_container.addChild(mine_frame);
+      item_container.addChild(mine);
       
     }
   }

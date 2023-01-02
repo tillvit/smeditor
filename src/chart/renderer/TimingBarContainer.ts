@@ -62,7 +62,10 @@ export class TimingBarContainer extends Container {
     }
     this.errorText.alpha = clamp((3000 - (Date.now() - this.errorTextTime))/2000, 0, 1)
     this.barline.width = Options.play.timingCollection.maxWindowMS()/1000*2*400
-    this.barlines.children.filter(child => Date.now() - (child as TimingBarObject).createTime > 3000).forEach(child => this.barlines.removeChild(child))  
+    this.barlines.children.filter(child => Date.now() - (child as TimingBarObject).createTime > 3000).forEach(child => {
+      child.destroy()
+      this.barlines.removeChild(child)
+    })  
   }
 
   addBar(error: number, judge: TimingWindow) {

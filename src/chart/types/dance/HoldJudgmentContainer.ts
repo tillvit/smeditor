@@ -1,5 +1,5 @@
 import { Assets, Container, Rectangle, Sprite, Texture } from "pixi.js"
-import { Options } from "../../../util/Options"
+import { ChartRenderer } from "../../ChartRenderer"
 import { TimingWindow } from "../../play/TimingWindow"
 import { isHoldDroppedTimingWindow, isHoldTimingWindow } from "../../play/TimingWindowCollection"
 import { DanceNotefield } from "./DanceNotefield"
@@ -12,16 +12,18 @@ interface HoldJudgmentObject extends Sprite {
 export class HoldJudgmentContainer extends Container {
 
   children: HoldJudgmentObject[] = []
+  renderer: ChartRenderer
 
   private static held_tex?: Texture
   private static dropped_tex?: Texture
 
   private notefield: DanceNotefield
 
-  constructor(notefield: DanceNotefield) {
+  constructor(notefield: DanceNotefield, renderer: ChartRenderer) {
     super()
     if (!HoldJudgmentContainer.held_tex) this.loadTex()
     this.notefield = notefield
+    this.renderer = renderer
   }
 
   async loadTex() {
@@ -35,7 +37,7 @@ export class HoldJudgmentContainer extends Container {
   }
 
   renderThis() {
-    this.y = Options.chart.receptorYPos + 48
+    this.y = this.renderer.getYPos(this.renderer.getBeat()) + 48
 
     for (let child of this.children) { 
       let time = (Date.now() - child.createTime)/1000
@@ -47,11 +49,14 @@ export class HoldJudgmentContainer extends Container {
         child.scale.set(0.3*(1-p))
       }
     }
-    this.children.filter(child => Date.now() - child.createTime > 800).forEach(child => this.removeChild(child))  
+    this.children.filter(child => Date.now() - child.createTime > 800).forEach(child => {
+      child.destroy()
+      this.removeChild(child)
+    })  
   }
 
   addJudge(col: number, judgment: TimingWindow) {
-    if (!isHoldDroppedTimingWindow(judgment) || isHoldTimingWindow(judgment)) return
+    if (!isHoldDroppedTimingWindow(judgment) && !isHoldTimingWindow(judgment)) return
     let judge = new Sprite(isHoldDroppedTimingWindow(judgment) ? HoldJudgmentContainer.dropped_tex : HoldJudgmentContainer.held_tex) as HoldJudgmentObject
     judge.anchor.set(0.5)
     judge.x = this.notefield.getColX(col)

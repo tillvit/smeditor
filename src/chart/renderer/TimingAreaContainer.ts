@@ -83,6 +83,7 @@ export class TimingAreaContainer extends Container {
     })
 
     this.children.filter(child => Date.now() - child.dirtyTime > 5000).forEach(child => {
+      child.destroy()
       this.removeChild(child)
     })
   }
@@ -121,7 +122,7 @@ export class TimingAreaContainer extends Container {
     newChild.marked = true
     newChild.anchor!.x = 0.5
     newChild.anchor!.y = 0
-    newChild.width = 384
+    newChild.width = this.renderer.chart.gameType.notefieldWidth + 128
     newChild.visible = true
     newChild.tint = TIMING_EVENT_DATA[event.type][1]
     newChild.alpha = 0.2

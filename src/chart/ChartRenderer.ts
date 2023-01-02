@@ -1,6 +1,6 @@
 import { Waveform } from "./renderer/Waveform";
 import { ChartManager, EditMode } from "./ChartManager"
-import { Container, Point, Rectangle} from "pixi.js"
+import { Container, Point, Rectangle } from "pixi.js"
 import { Options } from "../util/Options"
 import { Chart } from "./sm/Chart"
 import { NotedataEntry } from "./sm/NoteTypes"
@@ -11,6 +11,8 @@ import { TimingWindow } from "./play/TimingWindow"
 import { JudgmentContainer } from "./renderer/JudgmentContainer"
 import { TimingBarContainer } from "./renderer/TimingBarContainer"
 import { Notefield } from "./types/base/Notefield"
+import { SnapContainer } from "./renderer/SnapContainer"
+import { NoteLayoutSprite } from "./renderer/NoteLayoutSprite"
 
 export class ChartRenderer extends Container {
 
@@ -32,8 +34,9 @@ export class ChartRenderer extends Container {
   private timingAreas: TimingAreaContainer
   private timingBoxes: TimingBoxContainer
   private timingBar: TimingBarContainer
-  // private editingArrow: Container
+  private noteLayout: NoteLayoutSprite
   private notefield: Notefield
+  private snapDisplay: SnapContainer
   private judgment: JudgmentContainer
   
  
@@ -47,9 +50,9 @@ export class ChartRenderer extends Container {
     this.timingAreas = new TimingAreaContainer(this)
     this.timingBoxes = new TimingBoxContainer(this)
     this.timingBar = new TimingBarContainer(this)
-    // this.editingArrow = DanceNoteRenderer.createArrow({beat: 0, col: 1, type: "Tap"})
-    // this.editingArrow.alpha = 0.4
+    this.noteLayout = new NoteLayoutSprite(this)
     this.notefield = new this.chart.gameType.notefield(this)
+    this.snapDisplay = new SnapContainer(this)
     this.judgment = new JudgmentContainer()
 
     this.addChild(this.waveform)
@@ -57,9 +60,10 @@ export class ChartRenderer extends Container {
     this.addChild(this.timingAreas)
     this.addChild(this.timingBoxes)
     this.addChild(this.timingBar)
-    // this.addChild(this.editingArrow)
     this.addChild(this.notefield)
+    this.addChild(this.snapDisplay)
     this.addChild(this.judgment)
+    this.addChild(this.noteLayout)
 
     this.chartManager.app.stage.addChild(this)
 
@@ -152,8 +156,10 @@ export class ChartRenderer extends Container {
     this.timingBoxes.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
     this.timingBar.renderThis()
     this.notefield.update(beat, renderBeatLowerLimit, renderBeatLimit)
+    this.snapDisplay.renderThis()
     this.waveform.renderThis(beat)
     this.judgment.renderThis()
+    this.noteLayout.renderThis()
 
     if (this.lastMousePos && this.chartManager.getMode() != EditMode.Play) {
       let snap = Options.chart.snap == 0 ? 1/48 : Options.chart.snap
@@ -169,23 +175,16 @@ export class ChartRenderer extends Container {
         if (col > 3 || col < 0) {
           this.lastMouseBeat = -1
           this.lastMouseCol = -1
+          this.notefield.setGhostNote()
         } else {
-          
-          // DanceNoteRenderer.setData(this.notefield, this.editingArrow, {
-          //   beat: snapBeat,
-          //   col: this.lastMouseCol,
-          //   type: this.chartManager.getEditingNoteType()
-          // })
+          this.notefield.setGhostNote({
+            beat: snapBeat,
+            col: this.lastMouseCol,
+            type: this.chartManager.getEditingNoteType()
+          })
         }
       }
     }
-
-    // this.editingArrow.visible = Options.editor.mousePlacement && this.lastMouseCol != -1 && this.lastMouseBeat != -1 && this.editingCol == -1 && this.lastMouseBeat >= renderBeatLowerLimit && this.lastMouseBeat <= renderBeatLimit && this.lastMouseBeat >= 0 
-    // this.editingArrow.x = this.lastMouseCol*64-96
-    // this.editingArrow.y = this.getYPos(this.lastMouseBeat)
-    // if (this.chartManager.getEditingNoteType() == "Mine") {
-    //   DanceNoteRenderer.setMineTime(this.editingArrow, time)
-    // }
   }
 
   getTime(): number {
@@ -212,6 +211,7 @@ export class ChartRenderer extends Container {
     if (Options.chart.CMod) {
       return (this.chart.getSeconds(beat)-currentTime)*Options.chart.speed/100*64*4 + Options.chart.receptorYPos
     }
+    if (currentBeat == beat) return Options.chart.receptorYPos
     if (Options.chart.doSpeedChanges) return (this.chart.timingData.getEffectiveBeat(beat) - this.chart.timingData.getEffectiveBeat(currentBeat)) * Options.chart.speed/100*64 * this.speedMult + Options.chart.receptorYPos
     return (beat - currentBeat)*Options.chart.speed/100*64 + Options.chart.receptorYPos
   }
@@ -226,12 +226,12 @@ export class ChartRenderer extends Container {
     return this.chart.getSeconds(this.getBeatFromYPos(yp))
   }
 
-  getBeatFromYPos(yp: number): number {
+  getBeatFromYPos(yp: number, ignoreSpeeds?: boolean): number {
     let currentBeat = this.getBeat()
     if (Options.chart.CMod) {
       return this.chart.getBeat(this.getTimeFromYPos(yp))
     }
-    if (Options.chart.doSpeedChanges) return this.chart.getBeatFromEffectiveBeat((yp - Options.chart.receptorYPos)/64*100/Options.chart.speed/this.speedMult+this.chart.timingData.getEffectiveBeat(currentBeat))
+    if (Options.chart.doSpeedChanges && !ignoreSpeeds) return this.chart.getBeatFromEffectiveBeat((yp - Options.chart.receptorYPos)/64*100/Options.chart.speed/this.speedMult+this.chart.timingData.getEffectiveBeat(currentBeat))
     return (yp - Options.chart.receptorYPos)/64*100/Options.chart.speed+currentBeat
   }
 

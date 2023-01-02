@@ -1,6 +1,7 @@
 import { App } from "../App"
 import { Chart } from "../chart/sm/Chart"
-import { GameType } from "../chart/types/GameTypeRegistry"
+import { GameType, GameTypeRegistry } from "../chart/types/GameTypeRegistry"
+import { Dropdown } from "../gui/Dropdown"
 import { Window } from "./Window"
 
 type ChartListItem = HTMLDivElement & {
@@ -16,7 +17,7 @@ export class ChartListWindow extends Window {
     super({
       title: "Chart List", 
       width: 500,
-      height: 250,
+      height: 300,
       win_id: "chart_list"
     })
     this.app = app
@@ -29,9 +30,40 @@ export class ChartListWindow extends Window {
 
     let padding = document.createElement("div")
     padding.classList.add("padding")
-    let wrapper = document.createElement("div")
-    wrapper.classList.add("chart-view-wrapper")
-    padding.appendChild(wrapper)
+
+    let gameTypeWrapper = document.createElement("div")
+    gameTypeWrapper.classList.add("chart-view-type-wrapper")
+
+    let gameTypeLabel = document.createElement("div")
+    gameTypeLabel.classList.add("chart-view-type-label")
+    gameTypeLabel.innerText = "Game Type:"
+
+    let gameTypeDropdown = Dropdown.create(GameTypeRegistry.getPriority().map(gameType => {
+      let charts = this.app.chartManager.sm?.charts[gameType.id] ?? []
+      return gameType.id + " (" + charts.length + ")"
+    }), this.gameType.id + " (" + (this.app.chartManager.sm?.charts[this.gameType.id] ?? []).length + ") ")
+    gameTypeDropdown.onChange((value) => {
+      this.gameType = GameTypeRegistry.getGameType(value.split(" ")[0]) ?? this.gameType
+      this.loadCharts(chartList, chartInfo)
+    })
+    window.onmessage = (message) => { 
+      if (message.data == "smLoaded" && message.source == window) {
+        gameTypeDropdown.setItems(GameTypeRegistry.getPriority().map(gameType => {
+          let charts = this.app.chartManager.sm?.charts[gameType.id] ?? []
+          return gameType.id + " (" + charts.length + ")"
+        }))
+        gameTypeDropdown.setSelected(this.gameType.id + " (" + (this.app.chartManager.sm?.charts[this.gameType.id] ?? []).length + ") ")
+        this.gameType = this.app.chartManager.chart!.gameType ?? this.gameType
+        this.loadCharts(chartList, chartInfo)
+      }
+    }
+    gameTypeWrapper.appendChild(gameTypeLabel)
+    gameTypeWrapper.appendChild(gameTypeDropdown.view)
+
+    let scroller = document.createElement("div")
+    scroller.classList.add("chart-view-scroller")
+    padding.appendChild(gameTypeWrapper)
+    padding.appendChild(scroller)
 
     let chartList = document.createElement("div")
     chartList.classList.add("chart-list")
@@ -39,11 +71,17 @@ export class ChartListWindow extends Window {
     let chartInfo = document.createElement("div")
     chartInfo.classList.add("chart-info")
 
-    wrapper.appendChild(chartList)
-    wrapper.appendChild(chartInfo)
+    scroller.appendChild(chartList)
+    scroller.appendChild(chartInfo)
 
+    viewElement.appendChild(padding) 
 
+    this.loadCharts(chartList, chartInfo)
+  }
+
+  private loadCharts(chartList: HTMLDivElement, chartInfo: HTMLDivElement) {
     let charts = this.app.chartManager.sm?.charts[this.gameType.id] ?? []
+    let chartEls: HTMLElement[] = []
     charts.forEach(chart => {
       let chartListItem = document.createElement("div") as ChartListItem
       chartListItem.classList.add("chart-list-item")
@@ -53,7 +91,7 @@ export class ChartListWindow extends Window {
       chartListItem.onclick = () => {
         if (chartListItem.chart == this.app.chartManager.chart) return
         this.app.chartManager.loadChart(chartListItem.chart)
-        padding.querySelectorAll(".selected").forEach(el => el.classList.remove("selected"))
+        chartList.querySelectorAll(".selected").forEach(el => el.classList.remove("selected"))
         chartListItem.classList.add("selected")
       }
 
@@ -81,16 +119,19 @@ export class ChartListWindow extends Window {
 
       chartListItem.appendChild(title)
       chartListItem.appendChild(attributes)
-      chartList.appendChild(chartListItem)
+      chartEls.push(chartListItem)
     });
-
-
-    viewElement.appendChild(padding) 
+    console.log(chartEls)
+    chartList.replaceChildren(...chartEls)
     this.loadChartDetails(chartInfo)
   }
 
   private loadChartDetails(chartInfo: HTMLDivElement, chart?: Chart) {
     chart = chart ?? this.app.chartManager.chart!
+    if (chart.gameType.id != this.gameType.id) {
+      chartInfo.replaceChildren()
+      return
+    }
     if (!chart) return
     let main = document.createElement("div")
     main.classList.add("chart-info-main")
@@ -110,6 +151,17 @@ export class ChartListWindow extends Window {
 
     let notedataStats = chart.getNotedataStats()
 
+    let nps = document.createElement("div")
+    nps.classList.add("chart-info-grid-item")
+    let label = document.createElement("div")
+    label.innerText = "Peak NPS"
+    label.classList.add("title", "chart-info-grid-label")
+    let count = document.createElement("div")
+    count.innerText = Math.max(...notedataStats.npsGraph).toFixed(2) + ""
+    count.classList.add("title", "chart-info-grid-count")
+    nps.appendChild(label)
+    nps.appendChild(count)
+
     let grid = document.createElement("div")
     grid.classList.add("chart-info-grid")
     Object.entries(notedataStats.counts).forEach(entry => {
@@ -126,7 +178,7 @@ export class ChartListWindow extends Window {
       grid.appendChild(item)
     })
 
-    chartInfo.replaceChildren(main,credit,grid)
+    chartInfo.replaceChildren(main,credit,nps,grid)
   }
 }
 

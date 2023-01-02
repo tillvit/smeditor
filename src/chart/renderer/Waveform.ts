@@ -24,12 +24,14 @@ export class Waveform extends Container {
 
   private lastReZoom: number
   private lastZoom: number
+  private zoom: number
 
   constructor(renderer: ChartRenderer) {
     super()
     this.renderer = renderer
     this.chartAudio = this.renderer.chartManager.songAudio
     this.lastZoom = this.getZoom()
+    this.zoom = this.getZoom()
     this.lastReZoom = Date.now()
     this.chartAudio.addWaveform(this)
     this.refilter()
@@ -37,7 +39,7 @@ export class Waveform extends Container {
 
   private async stripWaveform(rawData: Float32Array | undefined): Promise<number[] | undefined> {
     if (rawData == undefined) return
-    let blockSize = this.chartAudio.getSampleRate() / (this.getZoom()*4); // Number of samples in each subdivision
+    let blockSize = this.chartAudio.getSampleRate() / (this.zoom*4); // Number of samples in each subdivision
     let samples = Math.floor(rawData.length / blockSize);
     let filteredData = [];
     for (let i = 0; i < samples; i++) {
@@ -65,10 +67,14 @@ export class Waveform extends Container {
       this.refilter()
       this.chartAudio.addWaveform(this)
     }
-    if (Date.now() - this.lastReZoom > 40 && this.lastZoom != this.getZoom()) {
-      this.lastZoom = this.getZoom()
+    if (this.lastZoom != this.getZoom()) {
       this.lastReZoom = Date.now()
-      this.refilter()
+      this.lastZoom = this.getZoom()
+    }else{
+      if (Date.now() - this.lastReZoom > 120 && this.zoom != this.getZoom()){
+        this.zoom = this.getZoom()
+        this.refilter()
+      }
     }
     this.children.forEach(line => line.active = false)
     if (this.strippedWaveform) {
@@ -78,7 +84,10 @@ export class Waveform extends Container {
       this.renderData(beat, this.strippedFilteredWaveform, Options.waveform.filteredColor, Options.waveform.filteredOpacity)
     }
     this.children.forEach(line => line.visible = line.active)
-    this.children.filter(line => Date.now() - line.lastUsed > 5000).forEach(line => this.removeChild(line))
+    this.children.filter(line => Date.now() - line.lastUsed > 5000).forEach(line => {
+      line.destroy()
+      this.removeChild(line)
+    })
   }
 
   private renderData(beat: number, data: number[], color: number, opacity: number) {
@@ -120,7 +129,7 @@ export class Waveform extends Container {
           curBeat += 100/chartSpeed/speedMult/64/Math.abs(scroll.value)
           let calcTime = this.renderer.chart.getSeconds(curBeat)
           if (calcTime < 0) continue
-          let samp = Math.floor(calcTime * this.getZoom()*4)
+          let samp = Math.floor(calcTime * this.zoom*4)
           let v = data[samp];
           if (!v) continue
           let line = this.getLine()
@@ -136,7 +145,7 @@ export class Waveform extends Container {
     }else{
       for (let i = 0; i < this.renderer.chartManager.app.renderer.screen.height; i++) {
         let calcTime = this.renderer.getTimeFromYPos(i-this.parent.y)
-        let samp = Math.floor(calcTime * this.getZoom()*4)
+        let samp = Math.floor(calcTime * this.zoom*4)
         let v = (data[samp]);
         if (!v) continue
         let line = this.getLine()

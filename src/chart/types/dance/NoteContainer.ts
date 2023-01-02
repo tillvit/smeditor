@@ -54,9 +54,6 @@ export class NoteContainer extends Container {
           DanceNoteRenderer.setHoldBrightness(arrow, 1-t*0.7)
         }
       }
-      if (note.type == "Mine") {
-        DanceNoteRenderer.setMineTime(arrow, time)
-      }
       if (note.type == "Fake") {
         DanceNoteRenderer.hideFakeOverlay(arrow, this.renderer.chartManager.getMode() == EditMode.Play)
       }
@@ -72,12 +69,13 @@ export class NoteContainer extends Container {
     })
 
     this.children.filter(child => Date.now() - child.dirtyTime > 5000).forEach(child => {
+      child.destroy()
       this.removeChild(child)
     })
   }
 
   private checkBounds(note: NotedataEntry, beat: number): [boolean, boolean, number, number] {
-    let y = Options.chart.receptorYPos
+    let y = this.renderer.getYPos(beat)
     if (!isHoldNote(note) || (!note.gameplay?.lastHoldActivation || beat < note.beat)) y = this.renderer.getYPos(note.beat)
     if (isHoldNote(note) && note.gameplay?.droppedHoldBeat) y = this.renderer.getYPos(note.gameplay.droppedHoldBeat)
     let y_hold = this.renderer.getYPos(note.beat + (isHoldNote(note) ? note.hold : 0))

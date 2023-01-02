@@ -39,7 +39,7 @@ export class MenubarManager {
   
         item.addEventListener("click", () => {
           meta.callback(this.app)
-          let dropdown = item.closest(".menu-main")!.querySelector(".dropdown")!
+          let dropdown = item.closest(".menu-main")!.querySelector(".menubar-dropdown")!
           dropdown.replaceChildren()
         })
       } else {
@@ -59,7 +59,7 @@ export class MenubarManager {
       if (data.type == "dropdown") {
         let dropdown = document.createElement("div")
         item.appendChild(dropdown)
-        dropdown.classList.add("dropdown")
+        dropdown.classList.add("menubar-dropdown")
         data.options.map(x=>this.createElement(x)).forEach(x=>dropdown.appendChild(x))
       }
       if (data.type == "checkbox") {
@@ -79,7 +79,7 @@ export class MenubarManager {
       title.classList.add("title", "unselectable")
       menuitem.classList.add("menu-item","menu-main")
       title.classList.add("menu-hover")
-      dropdown.classList.add("dropdown", "unselectable")
+      dropdown.classList.add("menubar-dropdown", "unselectable")
       menuitem.onmouseenter = () => { 
         dropdown.replaceChildren(...data.options.map(x=>this.createElement(x)))
       }
