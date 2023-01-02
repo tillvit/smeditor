@@ -10,6 +10,14 @@ export function getQuant(beat: number) {
   return 9
 }
 
+export function lerp(v0: number, v1: number, t: number): number {
+  return v0*(1-t)+v1*t
+}
+
+export function unlerp(min: number, max: number, value: number) {
+  return (value - min) / (max - min)
+}
+
 export function rgbtoHex(r: number, g: number, b: number): number {
   return (r << 16) + (g << 8) + (b)
 }

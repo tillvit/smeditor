@@ -61,11 +61,11 @@ export class EQWindow extends Window {
       }
       ctx.fillRect(0, 200, 1200, 1);
       ctx.fillStyle = "rgba(0, 100, 150,0.5)";
-      let bodePlot = this.app.chartManager.songAudio.getBodePlot(1200)
-      for (let x = 0; x < 1200; x++) {
-        let gain = bodePlot[x]
-        ctx.fillRect(x, 200, 1, -gain*(400/20));
-      }
+      // let bodePlot = this.app.chartManager.songAudio.getBodePlot(1200)
+      // for (let x = 0; x < 1200; x++) {
+      //   let gain = bodePlot[x]
+      //   ctx.fillRect(x, 200, 1, -gain*(400/20));
+      // }
       if (canvas.closest("#windows")) requestAnimationFrame(call)
     }
     return call

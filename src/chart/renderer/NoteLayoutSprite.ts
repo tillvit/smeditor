@@ -1,7 +1,7 @@
 import { Container, FederatedPointerEvent, RenderTexture, Sprite, Texture } from "pixi.js"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
-import { clamp, getQuant } from "../../util/Util"
+import { clamp, getQuant, lerp, unlerp } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { isHoldNote } from "../sm/NoteTypes"
@@ -36,6 +36,7 @@ export class NoteLayoutSprite extends Container {
     this.overlay.alpha = 0.3
     this.lastCMod = Options.chart.CMod
     this.addChild(this.overlay)
+    this.x = this.renderer.chartManager.app.renderer.screen.width/2 - 20
     window.onmessage = (message) => { 
       if (message.data == "chartModified" && message.source == window) {
         this.populate()
@@ -73,7 +74,7 @@ export class NoteLayoutSprite extends Container {
     let lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
     let lastSecond = this.renderer.chart.getSeconds(lastBeat)
     if (Options.chart.CMod) {
-      this.renderer.chartManager.setTime(lastSecond * t)
+      this.renderer.chartManager.setTime(lerp(-this.renderer.chart.timingData.getTimingData("OFFSET"), lastSecond, t))
     } else {
       this.renderer.chartManager.setBeat(lastBeat * t)
     }
@@ -95,15 +96,19 @@ export class NoteLayoutSprite extends Container {
     let lastSecond = this.renderer.chart.getSeconds(lastBeat)
     let start = Options.chart.CMod ? this.renderer.getTimeFromYPos(-this.renderer.chartManager.app.renderer.screen.height/2) : this.renderer.getBeatFromYPos(-this.renderer.chartManager.app.renderer.screen.height/2, true)
     let end = Options.chart.CMod ? this.renderer.getTimeFromYPos(this.renderer.chartManager.app.renderer.screen.height/2) : this.renderer.getBeatFromYPos(this.renderer.chartManager.app.renderer.screen.height/2, true)
-    let startY = ((Options.chart.CMod ? start / lastSecond : start / lastBeat) - 0.5) * (this.backing.height-10)
-    let endY = ((Options.chart.CMod ? end / lastSecond : end / lastBeat) - 0.5) * (this.backing.height-10)
+    let t_startY = unlerp(0, lastBeat, start)
+    let t_endY = unlerp(0, lastBeat, end)
+    if (Options.chart.CMod) {
+      t_startY = unlerp(-this.renderer.chart.timingData.getTimingData("OFFSET"), lastSecond, start)
+      t_endY = unlerp(-this.renderer.chart.timingData.getTimingData("OFFSET"), lastSecond, end)
+    }
+    let startY = (t_startY - 0.5) * (this.backing.height-10)
+    let endY = (t_endY - 0.5) * (this.backing.height-10)
     this.overlay.y = startY
     this.overlay.height = endY-startY
     if (this.renderer.chartManager.app.renderer.screen.height != this.lastHeight || this.lastCMod != Options.chart.CMod) {
       this.lastCMod = Options.chart.CMod
       this.lastHeight = this.renderer.chartManager.app.renderer.screen.height
-      // clearTimeout(this.zoomTimeout)
-      // this.zoomTimeout = setTimeout(() => this.populate(), 120)
       this.populate()
     }
   }
@@ -141,7 +146,9 @@ export class NoteLayoutSprite extends Container {
       }
       obj.height = 2
       obj.x = (note.col+0.5) * 6
-      obj.y = (Options.chart.CMod ? note.second / lastSecond : note.beat / lastBeat) * height
+      let t = unlerp(0, lastBeat, note.beat)
+      if (Options.chart.CMod) unlerp(this.renderer.chart.timingData.getTimingData("OFFSET"), lastSecond, note.second)
+      obj.y = t * height
       obj.tint = QUANT_COLORS[getQuant(note.beat)]
       if (note.type == "Mine") obj.tint = 0x808080
       childIndex++

@@ -70,6 +70,8 @@ export class App {
     this.registerListeners()
     this.keybinds = new Keybinds(this)
 
+    this.onResize()
+
     
     console.log(`smeditor is currently a work in progress. editing is almost start since the viewer is almost done!`)
     console.log(`audio filtering is working (hopefully) but not yet implemented into UI`)
