@@ -10,7 +10,6 @@ const LINE_HEIGHT = 1.5
 
 interface WaveformLine extends Sprite {
   lastUsed: number
-  active: boolean
 }
 
 export class Waveform extends Container {
@@ -27,6 +26,7 @@ export class Waveform extends Container {
   private lastReZoom: number
   private lastZoom: number
   private zoom: number
+  private poolSearch = 0
 
   constructor(renderer: ChartRenderer) {
     super()
@@ -65,7 +65,6 @@ export class Waveform extends Container {
 
   refilter() {
     this.stripWaveform(this.chartAudio.getRawData()).then(data => this.strippedWaveform = data)
-    // this.stripWaveform(this.chartAudio.getFilteredRawData()).then(data => this.strippedFilteredWaveform = data)
   }
 
   renderThis(beat: number) {
@@ -86,11 +85,9 @@ export class Waveform extends Container {
         this.refilter()
       }
     }
-    this.lineContainer.children.forEach(line => (line as WaveformLine).active = false)
     if (this.strippedWaveform) {
       this.renderData(beat, this.strippedWaveform, Options.waveform.color, Options.waveform.opacity)
     }
-    this.lineContainer.children.forEach(line => line.visible = (line as WaveformLine).active)
     this.lineContainer.children.filter(line => Date.now() - (line as WaveformLine).lastUsed > 5000).forEach(line => {
       line.destroy()
       this.lineContainer.removeChild(line)
@@ -100,6 +97,8 @@ export class Waveform extends Container {
   }
 
   private renderData(beat: number, data: number[][], color: number, opacity: number) {
+    this.resetPool()
+
     if (Options.experimental.speedChangeWaveform && !Options.chart.CMod && Options.chart.doSpeedChanges) {
       let chartSpeed = Options.chart.speed
       let speedMult = this.renderer.chart.timingData.getSpeedMult(beat, this.renderer.chartManager.getTime())
@@ -170,22 +169,34 @@ export class Waveform extends Container {
         }
       }
     }
+
+    this.purgePool()
+  }
+
+  private resetPool() {
+    this.poolSearch = 0
+  }
+
+  private purgePool() {
+    for(let i = this.poolSearch; i < this.lineContainer.children.length; i++) {
+      this.lineContainer.children[i].visible = false
+    }
   }
 
   private getLine(): WaveformLine {
-    for (let line of this.lineContainer.children) {
-      let w_line = line as WaveformLine
-      if (!w_line.active) {
-        w_line.active = true
-        w_line.lastUsed = Date.now()
-        return w_line
-      }
+    while (this.lineContainer.children[this.poolSearch]) {
+      let w_line = this.lineContainer.children[this.poolSearch] as WaveformLine
+      w_line.lastUsed = Date.now()
+      w_line.visible = true
+      this.poolSearch++
+      return w_line
     }
     let line = new Sprite(Texture.WHITE) as WaveformLine
     line.height = LINE_HEIGHT
     line.anchor.set(0.5)
     line.lastUsed = Date.now()
-    line.active = true
+    line.visible = true
+    this.poolSearch++
     this.lineContainer.addChild(line)
     return line
   }

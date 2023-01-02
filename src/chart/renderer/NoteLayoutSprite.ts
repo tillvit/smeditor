@@ -136,6 +136,8 @@ export class NoteLayoutSprite extends Container {
 
     this.barTexture.resize(numCols * 6, height)
 
+    let songOffset = this.renderer.chart.timingData.getTimingData("OFFSET")
+
     this.renderer.chart.notedata.forEach((note) => {
       let obj = this.barContainer.children[childIndex] as Sprite
       if (!obj) {
@@ -147,7 +149,7 @@ export class NoteLayoutSprite extends Container {
       obj.height = 2
       obj.x = (note.col+0.5) * 6
       let t = unlerp(0, lastBeat, note.beat)
-      if (Options.chart.CMod) unlerp(this.renderer.chart.timingData.getTimingData("OFFSET"), lastSecond, note.second)
+      if (Options.chart.CMod) t = unlerp(songOffset, lastSecond, note.second)
       obj.y = t * height
       obj.tint = QUANT_COLORS[getQuant(note.beat)]
       if (note.type == "Mine") obj.tint = 0x808080
