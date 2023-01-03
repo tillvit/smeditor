@@ -34,6 +34,7 @@ export class BarlineContainer extends Container {
   private renderer: ChartRenderer
   private barlineMap: Map<number, Barline> = new Map
   private barlineLabelMap: Map<number, BarlineLabel> = new Map
+  private poolSearch = 0
 
   constructor(renderer: ChartRenderer) {
     super()
@@ -58,11 +59,13 @@ export class BarlineContainer extends Container {
       let barline = this.getBarline(bar_beat)
       barline.y = yPos
       barline.marked = true
+      barline.deactivated = false
       barline.dirtyTime = Date.now()
       if (bar_beat % 4 == 0) {
         let barlineLabel = this.getBarlineLabel(bar_beat)
         barlineLabel.y = yPos
         barlineLabel.marked = true
+        barlineLabel.deactivated = false
         barlineLabel.dirtyTime = Date.now()
       }
     }
@@ -91,12 +94,12 @@ export class BarlineContainer extends Container {
     return [false, false, y]
   }
 
+  
   private getBarline(beat: number): Barline {
     if (this.barlineMap.get(beat)) return this.barlineMap.get(beat)!
     let newChild: Partial<Barline> | undefined
     for (let child of this.children) {
       if (child.type == "barline" && child.deactivated) {
-        child.deactivated = false
         newChild = child
       }
     }
@@ -106,8 +109,6 @@ export class BarlineContainer extends Container {
     }
     newChild.type = "barline"
     newChild.beat = beat
-    newChild.deactivated = false
-    newChild.marked = true
     newChild.anchor!.x = 0.5
     newChild.anchor!.y = 0.5
     newChild.width = this.renderer.chart.gameType.notefieldWidth + 128

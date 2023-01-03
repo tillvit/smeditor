@@ -337,19 +337,19 @@ export class ChartManager {
     if (musicPath == "") {
       console.warn("No Audio File!")
       this.songAudio = new ChartAudio(undefined)
-      await this.songAudio.loaded
+      // await this.songAudio.loaded
       return
     }
     let audioFile: File | undefined = this.getAudioFile(musicPath)
     if (audioFile == undefined) {
       console.warn("Failed to load audio file " + musicPath)
       this.songAudio = new ChartAudio(undefined)
-      await this.songAudio.loaded
+      // await this.songAudio.loaded
       return
     }
     let audio_url = await URL.createObjectURL(audioFile)
     this.songAudio = new ChartAudio(audio_url)
-    await this.songAudio.loaded
+    // await this.songAudio.loaded
     this.songAudio.seek(this.time)
     this.updateSoundProperties()
     this.seekBack()

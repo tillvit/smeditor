@@ -26,6 +26,7 @@ export class ChartAudio {
     this._gainNode = this._audioContext.createGain();
 
     this._buffer = this._audioContext.createBuffer(2, 1, 44100);
+    this.initSource()
     this.loaded = new Promise((resolve) => {
       this.getData(url).then((buffer) => {
         if (!buffer) return
@@ -116,6 +117,10 @@ export class ChartAudio {
     this._audioAnalyzer.connect(this._gainNode);
     this._gainNode.connect(this._audioContext.destination);   
     this._source.playbackRate.value = this._rate
+    if (this._isPlaying) {
+      this.pause()
+      this.play()
+    }
   }
 
   volume(volume: number) {

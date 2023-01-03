@@ -43,28 +43,25 @@ export class Waveform extends Container {
     this.refilter()
   }
 
-  private async stripWaveform(rawData: Float32Array[] | undefined): Promise<number[][] | undefined> {
+  private async stripWaveform(rawData: Float32Array[] | undefined) {
     if (rawData == undefined) return
+    this.strippedWaveform = Array.from({ length: rawData.length }, _ => []);
     let blockSize = this.chartAudio.getSampleRate() / (this.zoom*4); // Number of samples in each subdivision
-    let ret = []
     for (let channel = 0; channel < rawData.length; channel++) {
       let samples = Math.floor(rawData[channel].length / blockSize);
-      let filteredData = [];
       for (let i = 0; i < samples; i++) {
         let blockStart = Math.floor(blockSize * i); // the location of the first sample in the block
         let sum = 0;
         for (let j = 0; j < blockSize; j++) {
           sum = sum + Math.abs(rawData[channel][blockStart + j]) // find the sum of all the samples in the block
         }
-        filteredData.push(sum / blockSize); // divide the sum by the block size to get the average
+        this.strippedWaveform[channel].push(sum / blockSize); // divide the sum by the block size to get the average
       }
-      ret.push(filteredData)
     }
-    return ret
   }
 
   refilter() {
-    this.stripWaveform(this.chartAudio.getRawData()).then(data => this.strippedWaveform = data)
+    this.stripWaveform(this.chartAudio.getRawData())
   }
 
   renderThis(beat: number) {
