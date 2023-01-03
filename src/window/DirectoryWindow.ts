@@ -171,14 +171,14 @@ export class DirectoryWindow extends Window {
         queue.push(this.traverseFileTree(prefix, item!))
       }
       await Promise.all(queue);
-      let scroll = viewElement.querySelector(".dir-selector")?.querySelector("div[data-path='"+prefix+"']")?.parentElement!.querySelector(".children")
+      let scroll = viewElement.querySelector(".dir-selector")?.querySelector("div[data-path='"+this.escapeSelector(prefix)+"']")?.parentElement!.querySelector(".children")
       if (prefix == "") {
         scroll = viewElement.querySelector(".dir-selector")
       }
       let s_path = prefix.split("/")
       while (scroll == undefined) {
         s_path.pop()
-        viewElement.querySelector(".dir-selector")?.querySelector("div[data-path='"+s_path.join("/")+"']")?.parentElement!.querySelector(".children")
+        viewElement.querySelector(".dir-selector")?.querySelector("div[data-path='"+this.escapeSelector(s_path.join("/"))+"']")?.parentElement!.querySelector(".children")
         if (s_path.length == 0) {
           scroll = viewElement.querySelector(".dir-selector")
         }
@@ -291,7 +291,7 @@ export class DirectoryWindow extends Window {
   select(viewElement: HTMLDivElement, path: string) {
     let scroll = viewElement.querySelector(".dir-selector")
     if (!scroll) return
-    let info = scroll.querySelector("div[data-path='"+path+"']")
+    let info = scroll.querySelector("div[data-path='"+this.escapeSelector(path)+"']")
     if (info) {
       viewElement.querySelector(".info.selected")?.classList.remove("selected");
       info.classList.add("selected")
@@ -587,18 +587,18 @@ export class DirectoryWindow extends Window {
   }
   
   reloadView(viewElement: HTMLDivElement, prefix: string) {
-    let scroll = viewElement.querySelector(".dir-selector")?.querySelector("div[data-path='"+prefix+"']")?.parentElement!.querySelector(".children")!
+    let scroll = viewElement.querySelector(".dir-selector")?.querySelector("div[data-path='"+this.escapeSelector(prefix)+"']")?.parentElement!.querySelector(".children")!
     if (prefix == "") {
       scroll = viewElement.querySelector(".dir-selector")!
     }
     let collapseCache = []
     for (let child of scroll.querySelectorAll(".folder:not(.collapsed)")) {
       let info: HTMLElement | null = child.querySelector(".info")
-      collapseCache.push(info?.dataset.path)
+      collapseCache.push(info?.dataset.path!)
     }
     scroll.replaceChildren(...this.createDiv(viewElement, this.app.files.getFilesAtPath(prefix),prefix))
     for (let cache of collapseCache) {
-      viewElement.querySelector(".dir-selector")?.querySelector("div[data-path='"+cache+"']")?.parentElement!.classList.remove("collapsed")
+      viewElement.querySelector(".dir-selector")?.querySelector("div[data-path='"+this.escapeSelector(cache)+"']")?.parentElement!.classList.remove("collapsed")
     }
   }
   
@@ -610,5 +610,9 @@ export class DirectoryWindow extends Window {
       }
     }
     this.select(viewElement, suggested)
+  }
+
+  private escapeSelector(selector: string) {
+    return selector.replaceAll(/'/g, "\\'")
   }
 }

@@ -13,6 +13,7 @@ import { Options } from "../util/Options"
 import { GameplayStats } from "./play/GameplayStats"
 import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
 import { GameTypeRegistry } from "./types/GameTypeRegistry"
+import { TimerStats } from "../util/TimerStats"
 
 const SNAPS = [1,2,3,4,6,8,12,16,24,48,-1]
 
@@ -121,14 +122,16 @@ export class ChartManager {
     this.app.stage.addChild(this.info)
     this.app.ticker.add(() => {
       if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
+      TimerStats.time("ChartRenderer Update Time")
       this.chartView?.renderThis();
+      TimerStats.endTime("ChartRenderer Update Time")
       this.info.text = this.mode
                      + "\nTime: " + roundDigit(this.time,3) 
                      + "\nBeat: " + roundDigit(this.beat,3)
-                     + "\nFrame Time: " + this.app.frameTime.toFixed(3) + "ms"
                      + "\nFPS: " + getFPS(this.app)
                      + "\nTPS: " + getTPS()
                      + "\nNote Type: " + this.chart.gameType.editNoteTypes[this.editNoteTypeIndex]
+      if (Options.debug.showTimers) this.info.text += "\n" + TimerStats.getTimers().map(timer => timer.name + ": " + timer.lastTime.toFixed(3) + "ms").join("\n")
       if (this.mode == EditMode.Play && this.gameStats) {
         this.info.text += "\nScore:" + (this.gameStats.getScore()*100).toFixed(2)
                         + "\nCumulative Score:" + (this.gameStats.getCumulativeScore()*100).toFixed(2)
@@ -141,6 +144,7 @@ export class ChartManager {
     setInterval(()=>{
       if (this.sm == undefined || this.chart == undefined || this.chartView == undefined) return
       let time = this.songAudio.seek()
+      TimerStats.time("Update Time")
       if (this.songAudio.isPlaying()) { 
         this.setTime(time, true) 
         if (!this.holdEditing.every(x => !x)) {
@@ -176,6 +180,7 @@ export class ChartManager {
         this.chart.gameType.gameLogic.update(this)
       }
       tpsUpdate()
+      TimerStats.endTime("Update Time")
     }, 5)
 
     window.addEventListener("message", (event)=>{

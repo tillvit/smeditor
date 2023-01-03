@@ -62,4 +62,7 @@ export class Options {
       "dance-single": TimingWindowCollection.ITG
     }
   }
+  static debug = {
+    showTimers: false
+  }
 }

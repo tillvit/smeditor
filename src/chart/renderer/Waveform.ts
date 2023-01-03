@@ -6,7 +6,7 @@ import { EditMode } from "../ChartManager"
 import { Options } from "../../util/Options"
 
 const MAX_ZOOM = 3500
-const LINE_HEIGHT = 1
+const LINE_HEIGHT = 1.5
 
 interface WaveformLine extends Sprite {
   lastUsed: number

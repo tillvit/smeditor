@@ -9,6 +9,7 @@ import { ActionHistory } from './util/ActionHistory'
 import { BetterRoundedRect } from './util/BetterRoundedRect'
 import { FileSystem } from './util/FileSystem';
 import { Options } from './util/Options';
+import { TimerStats } from './util/TimerStats'
 import { getBrowser } from './util/Util';
 import { DirectoryWindow } from './window/DirectoryWindow'
 import { OptionsWindow } from './window/OptionsWindow'
@@ -31,8 +32,6 @@ export class App {
   private lastWidth = window.innerWidth
   private lastHeight = window.innerHeight
 
-  frameTime = 0
-
   constructor() {
     this.registerFonts()
     
@@ -50,10 +49,10 @@ export class App {
     })
     this.ticker = new Ticker()
     this.ticker.add(()=>{
-      let t = performance.now()
+      TimerStats.time("Render Time")
       this.renderer.render(this.stage)
-      this.frameTime = performance.now() - t
-
+      TimerStats.endTime("Render Time")
+      TimerStats.endFrame()
     })
     this.ticker.start()
     this.stage.sortableChildren = true

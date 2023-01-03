@@ -13,6 +13,7 @@ import { TimingBarContainer } from "./renderer/TimingBarContainer"
 import { Notefield } from "./types/base/Notefield"
 import { SnapContainer } from "./renderer/SnapContainer"
 import { NoteLayoutSprite } from "./renderer/NoteLayoutSprite"
+import { TimerStats } from "../util/TimerStats"
 
 export class ChartRenderer extends Container {
 
@@ -151,15 +152,24 @@ export class ChartRenderer extends Container {
       renderSecondLowerLimit = (-32 - this.y - Options.chart.receptorYPos)/4/64*100/Options.chart.speed + time
     }
 
+    TimerStats.time("Chart Update Time")
     this.barlines.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
     this.timingAreas.renderThis(beat, renderBeatLowerLimit, renderBeatLimit, renderSecondLowerLimit)
     this.timingBoxes.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
     this.timingBar.renderThis()
-    this.notefield.update(beat, renderBeatLowerLimit, renderBeatLimit)
-    this.snapDisplay.renderThis()
-    this.waveform.renderThis(beat)
     this.judgment.renderThis()
     this.noteLayout.renderThis()
+    this.snapDisplay.renderThis()
+    TimerStats.endTime("Chart Update Time")
+
+    TimerStats.time("Notefield Update Time")
+    this.notefield.update(beat, renderBeatLowerLimit, renderBeatLimit)
+    TimerStats.endTime("Notefield Update Time")
+    
+    TimerStats.time("Waveform Update Time")
+    this.waveform.renderThis(beat)
+    TimerStats.endTime("Waveform Update Time")
+    
 
     if (this.lastMousePos && this.chartManager.getMode() != EditMode.Play) {
       let snap = Options.chart.snap == 0 ? 1/48 : Options.chart.snap
