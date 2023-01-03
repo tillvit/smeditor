@@ -1,7 +1,7 @@
 
 import { bsearch, clamp, roundDigit } from "../../util/Util"
 import { Chart } from "./Chart"
-import { TimingEvent, WarpTimingEvent, StopTimingEvent, AttackTimingEvent, TIMING_EVENT_NAMES, BeatCacheTimingEvent, SpeedTimingEvent, TimingProperty, TimingEventProperty, TimingEventBase, ScrollCacheTimingEvent } from "./TimingTypes"
+import { TimingEvent, WarpTimingEvent, StopTimingEvent, AttackTimingEvent, TIMING_EVENT_NAMES, BeatCacheTimingEvent, SpeedTimingEvent, TimingProperty, TimingEventProperty, TimingEventBase, ScrollCacheTimingEvent, BPMTimingEvent } from "./TimingTypes"
 
 
 type TimingPropertyCollection = {
@@ -186,6 +186,7 @@ export class TimingData {
       if (event.type == "WARPS") warping = true
       if (event.type == "WARP_DEST") warping = false
       if (event.type == "BPMS") curbpm = event.value
+      cache[i].searchSecond = Math.max(cache[i-1]?.second ?? -9999999999, seconds - offset)
       cache[i].second = seconds - offset
       if (event.type == "STOPS" || event.type == "DELAYS") seconds += event.value;
     }
@@ -246,7 +247,7 @@ export class TimingData {
   getBeat(seconds: number): number {
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
     let cache = this._cache.beatTiming!
-    let i = this.searchCache(cache, "second", seconds)
+    let i = this.searchCache(cache, "searchSecond", seconds)
     let event = cache[i]
     let beat = event.beat
     let time_left_over = seconds - event.second!
@@ -276,6 +277,8 @@ export class TimingData {
   isBeatWarped(beat: number): boolean {
     if (!isFinite(beat)) return false
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
+    let bpmEv = this.getBPMEvent(beat)
+    if (bpmEv && (bpmEv.value < 0 || bpmEv.searchSecond! > this.getSeconds(beat))) return true
     for (let event of this._cache.beatTiming!) {
       if (beat < event.beat) continue
       if (event.type == "WARPS" && beat < event.beat+event.value) return true
@@ -341,18 +344,21 @@ export class TimingData {
   }
 
   getBPM(beat: number): number {
-    if (!isFinite(beat)) return 1
+    return this.getBPMEvent(beat)?.value ?? 120
+  }
+
+  getBPMEvent(beat: number): BPMTimingEvent | undefined {
+    if (!isFinite(beat)) return
     if (this._cache.stopBeats == undefined) this.buildBeatTimingDataCache()
     let bpms = this.getTimingData("BPMS")
-    if (bpms.length == 0) return 120
+    if (bpms.length == 0) return
     for (let i = 0; i < bpms.length; i++) {
       if (beat < bpms[i].beat) {
-        if (i == 0) return bpms[i].value
-        // if (beat == bpms[i-1].beat && this._cache.stopBeats![bpms[i-1].beat]) i = Math.max(1,i-1)
-        return bpms[i-1].value
+        if (i == 0) return bpms[i]
+        return bpms[i-1]
       }
     }
-    return bpms[bpms.length-1].value
+    return bpms[bpms.length-1]
   }
 
   getTimingEventAtBeat<Type extends TimingEventProperty>(prop: Type, beat: number): Extract<TimingEvent, {type: Type}> | undefined {

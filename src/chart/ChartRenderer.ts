@@ -144,7 +144,7 @@ export class ChartRenderer extends Container {
     // let renderSecondLimit = this.chart.getSeconds(renderBeatLimit)
     let renderSecondLowerLimit = this.chart.getSeconds(renderBeatLowerLimit)
 
-    this.negScroll = Options.chart.doSpeedChanges && (this.speedMult < 0 || (this.chart.timingData.getTimingEventAtBeat("SCROLLS",beat)?.value ?? 1) < 0)
+    this.negScroll = Options.chart.doSpeedChanges && (this.speedMult < 0 || (this.chart.timingData.getTimingEventAtBeat("SCROLLS",beat)?.value ?? 1) < 0 || this.chart.timingData.getBPM(beat) < 0)
 
     if (Options.chart.CMod) {
       renderBeatLimit = this.getBeatFromYPos(this.chartManager.app.renderer.screen.height-this.y+32)
