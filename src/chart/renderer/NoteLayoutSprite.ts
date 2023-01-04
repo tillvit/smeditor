@@ -20,6 +20,7 @@ export class NoteLayoutSprite extends Container {
   private lastHeight = 0
   private lastCMod
   private mouseDown = false
+  private lastUpdate = 0
 
   constructor(renderer: ChartRenderer) {
     super()
@@ -38,7 +39,8 @@ export class NoteLayoutSprite extends Container {
     this.addChild(this.overlay)
     this.x = this.renderer.chartManager.app.renderer.screen.width/2 - 20
     window.onmessage = (message) => { 
-      if (message.data == "chartModified" && message.source == window) {
+      if (message.data == "chartModified" && message.source == window && Date.now() - this.lastUpdate > 5000) {
+        this.lastUpdate = Date.now()
         this.populate()
       }
     }

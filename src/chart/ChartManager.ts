@@ -260,20 +260,20 @@ export class ChartManager {
 
   setBeat(beat: number) {
     if (!this.chart) return
-    let seekBack = this.beat > beat
     this.beat = beat
     this.time = this.chart.getSeconds(this.beat)
     this.songAudio.seek(this.time)
-    if (seekBack) this.seekBack()
+    this.getAssistTickIndex()
   }
 
   setTime(time: number, ignoreSetSongTime?: boolean) {
     if (!this.chart) return
-    let seekBack = this.time > time
     this.time = time
     this.beat = this.chart.getBeat(this.time)
-    if (!ignoreSetSongTime) this.songAudio.seek(this.time)
-    if (seekBack) this.seekBack()
+    if (!ignoreSetSongTime) {
+      this.songAudio.seek(this.time)
+      this.getAssistTickIndex()
+    }
   }
 
   async loadSM(path: string) {
@@ -315,7 +315,7 @@ export class ChartManager {
       this.app.stage.removeChild(this.chartView)
     }
       
-    this.seekBack()
+    this.getAssistTickIndex()
     this.chartView = new ChartRenderer(this)
     this.chartView.x = this.app.renderer.screen.width/2
     this.chartView.y = this.app.renderer.screen.height/2
@@ -352,7 +352,7 @@ export class ChartManager {
     // await this.songAudio.loaded
     this.songAudio.seek(this.time)
     this.updateSoundProperties()
-    this.seekBack()
+    this.getAssistTickIndex()
   }
 
   private getAudioFile(musicPath: string) {
@@ -404,7 +404,7 @@ export class ChartManager {
     this.mine.volume(volume)
   }
 
-  seekBack() {
+  getAssistTickIndex() {
     if (this.sm == undefined || this.chart == undefined || this.chartView == undefined || this.chart.notedata.length == 0) {
       this.noteIndex = 0
       return
@@ -508,7 +508,7 @@ export class ChartManager {
         type: this.getEditingNoteType()
       }
     }
-    this.seekBack()
+    this.getAssistTickIndex()
     this.app.actionHistory.run({
       action: () => {
         holdEdit.removedNotes.forEach(note => this.chart!.removeNote(note))
@@ -539,11 +539,15 @@ export class ChartManager {
         hold: hold.endBeat - hold.startBeat
       })
     }else{
-      this.chart.modifyNote(hold.originalNote, {
+      let props = {
         beat: hold.startBeat,
         type: hold.roll ? "Roll" : "Hold",
         hold: hold.endBeat - hold.startBeat
-      })
+      }
+      if (props.beat != hold.originalNote.beat || props.type != hold.originalNote.type 
+        || !isHoldNote(hold.originalNote) || props.hold != hold.originalNote.hold) {
+          this.chart.modifyNote(hold.originalNote, props)
+      }
     }
     hold.originalNote = {
       beat: hold.startBeat,
@@ -559,7 +563,7 @@ export class ChartManager {
     })
     hold.removedNotes = hold.removedNotes.concat(conflictingNotes)
     conflictingNotes.forEach(note => this.chart!.removeNote(note))
-    this.seekBack()
+    this.getAssistTickIndex()
   }
 
   endEditing(col: number) {

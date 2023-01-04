@@ -24,7 +24,7 @@ export function rgbtoHex(r: number, g: number, b: number): number {
 
 
 export function roundDigit(num: number, scale: number): number {
-  return parseFloat(num.toFixed(scale));
+  return Math.round(num*Math.pow(10,scale))/Math.pow(10,scale)
 }
 
 export function getFont() {

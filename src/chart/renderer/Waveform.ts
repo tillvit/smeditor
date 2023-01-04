@@ -1,4 +1,4 @@
-import { Container, RenderTexture, Sprite, Texture } from "pixi.js"
+import { ParticleContainer, RenderTexture, Sprite, Texture } from "pixi.js"
 import { bsearch } from "../../util/Util"
 import { ChartRenderer } from "../ChartRenderer"
 import { ChartAudio } from "../audio/ChartAudio"
@@ -12,11 +12,10 @@ interface WaveformLine extends Sprite {
   lastUsed: number
 }
 
-export class Waveform extends Container {
+export class Waveform extends Sprite {
 
-  lineContainer: Container = new Container()
+  lineContainer: ParticleContainer = new ParticleContainer(1500, {position: true, scale: true})
   waveformTex: RenderTexture
-  waveformSprite: Sprite
 
   chartAudio: ChartAudio
   renderer: ChartRenderer
@@ -33,9 +32,8 @@ export class Waveform extends Container {
     this.renderer = renderer
     this.waveformTex = RenderTexture.create({resolution: 1})
     this.chartAudio = this.renderer.chartManager.songAudio
-    this.waveformSprite = new Sprite(this.waveformTex)
-    this.waveformSprite.anchor.set(0.5)
-    this.addChild(this.waveformSprite)
+    this.texture = this.waveformTex
+    this.anchor.set(0.5)
     this.lastZoom = this.getZoom()
     this.zoom = this.getZoom()
     this.lastReZoom = Date.now()
@@ -85,10 +83,10 @@ export class Waveform extends Container {
     if (this.strippedWaveform) {
       this.renderData(beat, this.strippedWaveform, Options.waveform.color, Options.waveform.opacity)
     }
-    this.lineContainer.children.filter(line => Date.now() - (line as WaveformLine).lastUsed > 5000).forEach(line => {
-      line.destroy()
-      this.lineContainer.removeChild(line)
-    })
+    // this.lineContainer.children.filter(line => Date.now() - (line as WaveformLine).lastUsed > 5000).forEach(line => {
+    //   line.destroy()
+    //   this.lineContainer.removeChild(line)
+    // })
     this.waveformTex.resize(this.strippedWaveform!.length * 288 ?? 288, this.renderer.chartManager.app.renderer.screen.height)
     this.renderer.chartManager.app.renderer.render(this.lineContainer, {renderTexture: this.waveformTex})
   }
@@ -176,14 +174,16 @@ export class Waveform extends Container {
 
   private purgePool() {
     for(let i = this.poolSearch; i < this.lineContainer.children.length; i++) {
-      this.lineContainer.children[i].visible = false
+      let line = this.lineContainer.children[i]
+      line.destroy()
+      this.lineContainer.removeChild(line)
     }
   }
 
   private getLine(): WaveformLine {
     while (this.lineContainer.children[this.poolSearch]) {
       let w_line = this.lineContainer.children[this.poolSearch] as WaveformLine
-      w_line.lastUsed = Date.now()
+      // w_line.lastUsed = Date.now()
       w_line.visible = true
       this.poolSearch++
       return w_line
@@ -191,7 +191,7 @@ export class Waveform extends Container {
     let line = new Sprite(Texture.WHITE) as WaveformLine
     line.height = LINE_HEIGHT
     line.anchor.set(0.5)
-    line.lastUsed = Date.now()
+    // line.lastUsed = Date.now()
     line.visible = true
     this.poolSearch++
     this.lineContainer.addChild(line)
