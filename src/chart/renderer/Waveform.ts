@@ -1,12 +1,12 @@
 import { ParticleContainer, RenderTexture, Sprite, Texture } from "pixi.js"
-import { bsearch } from "../../util/Util"
+import { bsearch, getTPS } from "../../util/Util"
 import { ChartRenderer } from "../ChartRenderer"
 import { ChartAudio } from "../audio/ChartAudio"
 import { EditMode } from "../ChartManager"
 import { Options } from "../../util/Options"
 
 const MAX_ZOOM = 3500
-const LINE_HEIGHT = 1.5
+let LINE_HEIGHT = 1
 
 interface WaveformLine extends Sprite {
   lastUsed: number
@@ -41,6 +41,18 @@ export class Waveform extends Sprite {
     this.lastReZoom = Date.now()
     this.chartAudio.addWaveform(this)
     this.refilter()
+
+    setInterval(() => {
+      if (getTPS() == 0) return
+      if (getTPS() < 60 && LINE_HEIGHT < 3) {
+        LINE_HEIGHT = Math.min(3, LINE_HEIGHT + 0.25)
+        this.updateLineHeight()
+      }
+      if (getTPS() > 190 && LINE_HEIGHT > 1) {
+        LINE_HEIGHT = Math.max(1, LINE_HEIGHT - 0.25)
+        this.updateLineHeight()
+      }
+    },1000)
   }
 
   private async stripWaveform(rawData: Float32Array[] | undefined) {
@@ -164,6 +176,8 @@ export class Waveform extends Sprite {
       }
     }
 
+
+
     this.purgePool()
   }
 
@@ -176,6 +190,13 @@ export class Waveform extends Sprite {
       let line = this.lineContainer.children[i]
       line.destroy()
       this.lineContainer.removeChild(line)
+    }
+  }
+
+  private updateLineHeight() {
+    for (let child of this.lineContainer.children) {
+      let line = child as WaveformLine
+      line.height = LINE_HEIGHT
     }
   }
 
