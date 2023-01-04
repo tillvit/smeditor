@@ -22,7 +22,6 @@ export class ChartRenderer extends Container {
   chart: Chart
 
   private speedMult: number = 1
-  private negScroll: boolean = false
 
   private lastMousePos?: Point
   private lastMouseBeat: number = -1
@@ -144,8 +143,6 @@ export class ChartRenderer extends Container {
     // let renderSecondLimit = this.chart.getSeconds(renderBeatLimit)
     let renderSecondLowerLimit = this.chart.getSeconds(renderBeatLowerLimit)
 
-    this.negScroll = Options.chart.doSpeedChanges && (this.speedMult < 0 || (this.chart.timingData.getTimingEventAtBeat("SCROLLS",beat)?.value ?? 1) < 0 || this.chart.timingData.getBPM(beat) < 0)
-
     if (Options.chart.CMod) {
       renderBeatLimit = this.getBeatFromYPos(this.chartManager.app.renderer.screen.height-this.y+32)
       renderBeatLowerLimit = this.getBeatFromYPos(-32 - this.y)
@@ -245,7 +242,7 @@ export class ChartRenderer extends Container {
     return (yp - Options.chart.receptorYPos)/64*100/Options.chart.speed+currentBeat
   }
 
-  isNegScroll() {
-    return this.negScroll
+  isNegScroll(beat: number) {
+    return Options.chart.doSpeedChanges && (this.speedMult < 0 || (this.chart.timingData.getTimingEventAtBeat("SCROLLS",beat)?.value ?? 1) < 0 || this.chart.timingData.getBPM(beat) < 0)
   }
 }

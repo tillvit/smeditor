@@ -16,9 +16,11 @@ export class Waveform extends Sprite {
 
   lineContainer: ParticleContainer = new ParticleContainer(1500, {position: true, scale: true}, 16384, true)
   waveformTex: RenderTexture
+  lineTex: RenderTexture = RenderTexture.create({width: 16, height: 16})
 
   chartAudio: ChartAudio
   renderer: ChartRenderer
+  white: Sprite
 
   strippedWaveform: number[][] | undefined
 
@@ -35,6 +37,11 @@ export class Waveform extends Sprite {
     this.waveformTex = RenderTexture.create({resolution: 1})
     this.chartAudio = this.renderer.chartManager.songAudio
     this.texture = this.waveformTex
+
+    this.white = new Sprite(Texture.WHITE)
+    this.white.width = 16
+    this.white.height = 16
+
     this.anchor.set(0.5)
     this.lastZoom = this.getZoom()
     this.zoom = this.getZoom()
@@ -97,6 +104,8 @@ export class Waveform extends Sprite {
       }
     }
     this.waveformTex.resize(this.strippedWaveform!.length * 288 ?? 288, this.renderer.chartManager.app.renderer.screen.height)
+    this.white.alpha = Options.waveform.opacity
+    this.renderer.chartManager.app.renderer.render(this.white, {renderTexture: this.lineTex})
     if (this.strippedWaveform && (beat != this.lastBeat || time != this.lastTime)) {
       this.lastBeat = beat
       this.lastTime = time
@@ -155,7 +164,6 @@ export class Waveform extends Sprite {
             line.scale.x = v*256 / 16
             line.y = y
             line.x = 144 + 288 * channel
-            line.alpha = Options.waveform.opacity
           }
           
         }
@@ -173,7 +181,6 @@ export class Waveform extends Sprite {
           line.scale.x = v*256 / 16
           line.y = i
           line.x = 144 + 288 * channel
-          line.alpha = Options.waveform.opacity
         }
       }
     }
@@ -209,7 +216,7 @@ export class Waveform extends Sprite {
       this.poolSearch++
       return w_line
     }
-    let line = new Sprite(Texture.WHITE) as WaveformLine
+    let line = new Sprite(this.lineTex) as WaveformLine
     line.height = LINE_HEIGHT
     line.anchor.set(0.5)
     line.visible = true

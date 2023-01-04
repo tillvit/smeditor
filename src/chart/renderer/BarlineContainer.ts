@@ -88,7 +88,7 @@ export class BarlineContainer extends Container {
     let y = this.renderer.getYPos(bar_beat)
     if (y < -32 - this.renderer.y) return [true, false, y]
     if (y > this.renderer.chartManager.app.renderer.screen.height-this.renderer.y+32) {
-      if (this.renderer.isNegScroll() || bar_beat < beat) return [true, false, y]
+      if (bar_beat < beat || this.renderer.isNegScroll(bar_beat)) return [true, false, y]
       else return [true, true, y]
     }
     return [false, false, y]

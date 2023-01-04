@@ -81,7 +81,7 @@ export class TimingBoxContainer extends Container {
     if (event.type == "ATTACKS" && Options.chart.CMod) y = (event.second-this.renderer.chartManager.getTime())*Options.chart.speed/100*64*4 + Options.chart.receptorYPos
     if (y < -32 - this.renderer.y) return [true, false, y]
     if (y > this.renderer.chartManager.app.renderer.screen.height-this.renderer.y+32) {
-      if (this.renderer.isNegScroll() || event.beat! < beat) return [true, false, y]
+      if (event.beat! < beat || this.renderer.isNegScroll(event.beat!)) return [true, false, y]
       else return [true, true, y]
     }
     return [false, false, y]

@@ -1,4 +1,4 @@
-import { BitmapText, Container, Sprite, Texture } from "pixi.js"
+import { BitmapText, Container, Graphics, Sprite, Texture } from "pixi.js"
 import { Options } from "../../util/Options"
 import { clamp } from "../../util/Util"
 import { EditMode } from "../ChartManager"
@@ -23,7 +23,7 @@ export class TimingBarContainer extends Container {
 
   private barlines: Container = new Container()
   private barline: Sprite
-  private currentMedian: Sprite
+  private currentMedian: Graphics
   private errorText: BitmapText = new BitmapText("", errorStyle)
   private errorTextTime: number = -1
   private renderer: ChartRenderer
@@ -42,10 +42,12 @@ export class TimingBarContainer extends Container {
     target.height = BAR_HEIGHT
     target.anchor.set(0.5)
     target.alpha = 0.5
-    this.currentMedian = new Sprite(Texture.WHITE)
-    this.currentMedian.width = BAR_WIDTH * 2
-    this.currentMedian.height = BAR_HEIGHT
-    this.currentMedian.anchor.set(0.5)
+    this.currentMedian = new Graphics()
+    this.currentMedian.beginFill(0xffffff);
+    this.currentMedian.moveTo(0, -10);
+    this.currentMedian.lineTo(5, -15);
+    this.currentMedian.lineTo(-5, -15);
+    this.currentMedian.lineTo(0, -10);		
     this.errorText.y = -25
     this.errorText.anchor.set(0.5)
     this.addChild(this.barline)
@@ -59,12 +61,12 @@ export class TimingBarContainer extends Container {
     this.visible = this.renderer.chartManager.getMode() == EditMode.Play
     for (let child of this.barlines.children) { 
       let barline = child as TimingBarObject
-      let t = (3000 - (Date.now() - barline.createTime))/2000
+      let t = (8000 - (Date.now() - barline.createTime))/6000
       child.alpha = Math.min(1, t)
     }
-    this.errorText.alpha = clamp((3000 - (Date.now() - this.errorTextTime))/2000, 0, 1)
+    this.errorText.alpha = clamp((2000 - (Date.now() - this.errorTextTime))/1000, 0, 1)
     this.barline.width = Options.play.timingCollection.maxWindowMS()/1000*2*400
-    this.barlines.children.filter(child => Date.now() - (child as TimingBarObject).createTime > 3000).forEach(child => {
+    this.barlines.children.filter(child => Date.now() - (child as TimingBarObject).createTime > 8000).forEach(child => {
       child.destroy()
       this.barlines.removeChild(child)
     })  
@@ -73,7 +75,7 @@ export class TimingBarContainer extends Container {
   addBar(error: number, judge: TimingWindow) {
     if (!isStandardMissTimingWindow(judge) && !isStandardTimingWindow(judge)) return
     if (!isStandardMissTimingWindow(judge)) this.data.push(error)
-    if (this.data.length > 10) this.data.splice(0, 1)
+    if (this.data.length > 30) this.data.splice(0, 1)
     let bar = new Sprite(Texture.WHITE) as TimingBarObject
     bar.width = BAR_WIDTH
     bar.height = BAR_HEIGHT

@@ -172,7 +172,7 @@ export class TimingData {
       value: event.value
     })))
     cache = cache.sort((a, b) => {
-      if (a.beat == b.beat) return (BEAT_TIMING_PRIORITY.indexOf(a.type) ?? 6) - (BEAT_TIMING_PRIORITY.indexOf(a.type) ?? 6)
+      if (a.beat == b.beat) return (BEAT_TIMING_PRIORITY.indexOf(a.type) ?? 6) - (BEAT_TIMING_PRIORITY.indexOf(b.type) ?? 6)
       return (a.beat-b.beat)
     })
     let seconds = 0
@@ -263,6 +263,12 @@ export class TimingData {
 
   getSeconds(beat: number): number {
     if (!isFinite(beat)) return 0
+    let [seconds, clamp] = this.getSecondsNoClamp(beat)
+    return Math.max(seconds, clamp)
+  }
+
+  private getSecondsNoClamp(beat: number): [number, number] {
+    if (!isFinite(beat)) return [0, 0]
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
     let cache = this._cache.beatTiming!
     let i = this.searchCache(cache, "beat", roundDigit(beat,3))
@@ -271,11 +277,11 @@ export class TimingData {
     let beats_left_over = beat - event.beat
     if (beat - event.beat < 0.001) beats_left_over = 0
     let curbpm = this.getBPM(roundDigit(event.beat, 3))
-    if (event.type == "STOPS" && roundDigit(beat,3) > event.beat || event.type == "DELAYS") return seconds + Math.max(0,Math.max(0,beats_left_over * 60/curbpm) + event.value)
-    if (event.type == "WARPS") return seconds
+    if (event.type == "STOPS" && roundDigit(beat,3) > event.beat || event.type == "DELAYS") return [seconds + Math.max(0,Math.max(0,beats_left_over * 60/curbpm) + event.value), event.searchSecond!]
+    if (event.type == "WARPS") beats_left_over = 0
     if (event.type == "BPMS" && roundDigit(beat,3) > event.beat) curbpm = event.value
     seconds += beats_left_over * 60/curbpm
-    return seconds
+    return [seconds, event.searchSecond!]
   }
 
   isBeatWarped(beat: number): boolean {
@@ -283,7 +289,7 @@ export class TimingData {
     if (this._cache.warpedBeats[beat]) return this._cache.warpedBeats[beat]
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
     let bpmEv = this.getBPMEvent(beat)
-    if (bpmEv && (bpmEv.value < 0 || bpmEv.searchSecond! > this.getSeconds(beat))) {
+    if (bpmEv && (bpmEv.value < 0 || (bpmEv.searchSecond! > this.getSecondsNoClamp(beat)[0]))) {
       this._cache.warpedBeats[beat] = true
       return true
     }
@@ -368,7 +374,7 @@ export class TimingData {
     let bpms = this.getTimingData("BPMS")
     if (bpms.length == 0) return
     for (let i = 0; i < bpms.length; i++) {
-      if (beat < bpms[i].beat) {
+      if (roundDigit(beat, 3) <= bpms[i].beat) {
         if (i == 0) return bpms[i]
         return bpms[i-1]
       }

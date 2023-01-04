@@ -88,7 +88,7 @@ export class NoteContainer extends Container {
     if (isHoldNote(note) && !note.gameplay?.droppedHoldBeat && note.gameplay?.lastHoldActivation && note.beat + note.hold < beat) return [true, false, y, y_hold - y]
     if (y_hold < -32 - this.renderer.y) return [true, false, y, y_hold - y]
     if (y > this.renderer.chartManager.app.renderer.screen.height-this.renderer.y+32) {
-      if (this.renderer.isNegScroll() || note.beat < beat) return [true, false, y, y_hold - y]
+      if (note.beat < beat || this.renderer.isNegScroll(note.beat)) return [true, false, y, y_hold - y]
       else return [true, true, y, y_hold - y]
     } 
     return [false, false, y, y_hold - y]
