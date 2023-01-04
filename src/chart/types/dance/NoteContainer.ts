@@ -45,6 +45,8 @@ export class NoteContainer extends Container {
       if (outOfBounds) continue
 
       let arrow = this.getNote(note)
+      arrow.deactivated = false
+      arrow.marked = true
       arrow.y = yPos;
       if (isHoldNote(note)) {
         DanceNoteRenderer.setHoldLength(arrow, holdLength)
@@ -93,7 +95,6 @@ export class NoteContainer extends Container {
     let newChild: Partial<NoteObject> | undefined
     for (let child of this.children) {
       if (child.deactivated) {
-        child.deactivated = false
         newChild = child
         break
       }
@@ -103,8 +104,6 @@ export class NoteContainer extends Container {
       this.addChild(newChild as NoteObject)
     }
     newChild.note = note
-    newChild.deactivated = false
-    newChild.marked = true
     newChild.visible = true
     this.buildObject(newChild)
     return newChild as NoteObject

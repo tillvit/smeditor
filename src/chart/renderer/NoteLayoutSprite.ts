@@ -1,4 +1,4 @@
-import { Container, FederatedPointerEvent, RenderTexture, Sprite, Texture } from "pixi.js"
+import { Container, FederatedPointerEvent, ParticleContainer, RenderTexture, Sprite, Texture } from "pixi.js"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
 import { clamp, getQuant, lerp, unlerp } from "../../util/Util"
@@ -10,7 +10,7 @@ const QUANT_COLORS = [0xE74827, 0x3D89F7, 0xAA2DF4, 0x82E247, 0xAA2DF4, 0xEAA138
 
 
 export class NoteLayoutSprite extends Container {
-  barContainer = new Container()
+  barContainer = new ParticleContainer(1500, {position: true, scale: true}, 16384, true)
   backing: BetterRoundedRect = new BetterRoundedRect()
   bars: Sprite
   barTexture: RenderTexture

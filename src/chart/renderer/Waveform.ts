@@ -14,7 +14,7 @@ interface WaveformLine extends Sprite {
 
 export class Waveform extends Sprite {
 
-  lineContainer: ParticleContainer = new ParticleContainer(1500, {position: true, scale: true})
+  lineContainer: ParticleContainer = new ParticleContainer(1500, {position: true, scale: true}, 16384, true)
   waveformTex: RenderTexture
 
   chartAudio: ChartAudio
@@ -137,7 +137,7 @@ export class Waveform extends Sprite {
             let v = data[channel][samp];
             if (!v) continue
             let line = this.getLine()
-            line.width = v*256
+            line.scale.x = v*256 / 16
             line.y = y
             line.tint = color
             line.alpha = opacity
@@ -156,7 +156,7 @@ export class Waveform extends Sprite {
           let v = data[channel][samp];
           if (!v) continue
           let line = this.getLine()
-          line.width = v*256
+          line.scale.x = v*256 / 16
           line.y = i
           line.tint = color
           line.alpha = opacity
