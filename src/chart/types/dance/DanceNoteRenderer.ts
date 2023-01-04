@@ -85,14 +85,14 @@ export class DanceNoteRenderer {
     if (type == "Hold" || type == "Roll") {
       // Create new item if not reusing
       if (!arrow.hold.holdBody || !arrow.hold.holdCap) { 
-        let holdBody = new TilingSprite(type == "Hold" ? hold_body_texture : roll_body_texture, 64, 0)
+        let holdBody = new TilingSprite(Texture.EMPTY, 64, 0)
         holdBody.tileScale.x = 0.5
         holdBody.tileScale.y = 0.5
         holdBody.uvRespectAnchor = true
         holdBody.anchor.y = 1
         
         holdBody.x = -32
-        let holdCap = new Sprite(type == "Hold" ? hold_cap_texture : roll_cap_texture)
+        let holdCap = new Sprite()
         holdCap.width = 64
         holdCap.height = 32
         holdCap.anchor.x = 0.5
@@ -102,6 +102,8 @@ export class DanceNoteRenderer {
         arrow.hold.addChild(holdBody)
         arrow.hold.addChild(holdCap)
       }
+      arrow.hold.holdBody.texture = type == "Hold" ? hold_body_texture : roll_body_texture
+      arrow.hold.holdCap.texture = type == "Hold" ? hold_cap_texture : roll_cap_texture
       DanceNoteRenderer.setHoldBrightness(arrow, 0.8)
       arrow.hold.visible = true
     }else{
