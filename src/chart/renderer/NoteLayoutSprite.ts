@@ -150,7 +150,7 @@ export class NoteLayoutSprite extends Container {
         obj.anchor.set(0.5)
         this.barContainer.addChild(obj)
       }
-      obj.height = 2
+      obj.height = 1
       obj.x = (note.col+0.5) * 6
       let t = unlerp(0, lastBeat, note.beat)
       if (Options.chart.CMod) t = unlerp(songOffset, lastSecond, note.second)

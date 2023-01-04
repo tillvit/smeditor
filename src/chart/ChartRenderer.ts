@@ -167,7 +167,7 @@ export class ChartRenderer extends Container {
     TimerStats.endTime("Notefield Update Time")
     
     TimerStats.time("Waveform Update Time")
-    this.waveform.renderThis(beat)
+    this.waveform.renderThis(beat, time)
     TimerStats.endTime("Waveform Update Time")
     
 

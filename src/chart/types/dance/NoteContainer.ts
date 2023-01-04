@@ -1,13 +1,13 @@
 import { Container } from "pixi.js"
 import { ChartRenderer } from "../../ChartRenderer"
-import { DanceNoteRenderer } from "./DanceNoteRenderer"
+import { DanceNoteRenderer, NoteObject } from "./DanceNoteRenderer"
 import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
 import { Options } from "../../../util/Options"
 import { EditMode } from "../../ChartManager"
 import { DanceNotefield } from "./DanceNotefield"
 import { DanceNoteTexture } from "./DanceNoteTexture"
 
-interface NoteObject extends Container {
+interface ExtendedNoteObject extends NoteObject {
   note: NotedataEntry,
   deactivated: boolean,
   marked: boolean,
@@ -16,11 +16,11 @@ interface NoteObject extends Container {
 
 export class NoteContainer extends Container {
 
-  children: NoteObject[] = []
+  children: ExtendedNoteObject[] = []
 
   private notefield: DanceNotefield
   private renderer: ChartRenderer
-  private noteMap: Map<NotedataEntry, NoteObject> = new Map
+  private noteMap: Map<NotedataEntry, ExtendedNoteObject> = new Map
 
   constructor(notefield: DanceNotefield, renderer: ChartRenderer) {
     super()
@@ -47,6 +47,7 @@ export class NoteContainer extends Container {
       let arrow = this.getNote(note)
       arrow.deactivated = false
       arrow.marked = true
+      arrow.dirtyTime = Date.now()
       arrow.y = yPos;
       if (isHoldNote(note)) {
         DanceNoteRenderer.setHoldLength(arrow, holdLength)
@@ -54,10 +55,12 @@ export class NoteContainer extends Container {
           let t = (Date.now() - note.gameplay.lastHoldActivation)/Options.play.timingCollection.getHeldJudgement(note).getTimingWindowMS()
           t = Math.min(1.2, t)
           DanceNoteRenderer.setHoldBrightness(arrow, 1-t*0.7)
+        }else{
+          DanceNoteRenderer.setHoldBrightness(arrow, 0.8)
         }
       }
       if (note.type == "Fake") {
-        DanceNoteRenderer.hideFakeOverlay(arrow, this.renderer.chartManager.getMode() == EditMode.Play)
+        DanceNoteRenderer.hideFakeIcon(arrow, this.renderer.chartManager.getMode() == EditMode.Play)
       }
     }
 
@@ -84,15 +87,15 @@ export class NoteContainer extends Container {
     if (isHoldNote(note) && !note.gameplay?.droppedHoldBeat && note.gameplay?.lastHoldActivation && note.beat + note.hold < beat) return [true, false, y, y_hold - y]
     if (y_hold < -32 - this.renderer.y) return [true, false, y, y_hold - y]
     if (y > this.renderer.chartManager.app.renderer.screen.height-this.renderer.y+32) {
-      if (this.renderer.isNegScroll() || note.beat < beat) [true, false, y, y_hold - y]
-      else [true, true, y, y_hold - y]
+      if (this.renderer.isNegScroll() || note.beat < beat) return [true, false, y, y_hold - y]
+      else return [true, true, y, y_hold - y]
     } 
     return [false, false, y, y_hold - y]
   }
 
-  private getNote(note: NotedataEntry): NoteObject {
+  private getNote(note: NotedataEntry): ExtendedNoteObject {
     if (this.noteMap.get(note)) return this.noteMap.get(note)!
-    let newChild: Partial<NoteObject> | undefined
+    let newChild: Partial<ExtendedNoteObject> | undefined
     for (let child of this.children) {
       if (child.deactivated) {
         newChild = child
@@ -100,17 +103,20 @@ export class NoteContainer extends Container {
       }
     }
     if (!newChild) { 
-      newChild = DanceNoteRenderer.createArrow() as NoteObject
-      this.addChild(newChild as NoteObject)
+      newChild = DanceNoteRenderer.createArrow() as ExtendedNoteObject
     }
     newChild.note = note
     newChild.visible = true
     this.buildObject(newChild)
-    return newChild as NoteObject
+    this.noteMap.set(note, newChild as ExtendedNoteObject)
+    // Move to Front
+    this.removeChild(newChild as ExtendedNoteObject)
+    this.addChild(newChild as ExtendedNoteObject)
+    return newChild as ExtendedNoteObject
   }
 
-  private buildObject(noteObj: Partial<NoteObject>) {
-    DanceNoteRenderer.setData(this.notefield, noteObj as NoteObject, noteObj.note!)
+  private buildObject(noteObj: Partial<ExtendedNoteObject>) {
+    DanceNoteRenderer.setData(this.notefield, noteObj as ExtendedNoteObject, noteObj.note!)
     noteObj.x = this.notefield.getColX(noteObj.note!.col)
   }
 }

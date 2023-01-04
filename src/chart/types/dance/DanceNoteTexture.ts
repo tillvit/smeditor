@@ -1,5 +1,7 @@
 import { RenderTexture, Container, Geometry, Texture, Shader, Mesh, Sprite, Rectangle, BaseTexture } from "pixi.js"
 import { App } from "../../../App"
+import { getQuant } from "../../../util/Util"
+import { PartialNotedataEntry } from "../../sm/NoteTypes"
 
 const mine_frame_texture = Texture.from('assets/noteskin/dance/mine/frame.png');
 
@@ -18,6 +20,8 @@ export class DanceNoteTexture {
 
   static mine_body_geometry: Geometry
   
+  static arrow_frame_tex = RenderTexture.create({ width: 64, height: 64, resolution: 4 })
+  static arrow_frame?: Mesh<Shader>
   static arrow_tex = RenderTexture.create({ width: 192, height: 192, resolution: 4 })
   static arrow_container = new Container();
   static mine_tex = RenderTexture.create({ width: 64, height: 64, resolution: 4 })
@@ -37,22 +41,29 @@ export class DanceNoteTexture {
     this.mine_body_geometry = await this.loadGeometry('assets/noteskin/dance/mine/body.txt')
     
     {
+      let shader_frame = Shader.from(this.noop_vert, this.noop_frag, 
+        {sampler0: this.arrow_parts_texture}) 
+      let arrow_frame = new Mesh(DanceNoteTexture.arrow_frame_geometry, shader_frame);
+      arrow_frame.x = 32
+      arrow_frame.y = 32
+      arrow_frame.rotation = -Math.PI/2
+      this.arrow_frame = arrow_frame
+    }
+    {
       for (let i = 0; i < 8; i ++) {
         let shader_body = Shader.from(this.noop_vert, this.arrow_gradient_frag, 
           {sampler0: this.arrow_parts_texture, time: 0, quant: i}) 
+        let arrow_frame = new Sprite(DanceNoteTexture.arrow_frame_tex)
+        arrow_frame.x = (i % 3) * 64
+        arrow_frame.y = Math.floor(i/3) * 64
         let arrow_body = new Mesh(DanceNoteTexture.arrow_body_geometry, shader_body);
         arrow_body.x = (i % 3) * 64 + 32
         arrow_body.y = Math.floor(i/3) * 64 + 32
         arrow_body.rotation = -Math.PI/2
+        arrow_body.name = "body" + i
+        DanceNoteTexture.arrow_container.addChild(arrow_frame)
         DanceNoteTexture.arrow_container.addChild(arrow_body)
       }
-      let shader_frame = Shader.from(this.noop_vert, this.noop_frag, 
-        {sampler0: this.arrow_parts_texture}) 
-      let arrow_frame = new Mesh(DanceNoteTexture.arrow_frame_geometry, shader_frame);
-      arrow_frame.x = 2 * 64 + 32
-      arrow_frame.y = 2 * 64 + 32
-      arrow_frame.rotation = -Math.PI/2
-      DanceNoteTexture.arrow_container.addChild(arrow_frame)
     }
     {
       let shader_body = Shader.from(this.noop_vert, this.mine_gradient_frag, 
@@ -68,6 +79,7 @@ export class DanceNoteTexture {
     }
     
     app.ticker.add(() => {
+      app.renderer.render(DanceNoteTexture.arrow_frame!, {renderTexture: DanceNoteTexture.arrow_frame_tex});
       app.renderer.render(DanceNoteTexture.arrow_container, {renderTexture: DanceNoteTexture.arrow_tex});
       app.renderer.render(DanceNoteTexture.mine_container, {renderTexture: DanceNoteTexture.mine_tex});
     });
@@ -111,27 +123,18 @@ export class DanceNoteTexture {
   static setArrowTexTime(beat: number, second: number) {
     if (!this.loaded) return
     for (let i = 0; i < 8; i ++) {
-      (<Mesh>DanceNoteTexture.arrow_container.children[i]).shader.uniforms.time = beat
+      (<Mesh>DanceNoteTexture.arrow_container.getChildByName("body"+i)).shader.uniforms.time = beat
     }
     (<Mesh>DanceNoteTexture.mine_container.children[0]).shader.uniforms.time = second
     DanceNoteTexture.mine_container.rotation = second % 1 * Math.PI * 2
   }
 
-  static getSpriteWithQuant(i: number) {
-    i = Math.min(i,7)
-    let arrow = new Container()
-    let body = new Sprite(new Texture(DanceNoteTexture.arrow_tex.baseTexture, new Rectangle((i % 3) * 64, Math.floor(i/3) * 64, 64, 64)))
-    let frame = new Sprite(new Texture(DanceNoteTexture.arrow_tex.baseTexture, new Rectangle(128, 128, 64, 64)))
-    body.anchor.set(0.5)
-    frame.anchor.set(0.5)
-    arrow.addChild(body)
-    arrow.addChild(frame)
-    return arrow
-  }
-
-  static getMine() {
-    let tt = new Sprite(DanceNoteTexture.mine_tex)
-    tt.anchor.set(0.5)
-    return tt
+  static setNoteTex(arrow: Sprite, note: PartialNotedataEntry) {
+    if (note.type == "Mine") {
+      arrow.texture = DanceNoteTexture.mine_tex
+    }else{
+      let i = Math.min(getQuant(note.beat), 7)
+      arrow.texture = new Texture(DanceNoteTexture.arrow_tex.baseTexture, new Rectangle((i % 3) * 64, Math.floor(i/3) * 64, 64, 64))
+    }
   }
 }

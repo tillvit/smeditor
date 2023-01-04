@@ -26,6 +26,8 @@ export class Waveform extends Sprite {
   private lastZoom: number
   private zoom: number
   private poolSearch = 0
+  private lastBeat = 0
+  private lastTime = 0
 
   constructor(renderer: ChartRenderer) {
     super()
@@ -60,9 +62,10 @@ export class Waveform extends Sprite {
 
   refilter() {
     this.stripWaveform(this.chartAudio.getRawData())
+    this.lastBeat = -1
   }
 
-  renderThis(beat: number) {
+  renderThis(beat: number, time: number) {
     this.visible = Options.waveform.enabled && (this.renderer.chartManager.getMode() != EditMode.Play || !Options.play.hideBarlines)
 
     if (!Options.waveform.enabled) return
@@ -80,18 +83,18 @@ export class Waveform extends Sprite {
         this.refilter()
       }
     }
-    if (this.strippedWaveform) {
-      this.renderData(beat, this.strippedWaveform, Options.waveform.color, Options.waveform.opacity)
-    }
-    // this.lineContainer.children.filter(line => Date.now() - (line as WaveformLine).lastUsed > 5000).forEach(line => {
-    //   line.destroy()
-    //   this.lineContainer.removeChild(line)
-    // })
     this.waveformTex.resize(this.strippedWaveform!.length * 288 ?? 288, this.renderer.chartManager.app.renderer.screen.height)
-    this.renderer.chartManager.app.renderer.render(this.lineContainer, {renderTexture: this.waveformTex})
+    if (this.strippedWaveform && (beat != this.lastBeat || time != this.lastTime)) {
+      this.lastBeat = beat
+      this.lastTime = time
+      this.renderData(beat, this.strippedWaveform)
+      this.renderer.chartManager.app.renderer.render(this.lineContainer, {renderTexture: this.waveformTex})
+      this.tint = Options.waveform.color
+      this.alpha = Options.waveform.opacity
+    }
   }
 
-  private renderData(beat: number, data: number[][], color: number, opacity: number) {
+  private renderData(beat: number, data: number[][]) {
     this.resetPool()
 
     if (Options.experimental.speedChangeWaveform && !Options.chart.CMod && Options.chart.doSpeedChanges) {
@@ -139,8 +142,6 @@ export class Waveform extends Sprite {
             let line = this.getLine()
             line.scale.x = v*256 / 16
             line.y = y
-            line.tint = color
-            line.alpha = opacity
             line.x = 144 + 288 * channel
           }
           
@@ -158,8 +159,6 @@ export class Waveform extends Sprite {
           let line = this.getLine()
           line.scale.x = v*256 / 16
           line.y = i
-          line.tint = color
-          line.alpha = opacity
           line.x = 144 + 288 * channel
         }
       }
@@ -183,7 +182,6 @@ export class Waveform extends Sprite {
   private getLine(): WaveformLine {
     while (this.lineContainer.children[this.poolSearch]) {
       let w_line = this.lineContainer.children[this.poolSearch] as WaveformLine
-      // w_line.lastUsed = Date.now()
       w_line.visible = true
       this.poolSearch++
       return w_line
@@ -191,7 +189,6 @@ export class Waveform extends Sprite {
     let line = new Sprite(Texture.WHITE) as WaveformLine
     line.height = LINE_HEIGHT
     line.anchor.set(0.5)
-    // line.lastUsed = Date.now()
     line.visible = true
     this.poolSearch++
     this.lineContainer.addChild(line)
