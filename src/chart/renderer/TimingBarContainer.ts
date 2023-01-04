@@ -36,10 +36,12 @@ export class TimingBarContainer extends Container {
     this.barline = new Sprite(Texture.WHITE)
     this.barline.anchor.set(0.5)
     this.barline.height = 1
+    this.barline.alpha = 0.5
     let target = new Sprite(Texture.WHITE)
     target.width = 2
     target.height = BAR_HEIGHT
     target.anchor.set(0.5)
+    target.alpha = 0.5
     this.currentMedian = new Sprite(Texture.WHITE)
     this.currentMedian.width = BAR_WIDTH * 2
     this.currentMedian.height = BAR_HEIGHT

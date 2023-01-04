@@ -41,6 +41,7 @@ export class BasicGameLogic extends GameLogic {
         continue
       }
       if (roundDigit(chartManager.getBeat(),3) >= roundDigit(hold.beat + hold.hold!, 3)) {
+        hold.gameplay!.hideNote = true
         chartManager.chartView.doJudgment(hold, 0, Options.play.timingCollection.getHeldJudgement(hold))
         this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
         chartManager.gameStats?.addHoldDataPoint(hold, Options.play.timingCollection.getHeldJudgement(hold))
