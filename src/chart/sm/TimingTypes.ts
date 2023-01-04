@@ -19,6 +19,7 @@ export type BeatCacheTimingEventBase = {
   beat?: number,
   second?: number,
   searchSecond?: number
+  warped?: boolean
 }
 export interface ScrollCacheTimingEvent extends ScrollTimingEvent {
   effectiveBeat?: number

@@ -93,7 +93,7 @@ export class TimingBarContainer extends Container {
   private getMedian() {
     let dat = [...this.data]
     if (dat.length == 0) return 0
-    dat.sort()
+    dat.sort((a, b) => a - b)
 
     let half = Math.floor(dat.length / 2)
     if (dat.length % 2) return dat[half]
