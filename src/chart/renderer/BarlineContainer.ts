@@ -47,13 +47,14 @@ export class BarlineContainer extends Container {
     //Reset mark of old objects
     this.children.forEach(child => child.marked = false)
 
+
     //Add new objects
     for (let bar_beat = Math.max(0,Math.floor(fromBeat)); bar_beat < toBeat; bar_beat++) {
       if (Options.chart.CMod && this.renderer.chart.isBeatWarped(bar_beat)) continue
       let [outOfBounds, endSearch, yPos] = this.checkBounds(bar_beat, beat)
       if (endSearch) break
       if (outOfBounds) continue
-
+     
       //Move element
       let barline = this.getBarline(bar_beat)
       barline.y = yPos

@@ -43,7 +43,7 @@ export class Waveform extends Sprite {
     this.refilter()
 
     setInterval(() => {
-      if (getTPS() == 0) return
+      if (getTPS() == 0 || !this.visible) return
       if (getTPS() < 60 && LINE_HEIGHT < 3) {
         LINE_HEIGHT = Math.min(3, LINE_HEIGHT + 0.25)
         this.updateLineHeight()
@@ -89,6 +89,7 @@ export class Waveform extends Sprite {
     if (this.lastZoom != this.getZoom()) {
       this.lastReZoom = Date.now()
       this.lastZoom = this.getZoom()
+      this.lastBeat = -1
     }else{
       if (Date.now() - this.lastReZoom > 120 && this.zoom != this.getZoom()){
         this.zoom = this.getZoom()

@@ -15,6 +15,7 @@ type TimingCache = {
   speeds?: SpeedTimingEvent[]
   stopBeats?: {[key: number]: StopTimingEvent}
   sortedEvents?: TimingEvent[]
+  warpedBeats: Record<number, boolean>
 }
 
 const BEAT_TIMING_PRIORITY = ["WARPS", "WARP_DEST", "STOPS", "DELAYS", "BPMS"] as const
@@ -24,6 +25,7 @@ export class TimingData {
   private _fallback?: TimingData
   private _cache: TimingCache = {
     events: {},
+    warpedBeats: {}
   }
   private _chart?: Chart
   events: TimingPropertyCollection = {}
@@ -194,6 +196,7 @@ export class TimingData {
     this._cache.beatTiming = cache
 
     this._cache.stopBeats = {}
+    this._cache.warpedBeats = {}
     this.getTimingData("STOPS").forEach(x => {
       this._cache.stopBeats![x.beat] = x
     });
@@ -277,17 +280,28 @@ export class TimingData {
 
   isBeatWarped(beat: number): boolean {
     if (!isFinite(beat)) return false
+    if (this._cache.warpedBeats[beat]) return this._cache.warpedBeats[beat]
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
     let bpmEv = this.getBPMEvent(beat)
-    if (bpmEv && (bpmEv.value < 0 || bpmEv.searchSecond! > this.getSeconds(beat))) return true
+    if (bpmEv && (bpmEv.value < 0 || bpmEv.searchSecond! > this.getSeconds(beat))) {
+      this._cache.warpedBeats[beat] = true
+      return true
+    }
     for (let event of this._cache.beatTiming!) {
       if (beat < event.beat) continue
-      if (event.type == "WARPS" && beat < event.beat+event.value) return true
+      if (event.type == "WARPS" && beat < event.beat+event.value) {
+        this._cache.warpedBeats[beat] = true
+        return true
+      }
       if ((event.type == "STOPS" || event.type == "DELAYS") && (event.value < 0)) {
         let bpmatstop = this.getBPM(event.beat)
-        if (beat < event.beat+event.value*-1*bpmatstop/60) return true
+        if (beat < event.beat+event.value*-1*bpmatstop/60) {
+          this._cache.warpedBeats[beat] = true
+          return true
+        }
       }
     }
+    this._cache.warpedBeats[beat] = false
     return false
   }
 
