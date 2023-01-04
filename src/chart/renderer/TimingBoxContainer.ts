@@ -35,6 +35,7 @@ export class TimingBoxContainer extends Container {
   constructor(renderer: ChartRenderer) {
     super()
     this.renderer = renderer
+    this.sortableChildren = true
   }
 
   renderThis(beat: number, fromBeat: number, toBeat: number) {
@@ -158,6 +159,7 @@ export class TimingBoxContainer extends Container {
     newChild.backgroundObj!.position.x = -5 - (text_style[0] == "right" ? 0 : newChild.textObj!.width)
     newChild.backgroundObj!.position.y = -10
     newChild.backgroundObj!.tint = text_style[1]
+    newChild.zIndex = event.beat
     if (text_style[0] == "left") this.last_length_left += newChild.textObj!.width + 15
     if (text_style[0] == "right") this.last_length_right += newChild.textObj!.width + 15 
     this.same_beat = event.beat!

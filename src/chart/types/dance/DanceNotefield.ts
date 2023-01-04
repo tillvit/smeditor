@@ -1,11 +1,10 @@
-import { Container } from "pixi.js"
 import { Options } from "../../../util/Options"
 import { EditMode } from "../../ChartManager"
 import { ChartRenderer } from "../../ChartRenderer"
 import { TimingWindow } from "../../play/TimingWindow"
 import { PartialNotedataEntry } from "../../sm/NoteTypes"
 import { Notefield } from "../base/Notefield"
-import { DanceNoteRenderer } from "./DanceNoteRenderer"
+import { DanceNoteRenderer, NoteObject } from "./DanceNoteRenderer"
 import { DanceNoteTexture } from "./DanceNoteTexture"
 import { HoldJudgmentContainer } from "./HoldJudgmentContainer"
 import { NoteContainer } from "./NoteContainer"
@@ -18,7 +17,7 @@ export class DanceNotefield extends Notefield {
   private notes: NoteContainer
   private flashes: NoteFlashContainer
   private holdJudges: HoldJudgmentContainer
-  private ghostNote: Container
+  private ghostNote: NoteObject
   private ghostNoteEntry?: PartialNotedataEntry
 
   constructor(renderer: ChartRenderer) {

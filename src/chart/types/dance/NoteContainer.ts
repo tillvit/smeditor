@@ -1,4 +1,3 @@
-import { Container } from "pixi.js"
 import { ChartRenderer } from "../../ChartRenderer"
 import { DanceNoteRenderer, NoteObject } from "./DanceNoteRenderer"
 import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
@@ -6,6 +5,7 @@ import { Options } from "../../../util/Options"
 import { EditMode } from "../../ChartManager"
 import { DanceNotefield } from "./DanceNotefield"
 import { DanceNoteTexture } from "./DanceNoteTexture"
+import { Container } from "pixi.js"
 
 interface ExtendedNoteObject extends NoteObject {
   note: NotedataEntry,
@@ -26,6 +26,7 @@ export class NoteContainer extends Container {
     super()
     this.renderer = renderer
     this.notefield = notefield
+    this.sortableChildren = true
   }
 
   renderThis(beat: number, fromBeat: number, toBeat: number) {
@@ -107,10 +108,9 @@ export class NoteContainer extends Container {
     }
     newChild.note = note
     newChild.visible = true
+    newChild.zIndex = note.beat
     this.buildObject(newChild)
     this.noteMap.set(note, newChild as ExtendedNoteObject)
-    // Move to Front
-    this.removeChild(newChild as ExtendedNoteObject)
     this.addChild(newChild as ExtendedNoteObject)
     return newChild as ExtendedNoteObject
   }

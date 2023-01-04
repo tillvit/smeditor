@@ -102,7 +102,6 @@ export class Waveform extends Sprite {
       this.renderData(beat, this.strippedWaveform)
       this.renderer.chartManager.app.renderer.render(this.lineContainer, {renderTexture: this.waveformTex})
       this.tint = Options.waveform.color
-      this.alpha = Options.waveform.opacity
     }
   }
 
@@ -126,7 +125,7 @@ export class Waveform extends Sprite {
           curBeat = scrolls[scrollIndex]!.beat
           continue
         }
-        while (curBeat < scrollBeatLimit) {
+        while (curBeat < Math.min(scrollBeatLimit, beatLimit)) {
           let y = Math.round(this.renderer.getYPos(curBeat) + this.parent.y)
           if (y < 0) {
             if (scroll.value < 0) {
@@ -155,6 +154,7 @@ export class Waveform extends Sprite {
             line.scale.x = v*256 / 16
             line.y = y
             line.x = 144 + 288 * channel
+            line.alpha = Options.waveform.opacity
           }
           
         }
@@ -172,6 +172,7 @@ export class Waveform extends Sprite {
           line.scale.x = v*256 / 16
           line.y = i
           line.x = 144 + 288 * channel
+          line.alpha = Options.waveform.opacity
         }
       }
     }

@@ -39,8 +39,8 @@ export class Options {
   }
   static waveform = {
     enabled: true,
-    color: 0x404152,
-    opacity: 1,
+    color: 0x606172,
+    opacity: 0.5,
     filteredColor: 0x00ff66,
     filteredOpacity: 1
   }
