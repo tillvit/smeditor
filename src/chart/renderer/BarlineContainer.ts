@@ -34,7 +34,6 @@ export class BarlineContainer extends Container {
   private renderer: ChartRenderer
   private barlineMap: Map<number, Barline> = new Map
   private barlineLabelMap: Map<number, BarlineLabel> = new Map
-  private poolSearch = 0
 
   constructor(renderer: ChartRenderer) {
     super()

@@ -1,6 +1,6 @@
 import { ColHeldTracker } from "../../../util/ColHeldTracker"
 import { Options } from "../../../util/Options"
-import { bsearch } from "../../../util/Util"
+import { bsearch, roundDigit } from "../../../util/Util"
 import { ChartManager } from "../../ChartManager"
 import { HoldNotedataEntry, isHoldNote, isTapNote, Notedata, NotedataEntry } from "../../sm/NoteTypes"
 import { GameLogic } from "../base/GameLogic"
@@ -40,7 +40,7 @@ export class BasicGameLogic extends GameLogic {
         chartManager.gameStats?.addHoldDataPoint(hold, Options.play.timingCollection.getDroppedJudgment())
         continue
       }
-      if (chartManager.getBeat() >= hold.beat + hold.hold!) {
+      if (roundDigit(chartManager.getBeat(),3) >= roundDigit(hold.beat + hold.hold!, 3)) {
         chartManager.chartView.doJudgment(hold, 0, Options.play.timingCollection.getHeldJudgement(hold))
         this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
         chartManager.gameStats?.addHoldDataPoint(hold, Options.play.timingCollection.getHeldJudgement(hold))

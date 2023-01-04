@@ -1,7 +1,6 @@
 
 import { BitmapFont, Container, Renderer, Ticker } from 'pixi.js';
 import WebFont from 'webfontloader'
-import { BiquadFilter } from './chart/audio/BiquadFilter'
 import { ChartManager } from './chart/ChartManager'
 import { MenubarManager } from './gui/MenubarManager'
 import { Keybinds } from './listener/Keybinds'
@@ -14,6 +13,14 @@ import { getBrowser } from './util/Util';
 import { DirectoryWindow } from './window/DirectoryWindow'
 import { OptionsWindow } from './window/OptionsWindow'
 import { WindowManager } from './window/WindowManager'
+
+declare global {
+  interface Window { 
+    app: App
+    runSafari?: Function
+  }
+}
+
 
 export class App {
 
@@ -47,6 +54,7 @@ export class App {
       autoDensity: true,
       view: this.view,
     })
+    this.renderer.gl.drawElements
     this.ticker = new Ticker()
     this.ticker.add(()=>{
       TimerStats.time("Render Time")
@@ -191,15 +199,6 @@ export class App {
     this.view.style.height = `${screenHeight}px`;
   }
 }
-
-declare global {
-  interface Window { 
-    app: App
-    runSafari?: Function
-    BiquadFilter: BiquadFilter
-  }
-}
-
 
 document.querySelector("body")!.innerHTML = 
 `<div id="view-wrapper"> 
