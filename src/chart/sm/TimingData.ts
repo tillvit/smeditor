@@ -188,6 +188,7 @@ export class TimingData {
       if (event.type == "WARPS") warping = true
       if (event.type == "WARP_DEST") warping = false
       if (event.type == "BPMS") curbpm = event.value
+      cache[i].warped = warping
       cache[i].searchSecond = Math.max(cache[i-1]?.second ?? -9999999999, seconds - offset)
       cache[i].second = seconds - offset
       if (event.type == "STOPS" || event.type == "DELAYS") seconds += event.value;
@@ -271,17 +272,25 @@ export class TimingData {
     if (!isFinite(beat)) return [0, 0]
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
     let cache = this._cache.beatTiming!
+    // Get the earliest timing event
     let i = this.searchCache(cache, "beat", roundDigit(beat,3))
-    let event = cache[i]
-    let seconds = event.second!
-    let beats_left_over = beat - event.beat
-    if (beat - event.beat < 0.001) beats_left_over = 0
-    let curbpm = this.getBPM(roundDigit(event.beat, 3))
-    if (event.type == "STOPS" && roundDigit(beat,3) > event.beat || event.type == "DELAYS") return [seconds + Math.max(0,Math.max(0,beats_left_over * 60/curbpm) + event.value), event.searchSecond!]
-    if (event.type == "WARPS") beats_left_over = 0
-    if (event.type == "BPMS" && roundDigit(beat,3) > event.beat) curbpm = event.value
+    while (cache[i-1] && cache[i-1].beat == cache[i].beat) i--
+    let b_start = cache[i].beat
+    let clamp = cache[i].searchSecond!
+    let seconds = cache[i].second!
+    let beats_left_over = beat - cache[i].beat
+    if (beat - cache[i].beat < 0.001) beats_left_over = 0
+    let curbpm = this.getBPM(roundDigit(cache[i].beat, 3))
+    // Execute all events in order
+    while (cache[i] && cache[i].beat == b_start) {
+      let event = cache[i]
+      if (event.type == "STOPS" && roundDigit(beat,3) > event.beat || event.type == "DELAYS") seconds += event.value 
+      if (event.warped) beats_left_over = 0
+      if (event.type == "BPMS" && roundDigit(beat,3) > event.beat) curbpm = event.value
+      i++
+    }
     seconds += beats_left_over * 60/curbpm
-    return [seconds, event.searchSecond!]
+    return [seconds, clamp]
   }
 
   isBeatWarped(beat: number): boolean {
