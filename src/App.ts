@@ -94,6 +94,9 @@ export class App {
 
     this.windowManager.openWindow(new BasicOptionsWindow(this, "select_sm_initial"))
     
+    window.onunload = () => {
+      Options.saveOptions()
+    }
   }
 
   registerFonts() {
