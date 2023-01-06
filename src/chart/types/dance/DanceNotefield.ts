@@ -90,7 +90,7 @@ export class DanceNotefield extends Notefield {
   getRotFromCol(col: number): number {
     let ROTS = [0,-90,90,180]
     if (this.getNumCols() == 3) ROTS = [45,-90,135]
-    if (this.getNumCols() == 6) ROTS = [0,45,-90,90,135,180]
+    if (this.getNumCols() == 6 || this.getNumCols() == 12) ROTS = [0,45,-90,90,135,180]
     if (this.getNumCols() == 8) ROTS = [0,-90,90,180,0,-90,90,180]
     return ROTS[col % ROTS.length]/180*Math.PI;
   }

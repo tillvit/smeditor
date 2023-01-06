@@ -20,7 +20,7 @@ export class NoteLayoutSprite extends Container {
   private lastHeight = 0
   private lastCMod
   private mouseDown = false
-  private lastUpdate = 0
+  private queued = false
 
   constructor(renderer: ChartRenderer) {
     super()
@@ -39,11 +39,17 @@ export class NoteLayoutSprite extends Container {
     this.addChild(this.overlay)
     this.x = this.renderer.chartManager.app.renderer.screen.width/2 - 20
     window.onmessage = (message) => { 
-      if (message.data == "chartModified" && message.source == window && Date.now() - this.lastUpdate > 5000) {
-        this.lastUpdate = Date.now()
-        this.populate()
+      if (message.data == "chartModified" && message.source == window) {
+        if (!this.queued) this.populate()
+        this.queued = true
       }
     }
+    setInterval(() => {
+      if (this.queued) {
+        this.queued = false
+        this.populate()
+      }
+    }, 3000)
     this.populate()
 
     this.bars.interactive = true
@@ -121,6 +127,15 @@ export class NoteLayoutSprite extends Container {
     let childIndex = 0
     let numCols = this.renderer.chart.gameType.numCols
     let lastNote = this.renderer.chart.notedata.at(-1)
+
+    let height = this.renderer.chartManager.app.renderer.screen.height - 40
+    this.backing.height = height
+    this.backing.width = numCols * 6 + 8
+    this.overlay.width = numCols * 6 + 8
+    this.pivot.x = this.backing.width/2
+
+    this.barTexture.resize(numCols * 6, height)
+
     if (!lastNote) {
       this.barContainer.children.forEach(child => {
         child.destroy()
@@ -131,14 +146,6 @@ export class NoteLayoutSprite extends Container {
     }
     let lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
     let lastSecond = this.renderer.chart.getSeconds(lastBeat)
-
-    let height = this.renderer.chartManager.app.renderer.screen.height - 40
-    this.backing.height = height
-    this.backing.width = numCols * 6 + 8
-    this.overlay.width = numCols * 6 + 8
-    this.pivot.x = this.backing.width/2
-
-    this.barTexture.resize(numCols * 6, height)
 
     let songOffset = this.renderer.chart.timingData.getTimingData("OFFSET")
 
