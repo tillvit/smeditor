@@ -1,3 +1,4 @@
+import { Parser } from "expr-eval"
 import { App } from "../App"
 
 const QUANTS = [1, 1/2, 1/3, 1/4, 1/6, 1/8, 1/12, 1/16, 1/24]
@@ -118,3 +119,18 @@ export function bsearch<T>(arr: T[], value: number, property?: (a: T) => number)
   return Math.max(0,high)
 }
 
+export function isStringNumeric(str: unknown): str is number {
+  return typeof str == "string" && !isNaN(Number(str))
+}
+
+export function isStringBoolean(str: unknown): str is boolean {
+  return str == "false" || str == "true"
+}
+
+export function safeParse(expr: string): number {
+  try{
+    return Parser.evaluate(expr)
+  } catch {
+    return 0
+  }
+}

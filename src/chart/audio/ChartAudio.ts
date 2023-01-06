@@ -14,6 +14,7 @@ export class ChartAudio {
   private _buffer: AudioBuffer
   private _delay?: number
   private _listeners: Waveform[] = []
+  private _volume: number = 1
 
   loaded: Promise<void>
   
@@ -124,10 +125,13 @@ export class ChartAudio {
   }
 
   volume(volume: number) {
+    if (this._volume == volume) return
+    this._volume = volume
     this._gainNode.gain.setValueAtTime(volume, this._audioContext.currentTime);
   }
 
   rate(rate: number) {
+    if (this._rate == rate) return
     this._rate = rate 
     if (!this._source) return
     if (this._isPlaying) this._playbackTime += (this._audioContext.currentTime - this._startTimestamp) * this._source.playbackRate.value

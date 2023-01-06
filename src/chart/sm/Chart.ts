@@ -7,10 +7,10 @@ import { TimingData } from "./TimingData";
 import { TimingEventProperty, TimingProperty, TIMING_EVENT_NAMES } from "./TimingTypes"
 
 export class Chart {
-  gameType: GameType
+  gameType: GameType = GameTypeRegistry.getPriority()[0]
   description: string = ""
   difficulty: ChartDifficulty = "Beginner";
-  meter: number = 0
+  meter: number = 1
   radarValues: string = ""
   chartName: string = ""
   chartStyle: string = ""
@@ -23,9 +23,10 @@ export class Chart {
   private _notedataStats?: NotedataStats
 
 
-  constructor(sm: Simfile, data: string | {[key: string]: string}) {
+  constructor(sm: Simfile, data?: string | {[key: string]: string}) {
     this.timingData = new TimingData(sm.timingData, this)
     this.sm = sm
+    if (!data) return
     if (sm._type == "ssc") {
       let dict = data as {[key: string]: string}
       for (let property in dict) {
@@ -140,6 +141,12 @@ export class Chart {
     window.postMessage("chartModified")
     return removedNote[0]
   }
+
+  setNotedata(notedata: Notedata) {
+    this.notedata = notedata
+    this.recalculateStats()
+    window.postMessage("chartModified")
+  }
   
   recalculateNotes() {
     this.notedata = this.notedata.map(note => this.computeNote(note))
@@ -151,5 +158,9 @@ export class Chart {
 
   getMusicPath(): string {
     return this.music ?? this.sm.properties.MUSIC ?? ""
+  }
+
+  toString(): string {
+    return this.difficulty + " " + this.meter
   }
 } 

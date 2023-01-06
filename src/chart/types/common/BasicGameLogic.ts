@@ -2,6 +2,7 @@ import { ColHeldTracker } from "../../../util/ColHeldTracker"
 import { Options } from "../../../util/Options"
 import { bsearch, roundDigit } from "../../../util/Util"
 import { ChartManager } from "../../ChartManager"
+import { TimingWindowCollection } from "../../play/TimingWindowCollection"
 import { HoldNotedataEntry, isHoldNote, isTapNote, Notedata, NotedataEntry } from "../../sm/NoteTypes"
 import { GameLogic } from "../base/GameLogic"
 
@@ -15,16 +16,16 @@ export class BasicGameLogic extends GameLogic {
   update(chartManager: ChartManager): void {
     if (!chartManager.chart || !chartManager.chartView) return
     let hitTime = chartManager.getTime() + Options.play.offset
-    let hitWindowStart = hitTime - Options.play.timingCollection.maxWindowMS()/1000 * Options.audio.rate
+    let hitWindowStart = hitTime - TimingWindowCollection.getCollection(Options.play.timingCollection).maxWindowMS()/1000 * Options.audio.rate
     let lastChord = -1
     // Do Misses
     while (chartManager.chart.notedata[this.missNoteIndex] && chartManager.chart.notedata[this.missNoteIndex].second < hitWindowStart) {
       let note = chartManager.chart.notedata[this.missNoteIndex]
       if (note.beat != lastChord && note.type != "Mine" && !note.fake && !note.gameplay!.hasHit) {
         lastChord = note.beat
-        chartManager.chartView.doJudgment(note, 0, Options.play.timingCollection.getMissJudgment())
+        chartManager.chartView.doJudgment(note, 0, TimingWindowCollection.getCollection(Options.play.timingCollection).getMissJudgment())
         let chord = this.chordCohesion.get(note.beat)!
-        chartManager.gameStats?.addDataPoint(chord, Options.play.timingCollection.getMissJudgment(), 0)
+        chartManager.gameStats?.addDataPoint(chord, TimingWindowCollection.getCollection(Options.play.timingCollection).getMissJudgment(), 0)
       }
       this.missNoteIndex++
     }
@@ -34,28 +35,28 @@ export class BasicGameLogic extends GameLogic {
       if (!hold.hold || !hold.gameplay!.lastHoldActivation) continue
       if (this.heldCols.isPressed(hold.col) && hold.type == "Hold") hold.gameplay!.lastHoldActivation = Date.now()
       if (this.shouldDropHold(hold, Date.now())) {
-        chartManager.chartView.doJudgment(hold, 0, Options.play.timingCollection.getDroppedJudgment())
+        chartManager.chartView.doJudgment(hold, 0, TimingWindowCollection.getCollection(Options.play.timingCollection).getDroppedJudgment())
         hold.gameplay!.droppedHoldBeat = chartManager.getBeat()
         this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
-        chartManager.gameStats?.addHoldDataPoint(hold, Options.play.timingCollection.getDroppedJudgment())
+        chartManager.gameStats?.addHoldDataPoint(hold, TimingWindowCollection.getCollection(Options.play.timingCollection).getDroppedJudgment())
         continue
       }
       if (roundDigit(chartManager.getBeat(),3) >= roundDigit(hold.beat + hold.hold!, 3)) {
         hold.gameplay!.hideNote = true
-        chartManager.chartView.doJudgment(hold, 0, Options.play.timingCollection.getHeldJudgement(hold))
+        chartManager.chartView.doJudgment(hold, 0, TimingWindowCollection.getCollection(Options.play.timingCollection).getHeldJudgement(hold))
         this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
-        chartManager.gameStats?.addHoldDataPoint(hold, Options.play.timingCollection.getHeldJudgement(hold))
+        chartManager.gameStats?.addHoldDataPoint(hold, TimingWindowCollection.getCollection(Options.play.timingCollection).getHeldJudgement(hold))
       }
     }
 
     //Do Mines
     for (let col of this.heldCols.getHeldCols()) { 
-      let mine = this.getClosestNote(chartManager.chart.notedata, chartManager.getTime()-Options.play.timingCollection.getMineJudgment().getTimingWindowMS()/2000, col, ["Mine"], Options.play.timingCollection.getMineJudgment().getTimingWindowMS()/2)
+      let mine = this.getClosestNote(chartManager.chart.notedata, chartManager.getTime()-TimingWindowCollection.getCollection(Options.play.timingCollection).getMineJudgment().getTimingWindowMS()/2000, col, ["Mine"], TimingWindowCollection.getCollection(Options.play.timingCollection).getMineJudgment().getTimingWindowMS()/2)
       if (mine) {
         mine.gameplay!.hasHit = true
         mine.gameplay!.hideNote = true
-        chartManager.chartView.doJudgment(mine, 0, Options.play.timingCollection.getMineJudgment())
-        chartManager.gameStats?.addDataPoint([mine], Options.play.timingCollection.getMineJudgment(), 0)
+        chartManager.chartView.doJudgment(mine, 0, TimingWindowCollection.getCollection(Options.play.timingCollection).getMineJudgment())
+        chartManager.gameStats?.addDataPoint([mine], TimingWindowCollection.getCollection(Options.play.timingCollection).getMineJudgment(), 0)
         chartManager.mine.play()
       }
     }
@@ -70,7 +71,7 @@ export class BasicGameLogic extends GameLogic {
       this.chordCohesion.get(note.beat)!.push(note)
     }
     let hitTime = chartManager.getTime() + Options.play.offset
-    let hitWindowStart = hitTime - Options.play.timingCollection.maxWindowMS()/1000 * Options.audio.rate
+    let hitWindowStart = hitTime - TimingWindowCollection.getCollection(Options.play.timingCollection).maxWindowMS()/1000 * Options.audio.rate
     let firstHittableNote = bsearch(chartManager.chart.notedata, hitWindowStart, a => a.second) + 1
     if (firstHittableNote >= 1 && hitWindowStart <= chartManager.chart.notedata[firstHittableNote-1].second) firstHittableNote--
     this.missNoteIndex = firstHittableNote
@@ -112,8 +113,8 @@ export class BasicGameLogic extends GameLogic {
     }
     let chord = this.chordCohesion.get(note.beat)!
     if (chord.every(note => note.gameplay!.hasHit)) {
-      let judge = Options.play.timingCollection.judgeInput((hitTime-note.second)/Options.audio.rate)
-      let hideNote = Options.play.timingCollection.shouldHideNote(judge)
+      let judge = TimingWindowCollection.getCollection(Options.play.timingCollection).judgeInput((hitTime-note.second)/Options.audio.rate)
+      let hideNote = TimingWindowCollection.getCollection(Options.play.timingCollection).shouldHideNote(judge)
       chord.forEach(note => {
         chartManager.chartView!.doJudgment(note, hitTime-note.second, judge)
         if (hideNote && isTapNote(note)) note.gameplay!.hideNote = true
@@ -123,7 +124,7 @@ export class BasicGameLogic extends GameLogic {
   }
 
   private getClosestNote(notedata: Notedata, hitTime: number, col: number, types: string[], windowMS?: number): NotedataEntry | undefined {
-    windowMS = windowMS ?? Options.play.timingCollection.maxWindowMS()
+    windowMS = windowMS ?? TimingWindowCollection.getCollection(Options.play.timingCollection).maxWindowMS()
     windowMS *= Options.audio.rate
     let hitWindowStart = hitTime - windowMS/1000
     let hitWindowEnd = hitTime + windowMS/1000
@@ -146,7 +147,7 @@ export class BasicGameLogic extends GameLogic {
 
   private shouldDropHold(note: HoldNotedataEntry, time: number): boolean {
     if (!note.gameplay?.lastHoldActivation) return false
-    let window = Options.play.timingCollection.getHeldJudgement(note)
+    let window = TimingWindowCollection.getCollection(Options.play.timingCollection).getHeldJudgement(note)
     if (!window) return false
     return (time - note.gameplay.lastHoldActivation) >= window.getTimingWindowMS()
   }

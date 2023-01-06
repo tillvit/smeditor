@@ -1,2 +1,2 @@
-export const CHART_DIFFICULTIES = ["Beginner", "Easy", "Medium", "Hard", "Challenge", "Edit"] as const
-export type ChartDifficulty = typeof CHART_DIFFICULTIES[number]
+export const CHART_DIFFICULTIES: readonly ChartDifficulty[] = ["Beginner", "Easy", "Medium", "Hard", "Challenge", "Edit"]
+export type ChartDifficulty = "Beginner" | "Easy" | "Medium" | "Hard" | "Challenge" | "Edit"

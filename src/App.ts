@@ -11,7 +11,7 @@ import { Options } from './util/Options';
 import { TimerStats } from './util/TimerStats'
 import { getBrowser } from './util/Util';
 import { DirectoryWindow } from './window/DirectoryWindow'
-import { OptionsWindow } from './window/OptionsWindow'
+import { BasicOptionsWindow } from './window/BasicOptionsWindow'
 import { WindowManager } from './window/WindowManager'
 
 declare global {
@@ -40,6 +40,8 @@ export class App {
   private lastHeight = window.innerHeight
 
   constructor() {
+    Options.loadOptions()
+    setInterval(()=>Options.saveOptions(), 10000)
     this.registerFonts()
     
     this.view = document.getElementById("pixi") as HTMLCanvasElement
@@ -50,7 +52,7 @@ export class App {
       antialias: false, 
       width: this.view.clientWidth, 
       height: this.view.clientHeight, 
-      resolution: window.devicePixelRatio, 
+      resolution: Options.performance.resolution,
       autoDensity: true,
       view: this.view,
     })
@@ -90,7 +92,7 @@ export class App {
     // sampleRate: usually 44100
     // bandwidth: width of the effect in octaves (used for lowpass, highpass, bandpass, peaking, notch)`)
 
-    this.windowManager.openWindow(new OptionsWindow(this, "select_sm_initial"))
+    this.windowManager.openWindow(new BasicOptionsWindow(this, "select_sm_initial"))
     
   }
 

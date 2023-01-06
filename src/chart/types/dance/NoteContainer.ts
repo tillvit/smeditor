@@ -6,6 +6,7 @@ import { EditMode } from "../../ChartManager"
 import { DanceNotefield } from "./DanceNotefield"
 import { DanceNoteTexture } from "./DanceNoteTexture"
 import { Container } from "pixi.js"
+import { TimingWindowCollection } from "../../play/TimingWindowCollection"
 
 interface ExtendedNoteObject extends NoteObject {
   note: NotedataEntry,
@@ -53,7 +54,7 @@ export class NoteContainer extends Container {
       if (isHoldNote(note)) {
         DanceNoteRenderer.setHoldLength(arrow, holdLength)
         if (note.gameplay?.lastHoldActivation) {
-          let t = (Date.now() - note.gameplay.lastHoldActivation)/Options.play.timingCollection.getHeldJudgement(note).getTimingWindowMS()
+          let t = (Date.now() - note.gameplay.lastHoldActivation)/TimingWindowCollection.getCollection(Options.play.timingCollection).getHeldJudgement(note).getTimingWindowMS()
           t = Math.min(1.2, t)
           DanceNoteRenderer.setHoldBrightness(arrow, 1-t*0.7)
         }else{

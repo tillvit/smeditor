@@ -1,5 +1,6 @@
 import { RenderTexture, Container, Geometry, Texture, Shader, Mesh, Sprite, Rectangle, BaseTexture } from "pixi.js"
 import { App } from "../../../App"
+import { Options } from "../../../util/Options"
 import { getQuant } from "../../../util/Util"
 import { PartialNotedataEntry } from "../../sm/NoteTypes"
 
@@ -20,11 +21,11 @@ export class DanceNoteTexture {
 
   static mine_body_geometry: Geometry
   
-  static arrow_frame_tex = RenderTexture.create({ width: 64, height: 64, resolution: 4 })
+  static arrow_frame_tex = RenderTexture.create({ width: 64, height: 64, resolution: Options.performance.resolution })
   static arrow_frame?: Mesh<Shader>
-  static arrow_tex = RenderTexture.create({ width: 192, height: 192, resolution: 4 })
+  static arrow_tex = RenderTexture.create({ width: 192, height: 192, resolution: Options.performance.resolution })
   static arrow_container = new Container();
-  static mine_tex = RenderTexture.create({ width: 64, height: 64, resolution: 4 })
+  static mine_tex = RenderTexture.create({ width: 64, height: 64, resolution: Options.performance.resolution })
   static mine_container = new Container();
 
   private static loaded = false

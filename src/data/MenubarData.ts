@@ -251,5 +251,13 @@ export const MENUBAR_DATA: {[key: string]: MenuMain} = {
       type: "selection",
       id: "showEq",
     }]
-  }
+  },
+  help: {
+    type: "menu",
+    title: "Help",
+    options: [{
+      type: "selection",
+      id: "options",
+    }]
+  },
 }

@@ -179,6 +179,7 @@ export class ChartManager {
       if (this.mode == EditMode.Play) {
         this.chart.gameType.gameLogic.update(this)
       }
+      this.updateSoundProperties()
       tpsUpdate()
       TimerStats.endTime("Update Time")
     }, 5)
@@ -308,6 +309,8 @@ export class ChartManager {
     this.chart = chart
     this.beat = this.chart.getBeat(this.time)
 
+    Options.play.timingCollection = Options.play.defaultTimingCollection[chart.gameType.id] ?? "ITG"
+
     window.postMessage("chartModified")
   
     if (this.chartView) {
@@ -351,7 +354,6 @@ export class ChartManager {
     this.songAudio = new ChartAudio(audio_url)
     // await this.songAudio.loaded
     this.songAudio.seek(this.time)
-    this.updateSoundProperties()
     this.getAssistTickIndex()
   }
 
@@ -387,17 +389,14 @@ export class ChartManager {
   }
 
   setRate(rate: number) {
-    Options.audio.rate = rate
     this.songAudio.rate(rate)
   }
   
   setVolume(volume: number) {
-    Options.audio.songVolume = volume
     this.songAudio.volume(volume)
   }
   
   setEffectVolume(volume: number) {
-    Options.audio.soundEffectVolume = volume
     this.assistTick.volume(volume)
     this.me_high.volume(volume)
     this.me_low.volume(volume)

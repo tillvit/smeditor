@@ -1,6 +1,6 @@
-import { Parser } from "expr-eval"
 import { App } from "../App"
 import { TimingData } from "../chart/sm/TimingData"
+import { safeParse } from "../util/Util"
 
 
 type TimingDataWindowElement<T extends HTMLElement> = {
@@ -21,8 +21,8 @@ export const TIMING_WINDOW_DATA: {[key: string]: TimingDataWindowData} = {
     element: createElement({
       create: (app) => {
         let input = document.createElement("input")
-        input.onchange = () => {
-          let beat = Math.max(0, Parser.evaluate(input.value))
+        input.onblur = () => {
+          let beat = Math.max(0, safeParse(input.value))
           app.chartManager.setBeat(beat)
           input.value = beat.toFixed(3)
           input.blur()
@@ -49,8 +49,8 @@ export const TIMING_WINDOW_DATA: {[key: string]: TimingDataWindowData} = {
     element: createElement({
       create: (app) => {
         let input = document.createElement("input")
-        input.onchange = () => {
-          let offset = Parser.evaluate(input.value)
+        input.onblur = () => {
+          let offset = safeParse(input.value)
           app.chartManager.chart?.timingData.update("OFFSET", offset)
           app.chartManager.setBeat(app.chartManager.getBeat())
           input.value = offset.toFixed(3)

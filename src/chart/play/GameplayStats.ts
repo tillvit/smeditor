@@ -3,7 +3,7 @@ import { isHoldNote, Notedata, NotedataEntry } from "../sm/NoteTypes"
 import { HoldDroppedTimingWindow } from "./HoldDroppedTimingWindow"
 import { HoldTimingWindow } from "./HoldTimingWindow"
 import { TimingWindow } from "./TimingWindow"
-import { isMineTimingWindow, isStandardMissTimingWindow } from "./TimingWindowCollection"
+import { isMineTimingWindow, isStandardMissTimingWindow, TimingWindowCollection } from "./TimingWindowCollection"
 
 interface JudgmentDataPoint {
   second: number,
@@ -29,10 +29,10 @@ export class GameplayStats {
     if (!this.judgmentCounts.has(judge)) this.judgmentCounts.set(judge, 0)
     this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
     this.dancePoints += judge.dancePoints
-    if (!isMineTimingWindow(judge)) this.maxCumulativeDancePoints += Options.play.timingCollection.getMaxDancePoints()
+    if (!isMineTimingWindow(judge)) this.maxCumulativeDancePoints += TimingWindowCollection.getCollection(Options.play.timingCollection).getMaxDancePoints()
     if (isStandardMissTimingWindow(judge)) {
       this.maxCumulativeDancePoints += notes.filter(isHoldNote).reduce((totalDP, note) => {
-        return totalDP + Options.play.timingCollection.getMaxHoldDancePoints(note.type)
+        return totalDP + TimingWindowCollection.getCollection(Options.play.timingCollection).getMaxHoldDancePoints(note.type)
       }, 0)
     }
     this.dataPoints.push({
@@ -47,7 +47,7 @@ export class GameplayStats {
     if (!this.judgmentCounts.has(judge)) this.judgmentCounts.set(judge, 0)
     this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
     this.dancePoints += judge.dancePoints
-    this.maxCumulativeDancePoints += Options.play.timingCollection.getMaxHoldDancePoints(note.type)
+    this.maxCumulativeDancePoints += TimingWindowCollection.getCollection(Options.play.timingCollection).getMaxHoldDancePoints(note.type)
   }
 
   getScore(): number {
@@ -68,18 +68,18 @@ export class GameplayStats {
       if ((entry[0] as HoldTimingWindow).noteType) {
         let judge: HoldTimingWindow = (entry[0] as HoldTimingWindow)
         this.dancePoints += entry[0].dancePoints
-        this.maxCumulativeDancePoints += entry[1] + Options.play.timingCollection.getMaxHoldDancePoints(judge.noteType)
+        this.maxCumulativeDancePoints += entry[1] + TimingWindowCollection.getCollection(Options.play.timingCollection).getMaxHoldDancePoints(judge.noteType)
       }
     }
     for (let dataPoint of this.dataPoints) {
-      let judge = Options.play.timingCollection.judgeInput(dataPoint.error)
+      let judge = TimingWindowCollection.getCollection(Options.play.timingCollection).judgeInput(dataPoint.error)
       if (!this.judgmentCounts.has(judge)) this.judgmentCounts.set(judge, 0)
       this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
       this.dancePoints += judge.dancePoints
-      this.maxCumulativeDancePoints += Options.play.timingCollection.getMaxDancePoints()
+      this.maxCumulativeDancePoints += TimingWindowCollection.getCollection(Options.play.timingCollection).getMaxDancePoints()
       if (isStandardMissTimingWindow(judge)) {
         this.maxCumulativeDancePoints += dataPoint.notes.filter(isHoldNote).reduce((totalDP, note) => {
-          return totalDP + Options.play.timingCollection.getMaxHoldDancePoints(note.type)
+          return totalDP + TimingWindowCollection.getCollection(Options.play.timingCollection).getMaxHoldDancePoints(note.type)
         }, 0)
       }
     }
@@ -97,9 +97,9 @@ export class GameplayStats {
       if (!chordCohesion.has(note.beat)) chordCohesion.set(note.beat, [])
       chordCohesion.get(note.beat)!.push(note)
     }
-    this.maxDancePoints = chordCohesion.size * Options.play.timingCollection.getMaxDancePoints()
+    this.maxDancePoints = chordCohesion.size * TimingWindowCollection.getCollection(Options.play.timingCollection).getMaxDancePoints()
     this.maxDancePoints += Array.from(numHoldsMap.entries()).reduce((totalDP, entry) => {
-      return totalDP + entry[1] * Options.play.timingCollection.getMaxHoldDancePoints(entry[0])
+      return totalDP + entry[1] * TimingWindowCollection.getCollection(Options.play.timingCollection).getMaxHoldDancePoints(entry[0])
     }, 0)
   }
 }

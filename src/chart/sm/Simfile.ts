@@ -60,15 +60,19 @@ export class Simfile {
             console.warn(error)
             continue
           }
-          this.charts[chart.gameType.id] ||= []
-          this.charts[chart.gameType.id]!.push(chart)
-          this.charts[chart.gameType.id]!.sort((a, b)=>{
-            if (CHART_DIFFICULTIES.indexOf(a.difficulty) == CHART_DIFFICULTIES.indexOf(b.difficulty)) return a.meter-b.meter
-            return CHART_DIFFICULTIES.indexOf(a.difficulty) - CHART_DIFFICULTIES.indexOf(b.difficulty)
-          })
+          this.addChart(chart)
         }
         resolve()
       })
     }) 
+  }
+
+  addChart(chart: Chart) {
+    this.charts[chart.gameType.id] ||= []
+    this.charts[chart.gameType.id]!.push(chart)
+    this.charts[chart.gameType.id]!.sort((a, b)=>{
+      if (CHART_DIFFICULTIES.indexOf(a.difficulty) == CHART_DIFFICULTIES.indexOf(b.difficulty)) return a.meter-b.meter
+      return CHART_DIFFICULTIES.indexOf(a.difficulty) - CHART_DIFFICULTIES.indexOf(b.difficulty)
+    })
   }
 }

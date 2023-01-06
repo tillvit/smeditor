@@ -2,7 +2,7 @@ import { App } from "../App"
 import { OPTIONS_WINDOW_DATA } from "../data/OptionsWindowData";
 import { Window } from "./Window"
 
-export class OptionsWindow extends Window {
+export class BasicOptionsWindow extends Window {
 
   optionsDataId = ""
   app: App

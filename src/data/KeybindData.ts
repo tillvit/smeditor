@@ -4,7 +4,9 @@ import { Options } from "../util/Options"
 import { ChartListWindow } from "../window/ChartListWindow"
 import { DirectoryWindow } from "../window/DirectoryWindow"
 import { EQWindow } from "../window/EQWindow"
+import { NewChartWindow } from "../window/NewChartWindow"
 import { TimingDataWindow } from "../window/TimingDataWindow"
+import { UserOptionsWindow } from "../window/UserOptionsWindow"
 
 export interface Keybind {
   label: string,
@@ -142,10 +144,10 @@ export const KEYBINDS: {[key: string]: Keybind} = {
   newChart: {
     label: "New Chart...",
     keybinds: [
-			{key: "N", mods: [DEF_MOD, Modifier.SHIFT]}
+			{key: "N", mods: [DEF_MOD, Modifier.ALT]}
 		],
-    disabled: true,
-    callback: () => 0
+    disabled: (app) => !app.chartManager.sm,
+    callback: (app) => app.windowManager.openWindow(new NewChartWindow(app))
   },
   openChart: {
     label: "Open Chart...",
@@ -193,7 +195,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
 			{key: "Up", mods: [Modifier.SHIFT]}
 		],
     disabled: false,
-    callback: (app) => app.chartManager.setVolume(Math.min(Options.audio.songVolume+0.05,1))
+    callback: () => Options.audio.songVolume = Math.min(Options.audio.songVolume+0.05,1)
   },
   volumeDown: {
     label: "Decrease volume",
@@ -201,7 +203,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
 			{key: "Down", mods: [Modifier.SHIFT]}
 		],
     disabled: false,
-    callback: (app) => app.chartManager.setVolume(Math.max(Options.audio.songVolume-0.05,0))
+    callback: () => Options.audio.songVolume = Math.max(Options.audio.songVolume-0.05,0)
   },
   effectvolumeUp: {
     label: "Increase sound effect volume",
@@ -209,7 +211,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
 			{key: "Up", mods: [Modifier.SHIFT, Modifier.ALT]}
 		],
     disabled: false,
-    callback: (app) => app.chartManager.setEffectVolume(Math.min(Options.audio.soundEffectVolume+0.05,1))
+    callback: () => Options.audio.soundEffectVolume = Math.min(Options.audio.soundEffectVolume+0.05,1)
   },
   effectvolumeDown: {
     label: "Decrease sound effect volume",
@@ -217,7 +219,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
 			{key: "Down", mods: [Modifier.SHIFT, Modifier.ALT]}
 		],
     disabled: false,
-    callback: (app) => app.chartManager.setEffectVolume(Math.max(Options.audio.soundEffectVolume-0.05,0))
+    callback: () => Options.audio.soundEffectVolume = Math.max(Options.audio.soundEffectVolume-0.05,0)
   },
   rateUp: {
     label: "Increase playback rate",
@@ -225,7 +227,7 @@ export const KEYBINDS: {[key: string]: Keybind} = {
 			{key: "Right", mods: [Modifier.SHIFT]}
 		],
     disabled: false,
-    callback: (app) => app.chartManager.setRate(Options.audio.rate += 0.05)
+    callback: () => Options.audio.rate += 0.05
   },
   rateDown: {
     label: "Decrease playback rate",
@@ -233,13 +235,13 @@ export const KEYBINDS: {[key: string]: Keybind} = {
 			{key: "Left", mods: [Modifier.SHIFT]}
 		],
     disabled: false,
-    callback: (app) => app.chartManager.setRate(Math.max(Options.audio.rate-0.05,0.1))
+    callback: () => Options.audio.rate = Math.max(Options.audio.rate-0.05,0.1)
   },
   rateDefault: {
     label: "Reset playback rate",
     keybinds: [],
     disabled: false,
-    callback: (app) => app.chartManager.setRate(1)
+    callback: () => Options.audio.rate = 1
   },
   previousMeasure: {
     label: "Previous measure",
@@ -430,5 +432,15 @@ export const KEYBINDS: {[key: string]: Keybind} = {
 		],
     disabled: (app) => !app.chartManager.chartView || app.chartManager.getMode() == EditMode.Play,
     callback: (app) => app.chartManager.setMode(EditMode.Play)
+  },
+  options: {
+    label: "Options",
+    keybinds: [
+			{key: ",", mods: [DEF_MOD]}
+		],
+    disabled: false,
+    callback: (app)=> {
+      app.windowManager.openWindow(new UserOptionsWindow(app))
+    }
   },
 }

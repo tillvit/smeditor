@@ -4,7 +4,7 @@ import { clamp } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { TimingWindow } from "../play/TimingWindow"
-import { isStandardMissTimingWindow, isStandardTimingWindow } from "../play/TimingWindowCollection"
+import { isStandardMissTimingWindow, isStandardTimingWindow, TimingWindowCollection } from "../play/TimingWindowCollection"
 
 interface TimingBarObject extends Sprite {
   createTime: number,
@@ -28,6 +28,7 @@ export class TimingBarContainer extends Container {
   private errorTextTime: number = -1
   private renderer: ChartRenderer
   private data: number[] = []
+  private target = 0
 
   constructor(renderer: ChartRenderer) {
     super()
@@ -65,11 +66,12 @@ export class TimingBarContainer extends Container {
       child.alpha = Math.min(1, t)
     }
     this.errorText.alpha = clamp((2000 - (Date.now() - this.errorTextTime))/1000, 0, 1)
-    this.barline.width = Options.play.timingCollection.maxWindowMS()/1000*2*400
+    this.barline.width = TimingWindowCollection.getCollection(Options.play.timingCollection).maxWindowMS()/1000*2*400
     this.barlines.children.filter(child => Date.now() - (child as TimingBarObject).createTime > 8000).forEach(child => {
       child.destroy()
       this.barlines.removeChild(child)
     })  
+    this.currentMedian.x = (this.currentMedian.x - this.target) * 0.8 + this.target
   }
 
   addBar(error: number, judge: TimingWindow) {
@@ -87,7 +89,7 @@ export class TimingBarContainer extends Container {
     this.errorText.text = (error*1000).toFixed(1) + "ms"
     this.errorTextTime = Date.now()
     this.barlines.addChild(bar)
-    this.currentMedian.x = this.getMedian()*400
+    this.target = this.getMedian()*400
   }
 
   private getMedian() {

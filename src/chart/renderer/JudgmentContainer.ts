@@ -3,7 +3,7 @@ import { Options } from "../../util/Options"
 import { clamp } from "../../util/Util"
 import { StandardTimingWindow, TIMING_WINDOW_AUTOPLAY } from "../play/StandardTimingWindow"
 import { TimingWindow } from "../play/TimingWindow"
-import { isStandardTimingWindow } from "../play/TimingWindowCollection"
+import { isStandardTimingWindow, TimingWindowCollection } from "../play/TimingWindowCollection"
 
 export class JudgmentContainer extends Sprite {
 
@@ -22,7 +22,7 @@ export class JudgmentContainer extends Sprite {
     if (this.active) {
       let time = (Date.now() - this.createTime)/1000
       let zoom = 1.1
-      if (!Options.play.timingCollection.shouldHideNote(this.type)) zoom = 0.5
+      if (!TimingWindowCollection.getCollection(Options.play.timingCollection).shouldHideNote(this.type)) zoom = 0.5
       if (time < 0.1) {
         let p = 1 - (1 - time/0.1) * (1 - time/0.1)
         let z = (1 - zoom) * p + zoom
