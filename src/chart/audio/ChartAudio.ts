@@ -92,7 +92,10 @@ export class ChartAudio {
 
   async getData(url?: string): Promise<AudioBuffer | void> {
     return new Promise((resolve, reject) => {
-      if (!url) resolve()
+      if (!url) {
+        resolve()
+        return
+      }
       fetch(url!)
         .then(response => response.arrayBuffer())
         .then(data => this._audioContext.decodeAudioData(data))
