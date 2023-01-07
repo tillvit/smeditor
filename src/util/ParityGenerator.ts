@@ -14,7 +14,6 @@ export {}
 
 // let testnotedata = [[]]
 
-
 // function getPossibleMoves(layout, cols) {
 //   let moves = {}
 //   let permutations = permutate(cols)
@@ -83,7 +82,7 @@ export {}
 //   let y1 = right[1] - left[1]
 //   let x2 = 1
 //   let y2 = 0
-//   let dot = x1*x2 + y1*y2     
-//   let det = x1*y2 - y1*x2     
-//   return Math.atan2(det, dot) 
+//   let dot = x1*x2 + y1*y2
+//   let det = x1*y2 - y1*x2
+//   return Math.atan2(det, dot)
 // }

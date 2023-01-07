@@ -2,10 +2,10 @@ import { Parser } from "expr-eval"
 import { DisplayObject } from "pixi.js"
 import { App } from "../App"
 
-const QUANTS = [1, 1/2, 1/3, 1/4, 1/6, 1/8, 1/12, 1/16, 1/24]
+const QUANTS = [1, 1 / 2, 1 / 3, 1 / 4, 1 / 6, 1 / 8, 1 / 12, 1 / 16, 1 / 24]
 export function getQuant(beat: number) {
   for (let i = 0; i < QUANTS.length; i++) {
-    if (Math.abs(beat-Math.round(beat/QUANTS[i])*QUANTS[i]) < 0.01) {
+    if (Math.abs(beat - Math.round(beat / QUANTS[i]) * QUANTS[i]) < 0.01) {
       return i
     }
   }
@@ -13,7 +13,7 @@ export function getQuant(beat: number) {
 }
 
 export function lerp(v0: number, v1: number, t: number): number {
-  return v0*(1-t)+v1*t
+  return v0 * (1 - t) + v1 * t
 }
 
 export function unlerp(min: number, max: number, value: number) {
@@ -21,24 +21,23 @@ export function unlerp(min: number, max: number, value: number) {
 }
 
 export function rgbtoHex(r: number, g: number, b: number): number {
-  return (r << 16) + (g << 8) + (b)
+  return (r << 16) + (g << 8) + b
 }
 
-
 export function roundDigit(num: number, scale: number): number {
-  return Math.round(num*Math.pow(10,scale))/Math.pow(10,scale)
+  return Math.round(num * Math.pow(10, scale)) / Math.pow(10, scale)
 }
 
 export function getFont() {
   return "Assistant, Helvetica, Arial"
 }
 
-let fpsTimes: number[] = []
+const fpsTimes: number[] = []
 let fps = false
 export function getFPS(app: App) {
   if (!fps) {
     fps = true
-    app.ticker.add(()=>{
+    app.ticker.add(() => {
       fpsTimes.push(Date.now())
       while (fpsTimes.length > 0 && fpsTimes[0] < Date.now() - 1000) {
         fpsTimes.shift()
@@ -48,7 +47,7 @@ export function getFPS(app: App) {
   return fpsTimes.length
 }
 
-let tpsTimes: number[] = []
+const tpsTimes: number[] = []
 export function getTPS() {
   return tpsTimes.length
 }
@@ -61,63 +60,73 @@ export function tpsUpdate() {
 }
 
 export function clamp(val: number, low: number, high: number): number {
-  return Math.max(low,Math.min(high, val))
-} 
+  return Math.max(low, Math.min(high, val))
+}
 
 export function getBrowser() {
   const { userAgent } = navigator
-  let match = userAgent.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || []
+  let match =
+    userAgent.match(
+      /(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i
+    ) || []
   let temp
 
   if (/trident/i.test(match[1])) {
     temp = /\brv[ :]+(\d+)/g.exec(userAgent) || []
 
-    return `IE ${temp[1] || ''}`
+    return `IE ${temp[1] || ""}`
   }
 
-  if (match[1] === 'Chrome') {
+  if (match[1] === "Chrome") {
     temp = userAgent.match(/\b(OPR|Edge)\/(\d+)/)
 
     if (temp !== null) {
-      return temp.slice(1).join(' ').replace('OPR', 'Opera')
+      return temp.slice(1).join(" ").replace("OPR", "Opera")
     }
 
     temp = userAgent.match(/\b(Edg)\/(\d+)/)
 
     if (temp !== null) {
-      return temp.slice(1).join(' ').replace('Edg', 'Edge (Chromium)')
+      return temp.slice(1).join(" ").replace("Edg", "Edge (Chromium)")
     }
   }
 
-  match = match[2] ? [ match[1], match[2] ] : [ navigator.appName, navigator.appVersion, '-?' ]
+  match = match[2]
+    ? [match[1], match[2]]
+    : [navigator.appName, navigator.appVersion, "-?"]
   temp = userAgent.match(/version\/(\d+)/i)
 
   if (temp !== null) {
     match.splice(1, 1, temp[1])
   }
 
-  return match.join(' ')
+  return match.join(" ")
 }
 
-export function bsearch<T>(arr: T[], value: number, property?: (a: T) => number): number {
-  property = property ?? (a => (a as number))
+export function bsearch<T>(
+  arr: T[],
+  value: number,
+  property?: (a: T) => number
+): number {
+  property = property ?? (a => a as number)
   if (arr.length == 0) return -1
-  if (value >= property(arr[arr.length-1])) {
+  if (value >= property(arr[arr.length - 1])) {
     let mid = arr.length - 1
-    while (mid > 0 && property(arr[mid-1]) == value) mid--
+    while (mid > 0 && property(arr[mid - 1]) == value) mid--
     return mid
   }
-  let low = 0, high = arr.length;
+  let low = 0,
+    high = arr.length
   while (low <= high) {
-    let mid = (low + high) >>> 1;
+    let mid = (low + high) >>> 1
     if (property(arr[mid]) == value) {
-      while (mid > 0 && property(arr[mid-1]) == value) mid--
+      while (mid > 0 && property(arr[mid - 1]) == value) mid--
       return mid
     }
-    if (property(arr[mid]) < value) low = mid + 1;
-    if (property(arr[mid]) > value) high = mid - 1;
+    if (property(arr[mid]) < value) low = mid + 1
+    if (property(arr[mid]) > value) high = mid - 1
   }
-  return Math.max(0,high)
+  return Math.max(0, high)
 }
 
 export function isStringNumeric(str: unknown): str is number {
@@ -129,15 +138,18 @@ export function isStringBoolean(str: unknown): str is boolean {
 }
 
 export function safeParse(expr: string): number {
-  try{
+  try {
     return Parser.evaluate(expr)
   } catch {
     return 0
   }
 }
 
-export function destroyChildIf<Child extends DisplayObject>(children: Child[], predicate: (child: Child, index: number) => boolean) {
-  let i = children.length;
+export function destroyChildIf<Child extends DisplayObject>(
+  children: Child[],
+  predicate: (child: Child, index: number) => boolean
+) {
+  let i = children.length
   if (children.length == 0) return
   while (i--) {
     if (predicate(children[i], i)) {

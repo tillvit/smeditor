@@ -3,37 +3,37 @@ name: Bundle js
 on:
   workflow_dispatch:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Setup Node
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18.x'
-    
-    - name: Cache
-      uses: actions/cache@v3.1.0-beta.1
-      with:
-        path: ~/.npm
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
 
-    - name: Install packages
-      run: |
-        npm install
+      - name: Cache
+        uses: actions/cache@v3.1.0-beta.1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
-    - name: Build
-      run: |
-        npm run build
-        
-    - name: Deploy 
-      uses: JamesIves/github-pages-deploy-action@v4
-      with:
-        folder: dist
+      - name: Install packages
+        run: |
+          npm install
+
+      - name: Build
+        run: |
+          npm run build
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist

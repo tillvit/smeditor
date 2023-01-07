@@ -1,69 +1,100 @@
 import { bsearch } from "../../util/Util"
 import { GameType, GameTypeRegistry } from "../types/GameTypeRegistry"
 import { ChartDifficulty, CHART_DIFFICULTIES } from "./ChartTypes"
-import { isHoldNote, Notedata, NotedataEntry, NotedataStats, PartialNotedataEntry } from "./NoteTypes"
+import {
+  isHoldNote,
+  Notedata,
+  NotedataEntry,
+  NotedataStats,
+  PartialNotedataEntry,
+} from "./NoteTypes"
 import { Simfile } from "./Simfile"
-import { TimingData } from "./TimingData";
-import { TimingEventProperty, TimingProperty, TIMING_EVENT_NAMES } from "./TimingTypes"
+import { TimingData } from "./TimingData"
+import {
+  TimingEventProperty,
+  TimingProperty,
+  TIMING_EVENT_NAMES,
+} from "./TimingTypes"
 
 export class Chart {
   gameType: GameType = GameTypeRegistry.getPriority()[0]
-  description: string = ""
-  difficulty: ChartDifficulty = "Beginner";
-  meter: number = 1
-  radarValues: string = ""
-  chartName: string = ""
-  chartStyle: string = ""
-  credit: string = ""
+  description = ""
+  difficulty: ChartDifficulty = "Beginner"
+  meter = 1
+  radarValues = ""
+  chartName = ""
+  chartStyle = ""
+  credit = ""
   music?: string
   timingData: TimingData
   sm: Simfile
 
-  notedata: Notedata = [];
+  notedata: Notedata = []
   private _notedataStats?: NotedataStats
 
-
-  constructor(sm: Simfile, data?: string | {[key: string]: string}) {
+  constructor(sm: Simfile, data?: string | { [key: string]: string }) {
     this.timingData = new TimingData(sm.timingData, this)
     this.sm = sm
     if (!data) return
     if (sm._type == "ssc") {
-      let dict = data as {[key: string]: string}
-      for (let property in dict) {
-        if (property == "OFFSET" || TIMING_EVENT_NAMES.includes(property as TimingEventProperty)) this.timingData.parse(property as TimingProperty, dict[property])
+      const dict = data as { [key: string]: string }
+      for (const property in dict) {
+        if (
+          property == "OFFSET" ||
+          TIMING_EVENT_NAMES.includes(property as TimingEventProperty)
+        )
+          this.timingData.parse(property as TimingProperty, dict[property])
       }
       this.timingData.reloadCache()
-      let gameType = GameTypeRegistry.getGameType(dict["STEPSTYPE"])
+      const gameType = GameTypeRegistry.getGameType(dict["STEPSTYPE"])
       if (!gameType) throw Error("Unknown step type " + dict["STEPSTYPE"])
       this.gameType = gameType
       this.description = dict["DESCRIPTION"] ?? ""
-      if (CHART_DIFFICULTIES.includes(dict["DIFFICULTY"] as ChartDifficulty)) this.difficulty = dict["DIFFICULTY"] as ChartDifficulty
+      if (CHART_DIFFICULTIES.includes(dict["DIFFICULTY"] as ChartDifficulty))
+        this.difficulty = dict["DIFFICULTY"] as ChartDifficulty
       else throw Error("Unknown chart difficulty " + dict["DIFFICULTY"])
       this.meter = parseInt(dict["METER"]) ?? 0
       this.radarValues = dict["RADARVALUES"] ?? ""
-      this.notedata = gameType.parser.fromString(dict["NOTES"]).map(note => this.computeNote(note)) ?? []
+      this.notedata =
+        gameType.parser
+          .fromString(dict["NOTES"])
+          .map(note => this.computeNote(note)) ?? []
       this.credit = dict["CREDIT"] ?? ""
       this.chartName = dict["CHARTNAME"] ?? ""
       this.chartStyle = dict["CHARTSTYLE"] ?? ""
       this.music = dict["MUSIC"]
-    }else{
-      let match = /([\w\d\-]+):[\s ]*([^:]*):[\s ]*([\w\d]+):[\s ]*([\d]+):[\s ]*([\d.,]+):[\s ]*([\w\d\s, ]+)/g.exec((<string>data).trim())
+    } else {
+      const match =
+        /([\w\d-]+):[\s ]*([^:]*):[\s ]*([\w\d]+):[\s ]*([\d]+):[\s ]*([\d.,]+):[\s ]*([\w\d\s, ]+)/g.exec(
+          (<string>data).trim()
+        )
       if (match != null) {
-        let gameType = GameTypeRegistry.getGameType(match[1])
+        const gameType = GameTypeRegistry.getGameType(match[1])
         if (!gameType) throw Error("Unknown step type " + match[1])
         this.gameType = gameType
         this.description = match[2] ?? ""
-        if (CHART_DIFFICULTIES.includes(match[3] as ChartDifficulty)) this.difficulty = match[3] as ChartDifficulty
+        if (CHART_DIFFICULTIES.includes(match[3] as ChartDifficulty))
+          this.difficulty = match[3] as ChartDifficulty
         else throw Error("Unknown chart difficulty " + match[3])
         this.meter = parseInt(match[4]) ?? 0
         this.radarValues = match[5] ?? ""
-        this.notedata = gameType.parser.fromString(match[6]).map(note => this.computeNote(note)) ?? []
-      }else{
+        this.notedata =
+          gameType.parser
+            .fromString(match[6])
+            .map(note => this.computeNote(note)) ?? []
+      } else {
         throw Error("Failed to load sm chart!")
       }
     }
     this.recalculateStats()
-    console.log("Loading chart " + this.difficulty + " " + this.meter + " " + this.gameType.id)
+    console.log(
+      "Loading chart " +
+        this.difficulty +
+        " " +
+        this.meter +
+        " " +
+        this.gameType.id
+    )
   }
 
   getNotedataStats() {
@@ -95,7 +126,7 @@ export class Chart {
       return this.notedata.indexOf(note as NotedataEntry)
     }
     for (let i = 0; i < this.notedata.length; i++) {
-      let n = this.notedata[i]
+      const n = this.notedata[i]
       if (n.beat == note.beat && n.col == note.col && n.type == note.type) {
         return i
       }
@@ -104,11 +135,11 @@ export class Chart {
   }
 
   addNote(note: PartialNotedataEntry): NotedataEntry {
-    note.beat = Math.round(note.beat*48)/48
-    if (isHoldNote(note)) note.hold = Math.round(note.hold*48)/48
-    let computedNote = this.computeNote(note)
+    note.beat = Math.round(note.beat * 48) / 48
+    if (isHoldNote(note)) note.hold = Math.round(note.hold * 48) / 48
+    const computedNote = this.computeNote(note)
     let index = bsearch(this.notedata, note.beat, a => a.beat) + 1
-    if (index >= 1 && this.notedata[index-1].beat > note.beat) index--
+    if (index >= 1 && this.notedata[index - 1].beat > note.beat) index--
     this.notedata.splice(index, 0, computedNote)
     this.recalculateStats()
     window.postMessage("chartModified")
@@ -119,14 +150,14 @@ export class Chart {
     return Object.assign(note, {
       warped: this.timingData.isBeatWarped(note.beat),
       fake: note.type == "Fake" || this.timingData.isBeatFaked(note.beat),
-      second: this.timingData.getSeconds(note.beat)
+      second: this.timingData.getSeconds(note.beat),
     })
   }
 
   modifyNote(note: PartialNotedataEntry, properties: Partial<NotedataEntry>) {
-    let i = this.getNoteIndex(note)
+    const i = this.getNoteIndex(note)
     if (i == -1) return
-    let noteToModify = this.notedata[i]
+    const noteToModify = this.notedata[i]
     this.notedata.splice(i, 1)
     Object.assign(noteToModify, properties)
     this.addNote(noteToModify)
@@ -134,9 +165,9 @@ export class Chart {
   }
 
   removeNote(note: PartialNotedataEntry): NotedataEntry | undefined {
-    let i = this.getNoteIndex(note)
+    const i = this.getNoteIndex(note)
     if (i == -1) return
-    let removedNote = this.notedata.splice(i, 1)
+    const removedNote = this.notedata.splice(i, 1)
     this.recalculateStats()
     window.postMessage("chartModified")
     return removedNote[0]
@@ -147,13 +178,16 @@ export class Chart {
     this.recalculateStats()
     window.postMessage("chartModified")
   }
-  
+
   recalculateNotes() {
     this.notedata = this.notedata.map(note => this.computeNote(note))
   }
-  
+
   private recalculateStats() {
-    this._notedataStats = this.gameType.parser.getStats(this.notedata, this.timingData)
+    this._notedataStats = this.gameType.parser.getStats(
+      this.notedata,
+      this.timingData
+    )
   }
 
   getMusicPath(): string {
@@ -163,4 +197,4 @@ export class Chart {
   toString(): string {
     return this.difficulty + " " + this.meter
   }
-} 
+}

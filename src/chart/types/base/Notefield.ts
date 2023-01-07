@@ -4,7 +4,6 @@ import { TimingWindow } from "../../play/TimingWindow"
 import { PartialNotedataEntry } from "../../sm/NoteTypes"
 
 export abstract class Notefield extends Container {
-
   protected renderer: ChartRenderer
 
   constructor(renderer: ChartRenderer) {
@@ -25,5 +24,4 @@ export abstract class Notefield extends Container {
   abstract keyDown(col: number): void
 
   abstract keyUp(col: number): void
-
 }

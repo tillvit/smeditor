@@ -10,19 +10,18 @@ import { TimingWindowCollection } from "../../play/TimingWindowCollection"
 import { destroyChildIf } from "../../../util/Util"
 
 interface ExtendedNoteObject extends NoteObject {
-  note: NotedataEntry,
-  deactivated: boolean,
-  marked: boolean,
+  note: NotedataEntry
+  deactivated: boolean
+  marked: boolean
   dirtyTime: number
 }
 
 export class NoteContainer extends Container {
-
   children: ExtendedNoteObject[] = []
 
   private notefield: DanceNotefield
   private renderer: ChartRenderer
-  private noteMap: Map<NotedataEntry, ExtendedNoteObject> = new Map
+  private noteMap: Map<NotedataEntry, ExtendedNoteObject> = new Map()
 
   constructor(notefield: DanceNotefield, renderer: ChartRenderer) {
     super()
@@ -32,77 +31,112 @@ export class NoteContainer extends Container {
   }
 
   renderThis(beat: number, fromBeat: number, toBeat: number) {
-
     //Reset mark of old objects
-    this.children.forEach(child => child.marked = false)
-    let time = this.renderer.chartManager.getTime()
-    for (let note of this.renderer.chart.notedata) { 
+    this.children.forEach(child => (child.marked = false))
+    const time = this.renderer.chartManager.getTime()
+    for (const note of this.renderer.chart.notedata) {
       if (note.gameplay?.hideNote) continue
-      if (Options.chart.CMod && Options.chart.hideWarpedArrows && note.warped) continue
+      if (Options.chart.CMod && Options.chart.hideWarpedArrows && note.warped)
+        continue
       if (note.beat + (isHoldNote(note) ? note.hold : 0) < fromBeat) continue
       if (note.beat > toBeat) break
 
-      let [outOfBounds, endSearch, yPos, holdLength] = this.checkBounds(note, beat)
+      const [outOfBounds, endSearch, yPos, holdLength] = this.checkBounds(
+        note,
+        beat
+      )
       if (endSearch) break
       if (outOfBounds) continue
 
-      let arrow = this.getNote(note)
+      const arrow = this.getNote(note)
       arrow.deactivated = false
       arrow.marked = true
       arrow.dirtyTime = Date.now()
-      arrow.y = yPos;
+      arrow.y = yPos
       if (isHoldNote(note)) {
         DanceNoteRenderer.setHoldLength(arrow, holdLength)
         if (note.gameplay?.lastHoldActivation) {
-          let t = (Date.now() - note.gameplay.lastHoldActivation)/TimingWindowCollection.getCollection(Options.play.timingCollection).getHeldJudgement(note).getTimingWindowMS()
+          let t =
+            (Date.now() - note.gameplay.lastHoldActivation) /
+            TimingWindowCollection.getCollection(Options.play.timingCollection)
+              .getHeldJudgement(note)
+              .getTimingWindowMS()
           t = Math.min(1.2, t)
-          DanceNoteRenderer.setHoldBrightness(arrow, 1-t*0.7)
-        }else{
+          DanceNoteRenderer.setHoldBrightness(arrow, 1 - t * 0.7)
+        } else {
           DanceNoteRenderer.setHoldBrightness(arrow, 0.8)
         }
       }
       if (note.type == "Fake") {
-        DanceNoteRenderer.hideFakeIcon(arrow, this.renderer.chartManager.getMode() == EditMode.Play)
+        DanceNoteRenderer.hideFakeIcon(
+          arrow,
+          this.renderer.chartManager.getMode() == EditMode.Play
+        )
       }
     }
 
     DanceNoteTexture.setArrowTexTime(beat, time)
 
     //Remove old elements
-    
-    this.children.filter(child => !child.deactivated && !child.marked).forEach(child => {
-      child.deactivated = true
-      child.visible = false
-      this.noteMap.delete(child.note)
-    })
+
+    this.children
+      .filter(child => !child.deactivated && !child.marked)
+      .forEach(child => {
+        child.deactivated = true
+        child.visible = false
+        this.noteMap.delete(child.note)
+      })
 
     destroyChildIf(this.children, child => Date.now() - child.dirtyTime > 5000)
   }
 
-  private checkBounds(note: NotedataEntry, beat: number): [boolean, boolean, number, number] {
+  private checkBounds(
+    note: NotedataEntry,
+    beat: number
+  ): [boolean, boolean, number, number] {
     let y = Options.chart.receptorYPos
-    if (!isHoldNote(note) || (!note.gameplay?.lastHoldActivation || beat < note.beat)) y = this.renderer.getYPos(note.beat)
-    if (isHoldNote(note) && note.gameplay?.droppedHoldBeat) y = this.renderer.getYPos(note.gameplay.droppedHoldBeat)
-    let y_hold = this.renderer.getYPos(note.beat + (isHoldNote(note) ? note.hold : 0))
-    if (isHoldNote(note) && !note.gameplay?.droppedHoldBeat && note.gameplay?.lastHoldActivation && note.beat + note.hold < beat) return [true, false, y, y_hold - y]
+    if (
+      !isHoldNote(note) ||
+      !note.gameplay?.lastHoldActivation ||
+      beat < note.beat
+    )
+      y = this.renderer.getYPos(note.beat)
+    if (isHoldNote(note) && note.gameplay?.droppedHoldBeat)
+      y = this.renderer.getYPos(note.gameplay.droppedHoldBeat)
+    const y_hold = this.renderer.getYPos(
+      note.beat + (isHoldNote(note) ? note.hold : 0)
+    )
+    if (
+      isHoldNote(note) &&
+      !note.gameplay?.droppedHoldBeat &&
+      note.gameplay?.lastHoldActivation &&
+      note.beat + note.hold < beat
+    )
+      return [true, false, y, y_hold - y]
     if (y_hold < -32 - this.renderer.y) return [true, false, y, y_hold - y]
-    if (y > this.renderer.chartManager.app.renderer.screen.height-this.renderer.y+32) {
-      if (note.beat < beat || this.renderer.isNegScroll(note.beat)) return [true, false, y, y_hold - y]
+    if (
+      y >
+      this.renderer.chartManager.app.renderer.screen.height -
+        this.renderer.y +
+        32
+    ) {
+      if (note.beat < beat || this.renderer.isNegScroll(note.beat))
+        return [true, false, y, y_hold - y]
       else return [true, true, y, y_hold - y]
-    } 
+    }
     return [false, false, y, y_hold - y]
   }
 
   private getNote(note: NotedataEntry): ExtendedNoteObject {
     if (this.noteMap.get(note)) return this.noteMap.get(note)!
     let newChild: Partial<ExtendedNoteObject> | undefined
-    for (let child of this.children) {
+    for (const child of this.children) {
       if (child.deactivated) {
         newChild = child
         break
       }
     }
-    if (!newChild) { 
+    if (!newChild) {
       newChild = DanceNoteRenderer.createArrow() as ExtendedNoteObject
     }
     newChild.note = note
@@ -115,7 +149,11 @@ export class NoteContainer extends Container {
   }
 
   private buildObject(noteObj: Partial<ExtendedNoteObject>) {
-    DanceNoteRenderer.setData(this.notefield, noteObj as ExtendedNoteObject, noteObj.note!)
+    DanceNoteRenderer.setData(
+      this.notefield,
+      noteObj as ExtendedNoteObject,
+      noteObj.note!
+    )
     noteObj.x = this.notefield.getColX(noteObj.note!.col)
   }
 }

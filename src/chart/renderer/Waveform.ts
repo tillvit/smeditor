@@ -12,10 +12,14 @@ interface WaveformLine extends Sprite {
 }
 
 export class Waveform extends Sprite {
-
-  lineContainer: ParticleContainer = new ParticleContainer(1500, {position: true, scale: true}, 16384, true)
+  lineContainer: ParticleContainer = new ParticleContainer(
+    1500,
+    { position: true, scale: true },
+    16384,
+    true
+  )
   waveformTex: RenderTexture
-  lineTex: RenderTexture = RenderTexture.create({width: 16, height: 16})
+  lineTex: RenderTexture = RenderTexture.create({ width: 16, height: 16 })
 
   chartAudio: ChartAudio
   renderer: ChartRenderer
@@ -34,7 +38,9 @@ export class Waveform extends Sprite {
   constructor(renderer: ChartRenderer) {
     super()
     this.renderer = renderer
-    this.waveformTex = RenderTexture.create({resolution: Math.min(1, Options.performance.resolution)})
+    this.waveformTex = RenderTexture.create({
+      resolution: Math.min(1, Options.performance.resolution),
+    })
     this.chartAudio = this.renderer.chartManager.songAudio
     this.texture = this.waveformTex
 
@@ -51,29 +57,35 @@ export class Waveform extends Sprite {
 
     setInterval(() => {
       if (!Options.waveform.autoAdjustQuality)
-      if (getTPS() == 0 || !this.visible) return
+        if (getTPS() == 0 || !this.visible) return
       if (getTPS() < 60 && Options.waveform.lineHeight < 3) {
-        Options.waveform.lineHeight = Math.min(3, Options.waveform.lineHeight + 0.25)
+        Options.waveform.lineHeight = Math.min(
+          3,
+          Options.waveform.lineHeight + 0.25
+        )
       }
       if (getTPS() > 190 && Options.waveform.lineHeight > 1) {
-        Options.waveform.lineHeight = Math.max(1, Options.waveform.lineHeight - 0.25)
+        Options.waveform.lineHeight = Math.max(
+          1,
+          Options.waveform.lineHeight - 0.25
+        )
       }
-    },1000)
+    }, 1000)
   }
 
   private async stripWaveform(rawData: Float32Array[] | undefined) {
     if (rawData == undefined) return
-    this.strippedWaveform = Array.from({ length: rawData.length }, _ => []);
-    let blockSize = this.chartAudio.getSampleRate() / (this.zoom*4); // Number of samples in each subdivision
+    this.strippedWaveform = Array.from({ length: rawData.length }, () => [])
+    const blockSize = this.chartAudio.getSampleRate() / (this.zoom * 4) // Number of samples in each subdivision
     for (let channel = 0; channel < rawData.length; channel++) {
-      let samples = Math.floor(rawData[channel].length / blockSize);
+      const samples = Math.floor(rawData[channel].length / blockSize)
       for (let i = 0; i < samples; i++) {
-        let blockStart = Math.floor(blockSize * i); // the location of the first sample in the block
-        let sum = 0;
+        const blockStart = Math.floor(blockSize * i) // the location of the first sample in the block
+        let sum = 0
         for (let j = 0; j < blockSize; j++) {
           sum = sum + Math.abs(rawData[channel][blockStart + j]) // find the sum of all the samples in the block
         }
-        this.strippedWaveform[channel].push(sum / blockSize); // divide the sum by the block size to get the average
+        this.strippedWaveform[channel].push(sum / blockSize) // divide the sum by the block size to get the average
       }
     }
   }
@@ -84,7 +96,10 @@ export class Waveform extends Sprite {
   }
 
   renderThis(beat: number, time: number) {
-    this.visible = Options.waveform.enabled && (this.renderer.chartManager.getMode() != EditMode.Play || !Options.play.hideBarlines)
+    this.visible =
+      Options.waveform.enabled &&
+      (this.renderer.chartManager.getMode() != EditMode.Play ||
+        !Options.play.hideBarlines)
 
     if (!Options.waveform.enabled) return
     if (this.chartAudio != this.renderer.chartManager.getAudio()) {
@@ -96,8 +111,8 @@ export class Waveform extends Sprite {
       this.lastReZoom = Date.now()
       this.lastZoom = this.getZoom()
       this.lastBeat = -1
-    }else{
-      if (Date.now() - this.lastReZoom > 120 && this.zoom != this.getZoom()){
+    } else {
+      if (Date.now() - this.lastReZoom > 120 && this.zoom != this.getZoom()) {
         this.zoom = this.getZoom()
         this.refilter()
       }
@@ -107,14 +122,24 @@ export class Waveform extends Sprite {
       if (Options.waveform.lineHeight <= 0) Options.waveform.lineHeight = 1
       this.updateLineHeight()
     }
-    this.waveformTex.resize(this.strippedWaveform!.length * 288 ?? 288, this.renderer.chartManager.app.renderer.screen.height)
+    this.waveformTex.resize(
+      this.strippedWaveform!.length * 288 ?? 288,
+      this.renderer.chartManager.app.renderer.screen.height
+    )
     this.white.alpha = Options.waveform.opacity
-    this.renderer.chartManager.app.renderer.render(this.white, {renderTexture: this.lineTex})
-    if (this.strippedWaveform && (beat != this.lastBeat || time != this.lastTime)) {
+    this.renderer.chartManager.app.renderer.render(this.white, {
+      renderTexture: this.lineTex,
+    })
+    if (
+      this.strippedWaveform &&
+      (beat != this.lastBeat || time != this.lastTime)
+    ) {
       this.lastBeat = beat
       this.lastTime = time
       this.renderData(beat, this.strippedWaveform)
-      this.renderer.chartManager.app.renderer.render(this.lineContainer, {renderTexture: this.waveformTex})
+      this.renderer.chartManager.app.renderer.render(this.lineContainer, {
+        renderTexture: this.waveformTex,
+      })
       this.tint = Options.waveform.color
     }
   }
@@ -122,31 +147,43 @@ export class Waveform extends Sprite {
   private renderData(beat: number, data: number[][]) {
     this.resetPool()
 
-    if (Options.experimental.speedChangeWaveform && !Options.chart.CMod && Options.chart.doSpeedChanges) {
-      let chartSpeed = Options.chart.speed
-      let speedMult = this.renderer.chart.timingData.getSpeedMult(beat, this.renderer.chartManager.getTime())
+    if (
+      Options.experimental.speedChangeWaveform &&
+      !Options.chart.CMod &&
+      Options.chart.doSpeedChanges
+    ) {
+      const chartSpeed = Options.chart.speed
+      const speedMult = this.renderer.chart.timingData.getSpeedMult(
+        beat,
+        this.renderer.chartManager.getTime()
+      )
       let curBeat = beat - Options.chart.maxDrawBeatsBack
-      let beatLimit = beat + Options.chart.maxDrawBeats
-      let scrolls = this.renderer.chart.timingData.getTimingData("SCROLLS")
+      const beatLimit = beat + Options.chart.maxDrawBeats
+      const scrolls = this.renderer.chart.timingData.getTimingData("SCROLLS")
       let scrollIndex = bsearch(scrolls, curBeat, a => a.beat)
       while (curBeat < beatLimit) {
-        let scroll = scrolls[scrollIndex] ?? {beat: 0,value: 1}
-        let scrollBeatLimit = scrolls[scrollIndex + 1]?.beat ?? beatLimit
-        let y_test = this.renderer.getYPos(curBeat) + this.parent.y 
-        if (scrolls[scrollIndex + 1] && ((scroll.value < 0 && y_test > this.renderer.chartManager.app.renderer.screen.height) ||
-            scroll.value <= 0)) {
+        const scroll = scrolls[scrollIndex] ?? { beat: 0, value: 1 }
+        const scrollBeatLimit = scrolls[scrollIndex + 1]?.beat ?? beatLimit
+        const y_test = this.renderer.getYPos(curBeat) + this.parent.y
+        if (
+          scrolls[scrollIndex + 1] &&
+          ((scroll.value < 0 &&
+            y_test > this.renderer.chartManager.app.renderer.screen.height) ||
+            scroll.value <= 0)
+        ) {
           scrollIndex++
           curBeat = scrolls[scrollIndex]!.beat
           continue
         }
         while (curBeat < Math.min(scrollBeatLimit, beatLimit)) {
-          let y = Math.round(this.renderer.getYPos(curBeat) + this.parent.y)
+          const y = Math.round(this.renderer.getYPos(curBeat) + this.parent.y)
           if (y < 0) {
             if (scroll.value < 0) {
               curBeat = scrollBeatLimit
               break
             }
-            curBeat += 100/chartSpeed/speedMult/64/Math.abs(scroll.value) * -y
+            curBeat +=
+              (100 / chartSpeed / speedMult / 64 / Math.abs(scroll.value)) * -y
             continue
           }
           if (y > this.renderer.chartManager.app.renderer.screen.height) {
@@ -154,42 +191,47 @@ export class Waveform extends Sprite {
               curBeat = scrollBeatLimit
               break
             }
-            curBeat += 100/chartSpeed/speedMult/64/Math.abs(scroll.value) * (y-this.renderer.chartManager.app.renderer.screen.height)
+            curBeat +=
+              (100 / chartSpeed / speedMult / 64 / Math.abs(scroll.value)) *
+              (y - this.renderer.chartManager.app.renderer.screen.height)
             continue
           }
-          curBeat += 100/chartSpeed/speedMult/64/Math.abs(scroll.value) * Options.waveform.lineHeight
-          let calcTime = this.renderer.chart.getSeconds(curBeat)
+          curBeat +=
+            (100 / chartSpeed / speedMult / 64 / Math.abs(scroll.value)) *
+            Options.waveform.lineHeight
+          const calcTime = this.renderer.chart.getSeconds(curBeat)
           if (calcTime < 0) continue
-          let samp = Math.floor(calcTime * this.zoom*4)
+          const samp = Math.floor(calcTime * this.zoom * 4)
           for (let channel = 0; channel < data.length; channel++) {
-            let v = data[channel][samp];
+            const v = data[channel][samp]
             if (!v) continue
-            let line = this.getLine()
-            line.scale.x = v*256 / 16
+            const line = this.getLine()
+            line.scale.x = (v * 256) / 16
             line.y = y
             line.x = 144 + 288 * channel
           }
-          
         }
         scrollIndex++
         curBeat = scrollBeatLimit
       }
-    }else{
-      for (let i = 0; i < this.renderer.chartManager.app.renderer.screen.height; i+=Options.waveform.lineHeight) {
-        let calcTime = this.renderer.getTimeFromYPos(i-this.parent.y)
-        let samp = Math.floor(calcTime * this.zoom*4)
-        for (let channel = 0; channel < data.length; channel ++) {
-          let v = data[channel][samp];
+    } else {
+      for (
+        let i = 0;
+        i < this.renderer.chartManager.app.renderer.screen.height;
+        i += Options.waveform.lineHeight
+      ) {
+        const calcTime = this.renderer.getTimeFromYPos(i - this.parent.y)
+        const samp = Math.floor(calcTime * this.zoom * 4)
+        for (let channel = 0; channel < data.length; channel++) {
+          const v = data[channel][samp]
           if (!v) continue
-          let line = this.getLine()
-          line.scale.x = v*256 / 16
+          const line = this.getLine()
+          line.scale.x = (v * 256) / 16
           line.y = i
           line.x = 144 + 288 * channel
         }
       }
     }
-
-
 
     this.purgePool()
   }
@@ -199,24 +241,29 @@ export class Waveform extends Sprite {
   }
 
   private purgePool() {
-    destroyChildIf(this.lineContainer.children, (_, index) => index >= this.poolSearch)
+    destroyChildIf(
+      this.lineContainer.children,
+      (_, index) => index >= this.poolSearch
+    )
   }
 
   private updateLineHeight() {
-    for (let child of this.lineContainer.children) {
-      let line = child as WaveformLine
+    for (const child of this.lineContainer.children) {
+      const line = child as WaveformLine
       line.height = Options.waveform.lineHeight
     }
   }
 
   private getLine(): WaveformLine {
     while (this.lineContainer.children[this.poolSearch]) {
-      let w_line = this.lineContainer.children[this.poolSearch] as WaveformLine
+      const w_line = this.lineContainer.children[
+        this.poolSearch
+      ] as WaveformLine
       w_line.visible = true
       this.poolSearch++
       return w_line
     }
-    let line = new Sprite(this.lineTex) as WaveformLine
+    const line = new Sprite(this.lineTex) as WaveformLine
     line.height = Options.waveform.lineHeight
     line.anchor.set(0.5)
     line.visible = true
@@ -229,4 +276,3 @@ export class Waveform extends Sprite {
     return Math.min(Options.chart.speed, MAX_ZOOM)
   }
 }
-

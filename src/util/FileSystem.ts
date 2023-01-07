@@ -1,17 +1,19 @@
-export interface FileTree { 
+export interface FileTree {
   [key: string]: FileTree | File
 }
 
-
 export class FileSystem {
-  files: {[key: string]: File} = {}
+  files: { [key: string]: File } = {}
   file_tree: FileTree = {}
 
-  constructor() {}
-
   parseFiles(prefix: string, files: File[] | FileList) {
-    for (let file of files) {
-      this.addFile(prefix != "" ? prefix + "/" + file.webkitRelativePath : file.webkitRelativePath, file)
+    for (const file of files) {
+      this.addFile(
+        prefix != ""
+          ? prefix + "/" + file.webkitRelativePath
+          : file.webkitRelativePath,
+        file
+      )
     }
   }
 
@@ -19,78 +21,77 @@ export class FileSystem {
     if (path.split("/").pop() == name) return
     let file = this.getFile(path)
     if (file) {
-      file = new File([file], name, {type: file.type});
-      let path_arr = path.split("/")
-      let key = path_arr.pop() as string
+      file = new File([file], name, { type: file.type })
+      const path_arr = path.split("/")
+      const key = path_arr.pop() as string
       delete this.files[path]
-      this.files[path_arr.join("/")+"/"+name] = file
+      this.files[path_arr.join("/") + "/" + name] = file
       let obj = this.file_tree
-      for (let sub of path_arr) {
+      for (const sub of path_arr) {
         if (!(sub in obj)) obj[sub] = {}
         obj = obj[sub] as FileTree
       }
       delete obj[key]
       obj[name] = file
-    }else{
-      let path_arr = path.split("/")
-      let key = path_arr.pop() as string
+    } else {
+      const path_arr = path.split("/")
+      const key = path_arr.pop() as string
       let obj = this.file_tree
-      for (let sub of path_arr) {
+      for (const sub of path_arr) {
         if (!(sub in obj)) obj[sub] = {}
         obj = obj[sub] as FileTree
       }
-      delete obj[key] 
+      delete obj[key]
       obj[name] = obj[key]
       //Fix remaining files
       let new_path = path_arr
       new_path.push(name)
       new_path = this.resolvePath(new_path)
-      for (let file_name in this.files) {
+      for (const file_name in this.files) {
         if (file_name.startsWith(path)) {
-          let cache = this.files[file_name]
+          const cache = this.files[file_name]
           delete this.files[file_name]
-          this.files[file_name.replace(path,new_path.join("/"))] = cache
+          this.files[file_name.replace(path, new_path.join("/"))] = cache
         }
       }
     }
   }
 
-  move(path: string, to: string){
-    if (path == to){
+  move(path: string, to: string) {
+    if (path == to) {
       return
     }
-    if (path.indexOf(".")>-1) {
-      let path_arr = path.split("/")
-      let name = path_arr.pop()
-      let file = this.getFile(path)
+    if (path.indexOf(".") > -1) {
+      const path_arr = path.split("/")
+      const name = path_arr.pop()
+      const file = this.getFile(path)
       this.removeFile(path)
       this.addFile(to + "/" + name, file)
-    }else{
-      if (to.startsWith(path))
-        return
-      let path_arr = path.split("/")
-      let name = path_arr.pop() as string
+    } else {
+      if (to.startsWith(path)) return
+      const path_arr = path.split("/")
+      const name = path_arr.pop() as string
       let obj = this.file_tree
-      for (let sub of path_arr) {
+      for (const sub of path_arr) {
         if (!(sub in obj)) obj[sub] = {}
         obj = obj[sub] as FileTree
       }
-      let dir = obj[name]
+      const dir = obj[name]
       delete obj[name]
 
-      let to_arr = to.split("/")
+      const to_arr = to.split("/")
       obj = this.file_tree
-      for (let sub of to_arr) {
+      for (const sub of to_arr) {
         if (!(sub in obj)) obj[sub] = {}
         obj = obj[sub] as FileTree
       }
       obj[name] = dir
 
-      for (let file_name in this.files) {
+      for (const file_name in this.files) {
         if (file_name.startsWith(path)) {
-          let cache = this.files[file_name]
+          const cache = this.files[file_name]
           delete this.files[file_name]
-          this.files[file_name.replace(path,to + "/" + name)] = cache
+          this.files[file_name.replace(path, to + "/" + name)] = cache
         }
       }
     }
@@ -101,7 +102,7 @@ export class FileSystem {
     if (typeof path == "string") path_arr = path.split("/")
     path_arr = this.resolvePath(path_arr as string[])
     let obj = this.file_tree
-    for (let sub of path_arr)  {
+    for (const sub of path_arr) {
       obj = obj[sub] as FileTree
     }
     return obj
@@ -122,42 +123,41 @@ export class FileSystem {
     path_arr = this.resolvePath(path_arr)
     this.files[path_arr.join("/")] = file
     let obj = this.file_tree
-    let name = path_arr.pop() as string
-    for (let sub of path_arr) {
+    const name = path_arr.pop() as string
+    for (const sub of path_arr) {
       if (!(sub in obj)) obj[sub] = {}
       obj = obj[sub] as FileTree
     }
-    obj[name] = file 
+    obj[name] = file
   }
 
   removeFile(path: string) {
-    let path_arr = this.resolvePath(path.split("/"))
+    const path_arr = this.resolvePath(path.split("/"))
     if (this.files[path_arr.join("/")]) {
       delete this.files[path_arr.join("/")]
-      let key = path_arr.pop() as string
+      const key = path_arr.pop() as string
       let obj = this.file_tree
-      for (let sub of path_arr) {
+      for (const sub of path_arr) {
         if (!(sub in obj)) obj[sub] = {}
         obj = obj[sub] as FileTree
       }
       delete obj[key]
-    }else{
-      let key = path_arr.pop() as string
+    } else {
+      const key = path_arr.pop() as string
       let obj = this.file_tree
-      for (let sub of path_arr) {
+      for (const sub of path_arr) {
         if (!(sub in obj)) obj[sub] = {}
         obj = obj[sub] as FileTree
       }
       delete obj[key]
-      for (let file_name in this.files) {
+      for (const file_name in this.files) {
         if (file_name.startsWith(path)) {
           delete this.files[file_name]
         }
       }
     }
-    
   }
-  
+
   getFileRelativeTo(path: string, file: string): File {
     let dir = path.split("/")
     dir.pop()
@@ -166,21 +166,20 @@ export class FileSystem {
   }
 
   resolveStringPath(str: string): string[] {
-    let path = str.split("/")
+    const path = str.split("/")
     return this.resolvePath(path)
   }
 
-  resolvePath(path_arr: string[]): string[]  {
+  resolvePath(path_arr: string[]): string[] {
     path_arr = path_arr.filter(item => item !== ".")
     path_arr = path_arr.filter(item => item !== "")
-    while (path_arr.indexOf("..")>-1) {
-      let ind = path_arr.indexOf("..")
+    while (path_arr.indexOf("..") > -1) {
+      const ind = path_arr.indexOf("..")
       if (ind == 0) {
         throw Error("Path" + path_arr.join("/") + "is invalid!")
       }
-      path_arr.splice(ind-1,2)
+      path_arr.splice(ind - 1, 2)
     }
     return path_arr
   }
 }
-

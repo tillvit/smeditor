@@ -4,11 +4,15 @@ import { Options } from "../../util/Options"
 import { destroyChildIf } from "../../util/Util"
 import { ChartRenderer } from "../ChartRenderer"
 import { GameplayStats } from "../play/GameplayStats"
-import { isStandardMissTimingWindow, isStandardTimingWindow, TimingWindowCollection } from "../play/TimingWindowCollection"
+import {
+  isStandardMissTimingWindow,
+  isStandardTimingWindow,
+  TimingWindowCollection,
+} from "../play/TimingWindowCollection"
 
 const HISTOGRAM_WIDTH = 300
 const HISTOGRAM_HEIGHT = 150
-const SCALING = [ 0.045, 0.090, 0.180, 0.370, 0.180, 0.090, 0.045 ]
+const SCALING = [0.045, 0.09, 0.18, 0.37, 0.18, 0.09, 0.045]
 
 interface HistogramLine extends Sprite {
   smoothCount: number
@@ -24,7 +28,6 @@ interface LineContainer extends Container {
 }
 
 export class ErrorHistogram extends Container {
-
   private renderer: ChartRenderer
   private max = 0
   private barlines: Histogram = new Container() as Histogram
@@ -40,22 +43,22 @@ export class ErrorHistogram extends Container {
     this.background.addChild(this.backgroundRect)
     this.addChild(this.background)
     this.addChild(this.backgroundLines)
-    
-    let early = new BitmapText("Early",{
+
+    const early = new BitmapText("Early", {
       fontName: "Assistant",
       fontSize: 15,
     })
-    early.x = -HISTOGRAM_WIDTH/2 + 5
+    early.x = -HISTOGRAM_WIDTH / 2 + 5
     early.y = -HISTOGRAM_HEIGHT + 10
     early.alpha = 0.3
     this.background.addChild(early)
 
-    let late = new BitmapText("Late",{
+    const late = new BitmapText("Late", {
       fontName: "Assistant",
       fontSize: 15,
     })
     late.anchor.x = 1
-    late.x = HISTOGRAM_WIDTH/2 - 5
+    late.x = HISTOGRAM_WIDTH / 2 - 5
     late.y = -HISTOGRAM_HEIGHT + 10
     late.alpha = 0.3
     this.background.addChild(late)
@@ -64,21 +67,25 @@ export class ErrorHistogram extends Container {
   }
 
   renderThis() {
-    this.x = -this.renderer.chartManager.app.renderer.screen.width/2 + 20 + HISTOGRAM_WIDTH/2
-    this.y = this.renderer.chartManager.app.renderer.screen.height/2 - 20 
+    this.x =
+      -this.renderer.chartManager.app.renderer.screen.width / 2 +
+      20 +
+      HISTOGRAM_WIDTH / 2
+    this.y = this.renderer.chartManager.app.renderer.screen.height / 2 - 20
     this.backgroundRect.width = HISTOGRAM_WIDTH + 10
-    this.backgroundRect.height = HISTOGRAM_HEIGHT 
-    this.backgroundRect.x = -HISTOGRAM_WIDTH/2 - 5
+    this.backgroundRect.height = HISTOGRAM_HEIGHT
+    this.backgroundRect.x = -HISTOGRAM_WIDTH / 2 - 5
     this.backgroundRect.y = -HISTOGRAM_HEIGHT
     this.background.visible = !!this.renderer.chartManager.gameStats
-    for (let line of this.barlines.children) { 
-      if (Options.performance.smoothAnimations) line.height = (line.targetHeight - line.height) * 0.2 + line.height
+    for (const line of this.barlines.children) {
+      if (Options.performance.smoothAnimations)
+        line.height = (line.targetHeight - line.height) * 0.2 + line.height
       else line.height = line.targetHeight
     }
   }
 
   private newLine(): HistogramLine {
-    let line: HistogramLine = new Sprite(Texture.WHITE) as HistogramLine
+    const line: HistogramLine = new Sprite(Texture.WHITE) as HistogramLine
     line.smoothCount = 0
     line.targetHeight = 0
     line.anchor.y = 1
@@ -92,33 +99,41 @@ export class ErrorHistogram extends Container {
     this.max = 0
     destroyChildIf(this.barlines.children, () => true)
     destroyChildIf(this.backgroundLines.children, () => true)
-   
-    let windowSize = Math.round(TimingWindowCollection.getCollection(Options.play.timingCollection).maxWindowMS())
-    for (let i = 0; i < windowSize*2; i++) {
-      let line = this.newLine()
-      line.width = HISTOGRAM_WIDTH/windowSize/2
-      line.x = (i-windowSize) * line.width
+
+    const windowSize = Math.round(
+      TimingWindowCollection.getCollection(
+        Options.play.timingCollection
+      ).maxWindowMS()
+    )
+    for (let i = 0; i < windowSize * 2; i++) {
+      const line = this.newLine()
+      line.width = HISTOGRAM_WIDTH / windowSize / 2
+      line.x = (i - windowSize) * line.width
       this.barlines.addChild(line)
     }
-    for (let window of TimingWindowCollection.getCollection(Options.play.timingCollection).getStandardWindows().reverse()) {
-      let ms = window.getTimingWindowMS()
+    for (const window of TimingWindowCollection.getCollection(
+      Options.play.timingCollection
+    )
+      .getStandardWindows()
+      .reverse()) {
+      const ms = window.getTimingWindowMS()
       if (ms == 0) continue
-      for (let mult = -1; mult <= 1; mult+=2) {
-        let line = new Sprite(Texture.WHITE)
+      for (let mult = -1; mult <= 1; mult += 2) {
+        const line = new Sprite(Texture.WHITE)
         line.anchor.y = 1
         line.anchor.x = 0.5
         line.height = HISTOGRAM_HEIGHT
         line.tint = window.color
         line.alpha = 0.2
         line.width = 1
-        line.x = ms*mult * HISTOGRAM_WIDTH/windowSize/2
+        line.x = (ms * mult * HISTOGRAM_WIDTH) / windowSize / 2
         this.backgroundLines.addChild(line)
       }
-      for (let i = -ms+windowSize; i < ms+windowSize; i++) {
+      for (let i = -ms + windowSize; i < ms + windowSize; i++) {
         this.barlines.children[Math.round(i)].tint = window.color
       }
     }
-    let line = new Sprite(Texture.WHITE)
+    const line = new Sprite(Texture.WHITE)
     line.anchor.y = 1
     line.anchor.x = 0.5
     line.height = HISTOGRAM_HEIGHT
@@ -129,11 +144,14 @@ export class ErrorHistogram extends Container {
     gameStats.onJudge((error, judge) => {
       if (isStandardMissTimingWindow(judge)) return
       if (!isStandardTimingWindow(judge)) return
-      let ms = Math.round(error*1000)
+      const ms = Math.round(error * 1000)
       for (let i = -3; i <= 3; i++) {
         if (!this.barlines.children[ms + windowSize + i]) continue
-        this.barlines.children[ms + windowSize + i].smoothCount += SCALING[i+3]
-        if (this.barlines.children[ms + windowSize + i].smoothCount > this.max) {
+        this.barlines.children[ms + windowSize + i].smoothCount +=
+          SCALING[i + 3]
+        if (
+          this.barlines.children[ms + windowSize + i].smoothCount > this.max
+        ) {
           this.max = this.barlines.children[ms + windowSize + i].smoothCount
         }
       }
@@ -142,8 +160,9 @@ export class ErrorHistogram extends Container {
   }
 
   private redraw() {
-    for (let line of this.barlines.children) { 
-      line.targetHeight = line.smoothCount*(HISTOGRAM_HEIGHT-20)/this.max
+    for (const line of this.barlines.children) {
+      line.targetHeight =
+        (line.smoothCount * (HISTOGRAM_HEIGHT - 20)) / this.max
     }
   }
 }

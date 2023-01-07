@@ -13,8 +13,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,                                                   
-    "noImplicitAny": true, 
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true
   },
   "include": ["src"]
 }

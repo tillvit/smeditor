@@ -1,4 +1,4 @@
-import { Waveform } from "./renderer/Waveform";
+import { Waveform } from "./renderer/Waveform"
 import { ChartManager, EditMode } from "./ChartManager"
 import { Container, Point, Rectangle } from "pixi.js"
 import { Options } from "../util/Options"
@@ -17,18 +17,17 @@ import { TimerStats } from "../util/TimerStats"
 import { ErrorHistogram } from "./renderer/ErrorHistogram"
 
 export class ChartRenderer extends Container {
-
   chartManager: ChartManager
-  
+
   chart: Chart
 
-  private speedMult: number = 1
+  private speedMult = 1
 
   private lastMousePos?: Point
-  private lastMouseBeat: number = -1
-  private lastMouseCol: number = -1
-  private lastNoteType: string = ""
-  private editingCol: number = -1
+  private lastMouseBeat = -1
+  private lastMouseCol = -1
+  private lastNoteType = ""
+  private editingCol = -1
 
   private waveform: Waveform
   private barlines: BarlineContainer
@@ -40,8 +39,7 @@ export class ChartRenderer extends Container {
   private snapDisplay: SnapContainer
   private judgment: JudgmentContainer
   private errorHistogram: ErrorHistogram
-  
- 
+
   constructor(chartManager: ChartManager) {
     super()
     this.chartManager = chartManager
@@ -71,31 +69,49 @@ export class ChartRenderer extends Container {
 
     this.chartManager.app.stage.addChild(this)
 
-    this.x = this.chartManager.app.renderer.screen.width/2
-    this.y = this.chartManager.app.renderer.screen.height/2
+    this.x = this.chartManager.app.renderer.screen.width / 2
+    this.y = this.chartManager.app.renderer.screen.height / 2
 
     this.interactive = true
-    this.hitArea = new Rectangle(-1e5, -1e5, 2e5, 2e5);
+    this.hitArea = new Rectangle(-1e5, -1e5, 2e5, 2e5)
 
-    this.on("mousemove", (event) =>{
+    this.on("mousemove", event => {
       this.lastMousePos = this.toLocal(event.global)
       if (this.editingCol != -1) {
-        let snap = Options.chart.snap == 0 ? 1/48 : Options.chart.snap
-        let snapBeat = Math.round(this.getBeatFromYPos(this.lastMousePos.y)/snap)*snap
-        this.chartManager.editHoldBeat(this.editingCol, snapBeat, event.shiftKey)
+        const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
+        const snapBeat =
+          Math.round(this.getBeatFromYPos(this.lastMousePos.y) / snap) * snap
+        this.chartManager.editHoldBeat(
+          this.editingCol,
+          snapBeat,
+          event.shiftKey
+        )
       }
     })
-    window.addEventListener("keydown", event =>{
+    window.addEventListener("keydown", event => {
       if (this.editingCol != -1) {
-        let snap = Options.chart.snap == 0 ? 1/48 : Options.chart.snap
-        let snapBeat = Math.round(this.getBeatFromYPos(this.lastMousePos!.y)/snap)*snap
-        this.chartManager.editHoldBeat(this.editingCol, snapBeat, event.shiftKey)
+        const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
+        const snapBeat =
+          Math.round(this.getBeatFromYPos(this.lastMousePos!.y) / snap) * snap
+        this.chartManager.editHoldBeat(
+          this.editingCol,
+          snapBeat,
+          event.shiftKey
+        )
       }
     })
     this.on("mousedown", () => {
-      if (Options.editor.mousePlacement && this.lastMouseBeat != -1 && this.lastMouseCol != -1) {
+      if (
+        Options.editor.mousePlacement &&
+        this.lastMouseBeat != -1 &&
+        this.lastMouseCol != -1
+      ) {
         this.editingCol = this.lastMouseCol
-        this.chartManager.setNote(this.lastMouseCol, "mouse", this.lastMouseBeat)
+        this.chartManager.setNote(
+          this.lastMouseCol,
+          "mouse",
+          this.lastMouseBeat
+        )
       }
     })
     this.on("mouseup", () => {
@@ -106,9 +122,8 @@ export class ChartRenderer extends Container {
     })
   }
 
-
   doJudgment(note: NotedataEntry, error: number, judgment: TimingWindow) {
-    if (this.chartManager.getMode() == EditMode.Play){
+    if (this.chartManager.getMode() == EditMode.Play) {
       this.judgment.doJudge(error, judgment)
       this.timingBar.addBar(error, judgment)
     }
@@ -119,11 +134,11 @@ export class ChartRenderer extends Container {
     this.notefield.activateHold(col)
   }
 
-  keyDown(col: number){
+  keyDown(col: number) {
     this.notefield.keyDown(col)
   }
 
-  keyUp(col: number){
+  keyUp(col: number) {
     this.notefield.keyUp(col)
   }
 
@@ -138,11 +153,12 @@ export class ChartRenderer extends Container {
   }
 
   renderThis() {
+    const beat = this.getBeat()
+    const time = this.getTime()
 
-    let beat = this.getBeat()
-    let time = this.getTime()
-
-    this.speedMult = Options.chart.doSpeedChanges ? this.chart.timingData.getSpeedMult(beat, time) : 1
+    this.speedMult = Options.chart.doSpeedChanges
+      ? this.chart.timingData.getSpeedMult(beat, time)
+      : 1
 
     let renderBeatLimit = beat + Options.chart.maxDrawBeats
     let renderBeatLowerLimit = beat - Options.chart.maxDrawBeatsBack
@@ -150,14 +166,24 @@ export class ChartRenderer extends Container {
     let renderSecondLowerLimit = this.chart.getSeconds(renderBeatLowerLimit)
 
     if (Options.chart.CMod) {
-      renderBeatLimit = this.getBeatFromYPos(this.chartManager.app.renderer.screen.height-this.y+32)
+      renderBeatLimit = this.getBeatFromYPos(
+        this.chartManager.app.renderer.screen.height - this.y + 32
+      )
       renderBeatLowerLimit = this.getBeatFromYPos(-32 - this.y)
-      renderSecondLowerLimit = (-32 - this.y - Options.chart.receptorYPos)/4/64*100/Options.chart.speed + time
+      renderSecondLowerLimit =
+        (((-32 - this.y - Options.chart.receptorYPos) / 4 / 64) * 100) /
+          Options.chart.speed +
+        time
     }
 
     TimerStats.time("Chart Update Time")
     this.barlines.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
-    this.timingAreas.renderThis(beat, renderBeatLowerLimit, renderBeatLimit, renderSecondLowerLimit)
+    this.timingAreas.renderThis(
+      beat,
+      renderBeatLowerLimit,
+      renderBeatLimit,
+      renderSecondLowerLimit
+    )
     this.timingBoxes.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
     this.timingBar.renderThis()
     this.judgment.renderThis()
@@ -169,17 +195,21 @@ export class ChartRenderer extends Container {
     TimerStats.time("Notefield Update Time")
     this.notefield.update(beat, renderBeatLowerLimit, renderBeatLimit)
     TimerStats.endTime("Notefield Update Time")
-    
+
     TimerStats.time("Waveform Update Time")
     this.waveform.renderThis(beat, time)
     TimerStats.endTime("Waveform Update Time")
-    
 
     if (this.lastMousePos && this.chartManager.getMode() != EditMode.Play) {
-      let snap = Options.chart.snap == 0 ? 1/48 : Options.chart.snap
-      let snapBeat = Math.round(this.getBeatFromYPos(this.lastMousePos.y)/snap)*snap
-      let col = Math.round((this.lastMousePos.x+96)/64)
-      if (snapBeat != this.lastMouseBeat || col != this.lastMouseCol || this.chartManager.getEditingNoteType() != this.lastNoteType)  {
+      const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
+      const snapBeat =
+        Math.round(this.getBeatFromYPos(this.lastMousePos.y) / snap) * snap
+      const col = Math.round((this.lastMousePos.x + 96) / 64)
+      if (
+        snapBeat != this.lastMouseBeat ||
+        col != this.lastMouseCol ||
+        this.chartManager.getEditingNoteType() != this.lastNoteType
+      ) {
         this.lastMouseBeat = snapBeat
         this.lastMouseCol = col
         this.lastNoteType = this.chartManager.getEditingNoteType()
@@ -194,7 +224,7 @@ export class ChartRenderer extends Container {
           this.notefield.setGhostNote({
             beat: snapBeat,
             col: this.lastMouseCol,
-            type: this.chartManager.getEditingNoteType()
+            type: this.chartManager.getEditingNoteType(),
           })
         }
       }
@@ -217,39 +247,73 @@ export class ChartRenderer extends Container {
     return beat
   }
 
-
-
   getYPos(beat: number): number {
-    let currentTime = this.getTime() 
-    let currentBeat = this.getBeat() 
+    const currentTime = this.getTime()
+    const currentBeat = this.getBeat()
     if (Options.chart.CMod) {
-      return (this.chart.getSeconds(beat)-currentTime)*Options.chart.speed/100*64*4 + Options.chart.receptorYPos
+      return (
+        (((this.chart.getSeconds(beat) - currentTime) * Options.chart.speed) /
+          100) *
+          64 *
+          4 +
+        Options.chart.receptorYPos
+      )
     }
     if (currentBeat == beat) return Options.chart.receptorYPos
-    if (Options.chart.doSpeedChanges) return (this.chart.timingData.getEffectiveBeat(beat) - this.chart.timingData.getEffectiveBeat(currentBeat)) * Options.chart.speed/100*64 * this.speedMult + Options.chart.receptorYPos
-    return (beat - currentBeat)*Options.chart.speed/100*64 + Options.chart.receptorYPos
+    if (Options.chart.doSpeedChanges)
+      return (
+        (((this.chart.timingData.getEffectiveBeat(beat) -
+          this.chart.timingData.getEffectiveBeat(currentBeat)) *
+          Options.chart.speed) /
+          100) *
+          64 *
+          this.speedMult +
+        Options.chart.receptorYPos
+      )
+    return (
+      (((beat - currentBeat) * Options.chart.speed) / 100) * 64 +
+      Options.chart.receptorYPos
+    )
   }
 
-
   getTimeFromYPos(yp: number): number {
-    let currentTime = this.getTime()
+    const currentTime = this.getTime()
     if (Options.chart.CMod) {
-      let seconds = (yp - Options.chart.receptorYPos)/Options.chart.speed*100/64/4 + currentTime
+      const seconds =
+        (((yp - Options.chart.receptorYPos) / Options.chart.speed) * 100) /
+          64 /
+          4 +
+        currentTime
       return seconds
     }
     return this.chart.getSeconds(this.getBeatFromYPos(yp))
   }
 
   getBeatFromYPos(yp: number, ignoreSpeeds?: boolean): number {
-    let currentBeat = this.getBeat()
+    const currentBeat = this.getBeat()
     if (Options.chart.CMod) {
       return this.chart.getBeat(this.getTimeFromYPos(yp))
     }
-    if (Options.chart.doSpeedChanges && !ignoreSpeeds) return this.chart.getBeatFromEffectiveBeat((yp - Options.chart.receptorYPos)/64*100/Options.chart.speed/this.speedMult+this.chart.timingData.getEffectiveBeat(currentBeat))
-    return (yp - Options.chart.receptorYPos)/64*100/Options.chart.speed+currentBeat
+    if (Options.chart.doSpeedChanges && !ignoreSpeeds)
+      return this.chart.getBeatFromEffectiveBeat(
+        (((yp - Options.chart.receptorYPos) / 64) * 100) /
+          Options.chart.speed /
+          this.speedMult +
+          this.chart.timingData.getEffectiveBeat(currentBeat)
+      )
+    return (
+      (((yp - Options.chart.receptorYPos) / 64) * 100) / Options.chart.speed +
+      currentBeat
+    )
   }
 
   isNegScroll(beat: number) {
-    return Options.chart.doSpeedChanges && (this.speedMult < 0 || (this.chart.timingData.getTimingEventAtBeat("SCROLLS",beat)?.value ?? 1) < 0 || this.chart.timingData.getBPM(beat) < 0)
+    return (
+      Options.chart.doSpeedChanges &&
+      (this.speedMult < 0 ||
+        (this.chart.timingData.getTimingEventAtBeat("SCROLLS", beat)?.value ??
+          1) < 0 ||
+        this.chart.timingData.getBPM(beat) < 0)
+    )
   }
 }

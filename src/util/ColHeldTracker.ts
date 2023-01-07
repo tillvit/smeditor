@@ -17,7 +17,7 @@ export class ColHeldTracker {
   getHeldCols() {
     return this.cols.map((_, col) => col).filter(col => this.isPressed(col))
   }
-  
+
   reset() {
     this.cols = []
   }

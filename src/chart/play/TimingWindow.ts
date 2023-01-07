@@ -1,7 +1,6 @@
 import { Options } from "../../util/Options"
 
 export abstract class TimingWindow {
-
   timingWindowMS: number
   dancePoints: number
   lifeChange: number
@@ -12,9 +11,10 @@ export abstract class TimingWindow {
     this.lifeChange = lifeChange
   }
 
-  getTimingWindowMS(){
-    return this.timingWindowMS * Options.play.timingWindowScale + Options.play.timingWindowAdd
+  getTimingWindowMS() {
+    return (
+      this.timingWindowMS * Options.play.timingWindowScale +
+      Options.play.timingWindowAdd
+    )
   }
 }
-
-

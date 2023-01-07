@@ -1,15 +1,14 @@
 export interface DropdownItem<T> {
-  label: string,
+  label: string
   value: T
 }
 
 export interface DropdownGroup<T> {
-  label: string,
+  label: string
   options: DropdownItem<T>[]
 }
 
 export class Dropdown<T> {
-
   view: HTMLDivElement
 
   private items: readonly T[] = []
@@ -20,14 +19,18 @@ export class Dropdown<T> {
     return new Dropdown(document.createElement("div"), items, selectedItem)
   }
 
-  private constructor(view: HTMLDivElement, items?: readonly T[], selectedItem?: T) {
+  private constructor(
+    view: HTMLDivElement,
+    items?: readonly T[],
+    selectedItem?: T
+  ) {
     this.view = view
     view.classList.add("dropdown")
     this.items = items ?? []
     this.selectedItem = selectedItem ?? this.items[0]
-    let itemDisplay = document.createElement("div")
+    const itemDisplay = document.createElement("div")
     itemDisplay.classList.add("dropdown-selected")
-    let itemList = document.createElement("div")
+    const itemList = document.createElement("div")
     itemList.classList.add("dropdown-items")
     itemList.style.display = "none"
     itemDisplay.onclick = () => {
@@ -42,9 +45,10 @@ export class Dropdown<T> {
         itemList.style.display = "none"
       }
     }
-    window.addEventListener("click", (e) => {
-      let target = e.target as HTMLElement
-      if (!target.closest(".dropdown") || target.closest(".dropdown") != view) itemList.style.display = "none"
+    window.addEventListener("click", e => {
+      const target = e.target as HTMLElement
+      if (!target.closest(".dropdown") || target.closest(".dropdown") != view)
+        itemList.style.display = "none"
     })
     this.view.appendChild(itemDisplay)
     this.view.appendChild(itemList)
@@ -69,20 +73,24 @@ export class Dropdown<T> {
   }
 
   setSelected(item?: T) {
-    this.selectedItem = item ?? this.selectedItem 
-    let itemDisplay = this.view.querySelector(".dropdown-selected")! as HTMLDivElement
+    this.selectedItem = item ?? this.selectedItem
+    const itemDisplay = this.view.querySelector(
+      ".dropdown-selected"
+    )! as HTMLDivElement
     itemDisplay.innerText = this.selectedItem ? this.selectedItem + "" : ""
   }
 
   private createDropdown() {
-    let itemList = this.view.querySelector(".dropdown-items")! as HTMLDivElement
-    let children: HTMLDivElement[] = this.items.map(item => {
-      let itemEl = document.createElement("div")
+    const itemList = this.view.querySelector(
+      ".dropdown-items"
+    )! as HTMLDivElement
+    const children: HTMLDivElement[] = this.items.map(item => {
+      const itemEl = document.createElement("div")
       itemEl.classList.add("dropdown-item")
       itemEl.innerText = item + ""
       itemEl.onclick = () => {
         itemList.style.display = "none"
-        if (this.selectedItem != item){
+        if (this.selectedItem != item) {
           this.onChangeHandlers.forEach(handler => handler(item))
           this.setSelected(item)
         }

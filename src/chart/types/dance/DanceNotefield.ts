@@ -12,7 +12,6 @@ import { NoteFlashContainer } from "./NoteFlashContainer"
 import { ReceptorContainer } from "./ReceptorContainer"
 
 export class DanceNotefield extends Notefield {
-
   private receptors: ReceptorContainer
   private notes: NoteContainer
   private flashes: NoteFlashContainer
@@ -32,7 +31,13 @@ export class DanceNotefield extends Notefield {
     this.ghostNote = DanceNoteRenderer.createArrow()
     this.ghostNote.visible = false
     this.ghostNote.alpha = 0.4
-    this.addChild(this.receptors, this.ghostNote, this.notes, this.flashes, this.holdJudges)
+    this.addChild(
+      this.receptors,
+      this.ghostNote,
+      this.notes,
+      this.flashes,
+      this.holdJudges
+    )
   }
 
   setGhostNote(note?: PartialNotedataEntry): void {
@@ -53,8 +58,12 @@ export class DanceNotefield extends Notefield {
 
     if (this.ghostNoteEntry) {
       this.ghostNote.y = this.renderer.getYPos(this.ghostNoteEntry.beat)
-      this.ghostNote.visible = Options.editor.mousePlacement && this.renderer.chartManager.getMode() == EditMode.Edit &&
-            this.ghostNoteEntry.beat >= fromBeat && this.ghostNoteEntry.beat <= toBeat && this.ghostNoteEntry.beat >= 0
+      this.ghostNote.visible =
+        Options.editor.mousePlacement &&
+        this.renderer.chartManager.getMode() == EditMode.Edit &&
+        this.ghostNoteEntry.beat >= fromBeat &&
+        this.ghostNoteEntry.beat <= toBeat &&
+        this.ghostNoteEntry.beat >= 0
     }
   }
 
@@ -80,7 +89,7 @@ export class DanceNotefield extends Notefield {
   }
 
   getColX(col: number): number {
-    return (col-this.getNumCols()/2+0.5)*64 
+    return (col - this.getNumCols() / 2 + 0.5) * 64
   }
 
   getNumCols(): number {
@@ -88,10 +97,11 @@ export class DanceNotefield extends Notefield {
   }
 
   getRotFromCol(col: number): number {
-    let ROTS = [0,-90,90,180]
-    if (this.getNumCols() == 3) ROTS = [45,-90,135]
-    if (this.getNumCols() == 6 || this.getNumCols() == 12) ROTS = [0,45,-90,90,135,180]
-    if (this.getNumCols() == 8) ROTS = [0,-90,90,180,0,-90,90,180]
-    return ROTS[col % ROTS.length]/180*Math.PI;
+    let ROTS = [0, -90, 90, 180]
+    if (this.getNumCols() == 3) ROTS = [45, -90, 135]
+    if (this.getNumCols() == 6 || this.getNumCols() == 12)
+      ROTS = [0, 45, -90, 90, 135, 180]
+    if (this.getNumCols() == 8) ROTS = [0, -90, 90, 180, 0, -90, 90, 180]
+    return (ROTS[col % ROTS.length] / 180) * Math.PI
   }
 }

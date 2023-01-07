@@ -1,9 +1,8 @@
 import { App } from "../App"
-import { OPTIONS_WINDOW_DATA } from "../data/OptionsWindowData";
+import { OPTIONS_WINDOW_DATA } from "../data/OptionsWindowData"
 import { Window } from "./Window"
 
 export class BasicOptionsWindow extends Window {
-
   optionsDataId = ""
   app: App
 
@@ -17,25 +16,29 @@ export class BasicOptionsWindow extends Window {
   initView(viewElement: HTMLDivElement): void {
     viewElement.replaceChildren()
     viewElement.classList.add("options")
-    let padding = document.createElement("div")
+    const padding = document.createElement("div")
     padding.classList.add("padding")
     OPTIONS_WINDOW_DATA[this.optionsDataId].view.forEach(entry => {
-      let title = document.createElement("div")
-      title.innerText = typeof entry.title == "function" ? entry.title(this.app) : entry.title
+      const title = document.createElement("div")
+      title.innerText =
+        typeof entry.title == "function" ? entry.title(this.app) : entry.title
       title.classList.add("title")
       padding.appendChild(title)
 
-      let section = document.createElement("div")
+      const section = document.createElement("div")
       section.classList.add("section")
       entry.options.forEach(option => {
-        let container = document.createElement("div")
+        const container = document.createElement("div")
         container.classList.add("container")
 
-        let label = document.createElement("div")
+        const label = document.createElement("div")
         label.classList.add("label")
 
-        let item = option.element(this.app)
-        label.innerText = typeof option.label == "function" ? option.label(this.app) : option.label
+        const item = option.element(this.app)
+        label.innerText =
+          typeof option.label == "function"
+            ? option.label(this.app)
+            : option.label
 
         container.appendChild(label)
         container.appendChild(item)
@@ -43,7 +46,7 @@ export class BasicOptionsWindow extends Window {
         section.appendChild(container)
       })
       padding.appendChild(section)
-    });
+    })
     viewElement.appendChild(padding)
   }
 }

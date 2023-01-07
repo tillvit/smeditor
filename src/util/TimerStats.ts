@@ -8,7 +8,8 @@ export interface Timer {
 export class TimerStats {
   private static timers: Record<string, Timer> = {}
   static time(name: string) {
-    if (!this.timers[name]) this.timers[name] = {name: name, time: 0, startTime: 0, lastTime: 0}
+    if (!this.timers[name])
+      this.timers[name] = { name: name, time: 0, startTime: 0, lastTime: 0 }
     this.timers[name].startTime = performance.now()
   }
   static endTime(name: string) {
@@ -16,7 +17,7 @@ export class TimerStats {
     this.timers[name].time += performance.now() - this.timers[name].startTime
   }
   static endFrame() {
-    for (let key in this.timers) {
+    for (const key in this.timers) {
       this.timers[key].lastTime = this.timers[key].time
       this.timers[key].time = 0
     }
