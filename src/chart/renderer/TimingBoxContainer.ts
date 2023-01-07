@@ -1,7 +1,7 @@
 import { BitmapText, Container } from "pixi.js"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
-import { roundDigit } from "../../util/Util"
+import { destroyChildIf, roundDigit } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { TimingEvent } from "../sm/TimingTypes"
@@ -70,10 +70,7 @@ export class TimingBoxContainer extends Container {
       this.timingBoxMap.delete(child.event)
     })
 
-    this.children.filter(child => Date.now() - child.dirtyTime > 5000).forEach(child => {
-      child.destroy()
-      this.removeChild(child)
-    })
+    destroyChildIf(this.children, child => Date.now() - child.dirtyTime > 5000)
   }
 
   private checkBounds(event: TimingEvent, beat: number): [boolean, boolean, number] {

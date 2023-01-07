@@ -1,5 +1,6 @@
 import { Container, Sprite, Texture } from "pixi.js"
 import { Options } from "../../util/Options"
+import { destroyChildIf } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { DelayTimingEvent, FakeTimingEvent, StopTimingEvent, TimingEventProperty, WarpTimingEvent } from "../sm/TimingTypes"
@@ -82,10 +83,7 @@ export class TimingAreaContainer extends Container {
       this.timingAreaMap.delete(child.event)
     })
 
-    this.children.filter(child => Date.now() - child.dirtyTime > 5000).forEach(child => {
-      child.destroy()
-      this.removeChild(child)
-    })
+    destroyChildIf(this.children, child => Date.now() - child.dirtyTime > 5000)
   }
 
   private checkBounds(event: StopTimingEvent | WarpTimingEvent | DelayTimingEvent | FakeTimingEvent, beat: number): [boolean, boolean, number, number] {

@@ -8,7 +8,7 @@ import { StandardTimingWindow } from "./StandardTimingWindow"
 import { TimingWindow } from "./TimingWindow"
 
 export function isStandardTimingWindow(window: TimingWindow): window is StandardTimingWindow {
-  return (window as StandardTimingWindow).color != undefined
+  return (window as StandardTimingWindow).color != undefined  && (window as StandardMissTimingWindow).id != "miss"
 }
 
 export function isStandardMissTimingWindow(window: TimingWindow): window is StandardMissTimingWindow {
@@ -50,7 +50,7 @@ export class TimingWindowCollection {
       new StandardTimingWindow("w3", "Great", 0x66c955, 103.5, 1, 0.004, JudgmentTexture.ITG),
       new StandardTimingWindow("w4", "Decent", 0xb45cff, 136.5, 0, 0, JudgmentTexture.ITG),
       new StandardTimingWindow("w5", "Way Off", 0xc9855e, 181.5, 0, -0.050, JudgmentTexture.ITG),
-      new StandardTimingWindow("miss", "Miss", 0xff3030, 0, 0, -0.1, JudgmentTexture.ITG),
+      new StandardMissTimingWindow("Miss", 0xff3030, 0, -0.1, JudgmentTexture.ITG),
       new HoldTimingWindow("Hold", 321.5, 1, -0.008),
       new HoldTimingWindow("Roll", 351.5, 1, -0.008),
       new HoldDroppedTimingWindow(0, -0.080),
@@ -63,7 +63,7 @@ export class TimingWindowCollection {
       new StandardTimingWindow("w3", "Solid", 0x00c800, 50, 6, 0.008, JudgmentTexture.WATERFALL),
       new StandardTimingWindow("w4", "OK", 0x0080ff, 100, 3, 0.004, JudgmentTexture.WATERFALL),
       new StandardTimingWindow("w5", "Fault", 0x808080, 160, 0, 0, JudgmentTexture.WATERFALL),
-      new StandardTimingWindow("miss", "Miss", 0xff3030, 0, 0, -0.1, JudgmentTexture.WATERFALL),
+      new StandardMissTimingWindow("Miss", 0xff3030, 0, -0.1, JudgmentTexture.WATERFALL),
       new HoldTimingWindow("Hold", 300, 6, -0.008),
       new HoldTimingWindow("Roll", 350, 6, -0.008),
       new HoldDroppedTimingWindow(0, -0.080),
@@ -88,6 +88,7 @@ export class TimingWindowCollection {
       else if (isStandardMissTimingWindow(window)) this.missWindow = window
       else if (isHoldTimingWindow(window)) this.holdWindows[window.noteType] = window
       else if (isHoldDroppedTimingWindow(window)) this.droppedWindow = window
+      else if (isMineTimingWindow(window)) this.mineWindow = window
     }
     this.windows.sort((a, b) => a.timingWindowMS - b.timingWindowMS)
     this.hideLimitMS = minHideMS
@@ -132,6 +133,10 @@ export class TimingWindowCollection {
 
   getMaxHoldDancePoints(noteType: string): number {
     return Math.max(this.holdWindows[noteType].dancePoints ?? 0, this.droppedWindow.dancePoints)
+  }
+
+  getStandardWindows(): StandardTimingWindow[] {
+    return [...this.windows]
   }
 
   static getCollection (name: string): TimingWindowCollection {

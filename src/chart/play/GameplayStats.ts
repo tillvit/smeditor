@@ -19,10 +19,15 @@ export class GameplayStats {
   private maxDancePoints = 0
   private notedata: Notedata
   private dataPoints: JudgmentDataPoint[] = []
+  private handlers: ((error: number, judge: TimingWindow) => void)[] = []
 
   constructor(notedata: Notedata) {
     this.notedata = notedata
     this.calculateMaxDP()
+  }
+
+  onJudge(handler: (error: number, judge: TimingWindow) => void) {
+    this.handlers.push(handler)
   }
 
   addDataPoint(notes: NotedataEntry[], judge: TimingWindow, error: number) {
@@ -35,6 +40,7 @@ export class GameplayStats {
         return totalDP + TimingWindowCollection.getCollection(Options.play.timingCollection).getMaxHoldDancePoints(note.type)
       }, 0)
     }
+    this.handlers.forEach(handler => handler(error, judge))
     this.dataPoints.push({
       second: notes[0].second,
       error,

@@ -1,7 +1,7 @@
 import { Container, FederatedPointerEvent, ParticleContainer, RenderTexture, Sprite, Texture } from "pixi.js"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
-import { clamp, getQuant, lerp, unlerp } from "../../util/Util"
+import { clamp, destroyChildIf, getQuant, lerp, unlerp } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { isHoldNote } from "../sm/NoteTypes"
@@ -137,10 +137,7 @@ export class NoteLayoutSprite extends Container {
     this.barTexture.resize(numCols * 6, height)
 
     if (!lastNote) {
-      this.barContainer.children.forEach(child => {
-        child.destroy()
-        this.barContainer.removeChild(child)
-      })
+      destroyChildIf(this.barContainer.children, ()=>true)
       this.renderer.chartManager.app.renderer.render(this.barContainer, { renderTexture: this.barTexture })
       return
     }
@@ -184,11 +181,7 @@ export class NoteLayoutSprite extends Container {
       }
     })
 
-    for (let i = childIndex; i < this.barContainer.children.length; i++) {
-      let child = this.barContainer.children[i]
-      child.destroy()
-      this.barContainer.removeChild(child)
-    }
+    destroyChildIf(this.barContainer.children,(_, index) => index >= childIndex)
 
     this.renderer.chartManager.app.renderer.render(this.barContainer, { renderTexture: this.barTexture })
   }

@@ -210,6 +210,7 @@ document.querySelector("body")!.innerHTML =
   <div class="menubar"></div>
     <canvas id="pixi"></canvas>
   </div>
+  <div id="blocker" style="display: none"></div>
 <div id="windows"></div>
 `
 
@@ -257,6 +258,7 @@ function init() {
           <div class="menubar"></div>
             <canvas id="pixi"></canvas>
           </div>
+        <div id="blocker" style="display: none"></div>
         <div id="windows"></div>
         `
         window.app = new App()

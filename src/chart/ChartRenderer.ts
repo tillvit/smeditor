@@ -14,6 +14,7 @@ import { Notefield } from "./types/base/Notefield"
 import { SnapContainer } from "./renderer/SnapContainer"
 import { NoteLayoutSprite } from "./renderer/NoteLayoutSprite"
 import { TimerStats } from "../util/TimerStats"
+import { ErrorHistogram } from "./renderer/ErrorHistogram"
 
 export class ChartRenderer extends Container {
 
@@ -38,6 +39,7 @@ export class ChartRenderer extends Container {
   private notefield: Notefield
   private snapDisplay: SnapContainer
   private judgment: JudgmentContainer
+  private errorHistogram: ErrorHistogram
   
  
   constructor(chartManager: ChartManager) {
@@ -54,6 +56,7 @@ export class ChartRenderer extends Container {
     this.notefield = new this.chart.gameType.notefield(this)
     this.snapDisplay = new SnapContainer(this)
     this.judgment = new JudgmentContainer()
+    this.errorHistogram = new ErrorHistogram(this)
 
     this.addChild(this.waveform)
     this.addChild(this.barlines)
@@ -64,6 +67,7 @@ export class ChartRenderer extends Container {
     this.addChild(this.snapDisplay)
     this.addChild(this.judgment)
     this.addChild(this.noteLayout)
+    this.addChild(this.errorHistogram)
 
     this.chartManager.app.stage.addChild(this)
 
@@ -123,12 +127,14 @@ export class ChartRenderer extends Container {
     this.notefield.keyUp(col)
   }
 
-  endPlay() {
-    this.notefield.reset()
+  startPlay() {
+    this.errorHistogram.start(this.chartManager.gameStats!)
   }
 
-  resetPlay() {
+  endPlay() {
+    this.notefield.reset()
     this.timingBar.reset()
+    this.judgment.reset()
   }
 
   renderThis() {
@@ -157,6 +163,7 @@ export class ChartRenderer extends Container {
     this.judgment.renderThis()
     this.noteLayout.renderThis()
     this.snapDisplay.renderThis()
+    this.errorHistogram.renderThis()
     TimerStats.endTime("Chart Update Time")
 
     TimerStats.time("Notefield Update Time")

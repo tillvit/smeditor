@@ -313,10 +313,7 @@ export class ChartManager {
 
     window.postMessage("chartModified")
   
-    if (this.chartView) {
-      this.chartView.destroy()
-      this.app.stage.removeChild(this.chartView)
-    }
+    if (this.chartView) this.chartView.destroy({children: true})
       
     this.getAssistTickIndex()
     this.chartView = new ChartRenderer(this)
@@ -397,10 +394,10 @@ export class ChartManager {
   }
   
   setEffectVolume(volume: number) {
-    this.assistTick.volume(volume)
-    this.me_high.volume(volume)
-    this.me_low.volume(volume)
-    this.mine.volume(volume)
+    if (this.assistTick.volume() != volume) this.assistTick.volume(volume)
+    if (this.me_high.volume() != volume) this.me_high.volume(volume)
+    if (this.me_low.volume() != volume) this.me_low.volume(volume)
+    if (this.mine.volume() != volume) this.mine.volume(volume)
   }
 
   getAssistTickIndex() {
@@ -605,7 +602,7 @@ export class ChartManager {
       }
       this.chart.gameType.gameLogic.reset(this)
       this.gameStats = new GameplayStats(this.chart.notedata)
-      this.chartView.resetPlay()
+      this.chartView.startPlay()
       this.songAudio.seek(this.time - 1)
       this.songAudio.play()
     }else{

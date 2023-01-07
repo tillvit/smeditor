@@ -1,5 +1,5 @@
 import { ParticleContainer, RenderTexture, Sprite, Texture } from "pixi.js"
-import { bsearch, getTPS } from "../../util/Util"
+import { bsearch, destroyChildIf, getTPS } from "../../util/Util"
 import { ChartRenderer } from "../ChartRenderer"
 import { ChartAudio } from "../audio/ChartAudio"
 import { EditMode } from "../ChartManager"
@@ -199,11 +199,7 @@ export class Waveform extends Sprite {
   }
 
   private purgePool() {
-    for(let i = this.poolSearch; i < this.lineContainer.children.length; i++) {
-      let line = this.lineContainer.children[i]
-      line.destroy()
-      this.lineContainer.removeChild(line)
-    }
+    destroyChildIf(this.lineContainer.children, (_, index) => index >= this.poolSearch)
   }
 
   private updateLineHeight() {

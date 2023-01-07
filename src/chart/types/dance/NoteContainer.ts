@@ -7,6 +7,7 @@ import { DanceNotefield } from "./DanceNotefield"
 import { DanceNoteTexture } from "./DanceNoteTexture"
 import { Container } from "pixi.js"
 import { TimingWindowCollection } from "../../play/TimingWindowCollection"
+import { destroyChildIf } from "../../../util/Util"
 
 interface ExtendedNoteObject extends NoteObject {
   note: NotedataEntry,
@@ -34,7 +35,6 @@ export class NoteContainer extends Container {
 
     //Reset mark of old objects
     this.children.forEach(child => child.marked = false)
-
     let time = this.renderer.chartManager.getTime()
     for (let note of this.renderer.chart.notedata) { 
       if (note.gameplay?.hideNote) continue
@@ -69,16 +69,14 @@ export class NoteContainer extends Container {
     DanceNoteTexture.setArrowTexTime(beat, time)
 
     //Remove old elements
+    
     this.children.filter(child => !child.deactivated && !child.marked).forEach(child => {
       child.deactivated = true
       child.visible = false
       this.noteMap.delete(child.note)
     })
 
-    this.children.filter(child => Date.now() - child.dirtyTime > 5000).forEach(child => {
-      child.destroy()
-      this.removeChild(child)
-    })
+    destroyChildIf(this.children, child => Date.now() - child.dirtyTime > 5000)
   }
 
   private checkBounds(note: NotedataEntry, beat: number): [boolean, boolean, number, number] {

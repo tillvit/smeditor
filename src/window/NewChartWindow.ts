@@ -92,7 +92,7 @@ export class NewChartWindow extends Window {
     super({
       title: "New Chart", 
       width: 350,
-      height: 150,
+      height: 160,
       disableClose: false,
       win_id: "new_chart",
       blocking: false

@@ -1,5 +1,6 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
 import { Options } from "../../util/Options"
+import { destroyChildIf } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 
@@ -70,6 +71,8 @@ export class BarlineContainer extends Container {
       }
     }
 
+    // console.log(this.children.map(child=>child.beat + " (" + child.type + ") => " + (Date.now() - child.dirtyTime)).join("\n"))
+
     //Remove old elements
     this.children.filter(child => !child.deactivated && !child.marked).forEach(child => {
       child.deactivated = true
@@ -78,10 +81,7 @@ export class BarlineContainer extends Container {
       if (child.type == "label") this.barlineLabelMap.delete(child.beat)
     })
 
-    this.children.filter(child => Date.now() - child.dirtyTime > 5000).forEach(child => {
-      child.destroy()
-      this.removeChild(child)
-    })
+    destroyChildIf(this.children, child => Date.now() - child.dirtyTime > 5000)
   }
 
   private checkBounds(bar_beat: number, beat: number): [boolean, boolean, number] {
@@ -123,9 +123,7 @@ export class BarlineContainer extends Container {
     let newChild: Partial<BarlineLabel> | undefined
     for (let child of this.children) {
       if (child.type == "label" && child.deactivated) {
-        child.deactivated = false
         newChild = child
-        break
       }
     }
     if (!newChild) {

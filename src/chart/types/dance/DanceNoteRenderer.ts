@@ -115,7 +115,6 @@ export class DanceNoteRenderer {
        // Remove old item if it is not the same icon
        if (arrow.item.icon && arrow.type != note.type) {
         arrow.item.icon.destroy()
-        arrow.item.removeChild(arrow.item.icon)
         arrow.item.icon = undefined
       }
       // Create new item if not reusing

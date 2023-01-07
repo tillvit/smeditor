@@ -6,8 +6,8 @@ const SAVE_BLACKLIST = [
   "play.timingCollection" 
 ]
 
-export const VIEW_BLACKLIST = [
-  "play.timingCollection" 
+export const VIEW_BLACKLIST: string[] = [
+
 ]
 
 class DefaultOptions {
@@ -62,7 +62,7 @@ class DefaultOptions {
   }
   static play = {
     offset: 0,
-    hideBarlines: true,
+    hideBarlines: false,
     judgmentTilt: true,
     timingWindowScale: 1,
     timingWindowAdd: 0,
@@ -79,7 +79,8 @@ class DefaultOptions {
     showTimers: false
   }
   static performance = {
-    resolution: window.devicePixelRatio
+    resolution: window.devicePixelRatio,
+    smoothAnimations: true
   }
 }
 

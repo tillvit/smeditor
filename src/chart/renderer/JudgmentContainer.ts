@@ -3,7 +3,7 @@ import { Options } from "../../util/Options"
 import { clamp } from "../../util/Util"
 import { StandardTimingWindow, TIMING_WINDOW_AUTOPLAY } from "../play/StandardTimingWindow"
 import { TimingWindow } from "../play/TimingWindow"
-import { isStandardTimingWindow, TimingWindowCollection } from "../play/TimingWindowCollection"
+import { isStandardMissTimingWindow, isStandardTimingWindow, TimingWindowCollection } from "../play/TimingWindowCollection"
 
 export class JudgmentContainer extends Sprite {
 
@@ -37,7 +37,7 @@ export class JudgmentContainer extends Sprite {
   }
 
   doJudge(error: number, judgment: TimingWindow) {
-    if (!isStandardTimingWindow(judgment)) return
+    if (!isStandardTimingWindow(judgment) && !isStandardMissTimingWindow(judgment)) return
     let tex = judgment.judgmentTexture.getTexture(error, judgment)
     if (!tex) return
     this.texture = tex
@@ -47,5 +47,9 @@ export class JudgmentContainer extends Sprite {
     this.createTime = Date.now()
     if (Options.play.judgmentTilt) this.rotation = clamp(error, -0.05, 0.05) * 300/180*Math.PI
     else this.rotation = 0
+  }
+
+  reset() {
+    this.active = false
   }
 }

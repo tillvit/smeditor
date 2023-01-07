@@ -1,6 +1,6 @@
 import { BitmapText, Container, Graphics, Sprite, Texture } from "pixi.js"
 import { Options } from "../../util/Options"
-import { clamp } from "../../util/Util"
+import { clamp, destroyChildIf } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { TimingWindow } from "../play/TimingWindow"
@@ -42,7 +42,6 @@ export class TimingBarContainer extends Container {
     target.width = 2
     target.height = BAR_HEIGHT
     target.anchor.set(0.5)
-    target.alpha = 0.5
     this.currentMedian = new Graphics()
     this.currentMedian.beginFill(0xffffff);
     this.currentMedian.moveTo(0, -10);
@@ -55,6 +54,7 @@ export class TimingBarContainer extends Container {
     this.addChild(target)
     this.addChild(this.barlines)
     this.addChild(this.currentMedian)
+   
     this.addChild(this.errorText)
   }
 
@@ -62,16 +62,14 @@ export class TimingBarContainer extends Container {
     this.visible = this.renderer.chartManager.getMode() == EditMode.Play
     for (let child of this.barlines.children) { 
       let barline = child as TimingBarObject
-      let t = (8000 - (Date.now() - barline.createTime))/6000
+      let t = (5000 - (Date.now() - barline.createTime))/4000
       child.alpha = Math.min(1, t)
     }
     this.errorText.alpha = clamp((2000 - (Date.now() - this.errorTextTime))/1000, 0, 1)
     this.barline.width = TimingWindowCollection.getCollection(Options.play.timingCollection).maxWindowMS()/1000*2*400
-    this.barlines.children.filter(child => Date.now() - (child as TimingBarObject).createTime > 8000).forEach(child => {
-      child.destroy()
-      this.barlines.removeChild(child)
-    })  
-    this.currentMedian.x = (this.currentMedian.x - this.target) * 0.8 + this.target
+    destroyChildIf(this.barlines.children, child => Date.now() - (child as TimingBarObject).createTime > 5000)
+    if (Options.performance.smoothAnimations) this.currentMedian.x = (this.currentMedian.x - this.target) * 0.8 + this.target
+    else this.currentMedian.x = this.target
   }
 
   addBar(error: number, judge: TimingWindow) {
@@ -105,5 +103,6 @@ export class TimingBarContainer extends Container {
   reset() {
     this.data = []
     this.currentMedian.x = 0
+    destroyChildIf(this.barlines.children, () => true)
   }
 }

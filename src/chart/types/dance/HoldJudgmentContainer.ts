@@ -1,5 +1,6 @@
 import { Assets, Container, Rectangle, Sprite, Texture } from "pixi.js"
 import { Options } from "../../../util/Options"
+import { destroyChildIf } from "../../../util/Util"
 import { ChartRenderer } from "../../ChartRenderer"
 import { TimingWindow } from "../../play/TimingWindow"
 import { isHoldDroppedTimingWindow, isHoldTimingWindow } from "../../play/TimingWindowCollection"
@@ -50,10 +51,7 @@ export class HoldJudgmentContainer extends Container {
         child.scale.set(0.3*(1-p))
       }
     }
-    this.children.filter(child => Date.now() - child.createTime > 800).forEach(child => {
-      child.destroy()
-      this.removeChild(child)
-    })  
+    destroyChildIf(this.children, child => Date.now() - child.createTime > 800)
   }
 
   addJudge(col: number, judgment: TimingWindow) {

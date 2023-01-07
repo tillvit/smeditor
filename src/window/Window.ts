@@ -69,7 +69,11 @@ export abstract class Window {
     navbarTitleElement.classList.add("title")
 
     windowElement.addEventListener('mousedown', () => this.focus());
-    if (options.blocking) window.addEventListener('mousedown', this.block, true);
+    if (options.blocking) {
+      window.addEventListener('mousedown', this.block, true)
+      document.getElementById("blocker")!.style.display = "block"
+      windowElement.dataset.blocking = "block"
+    }
   
     navbarTitleElement.addEventListener('mousedown', () => {
       window.addEventListener('mousemove', this.handleDrag)
@@ -88,7 +92,7 @@ export abstract class Window {
   addToManager(windowManager: WindowManager) {
     this.windowManager = windowManager
     windowManager.view.appendChild(this.windowElement)
-    
+    this.focus()
   }
 
   closeWindow() {
@@ -96,6 +100,7 @@ export abstract class Window {
       this.windowManager.removeWindow(this)
       this.windowElement.classList.add("exiting")
       window.removeEventListener('mousedown', this.block, true);
+      if (this.options.blocking) document.getElementById("blocker")!.style.display = "none"
       setTimeout(() => this.windowManager!.view.removeChild(this.windowElement),40)
     }
   }
@@ -107,7 +112,9 @@ export abstract class Window {
     let windows: HTMLDivElement[] = Array.from(this.windowManager.view.children).map(x => x as HTMLDivElement).filter(x => x != this.windowElement)
     windows.sort((a,b)=>parseInt(a.style.zIndex) - parseInt(b.style.zIndex))
     windows.push(this.windowElement)
-    for (let i = 0; i < windows.length; i++) windows[i].style.zIndex = i.toString()
+    for (let i = 0; i < windows.length; i++) {
+      windows[i].style.zIndex = ((windows[i].dataset.blocking ? 10001 : 0) + i).toString()
+    }
   }
 
   unfocus() {

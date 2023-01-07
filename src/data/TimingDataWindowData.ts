@@ -21,6 +21,7 @@ export const TIMING_WINDOW_DATA: {[key: string]: TimingDataWindowData} = {
     element: createElement({
       create: (app) => {
         let input = document.createElement("input")
+        input.type = "text"
         input.onblur = () => {
           let beat = Math.max(0, safeParse(input.value))
           app.chartManager.setBeat(beat)
@@ -49,6 +50,7 @@ export const TIMING_WINDOW_DATA: {[key: string]: TimingDataWindowData} = {
     element: createElement({
       create: (app) => {
         let input = document.createElement("input")
+        input.type = "text"
         input.onblur = () => {
           let offset = safeParse(input.value)
           app.chartManager.chart?.timingData.update("OFFSET", offset)

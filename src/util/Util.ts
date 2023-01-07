@@ -1,4 +1,5 @@
 import { Parser } from "expr-eval"
+import { DisplayObject } from "pixi.js"
 import { App } from "../App"
 
 const QUANTS = [1, 1/2, 1/3, 1/4, 1/6, 1/8, 1/12, 1/16, 1/24]
@@ -132,5 +133,15 @@ export function safeParse(expr: string): number {
     return Parser.evaluate(expr)
   } catch {
     return 0
+  }
+}
+
+export function destroyChildIf<Child extends DisplayObject>(children: Child[], predicate: (child: Child, index: number) => boolean) {
+  let i = children.length;
+  if (children.length == 0) return
+  while (i--) {
+    if (predicate(children[i], i)) {
+      children[i].destroy()
+    }
   }
 }
