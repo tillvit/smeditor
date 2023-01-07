@@ -667,10 +667,10 @@ export class DirectoryWindow extends Window {
 
   reloadView(viewElement: HTMLDivElement, prefix: string) {
     let scroll = viewElement
-      .querySelector(".dir-selector")!
-      .querySelector("div[data-path='" + this.escapeSelector(prefix) + "']")!
-      .parentElement!.querySelector(".children")!
-    if (prefix == "") {
+      .querySelector(".dir-selector")
+      ?.querySelector("div[data-path='" + this.escapeSelector(prefix) + "']")
+      ?.parentElement?.querySelector(".children")
+    if (prefix == "" || !scroll) {
       scroll = viewElement.querySelector(".dir-selector")!
     }
     const collapseCache = []
