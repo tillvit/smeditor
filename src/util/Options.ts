@@ -2,7 +2,7 @@ import { TimingEventProperty } from "../chart/sm/TimingTypes"
 
 const SAVE_BLACKLIST = [
   "audio.assistTick", "audio.metronome", "audio.rate", 
-  "chart.snap", "chart.speed", 
+  "chart.snap", "chart.speed", "chart.CMod", 
   "play.timingCollection" 
 ]
 

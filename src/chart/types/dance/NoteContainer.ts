@@ -82,7 +82,7 @@ export class NoteContainer extends Container {
   }
 
   private checkBounds(note: NotedataEntry, beat: number): [boolean, boolean, number, number] {
-    let y = this.renderer.getYPos(beat)
+    let y = Options.chart.receptorYPos
     if (!isHoldNote(note) || (!note.gameplay?.lastHoldActivation || beat < note.beat)) y = this.renderer.getYPos(note.beat)
     if (isHoldNote(note) && note.gameplay?.droppedHoldBeat) y = this.renderer.getYPos(note.gameplay.droppedHoldBeat)
     let y_hold = this.renderer.getYPos(note.beat + (isHoldNote(note) ? note.hold : 0))

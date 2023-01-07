@@ -79,7 +79,7 @@ export class UserOptionsWindow extends Window {
       }
       if (typeof defaultOption == "boolean") {
         input.type = "checkbox"
-        input.checked = defaultOption
+        input.checked = entry[1] as boolean
         input.onblur = () => {
           Options.applyOption([prefix + entry[0], input.checked])
         }
