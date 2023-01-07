@@ -53,7 +53,7 @@ export class App {
       autoDensity: true,
       view: this.view,
     })
-    this.renderer.gl.drawElements
+
     this.ticker = new Ticker()
     this.ticker.add(() => {
       TimerStats.time("Render Time")
@@ -163,38 +163,43 @@ export class App {
       event.dataTransfer!.dropEffect = "copy"
     })
 
-    window.addEventListener("drop", async event => {
+    window.addEventListener("drop", event => {
       event.stopPropagation()
       event.preventDefault()
-      let prefix = ""
-      const items = event.dataTransfer!.items
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i].webkitGetAsEntry()
-        if (item && item.isFile) {
-          if (item.name.endsWith(".sm") || item.name.endsWith(".ssc")) {
-            prefix = "New Song"
-            break
+      const handler = async () => {
+        let prefix = ""
+        const items = event.dataTransfer!.items
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i].webkitGetAsEntry()
+          if (item?.isFile) {
+            if (item.name.endsWith(".sm") || item.name.endsWith(".ssc")) {
+              prefix = "New Song"
+              break
+            }
           }
         }
-      }
 
-      const queue = []
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i].webkitGetAsEntry()
-        queue.push(this.traverseFileTree(prefix, item!))
+        const queue = []
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i].webkitGetAsEntry()
+          queue.push(this.traverseFileTree(prefix, item!))
+        }
+        await Promise.all(queue)
+        this.windowManager.openWindow(
+          new DirectoryWindow(this, {
+            title: "Select an sm/ssc file...",
+            accepted_file_types: ["sm", "ssc"],
+            disableClose: !this.chartManager.sm,
+            callback: (path: string) => {
+              this.chartManager.loadSM(path)
+              this.windowManager
+                .getWindowById("select_sm_initial")
+                ?.closeWindow()
+            },
+          })
+        )
       }
-      await Promise.all(queue)
-      this.windowManager.openWindow(
-        new DirectoryWindow(this, {
-          title: "Select an sm/ssc file...",
-          accepted_file_types: ["sm", "ssc"],
-          disableClose: !this.chartManager.sm,
-          callback: (path: string) => {
-            this.chartManager.loadSM(path)
-            this.windowManager.getWindowById("select_sm_initial")?.closeWindow()
-          },
-        })
-      )
+      handler()
     })
   }
 
@@ -212,15 +217,18 @@ export class App {
         })
       } else if (item.isDirectory) {
         const dirReader = (<FileSystemDirectoryEntry>item).createReader()
-        dirReader.readEntries(async entries => {
-          for (let i = 0; i < entries.length; i++) {
-            await this.traverseFileTree(
-              prefix,
-              entries[i],
-              path + item.name + "/"
-            )
+        dirReader.readEntries(entries => {
+          const handler = async () => {
+            for (let i = 0; i < entries.length; i++) {
+              await this.traverseFileTree(
+                prefix,
+                entries[i],
+                path + item.name + "/"
+              )
+            }
+            resolve()
           }
-          resolve()
+          handler()
         })
       }
     })
@@ -289,7 +297,7 @@ function init() {
       Additionally, many audio files cannot be played in Safari.
       If you still want to try loading SMEditor, run the command runSafari()`
     )
-    window.runSafari = async () => {
+    window.runSafari = () => {
       document.querySelector("body")!.innerHTML = `<div id="view-wrapper"> 
           <div class="menubar"></div>
             <canvas id="pixi"></canvas>

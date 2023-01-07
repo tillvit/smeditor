@@ -86,7 +86,7 @@ export class BasicGameLogic extends GameLogic {
       }
       if (
         roundDigit(chartManager.getBeat(), 3) >=
-        roundDigit(hold.beat + hold.hold!, 3)
+        roundDigit(hold.beat + hold.hold, 3)
       ) {
         hold.gameplay!.hideNote = true
         chartManager.chartView.doJudgment(

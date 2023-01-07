@@ -152,7 +152,7 @@ export class BarlineContainer extends Container {
     newChild.anchor!.y = 0.5
     newChild.x = (this.renderer.chart.gameType.notefieldWidth + 128) / -2 - 16
     newChild.visible = true
-    newChild.text = "" + beat / 4
+    newChild.text = `${beat / 4}`
     this.barlineLabelMap.set(beat, newChild as BarlineLabel)
     return newChild as BarlineLabel
   }

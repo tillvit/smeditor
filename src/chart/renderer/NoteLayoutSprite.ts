@@ -199,7 +199,7 @@ export class NoteLayoutSprite extends Container {
     const songOffset = this.renderer.chart.timingData.getTimingData("OFFSET")
 
     this.renderer.chart.notedata.forEach(note => {
-      let obj = this.barContainer.children[childIndex] as Sprite
+      let obj = this.barContainer.children[childIndex]
       if (!obj) {
         obj = new Sprite(Texture.WHITE)
         obj.width = 4
@@ -215,7 +215,7 @@ export class NoteLayoutSprite extends Container {
       if (note.type == "Mine") obj.tint = 0x808080
       childIndex++
       if (isHoldNote(note)) {
-        let h_obj = this.barContainer.children[childIndex] as Sprite
+        let h_obj = this.barContainer.children[childIndex]
         if (!h_obj) {
           h_obj = new Sprite(Texture.WHITE)
           h_obj.width = 4

@@ -1,6 +1,6 @@
 import { App } from "../App"
 import { Window } from "./Window"
-import { Options, VIEW_BLACKLIST } from "../util/Options"
+import { Options, OptionsObject, VIEW_BLACKLIST } from "../util/Options"
 import { safeParse } from "../util/Util"
 
 export class UserOptionsWindow extends Window {
@@ -121,14 +121,12 @@ export class UserOptionsWindow extends Window {
     return item
   }
 
-  private getObjects(
-    id: string
-  ): { [key: string]: string | number | boolean | object } | undefined {
+  private getObjects(id: string): OptionsObject | undefined {
     const path = id.split(".")
-    let obj: any = Options
+    let obj: OptionsObject = Options as unknown as OptionsObject
     if (id == "") return obj
     for (const part of path) {
-      if (part in obj) obj = obj[part]
+      if (part in obj) obj = obj[part] as OptionsObject
       else return undefined
     }
     return obj

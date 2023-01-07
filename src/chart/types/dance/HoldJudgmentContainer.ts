@@ -1,4 +1,11 @@
-import { Assets, Container, Rectangle, Sprite, Texture } from "pixi.js"
+import {
+  Assets,
+  BaseTexture,
+  Container,
+  Rectangle,
+  Sprite,
+  Texture,
+} from "pixi.js"
 import { Options } from "../../../util/Options"
 import { destroyChildIf } from "../../../util/Util"
 import { ChartRenderer } from "../../ChartRenderer"
@@ -32,9 +39,9 @@ export class HoldJudgmentContainer extends Container {
   async loadTex() {
     let tHeight = 0
     let tWidth = 0
-    const judge_tex = await Assets.load(
+    const judge_tex = (await Assets.load(
       "assets/noteskin/dance/hold_judgment.png"
-    )
+    )) as BaseTexture
     tHeight = judge_tex.height
     tWidth = judge_tex.width
     HoldJudgmentContainer.held_tex = new Texture(

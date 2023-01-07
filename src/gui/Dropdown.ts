@@ -74,16 +74,13 @@ export class Dropdown<T> {
 
   setSelected(item?: T) {
     this.selectedItem = item ?? this.selectedItem
-    const itemDisplay = this.view.querySelector(
-      ".dropdown-selected"
-    )! as HTMLDivElement
+    const itemDisplay: HTMLElement =
+      this.view.querySelector(".dropdown-selected")!
     itemDisplay.innerText = this.selectedItem ? this.selectedItem + "" : ""
   }
 
   private createDropdown() {
-    const itemList = this.view.querySelector(
-      ".dropdown-items"
-    )! as HTMLDivElement
+    const itemList: HTMLElement = this.view.querySelector(".dropdown-items")!
     const children: HTMLDivElement[] = this.items.map(item => {
       const itemEl = document.createElement("div")
       itemEl.classList.add("dropdown-item")

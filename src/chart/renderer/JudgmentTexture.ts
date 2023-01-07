@@ -27,7 +27,7 @@ export class JudgmentTexture {
   }
 
   private async loadTex(path: string) {
-    const judge_tex = await Assets.load(path)
+    const judge_tex = (await Assets.load(path)) as Texture
     this.texture = judge_tex
     this.tHeight = judge_tex.height
     this.tWidth = judge_tex.width

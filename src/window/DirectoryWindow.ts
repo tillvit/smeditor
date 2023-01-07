@@ -95,11 +95,11 @@ export class DirectoryWindow extends Window {
         if (!next)
           next = (<HTMLElement>(
             selected.parentElement!.nextSibling
-          ))!.querySelector(".info")! as HTMLElement
+          ))!.querySelector(".info") as HTMLElement
         if (!next && item.parentElement!.classList.contains("children"))
           next = (<HTMLElement>(
             item.parentElement!.parentElement!.nextSibling
-          ))!.querySelector(".info")! as HTMLElement
+          ))!.querySelector(".info") as HTMLElement
         if (next) {
           selected.classList.remove("selected")
           next.classList.add("selected")
@@ -164,54 +164,59 @@ export class DirectoryWindow extends Window {
       this.highlightedPath = ""
     }
 
-    this.dropHandler = async event => {
+    this.dropHandler = event => {
       event.preventDefault()
       event.stopImmediatePropagation()
-      if (!(<HTMLElement>event.target!).closest(".dir-selector")) {
-        return
-      }
-      let prefix = this.highlightedPath
-      const items = event.dataTransfer!.items
-      if (prefix == "") {
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i].webkitGetAsEntry()
-          if (item && item.isFile) {
-            if (item.name.endsWith(".sm") || item.name.endsWith(".ssc")) {
-              prefix = "New Song"
-              break
+      const handler = async () => {
+        if (!(<HTMLElement>event.target!).closest(".dir-selector")) {
+          return
+        }
+        let prefix = this.highlightedPath
+        const items = event.dataTransfer!.items
+        if (prefix == "") {
+          for (let i = 0; i < items.length; i++) {
+            const item = items[i].webkitGetAsEntry()
+            if (item?.isFile) {
+              if (item.name.endsWith(".sm") || item.name.endsWith(".ssc")) {
+                prefix = "New Song"
+                break
+              }
             }
           }
         }
-      }
 
-      const queue = []
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i].webkitGetAsEntry()
-        queue.push(this.traverseFileTree(prefix, item!))
-      }
-      await Promise.all(queue)
-      let scroll = viewElement
-        .querySelector(".dir-selector")
-        ?.querySelector("div[data-path='" + this.escapeSelector(prefix) + "']")
-        ?.parentElement!.querySelector(".children")
-      if (prefix == "") {
-        scroll = viewElement.querySelector(".dir-selector")
-      }
-      const s_path = prefix.split("/")
-      while (scroll == undefined) {
-        s_path.pop()
-        viewElement
+        const queue = []
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i].webkitGetAsEntry()
+          queue.push(this.traverseFileTree(prefix, item!))
+        }
+        await Promise.all(queue)
+        let scroll = viewElement
           .querySelector(".dir-selector")
           ?.querySelector(
-            "div[data-path='" + this.escapeSelector(s_path.join("/")) + "']"
+            "div[data-path='" + this.escapeSelector(prefix) + "']"
           )
           ?.parentElement!.querySelector(".children")
-        if (s_path.length == 0) {
+        if (prefix == "") {
           scroll = viewElement.querySelector(".dir-selector")
         }
+        const s_path = prefix.split("/")
+        while (scroll == undefined) {
+          s_path.pop()
+          viewElement
+            .querySelector(".dir-selector")
+            ?.querySelector(
+              "div[data-path='" + this.escapeSelector(s_path.join("/")) + "']"
+            )
+            ?.parentElement!.querySelector(".children")
+          if (s_path.length == 0) {
+            scroll = viewElement.querySelector(".dir-selector")
+          }
+        }
+        this.reloadView(viewElement, s_path.join("/"))
+        this.searchForAcceptableFile(viewElement, s_path.join("/"))
       }
-      this.reloadView(viewElement, s_path.join("/"))
-      this.searchForAcceptableFile(viewElement, s_path.join("/"))
+      handler()
     }
 
     //Padding container
@@ -313,15 +318,18 @@ export class DirectoryWindow extends Window {
         })
       } else if (item.isDirectory) {
         const dirReader = (<FileSystemDirectoryEntry>item).createReader()
-        dirReader.readEntries(async entries => {
-          for (let i = 0; i < entries.length; i++) {
-            await this.traverseFileTree(
-              prefix,
-              entries[i],
-              path + item.name + "/"
-            )
+        dirReader.readEntries(entries => {
+          const handler = async () => {
+            for (let i = 0; i < entries.length; i++) {
+              await this.traverseFileTree(
+                prefix,
+                entries[i],
+                path + item.name + "/"
+              )
+            }
+            resolve()
           }
-          resolve()
+          handler()
         })
       }
     })
@@ -352,9 +360,8 @@ export class DirectoryWindow extends Window {
 
   changeSelectState(viewElement: HTMLDivElement) {
     const item: HTMLElement | null = viewElement.querySelector(".info.selected")
-    const button = viewElement.querySelector(
-      "button.confirm"
-    )! as HTMLButtonElement
+    const button: HTMLButtonElement =
+      viewElement.querySelector("button.confirm")!
     const path = item?.dataset.path
     button.disabled = true
     if (!path) return
@@ -621,7 +628,7 @@ export class DirectoryWindow extends Window {
     title.style.pointerEvents = ""
     title.value = title.parentElement!.dataset.path!.split("/").pop()!
     title.focus()
-    title.addEventListener("keypress", this.textAreaKeyHandler, true)
+    title.addEventListener("keypress", e => this.textAreaKeyHandler(e), true)
     title.addEventListener("blur", () => {
       window.addEventListener("keydown", this.keyHandler!, true)
       title.disabled = true

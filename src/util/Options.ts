@@ -86,7 +86,7 @@ class DefaultOptions {
   }
 }
 
-type OptionsObject = {
+export type OptionsObject = {
   [key: string]: string | number | boolean | OptionsObject
 }
 
@@ -140,9 +140,9 @@ export class Options extends DefaultOptions {
   }
   static getDefaultOption(id: string): string | number | boolean | undefined {
     const path = id.split(".")
-    let obj: any = DefaultOptions
+    let obj: OptionsObject = DefaultOptions as unknown as OptionsObject
     for (const part of path) {
-      if (part in obj) obj = obj[part]
+      if (part in obj) obj = obj[part] as OptionsObject
       else return
     }
     if (

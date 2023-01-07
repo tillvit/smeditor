@@ -383,16 +383,16 @@ export class ChartManager {
     this.time = 0
     this.beat = 0
 
-    const smFile = await this.app.files.getFile(path)
+    const smFile = this.app.files.getFile(path)
     this.sm = new Simfile(smFile)
 
     await this.sm.loaded
     window.postMessage("smLoaded")
-    await this.loadChart()
+    this.loadChart()
     if (this.time == 0) this.setBeat(0)
   }
 
-  async loadChart(chart?: Chart) {
+  loadChart(chart?: Chart) {
     if (this.sm == undefined) return
     if (chart == undefined) {
       for (const gameType of GameTypeRegistry.getPriority()) {
@@ -424,31 +424,28 @@ export class ChartManager {
     if (this.chart.getMusicPath() != this.lastSong) {
       this.lastSong = this.chart.getMusicPath()
       const audioPlaying = this.songAudio.isPlaying()
-      await this.loadAudio()
+      this.loadAudio()
       if (audioPlaying) this.songAudio.play()
     }
   }
 
-  async loadAudio() {
+  loadAudio() {
     if (!this.sm || !this.chart) return
     this.songAudio.stop()
     const musicPath = this.chart.getMusicPath()
     if (musicPath == "") {
       console.warn("No Audio File!")
       this.songAudio = new ChartAudio(undefined)
-      // await this.songAudio.loaded
       return
     }
     const audioFile: File | undefined = this.getAudioFile(musicPath)
     if (audioFile == undefined) {
       console.warn("Failed to load audio file " + musicPath)
       this.songAudio = new ChartAudio(undefined)
-      // await this.songAudio.loaded
       return
     }
-    const audio_url = await URL.createObjectURL(audioFile)
+    const audio_url = URL.createObjectURL(audioFile)
     this.songAudio = new ChartAudio(audio_url)
-    // await this.songAudio.loaded
     this.songAudio.seek(this.time)
     this.getAssistTickIndex()
   }
@@ -637,15 +634,13 @@ export class ChartManager {
       if (note.col != col) return false
       if (Math.abs(note.beat - beat!) < 0.003) return true
       return (
-        isHoldNote(note) &&
-        note.beat <= beat! &&
-        note.beat + note.hold! >= beat!
+        isHoldNote(note) && note.beat <= beat! && note.beat + note.hold >= beat!
       )
     })
 
     const holdEdit: PartialHold = {
-      startBeat: beat!,
-      endBeat: beat!,
+      startBeat: beat,
+      endBeat: beat,
       roll: false,
       originalNote: undefined,
       type,
@@ -655,7 +650,7 @@ export class ChartManager {
 
     if (conflictingNote.length == 0) {
       holdEdit.originalNote = {
-        beat: beat!,
+        beat: beat,
         col: col,
         type: this.getEditingNoteType(),
       }
@@ -664,11 +659,10 @@ export class ChartManager {
     this.app.actionHistory.run({
       action: () => {
         holdEdit.removedNotes.forEach(note => this.chart!.removeNote(note))
-        if (holdEdit.originalNote) this.chart!.addNote(holdEdit.originalNote!)
+        if (holdEdit.originalNote) this.chart!.addNote(holdEdit.originalNote)
       },
       undo: () => {
-        if (holdEdit.originalNote)
-          this.chart!.removeNote(holdEdit.originalNote!)
+        if (holdEdit.originalNote) this.chart!.removeNote(holdEdit.originalNote)
         holdEdit.removedNotes.forEach(note => this.chart!.addNote(note))
       },
     })
@@ -724,17 +718,16 @@ export class ChartManager {
     }
     const conflictingNotes = this.chart.notedata.filter(note => {
       if (
-        note.beat == hold!.originalNote!.beat &&
-        note.col == hold!.originalNote!.col
+        note.beat == hold.originalNote!.beat &&
+        note.col == hold.originalNote!.col
       )
         return false
       if (note.col != col) return false
-      if (note.beat >= hold!.startBeat && note.beat <= hold!.endBeat)
-        return true
+      if (note.beat >= hold.startBeat && note.beat <= hold.endBeat) return true
       return (
         isHoldNote(note) &&
-        note.beat + note.hold >= hold!.startBeat &&
-        note.beat + note.hold <= hold!.endBeat
+        note.beat + note.hold >= hold.startBeat &&
+        note.beat + note.hold <= hold.endBeat
       )
     })
     hold.removedNotes = hold.removedNotes.concat(conflictingNotes)

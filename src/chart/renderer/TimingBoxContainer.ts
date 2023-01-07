@@ -149,32 +149,32 @@ export class TimingBoxContainer extends Container {
         label = roundDigit(event.value, 3).toString()
         break
       case "SPEEDS":
-        label =
-          roundDigit(event.value, 3) +
-          "/" +
-          roundDigit(event.delay, 3).toString() +
-          "/" +
+        label = `${roundDigit(event.value, 3)}/${roundDigit(event.delay, 3)}/${
           event.unit
+        }`
         break
       case "LABELS":
         label = event.value
         break
       case "TIMESIGNATURES":
-        label = event.upper + "/" + event.lower
+        label = `${roundDigit(event.upper, 3)}/${roundDigit(event.lower, 3)}`
         break
       case "COMBOS":
-        label = event.hitMult + "/" + event.missMult
+        label = `${roundDigit(event.hitMult, 3)}/${roundDigit(
+          event.missMult,
+          3
+        )}`
         break
       case "BGCHANGES":
       case "FGCHANGES":
         label = event.file
         break
       case "ATTACKS":
-        label = event.mods + " (" + event.endType + "=" + event.value + ")"
+        label = `${event.mods} (${event.endType}=${event.value})`
     }
     newChild.textObj!.text = label
-    newChild.textObj!.anchor!.x = text_style[0] == "right" ? 0 : 1
-    newChild.textObj!.anchor!.y = 0.5
+    newChild.textObj!.anchor.x = text_style[0] == "right" ? 0 : 1
+    newChild.textObj!.anchor.y = 0.5
     newChild.visible = true
     newChild.backgroundObj!.width = newChild.textObj!.width + 10
     newChild.backgroundObj!.height = 25

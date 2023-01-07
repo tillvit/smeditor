@@ -96,7 +96,7 @@ export class ChartAudio {
         resolve()
         return
       }
-      fetch(url!)
+      fetch(url)
         .then(response => response.arrayBuffer())
         .then(data => this._audioContext.decodeAudioData(data))
         .then(buffer => resolve(buffer))
@@ -207,7 +207,11 @@ export class ChartAudio {
     clearTimeout(this._delay)
     this._isPlaying = false
     if (this._playbackTime <= this._buffer.duration) {
-      this._source.stop()
+      try {
+        this._source.stop()
+      } catch {
+        ;("")
+      }
     }
     this._playbackTime = pause
       ? (this._audioContext.currentTime - this._startTimestamp) *

@@ -73,21 +73,29 @@ export class Waveform extends Sprite {
     }, 1000)
   }
 
-  private async stripWaveform(rawData: Float32Array[] | undefined) {
-    if (rawData == undefined) return
-    this.strippedWaveform = Array.from({ length: rawData.length }, () => [])
-    const blockSize = this.chartAudio.getSampleRate() / (this.zoom * 4) // Number of samples in each subdivision
-    for (let channel = 0; channel < rawData.length; channel++) {
-      const samples = Math.floor(rawData[channel].length / blockSize)
-      for (let i = 0; i < samples; i++) {
-        const blockStart = Math.floor(blockSize * i) // the location of the first sample in the block
-        let sum = 0
-        for (let j = 0; j < blockSize; j++) {
-          sum = sum + Math.abs(rawData[channel][blockStart + j]) // find the sum of all the samples in the block
-        }
-        this.strippedWaveform[channel].push(sum / blockSize) // divide the sum by the block size to get the average
+  private async stripWaveform(
+    rawData: Float32Array[] | undefined
+  ): Promise<void> {
+    return new Promise(resolve => {
+      if (rawData == undefined) {
+        resolve()
+        return
       }
-    }
+      this.strippedWaveform = Array.from({ length: rawData.length }, () => [])
+      const blockSize = this.chartAudio.getSampleRate() / (this.zoom * 4) // Number of samples in each subdivision
+      for (let channel = 0; channel < rawData.length; channel++) {
+        const samples = Math.floor(rawData[channel].length / blockSize)
+        for (let i = 0; i < samples; i++) {
+          const blockStart = Math.floor(blockSize * i) // the location of the first sample in the block
+          let sum = 0
+          for (let j = 0; j < blockSize; j++) {
+            sum = sum + Math.abs(rawData[channel][blockStart + j]) // find the sum of all the samples in the block
+          }
+          this.strippedWaveform[channel].push(sum / blockSize) // divide the sum by the block size to get the average
+        }
+      }
+      resolve()
+    })
   }
 
   refilter() {
