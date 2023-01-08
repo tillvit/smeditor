@@ -33,6 +33,7 @@ export class Waveform extends Sprite {
   private poolSearch = 0
   private lastBeat = 0
   private lastTime = 0
+  private lastHeight = 0
   private lastLineHeight = Options.waveform.lineHeight
 
   constructor(renderer: ChartRenderer) {
@@ -140,10 +141,14 @@ export class Waveform extends Sprite {
     })
     if (
       this.strippedWaveform &&
-      (beat != this.lastBeat || time != this.lastTime)
+      (beat != this.lastBeat ||
+        time != this.lastTime ||
+        this.renderer.chartManager.app.renderer.screen.height !=
+          this.lastHeight)
     ) {
       this.lastBeat = beat
       this.lastTime = time
+      this.lastHeight = this.renderer.chartManager.app.renderer.screen.height
       this.renderData(beat, this.strippedWaveform)
       this.renderer.chartManager.app.renderer.render(this.lineContainer, {
         renderTexture: this.waveformTex,

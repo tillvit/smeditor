@@ -1,6 +1,6 @@
 import { BitmapText, Container, Graphics, Sprite, Texture } from "pixi.js"
 import { Options } from "../../util/Options"
-import { clamp, destroyChildIf } from "../../util/Util"
+import { clamp, destroyChildIf, median } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { TimingWindow } from "../play/TimingWindow"
@@ -106,17 +106,7 @@ export class TimingBarContainer extends Container {
     this.errorText.text = (error * 1000).toFixed(1) + "ms"
     this.errorTextTime = Date.now()
     this.barlines.addChild(bar)
-    this.target = this.getMedian() * 400
-  }
-
-  private getMedian() {
-    const dat = [...this.data]
-    if (dat.length == 0) return 0
-    dat.sort((a, b) => a - b)
-
-    const half = Math.floor(dat.length / 2)
-    if (dat.length % 2) return dat[half]
-    return (dat[half - 1] + dat[half]) / 2
+    this.target = median(this.data) * 400
   }
 
   reset() {

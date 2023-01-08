@@ -85,6 +85,10 @@ export class GameplayStats {
     return this.dancePoints / this.maxCumulativeDancePoints
   }
 
+  getDataPoints(): JudgmentDataPoint[] {
+    return this.dataPoints
+  }
+
   recalculate() {
     this.calculateMaxDP()
     this.dancePoints = 0

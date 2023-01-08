@@ -1,7 +1,7 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
-import { destroyChildIf } from "../../util/Util"
+import { destroyChildIf, mean, median, stdDev } from "../../util/Util"
 import { ChartRenderer } from "../ChartRenderer"
 import { GameplayStats } from "../play/GameplayStats"
 import {
@@ -34,6 +34,12 @@ export class ErrorHistogram extends Container {
   private backgroundRect = new BetterRoundedRect()
   private background = new Container()
   private backgroundLines = new Container() as LineContainer
+  private statText = new Container()
+  private meanText: BitmapText
+  private medianText: BitmapText
+  private modeText: BitmapText
+  private stddevText: BitmapText
+  private errorMS: number[] = []
 
   constructor(renderer: ChartRenderer) {
     super()
@@ -63,6 +69,80 @@ export class ErrorHistogram extends Container {
     late.alpha = 0.3
     this.background.addChild(late)
 
+    this.meanText = new BitmapText("-", {
+      fontName: "Assistant",
+      fontSize: 15,
+    })
+    this.meanText.anchor.x = 0.5
+    this.meanText.x = (HISTOGRAM_WIDTH / 4) * -1.5
+    this.meanText.y = -HISTOGRAM_HEIGHT - 20
+    this.statText.addChild(this.meanText)
+
+    this.medianText = new BitmapText("-", {
+      fontName: "Assistant",
+      fontSize: 15,
+    })
+    this.medianText.anchor.x = 0.5
+    this.medianText.x = (HISTOGRAM_WIDTH / 4) * -0.5
+    this.medianText.y = -HISTOGRAM_HEIGHT - 20
+    this.statText.addChild(this.medianText)
+
+    this.modeText = new BitmapText("-", {
+      fontName: "Assistant",
+      fontSize: 15,
+    })
+    this.modeText.anchor.x = 0.5
+    this.modeText.x = (HISTOGRAM_WIDTH / 4) * 0.5
+    this.modeText.y = -HISTOGRAM_HEIGHT - 20
+    this.statText.addChild(this.modeText)
+
+    this.stddevText = new BitmapText("-", {
+      fontName: "Assistant",
+      fontSize: 15,
+    })
+    this.stddevText.anchor.x = 0.5
+    this.stddevText.x = (HISTOGRAM_WIDTH / 4) * 1.5
+    this.stddevText.y = -HISTOGRAM_HEIGHT - 20
+    this.statText.addChild(this.stddevText)
+
+    const meanLabel = new BitmapText("Mean", {
+      fontName: "Assistant",
+      fontSize: 10,
+    })
+    meanLabel.anchor.x = 0.5
+    meanLabel.x = (HISTOGRAM_WIDTH / 4) * -1.5
+    meanLabel.y = -HISTOGRAM_HEIGHT - 30
+    this.statText.addChild(meanLabel)
+
+    const medianLabel = new BitmapText("Median", {
+      fontName: "Assistant",
+      fontSize: 10,
+    })
+    medianLabel.anchor.x = 0.5
+    medianLabel.x = (HISTOGRAM_WIDTH / 4) * -0.5
+    medianLabel.y = -HISTOGRAM_HEIGHT - 30
+    this.statText.addChild(medianLabel)
+
+    const modeLabel = new BitmapText("Mode", {
+      fontName: "Assistant",
+      fontSize: 10,
+    })
+    modeLabel.anchor.x = 0.5
+    modeLabel.x = (HISTOGRAM_WIDTH / 4) * 0.5
+    modeLabel.y = -HISTOGRAM_HEIGHT - 30
+    this.statText.addChild(modeLabel)
+
+    const stddevLabel = new BitmapText("Std Dev.", {
+      fontName: "Assistant",
+      fontSize: 10,
+    })
+    stddevLabel.anchor.x = 0.5
+    stddevLabel.x = (HISTOGRAM_WIDTH / 4) * 1.5
+    stddevLabel.y = -HISTOGRAM_HEIGHT - 30
+    this.statText.addChild(stddevLabel)
+
+    this.addChild(this.statText)
+
     this.addChild(this.barlines)
   }
 
@@ -73,10 +153,10 @@ export class ErrorHistogram extends Container {
       HISTOGRAM_WIDTH / 2
     this.y = this.renderer.chartManager.app.renderer.screen.height / 2 - 20
     this.backgroundRect.width = HISTOGRAM_WIDTH + 10
-    this.backgroundRect.height = HISTOGRAM_HEIGHT
+    this.backgroundRect.height = HISTOGRAM_HEIGHT + 35
     this.backgroundRect.x = -HISTOGRAM_WIDTH / 2 - 5
-    this.backgroundRect.y = -HISTOGRAM_HEIGHT
-    this.background.visible = !!this.renderer.chartManager.gameStats
+    this.backgroundRect.y = -HISTOGRAM_HEIGHT - 35
+    this.visible = !!this.renderer.chartManager.gameStats
     for (const line of this.barlines.children) {
       if (Options.performance.smoothAnimations)
         line.height = (line.targetHeight - line.height) * 0.2 + line.height
@@ -91,12 +171,18 @@ export class ErrorHistogram extends Container {
     line.anchor.y = 1
     line.anchor.x = 0.5
     line.height = 0
+    line.visible = false
     this.barlines.addChild(line)
     return line
   }
 
   start(gameStats: GameplayStats) {
     this.max = 0
+    this.errorMS = []
+    this.meanText.text = "-"
+    this.medianText.text = "-"
+    this.modeText.text = "-"
+    this.stddevText.text = "-"
     destroyChildIf(this.barlines.children, () => true)
     destroyChildIf(this.backgroundLines.children, () => true)
 
@@ -149,12 +235,18 @@ export class ErrorHistogram extends Container {
         if (!this.barlines.children[ms + windowSize + i]) continue
         this.barlines.children[ms + windowSize + i].smoothCount +=
           SCALING[i + 3]
+        this.barlines.children[ms + windowSize + i].visible = true
         if (
           this.barlines.children[ms + windowSize + i].smoothCount > this.max
         ) {
+          this.modeText.text = ms + "ms"
           this.max = this.barlines.children[ms + windowSize + i].smoothCount
         }
       }
+      this.errorMS.push(error * 1000)
+      this.meanText.text = mean(this.errorMS).toFixed(2) + "ms"
+      this.medianText.text = median(this.errorMS).toFixed(2) + "ms"
+      this.stddevText.text = stdDev(this.errorMS).toFixed(2) + "ms"
       this.redraw()
     })
   }

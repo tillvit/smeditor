@@ -229,10 +229,18 @@ export class BasicGameLogic extends GameLogic {
         Options.play.timingCollection
       ).shouldHideNote(judge)
       chord.forEach(note => {
-        chartManager.chartView!.doJudgment(note, hitTime - note.second, judge)
+        chartManager.chartView!.doJudgment(
+          note,
+          (hitTime - note.second) / Options.audio.rate,
+          judge
+        )
         if (hideNote && isTapNote(note)) note.gameplay!.hideNote = true
       })
-      chartManager.gameStats?.addDataPoint(chord, judge, hitTime - note.second)
+      chartManager.gameStats?.addDataPoint(
+        chord,
+        judge,
+        (hitTime - note.second) / Options.audio.rate
+      )
     }
   }
 
