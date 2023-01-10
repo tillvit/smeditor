@@ -391,7 +391,7 @@ export class TimingData {
     if (!isFinite(beat)) return 0
     if (beat <= 0) {
       const curbpm = this.getBPM(0)
-      return this.getTimingData("OFFSET") + (beat * 60) / curbpm
+      return -this.getTimingData("OFFSET") + (beat * 60) / curbpm
     }
     const [seconds, clamp] = this.getSecondsNoClamp(beat)
     return Math.max(seconds, clamp)

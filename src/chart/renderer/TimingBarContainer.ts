@@ -112,6 +112,7 @@ export class TimingBarContainer extends Container {
   reset() {
     this.data = []
     this.currentMedian.x = 0
+    this.target = 0
     destroyChildIf(this.barlines.children, () => true)
   }
 }
