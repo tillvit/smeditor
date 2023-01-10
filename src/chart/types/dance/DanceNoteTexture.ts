@@ -193,9 +193,9 @@ export class DanceNoteTexture {
   static setArrowTexTime(beat: number, second: number) {
     if (!this.loaded) return
     for (let i = 0; i < 8; i++) {
-      ;(<Mesh>(
+      const note: Mesh<Shader> =
         DanceNoteTexture.arrow_container.getChildByName("body" + i)
-      )).shader.uniforms.time = beat
+      note.shader.uniforms.time = beat
     }
     ;(<Mesh>DanceNoteTexture.mine_container.children[0]).shader.uniforms.time =
       second

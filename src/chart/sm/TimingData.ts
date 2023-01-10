@@ -13,6 +13,7 @@ import {
   TimingEventBase,
   ScrollCacheTimingEvent,
   BPMTimingEvent,
+  BeatTimingEventProperty,
 } from "./TimingTypes"
 
 type TimingPropertyCollection = {
@@ -154,29 +155,111 @@ export class TimingData {
     if (doCache ?? true) this.reloadCache(type)
   }
 
-  delete(type: TimingEventProperty, event: TimingEvent, doCache?: boolean) {
-    if (!this.events[type]) return
-    const i = this.bindex(type, event)
+  delete(songTiming: boolean, event: TimingEvent, doCache?: boolean) {
+    if (!songTiming) {
+      this._fallback!.delete(true, event, doCache)
+      if (doCache ?? true) this.reloadCache(event.type)
+      return
+    }
+    if (!this.events[event.type]) return
+    const i = this.bindex(event.type, event)
     if (i > -1) {
-      this.events[type]!.splice(i, 1)
-      if (doCache ?? true) this.reloadCache(type)
+      this.events[event.type]!.splice(i, 1)
+      if (doCache ?? true) this.reloadCache(event.type)
     }
   }
 
-  update(type: TimingEventProperty, event: TimingEvent, doCache?: boolean): void
-  update(type: "OFFSET", event: number, doCache?: boolean): void
-  update(type: TimingProperty, event: TimingEvent | number, doCache?: boolean) {
+  private isDuplicate<Event extends TimingEvent>(
+    event: Event,
+    properties: Event
+  ): boolean {
+    if (
+      [
+        "STOPS",
+        "WARPS",
+        "DELAYS",
+        "FAKES",
+        "BGCHANGES",
+        "FGCHANGES",
+        "SPEEDS",
+      ].includes(event.type)
+    )
+      return false
+    if (properties.type != event.type) return false
+    switch (event.type) {
+      case "BPMS":
+      case "SCROLLS":
+      case "TICKCOUNTS":
+      case "LABELS":
+        return properties.type == event.type && event.value == properties.value
+      case "TIMESIGNATURES":
+        return (
+          properties.type == event.type &&
+          event.upper == properties.upper &&
+          event.lower == properties.lower
+        )
+      case "COMBOS":
+        return (
+          properties.type == event.type &&
+          event.hitMult == properties.hitMult &&
+          event.missMult == properties.missMult
+        )
+      default:
+        return false
+    }
+  }
+
+  update<Type extends TimingProperty>(
+    songTiming: boolean,
+    type: Type,
+    properties: Partial<Extract<TimingEvent, { type: Type }>>,
+    beat: number,
+    doCache?: boolean
+  ): void
+  update(
+    songTiming: boolean,
+    type: "OFFSET",
+    properties: number,
+    beat?: number,
+    doCache?: boolean
+  ): void
+  update<Type extends TimingProperty>(
+    songTiming: boolean,
+    type: Type,
+    properties: Partial<Extract<TimingEvent, { type: Type }>> | number,
+    beat?: number,
+    doCache?: boolean
+  ) {
+    const target = songTiming ? this : this._fallback!
     if (type == "OFFSET") {
-      this.offset = event as number
+      target.offset = properties as number
       if (doCache ?? true) this.reloadCache("OFFSET")
       return
     }
-    if (!this.events[type]) return
-    const i = this.bindex(type, event as TimingEvent)
-    if (i > -1) {
-      this.events[type]![i] = event as TimingEvent
-      if (doCache ?? true) this.reloadCache(type)
+    if (!target.events[type satisfies TimingEventProperty])
+      target.events[type satisfies TimingEventProperty] = []
+    beat = roundDigit(beat!, 3)
+    const event = target.getTimingEventAtBeat(type, beat)
+    if (event?.beat == beat) {
+      if (Object.keys(properties).length == 0) {
+        this.delete(songTiming, event)
+        return
+      }
+      const prevEvent = target.getTimingEventAtBeat(type, beat - 0.001)
+      const newEvent: Partial<TimingEvent> = { type: type, beat: beat }
+      Object.assign(newEvent, properties)
+      if (prevEvent && this.isDuplicate(prevEvent, newEvent as TimingEvent)) {
+        this.delete(songTiming, event)
+      } else {
+        Object.assign(event, properties)
+      }
+    } else {
+      if (Object.keys(properties).length == 0) return
+      const newEvent: Partial<TimingEvent> = { type: type, beat: beat }
+      Object.assign(newEvent, properties)
+      target.insert(type, newEvent as TimingEvent)
     }
+    if (doCache ?? true) this.reloadCache(type)
   }
 
   private buildBeatTimingDataCache() {
@@ -266,16 +349,18 @@ export class TimingData {
     this._cache.sortedEvents = TIMING_EVENT_NAMES.reduce(
       (data, type) =>
         data.concat(this.events[type] ?? this._fallback?.events[type] ?? []),
-      [] as any
+      [] as TimingEvent[]
     )
-    for (const event of this._cache.sortedEvents!) {
+    for (const event of this._cache.sortedEvents) {
       if (!TIMING_EVENT_NAMES.includes(event.type))
         event.second = this.getSeconds(event.beat!)
       if (event.type == "ATTACKS") event.beat = this.getBeat(event.second)
     }
-    this._cache.sortedEvents!.sort((a, b) => a.beat! - b.beat!)
+    this._cache.sortedEvents.sort((a, b) => a.beat! - b.beat!)
     for (const type of TIMING_EVENT_NAMES) {
-      this._cache.events[type] = this.getTimingData(type) as any
+      this._cache.events[type] = this._cache.sortedEvents.filter(
+        event => event.type == type
+      ) as any
     }
   }
 
@@ -304,6 +389,10 @@ export class TimingData {
 
   getSeconds(beat: number): number {
     if (!isFinite(beat)) return 0
+    if (beat <= 0) {
+      const curbpm = this.getBPM(0)
+      return this.getTimingData("OFFSET") + (beat * 60) / curbpm
+    }
     const [seconds, clamp] = this.getSecondsNoClamp(beat)
     return Math.max(seconds, clamp)
   }
@@ -450,21 +539,21 @@ export class TimingData {
     const entries = this.getTimingData(prop)
     if (!Array.isArray(entries)) return undefined
     const entry = entries[this.searchCache(entries, "beat", beat)]
-    if (entry && entry.beat && entry.beat > beat) return undefined
+    if (entry?.beat && entry.beat > beat) return undefined
     return entry
   }
 
   reloadCache(prop?: TimingProperty) {
+    this.buildTimingDataCache()
     if (
       prop == undefined ||
       prop == "OFFSET" ||
-      BEAT_TIMING_PRIORITY.includes(prop as any)
+      BEAT_TIMING_PRIORITY.includes(prop as BeatTimingEventProperty)
     )
       this.buildBeatTimingDataCache()
     if (prop == undefined || prop == "SCROLLS")
       this.buildEffectiveBeatTimingDataCache()
     if (prop == undefined || prop == "SPEEDS") this.buildSpeedsTimingDataCache()
-    if (prop == undefined) this.buildTimingDataCache()
     this._chart?.recalculateNotes()
   }
 

@@ -1,15 +1,17 @@
 import { App } from "../App"
 import { TimingData } from "../chart/sm/TimingData"
-import { safeParse } from "../util/Util"
+import { NumberSpinner } from "../gui/NumberSpinner"
+import { roundDigit } from "../util/Util"
 
 type TimingDataWindowElement<T extends HTMLElement> = {
-  create: (app: App) => T
+  create: (app: App, songTiming: () => boolean) => T
   update: (element: T, timingData: TimingData, beat: number) => void
 }
 
 type TimingDataWindowData = {
   title: string
   element: TimingDataWindowElement<any>
+  dropdownElement?: TimingDataWindowElement<any>
 }
 
 const createElement = <T extends HTMLElement>(
@@ -17,65 +19,85 @@ const createElement = <T extends HTMLElement>(
 ) => element
 
 export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
-  beat: {
-    title: "Beat",
-    element: createElement({
-      create: app => {
-        const input = document.createElement("input")
-        input.type = "text"
-        input.onblur = () => {
-          const beat = Math.max(0, safeParse(input.value))
-          app.chartManager.setBeat(beat)
-          input.value = beat.toFixed(3)
-          input.blur()
-        }
-        input.onkeydown = ev => {
-          if (ev.key == "Enter") input.blur()
-        }
-        input.oninput = () => {
-          input.value = input.value.replaceAll(/[^.0-9+-]/g, "")
-        }
-        return input
-      },
-      update: (element, _, beat) => {
-        const val = (element.value = beat.toFixed(3))
-        if (element.dataset.lastValue != val) {
-          element.value = val
-          element.dataset.lastValue = val
-        }
-      },
-    }),
-  },
   offset: {
     title: "Offset",
     element: createElement({
-      create: app => {
-        const input = document.createElement("input")
-        input.type = "text"
-        input.onblur = () => {
-          const offset = safeParse(input.value)
-          app.chartManager.chart?.timingData.update("OFFSET", offset)
+      create: (app, songTiming) => {
+        const input = NumberSpinner.create(0, 0.001)
+        input.onChange = value => {
+          app.chartManager.chart?.timingData.update(
+            songTiming(),
+            "OFFSET",
+            value
+          )
           app.chartManager.setBeat(app.chartManager.getBeat())
-          input.value = offset.toFixed(3)
-          input.blur()
         }
-        input.onkeydown = ev => {
-          if (ev.key == "Enter") input.blur()
-        }
-        input.oninput = () => {
-          input.value = input.value.replaceAll(/[^.0-9+-]/g, "")
-        }
-        return input
+        return input.view
       },
       update: (element, timingData) => {
-        const val = timingData.getTimingData("OFFSET").toFixed(3)
-        if (element.dataset.lastValue != val) {
-          element.value = val
-          element.dataset.lastValue = val
+        const value = timingData.getTimingData("OFFSET")
+        const input: HTMLInputElement = element.querySelector(".spinner-input")!
+        if (input.dataset.lastValue != value.toFixed(3)) {
+          input.dataset.lastValue = value.toFixed(3)
+          input.value = roundDigit(value, 3).toFixed(3)
         }
       },
     }),
   },
+  bpm: {
+    title: "BPM",
+    element: createElement({
+      create: (app, songTiming) => {
+        const input = NumberSpinner.create(120, 0.001)
+        input.onChange = value => {
+          app.chartManager.chart?.timingData.update(
+            songTiming(),
+            "BPMS",
+            { value: value },
+            app.chartManager.getBeat()
+          )
+        }
+        return input.view
+      },
+      update: (element, timingData, beat) => {
+        const value =
+          timingData.getTimingEventAtBeat("BPMS", beat)?.value ?? 120
+        const input: HTMLInputElement = element.querySelector(".spinner-input")!
+        if (input.dataset.lastValue != value.toFixed(3)) {
+          input.dataset.lastValue = value.toFixed(3)
+          input.value = roundDigit(value, 3).toFixed(3)
+        }
+      },
+    }),
+  },
+  stop: {
+    title: "Stop",
+    element: createElement({
+      create: (app, songTiming) => {
+        const input = NumberSpinner.create(0, 0.001)
+        input.onChange = value => {
+          app.chartManager.chart?.timingData.update(
+            songTiming(),
+            "STOPS",
+            { value: value },
+            app.chartManager.getBeat()
+          )
+        }
+        return input.view
+      },
+      update: (element, timingData, beat) => {
+        const event = timingData.getTimingEventAtBeat("STOPS", beat)
+        let value = event?.value ?? 0
+        if (beat != event?.beat) value = 0
+        const input: HTMLInputElement = element.querySelector(".spinner-input")!
+        if (input.dataset.lastValue != value.toFixed(3)) {
+          input.dataset.lastValue = value.toFixed(3)
+          input.value = roundDigit(value, 3).toFixed(3)
+        }
+      },
+    }),
+  },
+
   label: {
     title: "Label",
     element: createElement({
@@ -120,41 +142,6 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             event?.upper.toString() ?? "4"
           ;(<HTMLInputElement>element.children[2]).value =
             event?.lower.toString() ?? "4"
-          element.dataset.lastValue = val
-        }
-      },
-    }),
-  },
-  bpm: {
-    title: "BPM",
-    element: createElement({
-      create: () => {
-        const input = document.createElement("input")
-        return input
-      },
-      update: (element, timingData, beat) => {
-        const event = timingData.getTimingEventAtBeat("BPMS", beat)
-        const val = event?.value.toFixed(3) ?? "120.000"
-        if (element.dataset.lastValue != val) {
-          element.value = val
-          element.dataset.lastValue = val
-        }
-      },
-    }),
-  },
-  stop: {
-    title: "Stop",
-    element: createElement({
-      create: () => {
-        const input = document.createElement("input")
-        return input
-      },
-      update: (element, timingData, beat) => {
-        const event = timingData.getTimingEventAtBeat("STOPS", beat)
-        let val = event?.value.toFixed(3) ?? "0.000"
-        if (event && event.beat != beat) val = "0.000"
-        if (element.dataset.lastValue != val) {
-          element.value = val
           element.dataset.lastValue = val
         }
       },

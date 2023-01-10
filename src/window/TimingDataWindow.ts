@@ -6,6 +6,7 @@ export class TimingDataWindow extends Window {
   app: App
 
   private lastBeat: number
+  private songTiming = false
 
   constructor(app: App) {
     super({
@@ -44,7 +45,7 @@ export class TimingDataWindow extends Window {
       label.classList.add("label")
       label.innerText = entry.title
 
-      const item = entry.element.create(this.app)
+      const item = entry.element.create(this.app, () => this.songTiming)
 
       container.appendChild(label)
       container.appendChild(item)

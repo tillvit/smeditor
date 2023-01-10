@@ -590,3 +590,55 @@ input.right {
   top: 0;
   z-index: 10000;
 }
+
+.spinner {
+  display: flex;
+  flex-direction: row;
+}
+
+.spinner-input[type="text"] {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.spinner-btns {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #272727;
+  border-left: none;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+}
+
+.spinner-btns button {
+  padding: 0 2px;
+  flex: 1;
+  border-radius: 0;
+  height: 100%;
+  width: 10px;
+  border: none;
+}
+
+.spinner-btns button::after {
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAAbklEQVRIie2PMQqAMAxFXwfP6qJVPIjYzcOKdUkhQ0BaCoLkLS3k818CjuN8ztApYzIDl7xvmalFsAIZuIFozKPMMrC0CAJwKIkuGVX5KdkmLEm3ci1JSlLKU49yLSmXVG1es0EANvnvInKcP/AA784fpjlWwNQAAAAASUVORK5CYII=")
+    no-repeat;
+  background-position: center center;
+  background-size: contain;
+  transform: translate(-50%, -50%);
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  content: "";
+}
+
+.spinner-btns .spinner-up::after {
+  transform: translate(-50%, -50%) rotate(180deg);
+}
+
+.spinner-up {
+  background: linear-gradient(0deg, #484848, #444);
+}
+
+.spinner-down {
+  background: linear-gradient(180deg, #484848, #555);
+}
