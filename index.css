@@ -451,6 +451,7 @@ button:disabled {
 
 .timing-data > .padding > .container {
   display: flex;
+  align-items: center;
 }
 .timing-data > .padding > .container > *:first-child {
   flex: 1;
@@ -458,6 +459,7 @@ button:disabled {
 .timing-data > .padding > .container > *:last-child {
   flex: 0;
   display: flex;
+  column-gap: 3px;
 }
 input[type="text"],
 input[type="number"] {
@@ -496,9 +498,10 @@ input.right {
   background: linear-gradient(0deg, #333, #555);
   border: 1px solid black;
   border-radius: 5px;
-  padding: 3px;
+  height: 100%;
   padding-left: 7px;
   padding-right: 7px;
+  display: flex;
 }
 .dropdown-selected:empty {
   display: none;

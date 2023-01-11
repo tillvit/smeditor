@@ -79,6 +79,10 @@ export class Dropdown<T> {
     itemDisplay.innerText = this.selectedItem ? this.selectedItem + "" : ""
   }
 
+  get value(): T {
+    return this.selectedItem
+  }
+
   private createDropdown() {
     const itemList: HTMLElement = this.view.querySelector(".dropdown-items")!
     const children: HTMLDivElement[] = this.items.map(item => {
