@@ -247,8 +247,18 @@ export class TimingData {
       if (doCache ?? true) this.reloadCache("OFFSET")
       return
     }
-    if (!target.events[type satisfies TimingEventProperty])
-      target.events[type satisfies TimingEventProperty] = []
+    if (!target.events[type satisfies TimingEventProperty]) {
+      if (songTiming) {
+        target.events[type satisfies TimingEventProperty] = JSON.parse(
+          JSON.stringify(
+            this._fallback!.events[type satisfies TimingEventProperty]
+          )
+        )
+      } else {
+        target.events[type satisfies TimingEventProperty] = []
+      }
+    }
+
     beat = roundDigit(beat!, 6)
     const event = target.getTimingEventAtBeat(type, beat)
     if (event?.beat == beat) {

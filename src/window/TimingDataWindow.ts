@@ -1,5 +1,6 @@
 import { App } from "../App"
 import { TIMING_WINDOW_DATA } from "../data/TimingDataWindowData"
+import { Dropdown } from "../gui/Dropdown"
 import { Window } from "./Window"
 
 export class TimingDataWindow extends Window {
@@ -19,6 +20,7 @@ export class TimingDataWindow extends Window {
     })
     this.app = app
     this.lastBeat = Math.round(this.app.chartManager.getBeat() * 1000) / 1000
+    this.songTiming = !this.app.chartManager.chart!.timingData.isEmpty()
     this.initView(this.viewElement)
     setInterval(() => {
       if (
@@ -37,6 +39,19 @@ export class TimingDataWindow extends Window {
     viewElement.classList.add("timing-data")
     const padding = document.createElement("div")
     padding.classList.add("padding")
+    const songLabel = document.createElement("div")
+    songLabel.classList.add("label")
+    songLabel.innerText = "Apply to"
+
+    const item = Dropdown.create(
+      ["All charts", "This chart"],
+      this.songTiming ? "This chart" : "All charts"
+    )
+    item.onChange(value => {
+      this.songTiming = value == "This chart"
+    })
+    padding.appendChild(songLabel)
+    padding.appendChild(item.view)
     Object.values(TIMING_WINDOW_DATA).forEach(entry => {
       const label = document.createElement("div")
       label.classList.add("label")
@@ -54,7 +69,7 @@ export class TimingDataWindow extends Window {
   setData(viewElement: HTMLDivElement) {
     if (!this.app.chartManager.chart) return
     Object.values(TIMING_WINDOW_DATA).forEach((entry, index) => {
-      const item = viewElement.children[0].children[index * 2 + 1]
+      const item = viewElement.children[0].children[index * 2 + 3]
       entry.element.update(
         item,
         this.app.chartManager.chart!.timingData,

@@ -503,6 +503,7 @@ input.right {
   padding-right: 7px;
   display: flex;
   align-items: center;
+  white-space: nowrap;
 }
 
 .dropdown-selected.disabled {
@@ -582,6 +583,8 @@ input.right {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  height: 100%;
+  width: 100%;
 }
 .flex-column-gap {
   column-gap: 5px;
@@ -591,6 +594,9 @@ input.right {
 }
 .flex-grow {
   flex: 1;
+}
+.flex-static {
+  flex: 0;
 }
 
 #blocker {
