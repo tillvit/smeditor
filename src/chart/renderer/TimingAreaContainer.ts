@@ -24,7 +24,7 @@ export const TIMING_EVENT_DATA: {
   BPMS: ["right", 0x661320],
   STOPS: ["left", 0x9ea106],
   DELAYS: ["left", 0x06a2d6],
-  WARPS: ["right", 0x800b55],
+  WARPS: ["left", 0x800b55],
   FAKES: ["left", 0x888888],
   COMBOS: ["right", 0x0f5c25],
   SPEEDS: ["right", 0x2d4c75],

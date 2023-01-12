@@ -447,19 +447,12 @@ button:disabled {
 .timing-data > .padding {
   display: grid;
   row-gap: 3px;
+  grid-template-columns: auto 170px;
 }
 
-.timing-data > .padding > .container {
+.timing-data > .padding > div:not(.label) {
   display: flex;
   align-items: center;
-}
-.timing-data > .padding > .container > *:first-child {
-  flex: 1;
-}
-.timing-data > .padding > .container > *:last-child {
-  flex: 0;
-  display: flex;
-  column-gap: 3px;
 }
 input[type="text"],
 input[type="number"] {
@@ -467,7 +460,11 @@ input[type="number"] {
   border: 1px solid #272727;
   border-radius: 3px;
   padding: 0px 3px;
-  width: 100px;
+}
+
+input:disabled {
+  color: #888888;
+  pointer-events: none;
 }
 
 input:focus {
@@ -492,31 +489,41 @@ input.right {
 
 .dropdown {
   font-size: 12px;
+  height: 100%;
+  flex: 1;
 }
 
 .dropdown-selected {
   background: linear-gradient(0deg, #333, #555);
   border: 1px solid black;
   border-radius: 5px;
+  width: 100%;
   height: 100%;
   padding-left: 7px;
   padding-right: 7px;
   display: flex;
+  align-items: center;
+}
+
+.dropdown-selected.disabled {
+  color: #adadad;
+  pointer-events: none;
 }
 .dropdown-selected:empty {
   display: none;
 }
 .dropdown-selected::after {
   content: "";
-  background: center center no-repeat;
+  background: right center no-repeat;
   background-size: contain;
-  display: block;
-  width: 20px;
-  height: 15px;
-  float: right;
+  display: absolute;
+  width: 12px;
+  height: 12px;
+  align-self: right;
+  flex: 1;
   background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAAbklEQVRIie2PMQqAMAxFXwfP6qJVPIjYzcOKdUkhQ0BaCoLkLS3k818CjuN8ztApYzIDl7xvmalFsAIZuIFozKPMMrC0CAJwKIkuGVX5KdkmLEm3ci1JSlLKU49yLSmXVG1es0EANvnvInKcP/AA784fpjlWwNQAAAAASUVORK5CYII=");
 }
-.dropdown-selected:hover {
+.dropdown-selected:hover:not(.disabled) {
   filter: brightness(1.3);
 }
 .dropdown-selected:active {
@@ -528,6 +535,7 @@ input.right {
   background: #333;
   max-height: 200px;
   overflow: auto;
+  z-index: 5;
 }
 
 .dropdown-item {
@@ -597,11 +605,21 @@ input.right {
 .spinner {
   display: flex;
   flex-direction: row;
+  height: 100%;
+  flex: 1;
 }
 
 .spinner-input[type="text"] {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  flex: 1;
+}
+
+.spinner-input:disabled + .spinner-btns {
+  pointer-events: none;
 }
 
 .spinner-btns {
@@ -611,6 +629,8 @@ input.right {
   border-left: none;
   border-top-right-radius: 3px;
   border-bottom-right-radius: 3px;
+  height: 100%;
+  flex: 0;
 }
 
 .spinner-btns button {

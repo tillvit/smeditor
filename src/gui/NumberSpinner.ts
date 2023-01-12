@@ -3,17 +3,17 @@ import { clamp, roundDigit, safeParse } from "../util/Util"
 export class NumberSpinner {
   view: HTMLDivElement
   input: HTMLInputElement
-  onChange?: (value: number) => void
+  onChange?: (value: number | undefined) => void
   min = -Number.MAX_VALUE
   max = Number.MAX_VALUE
-  precision = 1
+  precision?: number
   step = 1
 
   constructor(
     view: HTMLDivElement,
     value: number,
     step: number,
-    precision: number,
+    precision?: number,
     min?: number,
     max?: number
   ) {
@@ -24,11 +24,12 @@ export class NumberSpinner {
     input.classList.add("spinner-input")
     input.type = "text"
     input.onblur = () => {
-      let value = roundDigit(safeParse(input.value), precision)
+      let value = roundDigit(safeParse(input.value), 3)
       value = clamp(value, this.min, this.max)
-      input.value = value.toFixed(precision)
+      input.value = this.formatValue(value)
       input.blur()
-      this.onChange?.(value)
+      if (input.value == "") this.onChange?.(undefined)
+      else this.onChange?.(value)
     }
     input.onkeydown = ev => {
       if (ev.key == "Enter") input.blur()
@@ -51,7 +52,7 @@ export class NumberSpinner {
     const upButton = document.createElement("button")
     upButton.classList.add("spinner-up")
     upButton.onclick = () => {
-      input.value = (parseFloat(input.value) + step).toFixed(precision)
+      input.value = this.formatValue(parseFloat(input.value) + step)
       this.onChange?.(parseFloat(input.value))
     }
     spinner.appendChild(upButton)
@@ -59,7 +60,7 @@ export class NumberSpinner {
     const downButton = document.createElement("button")
     downButton.classList.add("spinner-down")
     downButton.onclick = () => {
-      input.value = (parseFloat(input.value) - step).toFixed(precision)
+      input.value = this.formatValue(parseFloat(input.value) - step)
       this.onChange?.(parseFloat(input.value))
     }
     spinner.appendChild(downButton)
@@ -72,7 +73,7 @@ export class NumberSpinner {
   static create(
     value: number,
     step: number,
-    precision: number,
+    precision?: number,
     min?: number,
     max?: number
   ) {
@@ -87,9 +88,12 @@ export class NumberSpinner {
   }
 
   setValue(value: number) {
-    if (parseFloat(this.input.value) != roundDigit(value, this.precision))
-      this.input.value = roundDigit(value, this.precision).toFixed(
-        this.precision
-      )
+    if (parseFloat(this.input.value) != roundDigit(value, this.precision ?? 3))
+      this.input.value = this.formatValue(value)
+  }
+
+  private formatValue(value: number) {
+    if (!this.precision) return roundDigit(value, 3).toString()
+    return roundDigit(value, this.precision).toFixed(this.precision)
   }
 }

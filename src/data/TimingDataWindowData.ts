@@ -26,6 +26,12 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
       create: (app, songTiming) => {
         const input = NumberSpinner.create(0, 0.001, 3)
         input.onChange = value => {
+          if (!value) {
+            input.setValue(
+              app.chartManager.chart!.timingData.getTimingData("OFFSET")
+            )
+            return
+          }
           app.chartManager.chart?.timingData.update(
             songTiming(),
             "OFFSET",
@@ -51,6 +57,21 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
       create: (app, songTiming) => {
         const input = NumberSpinner.create(120, 0.001, 3)
         input.onChange = value => {
+          if (!value) {
+            const beat = app.chartManager.getBeat()
+            app.chartManager.chart?.timingData.delete(
+              songTiming(),
+              "BPMS",
+              beat
+            )
+            input.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "BPMS",
+                beat
+              )?.value ?? 120
+            )
+            return
+          }
           app.chartManager.chart?.timingData.update(
             songTiming(),
             "BPMS",
@@ -77,6 +98,21 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
       create: (app, songTiming) => {
         const input = NumberSpinner.create(0, 0.001, 3)
         input.onChange = value => {
+          if (!value || value == 0) {
+            const beat = app.chartManager.getBeat()
+            app.chartManager.chart?.timingData.delete(
+              songTiming(),
+              "STOPS",
+              beat
+            )
+            input.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "STOPS",
+                beat
+              )?.value ?? 0
+            )
+            return
+          }
           app.chartManager.chart?.timingData.update(
             songTiming(),
             "STOPS",
@@ -104,6 +140,21 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
       create: (app, songTiming) => {
         const input = NumberSpinner.create(0, 0.001, 3)
         input.onChange = value => {
+          if (!value || value == 0) {
+            const beat = app.chartManager.getBeat()
+            app.chartManager.chart?.timingData.delete(
+              songTiming(),
+              "DELAYS",
+              beat
+            )
+            input.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "DELAYS",
+                beat
+              )?.value ?? 0
+            )
+            return
+          }
           app.chartManager.chart?.timingData.update(
             songTiming(),
             "DELAYS",
@@ -129,8 +180,33 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "Warp",
     element: createElement({
       create: (app, songTiming) => {
-        const input = NumberSpinner.create(0, 0.001, 3)
+        const input = NumberSpinner.create(0, 0.001, 3, 0)
         input.onChange = value => {
+          if (!value || value == 0) {
+            const beat = app.chartManager.getBeat()
+            app.chartManager.chart?.timingData.delete(
+              songTiming(),
+              "WARPS",
+              beat
+            )
+            input.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "WARPS",
+                beat
+              )?.value ?? 0
+            )
+            return
+          }
+          if (value < 0) {
+            const beat = app.chartManager.getBeat()
+            input.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "WARPS",
+                beat
+              )?.value ?? 0
+            )
+            return
+          }
           app.chartManager.chart?.timingData.update(
             songTiming(),
             "WARPS",
@@ -158,8 +234,34 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     element: createElement({
       create: (app, songTiming) => {
         const container = document.createElement("div")
-        const upperInput = NumberSpinner.create(4, 1, 0)
+        container.classList.add("flex-column-gap")
+        const upperInput = NumberSpinner.create(4, 1, 0, 1)
         upperInput.onChange = value => {
+          if (!value) {
+            const beat = app.chartManager.getBeat()
+            app.chartManager.chart?.timingData.delete(
+              songTiming(),
+              "TIMESIGNATURES",
+              beat
+            )
+            upperInput.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "TIMESIGNATURES",
+                beat
+              )?.upper ?? 4
+            )
+            return
+          }
+          if (value < 1) {
+            const beat = app.chartManager.getBeat()
+            upperInput.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "TIMESIGNATURES",
+                beat
+              )?.upper ?? 4
+            )
+            return
+          }
           app.chartManager.chart?.timingData.update(
             songTiming(),
             "TIMESIGNATURES",
@@ -167,24 +269,42 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             app.chartManager.getBeat()
           )
         }
-        upperInput.input.classList.add("short")
-        const lowerInput = Dropdown.create(
-          [1, 2, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 192],
-          4
-        )
-        lowerInput.onChange(value => {
+        const lowerInput = NumberSpinner.create(4, 1, 0, 1)
+        lowerInput.onChange = value => {
+          if (!value) {
+            const beat = app.chartManager.getBeat()
+            app.chartManager.chart?.timingData.delete(
+              songTiming(),
+              "TIMESIGNATURES",
+              beat
+            )
+            lowerInput.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "TIMESIGNATURES",
+                beat
+              )?.lower ?? 4
+            )
+            return
+          }
+          if (value < 1) {
+            const beat = app.chartManager.getBeat()
+            lowerInput.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "TIMESIGNATURES",
+                beat
+              )?.lower ?? 4
+            )
+            return
+          }
           app.chartManager.chart?.timingData.update(
             songTiming(),
             "TIMESIGNATURES",
             { upper: upperInput.value, lower: value },
             app.chartManager.getBeat()
           )
-        })
+        }
 
-        const slash = document.createElement("div")
-        slash.innerText = "/"
         container.appendChild(upperInput.view)
-        container.appendChild(slash)
         container.appendChild(lowerInput.view)
         return container
       },
@@ -199,7 +319,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           upperInput.value = Math.round(upper).toString()
         }
         const lowerInput: HTMLDivElement =
-          element.lastElementChild!.querySelector(".dropdown-selected")!
+          element.lastElementChild!.querySelector(".spinner-input")!
         if (lowerInput.dataset.lastValue != Math.round(lower).toString()) {
           lowerInput.dataset.lastValue = Math.round(lower).toString()
           lowerInput.innerText = Math.round(lower).toString()
@@ -211,8 +331,34 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "Tickcount",
     element: createElement({
       create: (app, songTiming) => {
-        const input = NumberSpinner.create(4, 1, 0)
+        const input = NumberSpinner.create(4, 1, 0, 0)
         input.onChange = value => {
+          if (!value) {
+            const beat = app.chartManager.getBeat()
+            app.chartManager.chart?.timingData.delete(
+              songTiming(),
+              "TICKCOUNTS",
+              beat
+            )
+            input.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "TICKCOUNTS",
+                beat
+              )?.value ?? 0
+            )
+            return
+          }
+          if (value < 0) {
+            const beat = app.chartManager.getBeat()
+            input.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "TICKCOUNTS",
+                beat
+              )?.value ?? 0
+            )
+            return
+          }
+
           app.chartManager.chart?.timingData.update(
             songTiming(),
             "TICKCOUNTS",
@@ -220,7 +366,6 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             app.chartManager.getBeat()
           )
         }
-        input.input.classList.add("short")
         return input.view
       },
       update: (element, timingData, beat) => {
@@ -239,8 +384,34 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     element: createElement({
       create: (app, songTiming) => {
         const container = document.createElement("div")
-        const upperInput = NumberSpinner.create(1, 1, 0)
+        container.classList.add("flex-column-gap")
+        const upperInput = NumberSpinner.create(1, 1, 0, 0)
         upperInput.onChange = value => {
+          if (!value) {
+            const beat = app.chartManager.getBeat()
+            app.chartManager.chart?.timingData.delete(
+              songTiming(),
+              "COMBOS",
+              beat
+            )
+            upperInput.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "COMBOS",
+                beat
+              )?.hitMult ?? 1
+            )
+            return
+          }
+          if (value < 0) {
+            const beat = app.chartManager.getBeat()
+            upperInput.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "COMBOS",
+                beat
+              )?.hitMult ?? 1
+            )
+            return
+          }
           app.chartManager.chart?.timingData.update(
             songTiming(),
             "COMBOS",
@@ -248,9 +419,33 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             app.chartManager.getBeat()
           )
         }
-        upperInput.input.classList.add("short")
-        const lowerInput = NumberSpinner.create(1, 1, 0)
+        const lowerInput = NumberSpinner.create(1, 1, 0, 0)
         lowerInput.onChange = value => {
+          if (!value) {
+            const beat = app.chartManager.getBeat()
+            app.chartManager.chart?.timingData.delete(
+              songTiming(),
+              "COMBOS",
+              beat
+            )
+            lowerInput.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "COMBOS",
+                beat
+              )?.missMult ?? 1
+            )
+            return
+          }
+          if (value < 0) {
+            const beat = app.chartManager.getBeat()
+            lowerInput.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "COMBOS",
+                beat
+              )?.missMult ?? 1
+            )
+            return
+          }
           app.chartManager.chart?.timingData.update(
             songTiming(),
             "COMBOS",
@@ -258,12 +453,8 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             app.chartManager.getBeat()
           )
         }
-        lowerInput.input.classList.add("short")
 
-        const slash = document.createElement("div")
-        slash.innerText = "/"
         container.appendChild(upperInput.view)
-        container.appendChild(slash)
         container.appendChild(lowerInput.view)
         return container
       },
@@ -291,6 +482,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     element: createElement({
       create: (app, songTiming) => {
         const container = document.createElement("div")
+        container.classList.add("flex-column-gap")
 
         const update = () => {
           app.chartManager.chart?.timingData.update(
@@ -299,31 +491,62 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             {
               value: valueInput.value,
               delay: delayInput.value,
-              unit: unitDropdown.value,
+              unit: unitDropdown.value == "Beats" ? "B" : "T",
             },
             app.chartManager.getBeat()
           )
         }
 
-        const valueInput = NumberSpinner.create(1, 0.1, 3)
-        valueInput.onChange = update
-        valueInput.input.classList.add("short")
+        const valueInput = NumberSpinner.create(1, 0.1, 0)
+        valueInput.onChange = value => {
+          if (!value) {
+            const beat = app.chartManager.getBeat()
+            app.chartManager.chart?.timingData.delete(
+              songTiming(),
+              "SPEEDS",
+              beat
+            )
+            valueInput.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "SPEEDS",
+                beat
+              )?.value ?? 1
+            )
+            return
+          }
+          if (value < 0) {
+            const beat = app.chartManager.getBeat()
+            valueInput.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "SPEEDS",
+                beat
+              )?.value ?? 1
+            )
+            return
+          }
+          update()
+        }
 
-        const delayInput = NumberSpinner.create(1, 0.1, 3)
-        delayInput.onChange = update
-        delayInput.input.classList.add("short")
+        const delayInput = NumberSpinner.create(1, 0.1, 0)
+        delayInput.onChange = value => {
+          if (!value || value < 0) {
+            const beat = app.chartManager.getBeat()
+            delayInput.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "SPEEDS",
+                beat
+              )?.delay ?? 0
+            )
+            return
+          }
+          update()
+        }
 
-        const unitDropdown = Dropdown.create(["B", "T"] as const, "B")
+        const unitDropdown = Dropdown.create(["Beat", "Time"], "Beats")
         unitDropdown.onChange = update
 
-        const slash = document.createElement("div")
-        slash.innerText = "/"
-        const slash2 = document.createElement("div")
-        slash2.innerText = "/"
         container.appendChild(valueInput.view)
-        container.appendChild(slash)
         container.appendChild(delayInput.view)
-        container.appendChild(slash2)
         container.appendChild(unitDropdown.view)
         return container
       },
@@ -331,19 +554,20 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const event = timingData.getTimingEventAtBeat("SPEEDS", beat)
         const value = event?.value ?? 1
         const delay = event?.delay ?? 0
-        const unit = event?.unit ?? "B"
+        const unit = event?.unit == "B" ? "Beat" : "Time"
         const valueInput: HTMLInputElement =
-          element.children[0].querySelector(".spinner-input")!
-        if (valueInput.dataset.lastValue != value.toFixed(3)) {
-          valueInput.dataset.lastValue = value.toFixed(3)
-          valueInput.value = roundDigit(value, 3).toFixed(3)
+          element.firstElementChild!.querySelector(".spinner-input")!
+        if (valueInput.dataset.lastValue != roundDigit(value, 3).toString()) {
+          valueInput.dataset.lastValue = roundDigit(value, 3).toString()
+          valueInput.value = roundDigit(value, 3).toString()
         }
         const delayInput: HTMLInputElement =
-          element.children[2].querySelector(".spinner-input")!
-        if (delayInput.dataset.lastValue != delay.toFixed(3)) {
-          delayInput.dataset.lastValue = delay.toFixed(3)
-          delayInput.value = roundDigit(delay, 3).toFixed(3)
+          element.children[1].querySelector(".spinner-input")!
+        if (delayInput.dataset.lastValue != roundDigit(delay, 3).toString()) {
+          delayInput.dataset.lastValue = roundDigit(delay, 3).toString()
+          delayInput.value = roundDigit(delay, 3).toString()
         }
+        delayInput.disabled = event?.beat != beat
 
         const unitInput: HTMLDivElement =
           element.lastElementChild!.querySelector(".dropdown-selected")!
@@ -351,6 +575,9 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           unitInput.dataset.lastValue = unit
           unitInput.innerText = unit
         }
+
+        if (event?.beat != beat) unitInput.classList.add("disabled")
+        else unitInput.classList.remove("disabled")
       },
     }),
   },
@@ -360,6 +587,21 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
       create: (app, songTiming) => {
         const input = NumberSpinner.create(1, 0.001, 3)
         input.onChange = value => {
+          if (!value) {
+            const beat = app.chartManager.getBeat()
+            app.chartManager.chart?.timingData.delete(
+              songTiming(),
+              "SCROLLS",
+              beat
+            )
+            input.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "SCROLLS",
+                beat
+              )?.value ?? 1
+            )
+            return
+          }
           app.chartManager.chart?.timingData.update(
             songTiming(),
             "SCROLLS",
@@ -384,8 +626,33 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "Fake",
     element: createElement({
       create: (app, songTiming) => {
-        const input = NumberSpinner.create(1, 0.001, 3)
+        const input = NumberSpinner.create(1, 0.001, 3, 0)
         input.onChange = value => {
+          if (!value) {
+            const beat = app.chartManager.getBeat()
+            app.chartManager.chart?.timingData.delete(
+              songTiming(),
+              "FAKES",
+              beat
+            )
+            input.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "FAKES",
+                beat
+              )?.value ?? 0
+            )
+            return
+          }
+          if (value < 0) {
+            const beat = app.chartManager.getBeat()
+            input.setValue(
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "FAKES",
+                beat
+              )?.value ?? 0
+            )
+            return
+          }
           app.chartManager.chart?.timingData.update(
             songTiming(),
             "FAKES",
@@ -413,7 +680,25 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
       create: (app, songTiming) => {
         const input = document.createElement("input")
         input.type = "text"
+        input.onkeydown = ev => {
+          if (ev.key == "Enter") input.blur()
+        }
         input.onblur = () => {
+          if (input.value == "") {
+            const beat = app.chartManager.getBeat()
+            app.chartManager.chart?.timingData.delete(
+              songTiming(),
+              "LABELS",
+              beat
+            )
+            input.value =
+              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+                "LABELS",
+                beat
+              )?.value ?? ""
+
+            return
+          }
           app.chartManager.chart?.timingData.update(
             songTiming(),
             "LABELS",

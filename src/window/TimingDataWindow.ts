@@ -11,8 +11,8 @@ export class TimingDataWindow extends Window {
   constructor(app: App) {
     super({
       title: "Edit Timing Data",
-      width: 250,
-      height: 370,
+      width: 300,
+      height: 340,
       disableClose: false,
       win_id: "timing_data",
       blocking: false,
@@ -38,19 +38,14 @@ export class TimingDataWindow extends Window {
     const padding = document.createElement("div")
     padding.classList.add("padding")
     Object.values(TIMING_WINDOW_DATA).forEach(entry => {
-      const container = document.createElement("div")
-      container.classList.add("container")
-
       const label = document.createElement("div")
       label.classList.add("label")
       label.innerText = entry.title
 
       const item = entry.element.create(this.app, () => this.songTiming)
 
-      container.appendChild(label)
-      container.appendChild(item)
-
-      padding.appendChild(container)
+      padding.appendChild(label)
+      padding.appendChild(item)
     })
     viewElement.appendChild(padding)
     this.setData(viewElement)
@@ -59,7 +54,7 @@ export class TimingDataWindow extends Window {
   setData(viewElement: HTMLDivElement) {
     if (!this.app.chartManager.chart) return
     Object.values(TIMING_WINDOW_DATA).forEach((entry, index) => {
-      const item = viewElement.children[0].children[index].children[1]
+      const item = viewElement.children[0].children[index * 2 + 1]
       entry.element.update(
         item,
         this.app.chartManager.chart!.timingData,

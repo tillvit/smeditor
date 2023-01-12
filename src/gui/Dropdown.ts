@@ -34,6 +34,7 @@ export class Dropdown<T> {
     itemList.classList.add("dropdown-items")
     itemList.style.display = "none"
     itemDisplay.onclick = () => {
+      if (itemDisplay.classList.contains("disabled")) return
       if (this.items.length == 0) {
         itemList.style.display = "none"
         return
@@ -90,6 +91,7 @@ export class Dropdown<T> {
       itemEl.classList.add("dropdown-item")
       itemEl.innerText = item + ""
       itemEl.onclick = () => {
+        if (itemEl.classList.contains("disabled")) return
         itemList.style.display = "none"
         if (this.selectedItem != item) {
           this.onChangeHandlers.forEach(handler => handler(item))

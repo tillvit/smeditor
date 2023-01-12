@@ -27,10 +27,6 @@ export class TimingBoxContainer extends Container {
   private renderer: ChartRenderer
   private timingBoxMap: Map<TimingEvent, TimingBoxObject> = new Map()
 
-  private same_beat = -1
-  private last_length_left = 0
-  private last_length_right = 0
-
   constructor(renderer: ChartRenderer) {
     super()
     this.renderer = renderer
@@ -45,9 +41,9 @@ export class TimingBoxContainer extends Container {
     //Reset mark of old objects
     this.children.forEach(child => (child.marked = false))
 
-    this.same_beat = -1
-    this.last_length_left = 0
-    this.last_length_right = 0
+    let same_beat = -1
+    let last_length_left = 0
+    let last_length_right = 0
     for (const event of this.renderer.chart.timingData.getTimingData()) {
       if (toBeat < event.beat!) break
       if (!Options.chart.renderTimingEvent[event.type]) continue
@@ -58,6 +54,25 @@ export class TimingBoxContainer extends Container {
       if (outOfBounds) continue
 
       const area = this.getTimingBox(event)
+
+      const text_style = TIMING_EVENT_DATA[event.type] ?? ["right", 0x000000]
+      let x =
+        (text_style[0] == "right" ? 1 : -1) *
+        (this.renderer.chart.gameType.notefieldWidth * 0.5 + 64 + 16)
+      if (same_beat != event.beat) {
+        last_length_left = 0
+        last_length_right = 0
+      }
+      if (text_style[0] == "left") x -= last_length_left
+      if (text_style[0] == "right") x += last_length_right
+      area.position.x = x
+      area.textObj.anchor.x = text_style[0] == "right" ? 0 : 1
+      area.backgroundObj.position.x =
+        -5 - (text_style[0] == "right" ? 0 : area.textObj.width)
+      area.backgroundObj.tint = text_style[1]
+      if (text_style[0] == "left") last_length_left += area.textObj.width + 15
+      if (text_style[0] == "right") last_length_right += area.textObj.width + 15
+      same_beat = event.beat!
       area.y = yPos
       area.marked = true
       area.dirtyTime = Date.now()
@@ -124,19 +139,6 @@ export class TimingBoxContainer extends Container {
     newChild.deactivated = false
     newChild.marked = true
     newChild.visible = true
-
-    const text_style = TIMING_EVENT_DATA[event.type] ?? ["right", 0x000000]
-    let x =
-      (text_style[0] == "right" ? 1 : -1) *
-      (this.renderer.chart.gameType.notefieldWidth * 0.5 + 64 + 16)
-    if (this.same_beat != event.beat) {
-      this.last_length_left = 0
-      this.last_length_right = 0
-    }
-    if (text_style[0] == "left") x -= this.last_length_left
-    if (text_style[0] == "right") x += this.last_length_right
-    newChild.position!.x = x
-
     let label = ""
     switch (event.type) {
       case "BPMS":
@@ -173,21 +175,12 @@ export class TimingBoxContainer extends Container {
         label = `${event.mods} (${event.endType}=${event.value})`
     }
     newChild.textObj!.text = label
-    newChild.textObj!.anchor.x = text_style[0] == "right" ? 0 : 1
     newChild.textObj!.anchor.y = 0.5
     newChild.visible = true
     newChild.backgroundObj!.width = newChild.textObj!.width + 10
     newChild.backgroundObj!.height = 25
-    newChild.backgroundObj!.position.x =
-      -5 - (text_style[0] == "right" ? 0 : newChild.textObj!.width)
     newChild.backgroundObj!.position.y = -10
-    newChild.backgroundObj!.tint = text_style[1]
     newChild.zIndex = event.beat
-    if (text_style[0] == "left")
-      this.last_length_left += newChild.textObj!.width + 15
-    if (text_style[0] == "right")
-      this.last_length_right += newChild.textObj!.width + 15
-    this.same_beat = event.beat!
     this.timingBoxMap.set(event, newChild as TimingBoxObject)
     return newChild as TimingBoxObject
   }

@@ -117,7 +117,7 @@ export function bsearch<T>(
   }
   let low = 0,
     high = arr.length
-  while (low <= high) {
+  while (low <= high && low < arr.length) {
     let mid = (low + high) >>> 1
     if (property(arr[mid]) == value) {
       while (mid > 0 && property(arr[mid - 1]) == value) mid--
