@@ -84,6 +84,21 @@ export class Dropdown<T> {
     return this.selectedItem
   }
 
+  get disabled(): boolean {
+    return this.view
+      .querySelector(".dropdown-selected")!
+      .classList.contains("disabled")
+  }
+
+  set disabled(value: boolean) {
+    if (value)
+      this.view.querySelector(".dropdown-selected")!.classList.add("disabled")
+    else
+      this.view
+        .querySelector(".dropdown-selected")!
+        .classList.remove("disabled")
+  }
+
   private createDropdown() {
     const itemList: HTMLElement = this.view.querySelector(".dropdown-items")!
     const children: HTMLDivElement[] = this.items.map(item => {
@@ -91,7 +106,6 @@ export class Dropdown<T> {
       itemEl.classList.add("dropdown-item")
       itemEl.innerText = item + ""
       itemEl.onclick = () => {
-        if (itemEl.classList.contains("disabled")) return
         itemList.style.display = "none"
         if (this.selectedItem != item) {
           this.onChangeHandlers.forEach(handler => handler(item))

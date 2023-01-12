@@ -12,7 +12,6 @@ type TimingDataWindowElement<T extends HTMLElement> = {
 type TimingDataWindowData = {
   title: string
   element: TimingDataWindowElement<any>
-  dropdownElement?: TimingDataWindowElement<any>
 }
 
 const createElement = <T extends HTMLElement>(
@@ -680,6 +679,8 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
       create: (app, songTiming) => {
         const input = document.createElement("input")
         input.type = "text"
+        input.autocomplete = "off"
+        input.spellcheck = false
         input.onkeydown = ev => {
           if (ev.key == "Enter") input.blur()
         }

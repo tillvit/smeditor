@@ -411,6 +411,7 @@ export class ChartManager {
     Options.play.timingCollection =
       Options.play.defaultTimingCollection[chart.gameType.id] ?? "ITG"
 
+    window.postMessage("chartLoaded")
     window.postMessage("chartModified")
 
     if (this.chartView) this.chartView.destroy({ children: true })

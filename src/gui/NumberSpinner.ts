@@ -23,6 +23,8 @@ export class NumberSpinner {
     const input = document.createElement("input")
     input.classList.add("spinner-input")
     input.type = "text"
+    input.autocomplete = "off"
+    input.spellcheck = false
     input.onblur = () => {
       let value = roundDigit(safeParse(input.value), 3)
       value = clamp(value, this.min, this.max)

@@ -2,6 +2,7 @@ import { App } from "../App"
 import { EditMode } from "../chart/ChartManager"
 import { Options } from "../util/Options"
 import { ChartListWindow } from "../window/ChartListWindow"
+import { ChartPropertiesWindow } from "../window/ChartPropertiesWindow"
 import { DirectoryWindow } from "../window/DirectoryWindow"
 import { EQWindow } from "../window/EQWindow"
 import { NewChartWindow } from "../window/NewChartWindow"
@@ -162,8 +163,9 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   chartProperties: {
     label: "Chart Properties...",
     keybinds: [{ key: "P", mods: [Modifier.SHIFT, Modifier.ALT] }],
-    disabled: true,
-    callback: () => 0,
+    disabled: app => !app.chartManager.chart,
+    callback: app =>
+      app.windowManager.openWindow(new ChartPropertiesWindow(app)),
   },
   timingData: {
     label: "Edit Timing Data...",
