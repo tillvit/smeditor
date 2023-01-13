@@ -26,7 +26,11 @@ export class DirectoryWindow extends Window {
   dropHandler?: (event: DragEvent) => void
   highlightedPath = ""
 
-  constructor(app: App, options: DirectoryWindowOptions) {
+  constructor(
+    app: App,
+    options: DirectoryWindowOptions,
+    highlightedPath?: string
+  ) {
     super({
       title: options.title,
       width: 500,
@@ -39,6 +43,7 @@ export class DirectoryWindow extends Window {
     this.dirOptions = options
     options.accepted_file_types ||= []
     this.initView(this.viewElement)
+    if (highlightedPath) this.select(this.viewElement, highlightedPath)
   }
 
   initView(viewElement: HTMLDivElement): void {

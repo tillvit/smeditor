@@ -182,4 +182,29 @@ export class FileSystem {
     }
     return path_arr
   }
+
+  static relPath(from: string, to: string): string {
+    const fromParts = from.split("/")
+    const toParts = to.split("/")
+
+    const length = Math.min(fromParts.length, toParts.length)
+    let samePartsLength = length
+    for (let i = 0; i < length; i++) {
+      if (fromParts[i] !== toParts[i]) {
+        samePartsLength = i
+        break
+      }
+    }
+
+    if (samePartsLength == 0) return to
+
+    let outputParts = []
+    for (let i = samePartsLength; i < fromParts.length; i++) {
+      outputParts.push("..")
+    }
+
+    outputParts = outputParts.concat(toParts.slice(samePartsLength))
+
+    return outputParts.join("/")
+  }
 }

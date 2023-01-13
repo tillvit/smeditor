@@ -6,6 +6,7 @@ import { ChartPropertiesWindow } from "../window/ChartPropertiesWindow"
 import { DirectoryWindow } from "../window/DirectoryWindow"
 import { EQWindow } from "../window/EQWindow"
 import { NewChartWindow } from "../window/NewChartWindow"
+import { SMPropertiesWindow } from "../window/SMPropertiesWindow"
 import { TimingDataWindow } from "../window/TimingDataWindow"
 import { UserOptionsWindow } from "../window/UserOptionsWindow"
 
@@ -141,6 +142,12 @@ export const KEYBINDS: { [key: string]: Keybind } = {
         })
       )
     },
+  },
+  songProperties: {
+    label: "Song Properties...",
+    keybinds: [{ key: "P", mods: [Modifier.SHIFT] }],
+    disabled: app => !app.chartManager.sm,
+    callback: app => app.windowManager.openWindow(new SMPropertiesWindow(app)),
   },
   save: {
     label: "Save...",

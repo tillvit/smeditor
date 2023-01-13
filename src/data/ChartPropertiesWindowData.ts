@@ -2,6 +2,7 @@ import { App } from "../App"
 import { CHART_DIFFICULTIES } from "../chart/sm/ChartTypes"
 import { Dropdown } from "../gui/Dropdown"
 import { NumberSpinner } from "../gui/NumberSpinner"
+import { FileSystem } from "../util/FileSystem"
 import { DirectoryWindow } from "../window/DirectoryWindow"
 import { AUDIO_EXT } from "./FileData"
 
@@ -125,33 +126,57 @@ export const CHART_PROPERTIES_WINDOW_DATA: {
     title: "Music File",
     element: app => {
       const chart = app.chartManager.chart!
-      const input = document.createElement("input")
+
       const container = document.createElement("div")
       container.classList.add("flex-row", "flex-column-gap", "flex-static")
+
+      const handleInput = () => {
+        const playing = app.chartManager.songAudio.isPlaying()
+        if (
+          input.value == "" ||
+          input.value == app.chartManager.sm!.properties.MUSIC
+        ) {
+          chart.music = undefined
+          input.value = ""
+          app.chartManager.loadAudio()
+          if (playing) app.chartManager.songAudio.play()
+          return
+        }
+        chart.music = input.value
+        app.chartManager.loadAudio()
+        if (playing) app.chartManager.songAudio.play()
+      }
+      const input = document.createElement("input")
       input.type = "text"
       input.autocomplete = "off"
       input.spellcheck = false
       input.onkeydown = ev => {
         if (ev.key == "Enter") input.blur()
       }
-      input.onblur = () => {
-        chart.chartStyle = input.value
-      }
-      input.value = chart.chartStyle
+      input.onblur = handleInput
+      input.value = chart.music ?? ""
       input.placeholder = app.chartManager.sm!.properties.MUSIC ?? ""
 
       const dirButton = document.createElement("button")
       dirButton.style.height = "100%"
       dirButton.onclick = () => {
+        const dir = app.chartManager.sm_path.split("/").slice(0, -1).join("/")
         app.windowManager.openWindow(
-          new DirectoryWindow(app, {
-            title: "Select an audio file...",
-            accepted_file_types: AUDIO_EXT,
-            disableClose: true,
-            callback: (path: string) => {
-              input.value = path
+          new DirectoryWindow(
+            app,
+            {
+              title: "Select an audio file...",
+              accepted_file_types: AUDIO_EXT,
+              disableClose: true,
+              callback: (path: string) => {
+                input.value = FileSystem.relPath(dir, path)
+                handleInput()
+              },
             },
-          })
+            dir +
+              "/" +
+              (chart.music ?? app.chartManager.sm!.properties.MUSIC ?? "")
+          )
         )
       }
       const icon = document.createElement("img")

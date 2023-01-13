@@ -229,6 +229,13 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "selection",
+        id: "songProperties",
+      },
+      {
+        type: "seperator",
+      },
+      {
+        type: "selection",
         id: "chartProperties",
       },
       {

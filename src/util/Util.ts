@@ -180,3 +180,8 @@ export function mean(array: number[]): number {
   if (array.length == 0) return 0
   return array.reduce((a, b) => a + b) / array.length
 }
+
+export function capitalize(str: string): string {
+  if (str == "") return ""
+  return str.slice(0, 1).toUpperCase() + str.slice(1).toLowerCase()
+}
