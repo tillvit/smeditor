@@ -76,6 +76,9 @@ export class TimingBoxContainer extends Container {
       area.y = yPos
       area.marked = true
       area.dirtyTime = Date.now()
+
+      area.backgroundObj.position.y = Options.chart.reverse ? -14 : -11
+      area.textObj.scale.y = Options.chart.reverse ? -1 : 1
     }
 
     //Remove old elements
@@ -179,7 +182,6 @@ export class TimingBoxContainer extends Container {
     newChild.visible = true
     newChild.backgroundObj!.width = newChild.textObj!.width + 10
     newChild.backgroundObj!.height = 25
-    newChild.backgroundObj!.position.y = -10
     newChild.zIndex = event.beat
     this.timingBoxMap.set(event, newChild as TimingBoxObject)
     return newChild as TimingBoxObject

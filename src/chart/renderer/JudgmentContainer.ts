@@ -37,10 +37,12 @@ export class JudgmentContainer extends Sprite {
       if (time < 0.1) {
         const p = 1 - (1 - time / 0.1) * (1 - time / 0.1)
         const z = (1 - zoom) * p + zoom
-        this.scale.set(0.4 * z)
+        this.scale.x = 0.4 * z
+        this.scale.y = 0.4 * z * (Options.chart.reverse ? -1 : 1)
       } else if (time > 0.6 && time < 0.8) {
         const p = (((time - 0.6) / 0.2) * (time - 0.6)) / 0.2
-        this.scale.set(0.4 * (1 - p))
+        this.scale.x = 0.4 * (1 - p)
+        this.scale.y = 0.4 * (1 - p) * (Options.chart.reverse ? -1 : 1)
       } else if (time > 0.8) {
         this.active = false
       }

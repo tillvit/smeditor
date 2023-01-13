@@ -88,6 +88,9 @@ export class TimingBarContainer extends Container {
       this.currentMedian.x =
         (this.currentMedian.x - this.target) * 0.8 + this.target
     else this.currentMedian.x = this.target
+    this.errorText.scale.y = Options.chart.reverse ? -1 : 1
+    this.errorText.y = Options.chart.reverse ? 25 : -25
+    this.currentMedian.scale.y = Options.chart.reverse ? -1 : 1
   }
 
   addBar(error: number, judge: TimingWindow) {

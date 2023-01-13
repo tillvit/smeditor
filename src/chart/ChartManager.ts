@@ -101,7 +101,7 @@ export class ChartManager {
           if (this.mode == EditMode.Play) return
           let newbeat = this.beat
           const snap = Options.chart.snap
-          const speed = Options.chart.speed
+          const speed = Options.chart.speed * (Options.chart.reverse ? -1 : 1)
           if (snap == 0) {
             this.partialScroll = 0
             newbeat =

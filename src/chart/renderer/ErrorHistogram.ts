@@ -162,6 +162,8 @@ export class ErrorHistogram extends Container {
         line.height = (line.targetHeight - line.height) * 0.2 + line.height
       else line.height = line.targetHeight
     }
+    this.scale.y = Options.chart.reverse ? -1 : 1
+    this.y = this.y * (Options.chart.reverse ? -1 : 1)
   }
 
   private newLine(): HistogramLine {

@@ -176,6 +176,8 @@ export class ChartRenderer extends Container {
         time
     }
 
+    this.scale.y = Options.chart.reverse ? -1 : 1
+
     TimerStats.time("Chart Update Time")
     this.barlines.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
     this.timingAreas.renderThis(

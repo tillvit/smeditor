@@ -75,6 +75,7 @@ export class BarlineContainer extends Container {
         barlineLabel.marked = true
         barlineLabel.deactivated = false
         barlineLabel.dirtyTime = Date.now()
+        barlineLabel.scale.y = Options.chart.reverse ? -1 : 1
       }
     }
 

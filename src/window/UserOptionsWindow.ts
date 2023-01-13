@@ -84,6 +84,7 @@ export class UserOptionsWindow extends Window {
       if (typeof defaultOption == "boolean") {
         input.type = "checkbox"
         input.checked = entry[1] as boolean
+        input.onblur = null
         input.onchange = () => {
           Options.applyOption([prefix + entry[0], input.checked])
         }
