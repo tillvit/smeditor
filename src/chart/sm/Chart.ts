@@ -157,7 +157,7 @@ export class Chart {
   modifyNote(note: PartialNotedataEntry, properties: Partial<NotedataEntry>) {
     const i = this.getNoteIndex(note)
     if (i == -1) return
-    const noteToModify = this.notedata[i]
+    const noteToModify = Object.assign({}, this.notedata[i])
     this.notedata.splice(i, 1)
     Object.assign(noteToModify, properties)
     this.addNote(noteToModify)

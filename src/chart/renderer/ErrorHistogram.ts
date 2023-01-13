@@ -202,7 +202,7 @@ export class ErrorHistogram extends Container {
     )
       .getStandardWindows()
       .reverse()) {
-      const ms = window.getTimingWindowMS()
+      const ms = Math.round(window.getTimingWindowMS())
       if (ms == 0) continue
       for (let mult = -1; mult <= 1; mult += 2) {
         const line = new Sprite(Texture.WHITE)

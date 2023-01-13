@@ -9,7 +9,7 @@ export class ChartPropertiesWindow extends Window {
     super({
       title: "Chart Properties",
       width: 400,
-      height: 180,
+      height: 220,
       disableClose: false,
       win_id: "chart_properties",
       blocking: false,
