@@ -162,7 +162,7 @@ export class TimingData {
       return
     }
     if (!this.events[type]) return
-    time = roundDigit(time, 6)
+    time = roundDigit(time, 3)
     const i = this.bindex(type, { type, beat: time, second: time })
     if (i > -1) {
       if (i == 0 && type == "BPMS") return
@@ -259,7 +259,7 @@ export class TimingData {
       }
     }
 
-    beat = roundDigit(beat!, 6)
+    beat = roundDigit(beat!, 3)
     const event = target.getTimingEventAtBeat(type, beat)
     if (event?.beat == beat) {
       if (Object.keys(properties).length == 0) {
@@ -308,6 +308,7 @@ export class TimingData {
     let lastbeat = 0
     let curbpm = this.getTimingData("BPMS")[0]?.value ?? 120
     let warping = false
+    let lastStop: StopTimingEvent | undefined = undefined
     const offset = this.getTimingData("OFFSET")
     for (let i = 0; i < cache.length; i++) {
       const event = cache[i]
@@ -318,13 +319,20 @@ export class TimingData {
       if (event.type == "WARP_DEST") warping = false
       if (event.type == "BPMS") curbpm = event.value
       cache[i].warped = warping
+      cache[i].second = seconds - offset
+      cache[i].secondNoStop =
+        lastStop && lastStop.beat == event.beat
+          ? lastStop.second!
+          : cache[i].second
       cache[i].searchSecond = Math.max(
         cache[i - 1]?.second ?? -9999999999,
-        seconds - offset
+        cache[i].secondNoStop!
       )
-      cache[i].second = seconds - offset
       if (event.type == "STOPS" || event.type == "DELAYS")
         seconds += event.value
+      if (event.type == "STOPS") {
+        lastStop = event
+      }
     }
 
     this._cache.beatTiming = cache
@@ -398,8 +406,8 @@ export class TimingData {
     const i = this.searchCache(cache, "searchSecond", seconds)
     const event = cache[i]
     let beat = event.beat
-    let time_left_over = seconds - event.second!
-    let curbpm = this.getBPM(roundDigit(event.beat, 6))
+    let time_left_over = Math.max(0, seconds - event.second!)
+    let curbpm = this.getBPM(roundDigit(event.beat, 3))
     if (event.type == "STOPS" || event.type == "DELAYS")
       time_left_over = Math.max(0, time_left_over - event.value)
     if (event.type == "BPMS") curbpm = event.value
@@ -422,21 +430,22 @@ export class TimingData {
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
     const cache = this._cache.beatTiming!
     // Get the latest timing event at that beat
-    let i = this.searchCache(cache, "beat", roundDigit(beat, 6) - 0.0001)
+    let i = this.searchCache(cache, "beat", roundDigit(beat, 3))
     while (cache[i + 1] && cache[i + 1].beat == cache[i].beat) i++
     const event = cache[i]
     const clamp = event.searchSecond!
     let seconds = event.second!
+    if (roundDigit(beat, 3) == event.beat) seconds = event.secondNoStop!
     let beats_left_over = beat - event.beat
     if (beat - event.beat < 0.001) beats_left_over = 0
-    let curbpm = this.getBPM(roundDigit(event.beat, 6))
+    let curbpm = this.getBPM(roundDigit(event.beat, 3))
     if (
-      (event.type == "STOPS" && roundDigit(beat, 6) > event.beat) ||
-      event.type == "DELAYS"
+      (event.type == "STOPS" && roundDigit(beat, 3) > event.beat) ||
+      (event.type == "DELAYS" && roundDigit(beat, 3) >= event.beat)
     )
       seconds += event.value
     if (event.warped) beats_left_over = 0
-    if (event.type == "BPMS" && roundDigit(beat, 6) > event.beat)
+    if (event.type == "BPMS" && roundDigit(beat, 3) > event.beat)
       curbpm = event.value
     seconds += (beats_left_over * 60) / curbpm
     return [seconds, clamp]
@@ -544,7 +553,7 @@ export class TimingData {
     const bpms = this.getTimingData("BPMS")
     if (bpms.length == 0) return
     for (let i = 0; i < bpms.length; i++) {
-      if (roundDigit(beat, 6) <= bpms[i].beat) {
+      if (roundDigit(beat, 3) <= bpms[i].beat) {
         if (i == 0) return bpms[i]
         return bpms[i - 1]
       }

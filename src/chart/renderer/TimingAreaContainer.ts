@@ -133,7 +133,9 @@ export class TimingAreaContainer extends Container {
       | FakeTimingEvent,
     beat: number
   ): [boolean, boolean, number, number] {
-    const y_start = this.renderer.getYPos(event.beat)
+    const y_start = Options.chart.CMod
+      ? this.renderer.getYPosFromTime(event.second!)
+      : this.renderer.getYPos(event.beat)
     let length = this.renderer.getYPos(event.beat + event.value) - y_start
     if (event.type == "STOPS" || event.type == "DELAYS") {
       if (event.value < 0)

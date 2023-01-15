@@ -97,7 +97,9 @@ export class TimingBoxContainer extends Container {
     event: TimingEvent,
     beat: number
   ): [boolean, boolean, number] {
-    let y = this.renderer.getYPos(event.beat!)
+    let y = Options.chart.CMod
+      ? this.renderer.getYPosFromTime(event.second!)
+      : this.renderer.getYPos(event.beat!)
     if (event.type == "ATTACKS" && Options.chart.CMod)
       y =
         (((event.second - this.renderer.chartManager.getTime()) *

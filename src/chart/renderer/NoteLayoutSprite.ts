@@ -203,9 +203,9 @@ export class NoteLayoutSprite extends Container {
       if (!obj) {
         obj = new Sprite(Texture.WHITE)
         obj.width = 4
-        obj.anchor.set(0.5)
         this.barContainer.addChild(obj)
       }
+      obj.anchor.set(0.5)
       obj.height = 1
       obj.x = (note.col + 0.5) * 6
       let t = unlerp(0, lastBeat, note.beat)
@@ -220,9 +220,10 @@ export class NoteLayoutSprite extends Container {
           h_obj = new Sprite(Texture.WHITE)
           h_obj.width = 4
           h_obj.height = 2
-          h_obj.anchor.set(0.5)
           this.barContainer.addChild(h_obj)
         }
+        h_obj.anchor.x = 0.5
+        h_obj.anchor.y = 0
         h_obj.x = (note.col + 0.5) * 6
         const y_end =
           (Options.chart.CMod
@@ -230,8 +231,8 @@ export class NoteLayoutSprite extends Container {
             : (note.beat + note.hold) / lastBeat) *
             height +
           1
-        h_obj.y = obj.y + (y_end - obj.y) / 2
-        h_obj.height = (y_end - obj.y) / 2
+        h_obj.y = obj.y
+        h_obj.height = y_end - obj.y
         if (note.type == "Hold") h_obj.tint = 0xa0a0a0
         if (note.type == "Roll") h_obj.tint = 0xada382
         childIndex++

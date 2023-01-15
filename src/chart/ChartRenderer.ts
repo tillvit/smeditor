@@ -153,8 +153,8 @@ export class ChartRenderer extends Container {
   }
 
   renderThis() {
-    const beat = this.getBeat()
-    const time = this.getTime()
+    const beat = this.getBeatWithOffset()
+    const time = this.getTimeWithOffset()
 
     this.speedMult = Options.chart.doSpeedChanges
       ? this.chart.timingData.getSpeedMult(beat, time)
@@ -166,9 +166,10 @@ export class ChartRenderer extends Container {
     let renderSecondLowerLimit = this.chart.getSeconds(renderBeatLowerLimit)
 
     if (Options.chart.CMod) {
-      renderBeatLimit = this.getBeatFromYPos(
-        this.chartManager.app.renderer.screen.height - this.y + 32
-      )
+      renderBeatLimit =
+        this.getBeatFromYPos(
+          this.chartManager.app.renderer.screen.height - this.y + 32
+        ) + 1
       renderBeatLowerLimit = this.getBeatFromYPos(-32 - this.y)
       renderSecondLowerLimit =
         (((-32 - this.y - Options.chart.receptorYPos) / 4 / 64) * 100) /
@@ -233,7 +234,7 @@ export class ChartRenderer extends Container {
     }
   }
 
-  getTime(): number {
+  getTimeWithOffset(): number {
     let time = this.chartManager.getTime()
     if (this.chartManager.getMode() == EditMode.Play) {
       time += Options.play.offset
@@ -241,17 +242,17 @@ export class ChartRenderer extends Container {
     return time
   }
 
-  getBeat(): number {
+  getBeatWithOffset(): number {
     let beat = this.chartManager.getBeat()
     if (this.chartManager.getMode() == EditMode.Play) {
-      beat = this.chart.getBeat(this.getTime())
+      beat = this.chart.getBeat(this.getTimeWithOffset())
     }
     return beat
   }
 
   getYPos(beat: number): number {
-    const currentTime = this.getTime()
-    const currentBeat = this.getBeat()
+    const currentTime = this.getTimeWithOffset()
+    const currentBeat = this.getBeatWithOffset()
     if (Options.chart.CMod) {
       return (
         (((this.chart.getSeconds(beat) - currentTime) * Options.chart.speed) /
@@ -278,8 +279,18 @@ export class ChartRenderer extends Container {
     )
   }
 
+  getYPosFromTime(time: number): number {
+    const currentTime = this.getTimeWithOffset()
+    if (Options.chart.CMod) {
+      return (
+        (((time - currentTime) * Options.chart.speed) / 100) * 64 * 4 +
+        Options.chart.receptorYPos
+      )
+    } else return this.getYPos(this.chart.timingData.getBeat(time))
+  }
+
   getTimeFromYPos(yp: number): number {
-    const currentTime = this.getTime()
+    const currentTime = this.getTimeWithOffset()
     if (Options.chart.CMod) {
       const seconds =
         (((yp - Options.chart.receptorYPos) / Options.chart.speed) * 100) /
@@ -292,7 +303,7 @@ export class ChartRenderer extends Container {
   }
 
   getBeatFromYPos(yp: number, ignoreSpeeds?: boolean): number {
-    const currentBeat = this.getBeat()
+    const currentBeat = this.getBeatWithOffset()
     if (Options.chart.CMod) {
       return this.chart.getBeat(this.getTimeFromYPos(yp))
     }

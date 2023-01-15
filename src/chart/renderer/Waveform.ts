@@ -57,8 +57,8 @@ export class Waveform extends Sprite {
     this.refilter()
 
     setInterval(() => {
-      if (!Options.waveform.autoAdjustQuality)
-        if (getTPS() == 0 || !this.visible) return
+      if (!Options.waveform.autoAdjustQuality) return
+      if (getTPS() == 0 || !this.visible) return
       if (getTPS() < 60 && Options.waveform.lineHeight < 3) {
         Options.waveform.lineHeight = Math.min(
           3,

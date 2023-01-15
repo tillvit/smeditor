@@ -37,6 +37,7 @@ export type BeatCacheTimingEventBase = {
   type: BeatTimingEventProperty
   beat?: number
   second?: number
+  secondNoStop?: number
   searchSecond?: number
   warped?: boolean
 }
