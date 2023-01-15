@@ -351,6 +351,7 @@ export class TimingData {
       this._cache.effectiveBeatTiming = []
       return
     }
+    effBeat = cache[0].beat
     for (let i = 0; i < cache.length - 1; i++) {
       const event = cache[i]
       const beats = cache[i + 1].beat - event.beat
@@ -402,6 +403,9 @@ export class TimingData {
 
   getBeat(seconds: number): number {
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
+    if (seconds + this.getTimingData("OFFSET") < 0) {
+      return ((seconds + this.getTimingData("OFFSET")) * this.getBPM(0)) / 60
+    }
     const cache = this._cache.beatTiming!
     const i = this.searchCache(cache, "searchSecond", seconds)
     const event = cache[i]
@@ -503,6 +507,7 @@ export class TimingData {
     if (cache.length == 0) return beat
     const i = this.searchCache(cache, "beat", beat)
     const event = cache[i]
+    if (event.beat > beat) return beat
     let effBeat = event.effectiveBeat!
     const beats_left_over = beat - event.beat
     effBeat += beats_left_over * event.value
