@@ -175,7 +175,7 @@ export class Waveform extends Sprite {
       const scrolls = this.renderer.chart.timingData.getTimingData("SCROLLS")
 
       let scrollIndex = bsearch(scrolls, curBeat, a => a.beat)
-      if (scrolls[scrollIndex].beat != 0) scrollIndex--
+      if (scrolls[scrollIndex]?.beat != 0) scrollIndex--
       while (curBeat < beatLimit) {
         const scroll = scrolls[scrollIndex] ?? { beat: 0, value: 1 }
         const scrollBeatLimit = scrolls[scrollIndex + 1]?.beat ?? beatLimit

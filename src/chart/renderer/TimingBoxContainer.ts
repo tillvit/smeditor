@@ -42,6 +42,7 @@ export class TimingBoxContainer extends Container {
     this.children.forEach(child => (child.marked = false))
 
     let same_beat = -1
+    let same_second = undefined
     let last_length_left = 0
     let last_length_right = 0
     for (const event of this.renderer.chart.timingData.getTimingData()) {
@@ -59,7 +60,10 @@ export class TimingBoxContainer extends Container {
       let x =
         (text_style[0] == "right" ? 1 : -1) *
         (this.renderer.chart.gameType.notefieldWidth * 0.5 + 64 + 16)
-      if (same_beat != event.beat) {
+      if (
+        same_beat != event.beat ||
+        (event.second && same_second != event.second)
+      ) {
         last_length_left = 0
         last_length_right = 0
       }
@@ -73,6 +77,7 @@ export class TimingBoxContainer extends Container {
       if (text_style[0] == "left") last_length_left += area.textObj.width + 15
       if (text_style[0] == "right") last_length_right += area.textObj.width + 15
       same_beat = event.beat!
+      same_second = event.second
       area.y = yPos
       area.marked = true
       area.dirtyTime = Date.now()
@@ -97,17 +102,10 @@ export class TimingBoxContainer extends Container {
     event: TimingEvent,
     beat: number
   ): [boolean, boolean, number] {
-    let y = Options.chart.CMod
-      ? this.renderer.getYPosFromTime(event.second!)
-      : this.renderer.getYPos(event.beat!)
-    if (event.type == "ATTACKS" && Options.chart.CMod)
-      y =
-        (((event.second - this.renderer.chartManager.getTime()) *
-          Options.chart.speed) /
-          100) *
-          64 *
-          4 +
-        Options.chart.receptorYPos
+    const y =
+      Options.chart.CMod && event.second
+        ? this.renderer.getYPosFromTime(event.second)
+        : this.renderer.getYPos(event.beat!)
     if (y < -32 - this.renderer.y) return [true, false, y]
     if (
       y >

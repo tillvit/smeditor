@@ -66,7 +66,7 @@ export class TimingData {
     for (const str of entries) {
       if (type == "ATTACKS") {
         let match
-        const regex = /TIME=([\d.]+):(END|LEN)=([\d.]+):MODS=([^:]+):/g
+        const regex = /TIME=([\d.]+):(END|LEN)=([\d.]+):MODS=([^:]+)/g
         while ((match = regex.exec(str)) != null) {
           const event: AttackTimingEvent = {
             type: "ATTACKS",
@@ -597,7 +597,7 @@ export class TimingData {
   ) {
     let key = "beat" as keyof TimingEventBase
     const arr = this.events[type]!
-    if (type == "ATTACKS") key = "seconds" as keyof TimingEventBase
+    if (type == "ATTACKS") key = "second" as keyof TimingEventBase
     let low = 0,
       high = arr.length
     while (low < high) {
@@ -611,7 +611,7 @@ export class TimingData {
   private bindex(type: TimingEventProperty, event: TimingEventBase): number {
     let key = "beat" as keyof TimingEventBase
     const arr = this.events[type]!
-    if (type == "ATTACKS") key = "seconds" as keyof TimingEventBase
+    if (type == "ATTACKS") key = "second" as keyof TimingEventBase
     let low = 0,
       high = arr.length
     while (low <= high && low < arr.length) {
