@@ -104,12 +104,13 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
               "STOPS",
               beat
             )
-            input.setValue(
+            const event =
               app.chartManager.chart?.timingData.getTimingEventAtBeat(
                 "STOPS",
                 beat
-              )?.value ?? 0
-            )
+              )
+            input.setValue(event?.value ?? 0)
+            if (beat != event?.beat) input.setValue(0)
             return
           }
           app.chartManager.chart?.timingData.update(
@@ -146,12 +147,13 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
               "DELAYS",
               beat
             )
-            input.setValue(
+            const event =
               app.chartManager.chart?.timingData.getTimingEventAtBeat(
                 "DELAYS",
                 beat
-              )?.value ?? 0
-            )
+              )
+            input.setValue(event?.value ?? 0)
+            if (beat != event?.beat) input.setValue(0)
             return
           }
           app.chartManager.chart?.timingData.update(
@@ -188,22 +190,24 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
               "WARPS",
               beat
             )
-            input.setValue(
+            const event =
               app.chartManager.chart?.timingData.getTimingEventAtBeat(
                 "WARPS",
                 beat
-              )?.value ?? 0
-            )
+              )
+            input.setValue(event?.value ?? 0)
+            if (beat != event?.beat) input.setValue(0)
             return
           }
           if (value < 0) {
             const beat = app.chartManager.getBeat()
-            input.setValue(
+            const event =
               app.chartManager.chart?.timingData.getTimingEventAtBeat(
                 "WARPS",
                 beat
-              )?.value ?? 0
-            )
+              )
+            input.setValue(event?.value ?? 0)
+            if (beat != event?.beat) input.setValue(0)
             return
           }
           app.chartManager.chart?.timingData.update(
@@ -634,22 +638,24 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
               "FAKES",
               beat
             )
-            input.setValue(
+            const event =
               app.chartManager.chart?.timingData.getTimingEventAtBeat(
                 "FAKES",
                 beat
-              )?.value ?? 0
-            )
+              )
+            input.setValue(event?.value ?? 0)
+            if (beat != event?.beat) input.setValue(0)
             return
           }
           if (value < 0) {
             const beat = app.chartManager.getBeat()
-            input.setValue(
+            const event =
               app.chartManager.chart?.timingData.getTimingEventAtBeat(
                 "FAKES",
                 beat
-              )?.value ?? 0
-            )
+              )
+            input.setValue(event?.value ?? 0)
+            if (beat != event?.beat) input.setValue(0)
             return
           }
           app.chartManager.chart?.timingData.update(

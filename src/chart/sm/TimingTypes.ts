@@ -33,46 +33,40 @@ export interface TimingEventBase {
   beat?: number
   second?: number
 }
-export type BeatCacheTimingEventBase = {
-  type: BeatTimingEventProperty
-  beat?: number
-  second?: number
-  secondNoStop?: number
-  searchSecond?: number
-  warped?: boolean
+export interface BeatTimingCache {
+  beat: number
+  secondBefore: number
+  secondOf: number
+  secondAfter: number
+  secondClamp: number
+  bpm: number
+  warped: boolean
 }
+
 export interface ScrollCacheTimingEvent extends ScrollTimingEvent {
   effectiveBeat?: number
 }
-export interface BPMTimingEvent
-  extends TimingEventBase,
-    BeatCacheTimingEventBase {
+export interface BPMTimingEvent extends TimingEventBase {
   type: "BPMS"
   beat: number
   value: number
 }
-export interface StopTimingEvent
-  extends TimingEventBase,
-    BeatCacheTimingEventBase {
+export interface StopTimingEvent extends TimingEventBase {
   type: "STOPS"
   beat: number
   value: number
 }
-export interface WarpTimingEvent
-  extends TimingEventBase,
-    BeatCacheTimingEventBase {
+export interface WarpTimingEvent extends TimingEventBase {
   type: "WARPS"
   beat: number
   value: number
 }
-export interface WarpDestTimingEvent extends BeatCacheTimingEventBase {
+export interface WarpDestTimingEvent {
   type: "WARP_DEST"
   beat: number
   value: number
 }
-export interface DelayTimingEvent
-  extends TimingEventBase,
-    BeatCacheTimingEventBase {
+export interface DelayTimingEvent extends TimingEventBase {
   type: "DELAYS"
   beat: number
   value: number
@@ -168,9 +162,9 @@ export type TimingEvent =
   | BGChangeTimingEvent
   | FGChangeTimingEvent
 
-export type BeatCacheTimingEvent =
+export type BeatTimingEvent =
   | BPMTimingEvent
   | StopTimingEvent
   | WarpTimingEvent
-  | DelayTimingEvent
   | WarpDestTimingEvent
+  | DelayTimingEvent

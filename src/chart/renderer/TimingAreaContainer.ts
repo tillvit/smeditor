@@ -133,31 +133,44 @@ export class TimingAreaContainer extends Container {
       | FakeTimingEvent,
     beat: number
   ): [boolean, boolean, number, number] {
-    const y_start = Options.chart.CMod
+    const yStart = Options.chart.CMod
       ? this.renderer.getYPosFromTime(event.second!)
       : this.renderer.getYPos(event.beat)
-    let length = this.renderer.getYPos(event.beat + event.value) - y_start
-    if (event.type == "STOPS" || event.type == "DELAYS") {
-      if (event.value < 0)
-        length =
-          this.renderer.getYPos(
+    let yEnd = yStart
+    switch (event.type) {
+      case "STOPS":
+      case "DELAYS": {
+        if (Options.chart.CMod && event.value > 0) {
+          yEnd = this.renderer.getYPosFromTime(event.second! + event.value)
+        } else if (event.value < 0) {
+          yEnd = this.renderer.getYPos(
             this.renderer.chart.getBeat(event.second! + 0.0001)
-          ) - y_start
-      else length = ((event.value * Options.chart.speed) / 100) * 64 * 4
+          )
+        }
+        break
+      }
+      case "FAKES":
+      case "WARPS": {
+        if (!Options.chart.CMod) {
+          yEnd = this.renderer.getYPos(event.beat + event.value)
+        }
+        break
+      }
     }
-    if (y_start + length < -32 - this.renderer.y)
-      return [true, false, y_start, length]
+    const length = yEnd - yStart
+    if (yStart + length < -32 - this.renderer.y)
+      return [true, false, yStart, length]
     if (
-      y_start >
+      yStart >
       this.renderer.chartManager.app.renderer.screen.height -
         this.renderer.y +
         32
     ) {
       if (event.beat < beat || this.renderer.isNegScroll(event.beat))
-        return [true, false, y_start, length]
-      else return [true, true, y_start, length]
+        return [true, false, yStart, length]
+      else return [true, true, yStart, length]
     }
-    return [false, false, y_start, length]
+    return [false, false, yStart, length]
   }
 
   private getTimingArea(

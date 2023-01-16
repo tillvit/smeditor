@@ -101,8 +101,11 @@ export class Chart {
     return this._notedataStats!
   }
 
-  getSeconds(beat: number): number {
-    return this.timingData.getSeconds(beat)
+  getSeconds(
+    beat: number,
+    option?: "noclamp" | "before" | "after" | ""
+  ): number {
+    return this.timingData.getSeconds(beat, option)
   }
 
   getBeat(seconds: number): number {
