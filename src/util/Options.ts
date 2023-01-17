@@ -15,6 +15,7 @@ export const VIEW_BLACKLIST: string[] = []
 class DefaultOptions {
   static chart = {
     CMod: false,
+    reverse: false,
     hideWarpedArrows: false,
     doSpeedChanges: true,
     speed: 250,
@@ -122,6 +123,9 @@ export class Options extends DefaultOptions {
           option[0] +
           ": the value " +
           option[1] +
+          " (" +
+          typeof option[1] +
+          ") " +
           " does not match the type " +
           typeof this.getDefaultOption(option[0])
       )

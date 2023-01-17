@@ -33,7 +33,7 @@ const FIELDS: NewChartOption[] = [
     title: "Difficulty",
     element: chart => {
       const container = document.createElement("div")
-      container.classList.add("flex-row", "flex-column-gap")
+      container.classList.add("flex-row", "flex-column-gap", "flex-static")
       const dropdown = Dropdown.create(CHART_DIFFICULTIES)
       dropdown.onChange(value => {
         chart.difficulty = value
@@ -62,7 +62,7 @@ const FIELDS: NewChartOption[] = [
     title: "Copy Steps",
     element: (_, window) => {
       const container = document.createElement("div")
-      container.classList.add("flex-row", "flex-column-gap")
+      container.classList.add("flex-row", "flex-column-gap", "flex-static")
       const gameTypeDropdown = Dropdown.create([
         "Don't copy",
         ...GameTypeRegistry.getPriority()

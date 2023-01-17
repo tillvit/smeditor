@@ -1,6 +1,6 @@
 import { ColHeldTracker } from "../../../util/ColHeldTracker"
 import { Options } from "../../../util/Options"
-import { bsearch, roundDigit } from "../../../util/Util"
+import { bsearch } from "../../../util/Util"
 import { ChartManager } from "../../ChartManager"
 import { TimingWindowCollection } from "../../play/TimingWindowCollection"
 import {
@@ -20,7 +20,7 @@ export class BasicGameLogic extends GameLogic {
 
   update(chartManager: ChartManager): void {
     if (!chartManager.chart || !chartManager.chartView) return
-    const hitTime = chartManager.getTime() + Options.play.offset
+    const hitTime = chartManager.chartView.getTimeWithOffset()
     const hitWindowStart =
       hitTime -
       (TimingWindowCollection.getCollection(
@@ -85,8 +85,8 @@ export class BasicGameLogic extends GameLogic {
         continue
       }
       if (
-        roundDigit(chartManager.getBeat(), 3) >=
-        roundDigit(hold.beat + hold.hold, 3)
+        chartManager.chartView.getTimeWithOffset() >=
+        chartManager.chartView.chart.getSeconds(hold.beat + hold.hold)
       ) {
         hold.gameplay!.hideNote = true
         chartManager.chartView.doJudgment(
@@ -110,7 +110,7 @@ export class BasicGameLogic extends GameLogic {
     for (const col of this.heldCols.getHeldCols()) {
       const mine = this.getClosestNote(
         chartManager.chart.notedata,
-        chartManager.getTime() -
+        chartManager.chartView.getTimeWithOffset() -
           TimingWindowCollection.getCollection(Options.play.timingCollection)
             .getMineJudgment()
             .getTimingWindowMS() /
@@ -144,7 +144,7 @@ export class BasicGameLogic extends GameLogic {
   }
 
   reset(chartManager: ChartManager): void {
-    if (!chartManager.chart) return
+    if (!chartManager.chart || !chartManager.chartView) return
     this.chordCohesion.clear()
     for (const note of chartManager.chart.notedata) {
       if (note.type == "Mine" || note.fake) continue
@@ -152,7 +152,7 @@ export class BasicGameLogic extends GameLogic {
         this.chordCohesion.set(note.beat, [])
       this.chordCohesion.get(note.beat)!.push(note)
     }
-    const hitTime = chartManager.getTime() + Options.play.offset
+    const hitTime = chartManager.chartView.getTimeWithOffset()
     const hitWindowStart =
       hitTime -
       (TimingWindowCollection.getCollection(
@@ -175,7 +175,7 @@ export class BasicGameLogic extends GameLogic {
 
   keyDown(chartManager: ChartManager, col: number): void {
     if (!chartManager.chart || !chartManager.chartView) return
-    const hitTime = chartManager.getTime() + Options.play.offset
+    const hitTime = chartManager.chartView.getTimeWithOffset()
     const closestNote = this.getClosestNote(
       chartManager.chart.notedata,
       hitTime,
@@ -193,7 +193,7 @@ export class BasicGameLogic extends GameLogic {
 
   keyUp(chartManager: ChartManager, col: number): void {
     if (!chartManager.chart || !chartManager.chartView) return
-    const hitTime = chartManager.getTime() + Options.play.offset
+    const hitTime = chartManager.chartView.getTimeWithOffset()
     const closestNote = this.getClosestNote(
       chartManager.chart.notedata,
       hitTime,

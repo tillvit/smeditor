@@ -56,6 +56,7 @@ export class HoldJudgmentContainer extends Container {
 
   renderThis() {
     this.y = Options.chart.receptorYPos + 48
+    this.scale.y = Options.chart.reverse ? -1 : 1
 
     for (const child of this.children) {
       const time = (Date.now() - child.createTime) / 1000

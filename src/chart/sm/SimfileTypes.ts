@@ -11,6 +11,7 @@ export const SIMFILE_PROPERTIES = [
   "BACKGROUND",
   "BANNER",
   "MUSIC",
+  "CDTITLE",
   "JACKET",
   "PREVIEW",
   "LYRICSPATH",

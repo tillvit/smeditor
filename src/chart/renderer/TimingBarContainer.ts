@@ -10,8 +10,14 @@ import {
   TimingWindowCollection,
 } from "../play/TimingWindowCollection"
 
-interface TimingBarObject extends Sprite {
+interface TimingBarlineObject extends Sprite {
   createTime: number
+  ms: number
+  miss: boolean
+}
+
+interface TimingBarlineContainer extends Container {
+  children: TimingBarlineObject[]
 }
 
 const BAR_WIDTH = 1
@@ -24,13 +30,13 @@ const errorStyle = {
 }
 
 export class TimingBarContainer extends Container {
-  private barlines: Container = new Container()
+  private barlines: TimingBarlineContainer =
+    new Container() as TimingBarlineContainer
   private barline: Sprite
   private currentMedian: Graphics
   private errorText: BitmapText = new BitmapText("", errorStyle)
   private errorTextTime = -1
   private renderer: ChartRenderer
-  private data: number[] = []
   private target = 0
 
   constructor(renderer: ChartRenderer) {
@@ -64,7 +70,7 @@ export class TimingBarContainer extends Container {
   renderThis() {
     this.visible = this.renderer.chartManager.getMode() == EditMode.Play
     for (const child of this.barlines.children) {
-      const barline = child as TimingBarObject
+      const barline = child
       const t = (5000 - (Date.now() - barline.createTime)) / 4000
       child.alpha = Math.min(1, t)
     }
@@ -82,36 +88,44 @@ export class TimingBarContainer extends Container {
       400
     destroyChildIf(
       this.barlines.children,
-      child => Date.now() - (child as TimingBarObject).createTime > 5000
+      child => Date.now() - child.createTime > 5000
     )
     if (Options.performance.smoothAnimations)
       this.currentMedian.x =
         (this.currentMedian.x - this.target) * 0.8 + this.target
     else this.currentMedian.x = this.target
+    this.errorText.scale.y = Options.chart.reverse ? -1 : 1
+    this.errorText.y = Options.chart.reverse ? 25 : -25
+    this.currentMedian.scale.y = Options.chart.reverse ? -1 : 1
   }
 
   addBar(error: number, judge: TimingWindow) {
     if (!isStandardMissTimingWindow(judge) && !isStandardTimingWindow(judge))
       return
-    if (!isStandardMissTimingWindow(judge)) this.data.push(error)
-    if (this.data.length > 30) this.data.splice(0, 1)
-    const bar = new Sprite(Texture.WHITE) as TimingBarObject
+    const bar = new Sprite(Texture.WHITE) as TimingBarlineObject
     bar.width = BAR_WIDTH
     bar.height = BAR_HEIGHT
     bar.anchor.set(0.5)
     bar.x = error * 400
     bar.tint = judge.color
     bar.createTime = Date.now()
+    bar.miss = isStandardMissTimingWindow(judge)
+    bar.ms = Math.round(error * 1000)
     this.errorText.tint = judge.color
     this.errorText.text = (error * 1000).toFixed(1) + "ms"
     this.errorTextTime = Date.now()
     this.barlines.addChild(bar)
-    this.target = median(this.data) * 400
+    this.target =
+      median(
+        this.barlines.children
+          .filter(child => !child.miss)
+          .map(child => child.ms)
+      ) * 0.4
   }
 
   reset() {
-    this.data = []
     this.currentMedian.x = 0
+    this.target = 0
     destroyChildIf(this.barlines.children, () => true)
   }
 }

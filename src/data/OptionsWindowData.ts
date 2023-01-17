@@ -1,6 +1,7 @@
 import { WindowOptions } from "../window/Window"
 import { App } from "../App"
 import { DirectoryWindow } from "../window/DirectoryWindow"
+import { DEFAULT_SM } from "./SMData"
 
 type OptionsWindowOption = {
   label: string | ((app: App) => string)
@@ -60,20 +61,22 @@ export const OPTIONS_WINDOW_DATA: { [key: string]: OptionsWindowData } = {
         options: [
           {
             label: "Create a new song",
-            element: () => {
+            element: app => {
               const el = document.createElement("button")
               el.innerHTML = "New Song"
-              // el.onclick = () => {
-              //   let folder = "New Song"
-              //   if (app.files.file_tree[folder]) {
-              //     let i = 2
-              //     while (app.files.file_tree[folder + " " + i]) i++
-              //   }
-              //   let file = new File([DEFAULT_SM], "song.sm", {type: ""});
-              //   app.files.addFile(folder + "/song.sm",file)
-              //   app.chartManager.loadSM(folder + "/song.sm")
-              //   app.windowManager.getWindowById("select_sm_initial")!.closeWindow()
-              // }
+              el.onclick = () => {
+                const folder = "New Song"
+                if (app.files.file_tree[folder]) {
+                  let i = 2
+                  while (app.files.file_tree[folder + " " + i]) i++
+                }
+                const file = new File([DEFAULT_SM], "song.sm", { type: "" })
+                app.files.addFile(folder + "/song.sm", file)
+                app.chartManager.loadSM(folder + "/song.sm")
+                app.windowManager
+                  .getWindowById("select_sm_initial")!
+                  .closeWindow()
+              }
               return el
             },
           },

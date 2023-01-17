@@ -162,6 +162,8 @@ export class ErrorHistogram extends Container {
         line.height = (line.targetHeight - line.height) * 0.2 + line.height
       else line.height = line.targetHeight
     }
+    this.scale.y = Options.chart.reverse ? -1 : 1
+    this.y = this.y * (Options.chart.reverse ? -1 : 1)
   }
 
   private newLine(): HistogramLine {
@@ -202,7 +204,7 @@ export class ErrorHistogram extends Container {
     )
       .getStandardWindows()
       .reverse()) {
-      const ms = window.getTimingWindowMS()
+      const ms = Math.round(window.getTimingWindowMS())
       if (ms == 0) continue
       for (let mult = -1; mult <= 1; mult += 2) {
         const line = new Sprite(Texture.WHITE)

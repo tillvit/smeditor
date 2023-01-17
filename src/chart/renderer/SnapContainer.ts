@@ -66,6 +66,7 @@ export class SnapContainer extends Container {
         (Options.chart.snap == 0 || (4 / Options.chart.snap) % 1 != 0
           ? ""
           : 4 / Options.chart.snap)
+      text.scale.y = Options.chart.reverse ? -1 : 1
     }
   }
 }

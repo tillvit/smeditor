@@ -117,7 +117,7 @@ export function bsearch<T>(
   }
   let low = 0,
     high = arr.length
-  while (low <= high) {
+  while (low <= high && low < arr.length) {
     let mid = (low + high) >>> 1
     if (property(arr[mid]) == value) {
       while (mid > 0 && property(arr[mid - 1]) == value) mid--
@@ -179,4 +179,9 @@ export function median(array: number[]): number {
 export function mean(array: number[]): number {
   if (array.length == 0) return 0
   return array.reduce((a, b) => a + b) / array.length
+}
+
+export function capitalize(str: string): string {
+  if (str == "") return ""
+  return str.slice(0, 1).toUpperCase() + str.slice(1).toLowerCase()
 }

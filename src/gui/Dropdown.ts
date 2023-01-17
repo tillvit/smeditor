@@ -34,6 +34,7 @@ export class Dropdown<T> {
     itemList.classList.add("dropdown-items")
     itemList.style.display = "none"
     itemDisplay.onclick = () => {
+      if (itemDisplay.classList.contains("disabled")) return
       if (this.items.length == 0) {
         itemList.style.display = "none"
         return
@@ -77,6 +78,25 @@ export class Dropdown<T> {
     const itemDisplay: HTMLElement =
       this.view.querySelector(".dropdown-selected")!
     itemDisplay.innerText = this.selectedItem ? this.selectedItem + "" : ""
+  }
+
+  get value(): T {
+    return this.selectedItem
+  }
+
+  get disabled(): boolean {
+    return this.view
+      .querySelector(".dropdown-selected")!
+      .classList.contains("disabled")
+  }
+
+  set disabled(value: boolean) {
+    if (value)
+      this.view.querySelector(".dropdown-selected")!.classList.add("disabled")
+    else
+      this.view
+        .querySelector(".dropdown-selected")!
+        .classList.remove("disabled")
   }
 
   private createDropdown() {

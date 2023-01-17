@@ -101,8 +101,11 @@ export class Chart {
     return this._notedataStats!
   }
 
-  getSeconds(beat: number): number {
-    return this.timingData.getSeconds(beat)
+  getSeconds(
+    beat: number,
+    option?: "noclamp" | "before" | "after" | ""
+  ): number {
+    return this.timingData.getSeconds(beat, option)
   }
 
   getBeat(seconds: number): number {
@@ -157,7 +160,7 @@ export class Chart {
   modifyNote(note: PartialNotedataEntry, properties: Partial<NotedataEntry>) {
     const i = this.getNoteIndex(note)
     if (i == -1) return
-    const noteToModify = this.notedata[i]
+    const noteToModify = Object.assign({}, this.notedata[i])
     this.notedata.splice(i, 1)
     Object.assign(noteToModify, properties)
     this.addNote(noteToModify)

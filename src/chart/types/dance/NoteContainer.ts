@@ -53,6 +53,7 @@ export class NoteContainer extends Container {
       arrow.marked = true
       arrow.dirtyTime = Date.now()
       arrow.y = yPos
+      arrow.item.scale.y = Options.chart.reverse ? -1 : 1
       if (isHoldNote(note)) {
         DanceNoteRenderer.setHoldLength(arrow, holdLength)
         if (note.gameplay?.lastHoldActivation) {

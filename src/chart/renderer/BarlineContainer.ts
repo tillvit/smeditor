@@ -4,6 +4,8 @@ import { destroyChildIf } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 
+const MAX_POOL = 200
+
 interface Barline extends Sprite {
   type: "barline"
   beat: number
@@ -54,6 +56,7 @@ export class BarlineContainer extends Container {
       bar_beat < toBeat;
       bar_beat++
     ) {
+      if (this.barlineMap.size > MAX_POOL) break
       if (Options.chart.CMod && this.renderer.chart.isBeatWarped(bar_beat))
         continue
       const [outOfBounds, endSearch, yPos] = this.checkBounds(bar_beat, beat)
@@ -72,6 +75,7 @@ export class BarlineContainer extends Container {
         barlineLabel.marked = true
         barlineLabel.deactivated = false
         barlineLabel.dirtyTime = Date.now()
+        barlineLabel.scale.y = Options.chart.reverse ? -1 : 1
       }
     }
 

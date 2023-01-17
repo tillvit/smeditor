@@ -6,13 +6,15 @@ import {
   StopTimingEvent,
   AttackTimingEvent,
   TIMING_EVENT_NAMES,
-  BeatCacheTimingEvent,
   SpeedTimingEvent,
   TimingProperty,
   TimingEventProperty,
   TimingEventBase,
   ScrollCacheTimingEvent,
   BPMTimingEvent,
+  BeatTimingEventProperty,
+  BeatTimingCache,
+  BeatTimingEvent,
 } from "./TimingTypes"
 
 type TimingPropertyCollection = {
@@ -21,21 +23,13 @@ type TimingPropertyCollection = {
 
 type TimingCache = {
   events: TimingPropertyCollection
-  beatTiming?: BeatCacheTimingEvent[]
+  beatTiming?: BeatTimingCache[]
   effectiveBeatTiming?: ScrollCacheTimingEvent[]
   speeds?: SpeedTimingEvent[]
   stopBeats?: { [key: number]: StopTimingEvent }
   sortedEvents?: TimingEvent[]
   warpedBeats: Record<number, boolean>
 }
-
-const BEAT_TIMING_PRIORITY = [
-  "WARPS",
-  "WARP_DEST",
-  "STOPS",
-  "DELAYS",
-  "BPMS",
-] as const
 
 export class TimingData {
   private _fallback?: TimingData
@@ -65,7 +59,7 @@ export class TimingData {
     for (const str of entries) {
       if (type == "ATTACKS") {
         let match
-        const regex = /TIME=([\d.]+):(END|LEN)=([\d.]+):MODS=([^:]+):/g
+        const regex = /TIME=([\d.]+):(END|LEN)=([\d.]+):MODS=([^:]+)/g
         while ((match = regex.exec(str)) != null) {
           const event: AttackTimingEvent = {
             type: "ATTACKS",
@@ -154,83 +148,206 @@ export class TimingData {
     if (doCache ?? true) this.reloadCache(type)
   }
 
-  delete(type: TimingEventProperty, event: TimingEvent, doCache?: boolean) {
-    if (!this.events[type]) return
-    const i = this.bindex(type, event)
-    if (i > -1) {
-      this.events[type]!.splice(i, 1)
-      if (doCache ?? true) this.reloadCache(type)
-    }
-  }
-
-  update(type: TimingEventProperty, event: TimingEvent, doCache?: boolean): void
-  update(type: "OFFSET", event: number, doCache?: boolean): void
-  update(type: TimingProperty, event: TimingEvent | number, doCache?: boolean) {
-    if (type == "OFFSET") {
-      this.offset = event as number
-      if (doCache ?? true) this.reloadCache("OFFSET")
+  delete(songTiming: boolean, type: TimingEventProperty, time: number) {
+    if (!songTiming) {
+      this._fallback!.delete(true, type, time)
+      this.reloadCache(type)
       return
     }
     if (!this.events[type]) return
-    const i = this.bindex(type, event as TimingEvent)
+    time = roundDigit(time, 3)
+    const i = this.bindex(type, { type, beat: time, second: time })
     if (i > -1) {
-      this.events[type]![i] = event as TimingEvent
-      if (doCache ?? true) this.reloadCache(type)
+      if (i == 0 && type == "BPMS") return
+      this.events[type]!.splice(i, 1)
+      this.reloadCache(type)
     }
   }
 
+  private _delete(songTiming: boolean, event: TimingEvent, doCache?: boolean) {
+    if (!songTiming) {
+      this._fallback!._delete(true, event, doCache)
+      if (doCache ?? true) this.reloadCache(event.type)
+      return
+    }
+    if (!this.events[event.type]) return
+    const i = this.bindex(event.type, event)
+    if (i > -1) {
+      this.events[event.type]!.splice(i, 1)
+      if (doCache ?? true) this.reloadCache(event.type)
+    }
+  }
+
+  private isDuplicate<Event extends TimingEvent>(
+    event: Event,
+    properties: Event
+  ): boolean {
+    if (
+      ["STOPS", "WARPS", "DELAYS", "FAKES", "BGCHANGES", "FGCHANGES"].includes(
+        event.type
+      )
+    )
+      return false
+    if (properties.type != event.type) return false
+    switch (event.type) {
+      case "BPMS":
+      case "SCROLLS":
+      case "TICKCOUNTS":
+      case "LABELS":
+      case "SPEEDS":
+        return properties.type == event.type && event.value == properties.value
+      case "TIMESIGNATURES":
+        return (
+          properties.type == event.type &&
+          event.upper == properties.upper &&
+          event.lower == properties.lower
+        )
+      case "COMBOS":
+        return (
+          properties.type == event.type &&
+          event.hitMult == properties.hitMult &&
+          event.missMult == properties.missMult
+        )
+      default:
+        return false
+    }
+  }
+
+  update<Type extends TimingProperty>(
+    songTiming: boolean,
+    type: Type,
+    properties: Partial<Extract<TimingEvent, { type: Type }>>,
+    beat: number,
+    doCache?: boolean
+  ): void
+  update(
+    songTiming: boolean,
+    type: "OFFSET",
+    properties: number,
+    beat?: number,
+    doCache?: boolean
+  ): void
+  update<Type extends TimingProperty>(
+    songTiming: boolean,
+    type: Type,
+    properties: Partial<Extract<TimingEvent, { type: Type }>> | number,
+    beat?: number,
+    doCache?: boolean
+  ) {
+    const target = songTiming ? this : this._fallback!
+    if (type == "OFFSET") {
+      target.offset = properties as number
+      if (doCache ?? true) this.reloadCache("OFFSET")
+      return
+    }
+    if (!target.events[type satisfies TimingEventProperty]) {
+      if (songTiming) {
+        target.events[type satisfies TimingEventProperty] = JSON.parse(
+          JSON.stringify(
+            this._fallback!.events[type satisfies TimingEventProperty]
+          )
+        )
+      } else {
+        target.events[type satisfies TimingEventProperty] = []
+      }
+    }
+
+    beat = roundDigit(beat!, 3)
+    const event = target.getTimingEventAtBeat(type, beat)
+    if (event?.beat == beat) {
+      if (Object.keys(properties).length == 0) {
+        this._delete(songTiming, event)
+        return
+      }
+      const prevEvent = target.getTimingEventAtBeat(type, beat - 0.001)
+      const newEvent: Partial<TimingEvent> = { type: type, beat: beat }
+      Object.assign(newEvent, properties)
+      this._delete(songTiming, event)
+      if (!prevEvent || !this.isDuplicate(prevEvent, newEvent as TimingEvent)) {
+        target.insert(type, newEvent as TimingEvent)
+      }
+    } else {
+      if (Object.keys(properties).length == 0) return
+      const newEvent: Partial<TimingEvent> = { type: type, beat: beat }
+      Object.assign(newEvent, properties)
+      target.insert(type, newEvent as TimingEvent)
+    }
+    if (doCache ?? true) this.reloadCache(type)
+  }
+
   private buildBeatTimingDataCache() {
-    let cache: BeatCacheTimingEvent[] = this.getTimingData(
+    const cache: BeatTimingCache[] = []
+    let events: BeatTimingEvent[] = this.getTimingData(
       "BPMS",
       "STOPS",
       "WARPS",
       "DELAYS"
     )
-    cache = cache.concat(
+    events = events.concat(
       this.getTimingData("WARPS").map((event: WarpTimingEvent) => ({
         type: "WARP_DEST",
         beat: event.beat + event.value,
         value: event.value,
       }))
     )
-    cache = cache.sort((a, b) => {
-      if (a.beat == b.beat)
-        return (
-          (BEAT_TIMING_PRIORITY.indexOf(a.type) ?? 6) -
-          (BEAT_TIMING_PRIORITY.indexOf(b.type) ?? 6)
-        )
-      return a.beat - b.beat
-    })
-    let seconds = 0
-    let lastbeat = 0
-    let curbpm = this.getTimingData("BPMS")[0]?.value ?? 120
-    let warping = false
+
+    events.sort((a, b) => a.beat - b.beat)
+
     const offset = this.getTimingData("OFFSET")
-    for (let i = 0; i < cache.length; i++) {
-      const event = cache[i]
-      const time_to_event = ((event.beat - lastbeat) * 60) / curbpm
-      lastbeat = event.beat
-      if (!warping) seconds += time_to_event
-      if (event.type == "WARPS") warping = true
-      if (event.type == "WARP_DEST") warping = false
-      if (event.type == "BPMS") curbpm = event.value
-      cache[i].warped = warping
-      cache[i].searchSecond = Math.max(
-        cache[i - 1]?.second ?? -9999999999,
-        seconds - offset
-      )
-      cache[i].second = seconds - offset
-      if (event.type == "STOPS" || event.type == "DELAYS")
-        seconds += event.value
+
+    cache.push({
+      beat: 0,
+      secondBefore: -offset,
+      secondOf: -offset,
+      secondAfter: -offset,
+      secondClamp: -offset,
+      bpm: this.getTimingData("BPMS")[0]?.value ?? 120,
+      warped: false,
+    })
+
+    for (const event of events) {
+      if (cache.at(-1)?.beat != event.beat) {
+        cache.at(-1)!.secondClamp = Math.max(
+          Math.max(
+            cache.at(-2)?.secondClamp ?? -offset,
+            cache.at(-2)?.secondAfter ?? -offset
+          ),
+          cache.at(-1)!.secondBefore
+        )
+
+        let timeElapsed =
+          ((event.beat - cache.at(-1)!.beat) * 60) / cache.at(-1)!.bpm
+        if (cache.at(-1)!.warped) timeElapsed = 0
+
+        cache.push({
+          beat: event.beat,
+          secondBefore: cache.at(-1)!.secondAfter + timeElapsed,
+          secondOf: cache.at(-1)!.secondAfter + timeElapsed,
+          secondAfter: cache.at(-1)!.secondAfter + timeElapsed,
+          secondClamp: 0,
+          bpm: cache.at(-1)!.bpm,
+          warped: cache.at(-1)!.warped,
+        })
+      }
+      if (event.type == "WARPS") cache.at(-1)!.warped = true
+      if (event.type == "WARP_DEST") cache.at(-1)!.warped = false
+      if (event.type == "BPMS") cache.at(-1)!.bpm = event.value
+      if (event.type == "STOPS") {
+        cache.at(-1)!.secondAfter += event.value
+      }
+      if (event.type == "DELAYS") {
+        cache.at(-1)!.secondOf += event.value
+        cache.at(-1)!.secondAfter += event.value
+      }
     }
 
-    this._cache.beatTiming = cache
+    cache.at(-1)!.secondClamp = Math.max(
+      cache.at(-2)?.secondClamp ?? -offset,
+      cache.at(-1)!.secondBefore
+    )
 
-    this._cache.stopBeats = {}
+    this._cache.beatTiming = cache
     this._cache.warpedBeats = {}
-    this.getTimingData("STOPS").forEach(x => {
-      this._cache.stopBeats![x.beat] = x
-    })
   }
 
   private buildEffectiveBeatTimingDataCache() {
@@ -240,6 +357,7 @@ export class TimingData {
       this._cache.effectiveBeatTiming = []
       return
     }
+    effBeat = cache[0].beat
     for (let i = 0; i < cache.length - 1; i++) {
       const event = cache[i]
       const beats = cache[i + 1].beat - event.beat
@@ -266,16 +384,19 @@ export class TimingData {
     this._cache.sortedEvents = TIMING_EVENT_NAMES.reduce(
       (data, type) =>
         data.concat(this.events[type] ?? this._fallback?.events[type] ?? []),
-      [] as any
+      [] as TimingEvent[]
     )
-    for (const event of this._cache.sortedEvents!) {
-      if (!TIMING_EVENT_NAMES.includes(event.type))
-        event.second = this.getSeconds(event.beat!)
+    for (const event of this._cache.sortedEvents) {
+      if (event.type == "DELAYS")
+        event.second = this.getSeconds(event.beat, "before")
+      else event.second = this.getSeconds(event.beat!)
       if (event.type == "ATTACKS") event.beat = this.getBeat(event.second)
     }
-    this._cache.sortedEvents!.sort((a, b) => a.beat! - b.beat!)
+    this._cache.sortedEvents.sort((a, b) => a.beat! - b.beat!)
     for (const type of TIMING_EVENT_NAMES) {
-      this._cache.events[type] = this.getTimingData(type) as any
+      this._cache.events[type] = this._cache.sortedEvents.filter(
+        event => event.type == type
+      ) as any
     }
   }
 
@@ -288,91 +409,79 @@ export class TimingData {
   }
 
   getBeat(seconds: number): number {
+    if (!isFinite(seconds)) return 0
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
+    if (seconds + this.getTimingData("OFFSET") < 0) {
+      return (
+        ((seconds + this.getTimingData("OFFSET")) *
+          this._cache.beatTiming![0].bpm) /
+        60
+      )
+    }
     const cache = this._cache.beatTiming!
-    const i = this.searchCache(cache, "searchSecond", seconds)
+    const i = this.searchCache(cache, "secondClamp", seconds)
     const event = cache[i]
-    let beat = event.beat
-    let time_left_over = seconds - event.second!
-    let curbpm = this.getBPM(roundDigit(event.beat, 3))
-    if (event.type == "STOPS" || event.type == "DELAYS")
-      time_left_over = Math.max(0, time_left_over - event.value)
-    if (event.type == "BPMS") curbpm = event.value
-    beat += (time_left_over * curbpm) / 60
-    return beat
+    const timeElapsed = Math.max(0, seconds - event.secondAfter)
+    return event.beat + (timeElapsed * event.bpm) / 60
   }
 
-  getSeconds(beat: number): number {
+  getSeconds(
+    beat: number,
+    option?: "noclamp" | "before" | "after" | ""
+  ): number {
+    option ||= ""
     if (!isFinite(beat)) return 0
-    const [seconds, clamp] = this.getSecondsNoClamp(beat)
-    return Math.max(seconds, clamp)
-  }
-
-  private getSecondsNoClamp(beat: number): [number, number] {
-    if (!isFinite(beat)) return [0, 0]
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
+    const flooredBeat = Math.floor(beat * 1000) / 1000
+    if (beat <= 0) {
+      const curbpm = this._cache.beatTiming![0].bpm
+      return -this.getTimingData("OFFSET") + (beat * 60) / curbpm
+    }
     const cache = this._cache.beatTiming!
-    // Get the latest timing event at that beat
-    let i = this.searchCache(cache, "beat", roundDigit(beat, 3) - 0.0001)
-    while (cache[i + 1] && cache[i + 1].beat == cache[i].beat) i++
+    const i = this.searchCache(cache, "beat", flooredBeat)
     const event = cache[i]
-    const clamp = event.searchSecond!
-    let seconds = event.second!
-    let beats_left_over = beat - event.beat
-    if (beat - event.beat < 0.001) beats_left_over = 0
-    let curbpm = this.getBPM(roundDigit(event.beat, 3))
-    if (
-      (event.type == "STOPS" && roundDigit(beat, 3) > event.beat) ||
-      event.type == "DELAYS"
-    )
-      seconds += event.value
-    if (event.warped) beats_left_over = 0
-    if (event.type == "BPMS" && roundDigit(beat, 3) > event.beat)
-      curbpm = event.value
-    seconds += (beats_left_over * 60) / curbpm
-    return [seconds, clamp]
+    if (event.beat == flooredBeat) {
+      if (option == "noclamp" || option == "") return event.secondOf
+      if (option == "before") return event.secondBefore
+      if (option == "after") return event.secondAfter
+    }
+    const beatsElapsed = beat - event.beat
+    let timeElapsed = (beatsElapsed * 60) / event.bpm
+    if (event.warped) timeElapsed = 0
+    if (option == "noclamp") return event.secondAfter + timeElapsed
+    return Math.max(event.secondClamp, event.secondAfter + timeElapsed)
   }
 
   isBeatWarped(beat: number): boolean {
     if (!isFinite(beat)) return false
-    if (this._cache.warpedBeats[beat]) return this._cache.warpedBeats[beat]
+    const flooredBeat = Math.floor(beat * 1000) / 1000
+    if (this._cache.warpedBeats[flooredBeat])
+      return this._cache.warpedBeats[flooredBeat]
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
-    const bpmEv = this.getBPMEvent(beat)
-    if (
-      bpmEv &&
-      (bpmEv.value < 0 || bpmEv.searchSecond! > this.getSecondsNoClamp(beat)[0])
-    ) {
-      this._cache.warpedBeats[beat] = true
+    const cache = this._cache.beatTiming!
+    const i = this.searchCache(cache, "beat", flooredBeat)
+    const event = cache[i]
+    const secondLimit =
+      event.beat == flooredBeat
+        ? event.secondClamp
+        : Math.max(event.secondAfter, event.secondClamp)
+    if (event.warped || this.getSeconds(beat, "noclamp") < secondLimit) {
+      this._cache.warpedBeats[flooredBeat] = true
       return true
     }
-    for (const event of this._cache.beatTiming!) {
-      if (beat < event.beat) continue
-      if (event.type == "WARPS" && beat < event.beat + event.value) {
-        this._cache.warpedBeats[beat] = true
-        return true
-      }
-      if (
-        (event.type == "STOPS" || event.type == "DELAYS") &&
-        event.value < 0
-      ) {
-        const bpmatstop = this.getBPM(event.beat)
-        if (beat < event.beat + (event.value * -1 * bpmatstop) / 60) {
-          this._cache.warpedBeats[beat] = true
-          return true
-        }
-      }
-    }
-    this._cache.warpedBeats[beat] = false
+    this._cache.warpedBeats[flooredBeat] = false
     return false
   }
 
   isBeatFaked(beat: number): boolean {
     if (!isFinite(beat)) return false
-    if (this.isBeatWarped(beat)) return true
+    const flooredBeat = Math.floor(beat * 1000) / 1000
+    if (this.isBeatWarped(flooredBeat)) return true
     const fakes = this.getTimingData("FAKES")
     if (fakes == undefined) return false
     for (const event of fakes) {
-      if (beat >= event.beat && beat < event.beat + event.value) return true
+      if (flooredBeat >= event.beat && flooredBeat < event.beat + event.value)
+        return true
     }
     return false
   }
@@ -385,6 +494,7 @@ export class TimingData {
     if (cache.length == 0) return beat
     const i = this.searchCache(cache, "beat", beat)
     const event = cache[i]
+    if (event.beat > beat) return beat
     let effBeat = event.effectiveBeat!
     const beats_left_over = beat - event.beat
     effBeat += beats_left_over * event.value
@@ -450,21 +560,23 @@ export class TimingData {
     const entries = this.getTimingData(prop)
     if (!Array.isArray(entries)) return undefined
     const entry = entries[this.searchCache(entries, "beat", beat)]
-    if (entry && entry.beat && entry.beat > beat) return undefined
+    if (entry?.beat && entry.beat > beat) return undefined
     return entry
   }
 
   reloadCache(prop?: TimingProperty) {
+    this.buildTimingDataCache()
     if (
       prop == undefined ||
       prop == "OFFSET" ||
-      BEAT_TIMING_PRIORITY.includes(prop as any)
+      ["WARPS", "STOPS", "DELAYS", "BPMS"].includes(
+        prop as BeatTimingEventProperty
+      )
     )
       this.buildBeatTimingDataCache()
     if (prop == undefined || prop == "SCROLLS")
       this.buildEffectiveBeatTimingDataCache()
     if (prop == undefined || prop == "SPEEDS") this.buildSpeedsTimingDataCache()
-    if (prop == undefined) this.buildTimingDataCache()
     this._chart?.recalculateNotes()
   }
 
@@ -474,7 +586,7 @@ export class TimingData {
   ) {
     let key = "beat" as keyof TimingEventBase
     const arr = this.events[type]!
-    if (type == "ATTACKS") key = "seconds" as keyof TimingEventBase
+    if (type == "ATTACKS") key = "second" as keyof TimingEventBase
     let low = 0,
       high = arr.length
     while (low < high) {
@@ -488,10 +600,10 @@ export class TimingData {
   private bindex(type: TimingEventProperty, event: TimingEventBase): number {
     let key = "beat" as keyof TimingEventBase
     const arr = this.events[type]!
-    if (type == "ATTACKS") key = "seconds" as keyof TimingEventBase
+    if (type == "ATTACKS") key = "second" as keyof TimingEventBase
     let low = 0,
       high = arr.length
-    while (low <= high) {
+    while (low <= high && low < arr.length) {
       const mid = (low + high) >>> 1
       if (arr[mid][key] == event[key]) return mid
       if (arr[mid][key]! < event[key]!) low = mid + 1
