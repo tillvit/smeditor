@@ -102,7 +102,11 @@ export abstract class Window {
       this.windowManager.removeWindow(this)
       this.windowElement.classList.add("exiting")
       window.removeEventListener("mousedown", this.block, true)
-      if (this.options.blocking)
+      if (
+        this.options.blocking &&
+        this.windowManager.windows.filter(window => window.options.blocking)
+          .length == 0
+      )
         document.getElementById("blocker")!.style.display = "none"
       setTimeout(
         () => this.windowManager!.view.removeChild(this.windowElement),

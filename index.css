@@ -239,6 +239,7 @@ textarea {
 .menu-options {
   display: flex;
   margin-top: 5px;
+  flex: 0;
 }
 .menu-left {
   display: flex;
@@ -460,14 +461,20 @@ button:disabled {
   height: 100%;
 }
 
-.chart-properties > .padding {
+.chart-properties .padding {
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-properties .property-grid {
   display: grid;
   row-gap: 3px;
   grid-template-columns: auto 250px;
   align-items: center;
+  flex: 1;
 }
 
-.chart-properties > .padding > div:not(.label) {
+.chart-properties .property-grid > div:not(.label) {
   display: flex;
   align-items: center;
 }

@@ -168,10 +168,10 @@ export class NewChartWindow extends Window {
       this.closeWindow()
     }
 
-    const select_btn = document.createElement("button")
-    select_btn.innerText = "Create"
-    select_btn.classList.add("confirm")
-    select_btn.onclick = () => {
+    const create_btn = document.createElement("button")
+    create_btn.innerText = "Create"
+    create_btn.classList.add("confirm")
+    create_btn.onclick = () => {
       this.chart.setNotedata(
         this.copyChart?.notedata
           .filter(note => note.col < this.chart.gameType.numCols)
@@ -182,7 +182,7 @@ export class NewChartWindow extends Window {
       this.closeWindow()
     }
     menu_options_left.appendChild(cancel)
-    menu_options_right.appendChild(select_btn)
+    menu_options_right.appendChild(create_btn)
     padding.appendChild(menu_options)
     viewElement.appendChild(padding)
   }

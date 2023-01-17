@@ -14,6 +14,7 @@ import { GameplayStats } from "./play/GameplayStats"
 import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
 import { GameTypeRegistry } from "./types/GameTypeRegistry"
 import { TimerStats } from "../util/TimerStats"
+import { NewChartWindow } from "../window/NewChartWindow"
 
 const SNAPS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 48, -1]
 
@@ -38,6 +39,8 @@ export class ChartManager {
   songAudio: ChartAudio = new ChartAudio()
   chartView?: ChartRenderer
   info: BitmapText
+  noChartTextA: BitmapText
+  noChartTextB: BitmapText
   assistTick: Howl = new Howl({
     src: "assets/sound/assist_tick.ogg",
     volume: 0.5,
@@ -147,6 +150,36 @@ export class ChartManager {
       fontName: "Assistant",
       fontSize: 20,
     })
+    this.noChartTextA = new BitmapText("No Chart", {
+      fontName: "Assistant",
+      fontSize: 30,
+    })
+    this.noChartTextA.x = this.app.renderer.screen.width / 2
+    this.noChartTextA.y = this.app.renderer.screen.height / 2 - 20
+    this.noChartTextA.anchor.set(0.5)
+    this.noChartTextA.tint = 0x555555
+    this.app.stage.addChild(this.noChartTextA)
+    this.noChartTextB = new BitmapText("Create a new chart", {
+      fontName: "Assistant",
+      fontSize: 15,
+    })
+    this.noChartTextB.x = this.app.renderer.screen.width / 2
+    this.noChartTextB.y = this.app.renderer.screen.height / 2 + 10
+    this.noChartTextB.anchor.set(0.5)
+    this.noChartTextB.tint = 0x556677
+    this.noChartTextB.interactive = true
+    this.noChartTextB.on("mouseover", () => {
+      this.noChartTextB.tint = 0x8899aa
+    })
+    this.noChartTextB.on("mouseleave", () => {
+      this.noChartTextB.tint = 0x556677
+    })
+    this.noChartTextB.on("mousedown", () => {
+      this.app.windowManager.openWindow(new NewChartWindow(app))
+    })
+    this.noChartTextA.visible = false
+    this.noChartTextB.visible = false
+    this.app.stage.addChild(this.noChartTextB)
     this.info.x = 0
     this.info.y = 0
     this.info.zIndex = 1
@@ -376,7 +409,17 @@ export class ChartManager {
     }
   }
 
-  async loadSM(path: string) {
+  async loadSM(path?: string) {
+    if (!path) {
+      this.sm_path = ""
+      this.sm = undefined
+      this.songAudio.stop()
+      this.noChartTextA.visible = false
+      this.noChartTextB.visible = false
+      if (this.chartView) this.chartView.destroy({ children: true })
+      return
+    }
+
     this.songAudio.stop()
     this.lastSong = ""
     this.sm_path = path
@@ -387,6 +430,10 @@ export class ChartManager {
     this.sm = new Simfile(smFile)
 
     await this.sm.loaded
+
+    this.noChartTextA.visible = true
+    this.noChartTextB.visible = true
+
     window.postMessage("smLoaded")
     this.loadChart()
     if (this.time == 0) this.setBeat(0)
@@ -428,6 +475,9 @@ export class ChartManager {
       this.loadAudio()
       if (audioPlaying) this.songAudio.play()
     }
+
+    this.noChartTextA.visible = false
+    this.noChartTextB.visible = false
   }
 
   loadAudio() {

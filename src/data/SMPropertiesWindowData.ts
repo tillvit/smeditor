@@ -81,7 +81,9 @@ function fileOption(
                 handleInput()
               },
             },
-            dir + "/" + (sm.properties[prop] ?? "")
+            sm.properties[prop]
+              ? dir + "/" + sm.properties[prop]
+              : app.chartManager.sm_path
           )
         )
       }
