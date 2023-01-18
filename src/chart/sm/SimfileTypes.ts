@@ -13,6 +13,8 @@ export const SIMFILE_PROPERTIES = [
   "MUSIC",
   "CDTITLE",
   "JACKET",
+  "DISCIMAGE",
+  "CDIMAGE",
   "PREVIEW",
   "LYRICSPATH",
   "SAMPLESTART",

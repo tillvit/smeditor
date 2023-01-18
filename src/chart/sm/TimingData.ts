@@ -636,4 +636,150 @@ export class TimingData {
     }
     return true
   }
+
+  serialize(type: "sm" | "ssc"): string {
+    let str = ""
+    if (this.offset) str += "#OFFSET:" + this.offset + ";\n"
+    let props = [
+      "BPMS",
+      "STOPS",
+      "DELAYS",
+      "SPEEDS",
+      "SCROLLS",
+      "TICKCOUNTS",
+      "TIMESIGNATURES",
+      "LABELS",
+      "COMBOS",
+      "FAKES",
+      "BGCHANGES",
+      "FGCHANGES",
+      "ATTACKS",
+    ] satisfies TimingEventProperty[]
+    if (type == "sm") {
+      props = [
+        "BPMS",
+        "STOPS",
+        "TIMESIGNATURES",
+        "BGCHANGES",
+        "FGCHANGES",
+        "ATTACKS",
+      ]
+    }
+    for (const prop of props) {
+      str += this.formatProperty(prop)
+    }
+    return str
+  }
+
+  private formatProperty(prop: TimingEventProperty): string {
+    const precision = 3
+    if (!this._fallback && !this.events[prop]) return ""
+    let str = ""
+    switch (prop) {
+      case "ATTACKS": {
+        const events = this.getTimingData(prop)
+        str = events
+          .map(
+            event =>
+              `TIME=${event.second}${event.endType}=${event.value}:MODS=${event.mods}`
+          )
+          .join(":\n")
+        break
+      }
+      case "BGCHANGES":
+      case "FGCHANGES": {
+        const events = this.getTimingData(prop)
+        str = events
+          .map(
+            event =>
+              `${event.beat}=${event.file}=${roundDigit(
+                event.updateRate,
+                precision
+              ).toFixed(precision)}=${Number(event.crossFade)}=${Number(
+                event.stretchRewind
+              )}=${Number(event.stretchNoLoop)}=${event.effect}=${
+                event.file2
+              }=${event.transition}=${event.color1}=${event.color2}`
+          )
+          .join(",\n")
+        break
+      }
+      case "BPMS":
+      case "DELAYS":
+      case "FAKES":
+      case "SCROLLS":
+      case "STOPS":
+      case "WARPS": {
+        const events = this.getTimingData(prop)
+        str = events
+          .map(
+            event =>
+              `${roundDigit(event.beat, precision).toFixed(
+                precision
+              )}=${roundDigit(event.value, precision).toFixed(precision)}`
+          )
+          .join(",\n")
+        break
+      }
+      case "COMBOS": {
+        const events = this.getTimingData(prop)
+        str = events
+          .map(event => {
+            if (event.hitMult == event.missMult) {
+              return `${roundDigit(event.beat, precision).toFixed(precision)}=${
+                event.hitMult
+              }`
+            }
+            return `${roundDigit(event.beat, precision).toFixed(precision)}=${
+              event.hitMult
+            }=${event.missMult}`
+          })
+          .join(",\n")
+        break
+      }
+      case "LABELS":
+      case "TICKCOUNTS": {
+        const events = this.getTimingData(prop)
+        str = events
+          .map(
+            event =>
+              `${roundDigit(event.beat, precision).toFixed(precision)}=${
+                event.value
+              }`
+          )
+          .join(",\n")
+        break
+      }
+      case "SPEEDS": {
+        const events = this.getTimingData(prop)
+        str = events
+          .map(
+            event =>
+              `${roundDigit(event.beat, precision).toFixed(
+                precision
+              )}=${roundDigit(event.value, precision).toFixed(
+                precision
+              )}=${roundDigit(event.delay, precision).toFixed(precision)}=${
+                event.unit == "B" ? 0 : 1
+              }`
+          )
+          .join(",\n")
+        break
+      }
+      case "TIMESIGNATURES": {
+        const events = this.getTimingData(prop)
+        str = events
+          .map(
+            event =>
+              `${roundDigit(event.beat, precision).toFixed(precision)}=${
+                event.upper
+              }=${event.lower}`
+          )
+          .join(",\n")
+        break
+      }
+    }
+    if (str.includes(",")) str += "\n"
+    return "#" + prop + ":" + str + ";\n"
+  }
 }

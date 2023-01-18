@@ -462,11 +462,6 @@ button:disabled {
 }
 
 .chart-properties .padding {
-  display: flex;
-  flex-direction: column;
-}
-
-.chart-properties .property-grid {
   display: grid;
   row-gap: 3px;
   grid-template-columns: auto 250px;
@@ -474,7 +469,25 @@ button:disabled {
   flex: 1;
 }
 
-.chart-properties .property-grid > div:not(.label) {
+.chart-properties .padding > div:not(.label) {
+  display: flex;
+  align-items: center;
+}
+
+.sm-properties .padding {
+  display: flex;
+  flex-direction: column;
+}
+
+.sm-properties .property-grid {
+  display: grid;
+  row-gap: 3px;
+  grid-template-columns: auto 250px;
+  align-items: center;
+  flex: 1;
+}
+
+.sm-properties .property-grid > div:not(.label) {
   display: flex;
   align-items: center;
 }

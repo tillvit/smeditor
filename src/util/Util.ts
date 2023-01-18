@@ -3,13 +3,17 @@ import { DisplayObject } from "pixi.js"
 import { App } from "../App"
 
 const QUANTS = [1, 1 / 2, 1 / 3, 1 / 4, 1 / 6, 1 / 8, 1 / 12, 1 / 16, 1 / 24]
-export function getQuant(beat: number) {
+export function getQuantIndex(beat: number) {
   for (let i = 0; i < QUANTS.length; i++) {
     if (Math.abs(beat - Math.round(beat / QUANTS[i]) * QUANTS[i]) < 0.01) {
       return i
     }
   }
   return 9
+}
+
+export function getDivision(beat: number) {
+  return 4 / QUANTS[getQuantIndex(beat)]
 }
 
 export function lerp(v0: number, v1: number, t: number): number {
@@ -184,4 +188,22 @@ export function mean(array: number[]): number {
 export function capitalize(str: string): string {
   if (str == "") return ""
   return str.slice(0, 1).toUpperCase() + str.slice(1).toLowerCase()
+}
+
+export function gcd2(a: number, b: number): number {
+  if (!b) return b === 0 ? a : NaN
+  return gcd2(b, a % b)
+}
+export function gcd(array: number[]) {
+  let n = 0
+  for (let i = 0; i < array.length; ++i) n = gcd2(array[i], n)
+  return n
+}
+export function lcm2(a: number, b: number): number {
+  return (a * b) / gcd2(a, b)
+}
+export function lcm(array: number[]): number {
+  let n = 1
+  for (let i = 0; i < array.length; ++i) n = lcm2(array[i], n)
+  return n
 }

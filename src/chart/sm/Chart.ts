@@ -28,6 +28,7 @@ export class Chart {
   music?: string
   timingData: TimingData
   sm: Simfile
+  other_properties: { [key: string]: string } = {}
 
   notedata: Notedata = []
   private _notedataStats?: NotedataStats
@@ -63,6 +64,25 @@ export class Chart {
       this.chartName = dict["CHARTNAME"] ?? ""
       this.chartStyle = dict["CHARTSTYLE"] ?? ""
       this.music = dict["MUSIC"]
+      for (const key in dict) {
+        if (
+          [
+            "STEPSTYPE",
+            "DESCRIPTION",
+            "DIFFICULTY",
+            "METER",
+            "RADARVALUES",
+            "CREDIT",
+            "CHARTNAME",
+            "CHARTSTYLE",
+            "MUSIC",
+            "NOTES",
+            "NOTEDATA",
+          ].includes(key)
+        )
+          continue
+        this.other_properties[key] = dict[key]
+      }
     } else {
       const match =
         /([\w\d-]+):[\s ]*([^:]*):[\s ]*([\w\d]+):[\s ]*([\d]+):[\s ]*([\d.,]+):[\s ]*([\w\d\s, ]+)/g.exec(
@@ -199,5 +219,39 @@ export class Chart {
 
   toString(): string {
     return this.difficulty + " " + this.meter
+  }
+
+  serialize(type: "sm" | "ssc"): string {
+    let str =
+      "//---------------" +
+      this.gameType.id +
+      " - " +
+      this.description +
+      "---------------\n"
+    if (type == "sm") {
+      str += "#NOTES:\n"
+      str += `     ${this.gameType.id}:\n`
+      str += `     ${this.description}:\n`
+      str += `     ${this.difficulty}:\n`
+      str += `     ${this.meter}:\n`
+      str += `     ${this.radarValues}:\n`
+    } else {
+      str += "#NOTEDATA:;\n"
+      str += `#CHARTNAME:${this.chartName};\n`
+      str += `#CHARTSTYLE:${this.chartStyle};\n`
+      str += `#CREDIT:${this.credit};\n`
+      if (this.music) str += `#MUSIC:${this.music};\n`
+      str += `#STEPSTYPE:${this.gameType.id};\n`
+      str += `#DESCRIPTION:${this.description};\n`
+      str += `#DIFFICULTY:${this.difficulty};\n`
+      str += `#METER:${this.meter};\n`
+      str += `#RADARVALUES:${this.radarValues};\n`
+      for (const key in this.other_properties) {
+        str += `#${key}:${this.other_properties[key]};\n`
+      }
+      str += `#NOTES:\n`
+    }
+    str += this.gameType.parser.serialize(this.notedata, this.gameType) + ";"
+    return str
   }
 }

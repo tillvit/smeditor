@@ -15,7 +15,7 @@ export class SMPropertiesWindow extends Window {
     super({
       title: "Song Properties",
       width: 400,
-      height: 290,
+      height: 365,
       disableClose: !!isNewSM,
       win_id: "sm_properties",
       blocking: !!isNewSM,
@@ -32,7 +32,7 @@ export class SMPropertiesWindow extends Window {
 
   initView(viewElement: HTMLDivElement): void {
     viewElement.replaceChildren()
-    viewElement.classList.add("chart-properties")
+    viewElement.classList.add("sm-properties")
     const padding = document.createElement("div")
     padding.classList.add("padding")
 

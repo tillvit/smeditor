@@ -89,4 +89,75 @@ export class Simfile {
       )
     })
   }
+
+  serialize(type: "sm" | "ssc"): string {
+    let str = ""
+    if (type == "sm") {
+      if (this.other_properties["NITGVERSION"])
+        str += this.formatProperty(
+          "NITGVERSION",
+          this.other_properties["NITGVERSION"]
+        )
+      str += this.formatProperty("TITLE", this.properties.TITLE)
+      str += this.formatProperty("SUBTITLE", this.properties.SUBTITLE)
+      str += this.formatProperty("ARTIST", this.properties.ARTIST)
+      str += this.formatProperty("MUSIC", this.properties.MUSIC)
+      str += this.formatProperty("BANNER", this.properties.GENRE)
+      str += this.formatProperty("BACKGROUND", this.properties.BACKGROUND)
+      str += this.formatProperty("LYRICSPATH", this.properties.LYRICSPATH)
+      str += this.formatProperty("CDTITLE", this.properties.CDTITLE)
+      str += this.formatProperty("SAMPLESTART", this.properties.SAMPLESTART)
+      str += this.formatProperty("SAMPLELENGTH", this.properties.SAMPLELENGTH)
+    } else {
+      str += this.formatProperty(
+        "VERSION",
+        this.other_properties["VERSION"] ?? 0.83
+      )
+      str += this.formatProperty("TITLE", this.properties.TITLE)
+      str += this.formatProperty("SUBTITLE", this.properties.SUBTITLE)
+      str += this.formatProperty("ARTIST", this.properties.ARTIST)
+      str += this.formatProperty("TITLETRANSLIT", this.properties.TITLETRANSLIT)
+      str += this.formatProperty(
+        "SUBTITLETRANSLIT",
+        this.properties.SUBTITLETRANSLIT
+      )
+      str += this.formatProperty(
+        "ARTISTTRANSLIT",
+        this.properties.ARTISTTRANSLIT
+      )
+      str += this.formatProperty("GENRE", this.properties.GENRE)
+      str += this.formatProperty("CREDIT", this.properties.CREDIT)
+      str += this.formatProperty("MUSIC", this.properties.MUSIC)
+      str += this.formatProperty("BANNER", this.properties.BANNER)
+      str += this.formatProperty("BACKGROUND", this.properties.BACKGROUND)
+      str += this.formatProperty("JACKET", this.properties.JACKET)
+      str += this.formatProperty("DISCIMAGE", this.properties.DISCIMAGE)
+      str += this.formatProperty("CDIMAGE", this.properties.CDIMAGE)
+      str += this.formatProperty(
+        "SELECTABLE",
+        this.properties.SELECTABLE ?? "YES"
+      )
+      str += this.formatProperty("LYRICSPATH", this.properties.LYRICSPATH)
+      str += this.formatProperty("CDTITLE", this.properties.CDTITLE)
+      str += this.formatProperty("SAMPLESTART", this.properties.SAMPLESTART)
+      str += this.formatProperty("SAMPLELENGTH", this.properties.SAMPLELENGTH)
+    }
+    str += this.timingData.serialize(type)
+    for (const prop in this.other_properties) {
+      if (prop == "VERSION" || prop == "NITGVERSION") continue
+      str += this.formatProperty(prop, this.other_properties[prop])
+    }
+    str += "\n"
+    for (const gameType in this.charts) {
+      for (const chart of this.charts[gameType]) {
+        str += chart.serialize(type)
+      }
+    }
+    return str
+  }
+
+  private formatProperty(name: string, item: string | number | undefined) {
+    item ||= ""
+    return "#" + name.toUpperCase() + ":" + item + ";\n"
+  }
 }

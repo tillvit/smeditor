@@ -114,5 +114,8 @@ export const SM_PROPERTIES_WINDOW_DATA: {
   ),
   bg: fileOption("BACKGROUND", "image", "BG Image"),
   banner: fileOption("BANNER", "image", "Banner Image"),
-  cdtitle: fileOption("CDTITLE", "image", "CD Jacket"),
+  cdtitle: fileOption("CDTITLE", "image", "CD Title"),
+  cdimage: fileOption("CDIMAGE", "image", "CD Image"),
+  jacket: fileOption("JACKET", "image", "Jacket"),
+  discImage: fileOption("DISCIMAGE", "image", "Disc Image"),
 }

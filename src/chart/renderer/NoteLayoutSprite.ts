@@ -8,7 +8,13 @@ import {
 } from "pixi.js"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
-import { clamp, destroyChildIf, getQuant, lerp, unlerp } from "../../util/Util"
+import {
+  clamp,
+  destroyChildIf,
+  getQuantIndex,
+  lerp,
+  unlerp,
+} from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { isHoldNote } from "../sm/NoteTypes"
@@ -211,7 +217,7 @@ export class NoteLayoutSprite extends Container {
       let t = unlerp(0, lastBeat, note.beat)
       if (Options.chart.CMod) t = unlerp(songOffset, lastSecond, note.second)
       obj.y = t * height
-      obj.tint = QUANT_COLORS[getQuant(note.beat)]
+      obj.tint = QUANT_COLORS[getQuantIndex(note.beat)]
       if (note.type == "Mine") obj.tint = 0x808080
       childIndex++
       if (isHoldNote(note)) {

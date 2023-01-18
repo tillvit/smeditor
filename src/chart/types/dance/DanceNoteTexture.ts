@@ -11,7 +11,7 @@ import {
 } from "pixi.js"
 import { App } from "../../../App"
 import { Options } from "../../../util/Options"
-import { getQuant } from "../../../util/Util"
+import { getQuantIndex } from "../../../util/Util"
 import { PartialNotedataEntry } from "../../sm/NoteTypes"
 
 const mine_frame_texture = Texture.from("assets/noteskin/dance/mine/frame.png")
@@ -206,7 +206,7 @@ export class DanceNoteTexture {
     if (note.type == "Mine") {
       arrow.texture = DanceNoteTexture.mine_tex
     } else {
-      const i = Math.min(getQuant(note.beat), 7)
+      const i = Math.min(getQuantIndex(note.beat), 7)
       arrow.texture = new Texture(
         DanceNoteTexture.arrow_tex.baseTexture,
         new Rectangle((i % 3) * 64, Math.floor(i / 3) * 64, 64, 64)
