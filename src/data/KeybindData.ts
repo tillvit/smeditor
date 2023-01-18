@@ -229,13 +229,13 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   rateUp: {
     label: "Increase playback rate",
     keybinds: [{ key: "Right", mods: [Modifier.SHIFT] }],
-    disabled: false,
+    disabled: app => app.chartManager.getMode() == EditMode.Play,
     callback: () => (Options.audio.rate += 0.05),
   },
   rateDown: {
     label: "Decrease playback rate",
     keybinds: [{ key: "Left", mods: [Modifier.SHIFT] }],
-    disabled: false,
+    disabled: app => app.chartManager.getMode() == EditMode.Play,
     callback: () =>
       (Options.audio.rate = Math.max(Options.audio.rate - 0.05, 0.1)),
   },

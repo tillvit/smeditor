@@ -2,13 +2,13 @@ import { BitmapText, Container, Sprite, Texture } from "pixi.js"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
 import { destroyChildIf, mean, median, stdDev } from "../../util/Util"
-import { ChartRenderer } from "../ChartRenderer"
-import { GameplayStats } from "../play/GameplayStats"
 import {
   isStandardMissTimingWindow,
   isStandardTimingWindow,
   TimingWindowCollection,
-} from "../play/TimingWindowCollection"
+} from "../../chart/play/TimingWindowCollection"
+import { Widget } from "./Widget"
+import { WidgetManager } from "./WidgetManager"
 
 const HISTOGRAM_WIDTH = 300
 const HISTOGRAM_HEIGHT = 150
@@ -27,8 +27,7 @@ interface LineContainer extends Container {
   children: Sprite[]
 }
 
-export class ErrorHistogram extends Container {
-  private renderer: ChartRenderer
+export class ErrorHistrogramWidget extends Widget {
   private max = 0
   private barlines: Histogram = new Container() as Histogram
   private backgroundRect = new BetterRoundedRect()
@@ -41,9 +40,9 @@ export class ErrorHistogram extends Container {
   private stddevText: BitmapText
   private errorMS: number[] = []
 
-  constructor(renderer: ChartRenderer) {
-    super()
-    this.renderer = renderer
+  constructor(manager: WidgetManager) {
+    super(manager)
+    this.visible = false
     this.backgroundRect.tint = 0
     this.backgroundRect.alpha = 0.3
     this.background.addChild(this.backgroundRect)
@@ -146,24 +145,23 @@ export class ErrorHistogram extends Container {
     this.addChild(this.barlines)
   }
 
-  renderThis() {
+  update() {
+    this.visible = !!this.manager.chartManager.gameStats
     this.x =
-      -this.renderer.chartManager.app.renderer.screen.width / 2 +
+      -this.manager.chartManager.app.renderer.screen.width / 2 +
       20 +
       HISTOGRAM_WIDTH / 2
-    this.y = this.renderer.chartManager.app.renderer.screen.height / 2 - 20
+    this.y = this.manager.chartManager.app.renderer.screen.height / 2 - 20
     this.backgroundRect.width = HISTOGRAM_WIDTH + 10
     this.backgroundRect.height = HISTOGRAM_HEIGHT + 35
     this.backgroundRect.x = -HISTOGRAM_WIDTH / 2 - 5
     this.backgroundRect.y = -HISTOGRAM_HEIGHT - 35
-    this.visible = !!this.renderer.chartManager.gameStats
+    this.visible = !!this.manager.chartManager.gameStats
     for (const line of this.barlines.children) {
       if (Options.performance.smoothAnimations)
         line.height = (line.targetHeight - line.height) * 0.2 + line.height
       else line.height = line.targetHeight
     }
-    this.scale.y = Options.chart.reverse ? -1 : 1
-    this.y = this.y * (Options.chart.reverse ? -1 : 1)
   }
 
   private newLine(): HistogramLine {
@@ -178,7 +176,8 @@ export class ErrorHistogram extends Container {
     return line
   }
 
-  start(gameStats: GameplayStats) {
+  startPlay() {
+    const gameStats = this.manager.chartManager.gameStats!
     this.max = 0
     this.errorMS = []
     this.meanText.text = "-"

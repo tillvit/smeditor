@@ -1,11 +1,13 @@
 import {
-  Container,
   FederatedPointerEvent,
   ParticleContainer,
   RenderTexture,
   Sprite,
   Texture,
 } from "pixi.js"
+import { EditMode } from "../../chart/ChartManager"
+import { Chart } from "../../chart/sm/Chart"
+import { isHoldNote } from "../../chart/sm/NoteTypes"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
 import {
@@ -15,16 +17,15 @@ import {
   lerp,
   unlerp,
 } from "../../util/Util"
-import { EditMode } from "../ChartManager"
-import { ChartRenderer } from "../ChartRenderer"
-import { isHoldNote } from "../sm/NoteTypes"
+import { Widget } from "./Widget"
+import { WidgetManager } from "./WidgetManager"
 
 const QUANT_COLORS = [
   0xe74827, 0x3d89f7, 0xaa2df4, 0x82e247, 0xaa2df4, 0xeaa138, 0xaa2df4,
   0x6be88e,
 ]
 
-export class NoteLayoutSprite extends Container {
+export class NoteLayoutWidget extends Widget {
   barContainer = new ParticleContainer(
     1500,
     { position: true, scale: true },
@@ -36,20 +37,19 @@ export class NoteLayoutSprite extends Container {
   barTexture: RenderTexture
   overlay: Sprite = new Sprite(Texture.WHITE)
 
-  private renderer: ChartRenderer
   private lastHeight = 0
   private lastCMod
   private mouseDown = false
   private queued = false
 
-  constructor(renderer: ChartRenderer) {
-    super()
-    this.renderer = renderer
+  constructor(manager: WidgetManager) {
+    super(manager)
     this.addChild(this.backing)
+    this.visible = false
     this.backing.tint = 0
     this.backing.alpha = 0.3
     this.barTexture = RenderTexture.create({
-      resolution: this.renderer.chartManager.app.renderer.resolution,
+      resolution: this.manager.app.renderer.resolution,
     })
     this.bars = new Sprite(this.barTexture)
     this.bars.anchor.set(0.5)
@@ -59,7 +59,7 @@ export class NoteLayoutSprite extends Container {
     this.overlay.alpha = 0.3
     this.lastCMod = Options.chart.CMod
     this.addChild(this.overlay)
-    this.x = this.renderer.chartManager.app.renderer.screen.width / 2 - 20
+    this.x = this.manager.app.renderer.screen.width / 2 - 20
     window.onmessage = message => {
       if (message.data == "chartModified" && message.source == window) {
         if (!this.queued) this.populate()
@@ -74,20 +74,12 @@ export class NoteLayoutSprite extends Container {
     }, 3000)
     this.populate()
 
-    this.bars.interactive = true
-    this.overlay.interactive = true
-    this.bars.on("mousedown", event => {
+    this.interactive = true
+    this.on("mousedown", event => {
       this.mouseDown = true
       this.handleMouse(event)
     })
-    this.bars.on("mousemove", event => {
-      if (this.mouseDown) this.handleMouse(event)
-    })
-    this.overlay.on("mousedown", event => {
-      this.mouseDown = true
-      this.handleMouse(event)
-    })
-    this.overlay.on("mousemove", event => {
+    this.on("mousemove", event => {
       if (this.mouseDown) this.handleMouse(event)
     })
     window.onmouseup = () => {
@@ -96,68 +88,64 @@ export class NoteLayoutSprite extends Container {
   }
 
   private handleMouse(event: FederatedPointerEvent) {
-    if (this.renderer.chartManager.getMode() == EditMode.Play) return
+    if (this.manager.chartManager.getMode() == EditMode.Play) return
+    if (!this.getChart()) return
     let t =
       (this.bars.toLocal(event.global).y + this.bars.height / 2) /
       this.bars.height
     t = clamp(t, 0, 1)
-    const lastNote = this.renderer.chart.notedata.at(-1)
+    const lastNote = this.getChart().notedata.at(-1)
     if (!lastNote) return
     const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
-    const lastSecond = this.renderer.chart.getSeconds(lastBeat)
+    const lastSecond = this.getChart().getSeconds(lastBeat)
     if (Options.chart.CMod) {
-      this.renderer.chartManager.setTime(
-        lerp(
-          -this.renderer.chart.timingData.getTimingData("OFFSET"),
-          lastSecond,
-          t
-        )
+      this.manager.chartManager.setTime(
+        lerp(-this.getChart().timingData.getTimingData("OFFSET"), lastSecond, t)
       )
     } else {
-      this.renderer.chartManager.setBeat(lastBeat * t)
+      this.manager.chartManager.setBeat(lastBeat * t)
     }
   }
 
-  renderThis() {
-    const height = this.renderer.chartManager.app.renderer.screen.height - 40
+  update() {
+    const chart = this.getChart()
+    const chartView = this.manager.chartManager.chartView!
+    if (!chart) return
+    const height = this.manager.app.renderer.screen.height - 40
     this.backing.height = height + 10
     this.backing.position.y = -this.backing.height / 2
     this.backing.position.x = -this.backing.width / 2
     this.bars.height = height
-    this.x = this.renderer.chartManager.app.renderer.screen.width / 2 - 20
-    const lastNote = this.renderer.chart.notedata.at(-1)
+    this.x = this.manager.app.renderer.screen.width / 2 - 20
+    const lastNote = chart.notedata.at(-1)
     if (!lastNote) {
       this.overlay.height = 0
       return
     }
     const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
-    const lastSecond = this.renderer.chart.getSeconds(lastBeat)
+    const lastSecond = chart.getSeconds(lastBeat)
     const start = Options.chart.CMod
-      ? this.renderer.getTimeFromYPos(
-          -this.renderer.chartManager.app.renderer.screen.height / 2
-        )
-      : this.renderer.getBeatFromYPos(
-          -this.renderer.chartManager.app.renderer.screen.height / 2,
+      ? chartView.getTimeFromYPos(-this.manager.app.renderer.screen.height / 2)
+      : chartView.getBeatFromYPos(
+          -this.manager.app.renderer.screen.height / 2,
           true
         )
     const end = Options.chart.CMod
-      ? this.renderer.getTimeFromYPos(
-          this.renderer.chartManager.app.renderer.screen.height / 2
-        )
-      : this.renderer.getBeatFromYPos(
-          this.renderer.chartManager.app.renderer.screen.height / 2,
+      ? chartView.getTimeFromYPos(this.manager.app.renderer.screen.height / 2)
+      : chartView.getBeatFromYPos(
+          this.manager.app.renderer.screen.height / 2,
           true
         )
     let t_startY = unlerp(0, lastBeat, start)
     let t_endY = unlerp(0, lastBeat, end)
     if (Options.chart.CMod) {
       t_startY = unlerp(
-        -this.renderer.chart.timingData.getTimingData("OFFSET"),
+        -chart.timingData.getTimingData("OFFSET"),
         lastSecond,
         start
       )
       t_endY = unlerp(
-        -this.renderer.chart.timingData.getTimingData("OFFSET"),
+        -chart.timingData.getTimingData("OFFSET"),
         lastSecond,
         end
       )
@@ -169,22 +157,26 @@ export class NoteLayoutSprite extends Container {
     this.overlay.y = startY
     this.overlay.height = endY - startY
     if (
-      this.renderer.chartManager.app.renderer.screen.height !=
-        this.lastHeight ||
+      this.manager.app.renderer.screen.height != this.lastHeight ||
       this.lastCMod != Options.chart.CMod
     ) {
       this.lastCMod = Options.chart.CMod
-      this.lastHeight = this.renderer.chartManager.app.renderer.screen.height
+      this.lastHeight = this.manager.app.renderer.screen.height
       this.populate()
     }
+    this.scale.y = Options.chart.reverse ? -1 : 1
   }
 
   populate() {
-    let childIndex = 0
-    const numCols = this.renderer.chart.gameType.numCols
-    const lastNote = this.renderer.chart.notedata.at(-1)
+    const chart = this.getChart()
+    if (!chart) return
 
-    const height = this.renderer.chartManager.app.renderer.screen.height - 40
+    this.visible = true
+    let childIndex = 0
+    const numCols = chart.gameType.numCols
+    const lastNote = chart.notedata.at(-1)
+
+    const height = this.manager.app.renderer.screen.height - 40
     this.backing.height = height
     this.backing.width = numCols * 6 + 8
     this.overlay.width = numCols * 6 + 8
@@ -194,17 +186,17 @@ export class NoteLayoutSprite extends Container {
 
     if (!lastNote) {
       destroyChildIf(this.barContainer.children, () => true)
-      this.renderer.chartManager.app.renderer.render(this.barContainer, {
+      this.manager.app.renderer.render(this.barContainer, {
         renderTexture: this.barTexture,
       })
       return
     }
     const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
-    const lastSecond = this.renderer.chart.getSeconds(lastBeat)
+    const lastSecond = chart.getSeconds(lastBeat)
 
-    const songOffset = this.renderer.chart.timingData.getTimingData("OFFSET")
+    const songOffset = chart.timingData.getTimingData("OFFSET")
 
-    this.renderer.chart.notedata.forEach(note => {
+    chart.notedata.forEach(note => {
       let obj = this.barContainer.children[childIndex]
       if (!obj) {
         obj = new Sprite(Texture.WHITE)
@@ -233,7 +225,7 @@ export class NoteLayoutSprite extends Container {
         h_obj.x = (note.col + 0.5) * 6
         const y_end =
           (Options.chart.CMod
-            ? this.renderer.chart.getSeconds(note.beat + note.hold) / lastSecond
+            ? chart.getSeconds(note.beat + note.hold) / lastSecond
             : (note.beat + note.hold) / lastBeat) *
             height +
           1
@@ -250,8 +242,12 @@ export class NoteLayoutSprite extends Container {
       (_, index) => index >= childIndex
     )
 
-    this.renderer.chartManager.app.renderer.render(this.barContainer, {
+    this.manager.app.renderer.render(this.barContainer, {
       renderTexture: this.barTexture,
     })
+  }
+
+  private getChart(): Chart {
+    return this.manager.chartManager.chart!
   }
 }

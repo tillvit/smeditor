@@ -24,9 +24,8 @@ const BAR_WIDTH = 1
 const BAR_HEIGHT = 15
 
 const errorStyle = {
-  fontName: "Assistant",
+  fontName: "Assistant-Fancy",
   fontSize: 12,
-  fill: ["#ffffff"],
 }
 
 export class TimingBarContainer extends Container {

@@ -2,7 +2,7 @@ import { App } from "../App"
 import { Chart } from "../chart/sm/Chart"
 import { CHART_DIFFICULTIES } from "../chart/sm/ChartTypes"
 import { GameTypeRegistry } from "../chart/types/GameTypeRegistry"
-import { Dropdown } from "../gui/Dropdown"
+import { Dropdown } from "../gui/element/Dropdown"
 import { safeParse } from "../util/Util"
 import { Window } from "./Window"
 

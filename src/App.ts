@@ -1,7 +1,6 @@
-import { BitmapFont, Container, Renderer, Ticker } from "pixi.js"
+import { BitmapFont, Container, Renderer, TEXT_GRADIENT, Ticker } from "pixi.js"
 import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
-import { MenubarManager } from "./gui/MenubarManager"
 import { Keybinds } from "./listener/Keybinds"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
@@ -12,6 +11,7 @@ import { getBrowser } from "./util/Util"
 import { DirectoryWindow } from "./window/DirectoryWindow"
 import { BasicOptionsWindow } from "./window/BasicOptionsWindow"
 import { WindowManager } from "./window/WindowManager"
+import { MenubarManager } from "./gui/element/MenubarManager"
 
 declare global {
   interface Window {
@@ -44,6 +44,7 @@ export class App {
     this.view = document.getElementById("pixi") as HTMLCanvasElement
 
     this.stage = new Container()
+    this.stage.sortableChildren = true
     this.renderer = new Renderer({
       backgroundColor: 0x18191c,
       antialias: false,
@@ -114,6 +115,29 @@ export class App {
         fontFamily: "Assistant",
         fontSize: 20,
         fill: "white",
+      },
+      {
+        chars: [
+          ["a", "z"],
+          ["A", "Z"],
+          "!@#$%^&*()~{}[]:.-?=,",
+          "0123456789/",
+          " ",
+        ],
+        resolution: window.devicePixelRatio,
+      }
+    )
+
+    BitmapFont.from(
+      "Assistant-Fancy",
+      {
+        fontFamily: "Assistant",
+        fontSize: 40,
+        fontWeight: "700",
+        fill: ["#dddddd", "#ffffff"],
+        fillGradientType: TEXT_GRADIENT.LINEAR_VERTICAL,
+        stroke: 0xaaaaaa,
+        strokeThickness: 3,
       },
       {
         chars: [

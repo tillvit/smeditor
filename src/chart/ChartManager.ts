@@ -15,6 +15,7 @@ import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
 import { GameTypeRegistry } from "./types/GameTypeRegistry"
 import { TimerStats } from "../util/TimerStats"
 import { NewChartWindow } from "../window/NewChartWindow"
+import { WidgetManager } from "../gui/widget/WidgetManager"
 
 const SNAPS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 48, -1]
 
@@ -38,6 +39,7 @@ export class ChartManager {
 
   songAudio: ChartAudio = new ChartAudio()
   chartView?: ChartRenderer
+  widgetManager: WidgetManager
   info: BitmapText
   noChartTextA: BitmapText
   noChartTextB: BitmapText
@@ -146,6 +148,8 @@ export class ChartManager {
       { passive: true }
     )
 
+    this.widgetManager = new WidgetManager(this)
+
     this.info = new BitmapText("", {
       fontName: "Assistant",
       fontSize: 20,
@@ -184,6 +188,7 @@ export class ChartManager {
     this.info.y = 0
     this.info.zIndex = 1
     this.app.stage.addChild(this.info)
+    this.app.stage.addChild(this.widgetManager)
     this.app.ticker.add(() => {
       if (
         this.sm == undefined ||
@@ -193,6 +198,7 @@ export class ChartManager {
         return
       TimerStats.time("ChartRenderer Update Time")
       this.chartView?.renderThis()
+      this.widgetManager.update()
       TimerStats.endTime("ChartRenderer Update Time")
       this.info.text =
         this.mode +
@@ -827,8 +833,8 @@ export class ChartManager {
         else break
       }
       this.chart.gameType.gameLogic.reset(this)
-      this.gameStats = new GameplayStats(this.chart.notedata)
-      this.chartView.startPlay()
+      this.gameStats = new GameplayStats(this)
+      this.widgetManager.startPlay()
       this.songAudio.seek(this.time - 1)
       this.songAudio.play()
     } else {

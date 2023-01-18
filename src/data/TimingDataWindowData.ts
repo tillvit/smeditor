@@ -1,7 +1,7 @@
 import { App } from "../App"
 import { TimingData } from "../chart/sm/TimingData"
-import { Dropdown } from "../gui/Dropdown"
-import { NumberSpinner } from "../gui/NumberSpinner"
+import { Dropdown } from "../gui/element/Dropdown"
+import { NumberSpinner } from "../gui/element/NumberSpinner"
 import { roundDigit } from "../util/Util"
 
 type TimingDataWindowElement<T extends HTMLElement> = {

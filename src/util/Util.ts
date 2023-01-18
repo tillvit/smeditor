@@ -28,6 +28,16 @@ export function rgbtoHex(r: number, g: number, b: number): number {
   return (r << 16) + (g << 8) + b
 }
 
+export function lighten(col: number, gamma: number): number {
+  let r = col >> 16
+  let g = (col >> 8) & 0xff
+  let b = col & 0xff
+  r = clamp(r * gamma, 0, 255)
+  g = clamp(g * gamma, 0, 255)
+  b = clamp(b * gamma, 0, 255)
+  return rgbtoHex(r, g, b)
+}
+
 export function roundDigit(num: number, scale: number): number {
   return Math.round(num * Math.pow(10, scale)) / Math.pow(10, scale)
 }

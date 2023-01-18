@@ -1,6 +1,6 @@
 import { App } from "../App"
 import { TIMING_WINDOW_DATA } from "../data/TimingDataWindowData"
-import { Dropdown } from "../gui/Dropdown"
+import { Dropdown } from "../gui/element/Dropdown"
 import { Window } from "./Window"
 
 export class TimingDataWindow extends Window {
