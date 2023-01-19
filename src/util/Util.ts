@@ -1,6 +1,5 @@
 import { Parser } from "expr-eval"
 import { DisplayObject } from "pixi.js"
-import { App } from "../App"
 
 const QUANTS = [1, 1 / 2, 1 / 3, 1 / 4, 1 / 6, 1 / 8, 1 / 12, 1 / 16, 1 / 24]
 export function getQuantIndex(beat: number) {
@@ -47,18 +46,15 @@ export function getFont() {
 }
 
 const fpsTimes: number[] = []
-let fps = false
-export function getFPS(app: App) {
-  if (!fps) {
-    fps = true
-    app.ticker.add(() => {
-      fpsTimes.push(Date.now())
-      while (fpsTimes.length > 0 && fpsTimes[0] < Date.now() - 1000) {
-        fpsTimes.shift()
-      }
-    })
-  }
+export function getFPS() {
   return fpsTimes.length
+}
+
+export function fpsUpdate() {
+  fpsTimes.push(Date.now())
+  while (fpsTimes.length > 0 && fpsTimes[0] < Date.now() - 1000) {
+    fpsTimes.shift()
+  }
 }
 
 const tpsTimes: number[] = []

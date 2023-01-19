@@ -15,6 +15,8 @@ export class Simfile {
   properties: { [key in SimfileProperty]?: string } = {}
   timingData: TimingData = new TimingData()
 
+  unloadedCharts: (string | { [key: string]: string })[] = []
+
   loaded: Promise<void>
 
   constructor(file: File) {
@@ -37,7 +39,8 @@ export class Simfile {
             ssc_notedata[prop[1]] = prop[2]
             if (prop[1] == "NOTES") {
               temp_charts.push(ssc_notedata)
-              ;(ssc_notedata = {}), (ssc_pair = false)
+              ssc_notedata = {}
+              ssc_pair = false
             }
           } else if (prop[1] == "NOTES") {
             temp_charts.push(prop[2])
@@ -64,6 +67,7 @@ export class Simfile {
           try {
             chart = new Chart(this, data)
           } catch (error) {
+            this.unloadedCharts.push(data)
             console.warn(error)
             continue
           }
@@ -150,7 +154,50 @@ export class Simfile {
     str += "\n"
     for (const gameType in this.charts) {
       for (const chart of this.charts[gameType]) {
-        str += chart.serialize(type)
+        str += chart.serialize(type) + "\n"
+      }
+    }
+    for (const chart of this.unloadedCharts) {
+      if (typeof chart == "string") {
+        str += "#NOTES:" + chart + "\n"
+      } else {
+        str +=
+          "//---------------" +
+          chart.STEPSTYPE +
+          " - " +
+          chart.DESCRIPTION +
+          "---------------\n"
+        str += "#NOTEDATA:;\n"
+        str += `#CHARTNAME:${chart.CHARTNAME};\n`
+        str += `#CHARTSTYLE:${chart.CHARTSTYLE};\n`
+        str += `#CREDIT:${chart.CREDIT};\n`
+        if (chart.MUSIC) str += `#MUSIC:${chart.MUSIC};\n`
+        str += `#STEPSTYPE:${chart.STEPSTYPE};\n`
+        str += `#DESCRIPTION:${chart.DESCRIPTION};\n`
+        str += `#DIFFICULTY:${chart.DIFFICULTY};\n`
+        str += `#METER:${chart.METER};\n`
+        str += `#METERF:${chart.METERF};\n`
+        str += `#RADARVALUES:${chart.RADARVALUES};\n`
+        str += `#NOTES:`
+        for (const prop in chart) {
+          if (
+            [
+              "NOTEDATA",
+              "CHARTNAME",
+              "CHARTSTYLE",
+              "CREDIT",
+              "MUSIC",
+              "STEPSTYPE",
+              "DESCRIPTION",
+              "DIFFICULTY",
+              "METER",
+              "METERF",
+              "RADARVALUES",
+            ].includes(prop)
+          )
+            continue
+          str += `#${prop}:${chart[prop]};\n\n`
+        }
       }
     }
     return str

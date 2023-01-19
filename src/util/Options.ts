@@ -84,6 +84,7 @@ class DefaultOptions {
   static performance = {
     resolution: window.devicePixelRatio,
     smoothAnimations: true,
+    maxFPS: 60,
   }
 }
 

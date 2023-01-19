@@ -1,7 +1,7 @@
 import { Container } from "pixi.js"
 import { App } from "../../App"
 import { ChartManager } from "../../chart/ChartManager"
-import { ErrorHistrogramWidget as ErrorHistogramWidget } from "./ErrorHistogramWidget"
+import { PlayInfoWidget } from "./PlayInfoWidget"
 import { NoteLayoutWidget } from "./NoteLayoutWidget"
 import { Widget } from "./Widget"
 
@@ -15,7 +15,7 @@ export class WidgetManager extends Container {
     this.app = chartManager.app
     this.chartManager = chartManager
     this.addChild(new NoteLayoutWidget(this))
-    this.addChild(new ErrorHistogramWidget(this))
+    this.addChild(new PlayInfoWidget(this))
     this.zIndex = 2
   }
 

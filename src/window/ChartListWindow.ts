@@ -2,6 +2,7 @@ import { App } from "../App"
 import { Chart } from "../chart/sm/Chart"
 import { GameType, GameTypeRegistry } from "../chart/types/GameTypeRegistry"
 import { Dropdown } from "../gui/element/Dropdown"
+import { EventHandler } from "../listener/EventHandler"
 import { Window } from "./Window"
 
 type ChartListItem = HTMLDivElement & {
@@ -52,24 +53,22 @@ export class ChartListWindow extends Window {
         GameTypeRegistry.getGameType(value.split(" ")[0]) ?? this.gameType
       this.loadCharts(chartList, chartInfo)
     })
-    window.onmessage = message => {
-      if (message.data == "smLoaded" && message.source == window) {
-        gameTypeDropdown.setItems(
-          GameTypeRegistry.getPriority().map(gameType => {
-            const charts = this.app.chartManager.sm?.charts[gameType.id] ?? []
-            return gameType.id + " (" + charts.length + ")"
-          })
-        )
-        gameTypeDropdown.setSelected(
-          this.gameType.id +
-            " (" +
-            (this.app.chartManager.sm?.charts[this.gameType.id] ?? []).length +
-            ") "
-        )
-        this.gameType = this.app.chartManager.chart!.gameType ?? this.gameType
-        this.loadCharts(chartList, chartInfo)
-      }
-    }
+    EventHandler.on("smLoaded", () => {
+      gameTypeDropdown.setItems(
+        GameTypeRegistry.getPriority().map(gameType => {
+          const charts = this.app.chartManager.sm?.charts[gameType.id] ?? []
+          return gameType.id + " (" + charts.length + ")"
+        })
+      )
+      gameTypeDropdown.setSelected(
+        this.gameType.id +
+          " (" +
+          (this.app.chartManager.sm?.charts[this.gameType.id] ?? []).length +
+          ") "
+      )
+      this.gameType = this.app.chartManager.chart!.gameType ?? this.gameType
+      this.loadCharts(chartList, chartInfo)
+    })
     gameTypeWrapper.appendChild(gameTypeLabel)
     gameTypeWrapper.appendChild(gameTypeDropdown.view)
 

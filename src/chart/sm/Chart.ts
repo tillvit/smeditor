@@ -1,3 +1,4 @@
+import { EventHandler } from "../../listener/EventHandler"
 import { bsearch } from "../../util/Util"
 import { GameType, GameTypeRegistry } from "../types/GameTypeRegistry"
 import { ChartDifficulty, CHART_DIFFICULTIES } from "./ChartTypes"
@@ -21,6 +22,7 @@ export class Chart {
   description = ""
   difficulty: ChartDifficulty = "Beginner"
   meter = 1
+  meterF = 1
   radarValues = ""
   chartName = ""
   chartStyle = ""
@@ -31,6 +33,8 @@ export class Chart {
   other_properties: { [key: string]: string } = {}
 
   notedata: Notedata = []
+
+  dirty = false
   private _notedataStats?: NotedataStats
 
   constructor(sm: Simfile, data?: string | { [key: string]: string }) {
@@ -55,6 +59,7 @@ export class Chart {
         this.difficulty = dict["DIFFICULTY"] as ChartDifficulty
       else throw Error("Unknown chart difficulty " + dict["DIFFICULTY"])
       this.meter = parseInt(dict["METER"]) ?? 0
+      this.meterF = parseFloat(dict["METERF"]) ?? 0
       this.radarValues = dict["RADARVALUES"] ?? ""
       this.notedata =
         gameType.parser
@@ -71,6 +76,7 @@ export class Chart {
             "DESCRIPTION",
             "DIFFICULTY",
             "METER",
+            "METERF",
             "RADARVALUES",
             "CREDIT",
             "CHARTNAME",
@@ -165,7 +171,7 @@ export class Chart {
     if (index >= 1 && this.notedata[index - 1].beat > note.beat) index--
     this.notedata.splice(index, 0, computedNote)
     this.recalculateStats()
-    window.postMessage("chartModified")
+    EventHandler.emit("chartModified")
     return computedNote
   }
 
@@ -184,7 +190,7 @@ export class Chart {
     this.notedata.splice(i, 1)
     Object.assign(noteToModify, properties)
     this.addNote(noteToModify)
-    window.postMessage("chartModified")
+    EventHandler.emit("chartModified")
   }
 
   removeNote(note: PartialNotedataEntry): NotedataEntry | undefined {
@@ -192,14 +198,14 @@ export class Chart {
     if (i == -1) return
     const removedNote = this.notedata.splice(i, 1)
     this.recalculateStats()
-    window.postMessage("chartModified")
+    EventHandler.emit("chartModified")
     return removedNote[0]
   }
 
   setNotedata(notedata: Notedata) {
     this.notedata = notedata
     this.recalculateStats()
-    window.postMessage("chartModified")
+    EventHandler.emit("chartModified")
   }
 
   recalculateNotes() {
@@ -245,13 +251,14 @@ export class Chart {
       str += `#DESCRIPTION:${this.description};\n`
       str += `#DIFFICULTY:${this.difficulty};\n`
       str += `#METER:${this.meter};\n`
+      str += `#METERF:${this.meterF};\n`
       str += `#RADARVALUES:${this.radarValues};\n`
       for (const key in this.other_properties) {
         str += `#${key}:${this.other_properties[key]};\n`
       }
       str += `#NOTES:\n`
     }
-    str += this.gameType.parser.serialize(this.notedata, this.gameType) + ";"
+    str += this.gameType.parser.serialize(this.notedata, this.gameType) + ";\n"
     return str
   }
 }

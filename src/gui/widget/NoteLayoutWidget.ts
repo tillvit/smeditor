@@ -8,6 +8,7 @@ import {
 import { EditMode } from "../../chart/ChartManager"
 import { Chart } from "../../chart/sm/Chart"
 import { isHoldNote } from "../../chart/sm/NoteTypes"
+import { EventHandler } from "../../listener/EventHandler"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
 import {
@@ -60,12 +61,10 @@ export class NoteLayoutWidget extends Widget {
     this.lastCMod = Options.chart.CMod
     this.addChild(this.overlay)
     this.x = this.manager.app.renderer.screen.width / 2 - 20
-    window.onmessage = message => {
-      if (message.data == "chartModified" && message.source == window) {
-        if (!this.queued) this.populate()
-        this.queued = true
-      }
-    }
+    EventHandler.on("chartModified", () => {
+      if (!this.queued) this.populate()
+      this.queued = true
+    })
     setInterval(() => {
       if (this.queued) {
         this.queued = false

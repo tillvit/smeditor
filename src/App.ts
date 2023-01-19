@@ -7,11 +7,12 @@ import { BetterRoundedRect } from "./util/BetterRoundedRect"
 import { FileSystem } from "./util/FileSystem"
 import { Options } from "./util/Options"
 import { TimerStats } from "./util/TimerStats"
-import { getBrowser } from "./util/Util"
+import { fpsUpdate, getBrowser } from "./util/Util"
 import { DirectoryWindow } from "./window/DirectoryWindow"
 import { BasicOptionsWindow } from "./window/BasicOptionsWindow"
 import { WindowManager } from "./window/WindowManager"
 import { MenubarManager } from "./gui/element/MenubarManager"
+import { EventHandler } from "./listener/EventHandler"
 
 declare global {
   interface Window {
@@ -61,6 +62,7 @@ export class App {
       this.renderer.render(this.stage)
       TimerStats.endTime("Render Time")
       TimerStats.endFrame()
+      fpsUpdate()
     })
     this.ticker.start()
     this.stage.sortableChildren = true
@@ -86,22 +88,17 @@ export class App {
     this.onResize()
 
     console.log(
-      `smeditor is currently a work in progress. editing is almost start since the viewer is almost done!`
+      `smeditor is currently a work in progress. check the github repo for more info!`
     )
-    console.log(
-      `audio filtering is working (hopefully) but not yet implemented into UI`
-    )
-    // console.log(`use audio.filters = [new BiquadFilter(options)...] and then audio.processFilters()`)
-    // console.log(`syntax: new BiquadFilter(type, gain, freq, sampleRate, bandwidth)
-    // type: lowpass, highpass, bandpass, peaking, notch, lowshelf, highshelf
-    // gain: change in dB (used for peaking, lowshelf, highshelf)
-    // freq: where the filter frequency center is (or end if it is a lowpass/highpass)
-    // sampleRate: usually 44100
-    // bandwidth: width of the effect in octaves (used for lowpass, highpass, bandpass, peaking, notch)`)
 
     this.windowManager.openWindow(
       new BasicOptionsWindow(this, "select_sm_initial")
     )
+
+    // window.onbeforeunload = event => {
+    //   event.preventDefault()
+    //   return (event.returnValue = "Are you sure you want to exit?")
+    // }
 
     window.onunload = () => {
       Options.saveOptions()
@@ -178,7 +175,7 @@ export class App {
         this.lastHeight = window.innerHeight
         this.lastWidth = window.innerWidth
         this.onResize()
-        window.postMessage("resize")
+        EventHandler.emit("resize")
       }
     }, 100)
 

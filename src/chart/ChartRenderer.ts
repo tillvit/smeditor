@@ -12,7 +12,6 @@ import { JudgmentContainer } from "./renderer/JudgmentContainer"
 import { TimingBarContainer } from "./renderer/TimingBarContainer"
 import { Notefield } from "./types/base/Notefield"
 import { SnapContainer } from "./renderer/SnapContainer"
-import { TimerStats } from "../util/TimerStats"
 import { ComboNumber } from "./renderer/ComboNumber"
 
 export class ChartRenderer extends Container {
@@ -171,7 +170,6 @@ export class ChartRenderer extends Container {
 
     this.scale.y = Options.chart.reverse ? -1 : 1
 
-    TimerStats.time("Chart Update Time")
     this.barlines.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
     this.timingAreas.renderThis(
       beat,
@@ -184,15 +182,9 @@ export class ChartRenderer extends Container {
     this.judgment.renderThis()
     this.combo.renderThis()
     this.snapDisplay.renderThis()
-    TimerStats.endTime("Chart Update Time")
 
-    TimerStats.time("Notefield Update Time")
     this.notefield.update(beat, renderBeatLowerLimit, renderBeatLimit)
-    TimerStats.endTime("Notefield Update Time")
-
-    TimerStats.time("Waveform Update Time")
     this.waveform.renderThis(beat, time)
-    TimerStats.endTime("Waveform Update Time")
 
     if (this.lastMousePos && this.chartManager.getMode() != EditMode.Play) {
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap

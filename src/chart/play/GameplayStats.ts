@@ -31,6 +31,7 @@ export class GameplayStats {
   private handlers: ((error: number, judge: TimingWindow) => void)[] = []
   private combo = 0
   private missCombo = 0
+  private maxCombo = 0
   private bestJudge?: StandardTimingWindow
 
   constructor(chartManager: ChartManager) {
@@ -83,6 +84,7 @@ export class GameplayStats {
         ).shouldHideNote(judge)
       ) {
         this.combo += notes.length * hitMult
+        if (this.combo > this.maxCombo) this.maxCombo = this.combo
         this.missCombo = 0
         if (
           this.bestJudge &&
@@ -116,6 +118,7 @@ export class GameplayStats {
     this.maxCumulativeDancePoints += TimingWindowCollection.getCollection(
       Options.play.timingCollection
     ).getMaxHoldDancePoints(note.type)
+    this.handlers.forEach(handler => handler(0, judge))
   }
 
   getScore(): number {
@@ -130,6 +133,10 @@ export class GameplayStats {
 
   getDataPoints(): JudgmentDataPoint[] {
     return this.dataPoints
+  }
+
+  getMaxCombo(): number {
+    return this.maxCombo
   }
 
   recalculate() {
@@ -201,6 +208,10 @@ export class GameplayStats {
       },
       0
     )
+  }
+
+  getCount(window: TimingWindow): number {
+    return this.judgmentCounts.get(window) ?? 0
   }
 
   getCombo(): number {

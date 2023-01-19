@@ -1,5 +1,6 @@
 import { App } from "../App"
 import { SM_PROPERTIES_WINDOW_DATA } from "../data/SMPropertiesWindowData"
+import { EventHandler } from "../listener/EventHandler"
 import { Window } from "./Window"
 
 export class SMPropertiesWindow extends Window {
@@ -23,11 +24,7 @@ export class SMPropertiesWindow extends Window {
     this.app = app
     this.callback = callback
     this.initView(this.viewElement)
-    window.onmessage = message => {
-      if (message.data == "smLoaded" && message.source == window) {
-        this.initView(this.viewElement)
-      }
-    }
+    EventHandler.on("smLoaded", () => this.initView(this.viewElement))
   }
 
   initView(viewElement: HTMLDivElement): void {

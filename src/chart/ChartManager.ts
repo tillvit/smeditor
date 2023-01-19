@@ -16,6 +16,7 @@ import { GameTypeRegistry } from "./types/GameTypeRegistry"
 import { TimerStats } from "../util/TimerStats"
 import { NewChartWindow } from "../window/NewChartWindow"
 import { WidgetManager } from "../gui/widget/WidgetManager"
+import { EventHandler } from "../listener/EventHandler"
 
 const SNAPS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 48, -1]
 
@@ -207,7 +208,7 @@ export class ChartManager {
         "\nBeat: " +
         roundDigit(this.beat, 3) +
         "\nFPS: " +
-        getFPS(this.app) +
+        getFPS() +
         "\nTPS: " +
         getTPS() +
         "\nNote Type: " +
@@ -218,13 +219,6 @@ export class ChartManager {
           TimerStats.getTimers()
             .map(timer => timer.name + ": " + timer.lastTime.toFixed(3) + "ms")
             .join("\n")
-      if (this.mode == EditMode.Play && this.gameStats) {
-        this.info.text +=
-          "\nScore:" +
-          (this.gameStats.getScore() * 100).toFixed(2) +
-          "\nCumulative Score:" +
-          (this.gameStats.getCumulativeScore() * 100).toFixed(2)
-      }
       // for (let hold of this.holdEditing) {
       //   this.info.text += hold == undefined ? "\nundefined" : "\n" + JSON.stringify(hold)
       // }
@@ -297,12 +291,10 @@ export class ChartManager {
       TimerStats.endTime("Update Time")
     }, 5)
 
-    window.addEventListener("message", event => {
-      if (event.data == "resize" && event.source == window) {
-        if (this.chartView) {
-          this.chartView.x = this.app.renderer.screen.width / 2
-          this.chartView.y = this.app.renderer.screen.height / 2
-        }
+    EventHandler.on("resize", () => {
+      if (this.chartView) {
+        this.chartView.x = this.app.renderer.screen.width / 2
+        this.chartView.y = this.app.renderer.screen.height / 2
       }
     })
 
@@ -440,7 +432,7 @@ export class ChartManager {
     this.noChartTextA.visible = true
     this.noChartTextB.visible = true
 
-    window.postMessage("smLoaded")
+    EventHandler.emit("smLoaded")
     this.loadChart()
     if (this.time == 0) this.setBeat(0)
   }
@@ -464,8 +456,8 @@ export class ChartManager {
     Options.play.timingCollection =
       Options.play.defaultTimingCollection[chart.gameType.id] ?? "ITG"
 
-    window.postMessage("chartLoaded")
-    window.postMessage("chartModified")
+    EventHandler.emit("chartLoaded")
+    EventHandler.emit("chartModified")
 
     if (this.chartView) this.chartView.destroy({ children: true })
 

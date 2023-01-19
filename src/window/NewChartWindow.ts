@@ -3,6 +3,7 @@ import { Chart } from "../chart/sm/Chart"
 import { CHART_DIFFICULTIES } from "../chart/sm/ChartTypes"
 import { GameTypeRegistry } from "../chart/types/GameTypeRegistry"
 import { Dropdown } from "../gui/element/Dropdown"
+import { EventHandler } from "../listener/EventHandler"
 import { safeParse } from "../util/Util"
 import { Window } from "./Window"
 
@@ -116,11 +117,7 @@ export class NewChartWindow extends Window {
     }
     this.chart = new Chart(app.chartManager.sm)
     this.initView(this.viewElement)
-    window.onmessage = message => {
-      if (message.data == "smLoaded" && message.source == window) {
-        this.closeWindow()
-      }
-    }
+    EventHandler.on("smLoaded", () => this.closeWindow())
   }
 
   initView(viewElement: HTMLDivElement): void {
