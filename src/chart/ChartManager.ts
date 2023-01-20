@@ -2,6 +2,7 @@ import { Howl } from "howler"
 import { BitmapText } from "pixi.js"
 import { App } from "../App"
 import { IS_OSX, KEYBINDS } from "../data/KeybindData"
+import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { WidgetManager } from "../gui/widget/WidgetManager"
 import { Keybinds } from "../listener/Keybinds"
 import { EventHandler } from "../util/EventHandler"
@@ -446,6 +447,15 @@ export class ChartManager {
 
     this.noChartTextA.visible = false
     this.noChartTextB.visible = false
+
+    WaterfallManager.create(
+      "Loaded chart " +
+        chart.difficulty +
+        " " +
+        chart.meter +
+        " " +
+        chart.gameType.id
+    )
   }
 
   loadAudio() {
@@ -453,13 +463,19 @@ export class ChartManager {
     this.songAudio.stop()
     const musicPath = this.chart.getMusicPath()
     if (musicPath == "") {
-      console.warn("No Audio File!")
+      WaterfallManager.createFormatted(
+        "Failed to load audio: no audio file",
+        "error"
+      )
       this.songAudio = new ChartAudio(undefined)
       return
     }
     const audioFile: File | undefined = this.getAudioFile(musicPath)
     if (audioFile == undefined) {
-      console.warn("Failed to load audio file " + musicPath)
+      WaterfallManager.createFormatted(
+        "Failed to load audio: couldn't find audio file " + musicPath,
+        "error"
+      )
       this.songAudio = new ChartAudio(undefined)
       return
     }
@@ -476,7 +492,10 @@ export class ChartManager {
     )
     if (audioFile) return audioFile
 
-    console.warn("Failed to find audio file " + musicPath)
+    WaterfallManager.createFormatted(
+      "Failed to locate audio file " + musicPath,
+      "error"
+    )
 
     //Capitalization error
     let dir = this.sm_path.split("/")

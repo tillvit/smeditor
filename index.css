@@ -710,3 +710,46 @@ input.right {
 .spinner-down {
   background: linear-gradient(180deg, #484848, #555);
 }
+
+#waterfall {
+  position: absolute;
+  top: 35px;
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.waterfall-item {
+  transition: cubic-bezier(0.455, 0.03, 0.515, 0.955) 0.5s;
+  animation: waterfall-enter 0.3s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+}
+
+.waterfall-warn {
+  color: rgb(246, 202, 57);
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.waterfall-error {
+  color: rgb(183, 35, 35);
+  display: inline-block;
+  margin-right: 4px;
+}
+
+@keyframes waterfall-enter {
+  from {
+    opacity: 0;
+    transform: translate(200px, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.waterfall-exiting {
+  opacity: 0;
+  transform: translateX(200px);
+}

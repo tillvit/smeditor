@@ -93,13 +93,6 @@ export type OptionsObject = {
 }
 
 export class Options extends DefaultOptions {
-  static {
-    const obj: { [key: string]: any } = {}
-    for (const e of Object.entries(DefaultOptions)) {
-      obj[e[0]] = JSON.parse(JSON.stringify(e[1]))
-    }
-    Object.assign(this, obj)
-  }
   private static extractOptions(
     obj: { [key: string]: any },
     prefix?: string
@@ -217,3 +210,9 @@ export class Options extends DefaultOptions {
     localStorage.removeItem("options")
   }
 }
+
+const obj: { [key: string]: any } = {}
+for (const e of Object.entries(DefaultOptions)) {
+  obj[e[0]] = JSON.parse(JSON.stringify(e[1]))
+}
+Object.assign(Options, obj)

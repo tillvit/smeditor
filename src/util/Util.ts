@@ -213,3 +213,8 @@ export function lcm(array: number[]): number {
   for (let i = 0; i < array.length; ++i) n = lcm2(array[i], n)
   return n
 }
+
+export function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message
+  return String(error)
+}

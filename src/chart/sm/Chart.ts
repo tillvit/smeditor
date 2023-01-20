@@ -113,14 +113,6 @@ export class Chart {
       }
     }
     this.recalculateStats()
-    console.log(
-      "Loading chart " +
-        this.difficulty +
-        " " +
-        this.meter +
-        " " +
-        this.gameType.id
-    )
   }
 
   getNotedataStats() {

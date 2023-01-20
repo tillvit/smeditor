@@ -1,18 +1,18 @@
 import { BitmapFont, Container, Renderer, TEXT_GRADIENT, Ticker } from "pixi.js"
 import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
+import { MenubarManager } from "./gui/element/MenubarManager"
 import { Keybinds } from "./listener/Keybinds"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
+import { EventHandler } from "./util/EventHandler"
 import { FileSystem } from "./util/FileSystem"
 import { Options } from "./util/Options"
 import { TimerStats } from "./util/TimerStats"
 import { fpsUpdate, getBrowser } from "./util/Util"
-import { DirectoryWindow } from "./window/DirectoryWindow"
 import { BasicOptionsWindow } from "./window/BasicOptionsWindow"
+import { DirectoryWindow } from "./window/DirectoryWindow"
 import { WindowManager } from "./window/WindowManager"
-import { MenubarManager } from "./gui/element/MenubarManager"
-import { EventHandler } from "./util/EventHandler"
 
 declare global {
   interface Window {
@@ -270,12 +270,13 @@ export class App {
 }
 
 document.querySelector("body")!.innerHTML = `<div id="view-wrapper"> 
-  <div class="menubar"></div>
-    <canvas id="pixi"></canvas>
-  </div>
-  <div id="blocker" style="display: none"></div>
-<div id="windows"></div>
-`
+            <div class="menubar"></div>
+            <div id="waterfall"></div>
+            <canvas id="pixi"></canvas>
+          </div> 
+          <div id="blocker" style="display: none"></div>
+          <div id="windows"></div>
+        `
 
 // Check WebGL
 
@@ -320,11 +321,12 @@ function init() {
     )
     window.runSafari = () => {
       document.querySelector("body")!.innerHTML = `<div id="view-wrapper"> 
-          <div class="menubar"></div>
+            <div class="menubar"></div>
+            <div id="waterfall"></div>
             <canvas id="pixi"></canvas>
-          </div>
-        <div id="blocker" style="display: none"></div>
-        <div id="windows"></div>
+          </div> 
+          <div id="blocker" style="display: none"></div>
+          <div id="windows"></div>
         `
       window.app = new App()
       window.runSafari = undefined
