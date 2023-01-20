@@ -96,9 +96,6 @@ export class GameplayStats {
         this.combo = 0
       }
     }
-    if (isHoldDroppedTimingWindow(judge)) {
-      this.bestJudge = undefined
-    }
     this.handlers.forEach(handler => handler(error, judge))
     this.dataPoints.push({
       second: notes[0].second,
@@ -119,6 +116,9 @@ export class GameplayStats {
       Options.play.timingCollection
     ).getMaxHoldDancePoints(note.type)
     this.handlers.forEach(handler => handler(0, judge))
+    if (isHoldDroppedTimingWindow(judge)) {
+      this.bestJudge = undefined
+    }
   }
 
   getScore(): number {

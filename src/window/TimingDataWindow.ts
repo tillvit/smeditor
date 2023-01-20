@@ -1,6 +1,7 @@
 import { App } from "../App"
 import { TIMING_WINDOW_DATA } from "../data/TimingDataWindowData"
 import { Dropdown } from "../gui/element/Dropdown"
+import { EventHandler } from "../util/EventHandler"
 import { Window } from "./Window"
 
 export class TimingDataWindow extends Window {
@@ -32,6 +33,7 @@ export class TimingDataWindow extends Window {
         this.setData(this.viewElement)
       }
     }, 17)
+    EventHandler.on("timingModified", () => this.setData(this.viewElement))
   }
 
   initView(viewElement: HTMLDivElement): void {

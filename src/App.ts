@@ -12,7 +12,7 @@ import { DirectoryWindow } from "./window/DirectoryWindow"
 import { BasicOptionsWindow } from "./window/BasicOptionsWindow"
 import { WindowManager } from "./window/WindowManager"
 import { MenubarManager } from "./gui/element/MenubarManager"
-import { EventHandler } from "./listener/EventHandler"
+import { EventHandler } from "./util/EventHandler"
 
 declare global {
   interface Window {

@@ -1,20 +1,22 @@
+import { ActionHistory } from "../../util/ActionHistory"
+import { EventHandler } from "../../util/EventHandler"
 import { bsearch, clamp, roundDigit } from "../../util/Util"
 import { Chart } from "./Chart"
 import {
-  TimingEvent,
-  WarpTimingEvent,
-  StopTimingEvent,
   AttackTimingEvent,
-  TIMING_EVENT_NAMES,
-  SpeedTimingEvent,
-  TimingProperty,
-  TimingEventProperty,
-  TimingEventBase,
-  ScrollCacheTimingEvent,
-  BPMTimingEvent,
-  BeatTimingEventProperty,
   BeatTimingCache,
   BeatTimingEvent,
+  BeatTimingEventProperty,
+  BPMTimingEvent,
+  ScrollCacheTimingEvent,
+  SpeedTimingEvent,
+  StopTimingEvent,
+  TimingEvent,
+  TimingEventBase,
+  TimingEventProperty,
+  TimingProperty,
+  TIMING_EVENT_NAMES,
+  WarpTimingEvent,
 } from "./TimingTypes"
 
 type TimingPropertyCollection = {
@@ -217,27 +219,25 @@ export class TimingData {
     songTiming: boolean,
     type: Type,
     properties: Partial<Extract<TimingEvent, { type: Type }>>,
-    beat: number,
-    doCache?: boolean
+    beat: number
   ): void
   update(
     songTiming: boolean,
     type: "OFFSET",
     properties: number,
-    beat?: number,
-    doCache?: boolean
+    beat?: number
   ): void
   update<Type extends TimingProperty>(
     songTiming: boolean,
     type: Type,
     properties: Partial<Extract<TimingEvent, { type: Type }>> | number,
-    beat?: number,
-    doCache?: boolean
+    beat?: number
   ) {
     const target = songTiming ? this : this._fallback!
     if (type == "OFFSET") {
       target.offset = properties as number
-      if (doCache ?? true) this.reloadCache("OFFSET")
+      this.reloadCache("OFFSET")
+
       return
     }
     if (!target.events[type satisfies TimingEventProperty]) {
@@ -254,25 +254,78 @@ export class TimingData {
 
     beat = roundDigit(beat!, 3)
     const event = target.getTimingEventAtBeat(type, beat)
+    const newEvent: Partial<TimingEvent> = { type: type, beat: beat }
+    const toDelete: TimingEvent[] = []
+    const toAdd: TimingEvent[] = []
     if (event?.beat == beat) {
       if (Object.keys(properties).length == 0) {
-        this._delete(songTiming, event)
+        toDelete.push(event)
+
+        ActionHistory.instance.run({
+          action: () => {
+            for (const event of toDelete) {
+              this._delete(songTiming, event)
+            }
+            for (const event of toAdd) {
+              target.insert(type, event)
+            }
+          },
+          undo: () => {
+            for (const event of toAdd) {
+              this._delete(songTiming, event)
+            }
+            for (const event of toDelete) {
+              target.insert(type, event)
+            }
+          },
+        })
+        // this._delete(songTiming, event)
         return
       }
       const prevEvent = target.getTimingEventAtBeat(type, beat - 0.001)
-      const newEvent: Partial<TimingEvent> = { type: type, beat: beat }
       Object.assign(newEvent, properties)
-      this._delete(songTiming, event)
+      toDelete.push(event)
+      // this._delete(songTiming, event)
       if (!prevEvent || !this.isDuplicate(prevEvent, newEvent as TimingEvent)) {
-        target.insert(type, newEvent as TimingEvent)
+        // target.insert(type, newEvent as TimingEvent)
+        toAdd.push(newEvent as TimingEvent)
       }
     } else {
       if (Object.keys(properties).length == 0) return
-      const newEvent: Partial<TimingEvent> = { type: type, beat: beat }
       Object.assign(newEvent, properties)
-      target.insert(type, newEvent as TimingEvent)
+      // target.insert(type, newEvent as TimingEvent)
+      toAdd.push(newEvent as TimingEvent)
     }
-    if (doCache ?? true) this.reloadCache(type)
+    const bpms = this.getTimingData("BPMS")
+    const nextEvent = bpms[target.searchCache(bpms, "beat", beat) + 1]
+    if (nextEvent) {
+      if (this.isDuplicate(newEvent as TimingEvent, nextEvent)) {
+        // this._delete(songTiming, nextEvent)
+        toDelete.push(nextEvent)
+      }
+    }
+    ActionHistory.instance.run({
+      action: () => {
+        for (const event of toDelete) {
+          this._delete(songTiming, event)
+        }
+        for (const event of toAdd) {
+          target.insert(type, event)
+        }
+        this.reloadCache(type)
+        EventHandler.emit("timingModified")
+      },
+      undo: () => {
+        for (const event of toAdd) {
+          this._delete(songTiming, event)
+        }
+        for (const event of toDelete) {
+          target.insert(type, event)
+        }
+        this.reloadCache(type)
+        EventHandler.emit("timingModified")
+      },
+    })
   }
 
   private buildBeatTimingDataCache() {
@@ -544,13 +597,7 @@ export class TimingData {
     if (this._cache.stopBeats == undefined) this.buildBeatTimingDataCache()
     const bpms = this.getTimingData("BPMS")
     if (bpms.length == 0) return
-    for (let i = 0; i < bpms.length; i++) {
-      if (roundDigit(beat, 3) <= bpms[i].beat) {
-        if (i == 0) return bpms[i]
-        return bpms[i - 1]
-      }
-    }
-    return bpms[bpms.length - 1]
+    return bpms[this.searchCache(bpms, "beat", beat)]
   }
 
   getTimingEventAtBeat<Type extends TimingEventProperty>(

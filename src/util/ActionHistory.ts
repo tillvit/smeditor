@@ -1,4 +1,5 @@
 import { App } from "../App"
+import { EventHandler } from "./EventHandler"
 
 interface UndoableAction {
   action: (app: App) => void
@@ -10,9 +11,11 @@ export class ActionHistory {
   private items: UndoableAction[] = []
   private itemIndex = 0
   private app: App
+  static instance: ActionHistory
 
   constructor(app: App) {
     this.app = app
+    ActionHistory.instance = this
   }
 
   run(action: UndoableAction) {
@@ -29,6 +32,7 @@ export class ActionHistory {
     if (!this.items[this.itemIndex - 1]) return
     this.items[this.itemIndex - 1].undo(this.app)
     this.itemIndex--
+    EventHandler.emit("undo")
   }
 
   redo() {
@@ -37,6 +41,7 @@ export class ActionHistory {
       this.items[this.itemIndex].redo!(this.app)
     else this.items[this.itemIndex].action(this.app)
     this.itemIndex++
+    EventHandler.emit("redo")
   }
 
   reset() {

@@ -13,6 +13,8 @@ export abstract class Notefield extends Container {
 
   abstract update(beat: number, fromBeat: number, toBeat: number): void
 
+  abstract getNoteSprite(note: PartialNotedataEntry): Container
+
   abstract setGhostNote(note?: PartialNotedataEntry): void
 
   abstract reset(): void

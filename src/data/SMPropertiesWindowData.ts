@@ -1,5 +1,6 @@
 import { App } from "../App"
 import { SimfileProperty } from "../chart/sm/SimfileTypes"
+import { ActionHistory } from "../util/ActionHistory"
 import { FileSystem } from "../util/FileSystem"
 import { capitalize } from "../util/Util"
 import { DirectoryWindow } from "../window/DirectoryWindow"
@@ -26,7 +27,11 @@ function simpleTextOption(
         if (ev.key == "Enter") input.blur()
       }
       input.onblur = () => {
-        sm.properties[prop] = input.value
+        const lastValue = sm.properties[prop]
+        ActionHistory.instance.run({
+          action: () => (sm.properties[prop] = input.value),
+          undo: () => (sm.properties[prop] = lastValue),
+        })
       }
       input.value = sm.properties[prop] ?? ""
       return input

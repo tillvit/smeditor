@@ -8,8 +8,8 @@ import {
 import { EditMode } from "../../chart/ChartManager"
 import { Chart } from "../../chart/sm/Chart"
 import { isHoldNote } from "../../chart/sm/NoteTypes"
-import { EventHandler } from "../../listener/EventHandler"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
+import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
 import {
   clamp,

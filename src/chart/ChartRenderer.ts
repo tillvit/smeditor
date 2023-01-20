@@ -32,7 +32,7 @@ export class ChartRenderer extends Container {
   private timingAreas: TimingAreaContainer
   private timingBoxes: TimingBoxContainer
   private timingBar: TimingBarContainer
-  private notefield: Notefield
+  notefield: Notefield
   private snapDisplay: SnapContainer
   private judgment: JudgmentContainer
   private combo: ComboNumber

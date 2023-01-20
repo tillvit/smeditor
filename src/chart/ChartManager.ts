@@ -1,22 +1,22 @@
-import { App } from "../App"
-import { Simfile } from "./sm/Simfile"
-import { ChartRenderer } from "./ChartRenderer"
-import { ChartAudio } from "./audio/ChartAudio"
 import { Howl } from "howler"
-import { IS_OSX, KEYBINDS } from "../data/KeybindData"
-import { Chart } from "./sm/Chart"
 import { BitmapText } from "pixi.js"
-import { bsearch, getFPS, getTPS, roundDigit, tpsUpdate } from "../util/Util"
+import { App } from "../App"
+import { IS_OSX, KEYBINDS } from "../data/KeybindData"
+import { WidgetManager } from "../gui/widget/WidgetManager"
 import { Keybinds } from "../listener/Keybinds"
-import { isHoldNote, PartialNotedataEntry } from "./sm/NoteTypes"
+import { EventHandler } from "../util/EventHandler"
 import { Options } from "../util/Options"
+import { TimerStats } from "../util/TimerStats"
+import { bsearch, tpsUpdate } from "../util/Util"
+import { NewChartWindow } from "../window/NewChartWindow"
+import { ChartAudio } from "./audio/ChartAudio"
+import { ChartRenderer } from "./ChartRenderer"
 import { GameplayStats } from "./play/GameplayStats"
 import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
+import { Chart } from "./sm/Chart"
+import { isHoldNote, PartialNotedataEntry } from "./sm/NoteTypes"
+import { Simfile } from "./sm/Simfile"
 import { GameTypeRegistry } from "./types/GameTypeRegistry"
-import { TimerStats } from "../util/TimerStats"
-import { NewChartWindow } from "../window/NewChartWindow"
-import { WidgetManager } from "../gui/widget/WidgetManager"
-import { EventHandler } from "../listener/EventHandler"
 
 const SNAPS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 48, -1]
 
@@ -32,7 +32,7 @@ interface PartialHold {
 export enum EditMode {
   View = "View Mode",
   Edit = "Edit Mode",
-  Play = "Play Mode (Press Escape to exit)",
+  Play = "Play Mode (ESC to exit)",
 }
 
 export class ChartManager {
@@ -41,7 +41,6 @@ export class ChartManager {
   songAudio: ChartAudio = new ChartAudio()
   chartView?: ChartRenderer
   widgetManager: WidgetManager
-  info: BitmapText
   noChartTextA: BitmapText
   noChartTextB: BitmapText
   assistTick: Howl = new Howl({
@@ -151,10 +150,6 @@ export class ChartManager {
 
     this.widgetManager = new WidgetManager(this)
 
-    this.info = new BitmapText("", {
-      fontName: "Assistant",
-      fontSize: 20,
-    })
     this.noChartTextA = new BitmapText("No Chart", {
       fontName: "Assistant",
       fontSize: 30,
@@ -185,10 +180,6 @@ export class ChartManager {
     this.noChartTextA.visible = false
     this.noChartTextB.visible = false
     this.app.stage.addChild(this.noChartTextB)
-    this.info.x = 0
-    this.info.y = 0
-    this.info.zIndex = 1
-    this.app.stage.addChild(this.info)
     this.app.stage.addChild(this.widgetManager)
     this.app.ticker.add(() => {
       if (
@@ -201,27 +192,6 @@ export class ChartManager {
       this.chartView?.renderThis()
       this.widgetManager.update()
       TimerStats.endTime("ChartRenderer Update Time")
-      this.info.text =
-        this.mode +
-        "\nTime: " +
-        roundDigit(this.time, 3) +
-        "\nBeat: " +
-        roundDigit(this.beat, 3) +
-        "\nFPS: " +
-        getFPS() +
-        "\nTPS: " +
-        getTPS() +
-        "\nNote Type: " +
-        this.chart.gameType.editNoteTypes[this.editNoteTypeIndex]
-      if (Options.debug.showTimers)
-        this.info.text +=
-          "\n" +
-          TimerStats.getTimers()
-            .map(timer => timer.name + ": " + timer.lastTime.toFixed(3) + "ms")
-            .join("\n")
-      // for (let hold of this.holdEditing) {
-      //   this.info.text += hold == undefined ? "\nundefined" : "\n" + JSON.stringify(hold)
-      // }
     })
 
     setInterval(() => {

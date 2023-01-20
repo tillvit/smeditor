@@ -3,7 +3,7 @@ import { Chart } from "../chart/sm/Chart"
 import { CHART_DIFFICULTIES } from "../chart/sm/ChartTypes"
 import { GameTypeRegistry } from "../chart/types/GameTypeRegistry"
 import { Dropdown } from "../gui/element/Dropdown"
-import { EventHandler } from "../listener/EventHandler"
+import { EventHandler } from "../util/EventHandler"
 import { safeParse } from "../util/Util"
 import { Window } from "./Window"
 

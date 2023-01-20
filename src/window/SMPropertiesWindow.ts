@@ -1,6 +1,6 @@
 import { App } from "../App"
 import { SM_PROPERTIES_WINDOW_DATA } from "../data/SMPropertiesWindowData"
-import { EventHandler } from "../listener/EventHandler"
+import { EventHandler } from "../util/EventHandler"
 import { Window } from "./Window"
 
 export class SMPropertiesWindow extends Window {
@@ -25,6 +25,12 @@ export class SMPropertiesWindow extends Window {
     this.callback = callback
     this.initView(this.viewElement)
     EventHandler.on("smLoaded", () => this.initView(this.viewElement))
+    EventHandler.on("undo", () => {
+      this.initView(this.viewElement)
+    })
+    EventHandler.on("redo", () => {
+      this.initView(this.viewElement)
+    })
   }
 
   initView(viewElement: HTMLDivElement): void {

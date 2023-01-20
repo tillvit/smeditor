@@ -2,7 +2,7 @@ import { App } from "../App"
 import { Chart } from "../chart/sm/Chart"
 import { GameType, GameTypeRegistry } from "../chart/types/GameTypeRegistry"
 import { Dropdown } from "../gui/element/Dropdown"
-import { EventHandler } from "../listener/EventHandler"
+import { EventHandler } from "../util/EventHandler"
 import { Window } from "./Window"
 
 type ChartListItem = HTMLDivElement & {

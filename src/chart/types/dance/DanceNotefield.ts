@@ -1,3 +1,4 @@
+import { Container } from "pixi.js"
 import { Options } from "../../../util/Options"
 import { EditMode } from "../../ChartManager"
 import { ChartRenderer } from "../../ChartRenderer"
@@ -48,6 +49,12 @@ export class DanceNotefield extends Notefield {
     }
     DanceNoteRenderer.setData(this, this.ghostNote, note)
     this.ghostNote.x = this.getColX(note.col)
+  }
+
+  getNoteSprite(note: PartialNotedataEntry): Container {
+    const spr = DanceNoteRenderer.createArrow()
+    DanceNoteRenderer.setData(this, spr, note)
+    return spr
   }
 
   update(beat: number, fromBeat: number, toBeat: number): void {

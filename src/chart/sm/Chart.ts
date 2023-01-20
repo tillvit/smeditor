@@ -1,4 +1,4 @@
-import { EventHandler } from "../../listener/EventHandler"
+import { EventHandler } from "../../util/EventHandler"
 import { bsearch } from "../../util/Util"
 import { GameType, GameTypeRegistry } from "../types/GameTypeRegistry"
 import { ChartDifficulty, CHART_DIFFICULTIES } from "./ChartTypes"

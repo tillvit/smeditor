@@ -48,6 +48,8 @@ export class PlayInfoWidget extends Widget {
   private easeVelocity = 0
   private toggled = false
   private hovered = false
+  private drag = false
+  private dragStart = 0
 
   constructor(manager: WidgetManager) {
     super(manager)
@@ -61,7 +63,29 @@ export class PlayInfoWidget extends Widget {
 
     this.on("mousedown", () => {
       if (this.manager.chartManager.getMode() == EditMode.Play) return
-      this.toggled = !this.toggled
+      this.drag = true
+      this.dragStart = Date.now()
+    })
+
+    window.addEventListener("mousemove", event => {
+      if (this.drag) {
+        this.showEase += event.movementY / -350
+      }
+    })
+
+    this.on("mouseup", () => {
+      if (this.drag) {
+        if (Date.now() - this.dragStart > 400) {
+          this.toggled = this.showEase > 0.5
+        } else {
+          this.hovered = false
+          this.toggled = !this.toggled
+        }
+      }
+    })
+
+    window.addEventListener("mouseup", () => {
+      this.drag = false
     })
 
     this.on("mouseenter", () => {
@@ -186,14 +210,21 @@ export class PlayInfoWidget extends Widget {
       else line.height = line.targetHeight
     }
 
-    const easeTo =
-      this.manager.chartManager.getMode() == EditMode.Play || this.toggled
-        ? 1
-        : Number(this.hovered) * 0.05
-    this.easeVelocity += (easeTo - this.showEase) * 0.05
-    this.easeVelocity *= 0.75
-    this.showEase += this.easeVelocity
-    this.y += (1 - this.showEase) * 350
+    if (Options.performance.smoothAnimations) {
+      const easeTo =
+        this.manager.chartManager.getMode() == EditMode.Play || this.toggled
+          ? 1
+          : Number(this.hovered) * 0.05
+      if (!this.drag) {
+        this.easeVelocity += (easeTo - this.showEase) * 0.05
+        this.showEase += this.easeVelocity
+      }
+      if (this.easeVelocity < 0 && this.showEase < 0) this.easeVelocity *= -1
+      this.easeVelocity *= 0.75
+      this.y += (1 - this.showEase) * 350
+    } else {
+      if (this.manager.chartManager.getMode() != EditMode.Play) this.y += 350
+    }
   }
 
   private newLine(): HistogramLine {
