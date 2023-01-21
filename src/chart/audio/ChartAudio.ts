@@ -1,3 +1,4 @@
+import { WaterfallManager } from "../../gui/element/WaterfallManager"
 import { Waveform } from "../renderer/Waveform"
 
 export class ChartAudio {
@@ -33,7 +34,18 @@ export class ChartAudio {
           return buffer
         })
         .then(buffer => this.renderBuffer(buffer))
-        .catch(reason => console.error(reason))
+        .catch((reason: Error) => {
+          if (reason.name == "EncodingError")
+            WaterfallManager.createFormatted(
+              "Failed to load audio: file format not supported",
+              "error"
+            )
+          else
+            WaterfallManager.createFormatted(
+              "Failed to load audio: " + reason.message,
+              "error"
+            )
+        })
         .finally(() => {
           this.initSource()
           this.callListeners()
@@ -58,8 +70,11 @@ export class ChartAudio {
       .then(renderedBuffer => {
         this._buffer = renderedBuffer
       })
-      .catch(err => {
-        console.error(`Rendering failed: ${err}`)
+      .catch(() => {
+        WaterfallManager.createFormatted(
+          "Failed to load audio: audio rendering failed",
+          "error"
+        )
       })
   }
 

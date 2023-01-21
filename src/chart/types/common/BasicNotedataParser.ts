@@ -1,3 +1,4 @@
+import { getDivision, lcm, lcm2, roundDigit } from "../../../util/Util"
 import {
   isHoldNote,
   Notedata,
@@ -8,6 +9,7 @@ import {
 } from "../../sm/NoteTypes"
 import { TimingData } from "../../sm/TimingData"
 import { NotedataParser } from "../base/NotedataParser"
+import { GameType } from "../GameTypeRegistry"
 
 const NOTE_TYPE_LOOKUP: Record<string, string> = {
   "1": "Tap",
@@ -18,7 +20,68 @@ const NOTE_TYPE_LOOKUP: Record<string, string> = {
   L: "Lift",
 }
 
+const NOTE_TYPE_LOOKUP_REV: Record<string, string> = {
+  Tap: "1",
+  Hold: "2",
+  Roll: "4",
+  Mine: "M",
+  Fake: "F",
+  Lift: "L",
+}
+
 export class BasicNotedataParser extends NotedataParser {
+  serialize(notedata: PartialNotedata, gameType: GameType): string {
+    if (notedata.length == 0) return ""
+    const measures = []
+    let nIndex = 0
+    const holdEnds: PartialHoldNotedataEntry[] = notedata.filter(isHoldNote)
+    const lastNote = notedata.at(-1)!
+    const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
+    for (let measure = 0; measure < Math.floor(lastBeat / 4); measure++) {
+      let measureString = "// measure " + measure + "\n"
+      const measureNotes = []
+      while (notedata[nIndex]?.beat < measure * 4 + 4) {
+        measureNotes.push(notedata[nIndex++])
+      }
+      const measureHoldNotes = []
+      while (holdEnds[0]?.beat + holdEnds[0]?.hold < measure * 4 + 4) {
+        measureHoldNotes.push(holdEnds.shift()!)
+      }
+      const division = Math.max(
+        4,
+        lcm2(
+          lcm(measureNotes.map(note => getDivision(note.beat))),
+          lcm(measureHoldNotes.map(note => getDivision(note.beat + note.hold)))
+        )
+      )
+      for (
+        let beat = measure * 4;
+        beat < measure * 4 + 4;
+        beat += 4 / division
+      ) {
+        const row = new Array(gameType.numCols).fill("0")
+        while (
+          roundDigit(measureNotes[0]?.beat ?? -1, 3) == roundDigit(beat, 3)
+        ) {
+          const note = measureNotes.shift()!
+          row[note.col] = NOTE_TYPE_LOOKUP_REV[note.type]
+        }
+        while (
+          roundDigit(
+            measureHoldNotes[0]?.beat + measureHoldNotes[0]?.hold ?? -1,
+            3
+          ) == roundDigit(beat, 3)
+        ) {
+          const note = measureHoldNotes.shift()!
+          row[note.col] = "3"
+        }
+        measureString += row.join("") + "\n"
+      }
+      measures.push(measureString)
+    }
+    return measures.join(",  ")
+  }
+
   fromString(data: string): PartialNotedata {
     const measures = data.split(",")
     const notedata: PartialNotedata = []

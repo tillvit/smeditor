@@ -18,7 +18,6 @@ export class WindowManager {
   }
 
   openWindow(window: Window) {
-    if (!this.windows.every(window => !window.options.blocking)) return
     if (window.options.win_id) {
       const existingWindow = this.getWindowById(window.options.win_id)
       if (existingWindow) {

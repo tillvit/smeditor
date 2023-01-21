@@ -1,7 +1,7 @@
-import { App } from "../App"
-import { KEYBINDS } from "../data/KeybindData"
-import { MENUBAR_DATA, MenuOption } from "../data/MenubarData"
-import { Keybinds } from "../listener/Keybinds"
+import { App } from "../../App"
+import { KEYBINDS } from "../../data/KeybindData"
+import { MENUBAR_DATA, MenuOption } from "../../data/MenubarData"
+import { Keybinds } from "../../listener/Keybinds"
 
 export class MenubarManager {
   app: App

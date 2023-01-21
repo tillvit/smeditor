@@ -1,20 +1,22 @@
+import { ActionHistory } from "../../util/ActionHistory"
+import { EventHandler } from "../../util/EventHandler"
 import { bsearch, clamp, roundDigit } from "../../util/Util"
 import { Chart } from "./Chart"
 import {
-  TimingEvent,
-  WarpTimingEvent,
-  StopTimingEvent,
   AttackTimingEvent,
-  TIMING_EVENT_NAMES,
-  SpeedTimingEvent,
-  TimingProperty,
-  TimingEventProperty,
-  TimingEventBase,
-  ScrollCacheTimingEvent,
-  BPMTimingEvent,
-  BeatTimingEventProperty,
   BeatTimingCache,
   BeatTimingEvent,
+  BeatTimingEventProperty,
+  BPMTimingEvent,
+  ScrollCacheTimingEvent,
+  SpeedTimingEvent,
+  StopTimingEvent,
+  TimingEvent,
+  TimingEventBase,
+  TimingEventProperty,
+  TimingProperty,
+  TIMING_EVENT_NAMES,
+  WarpTimingEvent,
 } from "./TimingTypes"
 
 type TimingPropertyCollection = {
@@ -68,7 +70,7 @@ export class TimingData {
             value: parseFloat(match[3]),
             mods: match[4],
           }
-          this.insert("ATTACKS", event, false)
+          this._insert("ATTACKS", event, false)
         }
         return
       }
@@ -139,29 +141,41 @@ export class TimingData {
             color2: temp[10],
           }
       }
-      this.insert(type, event!, false)
+      this._insert(type, event!, false)
     }
   }
 
-  insert(type: TimingEventProperty, event: TimingEvent, doCache?: boolean) {
+  private _insert(
+    type: TimingEventProperty,
+    event: TimingEvent,
+    doCache?: boolean
+  ) {
     this.binsert(type, event)
     if (doCache ?? true) this.reloadCache(type)
   }
 
   delete(songTiming: boolean, type: TimingEventProperty, time: number) {
-    if (!songTiming) {
-      this._fallback!.delete(true, type, time)
-      this.reloadCache(type)
-      return
-    }
-    if (!this.events[type]) return
+    const target = songTiming ? this : this._fallback!
+    if (!target.events[type]) return
     time = roundDigit(time, 3)
-    const i = this.bindex(type, { type, beat: time, second: time })
-    if (i > -1) {
-      if (i == 0 && type == "BPMS") return
-      this.events[type]!.splice(i, 1)
-      this.reloadCache(type)
-    }
+    const i = target.bindex(type, { type, beat: time, second: time })
+    if (i == -1) return
+    if (i == 0 && type == "BPMS") return
+    const event = target.events[type]![i]
+    ActionHistory.instance.run({
+      action: () => {
+        target._delete(true, event)
+        target.reloadCache(type)
+        if (this != target) this.reloadCache(type)
+        EventHandler.emit("timingModified")
+      },
+      undo: () => {
+        target._insert(event.type, event)
+        target.reloadCache(type)
+        if (this != target) this.reloadCache(type)
+        EventHandler.emit("timingModified")
+      },
+    })
   }
 
   private _delete(songTiming: boolean, event: TimingEvent, doCache?: boolean) {
@@ -213,31 +227,29 @@ export class TimingData {
     }
   }
 
-  update<Type extends TimingProperty>(
+  insert<Type extends TimingProperty>(
     songTiming: boolean,
     type: Type,
     properties: Partial<Extract<TimingEvent, { type: Type }>>,
-    beat: number,
-    doCache?: boolean
+    beat: number
   ): void
-  update(
+  insert(
     songTiming: boolean,
     type: "OFFSET",
     properties: number,
-    beat?: number,
-    doCache?: boolean
+    beat?: number
   ): void
-  update<Type extends TimingProperty>(
+  insert<Type extends TimingProperty>(
     songTiming: boolean,
     type: Type,
     properties: Partial<Extract<TimingEvent, { type: Type }>> | number,
-    beat?: number,
-    doCache?: boolean
+    beat?: number
   ) {
     const target = songTiming ? this : this._fallback!
     if (type == "OFFSET") {
       target.offset = properties as number
-      if (doCache ?? true) this.reloadCache("OFFSET")
+      this.reloadCache("OFFSET")
+
       return
     }
     if (!target.events[type satisfies TimingEventProperty]) {
@@ -254,25 +266,76 @@ export class TimingData {
 
     beat = roundDigit(beat!, 3)
     const event = target.getTimingEventAtBeat(type, beat)
+    const newEvent: Partial<TimingEvent> = { type: type, beat: beat }
+    const toDelete: TimingEvent[] = []
+    const toAdd: TimingEvent[] = []
     if (event?.beat == beat) {
       if (Object.keys(properties).length == 0) {
-        this._delete(songTiming, event)
+        toDelete.push(event)
+
+        ActionHistory.instance.run({
+          action: () => {
+            for (const event of toDelete) {
+              this._delete(songTiming, event)
+            }
+            for (const event of toAdd) {
+              target._insert(type, event)
+            }
+          },
+          undo: () => {
+            for (const event of toAdd) {
+              target._insert(type, event)
+            }
+            for (const event of toDelete) {
+              this._delete(songTiming, event)
+            }
+          },
+        })
         return
       }
       const prevEvent = target.getTimingEventAtBeat(type, beat - 0.001)
-      const newEvent: Partial<TimingEvent> = { type: type, beat: beat }
       Object.assign(newEvent, properties)
-      this._delete(songTiming, event)
+      toDelete.push(event)
       if (!prevEvent || !this.isDuplicate(prevEvent, newEvent as TimingEvent)) {
-        target.insert(type, newEvent as TimingEvent)
+        toAdd.push(newEvent as TimingEvent)
       }
     } else {
       if (Object.keys(properties).length == 0) return
-      const newEvent: Partial<TimingEvent> = { type: type, beat: beat }
       Object.assign(newEvent, properties)
-      target.insert(type, newEvent as TimingEvent)
+      toAdd.push(newEvent as TimingEvent)
     }
-    if (doCache ?? true) this.reloadCache(type)
+    const bpms = this.getTimingData("BPMS")
+    const nextEvent = bpms[target.searchCache(bpms, "beat", beat) + 1]
+    if (nextEvent) {
+      if (this.isDuplicate(newEvent as TimingEvent, nextEvent)) {
+        toDelete.push(nextEvent)
+      }
+    }
+    console.log(toAdd, toDelete)
+    ActionHistory.instance.run({
+      action: () => {
+        for (const event of toDelete) {
+          this._delete(songTiming, event)
+        }
+        for (const event of toAdd) {
+          target._insert(type, event)
+        }
+        this.reloadCache(type)
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+      },
+      undo: () => {
+        for (const event of toAdd) {
+          this._delete(songTiming, event)
+        }
+        for (const event of toDelete) {
+          target._insert(type, event)
+        }
+        this.reloadCache(type)
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+      },
+    })
   }
 
   private buildBeatTimingDataCache() {
@@ -544,13 +607,7 @@ export class TimingData {
     if (this._cache.stopBeats == undefined) this.buildBeatTimingDataCache()
     const bpms = this.getTimingData("BPMS")
     if (bpms.length == 0) return
-    for (let i = 0; i < bpms.length; i++) {
-      if (roundDigit(beat, 3) <= bpms[i].beat) {
-        if (i == 0) return bpms[i]
-        return bpms[i - 1]
-      }
-    }
-    return bpms[bpms.length - 1]
+    return bpms[this.searchCache(bpms, "beat", beat)]
   }
 
   getTimingEventAtBeat<Type extends TimingEventProperty>(
@@ -612,6 +669,10 @@ export class TimingData {
     return -1
   }
 
+  getBeatTiming(): BeatTimingCache[] {
+    return this._cache.beatTiming!
+  }
+
   getTimingData(): TimingEvent[]
   getTimingData(...props: ["OFFSET"]): number
   getTimingData<Type extends TimingProperty>(
@@ -635,5 +696,151 @@ export class TimingData {
       if (value) return false
     }
     return true
+  }
+
+  serialize(type: "sm" | "ssc"): string {
+    let str = ""
+    if (this.offset) str += "#OFFSET:" + this.offset + ";\n"
+    let props = [
+      "BPMS",
+      "STOPS",
+      "DELAYS",
+      "SPEEDS",
+      "SCROLLS",
+      "TICKCOUNTS",
+      "TIMESIGNATURES",
+      "LABELS",
+      "COMBOS",
+      "FAKES",
+      "BGCHANGES",
+      "FGCHANGES",
+      "ATTACKS",
+    ] satisfies TimingEventProperty[]
+    if (type == "sm") {
+      props = [
+        "BPMS",
+        "STOPS",
+        "TIMESIGNATURES",
+        "BGCHANGES",
+        "FGCHANGES",
+        "ATTACKS",
+      ]
+    }
+    for (const prop of props) {
+      str += this.formatProperty(prop)
+    }
+    return str
+  }
+
+  private formatProperty(prop: TimingEventProperty): string {
+    const precision = 3
+    if (!this._fallback && !this.events[prop]) return ""
+    let str = ""
+    switch (prop) {
+      case "ATTACKS": {
+        const events = this.getTimingData(prop)
+        str = events
+          .map(
+            event =>
+              `TIME=${event.second}${event.endType}=${event.value}:MODS=${event.mods}`
+          )
+          .join(":\n")
+        break
+      }
+      case "BGCHANGES":
+      case "FGCHANGES": {
+        const events = this.getTimingData(prop)
+        str = events
+          .map(
+            event =>
+              `${event.beat}=${event.file}=${roundDigit(
+                event.updateRate,
+                precision
+              ).toFixed(precision)}=${Number(event.crossFade)}=${Number(
+                event.stretchRewind
+              )}=${Number(event.stretchNoLoop)}=${event.effect}=${
+                event.file2
+              }=${event.transition}=${event.color1}=${event.color2}`
+          )
+          .join(",\n")
+        break
+      }
+      case "BPMS":
+      case "DELAYS":
+      case "FAKES":
+      case "SCROLLS":
+      case "STOPS":
+      case "WARPS": {
+        const events = this.getTimingData(prop)
+        str = events
+          .map(
+            event =>
+              `${roundDigit(event.beat, precision).toFixed(
+                precision
+              )}=${roundDigit(event.value, precision).toFixed(precision)}`
+          )
+          .join(",\n")
+        break
+      }
+      case "COMBOS": {
+        const events = this.getTimingData(prop)
+        str = events
+          .map(event => {
+            if (event.hitMult == event.missMult) {
+              return `${roundDigit(event.beat, precision).toFixed(precision)}=${
+                event.hitMult
+              }`
+            }
+            return `${roundDigit(event.beat, precision).toFixed(precision)}=${
+              event.hitMult
+            }=${event.missMult}`
+          })
+          .join(",\n")
+        break
+      }
+      case "LABELS":
+      case "TICKCOUNTS": {
+        const events = this.getTimingData(prop)
+        str = events
+          .map(
+            event =>
+              `${roundDigit(event.beat, precision).toFixed(precision)}=${
+                event.value
+              }`
+          )
+          .join(",\n")
+        break
+      }
+      case "SPEEDS": {
+        const events = this.getTimingData(prop)
+        str = events
+          .map(
+            event =>
+              `${roundDigit(event.beat, precision).toFixed(
+                precision
+              )}=${roundDigit(event.value, precision).toFixed(
+                precision
+              )}=${roundDigit(event.delay, precision).toFixed(precision)}=${
+                event.unit == "B" ? 0 : 1
+              }`
+          )
+          .join(",\n")
+        break
+      }
+      case "TIMESIGNATURES": {
+        const events = this.getTimingData(prop)
+        str = events
+          .map(
+            event =>
+              `${roundDigit(event.beat, precision).toFixed(precision)}=${
+                event.upper
+              }=${event.lower}`
+          )
+          .join(",\n")
+        break
+      }
+    }
+    if (str.includes(",")) str += "\n"
+    return "#" + prop + ":" + str + ";\n"
   }
 }

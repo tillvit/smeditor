@@ -321,6 +321,10 @@ export class TimingWindowCollection {
     return [...this.windows]
   }
 
+  getHoldWindows(): HoldTimingWindow[] {
+    return [...Object.values(this.holdWindows)]
+  }
+
   static getCollection(name: string): TimingWindowCollection {
     return this.COLLECTIONS[name] ?? this.COLLECTIONS.ITG
   }

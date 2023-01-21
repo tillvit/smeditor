@@ -1,16 +1,17 @@
-import { BitmapFont, Container, Renderer, Ticker } from "pixi.js"
+import { BitmapFont, Container, Renderer, TEXT_GRADIENT, Ticker } from "pixi.js"
 import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
-import { MenubarManager } from "./gui/MenubarManager"
+import { MenubarManager } from "./gui/element/MenubarManager"
 import { Keybinds } from "./listener/Keybinds"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
+import { EventHandler } from "./util/EventHandler"
 import { FileSystem } from "./util/FileSystem"
 import { Options } from "./util/Options"
 import { TimerStats } from "./util/TimerStats"
-import { getBrowser } from "./util/Util"
-import { DirectoryWindow } from "./window/DirectoryWindow"
+import { fpsUpdate, getBrowser } from "./util/Util"
 import { BasicOptionsWindow } from "./window/BasicOptionsWindow"
+import { DirectoryWindow } from "./window/DirectoryWindow"
 import { WindowManager } from "./window/WindowManager"
 
 declare global {
@@ -44,6 +45,7 @@ export class App {
     this.view = document.getElementById("pixi") as HTMLCanvasElement
 
     this.stage = new Container()
+    this.stage.sortableChildren = true
     this.renderer = new Renderer({
       backgroundColor: 0x18191c,
       antialias: false,
@@ -60,6 +62,7 @@ export class App {
       this.renderer.render(this.stage)
       TimerStats.endTime("Render Time")
       TimerStats.endFrame()
+      fpsUpdate()
     })
     this.ticker.start()
     this.stage.sortableChildren = true
@@ -85,22 +88,17 @@ export class App {
     this.onResize()
 
     console.log(
-      `smeditor is currently a work in progress. editing is almost start since the viewer is almost done!`
+      `smeditor is currently a work in progress. check the github repo for more info!`
     )
-    console.log(
-      `audio filtering is working (hopefully) but not yet implemented into UI`
-    )
-    // console.log(`use audio.filters = [new BiquadFilter(options)...] and then audio.processFilters()`)
-    // console.log(`syntax: new BiquadFilter(type, gain, freq, sampleRate, bandwidth)
-    // type: lowpass, highpass, bandpass, peaking, notch, lowshelf, highshelf
-    // gain: change in dB (used for peaking, lowshelf, highshelf)
-    // freq: where the filter frequency center is (or end if it is a lowpass/highpass)
-    // sampleRate: usually 44100
-    // bandwidth: width of the effect in octaves (used for lowpass, highpass, bandpass, peaking, notch)`)
 
     this.windowManager.openWindow(
       new BasicOptionsWindow(this, "select_sm_initial")
     )
+
+    // window.onbeforeunload = event => {
+    //   event.preventDefault()
+    //   return (event.returnValue = "Are you sure you want to exit?")
+    // }
 
     window.onunload = () => {
       Options.saveOptions()
@@ -114,6 +112,29 @@ export class App {
         fontFamily: "Assistant",
         fontSize: 20,
         fill: "white",
+      },
+      {
+        chars: [
+          ["a", "z"],
+          ["A", "Z"],
+          "!@#$%^&*()~{}[]:.-?=,",
+          "0123456789/",
+          " ",
+        ],
+        resolution: window.devicePixelRatio,
+      }
+    )
+
+    BitmapFont.from(
+      "Assistant-Fancy",
+      {
+        fontFamily: "Assistant",
+        fontSize: 40,
+        fontWeight: "700",
+        fill: ["#dddddd", "#ffffff"],
+        fillGradientType: TEXT_GRADIENT.LINEAR_VERTICAL,
+        stroke: 0xaaaaaa,
+        strokeThickness: 3,
       },
       {
         chars: [
@@ -154,7 +175,7 @@ export class App {
         this.lastHeight = window.innerHeight
         this.lastWidth = window.innerWidth
         this.onResize()
-        window.postMessage("resize")
+        EventHandler.emit("resize")
       }
     }, 100)
 
@@ -249,12 +270,13 @@ export class App {
 }
 
 document.querySelector("body")!.innerHTML = `<div id="view-wrapper"> 
-  <div class="menubar"></div>
-    <canvas id="pixi"></canvas>
-  </div>
-  <div id="blocker" style="display: none"></div>
-<div id="windows"></div>
-`
+            <div class="menubar"></div>
+            <div id="waterfall"></div>
+            <canvas id="pixi"></canvas>
+          </div> 
+          <div id="blocker" style="display: none"></div>
+          <div id="windows"></div>
+        `
 
 // Check WebGL
 
@@ -299,11 +321,12 @@ function init() {
     )
     window.runSafari = () => {
       document.querySelector("body")!.innerHTML = `<div id="view-wrapper"> 
-          <div class="menubar"></div>
+            <div class="menubar"></div>
+            <div id="waterfall"></div>
             <canvas id="pixi"></canvas>
-          </div>
-        <div id="blocker" style="display: none"></div>
-        <div id="windows"></div>
+          </div> 
+          <div id="blocker" style="display: none"></div>
+          <div id="windows"></div>
         `
       window.app = new App()
       window.runSafari = undefined

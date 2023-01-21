@@ -1,3 +1,4 @@
+import { EventHandler } from "../../util/EventHandler"
 import { bsearch } from "../../util/Util"
 import { GameType, GameTypeRegistry } from "../types/GameTypeRegistry"
 import { ChartDifficulty, CHART_DIFFICULTIES } from "./ChartTypes"
@@ -21,6 +22,7 @@ export class Chart {
   description = ""
   difficulty: ChartDifficulty = "Beginner"
   meter = 1
+  meterF = 1
   radarValues = ""
   chartName = ""
   chartStyle = ""
@@ -28,8 +30,11 @@ export class Chart {
   music?: string
   timingData: TimingData
   sm: Simfile
+  other_properties: { [key: string]: string } = {}
 
   notedata: Notedata = []
+
+  dirty = false
   private _notedataStats?: NotedataStats
 
   constructor(sm: Simfile, data?: string | { [key: string]: string }) {
@@ -54,6 +59,7 @@ export class Chart {
         this.difficulty = dict["DIFFICULTY"] as ChartDifficulty
       else throw Error("Unknown chart difficulty " + dict["DIFFICULTY"])
       this.meter = parseInt(dict["METER"]) ?? 0
+      this.meterF = parseFloat(dict["METERF"]) ?? 0
       this.radarValues = dict["RADARVALUES"] ?? ""
       this.notedata =
         gameType.parser
@@ -63,6 +69,26 @@ export class Chart {
       this.chartName = dict["CHARTNAME"] ?? ""
       this.chartStyle = dict["CHARTSTYLE"] ?? ""
       this.music = dict["MUSIC"]
+      for (const key in dict) {
+        if (
+          [
+            "STEPSTYPE",
+            "DESCRIPTION",
+            "DIFFICULTY",
+            "METER",
+            "METERF",
+            "RADARVALUES",
+            "CREDIT",
+            "CHARTNAME",
+            "CHARTSTYLE",
+            "MUSIC",
+            "NOTES",
+            "NOTEDATA",
+          ].includes(key)
+        )
+          continue
+        this.other_properties[key] = dict[key]
+      }
     } else {
       const match =
         /([\w\d-]+):[\s ]*([^:]*):[\s ]*([\w\d]+):[\s ]*([\d]+):[\s ]*([\d.,]+):[\s ]*([\w\d\s, ]+)/g.exec(
@@ -87,14 +113,6 @@ export class Chart {
       }
     }
     this.recalculateStats()
-    console.log(
-      "Loading chart " +
-        this.difficulty +
-        " " +
-        this.meter +
-        " " +
-        this.gameType.id
-    )
   }
 
   getNotedataStats() {
@@ -144,8 +162,7 @@ export class Chart {
     let index = bsearch(this.notedata, note.beat, a => a.beat) + 1
     if (index >= 1 && this.notedata[index - 1].beat > note.beat) index--
     this.notedata.splice(index, 0, computedNote)
-    this.recalculateStats()
-    window.postMessage("chartModified")
+    EventHandler.emit("chartModified")
     return computedNote
   }
 
@@ -164,29 +181,27 @@ export class Chart {
     this.notedata.splice(i, 1)
     Object.assign(noteToModify, properties)
     this.addNote(noteToModify)
-    window.postMessage("chartModified")
+    EventHandler.emit("chartModified")
   }
 
   removeNote(note: PartialNotedataEntry): NotedataEntry | undefined {
     const i = this.getNoteIndex(note)
     if (i == -1) return
     const removedNote = this.notedata.splice(i, 1)
-    this.recalculateStats()
-    window.postMessage("chartModified")
+    EventHandler.emit("chartModified")
     return removedNote[0]
   }
 
   setNotedata(notedata: Notedata) {
     this.notedata = notedata
-    this.recalculateStats()
-    window.postMessage("chartModified")
+    EventHandler.emit("chartModified")
   }
 
   recalculateNotes() {
     this.notedata = this.notedata.map(note => this.computeNote(note))
   }
 
-  private recalculateStats() {
+  recalculateStats() {
     this._notedataStats = this.gameType.parser.getStats(
       this.notedata,
       this.timingData
@@ -199,5 +214,40 @@ export class Chart {
 
   toString(): string {
     return this.difficulty + " " + this.meter
+  }
+
+  serialize(type: "sm" | "ssc"): string {
+    let str =
+      "//---------------" +
+      this.gameType.id +
+      " - " +
+      this.description +
+      "---------------\n"
+    if (type == "sm") {
+      str += "#NOTES:\n"
+      str += `     ${this.gameType.id}:\n`
+      str += `     ${this.description}:\n`
+      str += `     ${this.difficulty}:\n`
+      str += `     ${this.meter}:\n`
+      str += `     ${this.radarValues}:\n`
+    } else {
+      str += "#NOTEDATA:;\n"
+      str += `#CHARTNAME:${this.chartName};\n`
+      str += `#CHARTSTYLE:${this.chartStyle};\n`
+      str += `#CREDIT:${this.credit};\n`
+      if (this.music) str += `#MUSIC:${this.music};\n`
+      str += `#STEPSTYPE:${this.gameType.id};\n`
+      str += `#DESCRIPTION:${this.description};\n`
+      str += `#DIFFICULTY:${this.difficulty};\n`
+      str += `#METER:${this.meter};\n`
+      str += `#METERF:${this.meterF};\n`
+      str += `#RADARVALUES:${this.radarValues};\n`
+      for (const key in this.other_properties) {
+        str += `#${key}:${this.other_properties[key]};\n`
+      }
+      str += `#NOTES:\n`
+    }
+    str += this.gameType.parser.serialize(this.notedata, this.gameType) + ";\n"
+    return str
   }
 }

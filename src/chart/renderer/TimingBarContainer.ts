@@ -1,6 +1,6 @@
 import { BitmapText, Container, Graphics, Sprite, Texture } from "pixi.js"
 import { Options } from "../../util/Options"
-import { clamp, destroyChildIf, median } from "../../util/Util"
+import { clamp, destroyChildIf, lerp, median } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { TimingWindow } from "../play/TimingWindow"
@@ -24,9 +24,8 @@ const BAR_WIDTH = 1
 const BAR_HEIGHT = 15
 
 const errorStyle = {
-  fontName: "Assistant",
+  fontName: "Assistant-Fancy",
   fontSize: 12,
-  fill: ["#ffffff"],
 }
 
 export class TimingBarContainer extends Container {
@@ -71,8 +70,11 @@ export class TimingBarContainer extends Container {
     this.visible = this.renderer.chartManager.getMode() == EditMode.Play
     for (const child of this.barlines.children) {
       const barline = child
-      const t = (5000 - (Date.now() - barline.createTime)) / 4000
-      child.alpha = Math.min(1, t)
+      const t = (Date.now() - barline.createTime) / 5000
+      if (t < 0.05) child.alpha = 1
+      else if (t < 0.3) child.alpha = lerp(1, 0.2, (t - 0.05) / 0.25)
+      else if (t < 0.9) child.alpha = 0.2
+      else child.alpha = (1 - t) * 3
     }
     this.errorText.alpha = clamp(
       (2000 - (Date.now() - this.errorTextTime)) / 1000,

@@ -1,5 +1,6 @@
 import { App } from "../App"
 import { SimfileProperty } from "../chart/sm/SimfileTypes"
+import { ActionHistory } from "../util/ActionHistory"
 import { FileSystem } from "../util/FileSystem"
 import { capitalize } from "../util/Util"
 import { DirectoryWindow } from "../window/DirectoryWindow"
@@ -26,7 +27,11 @@ function simpleTextOption(
         if (ev.key == "Enter") input.blur()
       }
       input.onblur = () => {
-        sm.properties[prop] = input.value
+        const lastValue = sm.properties[prop]
+        ActionHistory.instance.run({
+          action: () => (sm.properties[prop] = input.value),
+          undo: () => (sm.properties[prop] = lastValue),
+        })
       }
       input.value = sm.properties[prop] ?? ""
       return input
@@ -81,7 +86,9 @@ function fileOption(
                 handleInput()
               },
             },
-            dir + "/" + (sm.properties[prop] ?? "")
+            sm.properties[prop]
+              ? dir + "/" + sm.properties[prop]
+              : app.chartManager.sm_path
           )
         )
       }
@@ -112,5 +119,8 @@ export const SM_PROPERTIES_WINDOW_DATA: {
   ),
   bg: fileOption("BACKGROUND", "image", "BG Image"),
   banner: fileOption("BANNER", "image", "Banner Image"),
-  cdtitle: fileOption("CDTITLE", "image", "CD Jacket"),
+  cdtitle: fileOption("CDTITLE", "image", "CD Title"),
+  cdimage: fileOption("CDIMAGE", "image", "CD Image"),
+  jacket: fileOption("JACKET", "image", "Jacket"),
+  discImage: fileOption("DISCIMAGE", "image", "Disc Image"),
 }

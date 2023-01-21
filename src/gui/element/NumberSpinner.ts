@@ -1,4 +1,4 @@
-import { clamp, roundDigit, safeParse } from "../util/Util"
+import { clamp, roundDigit, safeParse } from "../../util/Util"
 
 export class NumberSpinner {
   view: HTMLDivElement

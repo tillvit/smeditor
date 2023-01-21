@@ -1,5 +1,6 @@
 import { App } from "../App"
 import { EditMode } from "../chart/ChartManager"
+import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { Options } from "../util/Options"
 import { ChartListWindow } from "../window/ChartListWindow"
 import { ChartPropertiesWindow } from "../window/ChartPropertiesWindow"
@@ -180,12 +181,6 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     disabled: app => !app.chartManager.chartView,
     callback: app => app.windowManager.openWindow(new TimingDataWindow(app)),
   },
-  adjustTiming: {
-    label: "Adjust Timing Changes...",
-    keybinds: [{ key: "T", mods: [Modifier.SHIFT, Modifier.ALT] }],
-    disabled: true,
-    callback: () => 0,
-  },
   selectRegion: {
     label: "Select Region",
     keybinds: [{ key: "Tab", mods: [] }],
@@ -196,54 +191,88 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Increase volume",
     keybinds: [{ key: "Up", mods: [Modifier.SHIFT] }],
     disabled: false,
-    callback: () =>
-      (Options.audio.songVolume = Math.min(Options.audio.songVolume + 0.05, 1)),
+    callback: () => {
+      Options.audio.songVolume = Math.min(Options.audio.songVolume + 0.05, 1)
+      WaterfallManager.create(
+        "Volume: " + Math.round(Options.audio.songVolume * 100) + "%"
+      )
+    },
   },
   volumeDown: {
     label: "Decrease volume",
     keybinds: [{ key: "Down", mods: [Modifier.SHIFT] }],
     disabled: false,
-    callback: () =>
-      (Options.audio.songVolume = Math.max(Options.audio.songVolume - 0.05, 0)),
+    callback: () => {
+      Options.audio.songVolume = Math.max(Options.audio.songVolume - 0.05, 0)
+      WaterfallManager.create(
+        "Volume: " + Math.round(Options.audio.songVolume * 100) + "%"
+      )
+    },
   },
   effectvolumeUp: {
     label: "Increase sound effect volume",
     keybinds: [{ key: "Up", mods: [Modifier.SHIFT, Modifier.ALT] }],
     disabled: false,
-    callback: () =>
-      (Options.audio.soundEffectVolume = Math.min(
+    callback: () => {
+      Options.audio.soundEffectVolume = Math.min(
         Options.audio.soundEffectVolume + 0.05,
         1
-      )),
+      )
+      WaterfallManager.create(
+        "Effect Volume: " +
+          Math.round(Options.audio.soundEffectVolume * 100) +
+          "%"
+      )
+    },
   },
   effectvolumeDown: {
     label: "Decrease sound effect volume",
     keybinds: [{ key: "Down", mods: [Modifier.SHIFT, Modifier.ALT] }],
     disabled: false,
-    callback: () =>
-      (Options.audio.soundEffectVolume = Math.max(
+    callback: () => {
+      Options.audio.soundEffectVolume = Math.max(
         Options.audio.soundEffectVolume - 0.05,
         0
-      )),
+      )
+      WaterfallManager.create(
+        "Effect Volume: " +
+          Math.round(Options.audio.soundEffectVolume * 100) +
+          "%"
+      )
+    },
   },
   rateUp: {
     label: "Increase playback rate",
     keybinds: [{ key: "Right", mods: [Modifier.SHIFT] }],
-    disabled: false,
-    callback: () => (Options.audio.rate += 0.05),
+    disabled: app => app.chartManager.getMode() == EditMode.Play,
+    callback: () => {
+      Options.audio.rate += 0.05
+      WaterfallManager.create(
+        "Playback Rate: " + Math.round(Options.audio.rate * 100) + "%"
+      )
+    },
   },
   rateDown: {
     label: "Decrease playback rate",
     keybinds: [{ key: "Left", mods: [Modifier.SHIFT] }],
-    disabled: false,
-    callback: () =>
-      (Options.audio.rate = Math.max(Options.audio.rate - 0.05, 0.1)),
+    disabled: app => app.chartManager.getMode() == EditMode.Play,
+    callback: () => {
+      Options.audio.rate = Math.max(Options.audio.rate - 0.05, 0.1)
+      WaterfallManager.create(
+        "Playback Rate: " + Math.round(Options.audio.rate * 100) + "%"
+      )
+    },
   },
   rateDefault: {
     label: "Reset playback rate",
     keybinds: [],
     disabled: false,
-    callback: () => (Options.audio.rate = 1),
+    callback: () => {
+      Options.audio.rate = 1
+      WaterfallManager.create(
+        "Playback Rate: " + Math.round(Options.audio.rate) + "%"
+      )
+    },
   },
   previousMeasure: {
     label: "Previous measure",
@@ -329,19 +358,34 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Assist Tick",
     keybinds: [{ key: "F7", mods: [] }],
     disabled: false,
-    callback: () => (Options.audio.assistTick = !Options.audio.assistTick),
+    callback: () => {
+      Options.audio.assistTick = !Options.audio.assistTick
+      WaterfallManager.create(
+        "Assist Tick: " + (Options.audio.assistTick ? "on" : "off")
+      )
+    },
   },
   metronome: {
     label: "Metronome",
     keybinds: [{ key: "F7", mods: [Modifier.ALT] }],
     disabled: false,
-    callback: () => (Options.audio.metronome = !Options.audio.metronome),
+    callback: () => {
+      Options.audio.metronome = !Options.audio.metronome
+      WaterfallManager.create(
+        "Metronome: " + (Options.audio.metronome ? "on" : "off")
+      )
+    },
   },
   renderWaveform: {
     label: "Render waveform",
     keybinds: [{ key: "W", mods: [Modifier.SHIFT, Modifier.ALT] }],
     disabled: false,
-    callback: () => (Options.waveform.enabled = !Options.waveform.enabled),
+    callback: () => {
+      Options.waveform.enabled = !Options.waveform.enabled
+      WaterfallManager.create(
+        "Waveform: " + (Options.audio.metronome ? "on" : "off")
+      )
+    },
   },
   waveformOptions: {
     label: "Waveform options...",
@@ -353,27 +397,41 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "XMod (Beat-based)",
     keybinds: [{ key: "X", mods: [Modifier.SHIFT] }],
     disabled: false,
-    callback: () => (Options.chart.CMod = false),
+    callback: () => {
+      Options.chart.CMod = false
+      WaterfallManager.create("Switched to XMod")
+    },
   },
   CMod: {
     label: "CMod (Time-based)",
     keybinds: [{ key: "C", mods: [Modifier.SHIFT] }],
     disabled: false,
-    callback: () => (Options.chart.CMod = true),
+    callback: () => {
+      Options.chart.CMod = true
+      WaterfallManager.create("Switched to CMod")
+    },
   },
   hideWarpedArrows: {
     label: "Hide warped arrows (CMod only)",
     keybinds: [{ key: "W", mods: [Modifier.SHIFT] }],
     disabled: false,
-    callback: () =>
-      (Options.chart.hideWarpedArrows = !Options.chart.hideWarpedArrows),
+    callback: () => {
+      Options.chart.hideWarpedArrows = !Options.chart.hideWarpedArrows
+      WaterfallManager.create(
+        "Hide Warped Arrows: " + (Options.audio.metronome ? "on" : "off")
+      )
+    },
   },
   doSpeedChanges: {
     label: "Do speed changes (XMod only)",
     keybinds: [{ key: "S", mods: [Modifier.SHIFT] }],
     disabled: false,
-    callback: () =>
-      (Options.chart.doSpeedChanges = !Options.chart.doSpeedChanges),
+    callback: () => {
+      Options.chart.doSpeedChanges = !Options.chart.doSpeedChanges
+      WaterfallManager.create(
+        "Speed Changes: " + (Options.audio.metronome ? "on" : "off")
+      )
+    },
   },
   showEq: {
     label: "Equalizer",
@@ -419,8 +477,12 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Enable Mouse Note Placement",
     keybinds: [{ key: "M", mods: [Modifier.SHIFT] }],
     disabled: false,
-    callback: () =>
-      (Options.editor.mousePlacement = !Options.editor.mousePlacement),
+    callback: () => {
+      Options.editor.mousePlacement = !Options.editor.mousePlacement
+      WaterfallManager.create(
+        "Mouse Note Placement: " + (Options.audio.metronome ? "on" : "off")
+      )
+    },
   },
   playMode: {
     label: "Enter Play Mode",

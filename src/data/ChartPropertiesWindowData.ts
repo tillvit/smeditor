@@ -1,7 +1,8 @@
 import { App } from "../App"
 import { CHART_DIFFICULTIES } from "../chart/sm/ChartTypes"
-import { Dropdown } from "../gui/Dropdown"
-import { NumberSpinner } from "../gui/NumberSpinner"
+import { Dropdown } from "../gui/element/Dropdown"
+import { NumberSpinner } from "../gui/element/NumberSpinner"
+import { ActionHistory } from "../util/ActionHistory"
 import { FileSystem } from "../util/FileSystem"
 import { DirectoryWindow } from "../window/DirectoryWindow"
 import { AUDIO_EXT } from "./FileData"
@@ -34,7 +35,11 @@ export const CHART_PROPERTIES_WINDOW_DATA: {
       container.classList.add("flex-row", "flex-column-gap", "flex-static")
       const dropdown = Dropdown.create(CHART_DIFFICULTIES, chart.difficulty)
       dropdown.onChange(value => {
-        chart.difficulty = value
+        const lastVal = chart.difficulty
+        ActionHistory.instance.run({
+          action: () => (chart.difficulty = value),
+          undo: () => (chart.difficulty = lastVal),
+        })
       })
       const input = NumberSpinner.create(chart.meter, 1, 0, 1)
       input.input.classList.add("short", "right")
@@ -62,7 +67,11 @@ export const CHART_PROPERTIES_WINDOW_DATA: {
         if (ev.key == "Enter") input.blur()
       }
       input.onblur = () => {
-        chart.credit = input.value
+        const lastVal = chart.credit
+        ActionHistory.instance.run({
+          action: () => (chart.credit = input.value),
+          undo: () => (chart.credit = lastVal),
+        })
       }
       input.value = chart.credit
       return input
@@ -80,7 +89,11 @@ export const CHART_PROPERTIES_WINDOW_DATA: {
         if (ev.key == "Enter") input.blur()
       }
       input.onblur = () => {
-        chart.chartName = input.value
+        const lastVal = chart.chartName
+        ActionHistory.instance.run({
+          action: () => (chart.chartName = input.value),
+          undo: () => (chart.chartName = lastVal),
+        })
       }
       input.value = chart.chartName
       return input
@@ -98,7 +111,11 @@ export const CHART_PROPERTIES_WINDOW_DATA: {
         if (ev.key == "Enter") input.blur()
       }
       input.onblur = () => {
-        chart.description = input.value
+        const lastVal = chart.description
+        ActionHistory.instance.run({
+          action: () => (chart.description = input.value),
+          undo: () => (chart.description = lastVal),
+        })
       }
       input.value = chart.description
       return input
@@ -116,7 +133,11 @@ export const CHART_PROPERTIES_WINDOW_DATA: {
         if (ev.key == "Enter") input.blur()
       }
       input.onblur = () => {
-        chart.chartStyle = input.value
+        const lastVal = chart.chartStyle
+        ActionHistory.instance.run({
+          action: () => (chart.chartStyle = input.value),
+          undo: () => (chart.chartStyle = lastVal),
+        })
       }
       input.value = chart.chartStyle
       return input
@@ -142,7 +163,11 @@ export const CHART_PROPERTIES_WINDOW_DATA: {
           if (playing) app.chartManager.songAudio.play()
           return
         }
-        chart.music = input.value
+        const lastVal = chart.music
+        ActionHistory.instance.run({
+          action: () => (chart.music = input.value),
+          undo: () => (chart.music = lastVal),
+        })
         app.chartManager.loadAudio()
         if (playing) app.chartManager.songAudio.play()
       }

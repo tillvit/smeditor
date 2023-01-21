@@ -2,6 +2,7 @@ import { WindowOptions } from "../window/Window"
 import { App } from "../App"
 import { DirectoryWindow } from "../window/DirectoryWindow"
 import { DEFAULT_SM } from "./SMData"
+import { SMPropertiesWindow } from "../window/SMPropertiesWindow"
 
 type OptionsWindowOption = {
   label: string | ((app: App) => string)
@@ -57,7 +58,7 @@ export const OPTIONS_WINDOW_DATA: { [key: string]: OptionsWindowData } = {
         ],
       },
       {
-        title: "New (not implemented)",
+        title: "New",
         options: [
           {
             label: "Create a new song",
@@ -73,9 +74,18 @@ export const OPTIONS_WINDOW_DATA: { [key: string]: OptionsWindowData } = {
                 const file = new File([DEFAULT_SM], "song.sm", { type: "" })
                 app.files.addFile(folder + "/song.sm", file)
                 app.chartManager.loadSM(folder + "/song.sm")
-                app.windowManager
-                  .getWindowById("select_sm_initial")!
-                  .closeWindow()
+                app.windowManager.openWindow(
+                  new SMPropertiesWindow(app, true, success => {
+                    if (success) {
+                      app.windowManager
+                        .getWindowById("select_sm_initial")!
+                        .closeWindow()
+                    } else {
+                      app.files.removeFile(app.chartManager.sm_path)
+                      app.chartManager.loadSM()
+                    }
+                  })
+                )
               }
               return el
             },

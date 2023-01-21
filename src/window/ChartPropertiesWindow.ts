@@ -1,5 +1,6 @@
 import { App } from "../App"
 import { CHART_PROPERTIES_WINDOW_DATA } from "../data/ChartPropertiesWindowData"
+import { EventHandler } from "../util/EventHandler"
 import { Window } from "./Window"
 
 export class ChartPropertiesWindow extends Window {
@@ -16,11 +17,13 @@ export class ChartPropertiesWindow extends Window {
     })
     this.app = app
     this.initView(this.viewElement)
-    window.onmessage = message => {
-      if (message.data == "chartLoaded" && message.source == window) {
-        this.initView(this.viewElement)
-      }
-    }
+    EventHandler.on("chartLoaded", () => this.initView(this.viewElement))
+    EventHandler.on("undo", () => {
+      this.initView(this.viewElement)
+    })
+    EventHandler.on("redo", () => {
+      this.initView(this.viewElement)
+    })
   }
 
   initView(viewElement: HTMLDivElement): void {

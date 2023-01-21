@@ -1,9 +1,10 @@
 import { ParticleContainer, RenderTexture, Sprite, Texture } from "pixi.js"
+import { EventHandler } from "../../util/EventHandler"
+import { Options } from "../../util/Options"
 import { bsearch, destroyChildIf, getTPS } from "../../util/Util"
-import { ChartRenderer } from "../ChartRenderer"
 import { ChartAudio } from "../audio/ChartAudio"
 import { EditMode } from "../ChartManager"
-import { Options } from "../../util/Options"
+import { ChartRenderer } from "../ChartRenderer"
 
 const MAX_ZOOM = 3500
 
@@ -72,6 +73,8 @@ export class Waveform extends Sprite {
         )
       }
     }, 1000)
+
+    EventHandler.on("timingModified", () => (this.lastBeat = -1))
   }
 
   private async stripWaveform(
@@ -173,25 +176,31 @@ export class Waveform extends Sprite {
       let curBeat = beat - Options.chart.maxDrawBeatsBack
       const beatLimit = beat + Options.chart.maxDrawBeats
       const scrolls = this.renderer.chart.timingData.getTimingData("SCROLLS")
+      const offset = this.renderer.chart.timingData.getTimingData("OFFSET")
+      const startBPM = this.renderer.chart.timingData.getBPM(0)
+      const timingChanges = this.renderer.chart.timingData.getBeatTiming()
+      let calcSec = this.renderer.chart.getSeconds(curBeat)
 
       let scrollIndex = bsearch(scrolls, curBeat, a => a.beat)
       if (scrolls[scrollIndex]?.beat != 0) scrollIndex--
+      let y = Math.round(this.renderer.getYPos(curBeat) + this.parent.y)
       while (curBeat < beatLimit) {
         const scroll = scrolls[scrollIndex] ?? { beat: 0, value: 1 }
         const scrollBeatLimit = scrolls[scrollIndex + 1]?.beat ?? beatLimit
-        const y_test = this.renderer.getYPos(curBeat) + this.parent.y
+        const y_test = this.renderer.getYPos(scrollBeatLimit) + this.parent.y
         if (
           scrolls[scrollIndex + 1] &&
-          ((scroll.value < 0 &&
-            y_test > this.renderer.chartManager.app.renderer.screen.height) ||
-            scroll.value <= 0)
+          (scroll.value == 0 ||
+            (scroll.value < 0 &&
+              y_test > this.renderer.chartManager.app.renderer.screen.height) ||
+            (scroll.value > 0 && y_test < 0))
         ) {
           scrollIndex++
           curBeat = scrolls[scrollIndex]!.beat
+          y = Math.round(y_test)
           continue
         }
         while (curBeat < Math.min(scrollBeatLimit, beatLimit)) {
-          const y = Math.round(this.renderer.getYPos(curBeat) + this.parent.y)
           if (y < 0) {
             if (scroll.value < 0) {
               curBeat = scrollBeatLimit
@@ -199,24 +208,40 @@ export class Waveform extends Sprite {
             }
             curBeat +=
               (100 / chartSpeed / speedMult / 64 / Math.abs(scroll.value)) * -y
-            continue
+            y = 0
           }
+
           if (y > this.renderer.chartManager.app.renderer.screen.height) {
             if (scroll.value > 0) {
-              curBeat = scrollBeatLimit
+              curBeat = beatLimit
               break
             }
             curBeat +=
               (100 / chartSpeed / speedMult / 64 / Math.abs(scroll.value)) *
               (y - this.renderer.chartManager.app.renderer.screen.height)
+            y = this.renderer.chartManager.app.renderer.screen.height
             continue
           }
           curBeat +=
             (100 / chartSpeed / speedMult / 64 / Math.abs(scroll.value)) *
             Options.waveform.lineHeight
-          const calcTime = this.renderer.chart.getSeconds(curBeat)
-          if (calcTime < 0) continue
-          const samp = Math.floor(calcTime * this.zoom * 4)
+          y += scroll.value > 0 ? 1 : -1
+          const flooredBeat = Math.floor(curBeat * 1000) / 1000
+          if (curBeat <= 0) calcSec = -offset + (curBeat * 60) / startBPM
+          else if (flooredBeat >= timingChanges[1]?.beat) {
+            while (flooredBeat >= timingChanges[1]?.beat) timingChanges.shift()
+            calcSec = this.renderer.chart.getSeconds(curBeat)
+          } else {
+            const beatsElapsed = curBeat - timingChanges[0].beat
+            let timeElapsed = (beatsElapsed * 60) / timingChanges[0].bpm
+            if (timingChanges[0].warped) timeElapsed = 0
+            calcSec = Math.max(
+              timingChanges[0].secondClamp,
+              timingChanges[0].secondAfter + timeElapsed
+            )
+          }
+          if (calcSec < 0) continue
+          const samp = Math.floor(calcSec * this.zoom * 4)
           for (let channel = 0; channel < data.length; channel++) {
             const v = data[channel][samp]
             if (!v) continue
@@ -228,6 +253,7 @@ export class Waveform extends Sprite {
         }
         scrollIndex++
         curBeat = scrollBeatLimit
+        y = y_test
       }
     } else {
       for (

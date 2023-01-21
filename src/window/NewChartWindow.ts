@@ -2,7 +2,8 @@ import { App } from "../App"
 import { Chart } from "../chart/sm/Chart"
 import { CHART_DIFFICULTIES } from "../chart/sm/ChartTypes"
 import { GameTypeRegistry } from "../chart/types/GameTypeRegistry"
-import { Dropdown } from "../gui/Dropdown"
+import { Dropdown } from "../gui/element/Dropdown"
+import { EventHandler } from "../util/EventHandler"
 import { safeParse } from "../util/Util"
 import { Window } from "./Window"
 
@@ -116,11 +117,7 @@ export class NewChartWindow extends Window {
     }
     this.chart = new Chart(app.chartManager.sm)
     this.initView(this.viewElement)
-    window.onmessage = message => {
-      if (message.data == "smLoaded" && message.source == window) {
-        this.closeWindow()
-      }
-    }
+    EventHandler.on("smLoaded", () => this.closeWindow())
   }
 
   initView(viewElement: HTMLDivElement): void {
@@ -168,10 +165,10 @@ export class NewChartWindow extends Window {
       this.closeWindow()
     }
 
-    const select_btn = document.createElement("button")
-    select_btn.innerText = "Create"
-    select_btn.classList.add("confirm")
-    select_btn.onclick = () => {
+    const create_btn = document.createElement("button")
+    create_btn.innerText = "Create"
+    create_btn.classList.add("confirm")
+    create_btn.onclick = () => {
       this.chart.setNotedata(
         this.copyChart?.notedata
           .filter(note => note.col < this.chart.gameType.numCols)
@@ -182,7 +179,7 @@ export class NewChartWindow extends Window {
       this.closeWindow()
     }
     menu_options_left.appendChild(cancel)
-    menu_options_right.appendChild(select_btn)
+    menu_options_right.appendChild(create_btn)
     padding.appendChild(menu_options)
     viewElement.appendChild(padding)
   }

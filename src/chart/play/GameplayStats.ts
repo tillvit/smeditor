@@ -1,11 +1,15 @@
 import { Options } from "../../util/Options"
+import { ChartManager } from "../ChartManager"
 import { isHoldNote, Notedata, NotedataEntry } from "../sm/NoteTypes"
 import { HoldDroppedTimingWindow } from "./HoldDroppedTimingWindow"
 import { HoldTimingWindow } from "./HoldTimingWindow"
+import { StandardTimingWindow } from "./StandardTimingWindow"
 import { TimingWindow } from "./TimingWindow"
 import {
+  isHoldDroppedTimingWindow,
   isMineTimingWindow,
   isStandardMissTimingWindow,
+  isStandardTimingWindow,
   TimingWindowCollection,
 } from "./TimingWindowCollection"
 
@@ -21,12 +25,21 @@ export class GameplayStats {
   private dancePoints = 0
   private maxCumulativeDancePoints = 0
   private maxDancePoints = 0
+  private chartManager: ChartManager
   private notedata: Notedata
   private dataPoints: JudgmentDataPoint[] = []
   private handlers: ((error: number, judge: TimingWindow) => void)[] = []
+  private combo = 0
+  private missCombo = 0
+  private maxCombo = 0
+  private bestJudge?: StandardTimingWindow
 
-  constructor(notedata: Notedata) {
-    this.notedata = notedata
+  constructor(chartManager: ChartManager) {
+    this.notedata = chartManager.chart!.notedata
+    this.chartManager = chartManager
+    this.bestJudge = TimingWindowCollection.getCollection(
+      Options.play.timingCollection
+    ).getStandardWindows()[0]
     this.calculateMaxDP()
   }
 
@@ -38,6 +51,14 @@ export class GameplayStats {
     if (!this.judgmentCounts.has(judge)) this.judgmentCounts.set(judge, 0)
     this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
     this.dancePoints += judge.dancePoints
+
+    const comboMult = this.chartManager.chart!.timingData.getTimingEventAtBeat(
+      "COMBOS",
+      notes[0].beat
+    )
+    const hitMult = comboMult?.hitMult ?? 1
+    const missMult = comboMult?.missMult ?? 1
+
     if (!isMineTimingWindow(judge))
       this.maxCumulativeDancePoints += TimingWindowCollection.getCollection(
         Options.play.timingCollection
@@ -53,6 +74,27 @@ export class GameplayStats {
             ).getMaxHoldDancePoints(note.type)
           )
         }, 0)
+      this.combo = 0
+      this.missCombo += missMult
+      this.bestJudge = undefined
+    } else if (isStandardTimingWindow(judge)) {
+      if (
+        TimingWindowCollection.getCollection(
+          Options.play.timingCollection
+        ).shouldHideNote(judge)
+      ) {
+        this.combo += notes.length * hitMult
+        if (this.combo > this.maxCombo) this.maxCombo = this.combo
+        this.missCombo = 0
+        if (
+          this.bestJudge &&
+          judge.getTimingWindowMS() > this.bestJudge.getTimingWindowMS()
+        )
+          this.bestJudge = judge
+      } else {
+        this.bestJudge = undefined
+        this.combo = 0
+      }
     }
     this.handlers.forEach(handler => handler(error, judge))
     this.dataPoints.push({
@@ -73,6 +115,10 @@ export class GameplayStats {
     this.maxCumulativeDancePoints += TimingWindowCollection.getCollection(
       Options.play.timingCollection
     ).getMaxHoldDancePoints(note.type)
+    this.handlers.forEach(handler => handler(0, judge))
+    if (isHoldDroppedTimingWindow(judge)) {
+      this.bestJudge = undefined
+    }
   }
 
   getScore(): number {
@@ -87,6 +133,10 @@ export class GameplayStats {
 
   getDataPoints(): JudgmentDataPoint[] {
     return this.dataPoints
+  }
+
+  getMaxCombo(): number {
+    return this.maxCombo
   }
 
   recalculate() {
@@ -158,5 +208,21 @@ export class GameplayStats {
       },
       0
     )
+  }
+
+  getCount(window: TimingWindow): number {
+    return this.judgmentCounts.get(window) ?? 0
+  }
+
+  getCombo(): number {
+    return this.combo
+  }
+
+  getMissCombo(): number {
+    return this.missCombo
+  }
+
+  getBestJudge(): StandardTimingWindow | undefined {
+    return this.bestJudge
   }
 }

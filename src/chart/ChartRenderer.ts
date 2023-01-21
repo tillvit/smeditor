@@ -12,9 +12,7 @@ import { JudgmentContainer } from "./renderer/JudgmentContainer"
 import { TimingBarContainer } from "./renderer/TimingBarContainer"
 import { Notefield } from "./types/base/Notefield"
 import { SnapContainer } from "./renderer/SnapContainer"
-import { NoteLayoutSprite } from "./renderer/NoteLayoutSprite"
-import { TimerStats } from "../util/TimerStats"
-import { ErrorHistogram } from "./renderer/ErrorHistogram"
+import { ComboNumber } from "./renderer/ComboNumber"
 
 export class ChartRenderer extends Container {
   chartManager: ChartManager
@@ -34,11 +32,10 @@ export class ChartRenderer extends Container {
   private timingAreas: TimingAreaContainer
   private timingBoxes: TimingBoxContainer
   private timingBar: TimingBarContainer
-  private noteLayout: NoteLayoutSprite
-  private notefield: Notefield
+  notefield: Notefield
   private snapDisplay: SnapContainer
   private judgment: JudgmentContainer
-  private errorHistogram: ErrorHistogram
+  private combo: ComboNumber
 
   constructor(chartManager: ChartManager) {
     super()
@@ -50,22 +47,20 @@ export class ChartRenderer extends Container {
     this.timingAreas = new TimingAreaContainer(this)
     this.timingBoxes = new TimingBoxContainer(this)
     this.timingBar = new TimingBarContainer(this)
-    this.noteLayout = new NoteLayoutSprite(this)
     this.notefield = new this.chart.gameType.notefield(this)
     this.snapDisplay = new SnapContainer(this)
     this.judgment = new JudgmentContainer()
-    this.errorHistogram = new ErrorHistogram(this)
+    this.combo = new ComboNumber(this)
 
     this.addChild(this.waveform)
     this.addChild(this.barlines)
     this.addChild(this.timingAreas)
     this.addChild(this.timingBoxes)
     this.addChild(this.timingBar)
+    this.addChild(this.combo)
     this.addChild(this.notefield)
     this.addChild(this.snapDisplay)
     this.addChild(this.judgment)
-    this.addChild(this.noteLayout)
-    this.addChild(this.errorHistogram)
 
     this.chartManager.app.stage.addChild(this)
 
@@ -142,10 +137,6 @@ export class ChartRenderer extends Container {
     this.notefield.keyUp(col)
   }
 
-  startPlay() {
-    this.errorHistogram.start(this.chartManager.gameStats!)
-  }
-
   endPlay() {
     this.notefield.reset()
     this.timingBar.reset()
@@ -179,7 +170,6 @@ export class ChartRenderer extends Container {
 
     this.scale.y = Options.chart.reverse ? -1 : 1
 
-    TimerStats.time("Chart Update Time")
     this.barlines.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
     this.timingAreas.renderThis(
       beat,
@@ -190,18 +180,11 @@ export class ChartRenderer extends Container {
     this.timingBoxes.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
     this.timingBar.renderThis()
     this.judgment.renderThis()
-    this.noteLayout.renderThis()
+    this.combo.renderThis()
     this.snapDisplay.renderThis()
-    this.errorHistogram.renderThis()
-    TimerStats.endTime("Chart Update Time")
 
-    TimerStats.time("Notefield Update Time")
     this.notefield.update(beat, renderBeatLowerLimit, renderBeatLimit)
-    TimerStats.endTime("Notefield Update Time")
-
-    TimerStats.time("Waveform Update Time")
     this.waveform.renderThis(beat, time)
-    TimerStats.endTime("Waveform Update Time")
 
     if (this.lastMousePos && this.chartManager.getMode() != EditMode.Play) {
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap

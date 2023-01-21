@@ -1,15 +1,18 @@
 import { Parser } from "expr-eval"
 import { DisplayObject } from "pixi.js"
-import { App } from "../App"
 
 const QUANTS = [1, 1 / 2, 1 / 3, 1 / 4, 1 / 6, 1 / 8, 1 / 12, 1 / 16, 1 / 24]
-export function getQuant(beat: number) {
+export function getQuantIndex(beat: number) {
   for (let i = 0; i < QUANTS.length; i++) {
     if (Math.abs(beat - Math.round(beat / QUANTS[i]) * QUANTS[i]) < 0.01) {
       return i
     }
   }
   return 9
+}
+
+export function getDivision(beat: number) {
+  return 4 / QUANTS[getQuantIndex(beat)]
 }
 
 export function lerp(v0: number, v1: number, t: number): number {
@@ -24,6 +27,16 @@ export function rgbtoHex(r: number, g: number, b: number): number {
   return (r << 16) + (g << 8) + b
 }
 
+export function lighten(col: number, gamma: number): number {
+  let r = col >> 16
+  let g = (col >> 8) & 0xff
+  let b = col & 0xff
+  r = clamp(r * gamma, 0, 255)
+  g = clamp(g * gamma, 0, 255)
+  b = clamp(b * gamma, 0, 255)
+  return rgbtoHex(r, g, b)
+}
+
 export function roundDigit(num: number, scale: number): number {
   return Math.round(num * Math.pow(10, scale)) / Math.pow(10, scale)
 }
@@ -33,18 +46,15 @@ export function getFont() {
 }
 
 const fpsTimes: number[] = []
-let fps = false
-export function getFPS(app: App) {
-  if (!fps) {
-    fps = true
-    app.ticker.add(() => {
-      fpsTimes.push(Date.now())
-      while (fpsTimes.length > 0 && fpsTimes[0] < Date.now() - 1000) {
-        fpsTimes.shift()
-      }
-    })
-  }
+export function getFPS() {
   return fpsTimes.length
+}
+
+export function fpsUpdate() {
+  fpsTimes.push(Date.now())
+  while (fpsTimes.length > 0 && fpsTimes[0] < Date.now() - 1000) {
+    fpsTimes.shift()
+  }
 }
 
 const tpsTimes: number[] = []
@@ -184,4 +194,27 @@ export function mean(array: number[]): number {
 export function capitalize(str: string): string {
   if (str == "") return ""
   return str.slice(0, 1).toUpperCase() + str.slice(1).toLowerCase()
+}
+
+export function gcd2(a: number, b: number): number {
+  if (!b) return b === 0 ? a : NaN
+  return gcd2(b, a % b)
+}
+export function gcd(array: number[]) {
+  let n = 0
+  for (let i = 0; i < array.length; ++i) n = gcd2(array[i], n)
+  return n
+}
+export function lcm2(a: number, b: number): number {
+  return (a * b) / gcd2(a, b)
+}
+export function lcm(array: number[]): number {
+  let n = 1
+  for (let i = 0; i < array.length; ++i) n = lcm2(array[i], n)
+  return n
+}
+
+export function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message
+  return String(error)
 }

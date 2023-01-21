@@ -239,6 +239,7 @@ textarea {
 .menu-options {
   display: flex;
   margin-top: 5px;
+  flex: 0;
 }
 .menu-left {
   display: flex;
@@ -460,14 +461,33 @@ button:disabled {
   height: 100%;
 }
 
-.chart-properties > .padding {
+.chart-properties .padding {
   display: grid;
   row-gap: 3px;
   grid-template-columns: auto 250px;
   align-items: center;
+  flex: 1;
 }
 
-.chart-properties > .padding > div:not(.label) {
+.chart-properties .padding > div:not(.label) {
+  display: flex;
+  align-items: center;
+}
+
+.sm-properties .padding {
+  display: flex;
+  flex-direction: column;
+}
+
+.sm-properties .property-grid {
+  display: grid;
+  row-gap: 3px;
+  grid-template-columns: auto 250px;
+  align-items: center;
+  flex: 1;
+}
+
+.sm-properties .property-grid > div:not(.label) {
   display: flex;
   align-items: center;
 }
@@ -689,4 +709,50 @@ input.right {
 
 .spinner-down {
   background: linear-gradient(180deg, #484848, #555);
+}
+
+#waterfall {
+  position: absolute;
+  top: 35px;
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  padding: 0 10px;
+  width: 100%;
+  pointer-events: none;
+  caret-color: transparent;
+}
+
+.waterfall-item {
+  transition: cubic-bezier(0.455, 0.03, 0.515, 0.955) 0.5s;
+  animation: waterfall-enter 0.3s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+  pointer-events: none;
+}
+
+.waterfall-warn {
+  color: rgb(246, 202, 57);
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.waterfall-error {
+  color: rgb(183, 35, 35);
+  display: inline-block;
+  margin-right: 4px;
+}
+
+@keyframes waterfall-enter {
+  from {
+    opacity: 0;
+    transform: translate(200px, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.waterfall-exiting {
+  opacity: 0;
+  transform: translateX(200px);
 }

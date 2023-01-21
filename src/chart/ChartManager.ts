@@ -1,19 +1,23 @@
-import { App } from "../App"
-import { Simfile } from "./sm/Simfile"
-import { ChartRenderer } from "./ChartRenderer"
-import { ChartAudio } from "./audio/ChartAudio"
 import { Howl } from "howler"
-import { IS_OSX, KEYBINDS } from "../data/KeybindData"
-import { Chart } from "./sm/Chart"
 import { BitmapText } from "pixi.js"
-import { bsearch, getFPS, getTPS, roundDigit, tpsUpdate } from "../util/Util"
+import { App } from "../App"
+import { IS_OSX, KEYBINDS } from "../data/KeybindData"
+import { WaterfallManager } from "../gui/element/WaterfallManager"
+import { WidgetManager } from "../gui/widget/WidgetManager"
 import { Keybinds } from "../listener/Keybinds"
-import { isHoldNote, PartialNotedataEntry } from "./sm/NoteTypes"
+import { EventHandler } from "../util/EventHandler"
 import { Options } from "../util/Options"
+import { TimerStats } from "../util/TimerStats"
+import { bsearch, tpsUpdate } from "../util/Util"
+import { NewChartWindow } from "../window/NewChartWindow"
+import { ChartAudio } from "./audio/ChartAudio"
+import { ChartRenderer } from "./ChartRenderer"
 import { GameplayStats } from "./play/GameplayStats"
 import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
+import { Chart } from "./sm/Chart"
+import { isHoldNote, PartialNotedataEntry } from "./sm/NoteTypes"
+import { Simfile } from "./sm/Simfile"
 import { GameTypeRegistry } from "./types/GameTypeRegistry"
-import { TimerStats } from "../util/TimerStats"
 
 const SNAPS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 48, -1]
 
@@ -29,7 +33,7 @@ interface PartialHold {
 export enum EditMode {
   View = "View Mode",
   Edit = "Edit Mode",
-  Play = "Play Mode (Press Escape to exit)",
+  Play = "Play Mode (ESC to exit)",
 }
 
 export class ChartManager {
@@ -37,7 +41,9 @@ export class ChartManager {
 
   songAudio: ChartAudio = new ChartAudio()
   chartView?: ChartRenderer
-  info: BitmapText
+  widgetManager: WidgetManager
+  noChartTextA: BitmapText
+  noChartTextB: BitmapText
   assistTick: Howl = new Howl({
     src: "assets/sound/assist_tick.ogg",
     volume: 0.5,
@@ -143,14 +149,39 @@ export class ChartManager {
       { passive: true }
     )
 
-    this.info = new BitmapText("", {
+    this.widgetManager = new WidgetManager(this)
+
+    this.noChartTextA = new BitmapText("No Chart", {
       fontName: "Assistant",
-      fontSize: 20,
+      fontSize: 30,
     })
-    this.info.x = 0
-    this.info.y = 0
-    this.info.zIndex = 1
-    this.app.stage.addChild(this.info)
+    this.noChartTextA.x = this.app.renderer.screen.width / 2
+    this.noChartTextA.y = this.app.renderer.screen.height / 2 - 20
+    this.noChartTextA.anchor.set(0.5)
+    this.noChartTextA.tint = 0x555555
+    this.app.stage.addChild(this.noChartTextA)
+    this.noChartTextB = new BitmapText("Create a new chart", {
+      fontName: "Assistant",
+      fontSize: 15,
+    })
+    this.noChartTextB.x = this.app.renderer.screen.width / 2
+    this.noChartTextB.y = this.app.renderer.screen.height / 2 + 10
+    this.noChartTextB.anchor.set(0.5)
+    this.noChartTextB.tint = 0x556677
+    this.noChartTextB.interactive = true
+    this.noChartTextB.on("mouseover", () => {
+      this.noChartTextB.tint = 0x8899aa
+    })
+    this.noChartTextB.on("mouseleave", () => {
+      this.noChartTextB.tint = 0x556677
+    })
+    this.noChartTextB.on("mousedown", () => {
+      this.app.windowManager.openWindow(new NewChartWindow(app))
+    })
+    this.noChartTextA.visible = false
+    this.noChartTextB.visible = false
+    this.app.stage.addChild(this.noChartTextB)
+    this.app.stage.addChild(this.widgetManager)
     this.app.ticker.add(() => {
       if (
         this.sm == undefined ||
@@ -160,35 +191,8 @@ export class ChartManager {
         return
       TimerStats.time("ChartRenderer Update Time")
       this.chartView?.renderThis()
+      this.widgetManager.update()
       TimerStats.endTime("ChartRenderer Update Time")
-      this.info.text =
-        this.mode +
-        "\nTime: " +
-        roundDigit(this.time, 3) +
-        "\nBeat: " +
-        roundDigit(this.beat, 3) +
-        "\nFPS: " +
-        getFPS(this.app) +
-        "\nTPS: " +
-        getTPS() +
-        "\nNote Type: " +
-        this.chart.gameType.editNoteTypes[this.editNoteTypeIndex]
-      if (Options.debug.showTimers)
-        this.info.text +=
-          "\n" +
-          TimerStats.getTimers()
-            .map(timer => timer.name + ": " + timer.lastTime.toFixed(3) + "ms")
-            .join("\n")
-      if (this.mode == EditMode.Play && this.gameStats) {
-        this.info.text +=
-          "\nScore:" +
-          (this.gameStats.getScore() * 100).toFixed(2) +
-          "\nCumulative Score:" +
-          (this.gameStats.getCumulativeScore() * 100).toFixed(2)
-      }
-      // for (let hold of this.holdEditing) {
-      //   this.info.text += hold == undefined ? "\nundefined" : "\n" + JSON.stringify(hold)
-      // }
     })
 
     setInterval(() => {
@@ -258,12 +262,16 @@ export class ChartManager {
       TimerStats.endTime("Update Time")
     }, 5)
 
-    window.addEventListener("message", event => {
-      if (event.data == "resize" && event.source == window) {
-        if (this.chartView) {
-          this.chartView.x = this.app.renderer.screen.width / 2
-          this.chartView.y = this.app.renderer.screen.height / 2
-        }
+    EventHandler.on("resize", () => {
+      if (this.chartView) {
+        this.chartView.x = this.app.renderer.screen.width / 2
+        this.chartView.y = this.app.renderer.screen.height / 2
+      }
+    })
+
+    EventHandler.on("chartModified", () => {
+      if (this.chart) {
+        this.chart.recalculateStats()
       }
     })
 
@@ -376,7 +384,17 @@ export class ChartManager {
     }
   }
 
-  async loadSM(path: string) {
+  async loadSM(path?: string) {
+    if (!path) {
+      this.sm_path = ""
+      this.sm = undefined
+      this.songAudio.stop()
+      this.noChartTextA.visible = false
+      this.noChartTextB.visible = false
+      if (this.chartView) this.chartView.destroy({ children: true })
+      return
+    }
+
     this.songAudio.stop()
     this.lastSong = ""
     this.sm_path = path
@@ -387,7 +405,11 @@ export class ChartManager {
     this.sm = new Simfile(smFile)
 
     await this.sm.loaded
-    window.postMessage("smLoaded")
+
+    this.noChartTextA.visible = true
+    this.noChartTextB.visible = true
+
+    EventHandler.emit("smLoaded")
     this.loadChart()
     if (this.time == 0) this.setBeat(0)
   }
@@ -411,8 +433,8 @@ export class ChartManager {
     Options.play.timingCollection =
       Options.play.defaultTimingCollection[chart.gameType.id] ?? "ITG"
 
-    window.postMessage("chartLoaded")
-    window.postMessage("chartModified")
+    EventHandler.emit("chartLoaded")
+    EventHandler.emit("chartModified")
 
     if (this.chartView) this.chartView.destroy({ children: true })
 
@@ -428,6 +450,18 @@ export class ChartManager {
       this.loadAudio()
       if (audioPlaying) this.songAudio.play()
     }
+
+    this.noChartTextA.visible = false
+    this.noChartTextB.visible = false
+
+    WaterfallManager.create(
+      "Loaded chart " +
+        chart.difficulty +
+        " " +
+        chart.meter +
+        " " +
+        chart.gameType.id
+    )
   }
 
   loadAudio() {
@@ -435,13 +469,19 @@ export class ChartManager {
     this.songAudio.stop()
     const musicPath = this.chart.getMusicPath()
     if (musicPath == "") {
-      console.warn("No Audio File!")
+      WaterfallManager.createFormatted(
+        "Failed to load audio: no audio file",
+        "error"
+      )
       this.songAudio = new ChartAudio(undefined)
       return
     }
     const audioFile: File | undefined = this.getAudioFile(musicPath)
     if (audioFile == undefined) {
-      console.warn("Failed to load audio file " + musicPath)
+      WaterfallManager.createFormatted(
+        "Failed to load audio: couldn't find audio file " + musicPath,
+        "error"
+      )
       this.songAudio = new ChartAudio(undefined)
       return
     }
@@ -458,7 +498,10 @@ export class ChartManager {
     )
     if (audioFile) return audioFile
 
-    console.warn("Failed to find audio file " + musicPath)
+    WaterfallManager.createFormatted(
+      "Failed to locate audio file " + musicPath,
+      "error"
+    )
 
     //Capitalization error
     let dir = this.sm_path.split("/")
@@ -777,8 +820,8 @@ export class ChartManager {
         else break
       }
       this.chart.gameType.gameLogic.reset(this)
-      this.gameStats = new GameplayStats(this.chart.notedata)
-      this.chartView.startPlay()
+      this.gameStats = new GameplayStats(this)
+      this.widgetManager.startPlay()
       this.songAudio.seek(this.time - 1)
       this.songAudio.play()
     } else {
