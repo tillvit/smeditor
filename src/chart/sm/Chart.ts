@@ -162,7 +162,6 @@ export class Chart {
     let index = bsearch(this.notedata, note.beat, a => a.beat) + 1
     if (index >= 1 && this.notedata[index - 1].beat > note.beat) index--
     this.notedata.splice(index, 0, computedNote)
-    this.recalculateStats()
     EventHandler.emit("chartModified")
     return computedNote
   }
@@ -189,14 +188,12 @@ export class Chart {
     const i = this.getNoteIndex(note)
     if (i == -1) return
     const removedNote = this.notedata.splice(i, 1)
-    this.recalculateStats()
     EventHandler.emit("chartModified")
     return removedNote[0]
   }
 
   setNotedata(notedata: Notedata) {
     this.notedata = notedata
-    this.recalculateStats()
     EventHandler.emit("chartModified")
   }
 
@@ -204,7 +201,7 @@ export class Chart {
     this.notedata = this.notedata.map(note => this.computeNote(note))
   }
 
-  private recalculateStats() {
+  recalculateStats() {
     this._notedataStats = this.gameType.parser.getStats(
       this.notedata,
       this.timingData

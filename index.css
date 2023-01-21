@@ -719,11 +719,14 @@ input.right {
   text-align: right;
   padding: 0 10px;
   width: 100%;
+  pointer-events: none;
+  caret-color: transparent;
 }
 
 .waterfall-item {
   transition: cubic-bezier(0.455, 0.03, 0.515, 0.955) 0.5s;
   animation: waterfall-enter 0.3s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+  pointer-events: none;
 }
 
 .waterfall-warn {

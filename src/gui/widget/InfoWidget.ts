@@ -1,8 +1,9 @@
 import { BitmapText, Container } from "pixi.js"
 import { EditMode } from "../../chart/ChartManager"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
+import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
-import { roundDigit } from "../../util/Util"
+import { destroyChildIf, roundDigit } from "../../util/Util"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
 
@@ -11,7 +12,9 @@ const WIDGET_WIDTH = 300
 export class InfoWidget extends Widget {
   background = new BetterRoundedRect()
   maskObj = new BetterRoundedRect()
+  items = new Container()
   texts = new Container<BitmapText>()
+  noteCounts = new Container<BitmapText>()
   arrowBack = new BetterRoundedRect()
 
   private showEase = 0
@@ -27,7 +30,8 @@ export class InfoWidget extends Widget {
     this.background.zIndex = -1
     this.visible = false
     this.sortableChildren = true
-    this.addChild(this.maskObj, this.texts)
+    this.addChild(this.maskObj, this.items)
+    this.items.addChild(this.texts, this.noteCounts)
     const mode = new BitmapText("", {
       fontName: "Assistant",
       fontSize: 25,
@@ -55,7 +59,33 @@ export class InfoWidget extends Widget {
     chart.x = 20
     chart.y = 50
     this.texts.addChild(chart)
-    this.texts.mask = this.maskObj
+    this.items.mask = this.maskObj
+
+    EventHandler.on("chartLoaded", () => {
+      destroyChildIf(this.noteCounts.children, () => true)
+      const stats = this.manager.chartManager.chart!.getNotedataStats().counts
+      let numLines = 0
+      for (const type in stats) {
+        const text = new BitmapText(`${type}: ${stats[type]}`, {
+          fontName: "Assistant",
+          fontSize: 18,
+        })
+        text.name = type
+        text.x = 20 + 150 * (numLines % 2)
+        text.y = Math.floor(numLines++ / 2) * 18
+        this.noteCounts.addChild(text)
+      }
+    })
+
+    EventHandler.on("chartModified", () => {
+      const stats = this.manager.chartManager.chart!.getNotedataStats().counts
+      for (const type in stats) {
+        const text = this.noteCounts.getChildByName<BitmapText>(type)
+        text.text = `${type}: ${stats[type]}`
+      }
+    })
+
+    this.noteCounts.y = 180
   }
 
   update(): void {
@@ -94,10 +124,11 @@ export class InfoWidget extends Widget {
       this.easeVelocity += (easeTo - this.showEase) * 0.05
       this.showEase += this.easeVelocity
       this.easeVelocity *= 0.75
-      this.background.height += (1 - this.showEase) * 40
+      this.background.height +=
+        (1 - this.showEase) * (50 + this.noteCounts.height)
     } else {
       if (this.manager.chartManager.getMode() == EditMode.Edit) {
-        this.background.height += 40
+        this.background.height += 50 + this.noteCounts.height
       }
     }
     this.maskObj.height = this.background.height

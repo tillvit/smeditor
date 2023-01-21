@@ -70,7 +70,7 @@ export class TimingData {
             value: parseFloat(match[3]),
             mods: match[4],
           }
-          this.insert("ATTACKS", event, false)
+          this._insert("ATTACKS", event, false)
         }
         return
       }
@@ -141,29 +141,41 @@ export class TimingData {
             color2: temp[10],
           }
       }
-      this.insert(type, event!, false)
+      this._insert(type, event!, false)
     }
   }
 
-  insert(type: TimingEventProperty, event: TimingEvent, doCache?: boolean) {
+  private _insert(
+    type: TimingEventProperty,
+    event: TimingEvent,
+    doCache?: boolean
+  ) {
     this.binsert(type, event)
     if (doCache ?? true) this.reloadCache(type)
   }
 
   delete(songTiming: boolean, type: TimingEventProperty, time: number) {
-    if (!songTiming) {
-      this._fallback!.delete(true, type, time)
-      this.reloadCache(type)
-      return
-    }
-    if (!this.events[type]) return
+    const target = songTiming ? this : this._fallback!
+    if (!target.events[type]) return
     time = roundDigit(time, 3)
-    const i = this.bindex(type, { type, beat: time, second: time })
-    if (i > -1) {
-      if (i == 0 && type == "BPMS") return
-      this.events[type]!.splice(i, 1)
-      this.reloadCache(type)
-    }
+    const i = target.bindex(type, { type, beat: time, second: time })
+    if (i == -1) return
+    if (i == 0 && type == "BPMS") return
+    const event = target.events[type]![i]
+    ActionHistory.instance.run({
+      action: () => {
+        target._delete(true, event)
+        target.reloadCache(type)
+        if (this != target) this.reloadCache(type)
+        EventHandler.emit("timingModified")
+      },
+      undo: () => {
+        target._insert(event.type, event)
+        target.reloadCache(type)
+        if (this != target) this.reloadCache(type)
+        EventHandler.emit("timingModified")
+      },
+    })
   }
 
   private _delete(songTiming: boolean, event: TimingEvent, doCache?: boolean) {
@@ -215,19 +227,19 @@ export class TimingData {
     }
   }
 
-  update<Type extends TimingProperty>(
+  insert<Type extends TimingProperty>(
     songTiming: boolean,
     type: Type,
     properties: Partial<Extract<TimingEvent, { type: Type }>>,
     beat: number
   ): void
-  update(
+  insert(
     songTiming: boolean,
     type: "OFFSET",
     properties: number,
     beat?: number
   ): void
-  update<Type extends TimingProperty>(
+  insert<Type extends TimingProperty>(
     songTiming: boolean,
     type: Type,
     properties: Partial<Extract<TimingEvent, { type: Type }>> | number,
@@ -267,63 +279,61 @@ export class TimingData {
               this._delete(songTiming, event)
             }
             for (const event of toAdd) {
-              target.insert(type, event)
+              target._insert(type, event)
             }
           },
           undo: () => {
             for (const event of toAdd) {
-              this._delete(songTiming, event)
+              target._insert(type, event)
             }
             for (const event of toDelete) {
-              target.insert(type, event)
+              this._delete(songTiming, event)
             }
           },
         })
-        // this._delete(songTiming, event)
         return
       }
       const prevEvent = target.getTimingEventAtBeat(type, beat - 0.001)
       Object.assign(newEvent, properties)
       toDelete.push(event)
-      // this._delete(songTiming, event)
       if (!prevEvent || !this.isDuplicate(prevEvent, newEvent as TimingEvent)) {
-        // target.insert(type, newEvent as TimingEvent)
         toAdd.push(newEvent as TimingEvent)
       }
     } else {
       if (Object.keys(properties).length == 0) return
       Object.assign(newEvent, properties)
-      // target.insert(type, newEvent as TimingEvent)
       toAdd.push(newEvent as TimingEvent)
     }
     const bpms = this.getTimingData("BPMS")
     const nextEvent = bpms[target.searchCache(bpms, "beat", beat) + 1]
     if (nextEvent) {
       if (this.isDuplicate(newEvent as TimingEvent, nextEvent)) {
-        // this._delete(songTiming, nextEvent)
         toDelete.push(nextEvent)
       }
     }
+    console.log(toAdd, toDelete)
     ActionHistory.instance.run({
       action: () => {
         for (const event of toDelete) {
           this._delete(songTiming, event)
         }
         for (const event of toAdd) {
-          target.insert(type, event)
+          target._insert(type, event)
         }
         this.reloadCache(type)
         EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
       },
       undo: () => {
         for (const event of toAdd) {
           this._delete(songTiming, event)
         }
         for (const event of toDelete) {
-          target.insert(type, event)
+          target._insert(type, event)
         }
         this.reloadCache(type)
         EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
       },
     })
   }
@@ -657,6 +667,10 @@ export class TimingData {
       if (arr[mid][key]! > event[key]!) high = mid - 1
     }
     return -1
+  }
+
+  getBeatTiming(): BeatTimingCache[] {
+    return this._cache.beatTiming!
   }
 
   getTimingData(): TimingEvent[]

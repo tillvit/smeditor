@@ -17,17 +17,14 @@ export class BasicGameLogic extends GameLogic {
   private missNoteIndex = 0
   private holdProgress: HoldNotedataEntry[] = []
   private heldCols: ColHeldTracker = new ColHeldTracker()
+  private collection: TimingWindowCollection =
+    TimingWindowCollection.getCollection("ITG")
 
   update(chartManager: ChartManager): void {
     if (!chartManager.chart || !chartManager.chartView) return
     const hitTime = chartManager.chartView.getTimeWithOffset()
     const hitWindowStart =
-      hitTime -
-      (TimingWindowCollection.getCollection(
-        Options.play.timingCollection
-      ).maxWindowMS() /
-        1000) *
-        Options.audio.rate
+      hitTime - (this.collection.maxWindowMS() / 1000) * Options.audio.rate
     let lastChord = -1
     // Do Misses
     while (
@@ -45,16 +42,12 @@ export class BasicGameLogic extends GameLogic {
         chartManager.chartView.doJudgment(
           note,
           0,
-          TimingWindowCollection.getCollection(
-            Options.play.timingCollection
-          ).getMissJudgment()
+          this.collection.getMissJudgment()
         )
         const chord = this.chordCohesion.get(note.beat)!
         chartManager.gameStats?.addDataPoint(
           chord,
-          TimingWindowCollection.getCollection(
-            Options.play.timingCollection
-          ).getMissJudgment(),
+          this.collection.getMissJudgment(),
           0
         )
       }
@@ -70,17 +63,13 @@ export class BasicGameLogic extends GameLogic {
         chartManager.chartView.doJudgment(
           hold,
           0,
-          TimingWindowCollection.getCollection(
-            Options.play.timingCollection
-          ).getDroppedJudgment()
+          this.collection.getDroppedJudgment()
         )
         hold.gameplay!.droppedHoldBeat = chartManager.getBeat()
         this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
         chartManager.gameStats?.addHoldDataPoint(
           hold,
-          TimingWindowCollection.getCollection(
-            Options.play.timingCollection
-          ).getDroppedJudgment()
+          this.collection.getDroppedJudgment()
         )
         continue
       }
@@ -92,16 +81,12 @@ export class BasicGameLogic extends GameLogic {
         chartManager.chartView.doJudgment(
           hold,
           0,
-          TimingWindowCollection.getCollection(
-            Options.play.timingCollection
-          ).getHeldJudgement(hold)
+          this.collection.getHeldJudgement(hold)
         )
         this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
         chartManager.gameStats?.addHoldDataPoint(
           hold,
-          TimingWindowCollection.getCollection(
-            Options.play.timingCollection
-          ).getHeldJudgement(hold)
+          this.collection.getHeldJudgement(hold)
         )
       }
     }
@@ -111,15 +96,10 @@ export class BasicGameLogic extends GameLogic {
       const mine = this.getClosestNote(
         chartManager.chart.notedata,
         chartManager.chartView.getTimeWithOffset() -
-          TimingWindowCollection.getCollection(Options.play.timingCollection)
-            .getMineJudgment()
-            .getTimingWindowMS() /
-            2000,
+          this.collection.getMineJudgment().getTimingWindowMS() / 2000,
         col,
         ["Mine"],
-        TimingWindowCollection.getCollection(Options.play.timingCollection)
-          .getMineJudgment()
-          .getTimingWindowMS() / 2
+        this.collection.getMineJudgment().getTimingWindowMS() / 2
       )
       if (mine) {
         mine.gameplay!.hasHit = true
@@ -127,15 +107,11 @@ export class BasicGameLogic extends GameLogic {
         chartManager.chartView.doJudgment(
           mine,
           0,
-          TimingWindowCollection.getCollection(
-            Options.play.timingCollection
-          ).getMineJudgment()
+          this.collection.getMineJudgment()
         )
         chartManager.gameStats?.addDataPoint(
           [mine],
-          TimingWindowCollection.getCollection(
-            Options.play.timingCollection
-          ).getMineJudgment(),
+          this.collection.getMineJudgment(),
           0
         )
         chartManager.mine.play()
@@ -145,6 +121,9 @@ export class BasicGameLogic extends GameLogic {
 
   reset(chartManager: ChartManager): void {
     if (!chartManager.chart || !chartManager.chartView) return
+    this.collection = TimingWindowCollection.getCollection(
+      Options.play.timingCollection
+    )
     this.chordCohesion.clear()
     for (const note of chartManager.chart.notedata) {
       if (note.type == "Mine" || note.fake) continue
@@ -154,12 +133,7 @@ export class BasicGameLogic extends GameLogic {
     }
     const hitTime = chartManager.chartView.getTimeWithOffset()
     const hitWindowStart =
-      hitTime -
-      (TimingWindowCollection.getCollection(
-        Options.play.timingCollection
-      ).maxWindowMS() /
-        1000) *
-        Options.audio.rate
+      hitTime - (this.collection.maxWindowMS() / 1000) * Options.audio.rate
     let firstHittableNote =
       bsearch(chartManager.chart.notedata, hitWindowStart, a => a.second) + 1
     if (
@@ -222,12 +196,10 @@ export class BasicGameLogic extends GameLogic {
     }
     const chord = this.chordCohesion.get(note.beat)!
     if (chord.every(note => note.gameplay!.hasHit)) {
-      const judge = TimingWindowCollection.getCollection(
-        Options.play.timingCollection
-      ).judgeInput((hitTime - note.second) / Options.audio.rate)
-      const hideNote = TimingWindowCollection.getCollection(
-        Options.play.timingCollection
-      ).shouldHideNote(judge)
+      const judge = this.collection.judgeInput(
+        (hitTime - note.second) / Options.audio.rate
+      )
+      const hideNote = this.collection.shouldHideNote(judge)
       chord.forEach(note => {
         chartManager.chartView!.doJudgment(
           note,
@@ -251,11 +223,7 @@ export class BasicGameLogic extends GameLogic {
     types: string[],
     windowMS?: number
   ): NotedataEntry | undefined {
-    windowMS =
-      windowMS ??
-      TimingWindowCollection.getCollection(
-        Options.play.timingCollection
-      ).maxWindowMS()
+    windowMS = windowMS ?? this.collection.maxWindowMS()
     windowMS *= Options.audio.rate
     const hitWindowStart = hitTime - windowMS / 1000
     const hitWindowEnd = hitTime + windowMS / 1000
@@ -293,9 +261,7 @@ export class BasicGameLogic extends GameLogic {
 
   private shouldDropHold(note: HoldNotedataEntry, time: number): boolean {
     if (!note.gameplay?.lastHoldActivation) return false
-    const window = TimingWindowCollection.getCollection(
-      Options.play.timingCollection
-    ).getHeldJudgement(note)
+    const window = this.collection.getHeldJudgement(note)
     if (!window) return false
     return time - note.gameplay.lastHoldActivation >= window.getTimingWindowMS()
   }

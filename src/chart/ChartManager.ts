@@ -269,6 +269,12 @@ export class ChartManager {
       }
     })
 
+    EventHandler.on("chartModified", () => {
+      if (this.chart) {
+        this.chart.recalculateStats()
+      }
+    })
+
     window.addEventListener(
       "keyup",
       (event: KeyboardEvent) => {

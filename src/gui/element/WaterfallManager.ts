@@ -27,6 +27,7 @@ export class WaterfallManager {
     }
     const container = document.createElement("div")
     container.innerHTML = message
+    if (count > 1) container.innerHTML += ` (${count})`
     container.classList.add("waterfall-item")
     WaterfallManager.messages[message] = {
       type: "",
