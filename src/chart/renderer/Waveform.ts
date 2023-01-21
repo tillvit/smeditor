@@ -179,7 +179,7 @@ export class Waveform extends Sprite {
       const offset = this.renderer.chart.timingData.getTimingData("OFFSET")
       const startBPM = this.renderer.chart.timingData.getBPM(0)
       const timingChanges = this.renderer.chart.timingData.getBeatTiming()
-      let calcSec = this.renderer.chart.getSeconds(curBeat)
+      let curSec = this.renderer.chart.getSeconds(curBeat)
 
       let scrollIndex = bsearch(scrolls, curBeat, a => a.beat)
       if (scrolls[scrollIndex]?.beat != 0) scrollIndex--
@@ -227,21 +227,21 @@ export class Waveform extends Sprite {
             Options.waveform.lineHeight
           y += scroll.value > 0 ? 1 : -1
           const flooredBeat = Math.floor(curBeat * 1000) / 1000
-          if (curBeat <= 0) calcSec = -offset + (curBeat * 60) / startBPM
+          if (curBeat <= 0) curSec = -offset + (curBeat * 60) / startBPM
           else if (flooredBeat >= timingChanges[1]?.beat) {
             while (flooredBeat >= timingChanges[1]?.beat) timingChanges.shift()
-            calcSec = this.renderer.chart.getSeconds(curBeat)
+            curSec = this.renderer.chart.getSeconds(curBeat)
           } else {
             const beatsElapsed = curBeat - timingChanges[0].beat
             let timeElapsed = (beatsElapsed * 60) / timingChanges[0].bpm
             if (timingChanges[0].warped) timeElapsed = 0
-            calcSec = Math.max(
+            curSec = Math.max(
               timingChanges[0].secondClamp,
               timingChanges[0].secondAfter + timeElapsed
             )
           }
-          if (calcSec < 0) continue
-          const samp = Math.floor(calcSec * this.zoom * 4)
+          if (curSec < 0) continue
+          const samp = Math.floor(curSec * this.zoom * 4)
           for (let channel = 0; channel < data.length; channel++) {
             const v = data[channel][samp]
             if (!v) continue

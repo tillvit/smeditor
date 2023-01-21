@@ -670,7 +670,7 @@ export class TimingData {
   }
 
   getBeatTiming(): BeatTimingCache[] {
-    return this._cache.beatTiming!
+    return [...this._cache.beatTiming!]
   }
 
   getTimingData(): TimingEvent[]

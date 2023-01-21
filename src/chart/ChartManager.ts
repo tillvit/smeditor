@@ -498,11 +498,6 @@ export class ChartManager {
     )
     if (audioFile) return audioFile
 
-    WaterfallManager.createFormatted(
-      "Failed to locate audio file " + musicPath,
-      "error"
-    )
-
     //Capitalization error
     let dir = this.sm_path.split("/")
     dir.pop()
@@ -515,10 +510,30 @@ export class ChartManager {
     audioFile = files.filter(
       file => file.name.toLowerCase() == aName.toLowerCase()
     )[0]
-    if (audioFile) return audioFile
+    if (audioFile) {
+      WaterfallManager.createFormatted(
+        "Failed to locate audio file " +
+          musicPath +
+          ", using file " +
+          audioFile.name +
+          " instead",
+        "warn"
+      )
+      return audioFile
+    }
 
     //Any audio file in dir
     audioFile = files.filter(file => file.type.startsWith("audio/"))[0]
+    if (audioFile) {
+      WaterfallManager.createFormatted(
+        "Failed to locate audio file " +
+          musicPath +
+          ", using file " +
+          audioFile.name +
+          " instead",
+        "warn"
+      )
+    }
     return audioFile
   }
 

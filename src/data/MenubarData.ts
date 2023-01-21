@@ -201,6 +201,17 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         type: "seperator",
       },
       {
+        type: "selection",
+        id: "playMode",
+      },
+      {
+        type: "selection",
+        id: "playModeStart",
+      },
+      {
+        type: "seperator",
+      },
+      {
         type: "checkbox",
         id: "hideWarpedArrows",
         checked: () => Options.chart.hideWarpedArrows,

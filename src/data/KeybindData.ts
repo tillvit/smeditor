@@ -146,7 +146,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   },
   songProperties: {
     label: "Song Properties...",
-    keybinds: [{ key: "P", mods: [Modifier.SHIFT] }],
+    keybinds: [{ key: "U", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.sm,
     callback: app => app.windowManager.openWindow(new SMPropertiesWindow(app)),
   },
@@ -170,7 +170,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   },
   chartProperties: {
     label: "Chart Properties...",
-    keybinds: [{ key: "P", mods: [Modifier.SHIFT, Modifier.ALT] }],
+    keybinds: [{ key: "U", mods: [Modifier.SHIFT, Modifier.ALT] }],
     disabled: app => !app.chartManager.chart,
     callback: app =>
       app.windowManager.openWindow(new ChartPropertiesWindow(app)),
@@ -383,7 +383,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     callback: () => {
       Options.waveform.enabled = !Options.waveform.enabled
       WaterfallManager.create(
-        "Waveform: " + (Options.audio.metronome ? "on" : "off")
+        "Waveform: " + (Options.waveform.enabled ? "on" : "off")
       )
     },
   },
@@ -418,7 +418,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     callback: () => {
       Options.chart.hideWarpedArrows = !Options.chart.hideWarpedArrows
       WaterfallManager.create(
-        "Hide Warped Arrows: " + (Options.audio.metronome ? "on" : "off")
+        "Hide Warped Arrows: " + (Options.chart.hideWarpedArrows ? "on" : "off")
       )
     },
   },
@@ -429,7 +429,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     callback: () => {
       Options.chart.doSpeedChanges = !Options.chart.doSpeedChanges
       WaterfallManager.create(
-        "Speed Changes: " + (Options.audio.metronome ? "on" : "off")
+        "Speed Changes: " + (Options.chart.doSpeedChanges ? "on" : "off")
       )
     },
   },
@@ -480,17 +480,29 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     callback: () => {
       Options.editor.mousePlacement = !Options.editor.mousePlacement
       WaterfallManager.create(
-        "Mouse Note Placement: " + (Options.audio.metronome ? "on" : "off")
+        "Mouse Note Placement: " +
+          (Options.editor.mousePlacement ? "on" : "off")
       )
     },
   },
   playMode: {
-    label: "Enter Play Mode",
-    keybinds: [{ key: "P", mods: [DEF_MOD] }],
+    label: "Play from current beat",
+    keybinds: [{ key: "P", mods: [] }],
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play,
     callback: app => app.chartManager.setMode(EditMode.Play),
+  },
+  playModeStart: {
+    label: "Play from start",
+    keybinds: [{ key: "P", mods: [Modifier.SHIFT] }],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Play,
+    callback: app => {
+      app.chartManager.setBeat(0)
+      app.chartManager.setMode(EditMode.Play)
+    },
   },
   options: {
     label: "Options",
