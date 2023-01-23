@@ -54,11 +54,13 @@ export class BasicNotedataParser extends NotedataParser {
           lcm(measureHoldNotes.map(note => getDivision(note.beat + note.hold)))
         )
       )
-      for (
-        let beat = measure * 4;
-        beat < measure * 4 + 4;
-        beat += 4 / division
-      ) {
+      console.log(
+        measure,
+        division,
+        measureNotes.map(note => note.beat)
+      )
+      for (let div = 0; div < division; div++) {
+        const beat = measure * 4 + (4 / division) * div
         const row = new Array(gameType.numCols).fill("0")
         while (
           roundDigit(measureNotes[0]?.beat ?? -1, 3) == roundDigit(beat, 3)
@@ -77,6 +79,7 @@ export class BasicNotedataParser extends NotedataParser {
         }
         measureString += row.join("") + "\n"
       }
+      console.log(measureString)
       measures.push(measureString)
     }
     return measures.join(",  ")

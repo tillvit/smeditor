@@ -5,6 +5,7 @@ import { IS_OSX, KEYBINDS } from "../data/KeybindData"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { WidgetManager } from "../gui/widget/WidgetManager"
 import { Keybinds } from "../listener/Keybinds"
+import { ActionHistory } from "../util/ActionHistory"
 import { EventHandler } from "../util/EventHandler"
 import { Options } from "../util/Options"
 import { TimerStats } from "../util/TimerStats"
@@ -408,6 +409,7 @@ export class ChartManager {
 
     this.noChartTextA.visible = true
     this.noChartTextB.visible = true
+    ActionHistory.instance.reset()
 
     EventHandler.emit("smLoaded")
     this.loadChart()
@@ -429,6 +431,7 @@ export class ChartManager {
 
     this.chart = chart
     this.beat = this.chart.getBeat(this.time)
+    ActionHistory.instance.lock()
 
     Options.play.timingCollection =
       Options.play.defaultTimingCollection[chart.gameType.id] ?? "ITG"
@@ -853,5 +856,30 @@ export class ChartManager {
   judgeColUp(col: number) {
     if (!this.chart || !this.chartView || this.mode != EditMode.Play) return
     this.chart.gameType.gameLogic.keyUp(this, col)
+  }
+
+  save() {
+    if (!this.sm) return
+    if (!ActionHistory.instance.canUndo()) {
+      WaterfallManager.create("Saved")
+      return
+    }
+    const path_arr = this.sm_path.split("/")
+    const name = path_arr.pop()!.split(".").slice(0, -1).join(".")
+    const path = path_arr.join("/")
+    if (!this.sm.usesSplitTiming()) {
+      const sm = new File([this.sm.serialize("sm")], name + ".sm", { type: "" })
+      this.app.files.addFile(path + "/" + name + ".sm", sm)
+    }
+    const ssc = new File([this.sm.serialize("ssc")], name + ".ssc", {
+      type: "",
+    })
+    this.app.files.addFile(path + "/" + name + ".ssc", ssc)
+    if (this.sm.usesSplitTiming()) {
+      WaterfallManager.create("Saved. No SM file since split timing was used.")
+    } else {
+      WaterfallManager.create("Saved")
+    }
+    return
   }
 }

@@ -1,7 +1,18 @@
 import { Parser } from "expr-eval"
 import { DisplayObject } from "pixi.js"
 
-const QUANTS = [1, 1 / 2, 1 / 3, 1 / 4, 1 / 6, 1 / 8, 1 / 12, 1 / 16, 1 / 24]
+const QUANTS = [
+  1,
+  1 / 2,
+  1 / 3,
+  1 / 4,
+  1 / 6,
+  1 / 8,
+  1 / 12,
+  1 / 16,
+  1 / 24,
+  1 / 48,
+]
 export function getQuantIndex(beat: number) {
   for (let i = 0; i < QUANTS.length; i++) {
     if (Math.abs(beat - Math.round(beat / QUANTS[i]) * QUANTS[i]) < 0.01) {

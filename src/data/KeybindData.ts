@@ -153,8 +153,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   save: {
     label: "Save...",
     keybinds: [{ key: "S", mods: [DEF_MOD] }],
-    disabled: true,
-    callback: () => 0,
+    disabled: app => !app.chartManager.sm,
+    callback: app => app.chartManager.save(),
   },
   newChart: {
     label: "New Chart...",
