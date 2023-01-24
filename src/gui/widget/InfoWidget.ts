@@ -7,7 +7,7 @@ import { destroyChildIf, roundDigit } from "../../util/Util"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
 
-const WIDGET_WIDTH = 300
+const WIDGET_WIDTH = 310
 
 export class InfoWidget extends Widget {
   background = new BetterRoundedRect()
@@ -90,7 +90,7 @@ export class InfoWidget extends Widget {
 
   update(): void {
     this.visible = true
-    this.x = -this.manager.app.renderer.screen.width / 2 + 20
+    this.x = -this.manager.app.renderer.screen.width / 2 + 15
     this.y = -this.manager.app.renderer.screen.height / 2 + 20
     this.background.height = 150
     this.maskObj.height = 150

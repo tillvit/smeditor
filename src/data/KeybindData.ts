@@ -1,3 +1,4 @@
+import { saveAs } from "file-saver"
 import { App } from "../App"
 import { EditMode } from "../chart/ChartManager"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
@@ -153,8 +154,21 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   save: {
     label: "Save...",
     keybinds: [{ key: "S", mods: [DEF_MOD] }],
-    disabled: true,
-    callback: () => 0,
+    disabled: app => !app.chartManager.sm,
+    callback: app => app.chartManager.save(),
+  },
+  export: {
+    label: "Export current song",
+    keybinds: [{ key: "E", mods: [DEF_MOD] }],
+    disabled: app => !app.chartManager.sm,
+    callback: app => {
+      const zip = app.files.zip(app.chartManager.sm_path)
+      const folderName = app.chartManager.sm_path.split("/").at(-2) ?? "song"
+      WaterfallManager.create("Exporting " + folderName + ".zip")
+      zip
+        .generateAsync({ type: "blob" })
+        .then(blob => saveAs(blob, folderName + ".zip"))
+    },
   },
   newChart: {
     label: "New Chart...",

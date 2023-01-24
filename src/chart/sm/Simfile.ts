@@ -205,6 +205,15 @@ export class Simfile {
     return str
   }
 
+  usesSplitTiming(): boolean {
+    for (const type in this.charts) {
+      for (const chart of this.charts[type]) {
+        if (!chart.timingData.isEmpty()) return true
+      }
+    }
+    return false
+  }
+
   private formatProperty(name: string, item: string | number | undefined) {
     item ||= ""
     return "#" + name.toUpperCase() + ":" + item + ";\n"

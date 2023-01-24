@@ -10,6 +10,7 @@ interface UndoableAction {
 export class ActionHistory {
   private items: UndoableAction[] = []
   private itemIndex = 0
+  private limit = 0
   private app: App
   static instance: ActionHistory
 
@@ -50,10 +51,18 @@ export class ActionHistory {
   }
 
   canUndo(): boolean {
-    return this.itemIndex != 0
+    return this.itemIndex > 0
   }
 
   canRedo(): boolean {
     return this.itemIndex != this.items.length
+  }
+
+  setLimit() {
+    this.limit = this.itemIndex
+  }
+
+  isDirty(): boolean {
+    return this.itemIndex != this.limit
   }
 }

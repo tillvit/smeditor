@@ -5,10 +5,12 @@ import { IS_OSX, KEYBINDS } from "../data/KeybindData"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { WidgetManager } from "../gui/widget/WidgetManager"
 import { Keybinds } from "../listener/Keybinds"
+import { ActionHistory } from "../util/ActionHistory"
 import { EventHandler } from "../util/EventHandler"
 import { Options } from "../util/Options"
 import { TimerStats } from "../util/TimerStats"
 import { bsearch, tpsUpdate } from "../util/Util"
+import { ConfimationWindow } from "../window/ConfirmationWindow"
 import { NewChartWindow } from "../window/NewChartWindow"
 import { ChartAudio } from "./audio/ChartAudio"
 import { ChartRenderer } from "./ChartRenderer"
@@ -385,6 +387,32 @@ export class ChartManager {
   }
 
   async loadSM(path?: string) {
+    if (ActionHistory.instance.isDirty()) {
+      const window = new ConfimationWindow(
+        this.app,
+        "Save",
+        "Do you wish to save the current file?",
+        [
+          {
+            label: "Cancel",
+            type: "default",
+          },
+          {
+            label: "No",
+            type: "default",
+          },
+          {
+            label: "Yes",
+            type: "confirm",
+          },
+        ]
+      )
+      this.app.windowManager.openWindow(window)
+      const option = await window.resolved
+      if (option == "Cancel") return
+      if (option == "Yes") this.save()
+    }
+
     if (!path) {
       this.sm_path = ""
       this.sm = undefined
@@ -429,6 +457,7 @@ export class ChartManager {
 
     this.chart = chart
     this.beat = this.chart.getBeat(this.time)
+    ActionHistory.instance.reset()
 
     Options.play.timingCollection =
       Options.play.defaultTimingCollection[chart.gameType.id] ?? "ITG"
@@ -853,5 +882,31 @@ export class ChartManager {
   judgeColUp(col: number) {
     if (!this.chart || !this.chartView || this.mode != EditMode.Play) return
     this.chart.gameType.gameLogic.keyUp(this, col)
+  }
+
+  save() {
+    if (!this.sm) return
+    if (!ActionHistory.instance.isDirty()) {
+      WaterfallManager.create("Saved")
+      return
+    }
+    const path_arr = this.sm_path.split("/")
+    const name = path_arr.pop()!.split(".").slice(0, -1).join(".")
+    const path = path_arr.join("/")
+    if (!this.sm.usesSplitTiming()) {
+      const sm = new File([this.sm.serialize("sm")], name + ".sm", { type: "" })
+      this.app.files.addFile(path + "/" + name + ".sm", sm)
+    }
+    const ssc = new File([this.sm.serialize("ssc")], name + ".ssc", {
+      type: "",
+    })
+    this.app.files.addFile(path + "/" + name + ".ssc", ssc)
+    if (this.sm.usesSplitTiming()) {
+      WaterfallManager.create("Saved. No SM file since split timing was used.")
+    } else {
+      WaterfallManager.create("Saved")
+    }
+    ActionHistory.instance.setLimit()
+    return
   }
 }

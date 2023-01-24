@@ -15,7 +15,7 @@ export class ChartListWindow extends Window {
 
   constructor(app: App, gameType?: GameType) {
     super({
-      title: "Chart List",
+      title: "Open a chart...",
       width: 500,
       height: 300,
       win_id: "chart_list",
