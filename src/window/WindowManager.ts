@@ -30,7 +30,7 @@ export class WindowManager {
   }
 
   removeWindow(window: Window) {
-    this.windows.splice(this.windows.indexOf(window))
+    this.windows.splice(this.windows.indexOf(window), 1)
   }
 
   getWindowById(id: string): Window | undefined {

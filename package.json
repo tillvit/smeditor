@@ -10,6 +10,7 @@
     "prepare": "husky install"
   },
   "devDependencies": {
+    "@types/file-saver": "^2.0.5",
     "@types/howler": "^2.2.7",
     "@types/webfontloader": "^1.6.35",
     "@typescript-eslint/eslint-plugin": "^5.48.0",
@@ -27,7 +28,9 @@
   "dependencies": {
     "@pixi/filter-adjustment": "^5.0.0",
     "expr-eval": "^2.0.2",
+    "file-saver": "^2.0.5",
     "howler": "^2.2.3",
+    "jszip": "^3.10.1",
     "pixi.js": "^7.0.4",
     "scroll-into-view-if-needed": "^3.0.3",
     "webfontloader": "^1.6.28"

@@ -51,15 +51,18 @@ export class ActionHistory {
   }
 
   canUndo(): boolean {
-    return this.itemIndex > this.limit
+    return this.itemIndex > 0
   }
 
   canRedo(): boolean {
     return this.itemIndex != this.items.length
   }
 
-  lock() {
+  setLimit() {
     this.limit = this.itemIndex
-    this.items.splice(this.itemIndex, this.items.length - this.itemIndex)
+  }
+
+  isDirty(): boolean {
+    return this.itemIndex != this.limit
   }
 }

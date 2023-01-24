@@ -1,3 +1,5 @@
+import JSZip from "jszip"
+
 export interface FileTree {
   [key: string]: FileTree | File
 }
@@ -181,6 +183,19 @@ export class FileSystem {
       path_arr.splice(ind - 1, 2)
     }
     return path_arr
+  }
+
+  zip(path: string) {
+    const zip = new JSZip()
+    const folder = path.split("/").slice(0, -1).join("/")
+    const files = Object.entries(this.files).filter(entry =>
+      entry[0].startsWith(folder)
+    )
+    for (const entry of files) {
+      const name = entry[0].slice(folder.length + 1)
+      zip.file(name, entry[1])
+    }
+    return zip
   }
 
   static relPath(from: string, to: string): string {

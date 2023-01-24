@@ -120,7 +120,7 @@ export class TimingWindowCollection {
         ),
         new StandardTimingWindow(
           "w1",
-          "White Fantastic",
+          "Fantastic",
           0xffffff,
           23,
           3,

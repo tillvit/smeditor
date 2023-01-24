@@ -727,12 +727,15 @@ export class TimingData {
       ]
     }
     for (const prop of props) {
-      str += this.formatProperty(prop)
+      str += this.formatProperty(type, prop)
     }
     return str
   }
 
-  private formatProperty(prop: TimingEventProperty): string {
+  private formatProperty(
+    type: "sm" | "ssc",
+    prop: TimingEventProperty
+  ): string {
     const precision = 3
     if (!this._fallback && !this.events[prop]) return ""
     let str = ""
@@ -769,9 +772,32 @@ export class TimingData {
       case "DELAYS":
       case "FAKES":
       case "SCROLLS":
-      case "STOPS":
       case "WARPS": {
         const events = this.getTimingData(prop)
+        str = events
+          .map(
+            event =>
+              `${roundDigit(event.beat, precision).toFixed(
+                precision
+              )}=${roundDigit(event.value, precision).toFixed(precision)}`
+          )
+          .join(",\n")
+        break
+      }
+      case "STOPS": {
+        let events = this.getTimingData(prop)
+        if (type == "sm") {
+          const warps = this.getTimingData("WARPS")
+          const stopWarps: StopTimingEvent[] = warps.map(warp => {
+            const bpm = this.getBPM(warp.beat)
+            return {
+              type: "STOPS",
+              beat: warp.beat,
+              value: (-60 / bpm) * warp.value,
+            }
+          })
+          events = events.concat(stopWarps)
+        }
         str = events
           .map(
             event =>
