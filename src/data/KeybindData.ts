@@ -122,6 +122,28 @@ export const KEYBINDS: { [key: string]: Keybind } = {
         Options.chart.speed * Math.pow(1.01, -30)
       )),
   },
+  zoomIn: {
+    label: "Increase scroll speed",
+    keybinds: [{ key: "=", mods: [DEF_MOD] }],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.zoom += 0.1
+      WaterfallManager.create(
+        "Zoom: " + Math.round(Options.chart.zoom * 100) + "%"
+      )
+    },
+  },
+  zoomOut: {
+    label: "Decrease scroll speed",
+    keybinds: [{ key: "-", mods: [DEF_MOD] }],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.zoom = Math.max(0.05, Options.chart.zoom - 0.1)
+      WaterfallManager.create(
+        "Zoom: " + Math.round(Options.chart.zoom * 100) + "%"
+      )
+    },
+  },
   newSong: {
     label: "New Song...",
     keybinds: [{ key: "N", mods: [DEF_MOD] }],

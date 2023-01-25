@@ -23,6 +23,7 @@ class DefaultOptions {
     snap: 1,
     maxDrawBeats: 20,
     maxDrawBeatsBack: 10,
+    zoom: 1,
     drawNoteFlash: true,
     renderTimingEvent: {
       BPMS: true,
@@ -79,12 +80,13 @@ class DefaultOptions {
     } as { [key: string]: string },
   }
   static debug = {
+    renderingStats: false,
     showTimers: false,
   }
   static performance = {
     resolution: window.devicePixelRatio,
     smoothAnimations: true,
-    maxFPS: 60,
+    antialiasing: false,
   }
 }
 

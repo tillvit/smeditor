@@ -43,6 +43,7 @@ export class Keybinds {
         })
         if (gp_matches.length > 0) {
           e.preventDefault()
+          if (app.windowManager.isBlocked()) return
           for (const match of gp_matches) {
             if (e.repeat) continue
             app.chartManager.judgeCol(match.col)
@@ -60,6 +61,7 @@ export class Keybinds {
       })
       if (matches.length > 0) {
         e.preventDefault()
+        if (app.windowManager.isBlocked()) return
         for (const match of matches) {
           let disabled = match.disabled
           if (disabled instanceof Function) disabled = disabled(this.app)
@@ -97,6 +99,7 @@ export class Keybinds {
         })
         if (gp_matches.length > 0) {
           e.preventDefault()
+          if (app.windowManager.isBlocked()) return
           for (const match of gp_matches) {
             if (e.repeat) continue
             app.chartManager.judgeColUp(match.col)

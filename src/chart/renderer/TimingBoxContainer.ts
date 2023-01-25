@@ -106,13 +106,8 @@ export class TimingBoxContainer extends Container {
       Options.chart.CMod && event.second
         ? this.renderer.getYPosFromTime(event.second)
         : this.renderer.getYPos(event.beat!)
-    if (y < -32 - this.renderer.y) return [true, false, y]
-    if (
-      y >
-      this.renderer.chartManager.app.renderer.screen.height -
-        this.renderer.y +
-        32
-    ) {
+    if (y < this.renderer.getUpperBound()) return [true, false, y]
+    if (y > this.renderer.getLowerBound()) {
       if (event.beat! < beat || this.renderer.isNegScroll(event.beat!))
         return [true, false, y]
       else return [true, true, y]

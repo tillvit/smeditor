@@ -1,13 +1,13 @@
-import { ChartRenderer } from "../../ChartRenderer"
-import { DanceNoteRenderer, NoteObject } from "./DanceNoteRenderer"
-import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
-import { Options } from "../../../util/Options"
-import { EditMode } from "../../ChartManager"
-import { DanceNotefield } from "./DanceNotefield"
-import { DanceNoteTexture } from "./DanceNoteTexture"
 import { Container } from "pixi.js"
-import { TimingWindowCollection } from "../../play/TimingWindowCollection"
+import { Options } from "../../../util/Options"
 import { destroyChildIf } from "../../../util/Util"
+import { EditMode } from "../../ChartManager"
+import { ChartRenderer } from "../../ChartRenderer"
+import { TimingWindowCollection } from "../../play/TimingWindowCollection"
+import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
+import { DanceNotefield } from "./DanceNotefield"
+import { DanceNoteRenderer, NoteObject } from "./DanceNoteRenderer"
+import { DanceNoteTexture } from "./DanceNoteTexture"
 
 interface ExtendedNoteObject extends NoteObject {
   note: NotedataEntry
@@ -95,7 +95,7 @@ export class NoteContainer extends Container {
     note: NotedataEntry,
     beat: number
   ): [boolean, boolean, number, number] {
-    let y = Options.chart.receptorYPos
+    let y = Options.chart.receptorYPos / Options.chart.zoom
     if (
       !isHoldNote(note) ||
       !note.gameplay?.lastHoldActivation ||
@@ -114,13 +114,9 @@ export class NoteContainer extends Container {
       note.beat + note.hold < beat
     )
       return [true, false, y, y_hold - y]
-    if (y_hold < -32 - this.renderer.y) return [true, false, y, y_hold - y]
-    if (
-      y >
-      this.renderer.chartManager.app.renderer.screen.height -
-        this.renderer.y +
-        32
-    ) {
+    if (y_hold < this.renderer.getUpperBound())
+      return [true, false, y, y_hold - y]
+    if (y > this.renderer.getLowerBound()) {
       if (note.beat < beat || this.renderer.isNegScroll(note.beat))
         return [true, false, y, y_hold - y]
       else return [true, true, y, y_hold - y]

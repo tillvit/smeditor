@@ -38,7 +38,7 @@ export class NoteFlashContainer extends Container {
   }
 
   renderThis() {
-    this.y = Options.chart.receptorYPos
+    this.y = Options.chart.receptorYPos / Options.chart.zoom
     this.scale.y = Options.chart.reverse ? -1 : 1
 
     for (const child of this.children) {
