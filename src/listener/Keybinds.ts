@@ -1,7 +1,12 @@
 import { App } from "../App"
 import { EditMode } from "../chart/ChartManager"
 import { GAMEPLAY_KEYBINDS } from "../data/GameplayKeybindData"
-import { KEYBINDS, Modifier, SPECIAL_KEYS } from "../data/KeybindData"
+import {
+  KEYBINDS,
+  Modifier,
+  MODIFIER_ASCII,
+  SPECIAL_KEYS,
+} from "../data/KeybindData"
 
 const MODPROPS: ["ctrlKey", "altKey", "shiftKey", "metaKey"] = [
   "ctrlKey",
@@ -145,8 +150,10 @@ export class Keybinds {
     const item = KEYBINDS[id]
     return item.keybinds
       .map(keybind => {
-        const mods = MODORDER.filter(x => keybind.mods.includes(x)).join("+")
-        return mods + (mods != "" ? "+" : "") + keybind.key
+        const mods = MODORDER.filter(x => keybind.mods.includes(x))
+          .map(mod => MODIFIER_ASCII[mod])
+          .join("")
+        return mods + (mods != "" ? " " : "") + keybind.key
       })
       .join(" / ")
   }

@@ -182,6 +182,7 @@ export class GameplayStats {
       if (!this.judgmentCounts.has(judge)) this.judgmentCounts.set(judge, 0)
       this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
       this.dancePoints += judge.dancePoints
+      dataPoint.judgment = judge
       if (!isMineTimingWindow(judge))
         this.maxCumulativeDancePoints += TimingWindowCollection.getCollection(
           Options.play.timingCollection

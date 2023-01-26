@@ -55,6 +55,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         type: "selection",
         id: "save",
       },
+      {
+        type: "selection",
+        id: "export",
+      },
     ],
   },
   edit: {
@@ -75,7 +79,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       {
         type: "checkbox",
         id: "mousePlacement",
-        checked: () => Options.editor.mousePlacement,
+        checked: () => Options.general.mousePlacement,
       },
     ],
   },
@@ -184,12 +188,33 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "dropdown",
+        title: "Zoom",
+        options: [
+          {
+            type: "selection",
+            id: "zoomIn",
+          },
+          {
+            type: "selection",
+            id: "zoomOut",
+          },
+          {
+            type: "seperator",
+          },
+          {
+            type: "selection",
+            id: "zoomDefault",
+          },
+        ],
+      },
+      {
+        type: "dropdown",
         title: "Waveform",
         options: [
           {
             type: "checkbox",
             id: "renderWaveform",
-            checked: () => Options.waveform.enabled,
+            checked: () => Options.chart.waveform.enabled,
           },
           {
             type: "selection",

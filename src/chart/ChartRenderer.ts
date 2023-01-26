@@ -97,7 +97,7 @@ export class ChartRenderer extends Container {
     })
     this.on("mousedown", () => {
       if (
-        Options.editor.mousePlacement &&
+        Options.general.mousePlacement &&
         this.lastMouseBeat != -1 &&
         this.lastMouseCol != -1
       ) {
