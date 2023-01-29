@@ -1,7 +1,12 @@
 import { App } from "../App"
 import { EditMode } from "../chart/ChartManager"
 import { GAMEPLAY_KEYBINDS } from "../data/GameplayKeybindData"
-import { KEYBINDS, Modifier, SPECIAL_KEYS } from "../data/KeybindData"
+import {
+  KEYBINDS,
+  Modifier,
+  MODIFIER_ASCII,
+  SPECIAL_KEYS,
+} from "../data/KeybindData"
 
 const MODPROPS: ["ctrlKey", "altKey", "shiftKey", "metaKey"] = [
   "ctrlKey",
@@ -43,6 +48,7 @@ export class Keybinds {
         })
         if (gp_matches.length > 0) {
           e.preventDefault()
+          if (app.windowManager.isBlocked()) return
           for (const match of gp_matches) {
             if (e.repeat) continue
             app.chartManager.judgeCol(match.col)
@@ -60,6 +66,7 @@ export class Keybinds {
       })
       if (matches.length > 0) {
         e.preventDefault()
+        if (app.windowManager.isBlocked()) return
         for (const match of matches) {
           let disabled = match.disabled
           if (disabled instanceof Function) disabled = disabled(this.app)
@@ -97,6 +104,7 @@ export class Keybinds {
         })
         if (gp_matches.length > 0) {
           e.preventDefault()
+          if (app.windowManager.isBlocked()) return
           for (const match of gp_matches) {
             if (e.repeat) continue
             app.chartManager.judgeColUp(match.col)
@@ -142,8 +150,10 @@ export class Keybinds {
     const item = KEYBINDS[id]
     return item.keybinds
       .map(keybind => {
-        const mods = MODORDER.filter(x => keybind.mods.includes(x)).join("+")
-        return mods + (mods != "" ? "+" : "") + keybind.key
+        const mods = MODORDER.filter(x => keybind.mods.includes(x))
+          .map(mod => MODIFIER_ASCII[mod])
+          .join("")
+        return mods + (mods != "" ? " " : "") + keybind.key
       })
       .join(" / ")
   }

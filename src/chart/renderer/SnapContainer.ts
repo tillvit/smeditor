@@ -53,7 +53,7 @@ export class SnapContainer extends Container {
   }
 
   renderThis() {
-    this.y = Options.chart.receptorYPos
+    this.y = Options.chart.receptorYPos / Options.chart.zoom
 
     this.visible = this.renderer.chartManager.getMode() == EditMode.Edit
     for (let i = 0; i < 2; i++) {

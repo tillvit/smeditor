@@ -328,4 +328,8 @@ export class TimingWindowCollection {
   static getCollection(name: string): TimingWindowCollection {
     return this.COLLECTIONS[name] ?? this.COLLECTIONS.ITG
   }
+
+  static getCollections() {
+    return TimingWindowCollection.COLLECTIONS
+  }
 }

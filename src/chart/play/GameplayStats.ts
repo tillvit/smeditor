@@ -1,12 +1,18 @@
 import { Options } from "../../util/Options"
 import { ChartManager } from "../ChartManager"
-import { isHoldNote, Notedata, NotedataEntry } from "../sm/NoteTypes"
+import {
+  HoldNotedataEntry,
+  isHoldNote,
+  Notedata,
+  NotedataEntry,
+} from "../sm/NoteTypes"
 import { HoldDroppedTimingWindow } from "./HoldDroppedTimingWindow"
 import { HoldTimingWindow } from "./HoldTimingWindow"
 import { StandardTimingWindow } from "./StandardTimingWindow"
 import { TimingWindow } from "./TimingWindow"
 import {
   isHoldDroppedTimingWindow,
+  isHoldTimingWindow,
   isMineTimingWindow,
   isStandardMissTimingWindow,
   isStandardTimingWindow,
@@ -22,6 +28,8 @@ interface JudgmentDataPoint {
 
 export class GameplayStats {
   private judgmentCounts: Map<TimingWindow, number> = new Map()
+  private holdJudgmentCounts: Map<HoldTimingWindow, [number, number]> =
+    new Map()
   private dancePoints = 0
   private maxCumulativeDancePoints = 0
   private maxDancePoints = 0
@@ -106,11 +114,20 @@ export class GameplayStats {
   }
 
   addHoldDataPoint(
-    note: NotedataEntry,
+    note: HoldNotedataEntry,
     judge: HoldTimingWindow | HoldDroppedTimingWindow
   ) {
     if (!this.judgmentCounts.has(judge)) this.judgmentCounts.set(judge, 0)
     this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
+    const holdJudge = TimingWindowCollection.getCollection(
+      Options.play.timingCollection
+    ).getHeldJudgement(note)
+    if (!this.holdJudgmentCounts.has(holdJudge))
+      this.holdJudgmentCounts.set(holdJudge, [0, 0])
+    const count = this.holdJudgmentCounts.get(holdJudge)!
+    if (isHoldTimingWindow(judge)) count[0]++
+    else count[1]++
+    this.holdJudgmentCounts.set(holdJudge, count)
     this.dancePoints += judge.dancePoints
     this.maxCumulativeDancePoints += TimingWindowCollection.getCollection(
       Options.play.timingCollection
@@ -143,27 +160,33 @@ export class GameplayStats {
     this.calculateMaxDP()
     this.dancePoints = 0
     this.maxCumulativeDancePoints = 0
-    for (const entry of this.judgmentCounts.entries()) {
-      if ((entry[0] as HoldTimingWindow).noteType) {
-        const judge: HoldTimingWindow = entry[0] as HoldTimingWindow
-        this.dancePoints += entry[0].dancePoints
-        this.maxCumulativeDancePoints +=
-          entry[1] +
-          TimingWindowCollection.getCollection(
-            Options.play.timingCollection
-          ).getMaxHoldDancePoints(judge.noteType)
-      }
+    for (const entry of this.holdJudgmentCounts.entries()) {
+      const judge = entry[0]
+      this.dancePoints += entry[0].dancePoints * entry[1][0]
+      this.maxCumulativeDancePoints +=
+        (entry[1][0] + entry[1][1]) *
+        TimingWindowCollection.getCollection(
+          Options.play.timingCollection
+        ).getMaxHoldDancePoints(judge.noteType)
     }
+    this.judgmentCounts.clear()
     for (const dataPoint of this.dataPoints) {
-      const judge = TimingWindowCollection.getCollection(
+      let judge: TimingWindow = TimingWindowCollection.getCollection(
         Options.play.timingCollection
       ).judgeInput(dataPoint.error)
+      if (
+        isStandardMissTimingWindow(dataPoint.judgment) ||
+        isMineTimingWindow(dataPoint.judgment)
+      )
+        judge = dataPoint.judgment
       if (!this.judgmentCounts.has(judge)) this.judgmentCounts.set(judge, 0)
       this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
       this.dancePoints += judge.dancePoints
-      this.maxCumulativeDancePoints += TimingWindowCollection.getCollection(
-        Options.play.timingCollection
-      ).getMaxDancePoints()
+      dataPoint.judgment = judge
+      if (!isMineTimingWindow(judge))
+        this.maxCumulativeDancePoints += TimingWindowCollection.getCollection(
+          Options.play.timingCollection
+        ).getMaxDancePoints()
       if (isStandardMissTimingWindow(judge)) {
         this.maxCumulativeDancePoints += dataPoint.notes
           .filter(isHoldNote)

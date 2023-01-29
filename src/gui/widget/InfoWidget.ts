@@ -3,7 +3,14 @@ import { EditMode } from "../../chart/ChartManager"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
-import { destroyChildIf, roundDigit } from "../../util/Util"
+import { TimerStats } from "../../util/TimerStats"
+import {
+  destroyChildIf,
+  getFPS,
+  getMemoryString,
+  getTPS,
+  roundDigit,
+} from "../../util/Util"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
 
@@ -32,6 +39,8 @@ export class InfoWidget extends Widget {
     this.sortableChildren = true
     this.addChild(this.maskObj, this.items)
     this.items.addChild(this.texts, this.noteCounts)
+
+    this.items.mask = this.maskObj
     const mode = new BitmapText("", {
       fontName: "Assistant",
       fontSize: 25,
@@ -59,7 +68,18 @@ export class InfoWidget extends Widget {
     chart.x = 20
     chart.y = 50
     this.texts.addChild(chart)
-    this.items.mask = this.maskObj
+
+    const renderStats = new BitmapText("", {
+      fontName: "Assistant",
+      fontSize: 18,
+    })
+    renderStats.name = "RStats"
+    renderStats.x = 290
+    renderStats.y = 50
+    renderStats.align = "right"
+    renderStats.visible = false
+    renderStats.anchor.x = 1
+    this.texts.addChild(renderStats)
 
     EventHandler.on("chartLoaded", () => {
       destroyChildIf(this.noteCounts.children, () => true)
@@ -115,6 +135,19 @@ export class InfoWidget extends Widget {
 
       this.texts.getChildByName<BitmapText>("Chart").text =
         chart.difficulty + " " + chart.meter
+    }
+
+    const renderStats = this.texts.getChildByName<BitmapText>("RStats")
+    renderStats.visible = Options.debug.renderingStats
+    if (Options.debug.renderingStats) {
+      renderStats.text =
+        getFPS() + " FPS\n" + getTPS() + " TPS\n" + getMemoryString() + "\n"
+      if (Options.debug.showTimers) {
+        for (const timer of TimerStats.getTimers()) {
+          renderStats.text +=
+            timer.name + ": " + timer.lastTime.toFixed(3) + "ms\n"
+        }
+      }
     }
 
     if (Options.performance.smoothAnimations) {

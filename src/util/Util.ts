@@ -1,6 +1,19 @@
 import { Parser } from "expr-eval"
 import { DisplayObject } from "pixi.js"
 
+declare global {
+  interface Performance {
+    memory?: {
+      /** The maximum size of the heap, in bytes, that is available to the context. */
+      jsHeapSizeLimit: number
+      /** The total allocated heap size, in bytes. */
+      totalJSHeapSize: number
+      /** The currently active segment of JS heap, in bytes. */
+      usedJSHeapSize: number
+    }
+  }
+}
+
 const QUANTS = [
   1,
   1 / 2,
@@ -78,6 +91,11 @@ export function tpsUpdate() {
   while (tpsTimes.length > 0 && tpsTimes[0] < Date.now() - 1000) {
     tpsTimes.shift()
   }
+}
+
+export function getMemoryString(): string {
+  if (!performance?.memory) return "- MB"
+  return Math.round(performance.memory.usedJSHeapSize / 1048576) + " MB"
 }
 
 export function clamp(val: number, low: number, high: number): number {

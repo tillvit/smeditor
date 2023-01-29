@@ -1,11 +1,8 @@
 import { TimingEventProperty } from "../chart/sm/TimingTypes"
 
 const SAVE_BLACKLIST = [
-  "audio.assistTick",
-  "audio.metronome",
   "audio.rate",
   "chart.snap",
-  "chart.speed",
   "chart.CMod",
   "play.timingCollection",
 ]
@@ -13,17 +10,29 @@ const SAVE_BLACKLIST = [
 export const VIEW_BLACKLIST: string[] = []
 
 class DefaultOptions {
+  static general = {
+    scrollSensitivity: 1,
+    mousePlacement: false,
+  }
   static chart = {
     CMod: false,
     reverse: false,
+    zoom: 1,
+    speed: 250,
+    snap: 1,
     hideWarpedArrows: false,
     doSpeedChanges: true,
-    speed: 250,
+    drawNoteFlash: true,
     receptorYPos: -200,
-    snap: 1,
     maxDrawBeats: 20,
     maxDrawBeatsBack: 10,
-    drawNoteFlash: true,
+    waveform: {
+      enabled: true,
+      color: 0x606172,
+      opacity: 0.5,
+      autoAdjustQuality: true,
+      lineHeight: 1,
+    },
     renderTimingEvent: {
       BPMS: true,
       STOPS: true,
@@ -44,32 +53,18 @@ class DefaultOptions {
   static audio = {
     assistTick: false,
     metronome: false,
-    effectOffset: 0,
-    soundEffectVolume: 0.5,
-    songVolume: 0.2,
     rate: 1,
-  }
-  static waveform = {
-    enabled: true,
-    color: 0x606172,
-    opacity: 0.5,
-    autoAdjustQuality: true,
-    lineHeight: 1,
-  }
-  static editor = {
-    scrollSensitivity: 1,
-    mousePlacement: false,
-  }
-  static experimental = {
-    speedChangeWaveform: true,
+    songVolume: 0.2,
+    soundEffectVolume: 0.5,
+    effectOffset: 0,
   }
   static play = {
     offset: 0,
     hideBarlines: false,
     judgmentTilt: true,
+    timingCollection: "ITG",
     timingWindowScale: 1,
     timingWindowAdd: 0,
-    timingCollection: "",
     defaultTimingCollection: {
       "dance-single": "ITG",
       "dance-double": "ITG",
@@ -78,13 +73,17 @@ class DefaultOptions {
       "dance-solodouble": "ITG",
     } as { [key: string]: string },
   }
-  static debug = {
-    showTimers: false,
-  }
   static performance = {
+    antialiasing: false,
     resolution: window.devicePixelRatio,
     smoothAnimations: true,
-    maxFPS: 60,
+  }
+  static debug = {
+    renderingStats: false,
+    showTimers: false,
+  }
+  static experimental = {
+    speedChangeWaveform: true,
   }
 }
 

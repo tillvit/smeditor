@@ -37,7 +37,7 @@ export class NumberSpinner {
       if (ev.key == "Enter") input.blur()
     }
     input.oninput = () => {
-      input.value = input.value.replaceAll(/[^.0-9+-]/g, "")
+      input.value = input.value.replaceAll(/[^.0-9+-/*]/g, "")
     }
     this.input = input
     this.min = min ?? this.min

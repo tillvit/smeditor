@@ -36,6 +36,13 @@ export enum Modifier {
 export const IS_OSX: boolean = navigator.userAgent.indexOf("Mac OS X") > -1
 export const DEF_MOD: Modifier = IS_OSX ? Modifier.META : Modifier.CTRL
 
+export const MODIFIER_ASCII: { [key: string]: string } = {
+  Shift: "⇧",
+  Ctrl: IS_OSX ? "Ctrl" : "⌃",
+  Alt: "⌥",
+  Command: "⌘",
+}
+
 export const SPECIAL_KEYS: { [key: string]: string } = {
   ArrowLeft: "Left",
   ArrowUp: "Up",
@@ -52,7 +59,7 @@ export const SPECIAL_KEYS: { [key: string]: string } = {
   Comma: ",",
   Backquote: "`",
   Minus: "-",
-  Equal: "=",
+  Equal: "+",
 }
 
 export const KEYBINDS: { [key: string]: Keybind } = {
@@ -121,6 +128,39 @@ export const KEYBINDS: { [key: string]: Keybind } = {
         10,
         Options.chart.speed * Math.pow(1.01, -30)
       )),
+  },
+  zoomIn: {
+    label: "Zoom in",
+    keybinds: [{ key: "+", mods: [DEF_MOD] }],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.zoom += 0.1
+      WaterfallManager.create(
+        "Zoom: " + Math.round(Options.chart.zoom * 100) + "%"
+      )
+    },
+  },
+  zoomOut: {
+    label: "Zoom out",
+    keybinds: [{ key: "-", mods: [DEF_MOD] }],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.zoom = Math.max(0.1, Options.chart.zoom - 0.1)
+      WaterfallManager.create(
+        "Zoom: " + Math.round(Options.chart.zoom * 100) + "%"
+      )
+    },
+  },
+  zoomDefault: {
+    label: "Reset zoom",
+    keybinds: [{ key: "0", mods: [DEF_MOD] }],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.zoom = 1
+      WaterfallManager.create(
+        "Zoom: " + Math.round(Options.chart.zoom * 100) + "%"
+      )
+    },
   },
   newSong: {
     label: "New Song...",
@@ -395,9 +435,9 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     keybinds: [{ key: "W", mods: [Modifier.SHIFT, Modifier.ALT] }],
     disabled: false,
     callback: () => {
-      Options.waveform.enabled = !Options.waveform.enabled
+      Options.chart.waveform.enabled = !Options.chart.waveform.enabled
       WaterfallManager.create(
-        "Waveform: " + (Options.waveform.enabled ? "on" : "off")
+        "Waveform: " + (Options.chart.waveform.enabled ? "on" : "off")
       )
     },
   },
@@ -492,10 +532,10 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     keybinds: [{ key: "M", mods: [Modifier.SHIFT] }],
     disabled: false,
     callback: () => {
-      Options.editor.mousePlacement = !Options.editor.mousePlacement
+      Options.general.mousePlacement = !Options.general.mousePlacement
       WaterfallManager.create(
         "Mouse Note Placement: " +
-          (Options.editor.mousePlacement ? "on" : "off")
+          (Options.general.mousePlacement ? "on" : "off")
       )
     },
   },

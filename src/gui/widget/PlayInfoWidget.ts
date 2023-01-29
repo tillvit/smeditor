@@ -1,4 +1,13 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
+import { EditMode } from "../../chart/ChartManager"
+import {
+  isHoldDroppedTimingWindow,
+  isHoldTimingWindow,
+  isMineTimingWindow,
+  isStandardMissTimingWindow,
+  isStandardTimingWindow,
+  TimingWindowCollection,
+} from "../../chart/play/TimingWindowCollection"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
 import {
@@ -8,17 +17,8 @@ import {
   roundDigit,
   stdDev,
 } from "../../util/Util"
-import {
-  isHoldDroppedTimingWindow,
-  isHoldTimingWindow,
-  isMineTimingWindow,
-  isStandardMissTimingWindow,
-  isStandardTimingWindow,
-  TimingWindowCollection,
-} from "../../chart/play/TimingWindowCollection"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
-import { EditMode } from "../../chart/ChartManager"
 
 const WIDGET_WIDTH = 300
 const HISTOGRAM_HEIGHT = 150

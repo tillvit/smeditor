@@ -158,14 +158,9 @@ export class TimingAreaContainer extends Container {
       }
     }
     const length = yEnd - yStart
-    if (yStart + length < -32 - this.renderer.y)
+    if (yStart + length < this.renderer.getUpperBound())
       return [true, false, yStart, length]
-    if (
-      yStart >
-      this.renderer.chartManager.app.renderer.screen.height -
-        this.renderer.y +
-        32
-    ) {
+    if (yStart > this.renderer.getLowerBound()) {
       if (event.beat < beat || this.renderer.isNegScroll(event.beat))
         return [true, false, yStart, length]
       else return [true, true, yStart, length]

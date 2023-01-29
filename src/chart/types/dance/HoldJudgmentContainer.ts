@@ -55,7 +55,7 @@ export class HoldJudgmentContainer extends Container {
   }
 
   renderThis() {
-    this.y = Options.chart.receptorYPos + 48
+    this.y = Options.chart.receptorYPos / Options.chart.zoom + 48
     this.scale.y = Options.chart.reverse ? -1 : 1
 
     for (const child of this.children) {

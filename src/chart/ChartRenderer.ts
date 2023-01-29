@@ -1,18 +1,18 @@
-import { Waveform } from "./renderer/Waveform"
-import { ChartManager, EditMode } from "./ChartManager"
 import { Container, Point, Rectangle } from "pixi.js"
 import { Options } from "../util/Options"
+import { ChartManager, EditMode } from "./ChartManager"
+import { TimingWindow } from "./play/TimingWindow"
+import { BarlineContainer } from "./renderer/BarlineContainer"
+import { ComboNumber } from "./renderer/ComboNumber"
+import { JudgmentContainer } from "./renderer/JudgmentContainer"
+import { SnapContainer } from "./renderer/SnapContainer"
+import { TimingAreaContainer } from "./renderer/TimingAreaContainer"
+import { TimingBarContainer } from "./renderer/TimingBarContainer"
+import { TimingBoxContainer } from "./renderer/TimingBoxContainer"
+import { Waveform } from "./renderer/Waveform"
 import { Chart } from "./sm/Chart"
 import { NotedataEntry } from "./sm/NoteTypes"
-import { BarlineContainer } from "./renderer/BarlineContainer"
-import { TimingAreaContainer } from "./renderer/TimingAreaContainer"
-import { TimingBoxContainer } from "./renderer/TimingBoxContainer"
-import { TimingWindow } from "./play/TimingWindow"
-import { JudgmentContainer } from "./renderer/JudgmentContainer"
-import { TimingBarContainer } from "./renderer/TimingBarContainer"
 import { Notefield } from "./types/base/Notefield"
-import { SnapContainer } from "./renderer/SnapContainer"
-import { ComboNumber } from "./renderer/ComboNumber"
 
 export class ChartRenderer extends Container {
   chartManager: ChartManager
@@ -97,7 +97,7 @@ export class ChartRenderer extends Container {
     })
     this.on("mousedown", () => {
       if (
-        Options.editor.mousePlacement &&
+        Options.general.mousePlacement &&
         this.lastMouseBeat != -1 &&
         this.lastMouseCol != -1
       ) {
@@ -157,18 +157,13 @@ export class ChartRenderer extends Container {
     let renderSecondLowerLimit = this.chart.getSeconds(renderBeatLowerLimit)
 
     if (Options.chart.CMod) {
-      renderBeatLimit =
-        this.getBeatFromYPos(
-          this.chartManager.app.renderer.screen.height - this.y + 32
-        ) + 1
-      renderBeatLowerLimit = this.getBeatFromYPos(-32 - this.y)
-      renderSecondLowerLimit =
-        (((-32 - this.y - Options.chart.receptorYPos) / 4 / 64) * 100) /
-          Options.chart.speed +
-        time
+      renderBeatLimit = this.getBeatFromYPos(this.getLowerBound()) + 1
+      renderBeatLowerLimit = this.getBeatFromYPos(this.getUpperBound())
+      renderSecondLowerLimit = this.getTimeFromYPos(this.getUpperBound())
     }
 
-    this.scale.y = Options.chart.reverse ? -1 : 1
+    this.scale.x = Options.chart.zoom
+    this.scale.y = (Options.chart.reverse ? -1 : 1) * Options.chart.zoom
 
     this.barlines.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
     this.timingAreas.renderThis(
@@ -242,10 +237,11 @@ export class ChartRenderer extends Container {
           100) *
           64 *
           4 +
-        Options.chart.receptorYPos
+        Options.chart.receptorYPos / Options.chart.zoom
       )
     }
-    if (currentBeat == beat) return Options.chart.receptorYPos
+    if (currentBeat == beat)
+      return Options.chart.receptorYPos / Options.chart.zoom
     if (Options.chart.doSpeedChanges)
       return (
         (((this.chart.timingData.getEffectiveBeat(beat) -
@@ -254,11 +250,11 @@ export class ChartRenderer extends Container {
           100) *
           64 *
           this.speedMult +
-        Options.chart.receptorYPos
+        Options.chart.receptorYPos / Options.chart.zoom
       )
     return (
       (((beat - currentBeat) * Options.chart.speed) / 100) * 64 +
-      Options.chart.receptorYPos
+      Options.chart.receptorYPos / Options.chart.zoom
     )
   }
 
@@ -267,7 +263,7 @@ export class ChartRenderer extends Container {
     if (Options.chart.CMod) {
       return (
         (((time - currentTime) * Options.chart.speed) / 100) * 64 * 4 +
-        Options.chart.receptorYPos
+        Options.chart.receptorYPos / Options.chart.zoom
       )
     } else return this.getYPos(this.chart.timingData.getBeat(time))
   }
@@ -276,7 +272,9 @@ export class ChartRenderer extends Container {
     const currentTime = this.getTimeWithOffset()
     if (Options.chart.CMod) {
       const seconds =
-        (((yp - Options.chart.receptorYPos) / Options.chart.speed) * 100) /
+        (((yp - Options.chart.receptorYPos / Options.chart.zoom) /
+          Options.chart.speed) *
+          100) /
           64 /
           4 +
         currentTime
@@ -292,13 +290,14 @@ export class ChartRenderer extends Container {
     }
     if (Options.chart.doSpeedChanges && !ignoreSpeeds)
       return this.chart.getBeatFromEffectiveBeat(
-        (((yp - Options.chart.receptorYPos) / 64) * 100) /
+        (((yp - Options.chart.receptorYPos / Options.chart.zoom) / 64) * 100) /
           Options.chart.speed /
           this.speedMult +
           this.chart.timingData.getEffectiveBeat(currentBeat)
       )
     return (
-      (((yp - Options.chart.receptorYPos) / 64) * 100) / Options.chart.speed +
+      (((yp - Options.chart.receptorYPos / Options.chart.zoom) / 64) * 100) /
+        Options.chart.speed +
       currentBeat
     )
   }
@@ -311,5 +310,17 @@ export class ChartRenderer extends Container {
           1) < 0 ||
         this.chart.timingData.getBPM(beat) < 0)
     )
+  }
+
+  getLowerBound(): number {
+    return (
+      (this.chartManager.app.renderer.screen.height - this.y) /
+        Options.chart.zoom +
+      32
+    )
+  }
+
+  getUpperBound(): number {
+    return -32 - this.y / Options.chart.zoom
   }
 }

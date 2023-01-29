@@ -90,7 +90,6 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 55px;
 }
 button:hover:enabled {
   filter: brightness(1.3);
@@ -677,7 +676,6 @@ input.right {
   border-left: none;
   border-top-right-radius: 3px;
   border-bottom-right-radius: 3px;
-  height: 100%;
   flex: 0;
 }
 
@@ -688,6 +686,7 @@ input.right {
   height: 100%;
   width: 10px;
   border: none;
+  min-width: auto;
 }
 
 .spinner-btns button::after {
@@ -762,4 +761,27 @@ input.right {
 .confirmation .padding .label {
   flex: 1;
   text-align: center;
+}
+
+.confirmation button {
+  min-width: 55px;
+}
+
+.pref-label > *:last-child {
+  max-width: 160px;
+  align-content: center;
+  display: flex;
+}
+
+.pref-label > .spinner {
+  max-width: 50px;
+}
+
+.pref-label .spinner-input {
+  text-align: right;
+}
+
+input[type="range"] {
+  width: 100px;
+  margin-right: 10px;
 }

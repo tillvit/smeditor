@@ -43,6 +43,7 @@ export class MenubarManager {
         if (disabled) item.classList.add("disabled")
 
         item.addEventListener("click", () => {
+          if (disabled) return
           meta.callback(this.app)
           const dropdown = item
             .closest(".menu-main")!

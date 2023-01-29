@@ -102,7 +102,7 @@ export class ChartManager {
             Options.chart.speed *
               Math.pow(
                 1.01,
-                (event.deltaY / 5) * Options.editor.scrollSensitivity
+                (event.deltaY / 5) * Options.general.scrollSensitivity
               )
           )
         } else {
@@ -114,10 +114,10 @@ export class ChartManager {
             this.partialScroll = 0
             newbeat =
               this.beat +
-              (event.deltaY / speed) * Options.editor.scrollSensitivity
+              (event.deltaY / speed) * Options.general.scrollSensitivity
           } else {
             this.partialScroll +=
-              (event.deltaY / speed) * Options.editor.scrollSensitivity
+              (event.deltaY / speed) * Options.general.scrollSensitivity
             if (Math.abs(this.partialScroll) > snap) {
               if (this.partialScroll < 0)
                 newbeat =
@@ -298,7 +298,7 @@ export class ChartManager {
         //Start editing note
         if (event.code.startsWith("Digit") && !event.repeat) {
           const col = parseInt(event.code.slice(5)) - 1
-          if (col < (this.chart?.gameType.numCols ?? 4)) {
+          if (col < (this.chart?.gameType.numCols ?? 4) && col > -1) {
             this.setNote(col, "key")
             event.preventDefault()
             event.stopImmediatePropagation()

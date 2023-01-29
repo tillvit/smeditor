@@ -48,7 +48,7 @@ export class App {
     this.stage.sortableChildren = true
     this.renderer = new Renderer({
       backgroundColor: 0x18191c,
-      antialias: false,
+      antialias: Options.performance.antialiasing,
       width: this.view.clientWidth,
       height: this.view.clientHeight,
       resolution: Options.performance.resolution,
