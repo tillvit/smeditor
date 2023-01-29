@@ -241,7 +241,7 @@ export class Waveform extends Sprite {
             ((100 / chartSpeed / speedMult / 64 / Math.abs(scroll.value)) *
               Options.chart.waveform.lineHeight) /
             Options.chart.zoom
-          y += scroll.value > 0 ? 1 : -1
+          y += (scroll.value > 0 ? 1 : -1) * Options.chart.waveform.lineHeight
           const flooredBeat = Math.floor(curBeat * 1000) / 1000
           if (curBeat <= 0) curSec = -offset + (curBeat * 60) / startBPM
           else if (flooredBeat >= timingChanges[1]?.beat) {
@@ -290,7 +290,7 @@ export class Waveform extends Sprite {
           line.scale.x = ((v * 256) / 16) * Options.chart.zoom
           line.y = y
           line.x =
-            this.renderer.chartManager.app.renderer.screen.width / 2 +
+            this.waveformTex.width / 2 +
             288 * (channel + 0.5 - data.length / 2) * Options.chart.zoom
         }
       }
