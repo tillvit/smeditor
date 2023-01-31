@@ -1,8 +1,12 @@
 import { App } from "../App"
+import { GameType, GameTypeRegistry } from "../chart/gameTypes/GameTypeRegistry"
 import { Chart } from "../chart/sm/Chart"
-import { GameType, GameTypeRegistry } from "../chart/types/GameTypeRegistry"
+import { CHART_DIFFICULTIES } from "../chart/sm/ChartTypes"
+import { CHART_PROPERTIES_DATA } from "../data/ChartListWindowData"
 import { Dropdown } from "../gui/element/Dropdown"
+import { ActionHistory } from "../util/ActionHistory"
 import { EventHandler } from "../util/EventHandler"
+import { clamp, isNumericKeyPress, safeParse } from "../util/Util"
 import { Window } from "./Window"
 
 type ChartListItem = HTMLDivElement & {
@@ -13,11 +17,15 @@ export class ChartListWindow extends Window {
   app: App
   gameType: GameType
 
+  private chartList?: HTMLDivElement
+  private chartInfo?: HTMLDivElement
+  private gameTypeDropdown?: Dropdown<string>
+
   constructor(app: App, gameType?: GameType) {
     super({
-      title: "Open a chart...",
+      title: "Chart List",
       width: 500,
-      height: 300,
+      height: 400,
       win_id: "chart_list",
     })
     this.app = app
@@ -38,7 +46,7 @@ export class ChartListWindow extends Window {
     gameTypeLabel.classList.add("chart-view-type-label")
     gameTypeLabel.innerText = "Game Type:"
 
-    const gameTypeDropdown = Dropdown.create(
+    this.gameTypeDropdown = Dropdown.create(
       GameTypeRegistry.getPriority().map(gameType => {
         const charts = this.app.chartManager.sm?.charts[gameType.id] ?? []
         return gameType.id + " (" + charts.length + ")"
@@ -48,52 +56,64 @@ export class ChartListWindow extends Window {
         (this.app.chartManager.sm?.charts[this.gameType.id] ?? []).length +
         ") "
     )
-    gameTypeDropdown.onChange(value => {
+    this.gameTypeDropdown.onChange(value => {
       this.gameType =
         GameTypeRegistry.getGameType(value.split(" ")[0]) ?? this.gameType
-      this.loadCharts(chartList, chartInfo)
+      this.loadCharts()
     })
-    EventHandler.on("smLoaded", () => {
-      gameTypeDropdown.setItems(
+    EventHandler.on("smLoadedAfter", () => {
+      this.gameTypeDropdown!.setItems(
         GameTypeRegistry.getPriority().map(gameType => {
           const charts = this.app.chartManager.sm?.charts[gameType.id] ?? []
           return gameType.id + " (" + charts.length + ")"
         })
       )
-      gameTypeDropdown.setSelected(
+      this.gameTypeDropdown!.setSelected(
         this.gameType.id +
           " (" +
           (this.app.chartManager.sm?.charts[this.gameType.id] ?? []).length +
           ") "
       )
-      this.gameType = this.app.chartManager.chart!.gameType ?? this.gameType
-      this.loadCharts(chartList, chartInfo)
+      this.gameType = this.app.chartManager.chart?.gameType ?? this.gameType
+      this.loadCharts()
     })
     gameTypeWrapper.appendChild(gameTypeLabel)
-    gameTypeWrapper.appendChild(gameTypeDropdown.view)
+    gameTypeWrapper.appendChild(this.gameTypeDropdown.view)
 
     const scroller = document.createElement("div")
     scroller.classList.add("chart-view-scroller")
     padding.appendChild(gameTypeWrapper)
     padding.appendChild(scroller)
 
-    const chartList = document.createElement("div")
-    chartList.classList.add("chart-list")
+    this.chartList = document.createElement("div")
+    this.chartList.classList.add("chart-list")
 
-    const chartInfo = document.createElement("div")
-    chartInfo.classList.add("chart-info")
+    this.chartInfo = document.createElement("div")
+    this.chartInfo.classList.add("chart-info")
 
-    scroller.appendChild(chartList)
-    scroller.appendChild(chartInfo)
+    scroller.appendChild(this.chartList)
+    scroller.appendChild(this.chartInfo)
 
     viewElement.appendChild(padding)
 
-    this.loadCharts(chartList, chartInfo)
+    this.loadCharts()
   }
 
-  private loadCharts(chartList: HTMLDivElement, chartInfo: HTMLDivElement) {
+  private loadCharts() {
     const charts = this.app.chartManager.sm?.charts[this.gameType.id] ?? []
     const chartEls: HTMLElement[] = []
+    this.gameTypeDropdown!.setItems(
+      GameTypeRegistry.getPriority().map(gameType => {
+        const charts = this.app.chartManager.sm?.charts[gameType.id] ?? []
+        return gameType.id + " (" + charts.length + ")"
+      })
+    )
+    this.gameTypeDropdown!.setSelected(
+      this.gameType.id +
+        " (" +
+        (this.app.chartManager.sm?.charts[this.gameType.id] ?? []).length +
+        ") "
+    )
     charts.forEach(chart => {
       const chartListItem = document.createElement("div") as ChartListItem
       chartListItem.classList.add("chart-list-item")
@@ -104,24 +124,24 @@ export class ChartListWindow extends Window {
       chartListItem.onclick = () => {
         if (chartListItem.chart == this.app.chartManager.chart) return
         this.app.chartManager.loadChart(chartListItem.chart)
-        chartList
-          .querySelectorAll(".selected")
-          .forEach(el => el.classList.remove("selected"))
+        this.chartList!.querySelectorAll(".selected").forEach(el =>
+          el.classList.remove("selected")
+        )
         chartListItem.classList.add("selected")
       }
 
       chartListItem.onmouseenter = () => {
-        this.loadChartDetails(chartInfo, chartListItem.chart)
+        this.loadChartDetails(chartListItem.chart)
       }
       chartListItem.onmouseleave = () => {
-        this.loadChartDetails(chartInfo)
+        this.loadChartDetails()
       }
 
       const title = document.createElement("div")
-      title.innerText = chart.difficulty + " " + chart.meter
+      title.innerText = chart.meter + ""
       title.classList.add("title", chart.difficulty)
-      const attributes = document.createElement("div")
-      attributes.classList.add("chart-attributes")
+      const info = document.createElement("div")
+      info.classList.add("chart-list-info")
       const credit = document.createElement("div")
       credit.innerText = chart.credit
       credit.classList.add("title", "chart-credit")
@@ -129,39 +149,154 @@ export class ChartListWindow extends Window {
       stepCount.innerText = chart.notedata.length + ""
       stepCount.classList.add("title", "chart-step-count")
 
-      attributes.appendChild(credit)
-      attributes.appendChild(stepCount)
+      info.appendChild(credit)
+      info.appendChild(stepCount)
+
+      // const actionTray = document.createElement("div")
+      // actionTray.classList.add("flex-row", "action-tray")
+
+      // const openIcon = document.createElement("img")
+      // openIcon.src = Icons.MENU_VERTICAL
+      // openIcon.classList.add("icon")
+
+      // const copyIcon = document.createElement("img")
+      // copyIcon.src = Icons.COPY
+      // copyIcon.classList.add("icon")
+
+      // const deleteIcon = document.createElement("img")
+      // deleteIcon.src = Icons.TRASH
+      // deleteIcon.classList.add("icon")
+
+      // actionTray.appendChild(openIcon)
+      // actionTray.appendChild(copyIcon)
+      // actionTray.appendChild(deleteIcon)
 
       chartListItem.appendChild(title)
-      chartListItem.appendChild(attributes)
+      chartListItem.appendChild(info)
+      // chartListItem.appendChild(actionTray)
       chartEls.push(chartListItem)
     })
-    chartList.replaceChildren(...chartEls)
-    this.loadChartDetails(chartInfo)
+    const addChart = document.createElement("div")
+    addChart.classList.add("chart-list-item")
+    const addTitle = document.createElement("div")
+    addTitle.innerText = "+"
+    addTitle.classList.add("title")
+    const addInfo = document.createElement("div")
+    addInfo.classList.add("chart-list-info")
+    addInfo.innerText = "New Blank Chart"
+    addChart.appendChild(addTitle)
+    addChart.appendChild(addInfo)
+    addChart.onclick = () => {
+      const newChart = new Chart(this.app.chartManager.sm!)
+      newChart.gameType = this.gameType
+      ActionHistory.instance.run({
+        action: app => {
+          app.chartManager.sm!.addChart(newChart)
+          app.chartManager.loadChart(newChart)
+          this.loadCharts()
+        },
+        undo: app => {
+          app.chartManager.sm!.removeChart(newChart)
+          app.chartManager.loadChart()
+          this.loadCharts()
+        },
+      })
+    }
+
+    this.chartList!.replaceChildren(...chartEls, addChart)
+    this.loadChartDetails()
   }
 
-  private loadChartDetails(chartInfo: HTMLDivElement, chart?: Chart) {
-    chart = chart ?? this.app.chartManager.chart!
-    if (chart.gameType.id != this.gameType.id) {
-      chartInfo.replaceChildren()
+  private loadChartDetails(chart?: Chart) {
+    chart = chart ?? this.app.chartManager.chart
+    if (chart?.gameType.id != this.gameType.id) {
+      this.chartInfo!.replaceChildren()
       return
     }
     if (!chart) return
+
+    const sortDifficulties = () =>
+      this.app.chartManager.sm!.charts[chart!.gameType.id]!.sort((a, b) => {
+        if (
+          CHART_DIFFICULTIES.indexOf(a.difficulty) ==
+          CHART_DIFFICULTIES.indexOf(b.difficulty)
+        )
+          return a.meter - b.meter
+        return (
+          CHART_DIFFICULTIES.indexOf(a.difficulty) -
+          CHART_DIFFICULTIES.indexOf(b.difficulty)
+        )
+      })
+
     const main = document.createElement("div")
     main.classList.add("chart-info-main")
-    const difficulty = document.createElement("div")
-    difficulty.innerText = chart.difficulty
-    difficulty.classList.add("title", "chart-difficulty")
-    const meter = document.createElement("div")
-    meter.innerText = chart.meter + ""
-    meter.classList.add("title", "chart-meter")
+    const difficulty = Dropdown.create(CHART_DIFFICULTIES, chart.difficulty)
+    difficulty.view.classList.add("no-border", "white")
+    difficulty.onChange(value => {
+      const lastVal = chart!.difficulty
+      ActionHistory.instance.run({
+        action: () => {
+          chart!.difficulty = value
+          sortDifficulties()
+          this.loadCharts()
+        },
+        undo: () => {
+          chart!.difficulty = lastVal
+          sortDifficulties()
+          this.loadCharts()
+        },
+      })
+    })
 
-    main.appendChild(difficulty)
+    const meter = document.createElement("div")
+    meter.spellcheck = false
+    meter.contentEditable = "true"
+    meter.classList.add("inlineEdit", "chart-meter")
+    meter.onkeydown = ev => {
+      if (!isNumericKeyPress(ev)) ev.preventDefault()
+      if (ev.key == "Enter") meter.blur()
+    }
+
+    meter.onblur = () => {
+      let value = Math.round(safeParse(meter.innerText))
+      value = clamp(1, value, 2 ** 31 - 1)
+      const lastVal = chart!.meter
+      ActionHistory.instance.run({
+        action: () => {
+          chart!.meter = value
+          sortDifficulties()
+          this.loadCharts()
+        },
+        undo: () => {
+          chart!.meter = lastVal
+          sortDifficulties()
+          this.loadCharts()
+        },
+      })
+      meter.scrollLeft = 0
+    }
+    meter.innerText = chart.meter + ""
+
+    const properties = document.createElement("div")
+    properties.classList.add("chart-properties")
+
+    main.appendChild(difficulty.view)
     main.appendChild(meter)
 
-    const credit = document.createElement("div")
-    credit.innerText = chart.credit
-    credit.classList.add("title", "chart-credit")
+    Object.values(CHART_PROPERTIES_DATA).forEach(entry => {
+      const label = document.createElement("div")
+      label.classList.add("label")
+      label.innerText = entry.title
+
+      const item = entry.element(chart!, this.app)
+
+      if (entry.title == "Artist") {
+        item.addEventListener("blur", () => this.loadCharts())
+      }
+
+      properties.appendChild(label)
+      properties.appendChild(item)
+    })
 
     const notedataStats = chart.getNotedataStats()
 
@@ -193,6 +328,56 @@ export class ChartListWindow extends Window {
       grid.appendChild(item)
     })
 
-    chartInfo.replaceChildren(main, credit, nps, grid)
+    //Menu Button Options
+    const menu_options = document.createElement("div")
+    menu_options.classList.add("menu-options")
+
+    const copyButton = document.createElement("button")
+    copyButton.innerText = "Duplicate Chart"
+    copyButton.onclick = () => {
+      const newChart: Chart = Object.assign(
+        Object.create(Object.getPrototypeOf(chart)),
+        chart
+      )
+      newChart.setNotedata(
+        chart!.notedata.map(note => chart!.computeNote(note)) ?? []
+      )
+      ActionHistory.instance.run({
+        action: app => {
+          app.chartManager.sm!.addChart(newChart)
+          app.chartManager.loadChart(newChart)
+          this.loadCharts()
+        },
+        undo: app => {
+          app.chartManager.sm!.removeChart(newChart)
+          app.chartManager.loadChart()
+          this.loadCharts()
+        },
+      })
+    }
+    menu_options.append(copyButton)
+
+    const deleteButton = document.createElement("button")
+    deleteButton.innerText = "Delete Chart"
+    deleteButton.onclick = () => {
+      ActionHistory.instance.run({
+        action: app => {
+          if (app.chartManager.sm!.removeChart(chart!)) {
+            app.chartManager.loadChart()
+            this.gameType = app.chartManager.chart?.gameType ?? this.gameType
+            this.loadCharts()
+          }
+        },
+        undo: app => {
+          app.chartManager.sm!.addChart(chart!)
+          app.chartManager.loadChart(chart)
+          this.loadCharts()
+        },
+      })
+    }
+    deleteButton.classList.add("delete")
+    menu_options.append(deleteButton)
+
+    this.chartInfo!.replaceChildren(main, properties, nps, grid, menu_options)
   }
 }

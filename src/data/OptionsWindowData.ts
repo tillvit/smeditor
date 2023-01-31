@@ -1,8 +1,9 @@
-import { WindowOptions } from "../window/Window"
 import { App } from "../App"
+import { FileHandler } from "../util/FileHandler"
 import { DirectoryWindow } from "../window/DirectoryWindow"
-import { DEFAULT_SM } from "./SMData"
 import { SMPropertiesWindow } from "../window/SMPropertiesWindow"
+import { WindowOptions } from "../window/Window"
+import { DEFAULT_SM } from "./SMData"
 
 type OptionsWindowOption = {
   label: string | ((app: App) => string)
@@ -41,7 +42,7 @@ export const OPTIONS_WINDOW_DATA: { [key: string]: OptionsWindowData } = {
                 app.windowManager.openWindow(
                   new DirectoryWindow(app, {
                     title: "Select an sm/ssc file...",
-                    accepted_file_types: ["sm", "ssc"],
+                    accepted_file_types: [".sm", ".ssc"],
                     disableClose: true,
                     callback: (path: string) => {
                       app.chartManager.loadSM(path)
@@ -65,23 +66,24 @@ export const OPTIONS_WINDOW_DATA: { [key: string]: OptionsWindowData } = {
             element: app => {
               const el = document.createElement("button")
               el.innerHTML = "New Song"
-              el.onclick = () => {
-                const folder = "New Song"
-                if (app.files.file_tree[folder]) {
+              el.onclick = async () => {
+                let folder = "New Song"
+                if (await FileHandler.getDirectoryHandle(folder)) {
                   let i = 2
-                  while (app.files.file_tree[folder + " " + i]) i++
+                  while (await FileHandler.getDirectoryHandle(folder)) {
+                    folder = `New Song ${i++}`
+                  }
                 }
-                const file = new File([DEFAULT_SM], "song.sm", { type: "" })
-                app.files.addFile(folder + "/song.sm", file)
-                app.chartManager.loadSM(folder + "/song.sm")
+                await FileHandler.writeFile(folder + "/song.sm", DEFAULT_SM)
+                await app.chartManager.loadSM(folder + "/song.sm")
                 app.windowManager.openWindow(
-                  new SMPropertiesWindow(app, true, success => {
+                  new SMPropertiesWindow(app, true, async success => {
                     if (success) {
                       app.windowManager
                         .getWindowById("select_sm_initial")!
                         .closeWindow()
                     } else {
-                      app.files.removeFile(app.chartManager.sm_path)
+                      await FileHandler.removeDirectory(folder)
                       app.chartManager.loadSM()
                     }
                   })

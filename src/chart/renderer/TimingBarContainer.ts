@@ -92,7 +92,7 @@ export class TimingBarContainer extends Container {
       this.barlines.children,
       child => Date.now() - child.createTime > 5000
     )
-    if (Options.performance.smoothAnimations)
+    if (Options.general.smoothAnimations)
       this.currentMedian.x =
         (this.currentMedian.x - this.target) * 0.8 + this.target
     else this.currentMedian.x = this.target

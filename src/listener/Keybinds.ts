@@ -23,6 +23,7 @@ export class Keybinds {
     this.app = app
 
     window.addEventListener("keydown", (e: KeyboardEvent) => {
+      if ((<HTMLElement>e.target).classList.contains("inlineEdit")) return
       if (e.target instanceof HTMLTextAreaElement) return
       if (e.target instanceof HTMLInputElement) return
       if (["Meta", "Control", "Shift", "Alt"].includes(e.key)) return
@@ -79,6 +80,7 @@ export class Keybinds {
     })
 
     window.addEventListener("keyup", (e: KeyboardEvent) => {
+      if ((<HTMLElement>e.target).classList.contains("inlineEdit")) return
       if (e.target instanceof HTMLTextAreaElement) return
       if (e.target instanceof HTMLInputElement) return
       if (["Meta", "Control", "Shift", "Alt"].includes(e.key)) return

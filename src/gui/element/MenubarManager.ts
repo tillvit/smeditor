@@ -2,6 +2,7 @@ import { App } from "../../App"
 import { KEYBINDS } from "../../data/KeybindData"
 import { MENUBAR_DATA, MenuOption } from "../../data/MenubarData"
 import { Keybinds } from "../../listener/Keybinds"
+import { Icons } from "../Icons"
 
 export class MenubarManager {
   app: App
@@ -53,8 +54,8 @@ export class MenubarManager {
       } else {
         title_bar_right = document.createElement("img")
         title_bar_right.classList.add("icon")
-        title_bar_right.src =
-          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAAlklEQVRIie3UsQ3CUAyE4U/MQKCCYUCipSFMEwYKFYvAFCAhGCIUoUieoLMrOMmddb98z8/8FaQlLrhhnQFo0L3rgSoasBkAOhyjAdAWkDoaMMV9AHhiHg3ZGk9xigbQ558aVaXfpNStqo2nOHxrnESTI5QeUeoj7wvzNtL800ebRQLKaHaR5unHLv1cL3DGFato8x/XCwFMPpf5ayxcAAAAAElFTkSuQmCC"
+        title_bar_right.src = Icons.CHEVRON
+        title_bar_right.style.transform = "rotate(-90deg)"
         title.innerText =
           typeof data.title == "function" ? data.title(this.app) : data.title
       }

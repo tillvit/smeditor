@@ -296,7 +296,7 @@ export class TimingWindowCollection {
   }
 
   shouldHideNote(judgment: StandardTimingWindow) {
-    return judgment.timingWindowMS <= this.hideLimitMS
+    return judgment.id != "miss" && judgment.timingWindowMS <= this.hideLimitMS
   }
 
   maxWindowMS(): number {

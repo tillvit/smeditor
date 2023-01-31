@@ -1,3 +1,4 @@
+import { Buffer } from "buffer"
 import { BitmapFont, Container, Renderer, TEXT_GRADIENT, Ticker } from "pixi.js"
 import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
@@ -6,17 +7,19 @@ import { Keybinds } from "./listener/Keybinds"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
 import { EventHandler } from "./util/EventHandler"
-import { FileSystem } from "./util/FileSystem"
+import { FileHandler } from "./util/FileHandler"
 import { Options } from "./util/Options"
 import { TimerStats } from "./util/TimerStats"
 import { fpsUpdate, getBrowser } from "./util/Util"
 import { BasicOptionsWindow } from "./window/BasicOptionsWindow"
-import { DirectoryWindow } from "./window/DirectoryWindow"
 import { WindowManager } from "./window/WindowManager"
 
 declare global {
   interface Window {
     app: App
+    isNative: boolean
+    fs: typeof FileHandler
+    Buffer: typeof Buffer
     runSafari?: () => void
   }
 }
@@ -27,7 +30,6 @@ export class App {
   stage: Container
   view: HTMLCanvasElement
   options: Options
-  files: FileSystem
   keybinds: Keybinds
   chartManager: ChartManager
   windowManager: WindowManager
@@ -40,6 +42,8 @@ export class App {
   constructor() {
     Options.loadOptions()
     setInterval(() => Options.saveOptions(), 10000)
+    if (Options.general.smoothAnimations)
+      document.body.classList.add("animated")
     this.registerFonts()
 
     this.view = document.getElementById("pixi") as HTMLCanvasElement
@@ -70,7 +74,6 @@ export class App {
     BetterRoundedRect.init(this.renderer)
 
     this.options = Options
-    this.files = new FileSystem()
     this.chartManager = new ChartManager(this)
     this.menubarManager = new MenubarManager(
       this,
@@ -203,55 +206,24 @@ export class App {
         const queue = []
         for (let i = 0; i < items.length; i++) {
           const item = items[i].webkitGetAsEntry()
-          queue.push(this.traverseFileTree(prefix, item!))
+          queue.push(FileHandler.uploadFiles(item!, prefix))
         }
         await Promise.all(queue)
-        this.windowManager.openWindow(
-          new DirectoryWindow(this, {
-            title: "Select an sm/ssc file...",
-            accepted_file_types: ["sm", "ssc"],
-            disableClose: !this.chartManager.sm,
-            callback: (path: string) => {
-              this.chartManager.loadSM(path)
-              this.windowManager
-                .getWindowById("select_sm_initial")
-                ?.closeWindow()
-            },
-          })
-        )
+        // this.windowManager.openWindow(
+        //   new DirectoryWindow(this, {
+        //     title: "Select an sm/ssc file...",
+        //     accepted_file_types: ["sm", "ssc"],
+        //     disableClose: !this.chartManager.sm,
+        //     callback: (path: string) => {
+        //       this.chartManager.loadSM(path)
+        //       this.windowManager
+        //         .getWindowById("select_sm_initial")
+        //         ?.closeWindow()
+        //     },
+        //   })
+        // )
       }
       handler()
-    })
-  }
-
-  private traverseFileTree(
-    prefix: string,
-    item: FileSystemEntry,
-    path?: string
-  ): Promise<void> {
-    return new Promise(resolve => {
-      path = path || ""
-      if (item.isFile) {
-        ;(<FileSystemFileEntry>item).file(file => {
-          this.files.addFile(prefix + "/" + path + file.name, file)
-          resolve()
-        })
-      } else if (item.isDirectory) {
-        const dirReader = (<FileSystemDirectoryEntry>item).createReader()
-        dirReader.readEntries(entries => {
-          const handler = async () => {
-            for (let i = 0; i < entries.length; i++) {
-              await this.traverseFileTree(
-                prefix,
-                entries[i],
-                path + item.name + "/"
-              )
-            }
-            resolve()
-          }
-          handler()
-        })
-      }
     })
   }
 
@@ -288,6 +260,9 @@ WebFont.load({
   inactive: init,
   classes: false,
 })
+
+window.fs = FileHandler
+window.Buffer = Buffer
 
 function init() {
   const canvas = document.createElement("canvas")

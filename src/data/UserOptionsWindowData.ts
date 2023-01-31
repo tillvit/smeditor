@@ -318,7 +318,7 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
       margin: true,
     },
 
-    "performance.smoothAnimations": {
+    "general.smoothAnimations": {
       label: "Smooth Animations",
       input: {
         type: "checkbox",

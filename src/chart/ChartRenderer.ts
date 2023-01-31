@@ -1,10 +1,11 @@
 import { Container, Point, Rectangle } from "pixi.js"
 import { Options } from "../util/Options"
 import { ChartManager, EditMode } from "./ChartManager"
+import { Notefield } from "./gameTypes/base/Notefield"
 import { TimingWindow } from "./play/TimingWindow"
 import { BarlineContainer } from "./renderer/BarlineContainer"
 import { ComboNumber } from "./renderer/ComboNumber"
-import { JudgmentContainer } from "./renderer/JudgmentContainer"
+import { JudgmentSprite } from "./renderer/JudgmentSprite"
 import { SnapContainer } from "./renderer/SnapContainer"
 import { TimingAreaContainer } from "./renderer/TimingAreaContainer"
 import { TimingBarContainer } from "./renderer/TimingBarContainer"
@@ -12,7 +13,6 @@ import { TimingBoxContainer } from "./renderer/TimingBoxContainer"
 import { Waveform } from "./renderer/Waveform"
 import { Chart } from "./sm/Chart"
 import { NotedataEntry } from "./sm/NoteTypes"
-import { Notefield } from "./types/base/Notefield"
 
 export class ChartRenderer extends Container {
   chartManager: ChartManager
@@ -34,7 +34,7 @@ export class ChartRenderer extends Container {
   private timingBar: TimingBarContainer
   notefield: Notefield
   private snapDisplay: SnapContainer
-  private judgment: JudgmentContainer
+  private judgment: JudgmentSprite
   private combo: ComboNumber
 
   constructor(chartManager: ChartManager) {
@@ -49,7 +49,7 @@ export class ChartRenderer extends Container {
     this.timingBar = new TimingBarContainer(this)
     this.notefield = new this.chart.gameType.notefield(this)
     this.snapDisplay = new SnapContainer(this)
-    this.judgment = new JudgmentContainer()
+    this.judgment = new JudgmentSprite()
     this.combo = new ComboNumber(this)
 
     this.addChild(this.waveform)

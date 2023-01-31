@@ -13,6 +13,7 @@ class DefaultOptions {
   static general = {
     scrollSensitivity: 1,
     mousePlacement: false,
+    smoothAnimations: true,
   }
   static chart = {
     CMod: false,
@@ -76,7 +77,6 @@ class DefaultOptions {
   static performance = {
     antialiasing: false,
     resolution: window.devicePixelRatio,
-    smoothAnimations: true,
   }
   static debug = {
     renderingStats: false,

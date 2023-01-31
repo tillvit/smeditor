@@ -12,7 +12,7 @@ import {
   TimingWindowCollection,
 } from "../play/TimingWindowCollection"
 
-export class JudgmentContainer extends Sprite {
+export class JudgmentSprite extends Sprite {
   private createTime = -1
   private active = false
   private type: StandardTimingWindow = TIMING_WINDOW_AUTOPLAY
@@ -27,13 +27,14 @@ export class JudgmentContainer extends Sprite {
     this.visible = this.active
     if (this.active) {
       const time = (Date.now() - this.createTime) / 1000
-      let zoom = 1.1
+      let zoom = 1.2
       if (
         !TimingWindowCollection.getCollection(
           Options.play.timingCollection
         ).shouldHideNote(this.type)
-      )
-        zoom = 0.5
+      ) {
+        zoom = 0.8
+      }
       if (time < 0.1) {
         const p = 1 - (1 - time / 0.1) * (1 - time / 0.1)
         const z = (1 - zoom) * p + zoom

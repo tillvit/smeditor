@@ -205,12 +205,12 @@ export class PlayInfoWidget extends Widget {
     this.backgroundRect.y = -HISTOGRAM_HEIGHT - 210
     this.visible = !!this.manager.chartManager.gameStats
     for (const line of this.barlines.children) {
-      if (Options.performance.smoothAnimations)
+      if (Options.general.smoothAnimations)
         line.height = (line.targetHeight - line.height) * 0.2 + line.height
       else line.height = line.targetHeight
     }
 
-    if (Options.performance.smoothAnimations) {
+    if (Options.general.smoothAnimations) {
       const easeTo =
         this.manager.chartManager.getMode() == EditMode.Play || this.toggled
           ? 1

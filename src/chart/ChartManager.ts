@@ -1,25 +1,27 @@
 import { Howl } from "howler"
 import { BitmapText } from "pixi.js"
 import { App } from "../App"
+import { AUDIO_EXT } from "../data/FileData"
 import { IS_OSX, KEYBINDS } from "../data/KeybindData"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { WidgetManager } from "../gui/widget/WidgetManager"
 import { Keybinds } from "../listener/Keybinds"
 import { ActionHistory } from "../util/ActionHistory"
 import { EventHandler } from "../util/EventHandler"
+import { FileHandler } from "../util/FileHandler"
 import { Options } from "../util/Options"
 import { TimerStats } from "../util/TimerStats"
-import { bsearch, tpsUpdate } from "../util/Util"
+import { basename, bsearch, dirname, extname, tpsUpdate } from "../util/Util"
+import { ChartListWindow } from "../window/ChartListWindow"
 import { ConfimationWindow } from "../window/ConfirmationWindow"
-import { NewChartWindow } from "../window/NewChartWindow"
 import { ChartAudio } from "./audio/ChartAudio"
 import { ChartRenderer } from "./ChartRenderer"
+import { GameTypeRegistry } from "./gameTypes/GameTypeRegistry"
 import { GameplayStats } from "./play/GameplayStats"
 import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
 import { Chart } from "./sm/Chart"
 import { isHoldNote, PartialNotedataEntry } from "./sm/NoteTypes"
 import { Simfile } from "./sm/Simfile"
-import { GameTypeRegistry } from "./types/GameTypeRegistry"
 
 const SNAPS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 48, -1]
 
@@ -157,8 +159,7 @@ export class ChartManager {
       fontName: "Assistant",
       fontSize: 30,
     })
-    this.noChartTextA.x = this.app.renderer.screen.width / 2
-    this.noChartTextA.y = this.app.renderer.screen.height / 2 - 20
+
     this.noChartTextA.anchor.set(0.5)
     this.noChartTextA.tint = 0x555555
     this.app.stage.addChild(this.noChartTextA)
@@ -166,8 +167,7 @@ export class ChartManager {
       fontName: "Assistant",
       fontSize: 15,
     })
-    this.noChartTextB.x = this.app.renderer.screen.width / 2
-    this.noChartTextB.y = this.app.renderer.screen.height / 2 + 10
+
     this.noChartTextB.anchor.set(0.5)
     this.noChartTextB.tint = 0x556677
     this.noChartTextB.interactive = true
@@ -178,13 +178,21 @@ export class ChartManager {
       this.noChartTextB.tint = 0x556677
     })
     this.noChartTextB.on("mousedown", () => {
-      this.app.windowManager.openWindow(new NewChartWindow(app))
+      this.app.windowManager.openWindow(
+        new ChartListWindow(app, GameTypeRegistry.getGameType("dance-single"))
+      )
     })
     this.noChartTextA.visible = false
     this.noChartTextB.visible = false
+    this.noChartTextA.x = this.app.renderer.screen.width / 2
+    this.noChartTextA.y = this.app.renderer.screen.height / 2 - 20
+    this.noChartTextB.x = this.app.renderer.screen.width / 2
+    this.noChartTextB.y = this.app.renderer.screen.height / 2 + 10
+
     this.app.stage.addChild(this.noChartTextB)
     this.app.stage.addChild(this.widgetManager)
     this.app.ticker.add(() => {
+      this.widgetManager.update()
       if (
         this.sm == undefined ||
         this.chart == undefined ||
@@ -193,7 +201,6 @@ export class ChartManager {
         return
       TimerStats.time("ChartRenderer Update Time")
       this.chartView?.renderThis()
-      this.widgetManager.update()
       TimerStats.endTime("ChartRenderer Update Time")
     })
 
@@ -269,6 +276,10 @@ export class ChartManager {
         this.chartView.x = this.app.renderer.screen.width / 2
         this.chartView.y = this.app.renderer.screen.height / 2
       }
+      this.noChartTextA.x = this.app.renderer.screen.width / 2
+      this.noChartTextA.y = this.app.renderer.screen.height / 2 - 20
+      this.noChartTextB.x = this.app.renderer.screen.width / 2
+      this.noChartTextB.y = this.app.renderer.screen.height / 2 + 10
     })
 
     EventHandler.on("chartModified", () => {
@@ -293,6 +304,7 @@ export class ChartManager {
       "keydown",
       (event: KeyboardEvent) => {
         if (this.mode != EditMode.Edit) return
+        if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
         if (event.target instanceof HTMLTextAreaElement) return
         if (event.target instanceof HTMLInputElement) return
         //Start editing note
@@ -429,7 +441,8 @@ export class ChartManager {
     this.time = 0
     this.beat = 0
 
-    const smFile = this.app.files.getFile(path)
+    const smHandle = await FileHandler.getFileHandle(this.sm_path)
+    const smFile = await smHandle!.getFile()
     this.sm = new Simfile(smFile)
 
     await this.sm.loaded
@@ -438,21 +451,41 @@ export class ChartManager {
     this.noChartTextB.visible = true
 
     EventHandler.emit("smLoaded")
-    this.loadChart()
+    await this.loadChart()
+    EventHandler.emit("smLoadedAfter")
     if (this.time == 0) this.setBeat(0)
   }
 
-  loadChart(chart?: Chart) {
+  async loadChart(chart?: Chart) {
     if (this.sm == undefined) return
+    this.chartView?.destroy({ children: true })
     if (chart == undefined) {
-      for (const gameType of GameTypeRegistry.getPriority()) {
-        const charts = this.sm.charts[gameType.id]
+      if (this.chart) {
+        const charts = this.sm.charts[this.chart.gameType.id]
         if (charts && charts.length > 0) {
           chart = charts.at(-1)
-          break
         }
       }
-      if (!chart) return
+      if (!chart) {
+        for (const gameType of GameTypeRegistry.getPriority()) {
+          const charts = this.sm.charts[gameType.id]
+          if (charts && charts.length > 0) {
+            chart = charts.at(-1)
+            break
+          }
+        }
+      }
+      if (!chart) {
+        this.beat = 0
+        this.time = 0
+        this.chart = undefined
+        this.chartView = undefined
+        this.noChartTextA.visible = true
+        this.noChartTextB.visible = true
+        EventHandler.emit("chartLoaded")
+        EventHandler.emit("chartModified")
+        return
+      }
     }
 
     this.chart = chart
@@ -465,8 +498,6 @@ export class ChartManager {
     EventHandler.emit("chartLoaded")
     EventHandler.emit("chartModified")
 
-    if (this.chartView) this.chartView.destroy({ children: true })
-
     this.getAssistTickIndex()
     this.chartView = new ChartRenderer(this)
     this.chartView.x = this.app.renderer.screen.width / 2
@@ -476,7 +507,7 @@ export class ChartManager {
     if (this.chart.getMusicPath() != this.lastSong) {
       this.lastSong = this.chart.getMusicPath()
       const audioPlaying = this.songAudio.isPlaying()
-      this.loadAudio()
+      await this.loadAudio()
       if (audioPlaying) this.songAudio.play()
     }
 
@@ -493,7 +524,7 @@ export class ChartManager {
     )
   }
 
-  loadAudio() {
+  async loadAudio() {
     if (!this.sm || !this.chart) return
     this.songAudio.stop()
     const musicPath = this.chart.getMusicPath()
@@ -505,8 +536,8 @@ export class ChartManager {
       this.songAudio = new ChartAudio(undefined)
       return
     }
-    const audioFile: File | undefined = this.getAudioFile(musicPath)
-    if (audioFile == undefined) {
+    const audioHandle = await this.getAudioHandle(musicPath)
+    if (audioHandle == undefined) {
       WaterfallManager.createFormatted(
         "Failed to load audio: couldn't find audio file " + musicPath,
         "error"
@@ -514,56 +545,51 @@ export class ChartManager {
       this.songAudio = new ChartAudio(undefined)
       return
     }
-    const audio_url = URL.createObjectURL(audioFile)
-    this.songAudio = new ChartAudio(audio_url)
+    const audioFile = await audioHandle.getFile()
+    const audioUrl = URL.createObjectURL(audioFile)
+    this.songAudio = new ChartAudio(audioUrl)
     this.songAudio.seek(this.time)
     this.getAssistTickIndex()
   }
 
-  private getAudioFile(musicPath: string) {
-    let audioFile: File | undefined = this.app.files.getFileRelativeTo(
-      this.sm_path,
-      musicPath
-    )
-    if (audioFile) return audioFile
+  private async getAudioHandle(musicPath: string) {
+    let audioHandle: FileSystemFileHandle | undefined =
+      await FileHandler.getFileHandleRelativeTo(this.sm_path, musicPath)
+    if (audioHandle) return audioHandle
 
     //Capitalization error
-    let dir = this.sm_path.split("/")
-    dir.pop()
-    dir = dir.concat(musicPath.split("/"))
-    const aName = dir.pop()!
-    const path = this.app.files.resolvePath(dir).join("/")
-    const files = Object.entries(this.app.files.files)
-      .filter(entry => entry[0].startsWith(path))
-      .map(entry => entry[1])
-    audioFile = files.filter(
-      file => file.name.toLowerCase() == aName.toLowerCase()
+    const dirFiles = await FileHandler.getDirectoryFiles(dirname(this.sm_path))
+    audioHandle = dirFiles.filter(
+      fileHandle =>
+        fileHandle.name.toLowerCase() == basename(musicPath).toLowerCase()
     )[0]
-    if (audioFile) {
+    if (audioHandle) {
       WaterfallManager.createFormatted(
         "Failed to locate audio file " +
           musicPath +
           ", using file " +
-          audioFile.name +
+          audioHandle.name +
           " instead",
         "warn"
       )
-      return audioFile
+      return audioHandle
     }
 
     //Any audio file in dir
-    audioFile = files.filter(file => file.type.startsWith("audio/"))[0]
-    if (audioFile) {
+    audioHandle = dirFiles.filter(fileHandle =>
+      AUDIO_EXT.includes(extname(fileHandle.name))
+    )[0]
+    if (audioHandle) {
       WaterfallManager.createFormatted(
         "Failed to locate audio file " +
           musicPath +
           ", using file " +
-          audioFile.name +
+          audioHandle.name +
           " instead",
         "warn"
       )
     }
-    return audioFile
+    return audioHandle
   }
 
   getAudio(): ChartAudio {
@@ -894,13 +920,9 @@ export class ChartManager {
     const name = path_arr.pop()!.split(".").slice(0, -1).join(".")
     const path = path_arr.join("/")
     if (!this.sm.usesSplitTiming()) {
-      const sm = new File([this.sm.serialize("sm")], name + ".sm", { type: "" })
-      this.app.files.addFile(path + "/" + name + ".sm", sm)
+      FileHandler.writeFile(path + "/" + name + ".sm", this.sm.serialize("sm"))
     }
-    const ssc = new File([this.sm.serialize("ssc")], name + ".ssc", {
-      type: "",
-    })
-    this.app.files.addFile(path + "/" + name + ".ssc", ssc)
+    FileHandler.writeFile(path + "/" + name + ".sm", this.sm.serialize("ssc"))
     if (this.sm.usesSplitTiming()) {
       WaterfallManager.create("Saved. No SM file since split timing was used.")
     } else {

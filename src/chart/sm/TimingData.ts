@@ -444,22 +444,21 @@ export class TimingData {
   }
 
   private buildTimingDataCache() {
-    this._cache.sortedEvents = TIMING_EVENT_NAMES.reduce(
-      (data, type) =>
-        data.concat(this.events[type] ?? this._fallback?.events[type] ?? []),
-      [] as TimingEvent[]
+    TIMING_EVENT_NAMES.forEach(type => {
+      this._cache.events[type] = (this.events[type] ??
+        this._fallback?.events[type] ??
+        []) as any
+    })
+    this._cache.sortedEvents = TIMING_EVENT_NAMES.map(
+      type => this._cache.events[type]!
     )
+      .flat()
+      .sort((a, b) => a.beat! - b.beat!)
     for (const event of this._cache.sortedEvents) {
       if (event.type == "DELAYS")
         event.second = this.getSeconds(event.beat, "before")
       else event.second = this.getSeconds(event.beat!)
       if (event.type == "ATTACKS") event.beat = this.getBeat(event.second)
-    }
-    this._cache.sortedEvents.sort((a, b) => a.beat! - b.beat!)
-    for (const type of TIMING_EVENT_NAMES) {
-      this._cache.events[type] = this._cache.sortedEvents.filter(
-        event => event.type == type
-      ) as any
     }
   }
 
