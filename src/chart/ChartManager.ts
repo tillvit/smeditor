@@ -929,7 +929,7 @@ export class ChartManager {
     if (!this.sm.usesSplitTiming()) {
       FileHandler.writeFile(path + "/" + name + ".sm", this.sm.serialize("sm"))
     }
-    FileHandler.writeFile(path + "/" + name + ".sm", this.sm.serialize("ssc"))
+    FileHandler.writeFile(path + "/" + name + ".ssc", this.sm.serialize("ssc"))
     if (this.sm.usesSplitTiming()) {
       WaterfallManager.create("Saved. No SM file since split timing was used.")
     } else {

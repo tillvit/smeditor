@@ -23,7 +23,7 @@ export class Chart {
   difficulty: ChartDifficulty = "Beginner"
   meter = 1
   meterF = 1
-  radarValues = ""
+  radarValues = "0,0,0,0,0"
   chartName = ""
   chartStyle = ""
   credit = ""
@@ -93,7 +93,7 @@ export class Chart {
       }
     } else {
       const match =
-        /([\w\d-]+):[\s ]*([^:]*):[\s ]*([\w\d]+):[\s ]*([\d]+):[\s ]*([\d.,]+):[\s ]*([\w\d\s, ]+)/g.exec(
+        /([\w\d-]+):[\s ]*([^:]*):[\s ]*([\w\d]+):[\s ]*([\d]+):[\s ]*([\d.,]*):[\s ]*([\w\d\s, ]*)/g.exec(
           (<string>data).trim()
         )
       if (match != null) {

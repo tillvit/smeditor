@@ -7,6 +7,7 @@ import { Dropdown } from "../gui/element/Dropdown"
 import { ActionHistory } from "../util/ActionHistory"
 import { EventHandler } from "../util/EventHandler"
 import { clamp, isNumericKeyPress, safeParse } from "../util/Util"
+import { ConfimationWindow } from "./ConfirmationWindow"
 import { Window } from "./Window"
 
 type ChartListItem = HTMLDivElement & {
@@ -189,18 +190,21 @@ export class ChartListWindow extends Window {
     addChart.onclick = () => {
       const newChart = new Chart(this.app.chartManager.sm!)
       newChart.gameType = this.gameType
-      ActionHistory.instance.run({
-        action: app => {
-          app.chartManager.sm!.addChart(newChart)
-          app.chartManager.loadChart(newChart)
-          this.loadCharts()
-        },
-        undo: app => {
-          app.chartManager.sm!.removeChart(newChart)
-          app.chartManager.loadChart()
-          this.loadCharts()
-        },
-      })
+      this.app.chartManager.sm!.addChart(newChart)
+      this.app.chartManager.loadChart(newChart)
+      this.loadCharts()
+      // ActionHistory.instance.run({
+      //   action: app => {
+      //     app.chartManager.sm!.addChart(newChart)
+      //     app.chartManager.loadChart(newChart)
+      //     this.loadCharts()
+      //   },
+      //   undo: app => {
+      //     app.chartManager.sm!.removeChart(newChart)
+      //     app.chartManager.loadChart()
+      //     this.loadCharts()
+      //   },
+      // })
     }
 
     this.chartList!.replaceChildren(...chartEls, addChart)
@@ -360,20 +364,31 @@ export class ChartListWindow extends Window {
     const deleteButton = document.createElement("button")
     deleteButton.innerText = "Delete Chart"
     deleteButton.onclick = () => {
-      ActionHistory.instance.run({
-        action: app => {
-          if (app.chartManager.sm!.removeChart(chart!)) {
-            app.chartManager.loadChart()
-            this.gameType = app.chartManager.chart?.gameType ?? this.gameType
-            this.loadCharts()
-          }
-        },
-        undo: app => {
-          app.chartManager.sm!.addChart(chart!)
-          app.chartManager.loadChart(chart)
-          this.loadCharts()
-        },
-      })
+      this.app.windowManager.openWindow(
+        new ConfimationWindow(
+          this.app,
+          "Delete chart",
+          "Are you sure you want to delete this chart?",
+          [
+            {
+              type: "default",
+              label: "Cancel",
+            },
+            {
+              type: "delete",
+              label: "Delete",
+              callback: () => {
+                if (this.app.chartManager.sm!.removeChart(chart!)) {
+                  this.app.chartManager.loadChart()
+                  this.gameType =
+                    this.app.chartManager.chart?.gameType ?? this.gameType
+                  this.loadCharts()
+                }
+              },
+            },
+          ]
+        )
+      )
     }
     deleteButton.classList.add("delete")
     menu_options.append(deleteButton)

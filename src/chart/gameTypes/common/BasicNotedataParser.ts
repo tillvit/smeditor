@@ -54,11 +54,6 @@ export class BasicNotedataParser extends NotedataParser {
           lcm(measureHoldNotes.map(note => getDivision(note.beat + note.hold)))
         )
       )
-      console.log(
-        measure,
-        division,
-        measureNotes.map(note => note.beat)
-      )
       for (let div = 0; div < division; div++) {
         const beat = measure * 4 + (4 / division) * div
         const row = new Array(gameType.numCols).fill("0")
@@ -79,7 +74,6 @@ export class BasicNotedataParser extends NotedataParser {
         }
         measureString += row.join("") + "\n"
       }
-      console.log(measureString)
       measures.push(measureString)
     }
     return measures.join(",  ")

@@ -225,7 +225,6 @@ export class DirectoryWindow extends Window {
     const children = element.nextSibling as HTMLDivElement
     await this.createDiv(element.dataset.path!).then(elements => {
       children.replaceChildren(...elements)
-      console.log(elements)
     })
   }
 
@@ -574,7 +573,6 @@ export class DirectoryWindow extends Window {
     if (event.code == "Enter") {
       event.preventDefault()
       event.stopImmediatePropagation()
-      if (selected.parentElement!.classList.contains("folder")) return
       this.startEditing(
         selected.parentElement!.querySelector(".title") as HTMLTextAreaElement
       )
