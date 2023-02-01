@@ -119,7 +119,11 @@ export class FileHandler {
       if (!item) continue
       queue.push(FileHandler.uploadFiles(item, prefix))
     }
+    let returnVal = undefined
+    if (items.length == 1 && items[0].webkitGetAsEntry()!.isDirectory)
+      returnVal = items[0].webkitGetAsEntry()!.name
     await Promise.all(queue)
+    return returnVal
   }
 
   static async uploadDir(

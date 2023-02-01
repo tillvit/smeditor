@@ -4,19 +4,18 @@ import { App } from "../App"
 import { AUDIO_EXT, IMG_EXT } from "../data/FileData"
 import { Icons } from "../gui/Icons"
 import { FileHandler } from "../util/FileHandler"
-import { dirname, extname } from "../util/Util"
+import { basename, dirname, extname } from "../util/Util"
 import { Window } from "./Window"
 
 interface DirectoryWindowOptions {
   title: string
   accepted_file_types?: string[]
   callback?: (path: string) => void
+  onload?: () => void
   disableClose?: boolean
-  initial_select?: string
 }
 
 type DraggableDiv = HTMLDivElement & {
-  mouseDown?: boolean
   totalMovementX: number
   totalMovementY: number
 }
@@ -24,16 +23,19 @@ type DraggableDiv = HTMLDivElement & {
 export class DirectoryWindow extends Window {
   app: App
   dirOptions: DirectoryWindowOptions
-  highlightedPath = ""
+  private fileDropPath = ""
+  private draggedElement?: DraggableDiv
+  private draggedCopy?: HTMLDivElement
 
   private keyHandler
   private dropHandler
   private mouseHandler
+  private dragHandler
 
   constructor(
     app: App,
     options: DirectoryWindowOptions,
-    highlightedPath?: string
+    selectedPath?: string
   ) {
     super({
       title: options.title,
@@ -50,12 +52,15 @@ export class DirectoryWindow extends Window {
     this.keyHandler = this.handleKeyEvent.bind(this)
     this.dropHandler = this.handleDropEvent.bind(this)
     this.mouseHandler = this.handleMouseEvent.bind(this)
+    this.dragHandler = this.handleDragEvent.bind(this)
 
-    this.initView(this.viewElement)
-    // if (highlightedPath) this.select(this.viewElement, highlightedPath)
+    this.initView(this.viewElement).then(() => {
+      if (selectedPath) this.selectPath(selectedPath)
+      options.onload?.()
+    })
   }
 
-  initView(viewElement: HTMLDivElement): void {
+  async initView(viewElement: HTMLDivElement) {
     // Create the window
     viewElement.replaceChildren()
 
@@ -93,7 +98,6 @@ export class DirectoryWindow extends Window {
     //Create file explorer
     const scroll = document.createElement("div")
     scroll.classList.add("dir-selector")
-    this.createDiv("").then(elements => scroll.replaceChildren(...elements))
 
     const file_options = document.createElement("div")
     file_options.classList.add("file-options")
@@ -106,6 +110,7 @@ export class DirectoryWindow extends Window {
     add_file.appendChild(document.createTextNode("Upload files"))
     file_options.appendChild(add_file)
     add_file.onclick = async () => {
+      const dropPath = this.fileDropPath
       const fileHandlers = await showOpenFilePicker({
         _preferPolyfill: false,
         excludeAcceptAllOption: false,
@@ -122,7 +127,10 @@ export class DirectoryWindow extends Window {
       }
 
       await Promise.all(promises)
-      setTimeout(() => this.refreshDirectory(this.highlightedPath), 50)
+      setTimeout(() => {
+        this.refreshDirectory(dropPath)
+        this.getAcceptableFile(dropPath).then(path => this.selectPath(path))
+      }, 50)
     }
 
     const add_dir = document.createElement("button")
@@ -134,6 +142,7 @@ export class DirectoryWindow extends Window {
     file_options.appendChild(add_dir)
 
     add_dir.onclick = async () => {
+      const dropPath = this.fileDropPath
       const directoryHandle = await showDirectoryPicker({
         _preferPolyfill: false,
       })
@@ -144,7 +153,10 @@ export class DirectoryWindow extends Window {
 
       await FileHandler.uploadHandle(directoryHandle, path)
 
-      setTimeout(() => this.refreshDirectory(this.highlightedPath), 50)
+      setTimeout(() => {
+        this.refreshDirectory(dropPath)
+        this.getAcceptableFile(dropPath).then(path => this.selectPath(path))
+      }, 50)
     }
 
     const rename_file = document.createElement("button")
@@ -195,29 +207,26 @@ export class DirectoryWindow extends Window {
     padding.appendChild(menu_options)
     viewElement.appendChild(padding)
 
-    //Find a file with extensions
-    // if (this.dirOptions.initial_select)
-    //   this.select(viewElement, this.dirOptions.initial_select)
-
     //Drag & drop
     window.addEventListener("keydown", this.keyHandler, true)
+    window.addEventListener("drop", this.dropHandler, true)
+    window.addEventListener("mousemove", this.dragHandler, true)
 
     viewElement.addEventListener("dragover", this.mouseHandler)
-    viewElement.addEventListener("dragend", () => {
-      viewElement.querySelector(".outlined")?.classList.remove("outlined")
-      this.highlightedPath = ""
-    })
 
-    window.addEventListener("drop", this.dropHandler, true)
+    await this.createDiv("").then(elements =>
+      scroll.replaceChildren(...elements)
+    )
   }
 
-  private expand(element: HTMLElement) {
+  private async expand(element: HTMLElement) {
     if (!element.parentElement!.classList.contains("folder")) return
     element.parentElement!.classList.remove("collapsed")
     const children = element.nextSibling as HTMLDivElement
-    this.createDiv(element.dataset.path!).then(elements =>
+    await this.createDiv(element.dataset.path!).then(elements => {
       children.replaceChildren(...elements)
-    )
+      console.log(elements)
+    })
   }
 
   private collapse(element: HTMLElement) {
@@ -232,6 +241,11 @@ export class DirectoryWindow extends Window {
       .querySelector(".info.selected")
       ?.classList.remove("selected")
     element.classList.add("selected")
+    scrollIntoView(element, {
+      scrollMode: "if-needed",
+      block: "nearest",
+      inline: "nearest",
+    })
     const button: HTMLButtonElement =
       this.viewElement.querySelector("button.confirm")!
     const path = element.dataset.path
@@ -244,7 +258,7 @@ export class DirectoryWindow extends Window {
       false
   }
 
-  async createDiv(path: string): Promise<HTMLDivElement[]> {
+  private async createDiv(path: string): Promise<HTMLDivElement[]> {
     const folders = await FileHandler.getDirectoryFolders(path)
     const files = await FileHandler.getDirectoryFiles(path)
     folders.sort((a, b) =>
@@ -312,6 +326,8 @@ export class DirectoryWindow extends Window {
 
     info.addEventListener("click", () => this.selectElement(info))
 
+    info.addEventListener("mousedown", () => this.startDragging(info))
+
     info.ondblclick = () => this.confirmFile()
     return new_div
   }
@@ -325,6 +341,7 @@ export class DirectoryWindow extends Window {
       this.dirOptions.callback?.(path)
       window.removeEventListener("keydown", this.keyHandler, true)
       window.removeEventListener("drop", this.dropHandler, true)
+      window.removeEventListener("mousemove", this.dragHandler, true)
       this.closeWindow()
     }
   }
@@ -395,7 +412,7 @@ export class DirectoryWindow extends Window {
     })
   }
 
-  private refreshDirectory(path: string) {
+  private async refreshDirectory(path: string) {
     const scroll = this.viewElement.querySelector(
       ".dir-selector"
     ) as HTMLElement
@@ -407,8 +424,22 @@ export class DirectoryWindow extends Window {
     if (!element) return
     const openedFolders = Array.from(
       element.parentElement!.querySelectorAll(".folder:not(.collapsed)")
-    ).map(element => (<HTMLElement>element).dataset.path)
-    this.createDiv(path).then(elements => element.replaceChildren(...elements))
+    ).map(element => {
+      const infoEl = element.children[0] as HTMLElement
+      return infoEl.dataset.path!
+    })
+    await this.createDiv(path).then(elements =>
+      element.replaceChildren(...elements)
+    )
+    await Promise.all(
+      openedFolders.map(path =>
+        this.expand(
+          scroll.querySelector(
+            "div[data-path='" + this.escapeSelector(path) + "']"
+          )!
+        )
+      )
+    )
   }
 
   private getElement(path: string): HTMLElement | null {
@@ -421,7 +452,7 @@ export class DirectoryWindow extends Window {
     )
   }
 
-  private async getAcceptableFile(path: string): Promise<string | undefined> {
+  async getAcceptableFile(path: string): Promise<string | undefined> {
     const baseDirHandle = await FileHandler.getDirectoryHandle(path)
     if (!baseDirHandle) return
     const queue = [{ path, handle: baseDirHandle }]
@@ -429,14 +460,38 @@ export class DirectoryWindow extends Window {
       const directory = queue.shift()!
       const handle = directory.handle
       for await (const entry of handle.values()) {
+        const prepend = directory.path == "" ? "" : directory.path + "/"
         if (entry.kind == "directory") {
-          queue.push({ path: directory.path + "/" + entry.name, handle: entry })
+          queue.push({ path: prepend + entry.name, handle: entry })
         } else if (this.acceptableFileType(entry.name)) {
-          return directory.path + "/" + entry.name
+          return prepend + entry.name
         }
       }
     }
     return undefined
+  }
+
+  async selectPath(path: string | undefined) {
+    if (!path) return
+    const scroll = this.viewElement.querySelector<HTMLElement>(".dir-selector")
+    if (!scroll) return
+    const parts = path.split("/")
+    parts.pop()
+    const pathBuild = []
+    while (parts.length > 0) {
+      pathBuild.push(parts.shift())
+      const element = scroll.querySelector<HTMLElement>(
+        "div[data-path='" + this.escapeSelector(pathBuild.join("/")) + "']"
+      )
+      if (!element) return
+      await this.expand(element)
+    }
+    const finalElement = scroll.querySelector<HTMLElement>(
+      "div[data-path='" + this.escapeSelector(path) + "']"
+    )
+    console.log(finalElement)
+    if (!finalElement) return
+    this.selectElement(finalElement)
   }
 
   private handleKeyEvent(event: KeyboardEvent) {
@@ -546,16 +601,104 @@ export class DirectoryWindow extends Window {
     }
   }
 
+  private startDragging(element: HTMLDivElement) {
+    const drag = element as DraggableDiv
+    drag.totalMovementX = 0
+    drag.totalMovementY = 0
+    this.draggedElement = drag
+
+    const endDragHandler = () => {
+      this.stopDragging()
+      window.removeEventListener("mouseup", endDragHandler)
+    }
+    window.addEventListener("mouseup", endDragHandler)
+  }
+
+  private handleDragEvent(event: MouseEvent) {
+    if (!this.draggedElement) return
+    this.draggedElement.totalMovementX += event.movementX
+    this.draggedElement.totalMovementY += event.movementY
+    if (!this.draggedCopy) {
+      if (
+        Math.abs(this.draggedElement.totalMovementX) +
+          Math.abs(this.draggedElement.totalMovementY) >
+        8
+      ) {
+        this.viewElement.addEventListener("mousemove", this.mouseHandler)
+        this.draggedCopy = this.draggedElement.parentElement!.cloneNode(
+          true
+        ) as HTMLDivElement
+        this.draggedCopy.style.position = "fixed"
+        const bounds = this.draggedElement.getBoundingClientRect()
+        this.draggedCopy.style.top =
+          bounds.top + this.draggedElement.totalMovementY + "px"
+        this.draggedCopy.style.left =
+          bounds.left + this.draggedElement.totalMovementX + "px"
+        this.draggedCopy.style.width = bounds.width + "px"
+        this.draggedCopy.style.boxShadow = "3px 3px 3px #222"
+        if (this.draggedCopy.querySelector(".children"))
+          this.draggedCopy.removeChild(
+            this.draggedCopy.querySelector(".children")!
+          )
+        this.viewElement.appendChild(this.draggedCopy)
+      } else {
+        return
+      }
+    }
+
+    this.draggedCopy.style.top =
+      parseFloat(this.draggedCopy.style.top.slice(0, -2)) +
+      event.movementY +
+      "px"
+    this.draggedCopy.style.left =
+      parseFloat(this.draggedCopy.style.left.slice(0, -2)) +
+      event.movementX +
+      "px"
+  }
+
+  private async stopDragging() {
+    if (this.draggedCopy) {
+      this.draggedCopy.remove()
+      this.viewElement.removeEventListener("mousemove", this.mouseHandler)
+      const isFolder = this.draggedCopy.classList.contains("folder")
+      const path = this.draggedElement!.dataset.path!
+      const targetPath =
+        this.fileDropPath == ""
+          ? basename(this.draggedElement!.dataset.path!)
+          : this.fileDropPath +
+            "/" +
+            basename(this.draggedElement!.dataset.path!)
+      await FileHandler[isFolder ? "renameDirectory" : "renameFile"](
+        path,
+        targetPath
+      )
+      setTimeout(() => {
+        this.refreshDirectory(dirname(path))
+        this.refreshDirectory(dirname(targetPath))
+      }, 300)
+
+      this.viewElement.querySelector(".outlined")?.classList.remove("outlined")
+      this.fileDropPath = ""
+    }
+    this.draggedCopy = undefined
+    this.draggedElement = undefined
+  }
+
   private handleDropEvent(event: DragEvent) {
     event.preventDefault()
     event.stopImmediatePropagation()
+    this.viewElement.querySelector(".outlined")?.classList.remove("outlined")
+
     if (!(<HTMLElement>event.target!).closest(".dir-selector")) {
       return
     }
-    FileHandler.handleDropEvent(event, this.highlightedPath).then(() => {
-      this.refreshDirectory(this.highlightedPath)
+    FileHandler.handleDropEvent(event, this.fileDropPath).then(async folder => {
+      await this.refreshDirectory(this.fileDropPath)
+      this.getAcceptableFile(folder ?? this.fileDropPath).then(path =>
+        this.selectPath(path)
+      )
+      this.fileDropPath = ""
     })
-    this.refreshDirectory(this.highlightedPath)
   }
 
   private handleMouseEvent(event: MouseEvent) {
@@ -577,16 +720,16 @@ export class DirectoryWindow extends Window {
           prevOwner?.classList.remove("outlined")
         }
         const item = <HTMLElement>folder.querySelector(".info")
-        this.highlightedPath = item?.dataset.path ?? ""
+        this.fileDropPath = item?.dataset.path ?? ""
         if (folder.classList.contains("dir-selector")) {
-          this.highlightedPath = ""
+          this.fileDropPath = ""
         }
         folder.classList.add("outlined")
         return
       }
     }
     this.viewElement.querySelector(".outlined")?.classList.remove("outlined")
-    this.highlightedPath = ""
+    this.fileDropPath = ""
   }
 
   private escapeSelector(selector: string) {

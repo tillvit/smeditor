@@ -12,6 +12,7 @@ import { Options } from "./util/Options"
 import { TimerStats } from "./util/TimerStats"
 import { fpsUpdate, getBrowser } from "./util/Util"
 import { BasicOptionsWindow } from "./window/BasicOptionsWindow"
+import { DirectoryWindow } from "./window/DirectoryWindow"
 import { WindowManager } from "./window/WindowManager"
 
 declare global {
@@ -188,7 +189,23 @@ export class App {
     })
 
     window.addEventListener("drop", event => {
-      FileHandler.handleDropEvent(event)
+      FileHandler.handleDropEvent(event).then(folder => {
+        const dirWindow = new DirectoryWindow(this, {
+          title: "Select an sm/ssc file...",
+          accepted_file_types: [".sm", ".ssc"],
+          disableClose: true,
+          callback: (path: string) => {
+            this.chartManager.loadSM(path)
+            this.windowManager.getWindowById("select_sm_initial")!.closeWindow()
+          },
+          onload: () => {
+            dirWindow
+              .getAcceptableFile(folder ?? "")
+              .then(path => dirWindow.selectPath(path))
+          },
+        })
+        this.windowManager.openWindow(dirWindow)
+      })
     })
   }
 
