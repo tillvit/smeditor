@@ -296,10 +296,7 @@ export function dirname(path: string) {
 
   if (!root && !dir) return ""
 
-  if (dir) {
-    // It has a dirname, strip trailing slash
-    dir = dir.slice(0, dir.length - 1)
-  }
+  if (dir) dir = dir.slice(0, dir.length - 1)
 
   return root + dir
 }

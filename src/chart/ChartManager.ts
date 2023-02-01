@@ -308,7 +308,14 @@ export class ChartManager {
         if (event.target instanceof HTMLTextAreaElement) return
         if (event.target instanceof HTMLInputElement) return
         //Start editing note
-        if (event.code.startsWith("Digit") && !event.repeat) {
+        if (
+          event.code.startsWith("Digit") &&
+          !event.repeat &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.altKey &&
+          !event.ctrlKey
+        ) {
           const col = parseInt(event.code.slice(5)) - 1
           if (col < (this.chart?.gameType.numCols ?? 4) && col > -1) {
             this.setNote(col, "key")

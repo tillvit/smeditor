@@ -25,13 +25,40 @@ export class FileHandler {
     }
   }
 
+  static async uploadHandle(
+    handle: FileSystemFileHandle | FileSystemDirectoryHandle,
+    base?: FileSystemDirectoryHandle | string
+  ): Promise<void> {
+    let baseHandle: FileSystemDirectoryHandle
+    if (typeof base == "string") {
+      const basedir = await this.getDirectoryHandle(base, { create: true })
+      if (!basedir) return
+      baseHandle = basedir
+    } else {
+      baseHandle = base ?? this.root
+    }
+    if (handle.kind == "file") {
+      const fileHandle = await baseHandle.getFileHandle(handle.name, {
+        create: true,
+      })
+      this.writeFile(fileHandle, await handle.getFile())
+    } else {
+      const dirHandle = await baseHandle.getDirectoryHandle(handle.name, {
+        create: true,
+      })
+      for await (const fileHandle of handle.values()) {
+        this.uploadHandle(fileHandle, dirHandle)
+      }
+    }
+  }
+
   static async uploadFiles(
     item: FileSystemEntry,
     base?: FileSystemDirectoryHandle | string
   ): Promise<void> {
     let dirHandle: FileSystemDirectoryHandle
     if (typeof base == "string") {
-      const basedir = await this.getDirectoryHandle(base)
+      const basedir = await this.getDirectoryHandle(base, { create: true })
       if (!basedir) return
       dirHandle = basedir
     } else {
@@ -40,15 +67,17 @@ export class FileHandler {
     return new Promise(resolve => {
       if (item.isFile) {
         const file = item as FileSystemFileEntry
-        file.file(async file => {
-          const fileHandle = await dirHandle.getFileHandle(file.name, {
-            create: true,
+        if (file.name == ".DS_Store") resolve()
+        else
+          file.file(async file => {
+            const fileHandle = await dirHandle.getFileHandle(file.name, {
+              create: true,
+            })
+            const writeStream = await fileHandle.createWritable()
+            writeStream.write(file)
+            writeStream.close()
+            resolve()
           })
-          const writeStream = await fileHandle.createWritable()
-          writeStream.write(file)
-          writeStream.close()
-          resolve()
-        })
       } else if (item.isDirectory) {
         const dirReader = (<FileSystemDirectoryEntry>item).createReader()
         dirReader.readEntries(async entries => {
@@ -64,6 +93,33 @@ export class FileHandler {
         })
       }
     })
+  }
+
+  static async handleDropEvent(event: DragEvent, prefix?: string) {
+    event.stopPropagation()
+    event.preventDefault()
+
+    const items = event.dataTransfer!.items
+    if (!prefix) {
+      prefix = ""
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i].webkitGetAsEntry()
+        if (item?.isFile) {
+          if (item.name.endsWith(".sm") || item.name.endsWith(".ssc")) {
+            prefix = "New Song"
+            break
+          }
+        }
+      }
+    }
+
+    const queue = []
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i].webkitGetAsEntry()
+      if (!item) continue
+      queue.push(FileHandler.uploadFiles(item, prefix))
+    }
+    await Promise.all(queue)
   }
 
   static async uploadDir(
@@ -111,6 +167,7 @@ export class FileHandler {
       if (pathParts.length == 0) return dirHandle
       return this.getDirectoryHandle(pathParts.join("/"), options, dirHandle)
     } catch (err) {
+      console.log(err)
       return undefined
     }
   }
@@ -129,6 +186,7 @@ export class FileHandler {
       if (!dirHandle) return undefined
       return await dirHandle.getFileHandle(filename, options)
     } catch (err) {
+      console.log(err)
       return undefined
     }
   }
@@ -143,6 +201,7 @@ export class FileHandler {
         this.resolvePath(absolutePath + "/" + relativePath)
       )
     } catch (err) {
+      console.log(err)
       return undefined
     }
   }
@@ -150,35 +209,45 @@ export class FileHandler {
   static async getDirectoryFiles(
     path: FileSystemDirectoryHandle | string
   ): Promise<FileSystemFileHandle[]> {
-    let dirHandle
-    if (typeof path == "string") {
-      dirHandle = await this.getDirectoryHandle(path)
-      if (!dirHandle) return []
-    } else {
-      dirHandle = path
+    try {
+      let dirHandle
+      if (typeof path == "string") {
+        dirHandle = await this.getDirectoryHandle(path)
+        if (!dirHandle) return []
+      } else {
+        dirHandle = path
+      }
+      const files: FileSystemFileHandle[] = []
+      for await (const entry of dirHandle.values()) {
+        if (entry.kind == "file") files.push(entry)
+      }
+      return files
+    } catch (err) {
+      console.log(err)
+      return []
     }
-    const files: FileSystemFileHandle[] = []
-    for await (const entry of dirHandle.values()) {
-      if (entry.kind == "file") files.push(entry)
-    }
-    return files
   }
 
   static async getDirectoryFolders(
     path: FileSystemDirectoryHandle | string
   ): Promise<FileSystemDirectoryHandle[]> {
-    let dirHandle
-    if (typeof path == "string") {
-      dirHandle = await this.getDirectoryHandle(path)
-      if (!dirHandle) return []
-    } else {
-      dirHandle = path
+    try {
+      let dirHandle
+      if (typeof path == "string") {
+        dirHandle = await this.getDirectoryHandle(path)
+        if (!dirHandle) return []
+      } else {
+        dirHandle = path
+      }
+      const files: FileSystemDirectoryHandle[] = []
+      for await (const entry of dirHandle.values()) {
+        if (entry.kind == "directory") files.push(entry)
+      }
+      return files
+    } catch (err) {
+      console.log(err)
+      return []
     }
-    const files: FileSystemDirectoryHandle[] = []
-    for await (const entry of dirHandle.values()) {
-      if (entry.kind == "directory") files.push(entry)
-    }
-    return files
   }
 
   static async writeFile(
@@ -205,12 +274,21 @@ export class FileHandler {
       if (!dirHandle) return
       dirHandle.removeEntry(basename(path), options)
     } catch (err) {
+      console.log(err)
       return
     }
   }
 
   static async removeDirectory(path: string) {
     return this.removeFile(path, { recursive: true })
+  }
+
+  static async remove(path: string) {
+    if (extname(path) == "") {
+      return this.removeDirectory(path)
+    } else {
+      return this.removeFile(path)
+    }
   }
 
   static resolvePath(path: string): string {
@@ -261,6 +339,71 @@ export class FileHandler {
     await zip.generateAsync({ type: "blob" }).then(async blob => {
       await blob.stream().pipeTo(await fileHandle.createWritable())
     })
+  }
+
+  static async renameFile(path: string, pathTo: string) {
+    try {
+      const baseFromDirHandle = await this.getDirectoryHandle(dirname(path))
+      const baseToDirHandle = await this.getDirectoryHandle(dirname(pathTo), {
+        create: true,
+      })
+      const fileHandle = await this.getFileHandle(path)
+      if (!baseFromDirHandle || !baseToDirHandle || !fileHandle) return
+      await this.copyToHandle(baseToDirHandle, fileHandle, basename(pathTo))
+      baseFromDirHandle.removeEntry(basename(path))
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  static async renameDirectory(path: string, pathTo: string) {
+    try {
+      const baseFromDirHandle = await this.getDirectoryHandle(dirname(path))
+      const baseToDirHandle = await this.getDirectoryHandle(dirname(pathTo), {
+        create: true,
+      })
+      const dirHandle = await this.getDirectoryHandle(path)
+      if (!baseFromDirHandle || !baseToDirHandle || !dirHandle) return
+      await this.copyToHandle(baseToDirHandle, dirHandle, basename(pathTo))
+      baseFromDirHandle.removeEntry(basename(path), { recursive: true })
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  static async copyToHandle(
+    directory: FileSystemDirectoryHandle,
+    handle: FileSystemDirectoryHandle | FileSystemFileHandle,
+    name?: string
+  ) {
+    try {
+      if (handle.kind == "directory") {
+        const newDirHandle = await directory.getDirectoryHandle(
+          name ?? handle.name,
+          {
+            create: true,
+          }
+        )
+        const promises = []
+        for await (const newHandle of handle.values()) {
+          promises.push(this.copyToHandle(newDirHandle, newHandle))
+        }
+        await Promise.all(promises)
+      } else {
+        const file = await handle.getFile()
+        const newFileHandle = await directory.getFileHandle(
+          name ?? handle.name,
+          {
+            create: true,
+          }
+        )
+        const writable = await newFileHandle.createWritable()
+        await writable.write(file)
+        await writable.close()
+      }
+    } catch (err) {
+      console.log(err)
+    }
   }
 
   static getRelativePath(from: string, to: string): string {

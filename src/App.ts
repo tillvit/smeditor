@@ -188,42 +188,7 @@ export class App {
     })
 
     window.addEventListener("drop", event => {
-      event.stopPropagation()
-      event.preventDefault()
-      const handler = async () => {
-        let prefix = ""
-        const items = event.dataTransfer!.items
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i].webkitGetAsEntry()
-          if (item?.isFile) {
-            if (item.name.endsWith(".sm") || item.name.endsWith(".ssc")) {
-              prefix = "New Song"
-              break
-            }
-          }
-        }
-
-        const queue = []
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i].webkitGetAsEntry()
-          queue.push(FileHandler.uploadFiles(item!, prefix))
-        }
-        await Promise.all(queue)
-        // this.windowManager.openWindow(
-        //   new DirectoryWindow(this, {
-        //     title: "Select an sm/ssc file...",
-        //     accepted_file_types: ["sm", "ssc"],
-        //     disableClose: !this.chartManager.sm,
-        //     callback: (path: string) => {
-        //       this.chartManager.loadSM(path)
-        //       this.windowManager
-        //         .getWindowById("select_sm_initial")
-        //         ?.closeWindow()
-        //     },
-        //   })
-        // )
-      }
-      handler()
+      FileHandler.handleDropEvent(event)
     })
   }
 

@@ -96,6 +96,7 @@ button {
   transform: translateY(-0.5px);
   box-shadow: 0px 0.5px rgba(0, 0, 0, 0.9), 0px 3px 5px -3px rgba(0, 0, 0, 0.6);
   cursor: pointer;
+  column-gap: 5px;
 }
 .animated button {
   transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.875);
@@ -222,12 +223,20 @@ img.icon {
 }
 .dir-selector {
   background-color: #373737;
-  border-radius: 5px;
-  margin-bottom: 5px;
+  border-radius: 5px 5px 0px 0px;
   flex: 1;
   height: 100%;
   overflow: auto;
   padding: 5px;
+}
+.file-options {
+  display: flex;
+  flex-direction: row;
+  column-gap: 5px;
+  background-color: #333;
+  margin-bottom: 5px;
+  padding: 4px;
+  border-radius: 0px 0px 5px 5px;
 }
 .info.disabled > .title {
   color: #888;
@@ -267,7 +276,7 @@ textarea {
 }
 .dir-selector:empty::before {
   color: #999;
-  content: "No files! Add a file by dragging a folder/file or using the buttons above.";
+  content: "No files! Add a file by dragging a folder/file or using the buttons below.";
   height: 100%;
   display: flex;
   justify-content: center;

@@ -1,9 +1,10 @@
+import { showDirectoryPicker, showOpenFilePicker } from "file-system-access"
 import scrollIntoView from "scroll-into-view-if-needed"
 import { App } from "../App"
 import { AUDIO_EXT, IMG_EXT } from "../data/FileData"
 import { Icons } from "../gui/Icons"
 import { FileHandler } from "../util/FileHandler"
-import { extname } from "../util/Util"
+import { dirname, extname } from "../util/Util"
 import { Window } from "./Window"
 
 interface DirectoryWindowOptions {
@@ -23,10 +24,11 @@ type DraggableDiv = HTMLDivElement & {
 export class DirectoryWindow extends Window {
   app: App
   dirOptions: DirectoryWindowOptions
-  keyHandler?: (event: KeyboardEvent) => void
-  dragHandler?: (event: MouseEvent) => void
-  dropHandler?: (event: DragEvent) => void
   highlightedPath = ""
+
+  private keyHandler
+  private dropHandler
+  private mouseHandler
 
   constructor(
     app: App,
@@ -44,6 +46,11 @@ export class DirectoryWindow extends Window {
     this.app = app
     this.dirOptions = options
     options.accepted_file_types ||= []
+
+    this.keyHandler = this.handleKeyEvent.bind(this)
+    this.dropHandler = this.handleDropEvent.bind(this)
+    this.mouseHandler = this.handleMouseEvent.bind(this)
+
     this.initView(this.viewElement)
     // if (highlightedPath) this.select(this.viewElement, highlightedPath)
   }
@@ -52,198 +59,9 @@ export class DirectoryWindow extends Window {
     // Create the window
     viewElement.replaceChildren()
 
-    this.keyHandler = (event: KeyboardEvent) => {
-      if (!this.windowElement.classList.contains("focused")) return
-      const selected = viewElement.querySelector(
-        ".info.selected"
-      ) as HTMLElement
-      if (selected == undefined) {
-        viewElement.querySelector(".info")?.classList.add("selected")
-        return
-      }
-      if (event.code == "ArrowUp") {
-        event.preventDefault()
-        event.stopImmediatePropagation()
-        const item = selected.parentElement!
-        let prev: HTMLElement | null = (<HTMLElement>(
-          item.previousSibling
-        ))?.querySelector(".info")
-        if (
-          prev &&
-          !prev.parentElement!.classList.contains("collapsed") &&
-          prev.parentElement!.classList.contains("folder")
-        ) {
-          prev = (<HTMLElement>(
-            prev.parentElement!.querySelector(".children")!.lastChild!
-          )).querySelector(".info")!
-        }
-        if (!prev && item.parentElement!.classList.contains("children")) {
-          prev = item.parentElement!.parentElement!.querySelector(".info")!
-        }
-        if (prev) {
-          this.selectElement(prev)
-          scrollIntoView(prev, {
-            scrollMode: "if-needed",
-            block: "nearest",
-            inline: "nearest",
-          })
-        }
-      }
-      if (event.code == "ArrowDown") {
-        event.preventDefault()
-        event.stopImmediatePropagation()
-        const item = selected.parentElement!
-        let next: HTMLElement | undefined = undefined
-        if (
-          item.classList.contains("folder") &&
-          !item.classList.contains("collapsed")
-        ) {
-          const children = item.querySelector(".children")!
-          next = <HTMLElement>children.children[0].querySelector(".info")
-        }
-        if (!next)
-          next = (<HTMLElement>(
-            selected.parentElement!.nextSibling
-          ))?.querySelector(".info") as HTMLElement
-        if (!next && item.parentElement!.classList.contains("children"))
-          next = (<HTMLElement>(
-            item.parentElement!.parentElement!.nextSibling
-          ))!.querySelector(".info") as HTMLElement
-        if (next) {
-          this.selectElement(next)
-          scrollIntoView(next, {
-            scrollMode: "if-needed",
-            block: "nearest",
-            inline: "nearest",
-          })
-        }
-      }
-      if (event.code == "ArrowLeft") {
-        event.preventDefault()
-        event.stopImmediatePropagation()
-        this.collapse(selected)
-      }
-      if (event.code == "ArrowRight") {
-        event.preventDefault()
-        event.stopImmediatePropagation()
-        this.expand(selected)
-      }
-      if (event.code == "Enter") {
-        event.preventDefault()
-        event.stopImmediatePropagation()
-        if (selected.parentElement!.classList.contains("folder")) return
-        this.startEditing(
-          selected.parentElement!.querySelector(".title") as HTMLTextAreaElement
-        )
-      }
-    }
-    this.dragHandler = (event: MouseEvent) => {
-      const scroll = viewElement.querySelector(".dir-selector")!
-      let items = Array.from(scroll.querySelectorAll("div.item.folder"))!
-      const prevOwner = viewElement.querySelector(".outlined")
-      items = items.filter(x => !x.parentElement!.closest(".collapsed"))
-      items.reverse()
-      items.push(scroll)
-      for (const folder of items) {
-        const bounds = folder.getBoundingClientRect()
-        if (
-          event.clientX >= bounds.x &&
-          event.clientX <= bounds.x + bounds.width &&
-          event.clientY >= bounds.y &&
-          event.clientY <= bounds.y + bounds.height
-        ) {
-          if (prevOwner != folder) {
-            prevOwner?.classList.remove("outlined")
-          }
-          const item = <HTMLElement>folder.querySelector(".info")
-          this.highlightedPath = item?.dataset.path ?? ""
-          if (folder.classList.contains("dir-selector")) {
-            this.highlightedPath = ""
-          }
-          folder.classList.add("outlined")
-          return
-        }
-      }
-      viewElement.querySelector(".outlined")?.classList.remove("outlined")
-      this.highlightedPath = ""
-    }
-
-    this.dropHandler = event => {
-      event.preventDefault()
-      event.stopImmediatePropagation()
-      const handler = async () => {
-        if (!(<HTMLElement>event.target!).closest(".dir-selector")) {
-          return
-        }
-        let prefix = this.highlightedPath
-        const items = event.dataTransfer!.items
-        if (prefix == "") {
-          for (let i = 0; i < items.length; i++) {
-            const item = items[i].webkitGetAsEntry()
-            if (item?.isFile) {
-              if (item.name.endsWith(".sm") || item.name.endsWith(".ssc")) {
-                prefix = "New Song"
-                break
-              }
-            }
-          }
-        }
-
-        const queue = []
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i].webkitGetAsEntry()
-          queue.push(FileHandler.uploadFiles(item!, prefix))
-        }
-        await Promise.all(queue)
-        let scroll = viewElement
-          .querySelector(".dir-selector")
-          ?.querySelector(
-            "div[data-path='" + this.escapeSelector(prefix) + "']"
-          )
-          ?.parentElement!.querySelector(".children")
-        if (prefix == "") {
-          scroll = viewElement.querySelector(".dir-selector")
-        }
-        this.refreshDirectory(this.highlightedPath)
-        // const s_path = prefix.split("/")
-        // while (scroll == undefined) {
-        //   s_path.pop()
-        //   viewElement
-        //     .querySelector(".dir-selector")
-        //     ?.querySelector(
-        //       "div[data-path='" + this.escapeSelector(s_path.join("/")) + "']"
-        //     )
-        //     ?.parentElement!.querySelector(".children")
-        //   if (s_path.length == 0) {
-        //     scroll = viewElement.querySelector(".dir-selector")
-        //   }
-        // }
-        // this.reloadView(viewElement, s_path.join("/"))
-        // this.searchForAcceptableFile(viewElement, s_path.join("/"))
-      }
-      handler()
-    }
-
     //Padding container
     const padding = document.createElement("div")
     padding.classList.add("padding")
-
-    //Navbar
-    // const navbar = document.createElement("div")
-    // navbar.classList.add("navbar")
-    // const navbar_title = document.createElement("div")
-    // navbar_title.classList.add("title")
-    // navbar_title.innerText = "Files"
-    // const add_folder = document.createElement("img")
-    // add_folder.src = Icons.ADD_FOLDER
-    // add_folder.onclick = async () => {
-    //   const dirHandle = await showDirectoryPicker({ id: 1 })
-    //   await FileHandler.uploadDir(dirHandle)
-    //   this.refreshDirectory("")
-    //   console.log(this.getAcceptableFile(dirHandle.name))
-    // }
-    // navbar.appendChild(navbar_title)
-    // navbar.appendChild(add_folder)
 
     //Menu Button Options
     const menu_options = document.createElement("div")
@@ -259,8 +77,8 @@ export class DirectoryWindow extends Window {
     const cancel = document.createElement("button")
     cancel.innerText = "Cancel"
     cancel.onclick = () => {
-      window.removeEventListener("keydown", this.keyHandler!, true)
-      window.removeEventListener("drop", this.dropHandler!, true)
+      window.removeEventListener("keydown", this.keyHandler, true)
+      window.removeEventListener("drop", this.dropHandler, true)
       this.closeWindow()
     }
 
@@ -277,8 +95,103 @@ export class DirectoryWindow extends Window {
     scroll.classList.add("dir-selector")
     this.createDiv("").then(elements => scroll.replaceChildren(...elements))
 
-    // padding.appendChild(navbar)
+    const file_options = document.createElement("div")
+    file_options.classList.add("file-options")
+
+    const add_file = document.createElement("button")
+    const add_file_icon = document.createElement("img")
+    add_file_icon.src = Icons.ADD_FILE
+    add_file_icon.classList.add("icon")
+    add_file.appendChild(add_file_icon)
+    add_file.appendChild(document.createTextNode("Upload files"))
+    file_options.appendChild(add_file)
+    add_file.onclick = async () => {
+      const fileHandlers = await showOpenFilePicker({
+        _preferPolyfill: false,
+        excludeAcceptAllOption: false,
+        multiple: true,
+      })
+
+      const selected: HTMLElement | null =
+        this.viewElement.querySelector(".info.selected")
+      const path = selected?.dataset.path ?? ""
+
+      const promises = []
+      for (const handle of fileHandlers) {
+        promises.push(FileHandler.uploadHandle(handle, path))
+      }
+
+      await Promise.all(promises)
+      setTimeout(() => this.refreshDirectory(this.highlightedPath), 50)
+    }
+
+    const add_dir = document.createElement("button")
+    const add_dir_icon = document.createElement("img")
+    add_dir_icon.src = Icons.ADD_FOLDER
+    add_dir_icon.classList.add("icon")
+    add_dir.appendChild(add_dir_icon)
+    add_dir.appendChild(document.createTextNode("Upload folder"))
+    file_options.appendChild(add_dir)
+
+    add_dir.onclick = async () => {
+      const directoryHandle = await showDirectoryPicker({
+        _preferPolyfill: false,
+      })
+
+      const selected: HTMLElement | null =
+        this.viewElement.querySelector(".info.selected")
+      const path = selected?.dataset.path ?? ""
+
+      await FileHandler.uploadHandle(directoryHandle, path)
+
+      setTimeout(() => this.refreshDirectory(this.highlightedPath), 50)
+    }
+
+    const rename_file = document.createElement("button")
+    rename_file.classList.add("rename")
+    const rename_file_icon = document.createElement("img")
+    rename_file_icon.src = Icons.EDIT
+    rename_file_icon.classList.add("icon")
+    rename_file.appendChild(rename_file_icon)
+    rename_file.appendChild(document.createTextNode("Rename"))
+    rename_file.disabled = true
+    rename_file.onclick = () => {
+      const selected: HTMLElement | null =
+        this.viewElement.querySelector(".info.selected")
+      const path = selected?.dataset.path
+      if (!path) return
+      this.startEditing(selected.querySelector("textarea")!)
+    }
+    file_options.appendChild(rename_file)
+
+    const delete_file = document.createElement("button")
+    delete_file.classList.add("delete")
+    const delete_file_icon = document.createElement("img")
+    delete_file_icon.src = Icons.TRASH
+    delete_file_icon.classList.add("icon")
+    delete_file.appendChild(delete_file_icon)
+    delete_file.appendChild(document.createTextNode("Delete"))
+    delete_file.disabled = true
+    delete_file.onclick = () => {
+      const selected: HTMLElement | null =
+        this.viewElement.querySelector(".info.selected")
+      const path = selected?.dataset.path
+      if (!path) return
+      const isFolder = selected.parentElement!.classList.contains("folder")
+      FileHandler[isFolder ? "removeDirectory" : "removeFile"](path).then(
+        () => {
+          const el = this.getElement(path)
+          if (!el) return
+          el.parentElement?.remove()
+          delete_file.disabled = true
+          rename_file.disabled = true
+        }
+      )
+    }
+    file_options.appendChild(delete_file)
+
     padding.appendChild(scroll)
+    padding.appendChild(file_options)
     padding.appendChild(menu_options)
     viewElement.appendChild(padding)
 
@@ -289,7 +202,7 @@ export class DirectoryWindow extends Window {
     //Drag & drop
     window.addEventListener("keydown", this.keyHandler, true)
 
-    viewElement.addEventListener("dragover", this.dragHandler)
+    viewElement.addEventListener("dragover", this.mouseHandler)
     viewElement.addEventListener("dragend", () => {
       viewElement.querySelector(".outlined")?.classList.remove("outlined")
       this.highlightedPath = ""
@@ -299,16 +212,16 @@ export class DirectoryWindow extends Window {
   }
 
   private expand(element: HTMLElement) {
-    if (!element.dataset.path || extname(element.dataset.path) != "") return
+    if (!element.parentElement!.classList.contains("folder")) return
     element.parentElement!.classList.remove("collapsed")
     const children = element.nextSibling as HTMLDivElement
-    this.createDiv(element.dataset.path).then(elements =>
+    this.createDiv(element.dataset.path!).then(elements =>
       children.replaceChildren(...elements)
     )
   }
 
   private collapse(element: HTMLElement) {
-    if (!element.dataset.path || extname(element.dataset.path) != "") return
+    if (!element.parentElement!.classList.contains("folder")) return
     element.parentElement!.classList.add("collapsed")
     const children = element.nextSibling as HTMLDivElement
     children.replaceChildren()
@@ -325,45 +238,15 @@ export class DirectoryWindow extends Window {
     button.disabled = true
     if (!path) return
     button.disabled = !this.acceptableFileType(path)
+    this.viewElement.querySelector<HTMLButtonElement>(".delete")!.disabled =
+      false
+    this.viewElement.querySelector<HTMLButtonElement>(".rename")!.disabled =
+      false
   }
 
-  // private selectPath(path: string) {
-  //   const scroll = this.viewElement.querySelector(".dir-selector")
-  //   if (!scroll) return
-  //   const pathParts = dirname(path).split("/")
-  //   let folder = scroll
-  //   let walkPath = ""
-  //   for (const part of pathParts) {
-
-  //     folder = folder.querySelector("div[data-path='" + this.escapeSelector(path) + "']")
-  //   }
-
-  //   const info = scroll.querySelector(
-  //     "div[data-path='" + this.escapeSelector(path) + "']"
-  //   )
-  //   if (!info) return
-  //   this.selectElement(info)
-  //   let el = info.parentElement!
-  //   while (el.parentElement!.parentElement!.classList.contains("folder")) {
-  //     el = el.parentElement!.parentElement!
-  //     el.classList.remove("collapsed")
-  //   }
-  //   scrollIntoView(info, {
-  //     scrollMode: "if-needed",
-  //     block: "nearest",
-  //     inline: "nearest",
-  //   })
-  // }
-
   async createDiv(path: string): Promise<HTMLDivElement[]> {
-    const dirHandle = await FileHandler.getDirectoryHandle(path)
-    if (!dirHandle) return []
-    const folders: FileSystemHandle[] = []
-    const files: FileSystemHandle[] = []
-    for await (const fileHandle of dirHandle.values()) {
-      if (fileHandle.kind == "directory") folders.push(fileHandle)
-      else files.push(fileHandle)
-    }
+    const folders = await FileHandler.getDirectoryFolders(path)
+    const files = await FileHandler.getDirectoryFiles(path)
     folders.sort((a, b) =>
       a.name.toLowerCase().localeCompare(b.name.toLowerCase())
     )
@@ -371,138 +254,19 @@ export class DirectoryWindow extends Window {
       a.name.toLowerCase().localeCompare(b.name.toLowerCase())
     )
     return folders
-      .concat(files)
       .map(handle => this.createBaseElement(path, handle))
-    // const rename = document.createElement("img")
-    // rename.classList.add("icon")
-    // rename.classList.add("options-icon")
-    // rename.src =
-    //   Icons.EDIT
-    // rename.onclick = e => {
-    //   e.preventDefault()
-    //   this.startEditing(title)
-    //   return false
-    // }
-    // const add_file = document.createElement("img")
-    // add_file.classList.add("icon")
-    // add_file.classList.add("options-icon")
-    // add_file.src =
-    //   Icons.ADD_FILE
-    // add_file.onclick = () => {
-    //   const input = document.createElement("input")
-    //   input.type = "file"
-    //   input.multiple = true
-
-    //   input.onchange = () => {
-    //     const path = info.dataset.path!.split("/")
-    //     if (path[path.length - 1].indexOf(".") > -1) {
-    //       path.pop()
-    //     }
-    //     this.uploadFiles(viewElement, path.join("/"), input.files!)
-    //   }
-    //   input.click()
-    //   return false
-    // }
-    // const add_folder = document.createElement("img")
-    // add_folder.classList.add("icon")
-    // add_folder.classList.add("options-icon")
-    // add_folder.src =
-    //   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAAvUlEQVRIie2UTQ7CIBBGnz8rb+Mt2hqv4TGMmt4Kexl7gUa3TXBRTAALQqGJJr5kNpR+r8ykwJ9vogJaQDrqlCrwhWeRfAoPrRYo5xRI4OYTpGLkLDMEevl9wXqGzC2wH3uQa8gGOVpUAALoVAmGW+GNKSc44v4XLqmCwgpcqfVeWzNOEisQAYJGfyHkspPARu3vrGCbHrjrQz4oSSiLiL2TuBLZoljKAMEuRQBwxj2rOjX8RcXQioeqBu3Ln4QChU8M4+FlAAAAAElFTkSuQmCC"
-    // adIcons.ADD_FOLDER
-    //   const input = document.createElement("input")
-    //   input.type = "file"
-    //   input.multiple = true
-    //   input.webkitdirectory = true
-
-    //   input.onchange = () => {
-    //     const path = info.dataset.path!.split("/")
-    //     if (path[path.length - 1].indexOf(".") > -1) {
-    //       path.pop()
-    //     }
-    //     this.uploadDirectory(viewElement, path.join("/"), input.files!)
-    //   }
-    //   input.click()
-    //   return false
-    // }
-    // const delete_file = document.createElement("img")
-    // delete_file.classList.add("icon")
-    // delete_file.classList.add("options-icon")
-    // delete_file.src =
-    //   Icons.TRASH
-    // delete_file.onclick = () => {
-    //   this.app.files.removeFile(info.dataset.path!)
-    //   new_div.parentElement!.removeChild(new_div)
-    //   return false
-    // }
-    // window.addEventListener("mousemove", e => {
-    //   const drag = info as DraggableDiv
-    //   if (drag.mouseDown) {
-    //     drag.totalMovementX += e.movementX
-    //     drag.totalMovementY += e.movementY
-    //     let info2: HTMLDivElement = viewElement.querySelector(".drag-copy")!
-    //     if (!info2) {
-    //       if (
-    //         Math.abs(drag.totalMovementX) + Math.abs(drag.totalMovementY) >
-    //         8
-    //       ) {
-    //         viewElement.addEventListener("mousemove", this.dragHandler!)
-    //         info2 = new_div.cloneNode(true) as HTMLDivElement
-    //         info2.style.position = "fixed"
-    //         const bounds = info.getBoundingClientRect()
-    //         info2.style.top = bounds.top + drag.totalMovementY + "px"
-    //         info2.style.left = bounds.left + drag.totalMovementX + "px"
-    //         info2.style.width = bounds.width + "px"
-    //         info2.style.boxShadow = "3px 3px 3px #222"
-    //         info2.classList.add("drag-copy")
-    //         if (info2.querySelector(".children"))
-    //           info2.removeChild(info2.querySelector(".children")!)
-    //         viewElement.appendChild(info2)
-    //       } else {
-    //         return
-    //       }
-    //     }
-    //     info2.style.top =
-    //       parseFloat(info2.style.top.slice(0, -2)) + e.movementY + "px"
-    //     info2.style.left =
-    //       parseFloat(info2.style.left.slice(0, -2)) + e.movementX + "px"
-    //   }
-    // })
-
-    // window.addEventListener("mouseup", () => {
-    //   const drag = info as DraggableDiv
-    //   if (drag.mouseDown) {
-    //     drag.mouseDown = false
-    //     const drags = Array.from(viewElement.querySelectorAll(".drag-copy"))
-    //     drags.forEach(x => viewElement.removeChild(x))
-    //     viewElement.removeEventListener("mousemove", this.dragHandler!)
-    //     if (
-    //       Math.abs(drag.totalMovementX) + Math.abs(drag.totalMovementY) >
-    //       8
-    //     ) {
-    //       this.app.files.move(info.dataset.path!, this.highlightedPath)
-    //       const prefix1 = info.dataset.path!.split("/").slice(0, -1).join("/")
-    //       const prefix2 = this.highlightedPath
-    //       this.reloadView(viewElement, prefix1)
-    //       this.reloadView(viewElement, prefix2)
-    //       viewElement.querySelector(".outlined")?.classList.remove("outlined")
-    //       this.highlightedPath = ""
-    //     }
-    //   }
-    // })
-
-    // new_div.appendChild(info)
+      .concat(files.map(handle => this.createBaseElement(path, handle)))
   }
 
   private createBaseElement(path: string, handle: FileSystemHandle) {
     if (path != "") path += "/"
-    const ext = extname(handle.name)
     const new_div = document.createElement("div")
     new_div.classList.add("item")
     //File/Directory Info
     const info = document.createElement("div")
     info.classList.add("info")
     new_div.appendChild(info)
-    if (ext == "" && !handle.name.startsWith(".")) {
+    if (handle.kind == "directory") {
       const folder_open = document.createElement("img")
       folder_open.classList.add("icon")
       folder_open.classList.add("folder-icon")
@@ -516,11 +280,15 @@ export class DirectoryWindow extends Window {
       new_div.classList.add("collapsed")
 
       info.addEventListener("click", e => {
-        const icon = e.target as HTMLElement
-        if (!icon?.classList.contains("options-icon")) {
-          if (new_div.classList.contains("collapsed")) this.expand(info)
-          else this.collapse(info)
-        }
+        const target = e.target as HTMLElement
+        if (target?.classList.contains("options-icon")) return
+        if (
+          target.tagName == "TEXTAREA" &&
+          !(<HTMLTextAreaElement>target).disabled
+        )
+          return
+        if (new_div.classList.contains("collapsed")) this.expand(info)
+        else this.collapse(info)
       })
     } else {
       if (!this.acceptableFileType(handle.name)) info.classList.add("disabled")
@@ -548,15 +316,15 @@ export class DirectoryWindow extends Window {
     return new_div
   }
 
-  confirmFile() {
+  private confirmFile() {
     const selected: HTMLElement | null =
       this.viewElement.querySelector(".info.selected")
     const path = selected?.dataset.path
     if (!path) return
     if (this.acceptableFileType(path)) {
       this.dirOptions.callback?.(path)
-      window.removeEventListener("keydown", this.keyHandler!, true)
-      window.removeEventListener("drop", this.dropHandler!, true)
+      window.removeEventListener("keydown", this.keyHandler, true)
+      window.removeEventListener("drop", this.dropHandler, true)
       this.closeWindow()
     }
   }
@@ -584,35 +352,47 @@ export class DirectoryWindow extends Window {
   }
 
   private startEditing(title: HTMLTextAreaElement) {
-    window.removeEventListener("keydown", this.keyHandler!, true)
+    const initialValue = title.value
+    const isFolder =
+      !!title.parentElement?.parentElement?.classList.contains("folder")
+    const path = title.parentElement?.dataset.path ?? ""
+    const basedir = dirname(path)
+    title.value = path.split("/").at(-1) ?? ""
+    window.removeEventListener("keydown", this.keyHandler, true)
     title.disabled = false
     title.style.pointerEvents = ""
-    title.value = title.parentElement!.dataset.path!.split("/").pop()!
     title.focus()
-    title.addEventListener("keypress", e => this.textAreaKeyHandler(e), true)
-    title.addEventListener("blur", () => {
-      window.addEventListener("keydown", this.keyHandler!, true)
+    title.addEventListener(
+      "keypress",
+      event => {
+        if (event.code == "Enter") {
+          event.preventDefault()
+          event.stopImmediatePropagation()
+          title.blur()
+        }
+      },
+      true
+    )
+    title.addEventListener("blur", async () => {
+      window.addEventListener("keydown", this.keyHandler, true)
       title.disabled = true
       title.style.pointerEvents = "none"
-      const path = title.parentElement!.dataset.path!.split("/")
-      const orig_path = title.parentElement!.dataset.path!
-      const isFolder = orig_path.indexOf(".") == -1
+      if (title.value.startsWith(".")) {
+        title.value = initialValue
+        return
+      }
       title.value = title.value.replaceAll("/", "")
-      if (isFolder) title.value = title.value.replaceAll(".", "")
-      path[path.length - 1] = title.value
-      title.parentElement!.dataset.path = path.join("/")
-      // this.app.files.rename(orig_path, title.value)
+      const newPath = basedir == "" ? title.value : basedir + "/" + title.value
+      if (newPath == path) return
+      title.parentElement!.dataset.path = newPath
+      await FileHandler[isFolder ? "renameDirectory" : "renameFile"](
+        path,
+        newPath
+      )
+      setTimeout(() => this.refreshDirectory(basedir), 300)
       if (title.value.length > 32)
         title.value = title.value.slice(0, 32) + "..."
     })
-  }
-
-  private textAreaKeyHandler(event: KeyboardEvent) {
-    if (event.code == "Enter") {
-      event.preventDefault()
-      event.stopImmediatePropagation()
-      ;(<HTMLElement>event.target)?.blur()
-    }
   }
 
   private refreshDirectory(path: string) {
@@ -631,6 +411,16 @@ export class DirectoryWindow extends Window {
     this.createDiv(path).then(elements => element.replaceChildren(...elements))
   }
 
+  private getElement(path: string): HTMLElement | null {
+    const scroll = this.viewElement.querySelector(
+      ".dir-selector"
+    ) as HTMLElement
+    if (!scroll) return null
+    return scroll.querySelector(
+      "div[data-path='" + this.escapeSelector(path) + "']"
+    )
+  }
+
   private async getAcceptableFile(path: string): Promise<string | undefined> {
     const baseDirHandle = await FileHandler.getDirectoryHandle(path)
     if (!baseDirHandle) return
@@ -647,6 +437,156 @@ export class DirectoryWindow extends Window {
       }
     }
     return undefined
+  }
+
+  private handleKeyEvent(event: KeyboardEvent) {
+    if (!this.windowElement.classList.contains("focused")) return
+    const selected = this.viewElement.querySelector(
+      ".info.selected"
+    ) as HTMLElement
+    if (selected == undefined) {
+      const first: HTMLElement | null = this.viewElement.querySelector(".info")
+      if (first) this.selectElement(first)
+      return
+    }
+    if (event.code == "ArrowUp") {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      const item = selected.parentElement!
+      let prev: HTMLElement | null = (<HTMLElement>(
+        item.previousSibling
+      ))?.querySelector(".info")
+      if (
+        prev &&
+        !prev.parentElement!.classList.contains("collapsed") &&
+        prev.parentElement!.classList.contains("folder")
+      ) {
+        prev = (<HTMLElement>(
+          prev.parentElement!.querySelector(".children")!.lastChild!
+        )).querySelector(".info")!
+      }
+      if (!prev && item.parentElement!.classList.contains("children")) {
+        prev = item.parentElement!.parentElement!.querySelector(".info")!
+      }
+      if (prev) {
+        this.selectElement(prev)
+        scrollIntoView(prev, {
+          scrollMode: "if-needed",
+          block: "nearest",
+          inline: "nearest",
+        })
+      }
+    }
+    if (event.code == "ArrowDown") {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      const item = selected.parentElement!
+      let next: HTMLElement | undefined = undefined
+      if (
+        item.classList.contains("folder") &&
+        !item.classList.contains("collapsed")
+      ) {
+        const children = item.querySelector(".children")!
+        next = <HTMLElement>children.children[0].querySelector(".info")
+      }
+      if (!next)
+        next = (<HTMLElement>(
+          selected.parentElement!.nextSibling
+        ))?.querySelector(".info") as HTMLElement
+      if (!next && item.parentElement!.classList.contains("children"))
+        next = (<HTMLElement>(
+          item.parentElement!.parentElement!.nextSibling
+        ))!.querySelector(".info") as HTMLElement
+      if (next) {
+        this.selectElement(next)
+        scrollIntoView(next, {
+          scrollMode: "if-needed",
+          block: "nearest",
+          inline: "nearest",
+        })
+      }
+    }
+    if (event.code == "ArrowLeft") {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      this.collapse(selected)
+    }
+    if (event.code == "ArrowRight") {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      this.expand(selected)
+    }
+    if (event.code == "Enter") {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      if (selected.parentElement!.classList.contains("folder")) return
+      this.startEditing(
+        selected.parentElement!.querySelector(".title") as HTMLTextAreaElement
+      )
+    }
+    if (event.code == "Delete" || event.code == "Backspace") {
+      const selected: HTMLElement | null =
+        this.viewElement.querySelector(".info.selected")
+      const path = selected?.dataset.path
+      if (!path) return
+      const isFolder = selected.parentElement!.classList.contains("folder")
+      FileHandler[isFolder ? "removeDirectory" : "removeFile"](path).then(
+        () => {
+          const el = this.getElement(path)
+          if (!el) return
+          el.parentElement?.remove()
+          this.viewElement.querySelector<HTMLButtonElement>(
+            ".delete"
+          )!.disabled = true
+          this.viewElement.querySelector<HTMLButtonElement>(
+            ".rename"
+          )!.disabled = true
+        }
+      )
+    }
+  }
+
+  private handleDropEvent(event: DragEvent) {
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    if (!(<HTMLElement>event.target!).closest(".dir-selector")) {
+      return
+    }
+    FileHandler.handleDropEvent(event, this.highlightedPath).then(() => {
+      this.refreshDirectory(this.highlightedPath)
+    })
+    this.refreshDirectory(this.highlightedPath)
+  }
+
+  private handleMouseEvent(event: MouseEvent) {
+    const scroll = this.viewElement.querySelector(".dir-selector")!
+    let items = Array.from(scroll.querySelectorAll("div.item.folder"))!
+    const prevOwner = this.viewElement.querySelector(".outlined")
+    items = items.filter(x => !x.parentElement!.closest(".collapsed"))
+    items.reverse()
+    items.push(scroll)
+    for (const folder of items) {
+      const bounds = folder.getBoundingClientRect()
+      if (
+        event.clientX >= bounds.x &&
+        event.clientX <= bounds.x + bounds.width &&
+        event.clientY >= bounds.y &&
+        event.clientY <= bounds.y + bounds.height
+      ) {
+        if (prevOwner != folder) {
+          prevOwner?.classList.remove("outlined")
+        }
+        const item = <HTMLElement>folder.querySelector(".info")
+        this.highlightedPath = item?.dataset.path ?? ""
+        if (folder.classList.contains("dir-selector")) {
+          this.highlightedPath = ""
+        }
+        folder.classList.add("outlined")
+        return
+      }
+    }
+    this.viewElement.querySelector(".outlined")?.classList.remove("outlined")
+    this.highlightedPath = ""
   }
 
   private escapeSelector(selector: string) {

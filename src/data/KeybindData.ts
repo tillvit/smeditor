@@ -35,9 +35,9 @@ export const IS_OSX: boolean = navigator.userAgent.indexOf("Mac OS X") > -1
 export const DEF_MOD: Modifier = IS_OSX ? Modifier.META : Modifier.CTRL
 
 export const MODIFIER_ASCII: { [key: string]: string } = {
-  Shift: "⇧",
-  Ctrl: IS_OSX ? "Ctrl" : "⌃",
-  Alt: "⌥",
+  Shift: IS_OSX ? "⇧" : "Shift",
+  Ctrl: IS_OSX ? "⌃" : "Ctrl",
+  Alt: IS_OSX ? "⌥" : "Alt",
   Command: "⌘",
 }
 
