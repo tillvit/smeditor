@@ -37,7 +37,7 @@ export class BasicNotedataParser extends NotedataParser {
     const holdEnds: PartialHoldNotedataEntry[] = notedata.filter(isHoldNote)
     const lastNote = notedata.at(-1)!
     const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
-    for (let measure = 0; measure < Math.floor(lastBeat / 4); measure++) {
+    for (let measure = 0; measure < Math.ceil(lastBeat / 4); measure++) {
       let measureString = "// measure " + measure + "\n"
       const measureNotes = []
       while (notedata[nIndex]?.beat < measure * 4 + 4) {

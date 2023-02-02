@@ -46,9 +46,11 @@ export class FileHandler {
       const dirHandle = await baseHandle.getDirectoryHandle(handle.name, {
         create: true,
       })
+      const promises = []
       for await (const fileHandle of handle.values()) {
-        this.uploadHandle(fileHandle, dirHandle)
+        promises.push(this.uploadHandle(fileHandle, dirHandle))
       }
+      await Promise.all(promises)
     }
   }
 
@@ -64,35 +66,34 @@ export class FileHandler {
     } else {
       dirHandle = base ?? this.root
     }
-    return new Promise(resolve => {
-      if (item.isFile) {
-        const file = item as FileSystemFileEntry
-        if (file.name == ".DS_Store") resolve()
-        else
-          file.file(async file => {
-            const fileHandle = await dirHandle.getFileHandle(file.name, {
-              create: true,
-            })
-            const writeStream = await fileHandle.createWritable()
-            writeStream.write(file)
-            writeStream.close()
-            resolve()
+    if (item.isFile) {
+      const file = item as FileSystemFileEntry
+      if (file.name == ".DS_Store") return
+      else
+        file.file(async file => {
+          const fileHandle = await dirHandle.getFileHandle(file.name, {
+            create: true,
           })
-      } else if (item.isDirectory) {
-        const dirReader = (<FileSystemDirectoryEntry>item).createReader()
-        dirReader.readEntries(async entries => {
-          const promises = []
-          for (let i = 0; i < entries.length; i++) {
-            const newDir = await dirHandle.getDirectoryHandle(item.name, {
-              create: true,
-            })
-            promises.push(this.uploadFiles(entries[i], newDir))
-          }
-          await Promise.all(promises)
-          resolve()
+          const writeStream = await fileHandle.createWritable()
+          await writeStream.write(file)
+          await writeStream.close()
         })
+    } else if (item.isDirectory) {
+      const dirReader = (<FileSystemDirectoryEntry>item).createReader()
+      const newDir = await dirHandle.getDirectoryHandle(item.name, {
+        create: true,
+      })
+      for await (const existingHandle of newDir.values()) {
+        await newDir.removeEntry(existingHandle.name, { recursive: true })
       }
-    })
+      dirReader.readEntries(async entries => {
+        const promises = []
+        for (let i = 0; i < entries.length; i++) {
+          promises.push(this.uploadFiles(entries[i], newDir))
+        }
+        await Promise.all(promises)
+      })
+    }
   }
 
   static async handleDropEvent(event: DragEvent, prefix?: string) {
@@ -117,7 +118,7 @@ export class FileHandler {
     for (let i = 0; i < items.length; i++) {
       const item = items[i].webkitGetAsEntry()
       if (!item) continue
-      queue.push(FileHandler.uploadFiles(item, prefix))
+      queue.push(this.uploadFiles(item, prefix))
     }
     let returnVal = undefined
     if (items.length == 1 && items[0].webkitGetAsEntry()!.isDirectory)
@@ -148,10 +149,10 @@ export class FileHandler {
         })
         const file = await handle.getFile()
         const writeStream = await fileHandle.createWritable()
-        writeStream.write(file)
-        writeStream.close()
+        await writeStream.write(file)
+        await writeStream.close()
       } else {
-        this.uploadDir(handle, dirHandle)
+        await this.uploadDir(handle, dirHandle)
       }
     }
   }
@@ -266,8 +267,8 @@ export class FileHandler {
       fileHandle = path
     }
     const writeStream = await fileHandle.createWritable()
-    writeStream.write(data)
-    writeStream.close()
+    await writeStream.write(data)
+    await writeStream.close()
     return
   }
 
@@ -276,7 +277,7 @@ export class FileHandler {
       const dir = dirname(path)
       const dirHandle = await this.getDirectoryHandle(dir)
       if (!dirHandle) return
-      dirHandle.removeEntry(basename(path), options)
+      await dirHandle.removeEntry(basename(path), options)
     } catch (err) {
       console.log(err)
       return
@@ -354,7 +355,7 @@ export class FileHandler {
       const fileHandle = await this.getFileHandle(path)
       if (!baseFromDirHandle || !baseToDirHandle || !fileHandle) return
       await this.copyToHandle(baseToDirHandle, fileHandle, basename(pathTo))
-      baseFromDirHandle.removeEntry(basename(path))
+      await baseFromDirHandle.removeEntry(basename(path))
     } catch (err) {
       console.log(err)
     }
@@ -369,7 +370,7 @@ export class FileHandler {
       const dirHandle = await this.getDirectoryHandle(path)
       if (!baseFromDirHandle || !baseToDirHandle || !dirHandle) return
       await this.copyToHandle(baseToDirHandle, dirHandle, basename(pathTo))
-      baseFromDirHandle.removeEntry(basename(path), { recursive: true })
+      await baseFromDirHandle.removeEntry(basename(path), { recursive: true })
     } catch (err) {
       console.log(err)
     }

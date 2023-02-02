@@ -127,10 +127,9 @@ export class DirectoryWindow extends Window {
       }
 
       await Promise.all(promises)
-      setTimeout(() => {
-        this.refreshDirectory(dropPath)
-        this.getAcceptableFile(dropPath).then(path => this.selectPath(path))
-      }, 50)
+
+      await this.refreshDirectory(dropPath)
+      this.getAcceptableFile(dropPath).then(path => this.selectPath(path))
     }
 
     const add_dir = document.createElement("button")
@@ -153,10 +152,8 @@ export class DirectoryWindow extends Window {
 
       await FileHandler.uploadHandle(directoryHandle, path)
 
-      setTimeout(() => {
-        this.refreshDirectory(dropPath)
-        this.getAcceptableFile(dropPath).then(path => this.selectPath(path))
-      }, 50)
+      await this.refreshDirectory(dropPath)
+      this.getAcceptableFile(dropPath).then(path => this.selectPath(path))
     }
 
     const rename_file = document.createElement("button")
@@ -259,13 +256,14 @@ export class DirectoryWindow extends Window {
 
   private async createDiv(path: string): Promise<HTMLDivElement[]> {
     const folders = await FileHandler.getDirectoryFolders(path)
-    const files = await FileHandler.getDirectoryFiles(path)
+    let files = await FileHandler.getDirectoryFiles(path)
     folders.sort((a, b) =>
       a.name.toLowerCase().localeCompare(b.name.toLowerCase())
     )
     files.sort((a, b) =>
       a.name.toLowerCase().localeCompare(b.name.toLowerCase())
     )
+    files = files.filter(file => extname(file.name) != ".crswap")
     return folders
       .map(handle => this.createBaseElement(path, handle))
       .concat(files.map(handle => this.createBaseElement(path, handle)))
@@ -405,7 +403,7 @@ export class DirectoryWindow extends Window {
         path,
         newPath
       )
-      setTimeout(() => this.refreshDirectory(basedir), 300)
+      this.refreshDirectory(basedir)
       if (title.value.length > 32)
         title.value = title.value.slice(0, 32) + "..."
     })
@@ -488,7 +486,6 @@ export class DirectoryWindow extends Window {
     const finalElement = scroll.querySelector<HTMLElement>(
       "div[data-path='" + this.escapeSelector(path) + "']"
     )
-    console.log(finalElement)
     if (!finalElement) return
     this.selectElement(finalElement)
   }
@@ -670,10 +667,9 @@ export class DirectoryWindow extends Window {
         path,
         targetPath
       )
-      setTimeout(() => {
-        this.refreshDirectory(dirname(path))
-        this.refreshDirectory(dirname(targetPath))
-      }, 300)
+
+      await this.refreshDirectory(dirname(path))
+      await this.refreshDirectory(dirname(targetPath))
 
       this.viewElement.querySelector(".outlined")?.classList.remove("outlined")
       this.fileDropPath = ""

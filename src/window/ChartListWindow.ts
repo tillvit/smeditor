@@ -346,18 +346,21 @@ export class ChartListWindow extends Window {
       newChart.setNotedata(
         chart!.notedata.map(note => chart!.computeNote(note)) ?? []
       )
-      ActionHistory.instance.run({
-        action: app => {
-          app.chartManager.sm!.addChart(newChart)
-          app.chartManager.loadChart(newChart)
-          this.loadCharts()
-        },
-        undo: app => {
-          app.chartManager.sm!.removeChart(newChart)
-          app.chartManager.loadChart()
-          this.loadCharts()
-        },
-      })
+      this.app.chartManager.sm!.addChart(newChart)
+      this.app.chartManager.loadChart(newChart)
+      this.loadCharts()
+      // ActionHistory.instance.run({
+      //   action: app => {
+      //     app.chartManager.sm!.addChart(newChart)
+      //     app.chartManager.loadChart(newChart)
+      //     this.loadCharts()
+      //   },
+      //   undo: app => {
+      //     app.chartManager.sm!.removeChart(newChart)
+      //     app.chartManager.loadChart()
+      //     this.loadCharts()
+      //   },
+      // })
     }
     menu_options.append(copyButton)
 
