@@ -1,3 +1,4 @@
+import { Buffer } from "buffer"
 import { BitmapFont, Container, Renderer, TEXT_GRADIENT, Ticker } from "pixi.js"
 import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
@@ -6,7 +7,7 @@ import { Keybinds } from "./listener/Keybinds"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
 import { EventHandler } from "./util/EventHandler"
-import { FileSystem } from "./util/FileSystem"
+import { FileHandler } from "./util/FileHandler"
 import { Options } from "./util/Options"
 import { TimerStats } from "./util/TimerStats"
 import { fpsUpdate, getBrowser } from "./util/Util"
@@ -17,6 +18,9 @@ import { WindowManager } from "./window/WindowManager"
 declare global {
   interface Window {
     app: App
+    isNative: boolean
+    fs: typeof FileHandler
+    Buffer: typeof Buffer
     runSafari?: () => void
   }
 }
@@ -27,7 +31,6 @@ export class App {
   stage: Container
   view: HTMLCanvasElement
   options: Options
-  files: FileSystem
   keybinds: Keybinds
   chartManager: ChartManager
   windowManager: WindowManager
@@ -40,6 +43,8 @@ export class App {
   constructor() {
     Options.loadOptions()
     setInterval(() => Options.saveOptions(), 10000)
+    if (Options.general.smoothAnimations)
+      document.body.classList.add("animated")
     this.registerFonts()
 
     this.view = document.getElementById("pixi") as HTMLCanvasElement
@@ -70,7 +75,6 @@ export class App {
     BetterRoundedRect.init(this.renderer)
 
     this.options = Options
-    this.files = new FileSystem()
     this.chartManager = new ChartManager(this)
     this.menubarManager = new MenubarManager(
       this,
@@ -185,73 +189,23 @@ export class App {
     })
 
     window.addEventListener("drop", event => {
-      event.stopPropagation()
-      event.preventDefault()
-      const handler = async () => {
-        let prefix = ""
-        const items = event.dataTransfer!.items
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i].webkitGetAsEntry()
-          if (item?.isFile) {
-            if (item.name.endsWith(".sm") || item.name.endsWith(".ssc")) {
-              prefix = "New Song"
-              break
-            }
-          }
-        }
-
-        const queue = []
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i].webkitGetAsEntry()
-          queue.push(this.traverseFileTree(prefix, item!))
-        }
-        await Promise.all(queue)
-        this.windowManager.openWindow(
-          new DirectoryWindow(this, {
-            title: "Select an sm/ssc file...",
-            accepted_file_types: ["sm", "ssc"],
-            disableClose: !this.chartManager.sm,
-            callback: (path: string) => {
-              this.chartManager.loadSM(path)
-              this.windowManager
-                .getWindowById("select_sm_initial")
-                ?.closeWindow()
-            },
-          })
-        )
-      }
-      handler()
-    })
-  }
-
-  private traverseFileTree(
-    prefix: string,
-    item: FileSystemEntry,
-    path?: string
-  ): Promise<void> {
-    return new Promise(resolve => {
-      path = path || ""
-      if (item.isFile) {
-        ;(<FileSystemFileEntry>item).file(file => {
-          this.files.addFile(prefix + "/" + path + file.name, file)
-          resolve()
+      FileHandler.handleDropEvent(event).then(folder => {
+        const dirWindow = new DirectoryWindow(this, {
+          title: "Select an sm/ssc file...",
+          accepted_file_types: [".sm", ".ssc"],
+          disableClose: true,
+          callback: (path: string) => {
+            this.chartManager.loadSM(path)
+            this.windowManager.getWindowById("select_sm_initial")!.closeWindow()
+          },
+          onload: () => {
+            dirWindow
+              .getAcceptableFile(folder ?? "")
+              .then(path => dirWindow.selectPath(path))
+          },
         })
-      } else if (item.isDirectory) {
-        const dirReader = (<FileSystemDirectoryEntry>item).createReader()
-        dirReader.readEntries(entries => {
-          const handler = async () => {
-            for (let i = 0; i < entries.length; i++) {
-              await this.traverseFileTree(
-                prefix,
-                entries[i],
-                path + item.name + "/"
-              )
-            }
-            resolve()
-          }
-          handler()
-        })
-      }
+        this.windowManager.openWindow(dirWindow)
+      })
     })
   }
 
@@ -288,6 +242,9 @@ WebFont.load({
   inactive: init,
   classes: false,
 })
+
+window.fs = FileHandler
+window.Buffer = Buffer
 
 function init() {
   const canvas = document.createElement("canvas")

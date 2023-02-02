@@ -96,6 +96,14 @@ export class Simfile {
     })
   }
 
+  removeChart(chart: Chart): boolean {
+    if (!this.charts[chart.gameType.id]) return false
+    const i = this.charts[chart.gameType.id].indexOf(chart)
+    if (i == -1) return false
+    this.charts[chart.gameType.id].splice(i, 1)
+    return true
+  }
+
   serialize(type: "sm" | "ssc"): string {
     let str = ""
     if (type == "sm") {

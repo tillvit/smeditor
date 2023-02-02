@@ -1,7 +1,8 @@
 import { App } from "../App"
 import { SimfileProperty } from "../chart/sm/SimfileTypes"
+import { Icons } from "../gui/Icons"
 import { ActionHistory } from "../util/ActionHistory"
-import { FileSystem } from "../util/FileSystem"
+import { FileHandler } from "../util/FileHandler"
 import { capitalize } from "../util/Util"
 import { DirectoryWindow } from "../window/DirectoryWindow"
 import { AUDIO_EXT, IMG_EXT } from "./FileData"
@@ -82,7 +83,7 @@ function fileOption(
               accepted_file_types: type == "audio" ? AUDIO_EXT : IMG_EXT,
               disableClose: true,
               callback: (path: string) => {
-                input.value = FileSystem.relPath(dir, path)
+                input.value = FileHandler.getRelativePath(dir, path)
                 handleInput()
               },
             },
@@ -95,8 +96,7 @@ function fileOption(
       const icon = document.createElement("img")
       icon.classList.add("icon")
       icon.style.height = "12px"
-      icon.src =
-        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAAArUlEQVR4nO3YQQ6CQBBE0X8PXKrn9DqGcDNNZC5QhGR2agQk6Z5QL+l9FwULGszMzN6dgB4ogFbOjQTLPzcsniZE/+fy4SHKTgHCQijZFGAALq0GUJ35u+xaDiDg3nqA15YA0bR2HwfYmdxAMLmBYHIDweQGgskNBJMbCCY3EExuIJgO18DY+k/9kGBRfZn57PnTFXgkWFYfDltnFurqESnD6zTWJ794eTMzO44JY84XrlhT/UgAAAAASUVORK5CYII="
+      icon.src = Icons.SELECT_FILE
       dirButton.appendChild(icon)
       container.appendChild(input)
       container.appendChild(dirButton)

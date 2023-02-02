@@ -13,6 +13,7 @@ interface UserOptionTextInput {
     serialize: (value: string) => string
     deserialize: (value: string) => string
   }
+  onChange?: (value: string) => void
 }
 
 type UserOptionDropdownInput<T> =
@@ -20,11 +21,13 @@ type UserOptionDropdownInput<T> =
       type: "dropdown"
       items: readonly string[]
       advanced: false
+      onChange?: (value: string | number) => void
     }
   | {
       type: "dropdown"
       items: readonly number[]
       advanced: false
+      onChange?: (value: string | number) => void
     }
   | {
       type: "dropdown"
@@ -34,6 +37,7 @@ type UserOptionDropdownInput<T> =
         serialize: (value: string | number | boolean) => T
         deserialize: (value: T) => string | number | boolean
       }
+      onChange?: (value: string | number | boolean) => void
     }
 
 interface UserOptionNumberInput {
@@ -46,6 +50,7 @@ interface UserOptionNumberInput {
     serialize: (value: number) => number
     deserialize: (value: number) => number
   }
+  onChange?: (value: number) => void
 }
 
 interface UserOptionSliderInput {
@@ -59,10 +64,12 @@ interface UserOptionSliderInput {
     serialize: (value: number) => number
     deserialize: (value: number) => number
   }
+  onChange?: (value: number) => void
 }
 
 interface UserOptionCheckboxInput {
   type: "checkbox"
+  onChange?: (value: boolean) => void
 }
 
 type UserOptionInput<T> =
@@ -318,10 +325,14 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
       margin: true,
     },
 
-    "performance.smoothAnimations": {
+    "general.smoothAnimations": {
       label: "Smooth Animations",
       input: {
         type: "checkbox",
+        onChange: (value: boolean) => {
+          if (value) document.body.classList.add("animated")
+          else document.body.classList.remove("animated")
+        },
       },
     },
 

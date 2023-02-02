@@ -12,6 +12,7 @@
   "devDependencies": {
     "@types/file-saver": "^2.0.5",
     "@types/howler": "^2.2.7",
+    "@types/node": "^18.11.18",
     "@types/webfontloader": "^1.6.35",
     "@typescript-eslint/eslint-plugin": "^5.48.0",
     "@typescript-eslint/parser": "^5.48.0",
@@ -27,8 +28,10 @@
   },
   "dependencies": {
     "@pixi/filter-adjustment": "^5.0.0",
+    "buffer": "^6.0.3",
     "expr-eval": "^2.0.2",
     "file-saver": "^2.0.5",
+    "file-system-access": "^1.0.4",
     "howler": "^2.2.3",
     "jszip": "^3.10.1",
     "pixi.js": "^7.0.4",
@@ -75,6 +78,7 @@
       "@typescript-eslint/no-unnecessary-qualifier": "warn",
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-misused-promises": "off",
       "@typescript-eslint/prefer-optional-chain": "warn",
       "@typescript-eslint/restrict-template-expressions": "off",
       "@typescript-eslint/restrict-plus-operands": "off"

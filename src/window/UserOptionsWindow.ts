@@ -84,11 +84,13 @@ export class UserOptionsWindow extends Window {
         switch (data.input.type) {
           case "checkbox": {
             const checkbox = document.createElement("input")
+            const callback = data.input.onChange
             checkbox.type = "checkbox"
             checkbox.checked = entry[1] as boolean
             checkbox.onblur = null
             checkbox.onchange = () => {
               Options.applyOption([prefix + entry[0], checkbox.checked])
+              callback?.(checkbox.checked)
             }
             checkbox.classList.add("pref-input", "right")
             checkbox.onkeydown = ev => {
@@ -101,22 +103,26 @@ export class UserOptionsWindow extends Window {
             if (data.input.advanced) {
               const deserializer = data.input.transformers.deserialize
               const serializer = data.input.transformers.serialize
+              const callback = data.input.onChange
               const dropdown = Dropdown.create(
                 data.input.items,
                 serializer(entry[1])
               )
               dropdown.onChange(value => {
                 Options.applyOption([prefix + entry[0], deserializer(value)])
+                callback?.(deserializer(value))
               })
               dropdown.view.classList.add("pref-input", "right")
               input = dropdown.view
             } else {
+              const callback = data.input.onChange
               const dropdown = Dropdown.create(
                 data.input.items,
                 entry[1] as string | number
               )
               dropdown.onChange(value => {
                 Options.applyOption([prefix + entry[0], value])
+                callback?.(value)
               })
               dropdown.view.classList.add("pref-input", "right")
               input = dropdown.view
@@ -128,6 +134,7 @@ export class UserOptionsWindow extends Window {
               data.input.transformers?.deserialize ?? ((value: number) => value)
             const serializer =
               data.input.transformers?.serialize ?? ((value: number) => value)
+            const callback = data.input.onChange
             const spinner = NumberSpinner.create(
               serializer(entry[1] as number),
               data.input.step,
@@ -141,6 +148,7 @@ export class UserOptionsWindow extends Window {
                 return
               }
               Options.applyOption([prefix + entry[0], deserializer(value)])
+              callback?.(deserializer(value))
             }
             input = spinner.view
             break
@@ -150,6 +158,7 @@ export class UserOptionsWindow extends Window {
               data.input.transformers?.deserialize ?? ((value: number) => value)
             const serializer =
               data.input.transformers?.serialize ?? ((value: number) => value)
+            const callback = data.input.onChange
             const container = document.createElement("div")
             const slider = document.createElement("input")
             slider.type = "range"
@@ -175,6 +184,7 @@ export class UserOptionsWindow extends Window {
                 numberInput.value = serializer(entry[1] as number).toString()
               else Options.applyOption([prefix + entry[0], deserializer(value)])
               slider.value = value.toString()
+              callback?.(deserializer(value))
             }
             numberInput.oninput = () => {
               numberInput.value = numberInput.value.replaceAll(
@@ -198,11 +208,13 @@ export class UserOptionsWindow extends Window {
             break
           }
           case "text": {
+            const callback = data.input.onChange
             const textInput = document.createElement("input")
             textInput.type = "text"
             textInput.value = entry[1].toString()
             textInput.onblur = () => {
               Options.applyOption([prefix + entry[0], textInput.value])
+              callback?.(textInput.value)
             }
             textInput.classList.add("pref-input", "right")
             textInput.onkeydown = ev => {

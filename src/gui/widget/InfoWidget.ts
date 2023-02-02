@@ -83,7 +83,8 @@ export class InfoWidget extends Widget {
 
     EventHandler.on("chartLoaded", () => {
       destroyChildIf(this.noteCounts.children, () => true)
-      const stats = this.manager.chartManager.chart!.getNotedataStats().counts
+      if (!this.manager.chartManager.chart) return
+      const stats = this.manager.chartManager.chart.getNotedataStats().counts
       let numLines = 0
       for (const type in stats) {
         const text = new BitmapText(`${type}: ${stats[type]}`, {
@@ -98,7 +99,8 @@ export class InfoWidget extends Widget {
     })
 
     EventHandler.on("chartModified", () => {
-      const stats = this.manager.chartManager.chart!.getNotedataStats().counts
+      if (!this.manager.chartManager.chart) return
+      const stats = this.manager.chartManager.chart.getNotedataStats().counts
       for (const type in stats) {
         const text = this.noteCounts.getChildByName<BitmapText>(type)
         text.text = `${type}: ${stats[type]}`
@@ -109,7 +111,7 @@ export class InfoWidget extends Widget {
   }
 
   update(): void {
-    this.visible = true
+    this.visible = !!this.manager.chartManager.sm
     this.x = -this.manager.app.renderer.screen.width / 2 + 15
     this.y = -this.manager.app.renderer.screen.height / 2 + 20
     this.background.height = 150
@@ -117,25 +119,26 @@ export class InfoWidget extends Widget {
 
     const chart = this.manager.chartManager.chart
 
-    if (chart) {
-      this.texts.getChildByName<BitmapText>("Mode").text =
-        this.manager.chartManager.getMode()
-      this.texts.getChildByName<BitmapText>("Info").text =
-        "\nTime: " +
-        roundDigit(this.manager.chartManager.getTime(), 3) +
-        "\nBeat: " +
-        roundDigit(this.manager.chartManager.getBeat(), 3) +
-        "\nBPM: " +
-        roundDigit(
-          chart.timingData.getBPM(this.manager.chartManager.getBeat()),
-          3
-        ) +
-        "\n\nNote Type: " +
-        this.manager.chartManager.getEditingNoteType()
+    this.texts.getChildByName<BitmapText>("Mode").text =
+      this.manager.chartManager.getMode()
+    this.texts.getChildByName<BitmapText>("Info").text =
+      "\nTime: " +
+      roundDigit(this.manager.chartManager.getTime(), 3) +
+      "\nBeat: " +
+      roundDigit(this.manager.chartManager.getBeat(), 3) +
+      "\nBPM: " +
+      (chart
+        ? roundDigit(
+            chart.timingData.getBPM(this.manager.chartManager.getBeat()),
+            3
+          )
+        : "-") +
+      "\n\nNote Type: " +
+      this.manager.chartManager.getEditingNoteType()
 
-      this.texts.getChildByName<BitmapText>("Chart").text =
-        chart.difficulty + " " + chart.meter
-    }
+    this.texts.getChildByName<BitmapText>("Chart").text = chart
+      ? `${chart.difficulty} ${chart.meter}`
+      : "No Chart"
 
     const renderStats = this.texts.getChildByName<BitmapText>("RStats")
     renderStats.visible = Options.debug.renderingStats
@@ -150,7 +153,7 @@ export class InfoWidget extends Widget {
       }
     }
 
-    if (Options.performance.smoothAnimations) {
+    if (Options.general.smoothAnimations) {
       const easeTo = Number(
         this.manager.chartManager.getMode() != EditMode.Edit
       )

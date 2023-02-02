@@ -1,13 +1,11 @@
-import { saveAs } from "file-saver"
 import { App } from "../App"
 import { EditMode } from "../chart/ChartManager"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
+import { FileHandler } from "../util/FileHandler"
 import { Options } from "../util/Options"
 import { ChartListWindow } from "../window/ChartListWindow"
-import { ChartPropertiesWindow } from "../window/ChartPropertiesWindow"
 import { DirectoryWindow } from "../window/DirectoryWindow"
 import { EQWindow } from "../window/EQWindow"
-import { NewChartWindow } from "../window/NewChartWindow"
 import { SMPropertiesWindow } from "../window/SMPropertiesWindow"
 import { TimingDataWindow } from "../window/TimingDataWindow"
 import { UserOptionsWindow } from "../window/UserOptionsWindow"
@@ -37,9 +35,9 @@ export const IS_OSX: boolean = navigator.userAgent.indexOf("Mac OS X") > -1
 export const DEF_MOD: Modifier = IS_OSX ? Modifier.META : Modifier.CTRL
 
 export const MODIFIER_ASCII: { [key: string]: string } = {
-  Shift: "⇧",
-  Ctrl: IS_OSX ? "Ctrl" : "⌃",
-  Alt: "⌥",
+  Shift: IS_OSX ? "⇧" : "Shift",
+  Ctrl: IS_OSX ? "⌃" : "Ctrl",
+  Alt: IS_OSX ? "⌥" : "Alt",
   Command: "⌘",
 }
 
@@ -176,7 +174,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       app.windowManager.openWindow(
         new DirectoryWindow(app, {
           title: "Select an sm/ssc file...",
-          accepted_file_types: ["sm", "ssc"],
+          accepted_file_types: [".sm", ".ssc"],
           disableClose: true,
           callback: (path: string) => {
             app.chartManager.loadSM(path)
@@ -201,33 +199,13 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Export current song",
     keybinds: [{ key: "E", mods: [DEF_MOD] }],
     disabled: app => !app.chartManager.sm,
-    callback: app => {
-      const zip = app.files.zip(app.chartManager.sm_path)
-      const folderName = app.chartManager.sm_path.split("/").at(-2) ?? "song"
-      WaterfallManager.create("Exporting " + folderName + ".zip")
-      zip
-        .generateAsync({ type: "blob" })
-        .then(blob => saveAs(blob, folderName + ".zip"))
-    },
-  },
-  newChart: {
-    label: "New Chart...",
-    keybinds: [{ key: "N", mods: [DEF_MOD, Modifier.ALT] }],
-    disabled: app => !app.chartManager.sm,
-    callback: app => app.windowManager.openWindow(new NewChartWindow(app)),
+    callback: app => FileHandler.saveDirectory(app.chartManager.sm_path),
   },
   openChart: {
-    label: "Open Chart...",
+    label: "Chart List",
     keybinds: [{ key: "O", mods: [DEF_MOD, Modifier.SHIFT] }],
     disabled: app => !app.chartManager.sm,
     callback: app => app.windowManager.openWindow(new ChartListWindow(app)),
-  },
-  chartProperties: {
-    label: "Chart Properties...",
-    keybinds: [{ key: "U", mods: [Modifier.SHIFT, Modifier.ALT] }],
-    disabled: app => !app.chartManager.chart,
-    callback: app =>
-      app.windowManager.openWindow(new ChartPropertiesWindow(app)),
   },
   timingData: {
     label: "Edit Timing Data...",
@@ -513,7 +491,6 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Undo",
     keybinds: [{ key: "Z", mods: [DEF_MOD] }],
     disabled: app =>
-      !app.chartManager.chartView ||
       !app.actionHistory.canUndo() ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => app.actionHistory.undo(),
@@ -522,8 +499,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Redo",
     keybinds: [{ key: "Y", mods: [DEF_MOD] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      !app.actionHistory.canRedo() ||
+      !app.actionHistory.canUndo() ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => app.actionHistory.redo(),
   },

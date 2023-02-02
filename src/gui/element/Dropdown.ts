@@ -32,24 +32,29 @@ export class Dropdown<T> {
     itemDisplay.classList.add("dropdown-selected")
     const itemList = document.createElement("div")
     itemList.classList.add("dropdown-items")
-    itemList.style.display = "none"
+    itemList.style.height = ""
     itemDisplay.onclick = () => {
       if (itemDisplay.classList.contains("disabled")) return
       if (this.items.length == 0) {
-        itemList.style.display = "none"
+        itemList.style.height = ""
         return
       }
       this.createDropdown()
-      if (itemList.style.display == "none") {
-        itemList.style.display = "block"
+      if (itemList.style.height == "") {
+        itemList.style.width =
+          Math.max(itemList.scrollWidth, itemDisplay.clientWidth) + "px"
+        itemList.style.height = itemList.scrollHeight + "px"
+        Array.from(itemList.children).forEach((child, index) => {
+          ;(child as HTMLElement).style.animationDelay = index * 0.02 + "s"
+        })
       } else {
-        itemList.style.display = "none"
+        itemList.style.height = ""
       }
     }
     window.addEventListener("click", e => {
       const target = e.target as HTMLElement
       if (!target.closest(".dropdown") || target.closest(".dropdown") != view)
-        itemList.style.display = "none"
+        itemList.style.height = ""
     })
     this.view.appendChild(itemDisplay)
     this.view.appendChild(itemList)
@@ -106,7 +111,7 @@ export class Dropdown<T> {
       itemEl.classList.add("dropdown-item")
       itemEl.innerText = item + ""
       itemEl.onclick = () => {
-        itemList.style.display = "none"
+        itemList.style.height = ""
         if (this.selectedItem != item) {
           this.onChangeHandlers.forEach(handler => handler(item))
           this.setSelected(item)

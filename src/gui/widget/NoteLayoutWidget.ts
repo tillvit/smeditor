@@ -61,6 +61,10 @@ export class NoteLayoutWidget extends Widget {
     this.lastCMod = Options.chart.CMod
     this.addChild(this.overlay)
     this.x = this.manager.app.renderer.screen.width / 2 - 20
+    EventHandler.on("chartLoaded", () => {
+      this.queued = false
+      this.populate()
+    })
     EventHandler.on("chartModified", () => {
       if (!this.queued) this.populate()
       this.queued = true
@@ -107,15 +111,19 @@ export class NoteLayoutWidget extends Widget {
   }
 
   update() {
-    const chart = this.getChart()
-    const chartView = this.manager.chartManager.chartView!
-    if (!chart) return
     const height = this.manager.app.renderer.screen.height - 40
     this.backing.height = height + 10
     this.backing.position.y = -this.backing.height / 2
     this.backing.position.x = -this.backing.width / 2
     this.bars.height = height
     this.x = this.manager.app.renderer.screen.width / 2 - 20
+    const chart = this.getChart()
+    const chartView = this.manager.chartManager.chartView!
+    if (!chart) {
+      this.visible = false
+      return
+    }
+    this.visible = true
     const lastNote = chart.notedata.at(-1)
     if (!lastNote) {
       this.overlay.height = 0
@@ -168,7 +176,14 @@ export class NoteLayoutWidget extends Widget {
 
   populate() {
     const chart = this.getChart()
-    if (!chart) return
+    if (!chart) {
+      destroyChildIf(this.barContainer.children, () => true)
+
+      this.manager.app.renderer.render(this.barContainer, {
+        renderTexture: this.barTexture,
+      })
+      return
+    }
 
     this.visible = true
     let childIndex = 0

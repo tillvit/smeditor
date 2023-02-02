@@ -1,6 +1,6 @@
 import { EventHandler } from "../../util/EventHandler"
 import { bsearch } from "../../util/Util"
-import { GameType, GameTypeRegistry } from "../types/GameTypeRegistry"
+import { GameType, GameTypeRegistry } from "../gameTypes/GameTypeRegistry"
 import { ChartDifficulty, CHART_DIFFICULTIES } from "./ChartTypes"
 import {
   isHoldNote,
@@ -23,7 +23,7 @@ export class Chart {
   difficulty: ChartDifficulty = "Beginner"
   meter = 1
   meterF = 1
-  radarValues = ""
+  radarValues = "0,0,0,0,0"
   chartName = ""
   chartStyle = ""
   credit = ""
@@ -34,13 +34,15 @@ export class Chart {
 
   notedata: Notedata = []
 
-  dirty = false
   private _notedataStats?: NotedataStats
 
   constructor(sm: Simfile, data?: string | { [key: string]: string }) {
     this.timingData = new TimingData(sm.timingData, this)
     this.sm = sm
-    if (!data) return
+    if (!data) {
+      this.recalculateStats()
+      return
+    }
     if (sm._type == "ssc") {
       const dict = data as { [key: string]: string }
       for (const property in dict) {
@@ -91,7 +93,7 @@ export class Chart {
       }
     } else {
       const match =
-        /([\w\d-]+):[\s ]*([^:]*):[\s ]*([\w\d]+):[\s ]*([\d]+):[\s ]*([\d.,]+):[\s ]*([\w\d\s, ]+)/g.exec(
+        /([\w\d-]+):[\s ]*([^:]*):[\s ]*([\w\d]+):[\s ]*([\d]+):[\s ]*([\d.,]*):[\s ]*([\w\d\s, ]*)/g.exec(
           (<string>data).trim()
         )
       if (match != null) {

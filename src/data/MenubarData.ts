@@ -254,10 +254,6 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
     options: [
       {
         type: "selection",
-        id: "newChart",
-      },
-      {
-        type: "selection",
         id: "openChart",
       },
       {
@@ -269,10 +265,6 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "seperator",
-      },
-      {
-        type: "selection",
-        id: "chartProperties",
       },
       {
         type: "selection",

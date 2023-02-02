@@ -1,4 +1,9 @@
-import { clamp, roundDigit, safeParse } from "../../util/Util"
+import {
+  clamp,
+  isNumericKeyPress,
+  roundDigit,
+  safeParse,
+} from "../../util/Util"
 
 export class NumberSpinner {
   view: HTMLDivElement
@@ -29,15 +34,12 @@ export class NumberSpinner {
       let value = roundDigit(safeParse(input.value), 3)
       value = clamp(value, this.min, this.max)
       input.value = this.formatValue(value)
-      input.blur()
       if (input.value == "") this.onChange?.(undefined)
       else this.onChange?.(value)
     }
     input.onkeydown = ev => {
+      if (!isNumericKeyPress(ev)) ev.preventDefault()
       if (ev.key == "Enter") input.blur()
-    }
-    input.oninput = () => {
-      input.value = input.value.replaceAll(/[^.0-9+-/*]/g, "")
     }
     this.input = input
     this.min = min ?? this.min
