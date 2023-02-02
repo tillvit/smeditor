@@ -21,7 +21,6 @@ declare global {
     isNative: boolean
     fs: typeof FileHandler
     Buffer: typeof Buffer
-    runSafari?: () => void
   }
 }
 
@@ -267,27 +266,13 @@ function init() {
       <div class='browser-unsupported-item'>
       <h1>Safari is currently not supported</h1>
       <div>Please use Chrome/Firefox instead.</div>
-      <div class='browser-unsupported-detail'>Check the console for more info.</div>
       </div>
     </div>`
     console.log(
-      `SMEditor is not supported for Safari due to various issues involving rendering and sound.
-      PIXI.js, the library used in SMEditor, takes an extremely long time to load and does not perform well on Safari.
-      Additionally, many audio files cannot be played in Safari.
-      If you still want to try loading SMEditor, run the command runSafari()`
+      `SMEditor is not supported for Safari due to a bug in file system writing.
+      Additionally, many audio files cannot be played in Safari. 
+`
     )
-    window.runSafari = () => {
-      document.querySelector("body")!.innerHTML = `<div id="view-wrapper"> 
-            <div class="menubar"></div>
-            <div id="waterfall"></div>
-            <canvas id="pixi"></canvas>
-          </div> 
-          <div id="blocker" style="display: none"></div>
-          <div id="windows"></div>
-        `
-      window.app = new App()
-      window.runSafari = undefined
-    }
   } else {
     window.app = new App()
   }

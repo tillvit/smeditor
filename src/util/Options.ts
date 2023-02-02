@@ -31,7 +31,6 @@ class DefaultOptions {
       enabled: true,
       color: 0x606172,
       opacity: 0.5,
-      autoAdjustQuality: true,
       lineHeight: 1,
     },
     renderTimingEvent: {

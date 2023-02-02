@@ -99,6 +99,11 @@ export class DirectoryWindow extends Window {
     const scroll = document.createElement("div")
     scroll.classList.add("dir-selector")
 
+    scroll.onclick = e => {
+      if (e.target != scroll) return
+      this.selectElement(undefined)
+    }
+
     const file_options = document.createElement("div")
     file_options.classList.add("file-options")
 
@@ -232,10 +237,17 @@ export class DirectoryWindow extends Window {
     children.replaceChildren()
   }
 
-  private selectElement(element: HTMLElement) {
+  private selectElement(element: HTMLElement | undefined) {
     this.viewElement
       .querySelector(".info.selected")
       ?.classList.remove("selected")
+    if (!element) {
+      this.viewElement.querySelector<HTMLButtonElement>(".delete")!.disabled =
+        true
+      this.viewElement.querySelector<HTMLButtonElement>(".rename")!.disabled =
+        true
+      return
+    }
     element.classList.add("selected")
     scrollIntoView(element, {
       scrollMode: "if-needed",
