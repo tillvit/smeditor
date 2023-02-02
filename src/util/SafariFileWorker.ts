@@ -88,11 +88,14 @@ export class SafariFileWorker {
     return this._worker
   }
 
-  static async writeHandle(path: string, file: Blob) {
+  static async writeHandle(path: string, data: Blob | string) {
     const id = this.workID++
     console.log("Starting work write " + path + ", id: " + id)
     const promise = new Promise<void>(resolve => this.map.set(id, resolve))
-    this.worker.postMessage([id, path, await file.arrayBuffer()])
+    const encode = new TextEncoder()
+    const buffer =
+      typeof data == "string" ? encode.encode(data) : await data.arrayBuffer()
+    this.worker.postMessage([id, path, buffer])
     return promise
   }
 }

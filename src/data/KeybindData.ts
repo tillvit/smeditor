@@ -518,9 +518,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   playMode: {
     label: "Play from current beat",
     keybinds: [{ key: "P", mods: [] }],
-    disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play,
+    disabled: app => !app.chartManager.chartView,
     callback: app => app.chartManager.setMode(EditMode.Play),
   },
   playModeStart: {

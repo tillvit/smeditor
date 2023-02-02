@@ -37,7 +37,7 @@ interface PartialHold {
 export enum EditMode {
   View = "View Mode",
   Edit = "Edit Mode",
-  Play = "Play Mode (ESC to exit)",
+  Play = "Play Mode",
 }
 
 export class ChartManager {
@@ -365,7 +365,6 @@ export class ChartManager {
       },
       true
     )
-
     window.addEventListener(
       "keydown",
       (event: KeyboardEvent) => {
@@ -882,7 +881,13 @@ export class ChartManager {
 
   setMode(mode: EditMode) {
     if (!this.chart || !this.chartView) return
-    if (this.mode == mode) return
+    if (this.mode == mode) {
+      if (mode == EditMode.Play) {
+        this.setMode(this.lastMode)
+        this.songAudio.pause()
+      }
+      return
+    }
     this.lastMode = this.mode
     this.mode = mode
     if (this.mode == EditMode.Play) {
@@ -899,7 +904,7 @@ export class ChartManager {
       this.chart.gameType.gameLogic.reset(this)
       this.gameStats = new GameplayStats(this)
       this.widgetManager.startPlay()
-      this.songAudio.seek(this.time - 1)
+      this.songAudio.seek(Math.max(0, this.time) - 1)
       this.songAudio.play()
     } else {
       this.chartView.endPlay()

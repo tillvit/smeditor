@@ -1,6 +1,7 @@
 import {
   getOriginPrivateDirectory,
   showSaveFilePicker,
+  support,
 } from "file-system-access"
 import JSZip from "jszip"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
@@ -16,7 +17,14 @@ export class FileHandler {
   }
 
   static async init() {
-    this._root = await getOriginPrivateDirectory()
+    if (support.adapter.native) {
+      this._root = await getOriginPrivateDirectory()
+    } else {
+      this._root = await getOriginPrivateDirectory(
+        import("file-system-access/lib/adapters/memory.js")
+      )
+    }
+    // Fix for tauri
     // if (!window.isNative) {
     //   this._root = await getOriginPrivateDirectory()
     // } else {
@@ -253,7 +261,10 @@ export class FileHandler {
     }
   }
 
-  static async writeFile(path: FileSystemFileHandle | string, data: File) {
+  static async writeFile(
+    path: FileSystemFileHandle | string,
+    data: File | string
+  ) {
     let fileHandle
     if (typeof path == "string") {
       fileHandle = await this.getFileHandle(path, { create: true })
@@ -428,15 +439,18 @@ export class FileHandler {
     return outputParts.join("/")
   }
 
-  private static async writeHandle(handle: FileSystemFileHandle, file: Blob) {
+  private static async writeHandle(
+    handle: FileSystemFileHandle,
+    data: Blob | string
+  ) {
     if (handle.createWritable) {
       const writable = await handle.createWritable()
-      await writable.write(file)
+      await writable.write(data)
       await writable.close()
     } else {
       const path = await this.root.resolve(handle)
       if (!path) return
-      await SafariFileWorker.writeHandle(path.join("/"), file)
+      await SafariFileWorker.writeHandle(path.join("/"), data)
     }
   }
 }
