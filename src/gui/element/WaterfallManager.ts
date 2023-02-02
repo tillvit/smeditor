@@ -3,7 +3,7 @@ import { capitalize } from "../../util/Util"
 interface WaterfallMessage {
   type: "log" | "warn" | "error" | ""
   container: HTMLDivElement
-  timeoutID: number
+  timeoutID: NodeJS.Timeout
   count: number
 }
 
