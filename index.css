@@ -240,6 +240,7 @@ img.icon {
 }
 .info.disabled > .title {
   color: #888;
+  -webkit-text-fill-color: #888;
 }
 .info.disabled > .icon {
   opacity: 0.3;

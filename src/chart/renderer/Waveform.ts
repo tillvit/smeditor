@@ -1,7 +1,7 @@
 import { ParticleContainer, RenderTexture, Sprite, Texture } from "pixi.js"
 import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
-import { bsearch, destroyChildIf, getTPS } from "../../util/Util"
+import { bsearch, destroyChildIf } from "../../util/Util"
 import { ChartAudio } from "../audio/ChartAudio"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
@@ -56,23 +56,6 @@ export class Waveform extends Sprite {
     this.lastReZoom = Date.now()
     this.chartAudio.addWaveform(this)
     this.refilter()
-
-    setInterval(() => {
-      if (!Options.chart.waveform.autoAdjustQuality) return
-      if (getTPS() == 0 || !this.visible) return
-      if (getTPS() < 60 && Options.chart.waveform.lineHeight < 3) {
-        Options.chart.waveform.lineHeight = Math.min(
-          3,
-          Options.chart.waveform.lineHeight + 0.25
-        )
-      }
-      if (getTPS() > 190 && Options.chart.waveform.lineHeight > 1) {
-        Options.chart.waveform.lineHeight = Math.max(
-          1,
-          Options.chart.waveform.lineHeight - 0.25
-        )
-      }
-    }, 1000)
 
     EventHandler.on("timingModified", () => (this.lastBeat = -1))
   }

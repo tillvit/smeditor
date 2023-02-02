@@ -1,9 +1,11 @@
 import {
   getOriginPrivateDirectory,
   showSaveFilePicker,
+  support,
 } from "file-system-access"
 import JSZip from "jszip"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
+import { SafariFileWorker } from "./SafariFileWorker"
 import { basename, dirname, extname } from "./Util"
 
 export class FileHandler {
@@ -15,7 +17,14 @@ export class FileHandler {
   }
 
   static async init() {
-    this._root = await getOriginPrivateDirectory()
+    if (support.adapter.native) {
+      this._root = await getOriginPrivateDirectory()
+    } else {
+      this._root = await getOriginPrivateDirectory(
+        import("file-system-access/lib/adapters/memory.js")
+      )
+    }
+    // Fix for tauri
     // if (!window.isNative) {
     //   this._root = await getOriginPrivateDirectory()
     // } else {
@@ -42,7 +51,7 @@ export class FileHandler {
       const fileHandle = await baseHandle.getFileHandle(handle.name, {
         create: true,
       })
-      this.writeFile(fileHandle, await handle.getFile())
+      await this.writeFile(fileHandle, await handle.getFile())
     } else {
       const dirHandle = await baseHandle.getDirectoryHandle(handle.name, {
         create: true,
@@ -75,9 +84,7 @@ export class FileHandler {
           const fileHandle = await dirHandle.getFileHandle(file.name, {
             create: true,
           })
-          const writeStream = await fileHandle.createWritable()
-          await writeStream.write(file)
-          await writeStream.close()
+          await this.writeHandle(fileHandle, file)
         })
     } else if (item.isDirectory) {
       const dirReader = (<FileSystemDirectoryEntry>item).createReader()
@@ -149,9 +156,7 @@ export class FileHandler {
           create: true,
         })
         const file = await handle.getFile()
-        const writeStream = await fileHandle.createWritable()
-        await writeStream.write(file)
-        await writeStream.close()
+        await this.writeHandle(fileHandle, file)
       } else {
         await this.uploadDir(handle, dirHandle)
       }
@@ -258,7 +263,7 @@ export class FileHandler {
 
   static async writeFile(
     path: FileSystemFileHandle | string,
-    data: FileSystemWriteChunkType
+    data: File | string
   ) {
     let fileHandle
     if (typeof path == "string") {
@@ -267,9 +272,7 @@ export class FileHandler {
     } else {
       fileHandle = path
     }
-    const writeStream = await fileHandle.createWritable()
-    await writeStream.write(data)
-    await writeStream.close()
+    await this.writeHandle(fileHandle, data)
     return
   }
 
@@ -343,7 +346,7 @@ export class FileHandler {
     const zip = await this.zipDirectory(path)
     if (!zip) return
     await zip.generateAsync({ type: "blob" }).then(async blob => {
-      await blob.stream().pipeTo(await fileHandle.createWritable())
+      await this.writeHandle(fileHandle, blob)
     })
   }
 
@@ -363,6 +366,7 @@ export class FileHandler {
   }
 
   static async renameDirectory(path: string, pathTo: string) {
+    if (pathTo.startsWith(path)) return
     try {
       const baseFromDirHandle = await this.getDirectoryHandle(dirname(path))
       const baseToDirHandle = await this.getDirectoryHandle(dirname(pathTo), {
@@ -403,9 +407,7 @@ export class FileHandler {
             create: true,
           }
         )
-        const writable = await newFileHandle.createWritable()
-        await writable.write(file)
-        await writable.close()
+        await this.writeHandle(newFileHandle, file)
       }
     } catch (err) {
       console.log(err)
@@ -435,6 +437,21 @@ export class FileHandler {
     outputParts = outputParts.concat(toParts.slice(samePartsLength))
 
     return outputParts.join("/")
+  }
+
+  private static async writeHandle(
+    handle: FileSystemFileHandle,
+    data: Blob | string
+  ) {
+    if (handle.createWritable) {
+      const writable = await handle.createWritable()
+      await writable.write(data)
+      await writable.close()
+    } else {
+      const path = await this.root.resolve(handle)
+      if (!path) return
+      await SafariFileWorker.writeHandle(path.join("/"), data)
+    }
   }
 }
 
