@@ -6,7 +6,7 @@ import {
 import JSZip from "jszip"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { SafariFileWorker } from "./SafariFileWorker"
-import { basename, dirname, extname } from "./Util"
+import { basename, dirname, extname, getBrowser } from "./Util"
 
 export class FileHandler {
   private static _root: FileSystemDirectoryHandle
@@ -17,7 +17,7 @@ export class FileHandler {
   }
 
   static async init() {
-    if (support.adapter.native) {
+    if (support.adapter.native && !getBrowser().includes("Safari")) {
       this._root = await getOriginPrivateDirectory()
     } else {
       this._root = await getOriginPrivateDirectory(

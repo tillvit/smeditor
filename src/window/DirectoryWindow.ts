@@ -158,7 +158,11 @@ export class DirectoryWindow extends Window {
       await FileHandler.uploadHandle(directoryHandle, path)
 
       await this.refreshDirectory(dropPath)
-      this.getAcceptableFile(dropPath).then(path => this.selectPath(path))
+      this.getAcceptableFile(
+        dropPath == ""
+          ? directoryHandle.name
+          : dropPath + "/" + directoryHandle.name
+      ).then(path => this.selectPath(path))
     }
 
     const rename_file = document.createElement("button")
@@ -508,8 +512,11 @@ export class DirectoryWindow extends Window {
       ".info.selected"
     ) as HTMLElement
     if (selected == undefined) {
-      const first: HTMLElement | null = this.viewElement.querySelector(".info")
-      if (first) this.selectElement(first)
+      if (event.code.startsWith("Arrow")) {
+        const first: HTMLElement | null =
+          this.viewElement.querySelector(".info")
+        if (first) this.selectElement(first)
+      }
       return
     }
     if (event.code == "ArrowUp") {
@@ -582,9 +589,13 @@ export class DirectoryWindow extends Window {
     if (event.code == "Enter") {
       event.preventDefault()
       event.stopImmediatePropagation()
-      this.startEditing(
-        selected.parentElement!.querySelector(".title") as HTMLTextAreaElement
-      )
+      const textarea = selected.parentElement?.querySelector(
+        ".title"
+      ) as HTMLTextAreaElement | null
+      if (textarea)
+        this.startEditing(
+          selected.parentElement?.querySelector(".title") as HTMLTextAreaElement
+        )
     }
     if (event.code == "Delete" || event.code == "Backspace") {
       const selected: HTMLElement | null =

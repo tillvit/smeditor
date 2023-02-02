@@ -3,7 +3,7 @@ import { TimingWindowCollection } from "../chart/play/TimingWindowCollection"
 interface UserOption<T> {
   label: string
   tooltip?: string
-  input: UserOptionInput<T>
+  input?: UserOptionInput<T>
   margin?: boolean
 }
 
@@ -113,7 +113,7 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
         type: "slider",
         min: 0,
         max: 750,
-        hardMax: Number.MAX_VALUE,
+        hardMax: 2 ** 31 - 1,
       },
     },
     "chart.receptorYPos": {
@@ -122,8 +122,8 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
         type: "slider",
         min: -400,
         max: 0,
-        hardMin: -Number.MAX_VALUE,
-        hardMax: Number.MAX_VALUE,
+        hardMin: -(2 ** 31 - 1),
+        hardMax: 2 ** 31 - 1,
       },
     },
     "chart.snap": {
@@ -145,7 +145,7 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
         type: "slider",
         min: 0,
         max: 30,
-        hardMax: Number.MAX_VALUE,
+        hardMax: 2 ** 31 - 1,
       },
     },
     "chart.maxDrawBeatsBack": {
@@ -154,7 +154,7 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
         type: "slider",
         min: 0,
         max: 30,
-        hardMax: Number.MAX_VALUE,
+        hardMax: 2 ** 31 - 1,
       },
     },
     "chart.zoom": {
@@ -164,7 +164,7 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
         min: 0,
         step: 1,
         max: 200,
-        hardMax: Number.MAX_VALUE,
+        hardMax: 2 ** 31 - 1,
         transformers: {
           serialize: value => value * 100,
           deserialize: value => value / 100,
@@ -199,7 +199,7 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
         min: 0,
         step: 1,
         max: 100,
-        hardMax: Number.MAX_VALUE,
+        hardMax: 2 ** 31 - 1,
         transformers: {
           serialize: value => value * 100,
           deserialize: value => value / 100,
@@ -213,7 +213,7 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
         min: 0,
         step: 1,
         max: 100,
-        hardMax: Number.MAX_VALUE,
+        hardMax: 2 ** 31 - 1,
         transformers: {
           serialize: value => value * 100,
           deserialize: value => value / 100,
@@ -227,7 +227,7 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
         min: 0,
         step: 1,
         max: 100,
-        hardMax: Number.MAX_VALUE,
+        hardMax: 2 ** 31 - 1,
         transformers: {
           serialize: value => value * 100,
           deserialize: value => value / 100,
@@ -242,8 +242,8 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
         min: -1,
         step: 0.001,
         max: 1,
-        hardMin: -Number.MAX_VALUE,
-        hardMax: Number.MAX_VALUE,
+        hardMin: -(2 ** 31 - 1),
+        hardMax: 2 ** 31 - 1,
       },
     },
     "play.offset": {
@@ -253,8 +253,8 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
         min: -1,
         step: 0.001,
         max: 1,
-        hardMin: -Number.MAX_VALUE,
-        hardMax: Number.MAX_VALUE,
+        hardMin: -(2 ** 31 - 1),
+        hardMax: 2 ** 31 - 1,
       },
       margin: true,
     },
@@ -290,7 +290,7 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
         min: 0,
         step: 0.001,
         max: 2,
-        hardMax: Number.MAX_VALUE,
+        hardMax: 2 ** 31 - 1,
       },
     },
 
@@ -301,7 +301,7 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
         min: 0,
         step: 0.001,
         max: 1,
-        hardMax: Number.MAX_VALUE,
+        hardMax: 2 ** 31 - 1,
       },
     },
 
@@ -320,9 +320,8 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
         step: 1,
         max: 4,
         hardMin: 0,
-        hardMax: Number.MAX_VALUE,
+        hardMax: 2 ** 31 - 1,
       },
-      margin: true,
     },
 
     "general.smoothAnimations": {
@@ -355,5 +354,93 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
       input: {
         type: "checkbox",
       },
+    },
+
+    "chart.renderTimingEvent": {
+      label: "Show timing event boxes",
+    },
+
+    "chart.waveform": {
+      label: "Waveform",
+    },
+
+    "chart.waveform.enabled": {
+      label: "Enable waveform",
+      input: {
+        type: "checkbox",
+      },
+    },
+
+    "chart.waveform.opacity": {
+      label: "Opacity",
+      input: {
+        type: "slider",
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
+    },
+
+    "chart.waveform.lineHeight": {
+      label: "Line height",
+      input: {
+        type: "slider",
+        min: 1,
+        max: 3,
+        step: 0.1,
+        hardMax: 100,
+      },
+    },
+
+    "general.scrollSensitivity": {
+      label: "Scroll sensitivity",
+      input: {
+        type: "slider",
+        min: 0,
+        step: 1,
+        max: 100,
+        hardMax: 2 ** 31 - 1,
+        transformers: {
+          serialize: value => value * 100,
+          deserialize: value => value / 100,
+        },
+      },
+      margin: true,
+    },
+
+    "general.mousePlacement": {
+      label: "Mouse note placement",
+      input: {
+        type: "checkbox",
+      },
+      margin: true,
+    },
+
+    general: {
+      label: "General",
+    },
+
+    chart: {
+      label: "Chart",
+    },
+
+    audio: {
+      label: "Audio",
+    },
+
+    play: {
+      label: "Play Mode",
+    },
+
+    performance: {
+      label: "Performance",
+    },
+
+    debug: {
+      label: "Debug",
+    },
+
+    experimental: {
+      label: "Experimental",
     },
   }

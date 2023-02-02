@@ -516,7 +516,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     },
   },
   playMode: {
-    label: "Play from current beat",
+    label: "Enter/Exit Play Mode",
     keybinds: [{ key: "P", mods: [] }],
     disabled: app => !app.chartManager.chartView,
     callback: app => app.chartManager.setMode(EditMode.Play),

@@ -62,6 +62,7 @@ export class SafariFileWorker {
         // Read file content to a buffer.
         const readBuffer = new ArrayBuffer(fileSize);
         const readSize = accessHandle.read(readBuffer, { "at": 0 });
+        console.log(readSize)
         await accessHandle.close();
       }
       
