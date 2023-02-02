@@ -15,14 +15,15 @@ export class FileHandler {
   }
 
   static async init() {
-    if (!window.isNative) {
-      this._root = await getOriginPrivateDirectory()
-    } else {
-      this._root = await getOriginPrivateDirectory(
-        import("file-system-access/lib/adapters/node.js"),
-        "."
-      )
-    }
+    this._root = await getOriginPrivateDirectory()
+    // if (!window.isNative) {
+    //   this._root = await getOriginPrivateDirectory()
+    // } else {
+    //   this._root = await getOriginPrivateDirectory(
+    //     import("file-system-access/lib/adapters/node.js"),
+    //     "."
+    //   )
+    // }
   }
 
   static async uploadHandle(
