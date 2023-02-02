@@ -80,6 +80,7 @@ export class UserOptionsWindow extends Window {
       let input: HTMLElement
       if (USER_OPTIONS_WINDOW_DATA[prefix + entry[0]]) {
         const data = USER_OPTIONS_WINDOW_DATA[prefix + entry[0]]
+        if (!data.input) return item
         title.innerText = data.label
         switch (data.input.type) {
           case "checkbox": {
@@ -233,16 +234,19 @@ export class UserOptionsWindow extends Window {
       }
       label.appendChild(input)
     } else {
-      const dd = document.createElement("div")
-      dd.classList.add("pref-dd")
-      item.appendChild(dd)
+      const dropdown = document.createElement("div")
+      dropdown.classList.add("pref-dd")
+      if (USER_OPTIONS_WINDOW_DATA[prefix + entry[0]]?.label) {
+        title.innerText = USER_OPTIONS_WINDOW_DATA[prefix + entry[0]].label
+      }
+      item.appendChild(dropdown)
       label.onclick = () => {
-        if (dd.childElementCount == 0) {
+        if (dropdown.childElementCount == 0) {
           label.classList.remove("collapsed")
-          dd.replaceChildren(...this.createDiv(prefix + entry[0]))
+          dropdown.replaceChildren(...this.createDiv(prefix + entry[0]))
         } else {
           label.classList.add("collapsed")
-          dd.replaceChildren()
+          dropdown.replaceChildren()
         }
       }
     }
