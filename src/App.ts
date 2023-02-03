@@ -1,4 +1,11 @@
-import { BitmapFont, Container, Renderer, TEXT_GRADIENT, Ticker } from "pixi.js"
+import {
+  BitmapFont,
+  Container,
+  Renderer,
+  TEXT_GRADIENT,
+  Ticker,
+  UPDATE_PRIORITY,
+} from "pixi.js"
 import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
 import { MenubarManager } from "./gui/element/MenubarManager"
@@ -66,7 +73,7 @@ export class App {
       TimerStats.endTime("Render Time")
       TimerStats.endFrame()
       fpsUpdate()
-    })
+    }, UPDATE_PRIORITY.LOW)
     this.ticker.start()
     this.stage.sortableChildren = true
 

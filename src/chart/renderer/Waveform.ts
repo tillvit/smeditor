@@ -164,74 +164,89 @@ export class Waveform extends Sprite {
         beat,
         this.renderer.chartManager.getTime()
       )
-      let curBeat = beat - Options.chart.maxDrawBeatsBack
-      const beatLimit = beat + Options.chart.maxDrawBeats
+      let currentBeat = beat - Options.chart.maxDrawBeatsBack
+      const maxDrawBeats = beat + Options.chart.maxDrawBeats
       const scrolls = this.renderer.chart.timingData.getTimingData("SCROLLS")
       const offset = this.renderer.chart.timingData.getTimingData("OFFSET")
       const startBPM = this.renderer.chart.timingData.getBPM(0)
       const timingChanges = this.renderer.chart.timingData.getBeatTiming()
-      let curSec = this.renderer.chart.getSeconds(curBeat)
+      const pixelsToEffectiveBeats =
+        100 / chartSpeed / speedMult / 64 / Options.chart.zoom
+      const screenHeight = this.renderer.chartManager.app.renderer.screen.height
+      let curSec = this.renderer.chart.getSeconds(currentBeat)
 
-      let scrollIndex = bsearch(scrolls, curBeat, a => a.beat)
+      // Get the first scroll index after curBeat
+      let scrollIndex = bsearch(scrolls, currentBeat, a => a.beat)
       if (scrolls[scrollIndex]?.beat != 0) scrollIndex--
-      let y = Math.round(
-        this.renderer.getYPos(curBeat) * Options.chart.zoom + this.parent.y
+      let currentYPos = Math.round(
+        this.renderer.getYPos(currentBeat) * Options.chart.zoom + this.parent.y
       )
-      while (curBeat < beatLimit) {
+      while (currentBeat < maxDrawBeats) {
         const scroll = scrolls[scrollIndex] ?? { beat: 0, value: 1 }
-        const scrollBeatLimit = scrolls[scrollIndex + 1]?.beat ?? beatLimit
-        const y_test =
-          this.renderer.getYPos(scrollBeatLimit) * Options.chart.zoom +
+        const scrollEndBeat = scrolls[scrollIndex + 1]?.beat ?? maxDrawBeats
+        const scrollEndYPos =
+          this.renderer.getYPos(scrollEndBeat) * Options.chart.zoom +
           this.parent.y
+
+        // Skip this scroll if
+        // a. value is 0,
+        // b. value is positive and ends off the top of the screen
+        // c. value is negative and ends off the bottom of the screen
         if (
           scrolls[scrollIndex + 1] &&
           (scroll.value == 0 ||
-            (scroll.value < 0 &&
-              y_test > this.renderer.chartManager.app.renderer.screen.height) ||
-            (scroll.value > 0 && y_test < 0))
+            (scroll.value < 0 && scrollEndYPos > screenHeight) ||
+            (scroll.value > 0 && scrollEndYPos < 0))
         ) {
           scrollIndex++
-          curBeat = scrolls[scrollIndex]!.beat
-          y = Math.round(y_test)
+          currentBeat = scrolls[scrollIndex]!.beat
+          currentYPos = Math.round(scrollEndYPos)
           continue
         }
-        while (curBeat < Math.min(scrollBeatLimit, beatLimit)) {
-          if (y < 0) {
+
+        const pixelsToBeats = pixelsToEffectiveBeats / Math.abs(scroll.value)
+
+        // Start drawing this scroll segment by stepping by 1 pixel
+        while (currentBeat < Math.min(scrollEndBeat, maxDrawBeats)) {
+          // Stop if the scroll is off the screen
+          if (currentYPos < 0) {
+            // Skip the scroll if we step off the stop of the screen
             if (scroll.value < 0) {
-              curBeat = scrollBeatLimit
+              currentBeat = scrollEndBeat
               break
             }
-            curBeat +=
-              ((100 / chartSpeed / speedMult / 64 / Math.abs(scroll.value)) *
-                -y) /
-              Options.chart.zoom
-            y = 0
+            // Skip to the top of the screen and keep stepping from there
+            currentBeat += pixelsToBeats * -currentYPos
+            currentYPos = 0
           }
 
-          if (y > this.renderer.chartManager.app.renderer.screen.height) {
+          if (currentYPos > screenHeight) {
+            // Stop, waveform finished rendering
             if (scroll.value > 0) {
-              curBeat = beatLimit
+              currentBeat = maxDrawBeats
               break
             }
-            curBeat +=
-              ((100 / chartSpeed / speedMult / 64 / Math.abs(scroll.value)) *
-                (y - this.renderer.chartManager.app.renderer.screen.height)) /
-              Options.chart.zoom
-            y = this.renderer.chartManager.app.renderer.screen.height
+            // Skip to the bottom of the screen and keep stepping from there
+            currentBeat += pixelsToBeats * (currentYPos - screenHeight)
+            currentYPos = screenHeight
             continue
           }
-          curBeat +=
-            ((100 / chartSpeed / speedMult / 64 / Math.abs(scroll.value)) *
-              Options.chart.waveform.lineHeight) /
-            Options.chart.zoom
-          y += (scroll.value > 0 ? 1 : -1) * Options.chart.waveform.lineHeight
-          const flooredBeat = Math.floor(curBeat * 1000) / 1000
-          if (curBeat <= 0) curSec = -offset + (curBeat * 60) / startBPM
+
+          // Step by 1 or -1 pixels and get the current beat
+          currentBeat += pixelsToBeats * Options.chart.waveform.lineHeight
+          currentYPos +=
+            (scroll.value > 0 ? 1 : -1) * Options.chart.waveform.lineHeight
+
+          // Calculate current second
+          const flooredBeat = Math.floor(currentBeat * 1000) / 1000
+          if (currentBeat <= 0) curSec = -offset + (currentBeat * 60) / startBPM
           else if (flooredBeat >= timingChanges[1]?.beat) {
+            // Use getSeconds for every timing event
             while (flooredBeat >= timingChanges[1]?.beat) timingChanges.shift()
-            curSec = this.renderer.chart.getSeconds(curBeat)
+            curSec = this.renderer.chart.getSeconds(currentBeat)
           } else {
-            const beatsElapsed = curBeat - timingChanges[0].beat
+            // Use normal bpm to beats calculation to not use getSeconds
+            const beatsElapsed = currentBeat - timingChanges[0].beat
             let timeElapsed = (beatsElapsed * 60) / timingChanges[0].bpm
             if (timingChanges[0].warped) timeElapsed = 0
             curSec = Math.max(
@@ -240,21 +255,22 @@ export class Waveform extends Sprite {
             )
           }
           if (curSec < 0) continue
+          // Draw the line
           const samp = Math.floor(curSec * this.zoom * 4)
           for (let channel = 0; channel < data.length; channel++) {
             const v = data[channel][samp]
             if (!v) continue
             const line = this.getLine()
-            line.scale.x = ((v * 256) / 16) * Options.chart.zoom
-            line.y = y
+            line.scale.x = v * 16 * Options.chart.zoom
+            line.y = currentYPos
             line.x =
               this.waveformTex.width / 2 +
               288 * (channel + 0.5 - data.length / 2) * Options.chart.zoom
           }
         }
         scrollIndex++
-        curBeat = scrollBeatLimit
-        y = y_test
+        currentBeat = scrollEndBeat
+        currentYPos = scrollEndYPos
       }
     } else {
       for (
@@ -270,7 +286,7 @@ export class Waveform extends Sprite {
           const v = data[channel][samp]
           if (!v) continue
           const line = this.getLine()
-          line.scale.x = ((v * 256) / 16) * Options.chart.zoom
+          line.scale.x = v * 16 * Options.chart.zoom
           line.y = y
           line.x =
             this.waveformTex.width / 2 +

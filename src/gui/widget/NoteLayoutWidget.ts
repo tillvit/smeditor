@@ -69,12 +69,14 @@ export class NoteLayoutWidget extends Widget {
       if (!this.queued) this.populate()
       this.queued = true
     })
-    setInterval(() => {
+    const interval = setInterval(() => {
       if (this.queued) {
         this.queued = false
         this.populate()
       }
     }, 3000)
+
+    this.on("destroyed", () => clearInterval(interval))
     this.populate()
 
     this.interactive = true

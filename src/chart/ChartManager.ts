@@ -193,24 +193,14 @@ export class ChartManager {
     this.app.stage.addChild(this.widgetManager)
     this.app.ticker.add(() => {
       this.widgetManager.update()
-      if (
-        this.sm == undefined ||
-        this.chart == undefined ||
-        this.chartView == undefined
-      )
-        return
+      if (!this.sm || !this.chart || !this.chartView) return
       TimerStats.time("ChartRenderer Update Time")
       this.chartView?.renderThis()
       TimerStats.endTime("ChartRenderer Update Time")
     })
 
     setInterval(() => {
-      if (
-        this.sm == undefined ||
-        this.chart == undefined ||
-        this.chartView == undefined
-      )
-        return
+      if (!this.sm || !this.chart || !this.chartView) return
       const time = this.songAudio.seek()
       TimerStats.time("Update Time")
       if (this.songAudio.isPlaying()) {

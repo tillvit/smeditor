@@ -9,6 +9,7 @@ export class TimingDataWindow extends Window {
 
   private lastBeat: number
   private songTiming = false
+  private interval
 
   constructor(app: App) {
     super({
@@ -23,7 +24,7 @@ export class TimingDataWindow extends Window {
     this.lastBeat = Math.round(this.app.chartManager.getBeat() * 1000) / 1000
     this.songTiming = !this.app.chartManager.chart!.timingData.isEmpty()
     this.initView(this.viewElement)
-    setInterval(() => {
+    this.interval = setInterval(() => {
       if (
         Math.round(this.app.chartManager.getBeat() * 1000) / 1000 !=
         this.lastBeat
@@ -34,6 +35,10 @@ export class TimingDataWindow extends Window {
       }
     }, 17)
     EventHandler.on("timingModified", () => this.setData(this.viewElement))
+  }
+
+  onClose() {
+    clearInterval(this.interval)
   }
 
   initView(viewElement: HTMLDivElement): void {
