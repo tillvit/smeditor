@@ -464,7 +464,6 @@ export class ChartManager {
 
   async loadChart(chart?: Chart) {
     if (this.sm == undefined) return
-    this.chartView?.destroy({ children: true })
     if (chart == undefined) {
       if (this.chart) {
         const charts = this.sm.charts[this.chart.gameType.id]
@@ -482,6 +481,7 @@ export class ChartManager {
         }
       }
       if (!chart) {
+        this.chartView?.destroy({ children: true })
         this.beat = 0
         this.time = 0
         this.chart = undefined
@@ -494,15 +494,15 @@ export class ChartManager {
       }
     }
 
+    if (chart == this.chart) return
+    this.chartView?.destroy({ children: true })
+
     this.chart = chart
     this.beat = this.chart.getBeat(this.time)
     ActionHistory.instance.reset()
 
     Options.play.timingCollection =
       Options.play.defaultTimingCollection[chart.gameType.id] ?? "ITG"
-
-    EventHandler.emit("chartLoaded")
-    EventHandler.emit("chartModified")
 
     this.getAssistTickIndex()
     this.chartView = new ChartRenderer(this)
@@ -528,6 +528,9 @@ export class ChartManager {
         " " +
         chart.gameType.id
     )
+
+    EventHandler.emit("chartLoaded")
+    EventHandler.emit("chartModified")
   }
 
   async loadAudio() {
@@ -873,6 +876,14 @@ export class ChartManager {
 
   getEditingNoteType(): string {
     return this.chart?.gameType.editNoteTypes[this.editNoteTypeIndex] ?? ""
+  }
+
+  setEditingNoteType(type: string) {
+    if (!this.chart) return
+    const types = this.chart?.gameType.editNoteTypes
+    const index = types.indexOf(type)
+    if (index == -1) return
+    this.editNoteTypeIndex = index
   }
 
   getMode(): EditMode {

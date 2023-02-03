@@ -134,11 +134,10 @@ export class DanceNoteRenderer {
         icon.width = 32
         icon.height = 32
         icon.anchor.set(0.5)
-        icon.alpha = 0.5
+        icon.alpha = 0.9
         arrow.item.icon = icon
         arrow.item.addChild(icon)
       }
-      arrow.item.icon.rotation = -notefield.getRotFromCol(col)
       arrow.item.icon.visible = true
     } else {
       if (arrow.item.icon) arrow.item.icon.visible = false

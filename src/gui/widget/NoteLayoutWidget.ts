@@ -119,7 +119,7 @@ export class NoteLayoutWidget extends Widget {
     this.x = this.manager.app.renderer.screen.width / 2 - 20
     const chart = this.getChart()
     const chartView = this.manager.chartManager.chartView!
-    if (!chart) {
+    if (!chart || !chartView) {
       this.visible = false
       return
     }

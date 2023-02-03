@@ -30,7 +30,10 @@ export class ChartListWindow extends Window {
       win_id: "chart_list",
     })
     this.app = app
-    this.gameType = gameType ?? app.chartManager.chart!.gameType
+    this.gameType =
+      gameType ??
+      app.chartManager.chart?.gameType ??
+      GameTypeRegistry.getPriority()[0]
     this.initView(this.viewElement)
   }
 
