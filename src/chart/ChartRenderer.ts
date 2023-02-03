@@ -83,7 +83,8 @@ export class ChartRenderer extends Container {
         )
       }
     })
-    window.addEventListener("keydown", event => {
+
+    const keyHandler = (event: KeyboardEvent) => {
       if (this.editingCol != -1) {
         const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
         const snapBeat =
@@ -94,6 +95,11 @@ export class ChartRenderer extends Container {
           event.shiftKey
         )
       }
+    }
+    window.addEventListener("keydown", keyHandler)
+    this.on("destroyed", () => {
+      window.removeEventListener("keydown", keyHandler)
+      this.removeAllListeners()
     })
     this.on("mousedown", () => {
       if (

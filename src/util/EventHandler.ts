@@ -21,4 +21,13 @@ export class EventHandler extends EventEmitter {
   ) {
     EventHandler.instance.on(event, fn, context)
   }
+
+  static off(
+    event: string | symbol,
+    fn?: (...args: any[]) => void,
+    context?: any,
+    once?: boolean
+  ) {
+    EventHandler.instance.off(event, fn, context, once)
+  }
 }

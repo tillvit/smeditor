@@ -10,6 +10,7 @@ export class TimingDataWindow extends Window {
   private lastBeat: number
   private songTiming = false
   private interval
+  private changeHandler = () => this.setData(this.viewElement)
 
   constructor(app: App) {
     super({
@@ -34,10 +35,11 @@ export class TimingDataWindow extends Window {
         this.setData(this.viewElement)
       }
     }, 17)
-    EventHandler.on("timingModified", () => this.setData(this.viewElement))
+    EventHandler.on("timingModified", this.changeHandler)
   }
 
   onClose() {
+    EventHandler.off("timingModified", this.changeHandler)
     clearInterval(this.interval)
   }
 

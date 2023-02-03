@@ -427,7 +427,7 @@ export class ChartManager {
       this.songAudio.stop()
       this.noChartTextA.visible = false
       this.noChartTextB.visible = false
-      if (this.chartView) this.chartView.destroy({ children: true })
+      this.chartView?.destroy({ children: true })
       return
     }
 
@@ -472,6 +472,7 @@ export class ChartManager {
       }
       if (!chart) {
         this.chartView?.destroy({ children: true })
+        this.chartView?.removeChildren()
         this.beat = 0
         this.time = 0
         this.chart = undefined
@@ -486,6 +487,7 @@ export class ChartManager {
 
     if (chart == this.chart) return
     this.chartView?.destroy({ children: true })
+    this.chartView?.removeChildren()
 
     this.chart = chart
     this.beat = this.chart.getBeat(this.time)
@@ -526,6 +528,7 @@ export class ChartManager {
   async loadAudio() {
     if (!this.sm || !this.chart) return
     this.songAudio.stop()
+    this.songAudio?.destroy()
     const musicPath = this.chart.getMusicPath()
     if (musicPath == "") {
       WaterfallManager.createFormatted(

@@ -21,6 +21,22 @@ export class ChartListWindow extends Window {
   private chartList?: HTMLDivElement
   private chartInfo?: HTMLDivElement
   private gameTypeDropdown?: Dropdown<string>
+  private smLoadHandler = () => {
+    this.gameTypeDropdown!.setItems(
+      GameTypeRegistry.getPriority().map(gameType => {
+        const charts = this.app.chartManager.sm?.charts[gameType.id] ?? []
+        return gameType.id + " (" + charts.length + ")"
+      })
+    )
+    this.gameTypeDropdown!.setSelected(
+      this.gameType.id +
+        " (" +
+        (this.app.chartManager.sm?.charts[this.gameType.id] ?? []).length +
+        ") "
+    )
+    this.gameType = this.app.chartManager.chart?.gameType ?? this.gameType
+    this.loadCharts()
+  }
 
   constructor(app: App, gameType?: GameType) {
     super({
@@ -35,6 +51,7 @@ export class ChartListWindow extends Window {
       app.chartManager.chart?.gameType ??
       GameTypeRegistry.getPriority()[0]
     this.initView(this.viewElement)
+    EventHandler.on("smLoadedAfter", this.smLoadHandler)
   }
 
   initView(viewElement: HTMLDivElement) {
@@ -65,22 +82,6 @@ export class ChartListWindow extends Window {
         GameTypeRegistry.getGameType(value.split(" ")[0]) ?? this.gameType
       this.loadCharts()
     })
-    EventHandler.on("smLoadedAfter", () => {
-      this.gameTypeDropdown!.setItems(
-        GameTypeRegistry.getPriority().map(gameType => {
-          const charts = this.app.chartManager.sm?.charts[gameType.id] ?? []
-          return gameType.id + " (" + charts.length + ")"
-        })
-      )
-      this.gameTypeDropdown!.setSelected(
-        this.gameType.id +
-          " (" +
-          (this.app.chartManager.sm?.charts[this.gameType.id] ?? []).length +
-          ") "
-      )
-      this.gameType = this.app.chartManager.chart?.gameType ?? this.gameType
-      this.loadCharts()
-    })
     gameTypeWrapper.appendChild(gameTypeLabel)
     gameTypeWrapper.appendChild(this.gameTypeDropdown.view)
 
@@ -101,6 +102,10 @@ export class ChartListWindow extends Window {
     viewElement.appendChild(padding)
 
     this.loadCharts()
+  }
+
+  onClose(): void {
+    EventHandler.off("smLoadedAfter", this.smLoadHandler)
   }
 
   private loadCharts() {

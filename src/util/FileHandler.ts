@@ -24,7 +24,11 @@ export class FileHandler {
         import("file-system-access/lib/adapters/memory.js")
       )
     }
-    // Fix for tauri
+    // this._root = await getOriginPrivateDirectory(
+    //   import("file-system-access/lib/adapters/node.js"),
+    //   "."
+    // )
+    // // Fix for tauri
     // if (!window.isNative) {
     //   this._root = await getOriginPrivateDirectory()
     // } else {

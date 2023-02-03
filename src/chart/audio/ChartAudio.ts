@@ -15,6 +15,7 @@ export class ChartAudio {
   private _delay?: NodeJS.Timer
   private _listeners: Waveform[] = []
   private _volume = 1
+  private _destroyed = false
 
   loaded: Promise<void>
 
@@ -91,8 +92,18 @@ export class ChartAudio {
   }
 
   getFrequencyData(): Uint8Array {
+    if (this._destroyed) return new Uint8Array()
     this._audioAnalyzer.getByteFrequencyData(this._freqData)
     return this._freqData
+  }
+
+  destroy() {
+    if (this._destroyed) return
+    this.stop()
+    this._buffer = this._audioContext.createBuffer(2, 1, 44100)
+    this._listeners = []
+    clearTimeout(this._delay)
+    this._destroyed = true
   }
 
   // getBodePlot(numPixels: number): number[] {
@@ -128,6 +139,7 @@ export class ChartAudio {
   }
 
   getRawData(): Float32Array[] {
+    if (this._destroyed) return []
     const ret = []
     for (let i = 0; i < this._buffer.numberOfChannels; i++)
       ret.push(this._buffer.getChannelData(i))
@@ -135,6 +147,7 @@ export class ChartAudio {
   }
 
   isPlaying(): boolean {
+    if (this._destroyed) return false
     return this._isPlaying
   }
 
@@ -152,12 +165,14 @@ export class ChartAudio {
   }
 
   volume(volume: number) {
+    if (this._destroyed) return
     if (this._volume == volume) return
     this._volume = volume
     this._gainNode.gain.setValueAtTime(volume, this._audioContext.currentTime)
   }
 
   rate(rate: number) {
+    if (this._destroyed) return
     if (this._rate == rate) return
     this._rate = rate
     if (!this._source) return
@@ -170,6 +185,7 @@ export class ChartAudio {
   }
 
   play() {
+    if (this._destroyed) return
     if (!this._source) return
     if (this._isPlaying) return
     this.initSource()
@@ -194,6 +210,7 @@ export class ChartAudio {
   seek(): number
   seek(playbackTime: number): void
   seek(playbackTime?: number) {
+    if (this._destroyed) return
     if (!this._source) return
     if (playbackTime === undefined) {
       if (!this._isPlaying) return this._playbackTime
@@ -213,10 +230,12 @@ export class ChartAudio {
   }
 
   pause() {
+    if (this._destroyed) return
     this.stop(true)
   }
 
   stop(pause?: boolean) {
+    if (this._destroyed) return
     if (!this._source) return
     if (!this._isPlaying) return
     clearTimeout(this._delay)

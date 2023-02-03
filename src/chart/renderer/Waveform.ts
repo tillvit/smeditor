@@ -57,7 +57,11 @@ export class Waveform extends Sprite {
     this.chartAudio.addWaveform(this)
     this.refilter()
 
-    EventHandler.on("timingModified", () => (this.lastBeat = -1))
+    const timingHandler = () => (this.lastBeat = -1)
+    EventHandler.on("timingModified", timingHandler)
+    this.on("destroyed", () => {
+      EventHandler.off("timingModified", timingHandler)
+    })
   }
 
   private async stripWaveform(
