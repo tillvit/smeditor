@@ -17,12 +17,20 @@ export class FileHandler {
   }
 
   static async init() {
-    if (support.adapter.native && !getBrowser().includes("Safari")) {
-      this._root = await getOriginPrivateDirectory()
-    } else {
+    if (window.nw) {
+      const home = nw.require("os").homedir()
       this._root = await getOriginPrivateDirectory(
-        import("file-system-access/lib/adapters/memory.js")
+        import("./node-adapter/NodeAdapter.js"),
+        home
       )
+    } else {
+      if (support.adapter.native && !getBrowser().includes("Safari")) {
+        this._root = await getOriginPrivateDirectory()
+      } else {
+        this._root = await getOriginPrivateDirectory(
+          import("file-system-access/lib/adapters/memory.js")
+        )
+      }
     }
     // this._root = await getOriginPrivateDirectory(
     //   import("file-system-access/lib/adapters/node.js"),

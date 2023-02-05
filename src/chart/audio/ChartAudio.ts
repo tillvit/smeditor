@@ -19,7 +19,7 @@ export class ChartAudio {
 
   loaded: Promise<void>
 
-  constructor(url?: string) {
+  constructor(data?: ArrayBuffer) {
     this._audioAnalyzer = this._audioContext.createAnalyser()
     this._audioAnalyzer.fftSize = 8192
     this._audioAnalyzer.maxDecibels = 0
@@ -29,7 +29,7 @@ export class ChartAudio {
     this._buffer = this._audioContext.createBuffer(2, 1, 44100)
     this.initSource()
     this.loaded = new Promise(resolve => {
-      this.getData(url)
+      this.decodeData(data)
         .then(buffer => {
           if (!buffer) return
           return buffer
@@ -116,15 +116,14 @@ export class ChartAudio {
   //   return bodePlot
   // }
 
-  async getData(url?: string): Promise<AudioBuffer | void> {
+  async decodeData(data?: ArrayBuffer): Promise<AudioBuffer | void> {
     return new Promise((resolve, reject) => {
-      if (!url) {
+      if (!data) {
         resolve()
         return
       }
-      fetch(url)
-        .then(response => response.arrayBuffer())
-        .then(data => this._audioContext.decodeAudioData(data))
+      this._audioContext
+        .decodeAudioData(data)
         .then(buffer => resolve(buffer))
         .catch(reason => reject(reason))
     })

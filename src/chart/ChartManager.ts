@@ -1,4 +1,4 @@
-import { Howl } from "howler"
+import { Howl } from "howler/dist/howler.core.min.js"
 import { BitmapText } from "pixi.js"
 import { App } from "../App"
 import { AUDIO_EXT } from "../data/FileData"
@@ -548,8 +548,7 @@ export class ChartManager {
       return
     }
     const audioFile = await audioHandle.getFile()
-    const audioUrl = URL.createObjectURL(audioFile)
-    this.songAudio = new ChartAudio(audioUrl)
+    this.songAudio = new ChartAudio(await audioFile.arrayBuffer())
     this.songAudio.seek(this.time)
     this.getAssistTickIndex()
   }

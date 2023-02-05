@@ -14,6 +14,12 @@ import { Waveform } from "./renderer/Waveform"
 import { Chart } from "./sm/Chart"
 import { NotedataEntry } from "./sm/NoteTypes"
 
+// interface Selection {
+//   startPoint?: Point
+//   notes: Notedata
+//   timingEvents: TimingEvent[]
+// }
+
 export class ChartRenderer extends Container {
   chartManager: ChartManager
 
@@ -70,20 +76,6 @@ export class ChartRenderer extends Container {
     this.interactive = true
     this.hitArea = new Rectangle(-1e5, -1e5, 2e5, 2e5)
 
-    this.on("mousemove", event => {
-      this.lastMousePos = this.toLocal(event.global)
-      if (this.editingCol != -1) {
-        const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-        const snapBeat =
-          Math.round(this.getBeatFromYPos(this.lastMousePos.y) / snap) * snap
-        this.chartManager.editHoldBeat(
-          this.editingCol,
-          snapBeat,
-          event.shiftKey
-        )
-      }
-    })
-
     const keyHandler = (event: KeyboardEvent) => {
       if (this.editingCol != -1) {
         const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
@@ -101,11 +93,13 @@ export class ChartRenderer extends Container {
       window.removeEventListener("keydown", keyHandler)
       this.removeAllListeners()
     })
-    this.on("mousedown", () => {
+
+    this.on("mousedown", e => {
       if (
         Options.general.mousePlacement &&
         this.lastMouseBeat != -1 &&
-        this.lastMouseCol != -1
+        this.lastMouseCol != -1 &&
+        !e.getModifierState("Shift")
       ) {
         this.editingCol = this.lastMouseCol
         this.chartManager.setNote(
@@ -113,8 +107,25 @@ export class ChartRenderer extends Container {
           "mouse",
           this.lastMouseBeat
         )
+      } else {
+        console.log("start selection")
       }
     })
+
+    this.on("mousemove", event => {
+      this.lastMousePos = this.toLocal(event.global)
+      if (this.editingCol != -1) {
+        const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
+        const snapBeat =
+          Math.round(this.getBeatFromYPos(this.lastMousePos.y) / snap) * snap
+        this.chartManager.editHoldBeat(
+          this.editingCol,
+          snapBeat,
+          event.shiftKey
+        )
+      }
+    })
+
     this.on("mouseup", () => {
       if (this.editingCol != -1) {
         this.chartManager.endEditing(this.editingCol)

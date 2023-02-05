@@ -6,21 +6,31 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "app-dev": "cross-env EXECUTION_MODE='DEBUG' NODE_ENV='production' nwbuild ./nw/**/* --mode=run --version=latest --flavor=sdk",
+    "app-osx": "nwbuild ./nw/**/* --mode=build --version=latest --flavor=normal --platform=osx --outDir=build/mac",
+    "app-linux": "nwbuild ./nw/**/* --mode=build --version=latest --flavor=normal --platform=linux --outDir=build/linux",
+    "app-windows": "nwbuild ./nw/**/* --mode=build --version=latest --flavor=normal --platform=win --outDir=build/windows",
+    "app-build": "npm run -s app-windows & npm run -s app-osx & npm run -s app-linux",
     "preview": "vite preview",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "postinstall": "patch-package"
   },
   "devDependencies": {
     "@types/file-saver": "^2.0.5",
     "@types/howler": "^2.2.7",
     "@types/node": "^18.11.18",
+    "@types/nw.js": "^0.13.16",
     "@types/webfontloader": "^1.6.35",
     "@typescript-eslint/eslint-plugin": "^5.48.0",
     "@typescript-eslint/parser": "^5.48.0",
+    "cross-env": "^7.0.3",
     "eslint": "^8.31.0",
     "eslint-config-prettier": "^8.6.0",
     "eslint-plugin-prettier": "^4.2.1",
     "husky": "^8.0.3",
     "lint-staged": "^13.1.0",
+    "nw-builder": "^4.0.9",
+    "patch-package": "^6.5.1",
     "prettier": "^2.8.1",
     "prettier-plugin-glsl": "^0.0.8",
     "typescript": "^4.9.4",
@@ -48,6 +58,18 @@
       "prettier --write",
       "git add"
     ]
+  },
+  "main": "nw/index.html",
+  "node-remote": [
+    "http://127.0.0.1:5173",
+    "https://tillvit.github.io/smeditor"
+  ],
+  "fullscreen": true,
+  "chromium-args": "--enable-webgl2-compute-context --force-discrete-gpu --enable-high-resolution-time --enable-zero-copy --autoplay-policy no-user-gesture-required",
+  "nwbuild": {
+    "srcDir": "./nw/**",
+    "version": "latest",
+    "flavor": "sdk"
   },
   "eslintConfig": {
     "extends": [
@@ -78,11 +100,16 @@
       "@typescript-eslint/no-unnecessary-qualifier": "warn",
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-misused-promises": "off",
       "@typescript-eslint/prefer-optional-chain": "warn",
       "@typescript-eslint/restrict-template-expressions": "off",
       "@typescript-eslint/restrict-plus-operands": "off"
     },
-    "root": true
+    "root": true,
+    "globals": {
+      "nw": "readonly"
+    }
   }
 }

@@ -1,0 +1,12 @@
+{
+  "name": "smeditor",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./index.html",
+  "node-remote": [
+    "http://127.0.0.1:5173",
+    "https://tillvit.github.io/smeditor"
+  ],
+  "fullscreen": true,
+  "chromium-args": "--enable-webgl2-compute-context --force-discrete-gpu --enable-high-resolution-time --enable-zero-copy --autoplay-policy no-user-gesture-required"
+}
