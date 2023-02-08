@@ -74,6 +74,20 @@ export class NoteContainer extends Container {
           this.renderer.chartManager.getMode() == EditMode.Play
         )
       }
+      const inSelection =
+        this.renderer.chartManager.getMode() != EditMode.Play &&
+        (this.renderer.chartManager.selection.notes.includes(note) ||
+          this.renderer.chartManager.selection.inProgressNotes.includes(note))
+      arrow.selection.alpha = inSelection
+        ? Math.sin(Date.now() / 320) * 0.1 + 0.3
+        : 0
+      const inSelectionBounds = this.renderer.selectionTest(arrow)
+      if (!inSelection && inSelectionBounds) {
+        this.renderer.chartManager.addNoteToDragSelection(note)
+      }
+      if (inSelection && !inSelectionBounds) {
+        this.renderer.chartManager.removeNoteFromDragSelection(note)
+      }
     }
 
     DanceNoteTexture.setArrowTexTime(beat, time)
@@ -139,18 +153,39 @@ export class NoteContainer extends Container {
     newChild.note = note
     newChild.visible = true
     newChild.zIndex = note.beat
-    this.buildObject(newChild)
+    DanceNoteRenderer.setData(
+      this.notefield,
+      newChild as ExtendedNoteObject,
+      note
+    )
+    newChild.x = this.notefield.getColX(note.col)
+    newChild.interactive = true
+    newChild.on!("mousedown", event => {
+      if (
+        Options.general.mousePlacement &&
+        !event.getModifierState("Meta") &&
+        !event.getModifierState("Control")
+      )
+        return
+      event.stopImmediatePropagation()
+      if (this.renderer.chartManager.selection.notes.includes(note)) {
+        if (event.getModifierState("Control") || event.getModifierState("Meta"))
+          this.renderer.chartManager.removeNoteFromSelection(note)
+      } else {
+        if (
+          !event.getModifierState("Control") &&
+          !event.getModifierState("Meta") &&
+          (Options.general.mousePlacement || !event.getModifierState("Shift"))
+        )
+          this.renderer.chartManager.clearSelection()
+        this.renderer.chartManager.addNoteToSelection(note)
+      }
+    })
+    newChild.on!("destroyed", () => {
+      newChild?.removeAllListeners!()
+    })
     this.noteMap.set(note, newChild as ExtendedNoteObject)
     this.addChild(newChild as ExtendedNoteObject)
     return newChild as ExtendedNoteObject
-  }
-
-  private buildObject(noteObj: Partial<ExtendedNoteObject>) {
-    DanceNoteRenderer.setData(
-      this.notefield,
-      noteObj as ExtendedNoteObject,
-      noteObj.note!
-    )
-    noteObj.x = this.notefield.getColX(noteObj.note!.col)
   }
 }

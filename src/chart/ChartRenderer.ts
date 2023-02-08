@@ -1,4 +1,4 @@
-import { Container, Point, Rectangle } from "pixi.js"
+import { Container, Point, Rectangle, Sprite, Texture } from "pixi.js"
 import { Options } from "../util/Options"
 import { ChartManager, EditMode } from "./ChartManager"
 import { Notefield } from "./gameTypes/base/Notefield"
@@ -6,6 +6,7 @@ import { TimingWindow } from "./play/TimingWindow"
 import { BarlineContainer } from "./renderer/BarlineContainer"
 import { ComboNumber } from "./renderer/ComboNumber"
 import { JudgmentSprite } from "./renderer/JudgmentSprite"
+import { SelectionAreaContainer } from "./renderer/SelectionAreaContainer"
 import { SnapContainer } from "./renderer/SnapContainer"
 import { TimingAreaContainer } from "./renderer/TimingAreaContainer"
 import { TimingBarContainer } from "./renderer/TimingBarContainer"
@@ -14,11 +15,10 @@ import { Waveform } from "./renderer/Waveform"
 import { Chart } from "./sm/Chart"
 import { NotedataEntry } from "./sm/NoteTypes"
 
-// interface Selection {
-//   startPoint?: Point
-//   notes: Notedata
-//   timingEvents: TimingEvent[]
-// }
+interface SelectionBounds {
+  start: Point
+  end: Point
+}
 
 export class ChartRenderer extends Container {
   chartManager: ChartManager
@@ -42,6 +42,10 @@ export class ChartRenderer extends Container {
   private snapDisplay: SnapContainer
   private judgment: JudgmentSprite
   private combo: ComboNumber
+  private selectionSprite: Sprite
+  private selectionArea: SelectionAreaContainer
+
+  private selectionBounds?: SelectionBounds
 
   constructor(chartManager: ChartManager) {
     super()
@@ -55,18 +59,24 @@ export class ChartRenderer extends Container {
     this.timingBar = new TimingBarContainer(this)
     this.notefield = new this.chart.gameType.notefield(this)
     this.snapDisplay = new SnapContainer(this)
+    this.selectionArea = new SelectionAreaContainer(this)
     this.judgment = new JudgmentSprite()
     this.combo = new ComboNumber(this)
+    this.selectionSprite = new Sprite(Texture.WHITE)
+    this.selectionSprite.visible = false
+    this.selectionSprite.alpha = 0.2
 
     this.addChild(this.waveform)
     this.addChild(this.barlines)
     this.addChild(this.timingAreas)
+    this.addChild(this.selectionArea)
     this.addChild(this.timingBoxes)
     this.addChild(this.timingBar)
     this.addChild(this.combo)
     this.addChild(this.notefield)
     this.addChild(this.snapDisplay)
     this.addChild(this.judgment)
+    this.addChild(this.selectionSprite)
 
     this.chartManager.app.stage.addChild(this)
 
@@ -94,12 +104,13 @@ export class ChartRenderer extends Container {
       this.removeAllListeners()
     })
 
-    this.on("mousedown", e => {
+    this.on("mousedown", event => {
+      if (this.chartManager.getMode() == EditMode.Play) return
       if (
         Options.general.mousePlacement &&
         this.lastMouseBeat != -1 &&
         this.lastMouseCol != -1 &&
-        !e.getModifierState("Shift")
+        !event.getModifierState("Shift")
       ) {
         this.editingCol = this.lastMouseCol
         this.chartManager.setNote(
@@ -108,7 +119,18 @@ export class ChartRenderer extends Container {
           this.lastMouseBeat
         )
       } else {
-        console.log("start selection")
+        if (
+          !event.getModifierState("Control") &&
+          !event.getModifierState("Meta") &&
+          (Options.general.mousePlacement || !event.getModifierState("Shift"))
+        ) {
+          this.chartManager.clearSelection()
+        }
+        this.chartManager.startDragSelection()
+        this.selectionBounds = {
+          start: this.toLocal(event.global),
+          end: this.toLocal(event.global),
+        }
       }
     })
 
@@ -124,6 +146,9 @@ export class ChartRenderer extends Container {
           event.shiftKey
         )
       }
+      if (this.selectionBounds) {
+        this.selectionBounds.end = this.toLocal(event.global)
+      }
     })
 
     this.on("mouseup", () => {
@@ -131,6 +156,8 @@ export class ChartRenderer extends Container {
         this.chartManager.endEditing(this.editingCol)
         this.editingCol = -1
       }
+      this.chartManager.endDragSelection()
+      this.selectionBounds = undefined
     })
   }
 
@@ -179,6 +206,24 @@ export class ChartRenderer extends Container {
       renderSecondLowerLimit = this.getTimeFromYPos(this.getUpperBound())
     }
 
+    this.selectionSprite.visible = !!this.selectionBounds
+    if (this.selectionBounds) {
+      this.selectionSprite.position.x = Math.min(
+        this.selectionBounds.start.x,
+        this.selectionBounds.end.x
+      )
+      this.selectionSprite.position.y = Math.min(
+        this.selectionBounds.start.y,
+        this.selectionBounds.end.y
+      )
+      this.selectionSprite.width = Math.abs(
+        this.selectionBounds.end.x - this.selectionBounds.start.x
+      )
+      this.selectionSprite.height = Math.abs(
+        this.selectionBounds.end.y - this.selectionBounds.start.y
+      )
+    }
+
     this.scale.x = Options.chart.zoom
     this.scale.y = (Options.chart.reverse ? -1 : 1) * Options.chart.zoom
 
@@ -194,11 +239,16 @@ export class ChartRenderer extends Container {
     this.judgment.renderThis()
     this.combo.renderThis()
     this.snapDisplay.renderThis()
+    this.selectionArea.renderThis()
 
     this.notefield.update(beat, renderBeatLowerLimit, renderBeatLimit)
     this.waveform.renderThis(beat, time)
 
-    if (this.lastMousePos && this.chartManager.getMode() != EditMode.Play) {
+    if (
+      Options.general.mousePlacement &&
+      this.lastMousePos &&
+      this.chartManager.getMode() != EditMode.Play
+    ) {
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
       const snapBeat =
         Math.round(this.getBeatFromYPos(this.lastMousePos.y) / snap) * snap
@@ -339,5 +389,17 @@ export class ChartRenderer extends Container {
 
   getUpperBound(): number {
     return -32 - this.y / Options.chart.zoom
+  }
+
+  selectionTest(object: Container): boolean {
+    if (!this.selectionBounds) return false
+    const ab = this.selectionSprite.getBounds()
+    const bb = object.getBounds()
+    return (
+      ab.x + ab.width > bb.x &&
+      ab.x < bb.x + bb.width &&
+      ab.y + ab.height > bb.y &&
+      ab.y < bb.y + bb.height
+    )
   }
 }

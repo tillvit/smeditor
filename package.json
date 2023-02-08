@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "app-dev": "cross-env EXECUTION_MODE='DEBUG' NODE_ENV='production' nwbuild ./nw/**/* --mode=run --version=latest --flavor=sdk",
+    "app-dev": "cross-env EXECUTION_MODE='DEBUG' NODE_ENV='production' nwbuild ./nw/**/* --mode=run --version=latest --flavor=sdk --outDir=build",
     "app-osx": "nwbuild ./nw/**/* --mode=build --version=latest --flavor=normal --platform=osx --outDir=build/mac",
     "app-linux": "nwbuild ./nw/**/* --mode=build --version=latest --flavor=normal --platform=linux --outDir=build/linux",
     "app-windows": "nwbuild ./nw/**/* --mode=build --version=latest --flavor=normal --platform=win --outDir=build/windows",
@@ -30,7 +30,6 @@
     "husky": "^8.0.3",
     "lint-staged": "^13.1.0",
     "nw-builder": "^4.0.9",
-    "patch-package": "^6.5.1",
     "prettier": "^2.8.1",
     "prettier-plugin-glsl": "^0.0.8",
     "typescript": "^4.9.4",

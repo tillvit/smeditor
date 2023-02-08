@@ -37,6 +37,7 @@ html {
   flex-direction: column;
   height: 100%;
   width: 100%;
+  caret-color: transparent;
 }
 canvas {
   flex: 1 1 auto;
@@ -826,6 +827,7 @@ input.right {
   position: absolute;
   top: 0;
   z-index: 10000;
+  caret-color: transparent;
 }
 
 .spinner {
@@ -900,6 +902,7 @@ input.right {
   padding: 0 10px;
   width: 100%;
   pointer-events: none;
+  user-select: none;
   caret-color: transparent;
 }
 

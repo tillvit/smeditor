@@ -216,8 +216,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   selectRegion: {
     label: "Select Region",
     keybinds: [{ key: "Tab", mods: [] }],
-    disabled: true,
-    callback: () => 0,
+    disabled: app => !app.chartManager.chart,
+    callback: app => app.chartManager.selectRegion(),
   },
   volumeUp: {
     label: "Increase volume",

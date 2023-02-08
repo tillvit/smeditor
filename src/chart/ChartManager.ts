@@ -20,8 +20,14 @@ import { GameTypeRegistry } from "./gameTypes/GameTypeRegistry"
 import { GameplayStats } from "./play/GameplayStats"
 import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
 import { Chart } from "./sm/Chart"
-import { isHoldNote, PartialNotedataEntry } from "./sm/NoteTypes"
+import {
+  isHoldNote,
+  Notedata,
+  NotedataEntry,
+  PartialNotedataEntry,
+} from "./sm/NoteTypes"
 import { Simfile } from "./sm/Simfile"
+import { TimingEvent } from "./sm/TimingTypes"
 
 const SNAPS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 48, -1]
 
@@ -32,6 +38,12 @@ interface PartialHold {
   type: "mouse" | "key"
   originalNote: PartialNotedataEntry | undefined
   removedNotes: PartialNotedataEntry[]
+}
+
+interface Selection {
+  notes: Notedata
+  inProgressNotes: Notedata
+  timingEvents: TimingEvent[]
 }
 
 export enum EditMode {
@@ -68,6 +80,12 @@ export class ChartManager {
   sm_path = ""
   chart?: Chart
 
+  selection: Selection = {
+    notes: [],
+    inProgressNotes: [],
+    timingEvents: [],
+  }
+
   private beat = 0
   private time = 0
 
@@ -83,6 +101,9 @@ export class ChartManager {
 
   private mode: EditMode = EditMode.Edit
   private lastMode: EditMode = EditMode.Edit
+
+  startRegion?: number
+  endRegion?: number
 
   gameStats?: GameplayStats
 
@@ -945,5 +966,73 @@ export class ChartManager {
     }
     ActionHistory.instance.setLimit()
     return
+  }
+
+  clearSelection() {
+    this.selection = {
+      notes: [],
+      inProgressNotes: [],
+      timingEvents: [],
+    }
+  }
+
+  startDragSelection() {
+    this.selection.inProgressNotes = []
+  }
+
+  endDragSelection() {
+    this.selection.notes = this.selection.notes.concat(
+      this.selection.inProgressNotes
+    )
+  }
+
+  addNoteToDragSelection(note: NotedataEntry) {
+    this.selection.inProgressNotes.push(note)
+  }
+
+  removeNoteFromDragSelection(note: NotedataEntry) {
+    const index = this.selection.inProgressNotes.indexOf(note)
+    if (index == -1) return
+    this.selection.inProgressNotes.splice(index, 1)
+  }
+
+  addNoteToSelection(note: NotedataEntry) {
+    this.selection.notes.push(note)
+  }
+
+  removeNoteFromSelection(note: NotedataEntry) {
+    const index = this.selection.notes.indexOf(note)
+    if (index == -1) return
+    this.selection.notes.splice(index, 1)
+  }
+
+  addEventToSelection(event: TimingEvent) {
+    this.selection.timingEvents.push(event)
+  }
+
+  selectRegion() {
+    if (this.endRegion) {
+      this.startRegion = undefined
+      this.endRegion = undefined
+    }
+    if (!this.startRegion) {
+      this.clearSelection()
+      this.startRegion = this.beat
+      return
+    }
+    if (!this.endRegion) {
+      this.endRegion = this.beat
+      if (this.endRegion < this.startRegion) {
+        this.endRegion = this.startRegion
+        this.startRegion = this.beat
+      }
+      this.chart?.notedata
+        .filter(
+          note => note.beat >= this.startRegion! && note.beat < this.endRegion!
+        )
+        .filter(note => !this.selection.notes.includes(note))
+        .forEach(note => this.addNoteToSelection(note))
+      return
+    }
   }
 }
