@@ -12,8 +12,7 @@
     "app-windows": "nwbuild ./nw/**/* --mode=build --version=latest --flavor=normal --platform=win --outDir=build/windows",
     "app-build": "npm run -s app-windows & npm run -s app-osx & npm run -s app-linux",
     "preview": "vite preview",
-    "prepare": "husky install",
-    "postinstall": "patch-package"
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@types/file-saver": "^2.0.5",
