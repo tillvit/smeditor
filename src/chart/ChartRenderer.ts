@@ -112,6 +112,7 @@ export class ChartRenderer extends Container {
         this.lastMouseCol != -1 &&
         !event.getModifierState("Shift")
       ) {
+        this.chartManager.clearSelection()
         this.editingCol = this.lastMouseCol
         this.chartManager.setNote(
           this.lastMouseCol,
@@ -122,7 +123,7 @@ export class ChartRenderer extends Container {
         if (
           !event.getModifierState("Control") &&
           !event.getModifierState("Meta") &&
-          (Options.general.mousePlacement || !event.getModifierState("Shift"))
+          !event.getModifierState("Shift")
         ) {
           this.chartManager.clearSelection()
         }

@@ -42,6 +42,10 @@ interface PartialHold {
 
 interface Selection {
   notes: Notedata
+  shift?: {
+    columnShift: number
+    beatShift: number
+  }
   inProgressNotes: Notedata
   timingEvents: TimingEvent[]
 }
