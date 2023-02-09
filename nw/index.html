@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script>
+      const process = nw.require("process")
+      if (process.env.EXECUTION_MODE == "DEBUG") {
+        window.location = "http://127.0.0.1:5173"
+      } else {
+        window.location = "https://tillvit.github.io/smeditor"
+      }
+    </script>
+  </head>
+  <body></body>
+</html>

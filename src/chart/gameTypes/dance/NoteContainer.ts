@@ -1,4 +1,4 @@
-import { Container } from "pixi.js"
+import { Container, FederatedMouseEvent } from "pixi.js"
 import { Options } from "../../../util/Options"
 import { destroyChildIf } from "../../../util/Util"
 import { EditMode } from "../../ChartManager"
@@ -74,6 +74,25 @@ export class NoteContainer extends Container {
           this.renderer.chartManager.getMode() == EditMode.Play
         )
       }
+      const inSelection =
+        this.renderer.chartManager.getMode() != EditMode.Play &&
+        (this.renderer.chartManager.selection.notes.includes(note) ||
+          this.renderer.chartManager.selection.inProgressNotes.includes(note))
+      arrow.selection.alpha = inSelection
+        ? Math.sin(Date.now() / 320) * 0.1 + 0.3
+        : 0
+      const inSelectionBounds = this.renderer.selectionTest(arrow)
+      if (!inSelection && inSelectionBounds) {
+        this.renderer.chartManager.addNoteToDragSelection(note)
+      }
+      if (inSelection && !inSelectionBounds) {
+        this.renderer.chartManager.removeNoteFromDragSelection(note)
+      }
+      if (this.renderer.chartManager.selection.shift && inSelection) {
+        arrow.visible = false
+      } else {
+        arrow.visible = true
+      }
     }
 
     DanceNoteTexture.setArrowTexTime(beat, time)
@@ -139,18 +158,95 @@ export class NoteContainer extends Container {
     newChild.note = note
     newChild.visible = true
     newChild.zIndex = note.beat
-    this.buildObject(newChild)
+    DanceNoteRenderer.setData(
+      this.notefield,
+      newChild as ExtendedNoteObject,
+      note
+    )
+    newChild.x = this.notefield.getColX(note.col)
+    newChild.interactive = true
+    let lastTriedColumnShift = 0
+    const moveHandler = (event: FederatedMouseEvent) => {
+      const position = this.renderer.toLocal(event.global)
+      if (
+        Math.abs(position.y - newChild!.y!) ** 2 +
+          Math.abs(position.x - newChild!.x!) ** 2 <
+        32 * 32
+      ) {
+        if (this.renderer.chartManager.selection.shift) {
+          this.renderer.chartManager.selection.shift = {
+            columnShift: 0,
+            beatShift: 0,
+          }
+        }
+        return
+      }
+      const newBeat = this.renderer.getBeatFromYPos(position.y)
+      const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
+      let snapBeat = Math.round(newBeat / snap) * snap
+      if (Math.abs(snapBeat - newBeat) > Math.abs(newBeat - note.beat)) {
+        snapBeat = note.beat
+      }
+      const col = Math.round((position.x + 96) / 64)
+      this.renderer.chartManager.selection.shift ||= {
+        columnShift: 0,
+        beatShift: 0,
+      }
+      if (lastTriedColumnShift != col - note.col) {
+        lastTriedColumnShift = col - note.col
+        if (
+          this.renderer.chartManager.selection.notes.every(note => {
+            const newCol = note.col + lastTriedColumnShift
+            return (
+              newCol >= 0 &&
+              newCol < this.renderer.chartManager.chart!.gameType.numCols
+            )
+          })
+        ) {
+          this.renderer.chartManager.selection.shift.columnShift =
+            col - note.col
+        }
+      }
+      this.renderer.chartManager.selection.shift.beatShift =
+        snapBeat - note.beat
+    }
+    newChild.on!("mousedown", event => {
+      if (
+        Options.general.mousePlacement &&
+        !event.getModifierState("Meta") &&
+        !event.getModifierState("Control") &&
+        !event.getModifierState("Shift") &&
+        !this.renderer.chartManager.selection.notes.includes(newChild!.note!)
+      )
+        return
+      event.stopImmediatePropagation()
+      if (
+        this.renderer.chartManager.selection.notes.includes(newChild!.note!)
+      ) {
+        if (event.getModifierState("Control") || event.getModifierState("Meta"))
+          this.renderer.chartManager.removeNoteFromSelection(newChild!.note!)
+      } else {
+        if (
+          !event.getModifierState("Control") &&
+          !event.getModifierState("Meta") &&
+          !event.getModifierState("Shift")
+        )
+          this.renderer.chartManager.clearSelection()
+        this.renderer.chartManager.addNoteToSelection(newChild!.note!)
+      }
+      this.renderer.on("mousemove", moveHandler)
+      const mouseUp = () => {
+        this.renderer.off("mousemove", moveHandler)
+        this.renderer.off("mouseup", mouseUp)
+        this.renderer.chartManager.selection.shift = undefined
+      }
+      this.renderer.on("mouseup", mouseUp)
+    })
+    newChild.on!("destroyed", () => {
+      newChild?.removeAllListeners!()
+    })
     this.noteMap.set(note, newChild as ExtendedNoteObject)
     this.addChild(newChild as ExtendedNoteObject)
     return newChild as ExtendedNoteObject
-  }
-
-  private buildObject(noteObj: Partial<ExtendedNoteObject>) {
-    DanceNoteRenderer.setData(
-      this.notefield,
-      noteObj as ExtendedNoteObject,
-      noteObj.note!
-    )
-    noteObj.x = this.notefield.getColX(noteObj.note!.col)
   }
 }

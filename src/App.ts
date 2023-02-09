@@ -1,4 +1,11 @@
-import { BitmapFont, Container, Renderer, TEXT_GRADIENT, Ticker } from "pixi.js"
+import {
+  BitmapFont,
+  Container,
+  Renderer,
+  TEXT_GRADIENT,
+  Ticker,
+  UPDATE_PRIORITY,
+} from "pixi.js"
 import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
 import { MenubarManager } from "./gui/element/MenubarManager"
@@ -17,7 +24,6 @@ import { WindowManager } from "./window/WindowManager"
 declare global {
   interface Window {
     app: App
-    isNative: boolean
     fs: typeof FileHandler
     runSafari?: () => void
   }
@@ -39,6 +45,17 @@ export class App {
   private lastHeight = window.innerHeight
 
   constructor() {
+    if (window.nw) {
+      const activeWin = nw.Window.get()
+      activeWin.enterFullscreen()
+      window.addEventListener("keydown", e => {
+        if ((e.key == "r" && (e.metaKey || e.ctrlKey)) || e.key == "F5") {
+          e.preventDefault()
+          activeWin.reload()
+        }
+      })
+    }
+
     Options.loadOptions()
     setInterval(() => Options.saveOptions(), 10000)
     if (Options.general.smoothAnimations)
@@ -60,13 +77,14 @@ export class App {
     })
 
     this.ticker = new Ticker()
+    this.ticker.maxFPS = 120
     this.ticker.add(() => {
       TimerStats.time("Render Time")
       this.renderer.render(this.stage)
       TimerStats.endTime("Render Time")
       TimerStats.endFrame()
       fpsUpdate()
-    })
+    }, UPDATE_PRIORITY.LOW)
     this.ticker.start()
     this.stage.sortableChildren = true
 
@@ -76,7 +94,7 @@ export class App {
     this.chartManager = new ChartManager(this)
     this.menubarManager = new MenubarManager(
       this,
-      document.getElementsByClassName("menubar")[0] as HTMLDivElement
+      document.getElementById("menubar") as HTMLDivElement
     )
     this.windowManager = new WindowManager(
       this,
@@ -210,8 +228,7 @@ export class App {
   onResize() {
     const screenWidth = window.innerWidth
     const screenHeight =
-      window.innerHeight -
-      document.getElementsByClassName("menubar")[0]!.clientHeight
+      window.innerHeight - document.getElementById("menubar")!.clientHeight
     this.renderer.screen.width = screenWidth
     this.renderer.screen.height = screenHeight
     this.view.width = screenWidth * this.renderer.resolution
@@ -222,7 +239,7 @@ export class App {
 }
 
 document.querySelector("body")!.innerHTML = `<div id="view-wrapper"> 
-            <div class="menubar"></div>
+            <div id="menubar"></div>
             <div id="waterfall"></div>
             <canvas id="pixi"></canvas>
           </div> 
@@ -275,7 +292,7 @@ function init() {
     )
     window.runSafari = () => {
       document.querySelector("body")!.innerHTML = `<div id="view-wrapper"> 
-            <div class="menubar"></div>
+            <div id="menubar"></div>
             <div id="waterfall"></div>
             <canvas id="pixi"></canvas>
           </div> 

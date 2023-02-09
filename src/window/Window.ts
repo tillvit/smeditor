@@ -96,8 +96,12 @@ export abstract class Window {
     this.focus()
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  onClose(): void {}
+
   closeWindow() {
     if (this.windowManager) {
+      this.onClose()
       this.windowManager.removeWindow(this)
       this.windowElement.classList.add("exiting")
       window.removeEventListener("mousedown", this.block, true)

@@ -7,6 +7,7 @@ export class SMPropertiesWindow extends Window {
   app: App
 
   private callback?: (success: boolean) => void
+  private changeHandler = () => this.initView(this.viewElement)
 
   constructor(
     app: App,
@@ -24,13 +25,15 @@ export class SMPropertiesWindow extends Window {
     this.app = app
     this.callback = callback
     this.initView(this.viewElement)
-    EventHandler.on("smLoaded", () => this.initView(this.viewElement))
-    EventHandler.on("undo", () => {
-      this.initView(this.viewElement)
-    })
-    EventHandler.on("redo", () => {
-      this.initView(this.viewElement)
-    })
+    EventHandler.on("smLoaded", this.changeHandler)
+    EventHandler.on("undo", this.changeHandler)
+    EventHandler.on("redo", this.changeHandler)
+  }
+
+  onClose(): void {
+    EventHandler.off("smLoaded", this.changeHandler)
+    EventHandler.off("undo", this.changeHandler)
+    EventHandler.off("redo", this.changeHandler)
   }
 
   initView(viewElement: HTMLDivElement): void {

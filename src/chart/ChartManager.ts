@@ -1,4 +1,4 @@
-import { Howl } from "howler"
+import { Howl } from "howler/dist/howler.core.min.js"
 import { BitmapText } from "pixi.js"
 import { App } from "../App"
 import { AUDIO_EXT } from "../data/FileData"
@@ -20,8 +20,14 @@ import { GameTypeRegistry } from "./gameTypes/GameTypeRegistry"
 import { GameplayStats } from "./play/GameplayStats"
 import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
 import { Chart } from "./sm/Chart"
-import { isHoldNote, PartialNotedataEntry } from "./sm/NoteTypes"
+import {
+  isHoldNote,
+  Notedata,
+  NotedataEntry,
+  PartialNotedataEntry,
+} from "./sm/NoteTypes"
 import { Simfile } from "./sm/Simfile"
+import { TimingEvent } from "./sm/TimingTypes"
 
 const SNAPS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 48, -1]
 
@@ -32,6 +38,16 @@ interface PartialHold {
   type: "mouse" | "key"
   originalNote: PartialNotedataEntry | undefined
   removedNotes: PartialNotedataEntry[]
+}
+
+interface Selection {
+  notes: Notedata
+  shift?: {
+    columnShift: number
+    beatShift: number
+  }
+  inProgressNotes: Notedata
+  timingEvents: TimingEvent[]
 }
 
 export enum EditMode {
@@ -68,6 +84,12 @@ export class ChartManager {
   sm_path = ""
   chart?: Chart
 
+  selection: Selection = {
+    notes: [],
+    inProgressNotes: [],
+    timingEvents: [],
+  }
+
   private beat = 0
   private time = 0
 
@@ -83,6 +105,9 @@ export class ChartManager {
 
   private mode: EditMode = EditMode.Edit
   private lastMode: EditMode = EditMode.Edit
+
+  startRegion?: number
+  endRegion?: number
 
   gameStats?: GameplayStats
 
@@ -193,24 +218,14 @@ export class ChartManager {
     this.app.stage.addChild(this.widgetManager)
     this.app.ticker.add(() => {
       this.widgetManager.update()
-      if (
-        this.sm == undefined ||
-        this.chart == undefined ||
-        this.chartView == undefined
-      )
-        return
+      if (!this.sm || !this.chart || !this.chartView) return
       TimerStats.time("ChartRenderer Update Time")
       this.chartView?.renderThis()
       TimerStats.endTime("ChartRenderer Update Time")
     })
 
     setInterval(() => {
-      if (
-        this.sm == undefined ||
-        this.chart == undefined ||
-        this.chartView == undefined
-      )
-        return
+      if (!this.sm || !this.chart || !this.chartView) return
       const time = this.songAudio.seek()
       TimerStats.time("Update Time")
       if (this.songAudio.isPlaying()) {
@@ -437,7 +452,7 @@ export class ChartManager {
       this.songAudio.stop()
       this.noChartTextA.visible = false
       this.noChartTextB.visible = false
-      if (this.chartView) this.chartView.destroy({ children: true })
+      this.chartView?.destroy({ children: true })
       return
     }
 
@@ -464,7 +479,6 @@ export class ChartManager {
 
   async loadChart(chart?: Chart) {
     if (this.sm == undefined) return
-    this.chartView?.destroy({ children: true })
     if (chart == undefined) {
       if (this.chart) {
         const charts = this.sm.charts[this.chart.gameType.id]
@@ -482,6 +496,8 @@ export class ChartManager {
         }
       }
       if (!chart) {
+        this.chartView?.destroy({ children: true })
+        this.chartView?.removeChildren()
         this.beat = 0
         this.time = 0
         this.chart = undefined
@@ -494,15 +510,16 @@ export class ChartManager {
       }
     }
 
+    if (chart == this.chart) return
+    this.chartView?.destroy({ children: true })
+    this.chartView?.removeChildren()
+
     this.chart = chart
     this.beat = this.chart.getBeat(this.time)
     ActionHistory.instance.reset()
 
     Options.play.timingCollection =
       Options.play.defaultTimingCollection[chart.gameType.id] ?? "ITG"
-
-    EventHandler.emit("chartLoaded")
-    EventHandler.emit("chartModified")
 
     this.getAssistTickIndex()
     this.chartView = new ChartRenderer(this)
@@ -528,11 +545,15 @@ export class ChartManager {
         " " +
         chart.gameType.id
     )
+
+    EventHandler.emit("chartLoaded")
+    EventHandler.emit("chartModified")
   }
 
   async loadAudio() {
     if (!this.sm || !this.chart) return
     this.songAudio.stop()
+    this.songAudio?.destroy()
     const musicPath = this.chart.getMusicPath()
     if (musicPath == "") {
       WaterfallManager.createFormatted(
@@ -552,8 +573,7 @@ export class ChartManager {
       return
     }
     const audioFile = await audioHandle.getFile()
-    const audioUrl = URL.createObjectURL(audioFile)
-    this.songAudio = new ChartAudio(audioUrl)
+    this.songAudio = new ChartAudio(await audioFile.arrayBuffer())
     this.songAudio.seek(this.time)
     this.getAssistTickIndex()
   }
@@ -875,6 +895,14 @@ export class ChartManager {
     return this.chart?.gameType.editNoteTypes[this.editNoteTypeIndex] ?? ""
   }
 
+  setEditingNoteType(type: string) {
+    if (!this.chart) return
+    const types = this.chart?.gameType.editNoteTypes
+    const index = types.indexOf(type)
+    if (index == -1) return
+    this.editNoteTypeIndex = index
+  }
+
   getMode(): EditMode {
     return this.mode
   }
@@ -942,5 +970,73 @@ export class ChartManager {
     }
     ActionHistory.instance.setLimit()
     return
+  }
+
+  clearSelection() {
+    this.selection = {
+      notes: [],
+      inProgressNotes: [],
+      timingEvents: [],
+    }
+  }
+
+  startDragSelection() {
+    this.selection.inProgressNotes = []
+  }
+
+  endDragSelection() {
+    this.selection.notes = this.selection.notes.concat(
+      this.selection.inProgressNotes
+    )
+  }
+
+  addNoteToDragSelection(note: NotedataEntry) {
+    this.selection.inProgressNotes.push(note)
+  }
+
+  removeNoteFromDragSelection(note: NotedataEntry) {
+    const index = this.selection.inProgressNotes.indexOf(note)
+    if (index == -1) return
+    this.selection.inProgressNotes.splice(index, 1)
+  }
+
+  addNoteToSelection(note: NotedataEntry) {
+    this.selection.notes.push(note)
+  }
+
+  removeNoteFromSelection(note: NotedataEntry) {
+    const index = this.selection.notes.indexOf(note)
+    if (index == -1) return
+    this.selection.notes.splice(index, 1)
+  }
+
+  addEventToSelection(event: TimingEvent) {
+    this.selection.timingEvents.push(event)
+  }
+
+  selectRegion() {
+    if (this.endRegion) {
+      this.startRegion = undefined
+      this.endRegion = undefined
+    }
+    if (!this.startRegion) {
+      this.clearSelection()
+      this.startRegion = this.beat
+      return
+    }
+    if (!this.endRegion) {
+      this.endRegion = this.beat
+      if (this.endRegion < this.startRegion) {
+        this.endRegion = this.startRegion
+        this.startRegion = this.beat
+      }
+      this.chart?.notedata
+        .filter(
+          note => note.beat >= this.startRegion! && note.beat < this.endRegion!
+        )
+        .filter(note => !this.selection.notes.includes(note))
+        .forEach(note => this.addNoteToSelection(note))
+      return
+    }
   }
 }

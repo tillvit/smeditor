@@ -37,6 +37,7 @@ html {
   flex-direction: column;
   height: 100%;
   width: 100%;
+  caret-color: transparent;
 }
 canvas {
   flex: 1 1 auto;
@@ -307,7 +308,7 @@ textarea {
   box-shadow: inset 0 0 3px 2px rgba(16, 98, 156, 0.8);
 }
 
-.menubar {
+#menubar {
   display: flex;
   background-color: #555;
 }
@@ -323,19 +324,19 @@ textarea {
   align-items: center;
 }
 
-.menubar > .menu-item > .title {
+#menubar > .menu-item > .title {
   padding: 4px 10px 4px 10px;
 }
 
-.menubar .menubar-dropdown {
+#menubar .menubar-dropdown {
   display: none;
   background-color: #555;
   border: 1px solid #444;
   position: absolute;
 }
 
-.menu-item:not(.disabled):hover > .menubar-dropdown,
-.menubar-dropdown:not(.disabled):hover {
+#menubar .menu-item:not(.disabled):hover > .menubar-dropdown,
+#menubar .menubar-dropdown:not(.disabled):hover {
   display: block;
 }
 
@@ -826,6 +827,7 @@ input.right {
   position: absolute;
   top: 0;
   z-index: 10000;
+  caret-color: transparent;
 }
 
 .spinner {
@@ -900,6 +902,7 @@ input.right {
   padding: 0 10px;
   width: 100%;
   pointer-events: none;
+  user-select: none;
   caret-color: transparent;
 }
 

@@ -11,10 +11,12 @@ import { HoldJudgmentContainer } from "./HoldJudgmentContainer"
 import { NoteContainer } from "./NoteContainer"
 import { NoteFlashContainer } from "./NoteFlashContainer"
 import { ReceptorContainer } from "./ReceptorContainer"
+import { SelectionNoteContainer } from "./SelectionNoteContainer"
 
 export class DanceNotefield extends Notefield {
   private receptors: ReceptorContainer
   private notes: NoteContainer
+  private selectionNotes: SelectionNoteContainer
   private flashes: NoteFlashContainer
   private holdJudges: HoldJudgmentContainer
   private ghostNote: NoteObject
@@ -27,6 +29,7 @@ export class DanceNotefield extends Notefield {
 
     this.receptors = new ReceptorContainer(this)
     this.notes = new NoteContainer(this, renderer)
+    this.selectionNotes = new SelectionNoteContainer(this, renderer)
     this.flashes = new NoteFlashContainer(this)
     this.holdJudges = new HoldJudgmentContainer(this, renderer)
     this.ghostNote = DanceNoteRenderer.createArrow()
@@ -36,6 +39,7 @@ export class DanceNotefield extends Notefield {
       this.receptors,
       this.ghostNote,
       this.notes,
+      this.selectionNotes,
       this.flashes,
       this.holdJudges
     )
@@ -60,6 +64,7 @@ export class DanceNotefield extends Notefield {
   update(beat: number, fromBeat: number, toBeat: number): void {
     this.receptors.renderThis(beat)
     this.notes.renderThis(beat, fromBeat, toBeat)
+    this.selectionNotes.renderThis(beat, fromBeat, toBeat)
     this.flashes.renderThis()
     this.holdJudges.renderThis()
 

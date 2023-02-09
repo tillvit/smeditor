@@ -35,12 +35,16 @@ export class NoteObject extends Container {
   type = ""
   hold: NoteHold
   item: NoteItem
+  selection: Sprite
   constructor() {
     super()
     this.hold = new NoteHold()
     this.item = new NoteItem()
+    this.selection = new Sprite(Texture.WHITE)
+    this.selection.alpha = 0
     this.addChild(this.hold)
     this.addChild(this.item)
+    this.addChild(this.selection)
   }
 }
 
@@ -56,6 +60,7 @@ export class DanceNoteRenderer {
     arrow.hold.holdBody!.height = length
     arrow.hold.holdBody!.y = length
     arrow.hold.holdCap!.y = length
+    arrow.selection.height = 64 + length
   }
 
   static setHoldBrightness(arrow: NoteObject, brightness: number) {
@@ -134,15 +139,20 @@ export class DanceNoteRenderer {
         icon.width = 32
         icon.height = 32
         icon.anchor.set(0.5)
-        icon.alpha = 0.5
+        icon.alpha = 0.9
         arrow.item.icon = icon
         arrow.item.addChild(icon)
       }
-      arrow.item.icon.rotation = -notefield.getRotFromCol(col)
       arrow.item.icon.visible = true
     } else {
       if (arrow.item.icon) arrow.item.icon.visible = false
     }
+
+    //Create selection box
+    arrow.selection.x = -32
+    arrow.selection.y = -32
+    arrow.selection.width = 64
+    arrow.selection.height = 64
 
     //Set arrow type
     arrow.type = note.type
