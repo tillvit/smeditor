@@ -703,6 +703,7 @@ export class TimingData {
     let props = [
       "BPMS",
       "STOPS",
+      "WARPS",
       "DELAYS",
       "SPEEDS",
       "SCROLLS",

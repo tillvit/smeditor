@@ -1,5 +1,6 @@
 import { App } from "../App"
 import { EditMode } from "../chart/ChartManager"
+import { isHoldNote } from "../chart/sm/NoteTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { FileHandler } from "../util/FileHandler"
 import { Options } from "../util/Options"
@@ -499,7 +500,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Redo",
     keybinds: [{ key: "Y", mods: [DEF_MOD] }],
     disabled: app =>
-      !app.actionHistory.canUndo() ||
+      !app.actionHistory.canRedo() ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => app.actionHistory.redo(),
   },
@@ -538,6 +539,210 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     disabled: false,
     callback: app => {
       app.windowManager.openWindow(new UserOptionsWindow(app))
+    },
+  },
+  convertHoldsRolls: {
+    label: "Holds to rolls",
+    keybinds: [],
+    disabled: app => app.chartManager.selection.notes.length == 0,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        if (note.type == "Hold") note.type = "Roll"
+        return note
+      })
+    },
+  },
+  convertHoldsTaps: {
+    label: "Holds/rolls to taps",
+    keybinds: [],
+    disabled: app => app.chartManager.selection.notes.length == 0,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        if (note.type == "Hold" || note.type == "Roll") note.type = "Tap"
+        return note
+      })
+    },
+  },
+  convertNotesMines: {
+    label: "Notes to mines",
+    keybinds: [],
+    disabled: app => app.chartManager.selection.notes.length == 0,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.type = "Mine"
+        return note
+      })
+    },
+  },
+  convertTapsFakes: {
+    label: "Taps to fakes",
+    keybinds: [],
+    disabled: app => app.chartManager.selection.notes.length == 0,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        if (note.type == "Tap") note.type = "Fake"
+        return note
+      })
+    },
+  },
+  mirrorHorizontally: {
+    label: "Horizontally",
+    keybinds: [],
+    disabled: app => app.chartManager.selection.notes.length == 0,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.col =
+          app.chartManager.chart!.gameType.flipColumns.horizontal[note.col]
+        return note
+      })
+    },
+  },
+  mirrorVertically: {
+    label: "Vertically",
+    keybinds: [],
+    disabled: app => app.chartManager.selection.notes.length == 0,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.col =
+          app.chartManager.chart!.gameType.flipColumns.vertical[note.col]
+        return note
+      })
+    },
+  },
+  mirrorBoth: {
+    label: "Both",
+    keybinds: [],
+    disabled: app => app.chartManager.selection.notes.length == 0,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.col =
+          app.chartManager.chart!.gameType.flipColumns.horizontal[note.col]
+        note.col =
+          app.chartManager.chart!.gameType.flipColumns.vertical[note.col]
+        return note
+      })
+    },
+  },
+  selectAll: {
+    label: "Select All",
+    keybinds: [{ key: "A", mods: [DEF_MOD] }],
+    disabled: app => !app.chartManager.chart,
+    callback: app => {
+      app.chartManager.selection.notes = [...app.chartManager.chart!.notedata]
+    },
+  },
+  expand2to1: {
+    label: "Expand 2:1 (8th to 4th)",
+    keybinds: [],
+    disabled: app => app.chartManager.selection.notes.length == 0,
+    callback: app => {
+      const baseBeat = Math.min(
+        ...app.chartManager.selection.notes.map(note => note.beat)
+      )
+      app.chartManager.modifySelection(note => {
+        note.beat = (note.beat - baseBeat) * 2 + baseBeat
+        note.beat = Math.round(note.beat * 48) / 48
+        if (isHoldNote(note)) {
+          note.hold *= 2
+          note.hold = Math.round(note.hold * 48) / 48
+        }
+        return note
+      })
+    },
+  },
+  expand3to2: {
+    label: "Expand 3:2 (12th to 8th)",
+    keybinds: [],
+    disabled: app => app.chartManager.selection.notes.length == 0,
+    callback: app => {
+      const baseBeat = Math.min(
+        ...app.chartManager.selection.notes.map(note => note.beat)
+      )
+      app.chartManager.modifySelection(note => {
+        note.beat = (note.beat - baseBeat) * 1.5 + baseBeat
+        note.beat = Math.round(note.beat * 48) / 48
+        if (isHoldNote(note)) {
+          note.hold *= 1.5
+          note.hold = Math.round(note.hold * 48) / 48
+        }
+        return note
+      })
+    },
+  },
+  expand4to3: {
+    label: "Expand 4:3 (16th to 2th)",
+    keybinds: [],
+    disabled: app => app.chartManager.selection.notes.length == 0,
+    callback: app => {
+      const baseBeat = Math.min(
+        ...app.chartManager.selection.notes.map(note => note.beat)
+      )
+      app.chartManager.modifySelection(note => {
+        note.beat = ((note.beat - baseBeat) * 4) / 3 + baseBeat
+        note.beat = Math.round(note.beat * 48) / 48
+        if (isHoldNote(note)) {
+          note.hold *= 4 / 3
+          note.hold = Math.round(note.hold * 48) / 48
+        }
+        return note
+      })
+    },
+  },
+  compress1to2: {
+    label: "Compress 1:2 (4th to 8th)",
+    keybinds: [],
+    disabled: app => app.chartManager.selection.notes.length == 0,
+    callback: app => {
+      const baseBeat = Math.min(
+        ...app.chartManager.selection.notes.map(note => note.beat)
+      )
+      app.chartManager.modifySelection(note => {
+        note.beat = (note.beat - baseBeat) / 2 + baseBeat
+        note.beat = Math.round(note.beat * 48) / 48
+        if (isHoldNote(note)) {
+          note.hold /= 2
+          note.hold = Math.round(note.hold * 48) / 48
+        }
+        return note
+      })
+    },
+  },
+  compress2to3: {
+    label: "Compress 2:3 (8th to 12th)",
+    keybinds: [],
+    disabled: app => app.chartManager.selection.notes.length == 0,
+    callback: app => {
+      const baseBeat = Math.min(
+        ...app.chartManager.selection.notes.map(note => note.beat)
+      )
+      app.chartManager.modifySelection(note => {
+        note.beat = (note.beat - baseBeat) / 1.5 + baseBeat
+        note.beat = Math.round(note.beat * 48) / 48
+        if (isHoldNote(note)) {
+          note.hold /= 1.5
+          note.hold = Math.round(note.hold * 48) / 48
+        }
+        return note
+      })
+    },
+  },
+  compress3to4: {
+    label: "Compress 3:4 (12th to 16th)",
+    keybinds: [],
+    disabled: app => app.chartManager.selection.notes.length == 0,
+    callback: app => {
+      const baseBeat = Math.min(
+        ...app.chartManager.selection.notes.map(note => note.beat)
+      )
+      app.chartManager.modifySelection(note => {
+        note.beat = (note.beat - baseBeat) * 0.75 + baseBeat
+        note.beat = Math.round(note.beat * 48) / 48
+        if (isHoldNote(note)) {
+          note.hold *= 0.75
+          note.hold = Math.round(note.hold * 48) / 48
+        }
+        return note
+      })
     },
   },
 }

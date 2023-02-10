@@ -48,6 +48,8 @@ export class InfoWidget extends Widget {
   private lastType = ""
   private hoverType?: string
 
+  private lastStatsUpdate = 0
+
   constructor(manager: WidgetManager) {
     super(manager)
     this.addChild(this.background)
@@ -264,7 +266,7 @@ export class InfoWidget extends Widget {
 
     this.dropdownItems.mask = this.dropdownMask
 
-    EventHandler.on("chartModified", () => {
+    EventHandler.on("chartModifiedAfter", () => {
       if (!this.manager.chartManager.chart) return
       const stats = this.manager.chartManager.chart.getNotedataStats().counts
       for (const type in stats) {
@@ -323,7 +325,11 @@ export class InfoWidget extends Widget {
 
     const renderStats = this.texts.getChildByName<BitmapText>("RStats")
     renderStats.visible = Options.debug.renderingStats
-    if (Options.debug.renderingStats) {
+    if (
+      Options.debug.renderingStats &&
+      Date.now() - this.lastStatsUpdate > 1000
+    ) {
+      this.lastStatsUpdate = Date.now()
       renderStats.text =
         getFPS() + " FPS\n" + getTPS() + " TPS\n" + getMemoryString() + "\n"
       if (Options.debug.showTimers) {

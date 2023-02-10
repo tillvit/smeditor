@@ -64,7 +64,7 @@ export class SelectionNoteContainer extends Container {
         note,
         beat
       )
-      if (endSearch) break
+      if (endSearch) continue
       if (outOfBounds) continue
 
       const arrow = this.getNote(note)

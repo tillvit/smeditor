@@ -65,7 +65,7 @@ export class NoteLayoutWidget extends Widget {
       this.queued = false
       this.populate()
     })
-    EventHandler.on("chartModified", () => {
+    EventHandler.on("chartModifiedAfter", () => {
       if (!this.queued) this.populate()
       this.queued = true
     })

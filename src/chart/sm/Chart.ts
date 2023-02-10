@@ -168,6 +168,20 @@ export class Chart {
     return computedNote
   }
 
+  addNotes(notes: PartialNotedataEntry[]): NotedataEntry[] {
+    const computedNotes = notes.map(note => {
+      note.beat = Math.round(note.beat * 48) / 48
+      if (isHoldNote(note)) note.hold = Math.round(note.hold * 48) / 48
+      const computedNote = this.computeNote(note)
+      let index = bsearch(this.notedata, note.beat, a => a.beat) + 1
+      if (index >= 1 && this.notedata[index - 1].beat > note.beat) index--
+      this.notedata.splice(index, 0, computedNote)
+      return computedNote
+    })
+    EventHandler.emit("chartModified")
+    return computedNotes
+  }
+
   computeNote(note: PartialNotedataEntry): NotedataEntry {
     return Object.assign(note, {
       warped: this.timingData.isBeatWarped(note.beat),
@@ -192,6 +206,19 @@ export class Chart {
     const removedNote = this.notedata.splice(i, 1)
     EventHandler.emit("chartModified")
     return removedNote[0]
+  }
+
+  removeNotes(notes: PartialNotedataEntry[]): NotedataEntry[] {
+    const computedNotes = notes
+      .map(note => {
+        const i = this.getNoteIndex(note)
+        if (i == -1) return
+        const removedNote = this.notedata.splice(i, 1)
+        return removedNote[0]
+      })
+      .filter(note => note != undefined)
+    EventHandler.emit("chartModified")
+    return computedNotes as NotedataEntry[]
   }
 
   setNotedata(notedata: Notedata) {

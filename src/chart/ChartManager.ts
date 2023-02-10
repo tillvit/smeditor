@@ -219,9 +219,7 @@ export class ChartManager {
     this.app.ticker.add(() => {
       this.widgetManager.update()
       if (!this.sm || !this.chart || !this.chartView) return
-      TimerStats.time("ChartRenderer Update Time")
       this.chartView?.renderThis()
-      TimerStats.endTime("ChartRenderer Update Time")
     })
 
     setInterval(() => {
@@ -300,6 +298,7 @@ export class ChartManager {
     EventHandler.on("chartModified", () => {
       if (this.chart) {
         this.chart.recalculateStats()
+        EventHandler.emit("chartModifiedAfter")
       }
     })
 
@@ -514,6 +513,7 @@ export class ChartManager {
     this.chartView?.destroy({ children: true })
     this.chartView?.removeChildren()
 
+    this.clearSelection()
     this.chart = chart
     this.beat = this.chart.getBeat(this.time)
     ActionHistory.instance.reset()
@@ -950,7 +950,7 @@ export class ChartManager {
     this.chart.gameType.gameLogic.keyUp(this, col)
   }
 
-  save() {
+  async save() {
     if (!this.sm) return
     if (!ActionHistory.instance.isDirty()) {
       WaterfallManager.create("Saved")
@@ -959,10 +959,17 @@ export class ChartManager {
     const path_arr = this.sm_path.split("/")
     const name = path_arr.pop()!.split(".").slice(0, -1).join(".")
     const path = path_arr.join("/")
-    if (!this.sm.usesSplitTiming()) {
+    if (
+      !this.sm.usesSplitTiming() &&
+      (await FileHandler.getFileHandle(path + "/" + name + ".sm"))
+    ) {
       FileHandler.writeFile(path + "/" + name + ".sm", this.sm.serialize("sm"))
     }
-    FileHandler.writeFile(path + "/" + name + ".ssc", this.sm.serialize("ssc"))
+    if (await FileHandler.getFileHandle(path + "/" + name + ".ssc"))
+      FileHandler.writeFile(
+        path + "/" + name + ".ssc",
+        this.sm.serialize("ssc")
+      )
     if (this.sm.usesSplitTiming()) {
       WaterfallManager.create("Saved. No SM file since split timing was used.")
     } else {
@@ -1038,5 +1045,56 @@ export class ChartManager {
         .forEach(note => this.addNoteToSelection(note))
       return
     }
+  }
+
+  modifySelection(modify: (note: NotedataEntry) => PartialNotedataEntry) {
+    const removedNotes = this.selection.notes
+    const newNotes = structuredClone(this.selection.notes).map(modify).sort()
+    if (newNotes.length == 0) return
+    let startIndex = bsearch(
+      this.chart!.notedata,
+      newNotes[0].beat,
+      note => note.beat
+    )
+    const conflictingNotes: NotedataEntry[] = []
+    for (const newNote of newNotes) {
+      let latestNoteIndex = startIndex
+      const isHold = isHoldNote(newNote)
+      while (
+        this.chart!.notedata[startIndex] &&
+        this.chart!.notedata[startIndex].beat <=
+          newNote.beat + (isHold ? newNote.hold : 0)
+      ) {
+        const note = this.chart!.notedata[startIndex]
+        startIndex++
+        if (note.beat < newNote.beat) latestNoteIndex = startIndex
+        if (removedNotes.includes(note)) continue
+        if (note.col != newNote.col) continue
+        console.log("p")
+        if (note.beat == newNote.beat) {
+          conflictingNotes.push(note)
+        }
+        if (
+          isHold &&
+          note.beat > newNote.beat &&
+          note.beat <= newNote.beat + newNote.hold
+        ) {
+          conflictingNotes.push(note)
+        }
+      }
+      startIndex = latestNoteIndex
+    }
+
+    this.app.actionHistory.run({
+      action: () => {
+        this.chart!.removeNotes(removedNotes.concat(conflictingNotes))
+        this.selection.notes = this.chart!.addNotes(newNotes)
+      },
+      undo: () => {
+        this.chart!.removeNotes(newNotes)
+        this.chart!.addNotes(conflictingNotes)
+        this.selection.notes = this.chart!.addNotes(removedNotes)
+      },
+    })
   }
 }

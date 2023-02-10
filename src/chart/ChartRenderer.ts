@@ -98,10 +98,22 @@ export class ChartRenderer extends Container {
         )
       }
     }
+
+    let selectionSpeed = 0
+    const tickHandler = () => {
+      if (!this.chartManager.selection.shift && !this.selectionBounds) return
+      this.chartManager.setBeat(
+        Math.max(0, this.chartManager.getBeat() + selectionSpeed)
+      )
+    }
+
+    this.chartManager.app.ticker.add(tickHandler)
+
     window.addEventListener("keydown", keyHandler)
     this.on("destroyed", () => {
       window.removeEventListener("keydown", keyHandler)
       this.removeAllListeners()
+      this.chartManager.app.ticker.remove(tickHandler)
     })
 
     this.on("mousedown", event => {
@@ -149,6 +161,12 @@ export class ChartRenderer extends Container {
       }
       if (this.selectionBounds) {
         this.selectionBounds.end = this.toLocal(event.global)
+      }
+      selectionSpeed =
+        Math.max(0, this.lastMousePos.y - this.getLowerBound() + 100) / 600
+      if (this.lastMousePos.y < 0) {
+        selectionSpeed =
+          Math.min(0, this.lastMousePos.y - this.getUpperBound() - 100) / 600
       }
     })
 

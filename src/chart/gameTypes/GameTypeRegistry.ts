@@ -14,6 +14,10 @@ export interface GameType {
   parser: NotedataParser
   notefield: new (renderer: ChartRenderer) => Notefield
   editNoteTypes: string[]
+  flipColumns: {
+    horizontal: number[]
+    vertical: number[]
+  }
 }
 
 export class GameTypeRegistry {
@@ -42,6 +46,10 @@ GameTypeRegistry.register({
   parser: new BasicNotedataParser(),
   notefield: DanceNotefield,
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [3, 1, 2, 0],
+    vertical: [0, 2, 1, 3],
+  },
 })
 
 GameTypeRegistry.register({
@@ -52,6 +60,10 @@ GameTypeRegistry.register({
   parser: new BasicNotedataParser(),
   notefield: DanceNotefield,
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [3, 1, 2, 0, 7, 5, 6, 4],
+    vertical: [0, 2, 1, 3, 4, 6, 5, 7],
+  },
 })
 
 GameTypeRegistry.register({
@@ -62,6 +74,10 @@ GameTypeRegistry.register({
   parser: new BasicNotedataParser(),
   notefield: DanceNotefield,
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [3, 1, 2, 0, 7, 5, 6, 4],
+    vertical: [0, 2, 1, 3, 4, 6, 5, 7],
+  },
 })
 
 GameTypeRegistry.register({
@@ -72,6 +88,10 @@ GameTypeRegistry.register({
   parser: new BasicNotedataParser(),
   notefield: DanceNotefield,
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [5, 4, 2, 3, 1, 0],
+    vertical: [0, 1, 3, 2, 4, 5],
+  },
 })
 
 GameTypeRegistry.register({
@@ -82,6 +102,10 @@ GameTypeRegistry.register({
   parser: new BasicNotedataParser(),
   notefield: DanceNotefield,
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [5, 4, 2, 3, 1, 0, 11, 10, 8, 9, 7, 6],
+    vertical: [0, 1, 3, 2, 4, 5, 6, 7, 9, 8, 10, 11],
+  },
 })
 
 GameTypeRegistry.register({
@@ -92,4 +116,8 @@ GameTypeRegistry.register({
   parser: new BasicNotedataParser(),
   notefield: DanceNotefield,
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [2, 1, 0],
+    vertical: [0, 1, 2],
+  },
 })

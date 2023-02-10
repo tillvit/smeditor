@@ -166,11 +166,16 @@ export class NoteContainer extends Container {
     newChild.x = this.notefield.getColX(note.col)
     newChild.interactive = true
     let lastTriedColumnShift = 0
+    let initalPosX = 0
+    let initalPosY = 0
+    let movedNote: NotedataEntry | undefined
+
     const moveHandler = (event: FederatedMouseEvent) => {
+      const note = movedNote!
       const position = this.renderer.toLocal(event.global)
       if (
-        Math.abs(position.y - newChild!.y!) ** 2 +
-          Math.abs(position.x - newChild!.x!) ** 2 <
+        Math.abs(position.y - initalPosY) ** 2 +
+          Math.abs(position.x - initalPosX) ** 2 <
         32 * 32
       ) {
         if (this.renderer.chartManager.selection.shift) {
@@ -234,10 +239,22 @@ export class NoteContainer extends Container {
           this.renderer.chartManager.clearSelection()
         this.renderer.chartManager.addNoteToSelection(newChild!.note!)
       }
+      initalPosX = newChild!.x!
+      initalPosY = newChild!.y!
+      movedNote = newChild!.note!
       this.renderer.on("mousemove", moveHandler)
       const mouseUp = () => {
         this.renderer.off("mousemove", moveHandler)
         this.renderer.off("mouseup", mouseUp)
+        if (
+          (this.renderer.chartManager.selection.shift?.beatShift ?? 0) != 0 ||
+          (this.renderer.chartManager.selection.shift?.columnShift ?? 0) != 0
+        )
+          this.renderer.chartManager.modifySelection(note => {
+            note.beat += this.renderer.chartManager.selection.shift!.beatShift
+            note.col += this.renderer.chartManager.selection.shift!.columnShift
+            return note
+          })
         this.renderer.chartManager.selection.shift = undefined
       }
       this.renderer.on("mouseup", mouseUp)
