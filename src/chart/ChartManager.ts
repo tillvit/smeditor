@@ -54,6 +54,7 @@ export enum EditMode {
   View = "View Mode",
   Edit = "Edit Mode",
   Play = "Play Mode",
+  Record = "Record Mode",
 }
 
 export class ChartManager {
@@ -235,9 +236,28 @@ export class ChartManager {
               this.holdEditing[col]!.type == "mouse"
             )
               continue
+            let tapBeat = this.beat
+            if (this.mode == EditMode.Record) {
+              tapBeat = this.chart.getBeat(this.time + Options.play.offset)
+            }
             const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-            const snapBeat = Math.round(this.beat / snap) * snap
-            this.editHoldBeat(col, snapBeat, false)
+            const snapBeat = Math.round(tapBeat / snap) * snap
+            const hold = this.holdEditing[col]!
+            const holdLength =
+              Math.max(
+                0,
+                Math.round(Math.max(this.beat, hold.endBeat) * 48) / 48
+              ) -
+              Math.max(
+                0,
+                Math.round(Math.min(this.beat, hold.startBeat) * 48) / 48
+              )
+            console.log(holdLength)
+            if (
+              (holdLength * 60) / this.chart.timingData.getBPM(this.beat) >
+              0.3
+            )
+              this.editHoldBeat(col, snapBeat, false)
           }
         }
       }
@@ -382,7 +402,7 @@ export class ChartManager {
     window.addEventListener(
       "keydown",
       (event: KeyboardEvent) => {
-        if (this.mode != EditMode.Play) return
+        if (this.mode != EditMode.Play && this.mode != EditMode.Record) return
         if (event.key == "Escape") {
           this.setMode(this.lastMode)
           this.songAudio.pause()
@@ -525,7 +545,8 @@ export class ChartManager {
     this.chartView = new ChartRenderer(this)
     this.chartView.x = this.app.renderer.screen.width / 2
     this.chartView.y = this.app.renderer.screen.height / 2
-    if (this.mode == EditMode.Play) this.setMode(this.lastMode)
+    if (this.mode == EditMode.Play || this.mode == EditMode.Record)
+      this.setMode(this.lastMode)
 
     if (this.chart.getMusicPath() != this.lastSong) {
       this.lastSong = this.chart.getMusicPath()
@@ -910,7 +931,7 @@ export class ChartManager {
   setMode(mode: EditMode) {
     if (!this.chart || !this.chartView) return
     if (this.mode == mode) {
-      if (mode == EditMode.Play) {
+      if (mode == EditMode.Play || mode == EditMode.Record) {
         this.setMode(this.lastMode)
         this.songAudio.pause()
       }
@@ -938,16 +959,29 @@ export class ChartManager {
       this.chartView.endPlay()
       this.chart?.notedata.forEach(note => (note.gameplay = undefined))
     }
+    if (this.mode == EditMode.Record) {
+      this.songAudio.seek(Math.max(0, this.time) - 1)
+      this.songAudio.play()
+    }
   }
 
   judgeCol(col: number) {
-    if (!this.chart || !this.chartView || this.mode != EditMode.Play) return
-    this.chart.gameType.gameLogic.keyDown(this, col)
+    if (!this.chart || !this.chartView) return
+    if (this.mode == EditMode.Play)
+      this.chart.gameType.gameLogic.keyDown(this, col)
+    else if (this.mode == EditMode.Record) {
+      const tapBeat = this.chart.getBeat(this.time + Options.play.offset)
+      const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
+      const snapBeat = Math.round(tapBeat / snap) * snap
+      this.setNote(col, "key", snapBeat)
+    }
   }
 
   judgeColUp(col: number) {
-    if (!this.chart || !this.chartView || this.mode != EditMode.Play) return
-    this.chart.gameType.gameLogic.keyUp(this, col)
+    if (!this.chart || !this.chartView) return
+    if (this.mode == EditMode.Play)
+      this.chart.gameType.gameLogic.keyUp(this, col)
+    else if (this.mode == EditMode.Record) this.endEditing(col)
   }
 
   async save() {
@@ -1070,7 +1104,6 @@ export class ChartManager {
         if (note.beat < newNote.beat) latestNoteIndex = startIndex
         if (removedNotes.includes(note)) continue
         if (note.col != newNote.col) continue
-        console.log("p")
         if (note.beat == newNote.beat) {
           conflictingNotes.push(note)
         }
@@ -1093,6 +1126,18 @@ export class ChartManager {
       undo: () => {
         this.chart!.removeNotes(newNotes)
         this.chart!.addNotes(conflictingNotes)
+        this.selection.notes = this.chart!.addNotes(removedNotes)
+      },
+    })
+  }
+
+  deleteSelection() {
+    const removedNotes = this.selection.notes
+    this.app.actionHistory.run({
+      action: () => {
+        this.chart!.removeNotes(removedNotes)
+      },
+      undo: () => {
         this.selection.notes = this.chart!.addNotes(removedNotes)
       },
     })

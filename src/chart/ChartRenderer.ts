@@ -102,9 +102,15 @@ export class ChartRenderer extends Container {
     let selectionSpeed = 0
     const tickHandler = () => {
       if (!this.chartManager.selection.shift && !this.selectionBounds) return
+      const pos = this.getYPos(
+        Math.max(0, this.chartManager.getBeat() + selectionSpeed)
+      )
       this.chartManager.setBeat(
         Math.max(0, this.chartManager.getBeat() + selectionSpeed)
       )
+      if (this.selectionBounds)
+        this.selectionBounds.start.y +=
+          Options.chart.receptorYPos / Options.chart.zoom - pos
     }
 
     this.chartManager.app.ticker.add(tickHandler)
@@ -177,6 +183,7 @@ export class ChartRenderer extends Container {
       }
       this.chartManager.endDragSelection()
       this.selectionBounds = undefined
+      selectionSpeed = 0
     })
   }
 
@@ -300,7 +307,10 @@ export class ChartRenderer extends Container {
 
   getTimeWithOffset(): number {
     let time = this.chartManager.getTime()
-    if (this.chartManager.getMode() == EditMode.Play) {
+    if (
+      this.chartManager.getMode() == EditMode.Play ||
+      this.chartManager.getMode() == EditMode.Record
+    ) {
       time += Options.play.offset
     }
     return time
@@ -308,7 +318,10 @@ export class ChartRenderer extends Container {
 
   getBeatWithOffset(): number {
     let beat = this.chartManager.getBeat()
-    if (this.chartManager.getMode() == EditMode.Play) {
+    if (
+      this.chartManager.getMode() == EditMode.Play ||
+      this.chartManager.getMode() == EditMode.Record
+    ) {
       beat = this.chart.getBeat(this.getTimeWithOffset())
     }
     return beat

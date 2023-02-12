@@ -237,6 +237,13 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         type: "seperator",
       },
       {
+        type: "selection",
+        id: "recordMode",
+      },
+      {
+        type: "seperator",
+      },
+      {
         type: "checkbox",
         id: "hideWarpedArrows",
         checked: () => Options.chart.hideWarpedArrows,
@@ -245,6 +252,30 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         type: "checkbox",
         id: "doSpeedChanges",
         checked: () => Options.chart.doSpeedChanges,
+      },
+    ],
+  },
+  chart: {
+    type: "menu",
+    title: "Chart",
+    options: [
+      {
+        type: "selection",
+        id: "openChart",
+      },
+      {
+        type: "seperator",
+      },
+      {
+        type: "selection",
+        id: "songProperties",
+      },
+      {
+        type: "seperator",
+      },
+      {
+        type: "selection",
+        id: "timingData",
       },
     ],
   },
@@ -331,30 +362,6 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       {
         type: "selection",
         id: "selectAll",
-      },
-    ],
-  },
-  chart: {
-    type: "menu",
-    title: "Chart",
-    options: [
-      {
-        type: "selection",
-        id: "openChart",
-      },
-      {
-        type: "seperator",
-      },
-      {
-        type: "selection",
-        id: "songProperties",
-      },
-      {
-        type: "seperator",
-      },
-      {
-        type: "selection",
-        id: "timingData",
       },
     ],
   },

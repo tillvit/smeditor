@@ -35,7 +35,8 @@ export class Keybinds {
       const key = Keybinds.getKeyNameFromCode(e.code)
 
       if (
-        app.chartManager.getMode() == EditMode.Play &&
+        (app.chartManager.getMode() == EditMode.Play ||
+          app.chartManager.getMode() == EditMode.Record) &&
         app.chartManager.chart?.gameType
       ) {
         const kbds =
@@ -92,7 +93,8 @@ export class Keybinds {
       const key = Keybinds.getKeyNameFromCode(e.code)
 
       if (
-        app.chartManager.getMode() == EditMode.Play &&
+        (app.chartManager.getMode() == EditMode.Play ||
+          app.chartManager.getMode() == EditMode.Record) &&
         app.chartManager.chart?.gameType
       ) {
         const kbds =
