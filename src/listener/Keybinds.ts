@@ -67,7 +67,8 @@ export class Keybinds {
         return false
       })
       if (matches.length > 0) {
-        e.preventDefault()
+        if (matches.every(match => match.preventDefault != false))
+          e.preventDefault()
         if (app.windowManager.isBlocked()) return
         for (const match of matches) {
           let disabled = match.disabled
@@ -125,7 +126,8 @@ export class Keybinds {
         return false
       })
       if (matches.length > 0) {
-        e.preventDefault()
+        if (matches.every(match => match.preventDefault != false))
+          e.preventDefault()
         for (const match of matches) {
           let disabled = match.disabled
           if (disabled instanceof Function) disabled = disabled(this.app)

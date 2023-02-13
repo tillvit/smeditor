@@ -101,7 +101,11 @@ export class ChartRenderer extends Container {
 
     let selectionSpeed = 0
     const tickHandler = () => {
-      if (!this.chartManager.selection.shift && !this.selectionBounds) return
+      if (
+        (!this.chartManager.selection.shift && !this.selectionBounds) ||
+        selectionSpeed == 0
+      )
+        return
       const pos = this.getYPos(
         Math.max(0, this.chartManager.getBeat() + selectionSpeed)
       )

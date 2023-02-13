@@ -11,7 +11,15 @@ import { EventHandler } from "../util/EventHandler"
 import { FileHandler } from "../util/FileHandler"
 import { Options } from "../util/Options"
 import { TimerStats } from "../util/TimerStats"
-import { basename, bsearch, dirname, extname, tpsUpdate } from "../util/Util"
+import {
+  basename,
+  bsearch,
+  decodeNotes,
+  dirname,
+  encodeNotes,
+  extname,
+  tpsUpdate,
+} from "../util/Util"
 import { ChartListWindow } from "../window/ChartListWindow"
 import { ConfimationWindow } from "../window/ConfirmationWindow"
 import { ChartAudio } from "./audio/ChartAudio"
@@ -107,6 +115,8 @@ export class ChartManager {
   private mode: EditMode = EditMode.Edit
   private lastMode: EditMode = EditMode.Edit
 
+  private virtualClipboard = ""
+
   startRegion?: number
   endRegion?: number
 
@@ -114,6 +124,40 @@ export class ChartManager {
 
   constructor(app: App) {
     this.app = app
+
+    document.addEventListener(
+      "cut",
+      e => {
+        if (this.mode != EditMode.Edit) return
+        const data = this.copyNotes()
+        if (data) e.clipboardData?.setData("text/plain", data)
+        this.deleteSelection()
+        e.preventDefault()
+      },
+      true
+    )
+    document.addEventListener(
+      "copy",
+      e => {
+        if (this.mode != EditMode.Edit) return
+        const data = this.copyNotes()
+        if (data) e.clipboardData?.setData("text/plain", data)
+        e.preventDefault()
+        e.stopImmediatePropagation()
+      },
+      true
+    )
+    document.addEventListener(
+      "paste",
+      e => {
+        if (this.mode != EditMode.Edit) return
+        const clipboard = e.clipboardData?.getData("text/plain")
+        if (clipboard) this.pasteNotes(clipboard)
+        e.preventDefault()
+        e.stopImmediatePropagation()
+      },
+      true
+    )
 
     app.view.addEventListener?.(
       "wheel",
@@ -134,7 +178,7 @@ export class ChartManager {
               )
           )
         } else {
-          if (this.mode == EditMode.Play) return
+          if (this.mode == EditMode.Play || this.mode == EditMode.Record) return
           let newbeat = this.beat
           const snap = Options.chart.snap
           const speed = Options.chart.speed * (Options.chart.reverse ? -1 : 1)
@@ -955,13 +999,12 @@ export class ChartManager {
       this.widgetManager.startPlay()
       this.songAudio.seek(Math.max(0, this.time) - 1)
       this.songAudio.play()
+    } else if (this.mode == EditMode.Record) {
+      this.songAudio.seek(Math.max(0, this.time) - 1)
+      this.songAudio.play()
     } else {
       this.chartView.endPlay()
       this.chart?.notedata.forEach(note => (note.gameplay = undefined))
-    }
-    if (this.mode == EditMode.Record) {
-      this.songAudio.seek(Math.max(0, this.time) - 1)
-      this.songAudio.play()
     }
   }
 
@@ -1083,7 +1126,12 @@ export class ChartManager {
 
   modifySelection(modify: (note: NotedataEntry) => PartialNotedataEntry) {
     const removedNotes = this.selection.notes
-    const newNotes = structuredClone(this.selection.notes).map(modify).sort()
+    const newNotes = structuredClone(this.selection.notes)
+      .map(modify)
+      .sort((a, b) => {
+        if (a.beat == b.beat) return a.col - b.col
+        return a.beat - b.beat
+      })
     if (newNotes.length == 0) return
     let startIndex = bsearch(
       this.chart!.notedata,
@@ -1132,6 +1180,7 @@ export class ChartManager {
   }
 
   deleteSelection() {
+    if (this.selection.notes.length == 0) return
     const removedNotes = this.selection.notes
     this.app.actionHistory.run({
       action: () => {
@@ -1141,5 +1190,79 @@ export class ChartManager {
         this.selection.notes = this.chart!.addNotes(removedNotes)
       },
     })
+  }
+
+  pasteNotes(data: string) {
+    const notes = decodeNotes(data) ?? decodeNotes(this.virtualClipboard)
+    if (!notes) return
+    if (notes.length == 0) return
+    notes
+      .map(note => {
+        note.beat += this.beat
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+      .sort((a, b) => {
+        if (a.beat == b.beat) return a.col - b.col
+        return a.beat - b.beat
+      })
+    let startIndex = bsearch(
+      this.chart!.notedata,
+      notes[0].beat,
+      note => note.beat
+    )
+    const conflictingNotes: NotedataEntry[] = []
+    for (const newNote of notes) {
+      let latestNoteIndex = startIndex
+      const isHold = isHoldNote(newNote)
+      while (
+        this.chart!.notedata[startIndex] &&
+        this.chart!.notedata[startIndex].beat <=
+          newNote.beat + (isHold ? newNote.hold : 0)
+      ) {
+        const note = this.chart!.notedata[startIndex]
+        startIndex++
+        if (note.beat < newNote.beat) latestNoteIndex = startIndex
+        if (note.col != newNote.col) continue
+        if (note.beat == newNote.beat) {
+          conflictingNotes.push(note)
+        }
+        if (
+          isHold &&
+          note.beat > newNote.beat &&
+          note.beat <= newNote.beat + newNote.hold
+        ) {
+          conflictingNotes.push(note)
+        }
+      }
+      startIndex = latestNoteIndex
+    }
+    this.app.actionHistory.run({
+      action: () => {
+        this.chart!.removeNotes(conflictingNotes)
+        this.selection.notes = this.chart!.addNotes(notes)
+      },
+      undo: () => {
+        this.chart!.removeNotes(notes)
+        this.chart!.addNotes(conflictingNotes)
+      },
+    })
+  }
+
+  copyNotes(): string | undefined {
+    if (this.selection.notes.length == 0) return
+    const firstBeat = Math.min(...this.selection.notes.map(note => note.beat))
+    const notes = structuredClone(this.selection.notes)
+      .map(note => {
+        note.beat -= firstBeat
+        return note
+      })
+      .sort((a, b) => {
+        if (a.beat == b.beat) return a.col - b.col
+        return a.beat - b.beat
+      })
+    const encoded = encodeNotes(notes)
+    this.virtualClipboard = encoded
+    return encoded
   }
 }

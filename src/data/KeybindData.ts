@@ -16,6 +16,7 @@ export interface Keybind {
   keybinds: KeyCombo[]
   disabled: boolean | ((app: App) => boolean)
   disableRepeat?: boolean
+  preventDefault?: boolean
   callback: (app: App) => void
   callbackKeyUp?: (app: App) => void
 }
@@ -574,8 +575,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Holds to rolls",
     keybinds: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 &&
-      app.chartManager.getMode() == EditMode.Edit,
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.modifySelection(note => {
         if (note.type == "Hold") note.type = "Roll"
@@ -587,8 +588,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Holds/rolls to taps",
     keybinds: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 &&
-      app.chartManager.getMode() == EditMode.Edit,
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.modifySelection(note => {
         if (note.type == "Hold" || note.type == "Roll") note.type = "Tap"
@@ -600,8 +601,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Notes to mines",
     keybinds: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 &&
-      app.chartManager.getMode() == EditMode.Edit,
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.modifySelection(note => {
         note.type = "Mine"
@@ -613,8 +614,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Taps to fakes",
     keybinds: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 &&
-      app.chartManager.getMode() == EditMode.Edit,
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.modifySelection(note => {
         if (note.type == "Tap") note.type = "Fake"
@@ -626,8 +627,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Horizontally",
     keybinds: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 &&
-      app.chartManager.getMode() == EditMode.Edit,
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.modifySelection(note => {
         note.col =
@@ -640,8 +641,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Vertically",
     keybinds: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 &&
-      app.chartManager.getMode() == EditMode.Edit,
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.modifySelection(note => {
         note.col =
@@ -654,8 +655,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Both",
     keybinds: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 &&
-      app.chartManager.getMode() == EditMode.Edit,
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.modifySelection(note => {
         note.col =
@@ -678,8 +679,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Expand 2:1 (8th to 4th)",
     keybinds: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 &&
-      app.chartManager.getMode() == EditMode.Edit,
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       const baseBeat = Math.min(
         ...app.chartManager.selection.notes.map(note => note.beat)
@@ -699,8 +700,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Expand 3:2 (12th to 8th)",
     keybinds: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 &&
-      app.chartManager.getMode() == EditMode.Edit,
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       const baseBeat = Math.min(
         ...app.chartManager.selection.notes.map(note => note.beat)
@@ -720,8 +721,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Expand 4:3 (16th to 2th)",
     keybinds: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 &&
-      app.chartManager.getMode() == EditMode.Edit,
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       const baseBeat = Math.min(
         ...app.chartManager.selection.notes.map(note => note.beat)
@@ -741,8 +742,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Compress 1:2 (4th to 8th)",
     keybinds: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 &&
-      app.chartManager.getMode() == EditMode.Edit,
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       const baseBeat = Math.min(
         ...app.chartManager.selection.notes.map(note => note.beat)
@@ -762,8 +763,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Compress 2:3 (8th to 12th)",
     keybinds: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 &&
-      app.chartManager.getMode() == EditMode.Edit,
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       const baseBeat = Math.min(
         ...app.chartManager.selection.notes.map(note => note.beat)
@@ -783,8 +784,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Compress 3:4 (12th to 16th)",
     keybinds: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 &&
-      app.chartManager.getMode() == EditMode.Edit,
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       const baseBeat = Math.min(
         ...app.chartManager.selection.notes.map(note => note.beat)
@@ -807,8 +808,45 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       { key: "Delete", mods: [] },
     ],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 &&
-      app.chartManager.getMode() == EditMode.Edit,
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => app.chartManager.deleteSelection(),
+  },
+  paste: {
+    label: "Paste",
+    keybinds: [{ key: "V", mods: [DEF_MOD] }],
+    preventDefault: false,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: async app => {
+      const data = await navigator.clipboard.readText()
+      app.chartManager.pasteNotes(data)
+    },
+  },
+  copy: {
+    label: "Copy",
+    keybinds: [{ key: "C", mods: [DEF_MOD] }],
+    preventDefault: false,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: async app => {
+      const data = app.chartManager.copyNotes()
+      if (data) await navigator.clipboard.writeText(data)
+    },
+  },
+  cut: {
+    label: "Cut",
+    keybinds: [{ key: "X", mods: [DEF_MOD] }],
+    preventDefault: false,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: async app => {
+      const data = app.chartManager.copyNotes()
+      if (data) await navigator.clipboard.writeText(data)
+      app.chartManager.deleteSelection()
+    },
   },
 }

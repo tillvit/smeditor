@@ -67,6 +67,21 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
     options: [
       {
         type: "selection",
+        id: "cut",
+      },
+      {
+        type: "selection",
+        id: "copy",
+      },
+      {
+        type: "selection",
+        id: "paste",
+      },
+      {
+        type: "seperator",
+      },
+      {
+        type: "selection",
         id: "undo",
       },
       {

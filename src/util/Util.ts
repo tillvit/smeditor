@@ -1,5 +1,8 @@
+import { decode, encode } from "base85"
+import { Buffer } from "buffer"
 import { Parser } from "expr-eval"
 import { DisplayObject } from "pixi.js"
+import { isHoldNote, PartialNotedata } from "../chart/sm/NoteTypes"
 
 declare global {
   interface Performance {
@@ -314,4 +317,105 @@ const splitPathRe = /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^/]+?|)(\.[^./]*|))(?:[/]*)$/
 
 function posixSplitPath(filename: string) {
   return splitPathRe.exec(filename)!.slice(1)
+}
+
+export function unpackValue(bytes: number[]): number {
+  let total = 0
+  let numBytes = 0
+  let curByte = 129
+  while ((curByte & 0x80) != 0) {
+    const byte = bytes.shift()
+    if (!byte) break
+    total = total | ((byte & 0x7f) << (7 * numBytes++))
+    curByte = byte
+  }
+  return total
+}
+
+export function packValue(value: number): number[] {
+  const bytes = []
+  let finished = false
+  while (!finished) {
+    let byte = value & 0x7f
+    value = value >> 7
+    finished = value == 0
+    if (!finished) byte = byte | 0x80
+    bytes.push(byte)
+  }
+  return bytes
+}
+
+export function decodeNotes(data: string): PartialNotedata | undefined {
+  if (data.startsWith("ArrowVortex:notes:")) {
+    const decoded = decode("<~" + data.slice(18) + "~>", "ascii85")
+    if (decoded !== false) {
+      const data_arr = [...new Uint8Array(decoded.buffer)]
+      const pad = (4 - (data_arr.length % 4)) % 4
+      data_arr.push(...new Array(pad).fill(0))
+      if (data_arr.shift() != 0) return
+      const noteCount = unpackValue(data_arr)
+      const noteList: PartialNotedata = []
+      for (let i = 0; i < noteCount; i++) {
+        const header = data_arr.shift()
+        if (header == undefined) return
+        const col = header & 0x7f
+        if ((header & 0x80) != 0) {
+          const start = unpackValue(data_arr)
+          const end = unpackValue(data_arr)
+          const type = data_arr.shift()
+
+          if (type == undefined || type > 4) continue
+          const noteType = ["Hold", "Mine", "Roll", "Lift", "Fake"][type]
+          if (start == end) {
+            if (noteType == "Hold" || noteType == "Roll") continue
+            noteList.push({
+              type: noteType,
+              beat: start / 48,
+              col,
+            })
+          } else {
+            if (noteType == "Mine" || noteType == "Fake" || noteType == "Lift")
+              continue
+            noteList.push({
+              type: noteType,
+              beat: start / 48,
+              hold: (end - start) / 48,
+              col,
+            })
+          }
+        } else {
+          noteList.push({
+            type: "Tap",
+            beat: unpackValue(data_arr) / 48,
+            col,
+          })
+        }
+      }
+      return noteList
+    }
+  }
+}
+
+export function encodeNotes(notes: PartialNotedata): string {
+  const bytes = [0]
+  bytes.push(...packValue(notes.length))
+  for (const note of notes) {
+    if (note.type == "Tap") {
+      const start = Math.round(note.beat * 48)
+      bytes.push(note.col)
+      bytes.push(...packValue(start))
+    } else {
+      bytes.push(note.col + 0x80)
+      const start = Math.round(note.beat * 48)
+      let hold = 0
+      if (isHoldNote(note)) hold = note.hold
+      const end = Math.round(hold * 48) + start
+      bytes.push(...packValue(start))
+      bytes.push(...packValue(end))
+      bytes.push(["Hold", "Mine", "Roll", "Lift", "Fake"].indexOf(note.type))
+    }
+  }
+  return (
+    "ArrowVortex:notes:" + encode(Buffer.from(bytes), "ascii85").slice(2, -2)
+  )
 }
