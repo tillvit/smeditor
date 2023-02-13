@@ -128,6 +128,9 @@ export class ChartManager {
     document.addEventListener(
       "cut",
       e => {
+        if ((<HTMLElement>e.target).classList.contains("inlineEdit")) return
+        if (e.target instanceof HTMLTextAreaElement) return
+        if (e.target instanceof HTMLInputElement) return
         if (this.mode != EditMode.Edit) return
         const data = this.copyNotes()
         if (data) e.clipboardData?.setData("text/plain", data)
@@ -139,6 +142,9 @@ export class ChartManager {
     document.addEventListener(
       "copy",
       e => {
+        if ((<HTMLElement>e.target).classList.contains("inlineEdit")) return
+        if (e.target instanceof HTMLTextAreaElement) return
+        if (e.target instanceof HTMLInputElement) return
         if (this.mode != EditMode.Edit) return
         const data = this.copyNotes()
         if (data) e.clipboardData?.setData("text/plain", data)
@@ -150,6 +156,9 @@ export class ChartManager {
     document.addEventListener(
       "paste",
       e => {
+        if ((<HTMLElement>e.target).classList.contains("inlineEdit")) return
+        if (e.target instanceof HTMLTextAreaElement) return
+        if (e.target instanceof HTMLInputElement) return
         if (this.mode != EditMode.Edit) return
         const clipboard = e.clipboardData?.getData("text/plain")
         if (clipboard) this.pasteNotes(clipboard)
