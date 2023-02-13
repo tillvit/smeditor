@@ -91,9 +91,10 @@ export class BasicNotedataParser extends NotedataParser {
         for (let c = 0; c < row.length; c++) {
           const beat = measure_num * 4 + (row_index / rows.length) * 4
           let type = row[c]
-          if (type == "D" && row[c + 1] == "L") {
-            //why
-            type = "3"
+          if (type == "D" && (row[c + 1] == "L" || row[c + 1] == "M")) {
+            // lift holds / mineholds
+            if (row[c + 1] == "L") type = "3"
+            else type = "M"
             c++
           }
           if (type != "0" && type != "3") {

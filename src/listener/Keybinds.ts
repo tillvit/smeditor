@@ -35,7 +35,8 @@ export class Keybinds {
       const key = Keybinds.getKeyNameFromCode(e.code)
 
       if (
-        app.chartManager.getMode() == EditMode.Play &&
+        (app.chartManager.getMode() == EditMode.Play ||
+          app.chartManager.getMode() == EditMode.Record) &&
         app.chartManager.chart?.gameType
       ) {
         const kbds =
@@ -66,7 +67,8 @@ export class Keybinds {
         return false
       })
       if (matches.length > 0) {
-        e.preventDefault()
+        if (matches.every(match => match.preventDefault != false))
+          e.preventDefault()
         if (app.windowManager.isBlocked()) return
         for (const match of matches) {
           let disabled = match.disabled
@@ -92,7 +94,8 @@ export class Keybinds {
       const key = Keybinds.getKeyNameFromCode(e.code)
 
       if (
-        app.chartManager.getMode() == EditMode.Play &&
+        (app.chartManager.getMode() == EditMode.Play ||
+          app.chartManager.getMode() == EditMode.Record) &&
         app.chartManager.chart?.gameType
       ) {
         const kbds =
@@ -123,7 +126,8 @@ export class Keybinds {
         return false
       })
       if (matches.length > 0) {
-        e.preventDefault()
+        if (matches.every(match => match.preventDefault != false))
+          e.preventDefault()
         for (const match of matches) {
           let disabled = match.disabled
           if (disabled instanceof Function) disabled = disabled(this.app)

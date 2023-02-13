@@ -858,6 +858,7 @@ input.right {
   border-top-right-radius: 3px;
   border-bottom-right-radius: 3px;
   flex: 0;
+  height: 100%;
 }
 
 .spinner-btns button {

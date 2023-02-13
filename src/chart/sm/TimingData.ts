@@ -294,6 +294,7 @@ export class TimingData {
         return
       }
       const prevEvent = target.getTimingEventAtBeat(type, beat - 0.001)
+      if (prevEvent == event) return
       Object.assign(newEvent, properties)
       toDelete.push(event)
       if (!prevEvent || !this.isDuplicate(prevEvent, newEvent as TimingEvent)) {
@@ -703,6 +704,7 @@ export class TimingData {
     let props = [
       "BPMS",
       "STOPS",
+      "WARPS",
       "DELAYS",
       "SPEEDS",
       "SCROLLS",

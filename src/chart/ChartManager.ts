@@ -11,7 +11,15 @@ import { EventHandler } from "../util/EventHandler"
 import { FileHandler } from "../util/FileHandler"
 import { Options } from "../util/Options"
 import { TimerStats } from "../util/TimerStats"
-import { basename, bsearch, dirname, extname, tpsUpdate } from "../util/Util"
+import {
+  basename,
+  bsearch,
+  decodeNotes,
+  dirname,
+  encodeNotes,
+  extname,
+  tpsUpdate,
+} from "../util/Util"
 import { ChartListWindow } from "../window/ChartListWindow"
 import { ConfimationWindow } from "../window/ConfirmationWindow"
 import { ChartAudio } from "./audio/ChartAudio"
@@ -54,6 +62,7 @@ export enum EditMode {
   View = "View Mode",
   Edit = "Edit Mode",
   Play = "Play Mode",
+  Record = "Record Mode",
 }
 
 export class ChartManager {
@@ -106,6 +115,8 @@ export class ChartManager {
   private mode: EditMode = EditMode.Edit
   private lastMode: EditMode = EditMode.Edit
 
+  private virtualClipboard = ""
+
   startRegion?: number
   endRegion?: number
 
@@ -113,6 +124,40 @@ export class ChartManager {
 
   constructor(app: App) {
     this.app = app
+
+    document.addEventListener(
+      "cut",
+      e => {
+        if (this.mode != EditMode.Edit) return
+        const data = this.copyNotes()
+        if (data) e.clipboardData?.setData("text/plain", data)
+        this.deleteSelection()
+        e.preventDefault()
+      },
+      true
+    )
+    document.addEventListener(
+      "copy",
+      e => {
+        if (this.mode != EditMode.Edit) return
+        const data = this.copyNotes()
+        if (data) e.clipboardData?.setData("text/plain", data)
+        e.preventDefault()
+        e.stopImmediatePropagation()
+      },
+      true
+    )
+    document.addEventListener(
+      "paste",
+      e => {
+        if (this.mode != EditMode.Edit) return
+        const clipboard = e.clipboardData?.getData("text/plain")
+        if (clipboard) this.pasteNotes(clipboard)
+        e.preventDefault()
+        e.stopImmediatePropagation()
+      },
+      true
+    )
 
     app.view.addEventListener?.(
       "wheel",
@@ -133,7 +178,7 @@ export class ChartManager {
               )
           )
         } else {
-          if (this.mode == EditMode.Play) return
+          if (this.mode == EditMode.Play || this.mode == EditMode.Record) return
           let newbeat = this.beat
           const snap = Options.chart.snap
           const speed = Options.chart.speed * (Options.chart.reverse ? -1 : 1)
@@ -219,9 +264,7 @@ export class ChartManager {
     this.app.ticker.add(() => {
       this.widgetManager.update()
       if (!this.sm || !this.chart || !this.chartView) return
-      TimerStats.time("ChartRenderer Update Time")
       this.chartView?.renderThis()
-      TimerStats.endTime("ChartRenderer Update Time")
     })
 
     setInterval(() => {
@@ -237,9 +280,28 @@ export class ChartManager {
               this.holdEditing[col]!.type == "mouse"
             )
               continue
+            let tapBeat = this.beat
+            if (this.mode == EditMode.Record) {
+              tapBeat = this.chart.getBeat(this.time + Options.play.offset)
+            }
             const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-            const snapBeat = Math.round(this.beat / snap) * snap
-            this.editHoldBeat(col, snapBeat, false)
+            const snapBeat = Math.round(tapBeat / snap) * snap
+            const hold = this.holdEditing[col]!
+            const holdLength =
+              Math.max(
+                0,
+                Math.round(Math.max(this.beat, hold.endBeat) * 48) / 48
+              ) -
+              Math.max(
+                0,
+                Math.round(Math.min(this.beat, hold.startBeat) * 48) / 48
+              )
+            console.log(holdLength)
+            if (
+              (holdLength * 60) / this.chart.timingData.getBPM(this.beat) >
+              0.3
+            )
+              this.editHoldBeat(col, snapBeat, false)
           }
         }
       }
@@ -300,6 +362,7 @@ export class ChartManager {
     EventHandler.on("chartModified", () => {
       if (this.chart) {
         this.chart.recalculateStats()
+        EventHandler.emit("chartModifiedAfter")
       }
     })
 
@@ -383,7 +446,7 @@ export class ChartManager {
     window.addEventListener(
       "keydown",
       (event: KeyboardEvent) => {
-        if (this.mode != EditMode.Play) return
+        if (this.mode != EditMode.Play && this.mode != EditMode.Record) return
         if (event.key == "Escape") {
           this.setMode(this.lastMode)
           this.songAudio.pause()
@@ -514,6 +577,7 @@ export class ChartManager {
     this.chartView?.destroy({ children: true })
     this.chartView?.removeChildren()
 
+    this.clearSelection()
     this.chart = chart
     this.beat = this.chart.getBeat(this.time)
     ActionHistory.instance.reset()
@@ -525,7 +589,8 @@ export class ChartManager {
     this.chartView = new ChartRenderer(this)
     this.chartView.x = this.app.renderer.screen.width / 2
     this.chartView.y = this.app.renderer.screen.height / 2
-    if (this.mode == EditMode.Play) this.setMode(this.lastMode)
+    if (this.mode == EditMode.Play || this.mode == EditMode.Record)
+      this.setMode(this.lastMode)
 
     if (this.chart.getMusicPath() != this.lastSong) {
       this.lastSong = this.chart.getMusicPath()
@@ -910,7 +975,7 @@ export class ChartManager {
   setMode(mode: EditMode) {
     if (!this.chart || !this.chartView) return
     if (this.mode == mode) {
-      if (mode == EditMode.Play) {
+      if (mode == EditMode.Play || mode == EditMode.Record) {
         this.setMode(this.lastMode)
         this.songAudio.pause()
       }
@@ -934,6 +999,9 @@ export class ChartManager {
       this.widgetManager.startPlay()
       this.songAudio.seek(Math.max(0, this.time) - 1)
       this.songAudio.play()
+    } else if (this.mode == EditMode.Record) {
+      this.songAudio.seek(Math.max(0, this.time) - 1)
+      this.songAudio.play()
     } else {
       this.chartView.endPlay()
       this.chart?.notedata.forEach(note => (note.gameplay = undefined))
@@ -941,16 +1009,25 @@ export class ChartManager {
   }
 
   judgeCol(col: number) {
-    if (!this.chart || !this.chartView || this.mode != EditMode.Play) return
-    this.chart.gameType.gameLogic.keyDown(this, col)
+    if (!this.chart || !this.chartView) return
+    if (this.mode == EditMode.Play)
+      this.chart.gameType.gameLogic.keyDown(this, col)
+    else if (this.mode == EditMode.Record) {
+      const tapBeat = this.chart.getBeat(this.time + Options.play.offset)
+      const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
+      const snapBeat = Math.round(tapBeat / snap) * snap
+      this.setNote(col, "key", snapBeat)
+    }
   }
 
   judgeColUp(col: number) {
-    if (!this.chart || !this.chartView || this.mode != EditMode.Play) return
-    this.chart.gameType.gameLogic.keyUp(this, col)
+    if (!this.chart || !this.chartView) return
+    if (this.mode == EditMode.Play)
+      this.chart.gameType.gameLogic.keyUp(this, col)
+    else if (this.mode == EditMode.Record) this.endEditing(col)
   }
 
-  save() {
+  async save() {
     if (!this.sm) return
     if (!ActionHistory.instance.isDirty()) {
       WaterfallManager.create("Saved")
@@ -959,10 +1036,17 @@ export class ChartManager {
     const path_arr = this.sm_path.split("/")
     const name = path_arr.pop()!.split(".").slice(0, -1).join(".")
     const path = path_arr.join("/")
-    if (!this.sm.usesSplitTiming()) {
+    if (
+      !this.sm.usesSplitTiming() &&
+      (await FileHandler.getFileHandle(path + "/" + name + ".sm"))
+    ) {
       FileHandler.writeFile(path + "/" + name + ".sm", this.sm.serialize("sm"))
     }
-    FileHandler.writeFile(path + "/" + name + ".ssc", this.sm.serialize("ssc"))
+    if (await FileHandler.getFileHandle(path + "/" + name + ".ssc"))
+      FileHandler.writeFile(
+        path + "/" + name + ".ssc",
+        this.sm.serialize("ssc")
+      )
     if (this.sm.usesSplitTiming()) {
       WaterfallManager.create("Saved. No SM file since split timing was used.")
     } else {
@@ -1038,5 +1122,147 @@ export class ChartManager {
         .forEach(note => this.addNoteToSelection(note))
       return
     }
+  }
+
+  modifySelection(modify: (note: NotedataEntry) => PartialNotedataEntry) {
+    const removedNotes = this.selection.notes
+    const newNotes = structuredClone(this.selection.notes)
+      .map(modify)
+      .sort((a, b) => {
+        if (a.beat == b.beat) return a.col - b.col
+        return a.beat - b.beat
+      })
+    if (newNotes.length == 0) return
+    let startIndex = bsearch(
+      this.chart!.notedata,
+      newNotes[0].beat,
+      note => note.beat
+    )
+    const conflictingNotes: NotedataEntry[] = []
+    for (const newNote of newNotes) {
+      let latestNoteIndex = startIndex
+      const isHold = isHoldNote(newNote)
+      while (
+        this.chart!.notedata[startIndex] &&
+        this.chart!.notedata[startIndex].beat <=
+          newNote.beat + (isHold ? newNote.hold : 0)
+      ) {
+        const note = this.chart!.notedata[startIndex]
+        startIndex++
+        if (note.beat < newNote.beat) latestNoteIndex = startIndex
+        if (removedNotes.includes(note)) continue
+        if (note.col != newNote.col) continue
+        if (note.beat == newNote.beat) {
+          conflictingNotes.push(note)
+        }
+        if (
+          isHold &&
+          note.beat > newNote.beat &&
+          note.beat <= newNote.beat + newNote.hold
+        ) {
+          conflictingNotes.push(note)
+        }
+      }
+      startIndex = latestNoteIndex
+    }
+
+    this.app.actionHistory.run({
+      action: () => {
+        this.chart!.removeNotes(removedNotes.concat(conflictingNotes))
+        this.selection.notes = this.chart!.addNotes(newNotes)
+      },
+      undo: () => {
+        this.chart!.removeNotes(newNotes)
+        this.chart!.addNotes(conflictingNotes)
+        this.selection.notes = this.chart!.addNotes(removedNotes)
+      },
+    })
+  }
+
+  deleteSelection() {
+    if (this.selection.notes.length == 0) return
+    const removedNotes = this.selection.notes
+    this.app.actionHistory.run({
+      action: () => {
+        this.chart!.removeNotes(removedNotes)
+      },
+      undo: () => {
+        this.selection.notes = this.chart!.addNotes(removedNotes)
+      },
+    })
+  }
+
+  pasteNotes(data: string) {
+    const notes = decodeNotes(data) ?? decodeNotes(this.virtualClipboard)
+    if (!notes) return
+    if (notes.length == 0) return
+    notes
+      .map(note => {
+        note.beat += this.beat
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+      .sort((a, b) => {
+        if (a.beat == b.beat) return a.col - b.col
+        return a.beat - b.beat
+      })
+    let startIndex = bsearch(
+      this.chart!.notedata,
+      notes[0].beat,
+      note => note.beat
+    )
+    const conflictingNotes: NotedataEntry[] = []
+    for (const newNote of notes) {
+      let latestNoteIndex = startIndex
+      const isHold = isHoldNote(newNote)
+      while (
+        this.chart!.notedata[startIndex] &&
+        this.chart!.notedata[startIndex].beat <=
+          newNote.beat + (isHold ? newNote.hold : 0)
+      ) {
+        const note = this.chart!.notedata[startIndex]
+        startIndex++
+        if (note.beat < newNote.beat) latestNoteIndex = startIndex
+        if (note.col != newNote.col) continue
+        if (note.beat == newNote.beat) {
+          conflictingNotes.push(note)
+        }
+        if (
+          isHold &&
+          note.beat > newNote.beat &&
+          note.beat <= newNote.beat + newNote.hold
+        ) {
+          conflictingNotes.push(note)
+        }
+      }
+      startIndex = latestNoteIndex
+    }
+    this.app.actionHistory.run({
+      action: () => {
+        this.chart!.removeNotes(conflictingNotes)
+        this.selection.notes = this.chart!.addNotes(notes)
+      },
+      undo: () => {
+        this.chart!.removeNotes(notes)
+        this.chart!.addNotes(conflictingNotes)
+      },
+    })
+  }
+
+  copyNotes(): string | undefined {
+    if (this.selection.notes.length == 0) return
+    const firstBeat = Math.min(...this.selection.notes.map(note => note.beat))
+    const notes = structuredClone(this.selection.notes)
+      .map(note => {
+        note.beat -= firstBeat
+        return note
+      })
+      .sort((a, b) => {
+        if (a.beat == b.beat) return a.col - b.col
+        return a.beat - b.beat
+      })
+    const encoded = encodeNotes(notes)
+    this.virtualClipboard = encoded
+    return encoded
   }
 }

@@ -67,6 +67,21 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
     options: [
       {
         type: "selection",
+        id: "cut",
+      },
+      {
+        type: "selection",
+        id: "copy",
+      },
+      {
+        type: "selection",
+        id: "paste",
+      },
+      {
+        type: "seperator",
+      },
+      {
+        type: "selection",
         id: "undo",
       },
       {
@@ -237,6 +252,13 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         type: "seperator",
       },
       {
+        type: "selection",
+        id: "recordMode",
+      },
+      {
+        type: "seperator",
+      },
+      {
         type: "checkbox",
         id: "hideWarpedArrows",
         checked: () => Options.chart.hideWarpedArrows,
@@ -269,6 +291,92 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       {
         type: "selection",
         id: "timingData",
+      },
+    ],
+  },
+  selection: {
+    type: "menu",
+    title: "Selection",
+    options: [
+      {
+        type: "dropdown",
+        title: "Convert",
+        options: [
+          {
+            type: "selection",
+            id: "convertHoldsRolls",
+          },
+          {
+            type: "selection",
+            id: "convertHoldsTaps",
+          },
+          {
+            type: "selection",
+            id: "convertNotesMines",
+          },
+          {
+            type: "selection",
+            id: "convertTapsFakes",
+          },
+        ],
+      },
+      {
+        type: "dropdown",
+        title: "Mirror",
+        options: [
+          {
+            type: "selection",
+            id: "mirrorHorizontally",
+          },
+          {
+            type: "selection",
+            id: "mirrorVertically",
+          },
+          {
+            type: "selection",
+            id: "mirrorBoth",
+          },
+        ],
+      },
+      {
+        type: "dropdown",
+        title: "Stretch",
+        options: [
+          {
+            type: "selection",
+            id: "expand2to1",
+          },
+          {
+            type: "selection",
+            id: "expand3to2",
+          },
+          {
+            type: "selection",
+            id: "expand4to3",
+          },
+          {
+            type: "seperator",
+          },
+          {
+            type: "selection",
+            id: "compress1to2",
+          },
+          {
+            type: "selection",
+            id: "compress2to3",
+          },
+          {
+            type: "selection",
+            id: "compress3to4",
+          },
+        ],
+      },
+      {
+        type: "seperator",
+      },
+      {
+        type: "selection",
+        id: "selectAll",
       },
     ],
   },
