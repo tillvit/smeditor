@@ -28,7 +28,6 @@ type TimingCache = {
   beatTiming?: BeatTimingCache[]
   effectiveBeatTiming?: ScrollCacheTimingEvent[]
   speeds?: SpeedTimingEvent[]
-  stopBeats?: { [key: number]: StopTimingEvent }
   sortedEvents?: TimingEvent[]
   warpedBeats: Record<number, boolean>
 }
@@ -355,7 +354,13 @@ export class TimingData {
       }))
     )
 
-    events.sort((a, b) => a.beat - b.beat)
+    const ordering = ["WARP_DEST", "BPMS", "STOPS", "WARPS", "DELAYS"]
+    events.sort((a, b) => {
+      if (a.beat == b.beat) {
+        return ordering.indexOf(a.type) - ordering.indexOf(b.type)
+      }
+      return a.beat - b.beat
+    })
 
     const offset = this.getTimingData("OFFSET")
 
@@ -368,7 +373,6 @@ export class TimingData {
       bpm: this.getTimingData("BPMS")[0]?.value ?? 120,
       warped: false,
     })
-
     for (const event of events) {
       if (cache.at(-1)?.beat != event.beat) {
         cache.at(-1)!.secondClamp = Math.max(
@@ -528,7 +532,10 @@ export class TimingData {
       event.beat == flooredBeat
         ? event.secondClamp
         : Math.max(event.secondAfter, event.secondClamp)
-    if (event.warped || this.getSeconds(beat, "noclamp") < secondLimit) {
+    if (
+      (event.warped && event.beat != beat) ||
+      this.getSeconds(beat, "noclamp") < secondLimit
+    ) {
       this._cache.warpedBeats[flooredBeat] = true
       return true
     }
@@ -604,7 +611,7 @@ export class TimingData {
 
   getBPMEvent(beat: number): BPMTimingEvent | undefined {
     if (!isFinite(beat)) return
-    if (this._cache.stopBeats == undefined) this.buildBeatTimingDataCache()
+    if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
     const bpms = this.getTimingData("BPMS")
     if (bpms.length == 0) return
     return bpms[this.searchCache(bpms, "beat", beat)]
