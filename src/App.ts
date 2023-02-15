@@ -16,7 +16,7 @@ import { EventHandler } from "./util/EventHandler"
 import { FileHandler } from "./util/FileHandler"
 import { Options } from "./util/Options"
 import { TimerStats } from "./util/TimerStats"
-import { fpsUpdate, getBrowser } from "./util/Util"
+import { extname, fpsUpdate, getBrowser } from "./util/Util"
 import { BasicOptionsWindow } from "./window/BasicOptionsWindow"
 import { DirectoryWindow } from "./window/DirectoryWindow"
 import { WindowManager } from "./window/WindowManager"
@@ -26,6 +26,9 @@ declare global {
     app: App
     fs: typeof FileHandler
     runSafari?: () => void
+  }
+  interface File {
+    path?: string
   }
 }
 
@@ -205,23 +208,46 @@ export class App {
     })
 
     window.addEventListener("drop", event => {
-      FileHandler.handleDropEvent(event).then(folder => {
-        const dirWindow = new DirectoryWindow(this, {
-          title: "Select an sm/ssc file...",
-          accepted_file_types: [".sm", ".ssc"],
-          disableClose: true,
-          callback: (path: string) => {
-            this.chartManager.loadSM(path)
-            this.windowManager.getWindowById("select_sm_initial")!.closeWindow()
-          },
-          onload: () => {
-            dirWindow
-              .getAcceptableFile(folder ?? "")
-              .then(path => dirWindow.selectPath(path))
-          },
+      if (window.nw) {
+        event.stopPropagation()
+        event.preventDefault()
+
+        let foundSM = ""
+        for (const file of event.dataTransfer!.files) {
+          if (file.path) {
+            if (extname(file.path) == ".ssc") {
+              foundSM = file.path
+              break
+            } else if (foundSM == "" && extname(file.path) == ".sm") {
+              foundSM = file.path
+            }
+          }
+        }
+        if (foundSM != "") {
+          this.chartManager.loadSM(foundSM)
+          this.windowManager.getWindowById("select_sm_initial")?.closeWindow()
+        }
+      } else {
+        FileHandler.handleDropEvent(event).then(folder => {
+          const dirWindow = new DirectoryWindow(this, {
+            title: "Select an sm/ssc file...",
+            accepted_file_types: [".sm", ".ssc"],
+            disableClose: true,
+            callback: (path: string) => {
+              this.chartManager.loadSM(path)
+              this.windowManager
+                .getWindowById("select_sm_initial")
+                ?.closeWindow()
+            },
+            onload: () => {
+              dirWindow
+                .getAcceptableFile(folder ?? "")
+                .then(path => dirWindow.selectPath(path))
+            },
+          })
+          this.windowManager.openWindow(dirWindow)
         })
-        this.windowManager.openWindow(dirWindow)
-      })
+      }
     })
   }
 

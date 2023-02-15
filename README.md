@@ -11,3 +11,4 @@ SMEditor is currently a work in progress. You can check the planned features [he
 1. Clone the repository
 2. Install the required modules by running `npm install`
 3. Build the website with `npm run build` or start a dev web server with `npm run dev`
+4. Build the native app with `npm run app-build` or run the app with `npm run app-dev` (use `npm run dev` first)

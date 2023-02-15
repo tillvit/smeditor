@@ -72,26 +72,38 @@ function fileOption(
       dirButton.style.height = "100%"
       dirButton.onclick = () => {
         const dir = app.chartManager.sm_path.split("/").slice(0, -1).join("/")
-        app.windowManager.openWindow(
-          new DirectoryWindow(
-            app,
-            {
-              title:
-                type == "audio"
-                  ? "Select an audio file..."
-                  : "Select an image file...",
-              accepted_file_types: type == "audio" ? AUDIO_EXT : IMG_EXT,
-              disableClose: true,
-              callback: (path: string) => {
-                input.value = FileHandler.getRelativePath(dir, path)
-                handleInput()
+
+        if (window.nw) {
+          const fileSelector = document.createElement("input")
+          fileSelector.type = "file"
+          fileSelector.accept = type == "audio" ? "audio/*" : "image/*"
+          fileSelector.onchange = () => {
+            input.value = FileHandler.getRelativePath(dir, fileSelector.value)
+            handleInput()
+          }
+          fileSelector.click()
+        } else {
+          app.windowManager.openWindow(
+            new DirectoryWindow(
+              app,
+              {
+                title:
+                  type == "audio"
+                    ? "Select an audio file..."
+                    : "Select an image file...",
+                accepted_file_types: type == "audio" ? AUDIO_EXT : IMG_EXT,
+                disableClose: true,
+                callback: (path: string) => {
+                  input.value = FileHandler.getRelativePath(dir, path)
+                  handleInput()
+                },
               },
-            },
-            sm.properties[prop]
-              ? dir + "/" + sm.properties[prop]
-              : app.chartManager.sm_path
+              sm.properties[prop]
+                ? dir + "/" + sm.properties[prop]
+                : app.chartManager.sm_path
+            )
           )
-        )
+        }
       }
       const icon = document.createElement("img")
       icon.classList.add("icon")

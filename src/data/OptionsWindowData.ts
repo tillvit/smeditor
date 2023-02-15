@@ -31,27 +31,40 @@ export const OPTIONS_WINDOW_DATA: { [key: string]: OptionsWindowData } = {
     },
     view: [
       {
-        title: "Import",
+        title: window.nw ? "Open" : "Import",
         options: [
           {
-            label: "Import a song folder",
+            label: window.nw ? "Open an existing song" : "Import a song folder",
             element: app => {
               const el = document.createElement("button")
-              el.innerHTML = "Upload..."
+              el.innerHTML = window ? "Open..." : "Upload..."
               el.onclick = () => {
-                app.windowManager.openWindow(
-                  new DirectoryWindow(app, {
-                    title: "Select an sm/ssc file...",
-                    accepted_file_types: [".sm", ".ssc"],
-                    disableClose: true,
-                    callback: (path: string) => {
-                      app.chartManager.loadSM(path)
-                      app.windowManager
-                        .getWindowById("select_sm_initial")!
-                        .closeWindow()
-                    },
-                  })
-                )
+                if (window.nw) {
+                  const fileSelector = document.createElement("input")
+                  fileSelector.type = "file"
+                  fileSelector.accept = ".sm,.ssc"
+                  fileSelector.onchange = () => {
+                    app.chartManager.loadSM(fileSelector.value)
+                    app.windowManager
+                      .getWindowById("select_sm_initial")!
+                      .closeWindow()
+                  }
+                  fileSelector.click()
+                } else {
+                  app.windowManager.openWindow(
+                    new DirectoryWindow(app, {
+                      title: "Select an sm/ssc file...",
+                      accepted_file_types: [".sm", ".ssc"],
+                      disableClose: true,
+                      callback: (path: string) => {
+                        app.chartManager.loadSM(path)
+                        app.windowManager
+                          .getWindowById("select_sm_initial")!
+                          .closeWindow()
+                      },
+                    })
+                  )
+                }
               }
               return el
             },

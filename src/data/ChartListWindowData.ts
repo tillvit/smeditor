@@ -110,23 +110,37 @@ export const CHART_PROPERTIES_DATA: {
       const dirButton = document.createElement("button")
       dirButton.onclick = () => {
         const dir = app.chartManager.sm_path.split("/").slice(0, -1).join("/")
-        app.windowManager.openWindow(
-          new DirectoryWindow(
-            app,
-            {
-              title: "Select an audio file...",
-              accepted_file_types: AUDIO_EXT,
-              disableClose: true,
-              callback: (path: string) => {
-                input.innerText = FileHandler.getRelativePath(dir, path)
-                handleInput()
+        if (window.nw) {
+          const fileSelector = document.createElement("input")
+          fileSelector.type = "file"
+          fileSelector.accept = "audio/*"
+          fileSelector.onchange = () => {
+            input.innerText = FileHandler.getRelativePath(
+              dir,
+              fileSelector.value
+            )
+            handleInput()
+          }
+          fileSelector.click()
+        } else {
+          app.windowManager.openWindow(
+            new DirectoryWindow(
+              app,
+              {
+                title: "Select an audio file...",
+                accepted_file_types: AUDIO_EXT,
+                disableClose: true,
+                callback: (path: string) => {
+                  input.innerText = FileHandler.getRelativePath(dir, path)
+                  handleInput()
+                },
               },
-            },
-            dir +
-              "/" +
-              (chart.music ?? app.chartManager.sm!.properties.MUSIC ?? "")
+              dir +
+                "/" +
+                (chart.music ?? app.chartManager.sm!.properties.MUSIC ?? "")
+            )
           )
-        )
+        }
       }
       const icon = document.createElement("img")
       icon.classList.add("icon")

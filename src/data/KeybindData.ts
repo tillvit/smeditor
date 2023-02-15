@@ -178,16 +178,26 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     keybinds: [{ key: "O", mods: [DEF_MOD] }],
     disabled: app => !app.chartManager.sm,
     callback: app => {
-      app.windowManager.openWindow(
-        new DirectoryWindow(app, {
-          title: "Select an sm/ssc file...",
-          accepted_file_types: [".sm", ".ssc"],
-          disableClose: true,
-          callback: (path: string) => {
-            app.chartManager.loadSM(path)
-          },
-        })
-      )
+      if (window.nw) {
+        const fileSelector = document.createElement("input")
+        fileSelector.type = "file"
+        fileSelector.accept = ".sm,.ssc"
+        fileSelector.onchange = () => {
+          app.chartManager.loadSM(fileSelector.value)
+        }
+        fileSelector.click()
+      } else {
+        app.windowManager.openWindow(
+          new DirectoryWindow(app, {
+            title: "Select an sm/ssc file...",
+            accepted_file_types: [".sm", ".ssc"],
+            disableClose: true,
+            callback: (path: string) => {
+              app.chartManager.loadSM(path)
+            },
+          })
+        )
+      }
     },
   },
   songProperties: {
