@@ -18,10 +18,9 @@ export class FileHandler {
 
   static async init() {
     if (window.nw) {
-      const home = nw.require("os").homedir()
       this._root = await getOriginPrivateDirectory(
         import("./node-adapter/NodeAdapter.js"),
-        home
+        "/"
       )
     } else {
       if (support.adapter.native && !getBrowser().includes("Safari")) {
