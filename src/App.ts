@@ -17,8 +17,8 @@ import { FileHandler } from "./util/FileHandler"
 import { Options } from "./util/Options"
 import { TimerStats } from "./util/TimerStats"
 import { extname, fpsUpdate, getBrowser } from "./util/Util"
-import { BasicOptionsWindow } from "./window/BasicOptionsWindow"
 import { DirectoryWindow } from "./window/DirectoryWindow"
+import { InitialWindow } from "./window/InitialWindow"
 import { WindowManager } from "./window/WindowManager"
 
 declare global {
@@ -114,9 +114,7 @@ export class App {
       `smeditor is currently a work in progress. check the github repo for more info!`
     )
 
-    this.windowManager.openWindow(
-      new BasicOptionsWindow(this, "select_sm_initial")
-    )
+    this.windowManager.openWindow(new InitialWindow(this))
 
     // window.onbeforeunload = event => {
     //   event.preventDefault()

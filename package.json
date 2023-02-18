@@ -1,16 +1,13 @@
 {
   "name": "smeditor",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "app-dev": "cross-env EXECUTION_MODE='DEBUG' NODE_ENV='production' nwbuild ./nw/**/* --mode=run --version=latest --flavor=sdk --outDir=build",
-    "app-osx": "nwbuild ./nw/**/* --mode=build --version=latest --flavor=normal --platform=osx --outDir=build/mac",
-    "app-linux": "nwbuild ./nw/**/* --mode=build --version=latest --flavor=normal --platform=linux --outDir=build/linux",
-    "app-windows": "nwbuild ./nw/**/* --mode=build --version=latest --flavor=normal --platform=win --outDir=build/windows",
-    "app-build": "npm run -s app-windows & npm run -s app-osx & npm run -s app-linux",
+    "app-dev": "cross-env EXECUTION_MODE='DEBUG' NODE_ENV='production' nwbuild './nw/**/*' --mode=run --version=latest --flavor=sdk --outDir=build",
+    "app-build": "node nwbuild.js",
     "preview": "vite preview",
     "prepare": "husky install"
   },
@@ -58,18 +55,6 @@
       "git add"
     ]
   },
-  "main": "nw/index.html",
-  "node-remote": [
-    "http://127.0.0.1:5173",
-    "https://tillvit.github.io/smeditor"
-  ],
-  "fullscreen": true,
-  "chromium-args": "--enable-webgl2-compute-context --force-discrete-gpu --enable-high-resolution-time --enable-zero-copy --autoplay-policy no-user-gesture-required",
-  "nwbuild": {
-    "srcDir": "./nw/**",
-    "version": "latest",
-    "flavor": "sdk"
-  },
   "eslintConfig": {
     "extends": [
       "eslint:recommended",
@@ -86,6 +71,10 @@
     },
     "plugins": [
       "@typescript-eslint"
+    ],
+    "ignorePatterns": [
+      "vite.config.js",
+      "nwbuild.js"
     ],
     "rules": {
       "@typescript-eslint/no-non-null-assertion": "off",
