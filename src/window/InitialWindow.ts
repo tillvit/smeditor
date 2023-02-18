@@ -1,15 +1,13 @@
 import { App } from "../App"
-import { OPTIONS_WINDOW_DATA } from "../data/OptionsWindowData"
+import { INITIAL_WINDOW_DATA } from "../data/InitalWindowData"
 import { Window } from "./Window"
 
-export class BasicOptionsWindow extends Window {
-  optionsDataId = ""
+export class InitialWindow extends Window {
   app: App
 
-  constructor(app: App, optionsDataId: string) {
-    super(OPTIONS_WINDOW_DATA[optionsDataId].window_options)
+  constructor(app: App) {
+    super(INITIAL_WINDOW_DATA.window_options)
     this.app = app
-    this.optionsDataId = optionsDataId
     this.initView(this.viewElement)
   }
 
@@ -18,7 +16,7 @@ export class BasicOptionsWindow extends Window {
     viewElement.classList.add("options")
     const padding = document.createElement("div")
     padding.classList.add("padding")
-    OPTIONS_WINDOW_DATA[this.optionsDataId].view.forEach(entry => {
+    INITIAL_WINDOW_DATA.view.forEach(entry => {
       const title = document.createElement("div")
       title.innerText =
         typeof entry.title == "function" ? entry.title(this.app) : entry.title

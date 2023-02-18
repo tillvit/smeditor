@@ -10,6 +10,7 @@ import { basename, dirname, extname, getBrowser } from "./Util"
 
 export class FileHandler {
   private static _root: FileSystemDirectoryHandle
+  private static persistentFiles = false
 
   static get root(): FileSystemDirectoryHandle {
     if (!this._root) this.init()
@@ -22,9 +23,11 @@ export class FileHandler {
         import("./node-adapter/NodeAdapter.js"),
         "/"
       )
+      this.persistentFiles = true
     } else {
       if (support.adapter.native && !getBrowser().includes("Safari")) {
         this._root = await getOriginPrivateDirectory()
+        this.persistentFiles = true
       } else {
         this._root = await getOriginPrivateDirectory(
           import("file-system-access/lib/adapters/memory.js")
@@ -44,6 +47,10 @@ export class FileHandler {
     //     "."
     //   )
     // }
+  }
+
+  static isPersistent(): boolean {
+    return this.persistentFiles
   }
 
   static async uploadHandle(
