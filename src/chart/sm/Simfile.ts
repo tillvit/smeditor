@@ -115,7 +115,7 @@ export class Simfile {
       str += this.formatProperty("TITLE", this.properties.TITLE)
       str += this.formatProperty("SUBTITLE", this.properties.SUBTITLE)
       str += this.formatProperty("ARTIST", this.properties.ARTIST)
-      str += this.formatProperty("MUSIC", this.properties.MUSIC)
+      str += this.formatProperty("MUSIC", this.properties.MUSIC ?? "")
       str += this.formatProperty("BANNER", this.properties.GENRE)
       str += this.formatProperty("BACKGROUND", this.properties.BACKGROUND)
       str += this.formatProperty("LYRICSPATH", this.properties.LYRICSPATH)
@@ -141,7 +141,7 @@ export class Simfile {
       )
       str += this.formatProperty("GENRE", this.properties.GENRE)
       str += this.formatProperty("CREDIT", this.properties.CREDIT)
-      str += this.formatProperty("MUSIC", this.properties.MUSIC)
+      str += this.formatProperty("MUSIC", this.properties.MUSIC ?? "")
       str += this.formatProperty("BANNER", this.properties.BANNER)
       str += this.formatProperty("BACKGROUND", this.properties.BACKGROUND)
       str += this.formatProperty("JACKET", this.properties.JACKET)
@@ -186,7 +186,7 @@ export class Simfile {
         str += `#DESCRIPTION:${chart.DESCRIPTION};\n`
         str += `#DIFFICULTY:${chart.DIFFICULTY};\n`
         str += `#METER:${chart.METER};\n`
-        str += `#METERF:${chart.METERF};\n`
+        str += `#METERF:${chart.METERF ?? chart.METER};\n`
         str += `#RADARVALUES:${chart.RADARVALUES};\n`
         str += `#NOTES:`
         for (const prop in chart) {
