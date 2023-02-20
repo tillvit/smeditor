@@ -532,10 +532,11 @@ export class TimingData {
       event.beat == flooredBeat
         ? event.secondClamp
         : Math.max(event.secondAfter, event.secondClamp)
-    if (
-      (event.warped && event.beat != beat) ||
-      this.getSeconds(beat, "noclamp") < secondLimit
-    ) {
+    if (event.secondOf < event.secondAfter) {
+      this._cache.warpedBeats[flooredBeat] = false
+      return false
+    }
+    if (event.warped || this.getSeconds(beat, "noclamp") < secondLimit) {
       this._cache.warpedBeats[flooredBeat] = true
       return true
     }
@@ -564,7 +565,7 @@ export class TimingData {
     if (cache.length == 0) return beat
     const i = this.searchCache(cache, "beat", beat)
     const event = cache[i]
-    if (event.beat > beat) return beat
+    // if (event.beat > beat) return beat
     let effBeat = event.effectiveBeat!
     const beats_left_over = beat - event.beat
     effBeat += beats_left_over * event.value
