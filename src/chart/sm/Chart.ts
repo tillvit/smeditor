@@ -60,8 +60,10 @@ export class Chart {
       if (CHART_DIFFICULTIES.includes(dict["DIFFICULTY"] as ChartDifficulty))
         this.difficulty = dict["DIFFICULTY"] as ChartDifficulty
       else throw Error("Unknown chart difficulty " + dict["DIFFICULTY"])
-      this.meter = parseInt(dict["METER"]) ?? 0
-      this.meterF = parseFloat(dict["METERF"]) ?? 0
+      this.meter = parseInt(dict["METER"])
+      if (!isFinite(this.meter) || this.meter < 0) this.meter = 0
+      this.meterF = parseFloat(dict["METERF"])
+      if (!isFinite(this.meterF) || this.meterF < 0) this.meterF = this.meter
       this.radarValues = dict["RADARVALUES"] ?? ""
       this.notedata =
         gameType.parser
@@ -104,7 +106,9 @@ export class Chart {
         if (CHART_DIFFICULTIES.includes(match[3] as ChartDifficulty))
           this.difficulty = match[3] as ChartDifficulty
         else throw Error("Unknown chart difficulty " + match[3])
-        this.meter = parseInt(match[4]) ?? 0
+        this.meter = parseInt(match[4])
+        if (!isFinite(this.meter) || this.meter < 0) this.meter = 0
+        this.meterF = this.meter
         this.radarValues = match[5] ?? ""
         this.notedata =
           gameType.parser
