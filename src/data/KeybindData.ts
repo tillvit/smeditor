@@ -213,10 +213,13 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     callback: app => app.chartManager.save(),
   },
   export: {
-    label: "Export current song",
+    label: "Save and export current song",
     keybinds: [{ key: "E", mods: [DEF_MOD] }],
     disabled: app => !app.chartManager.sm,
-    callback: app => FileHandler.saveDirectory(app.chartManager.sm_path),
+    callback: app => {
+      app.chartManager.save()
+      FileHandler.saveDirectory(app.chartManager.sm_path)
+    },
   },
   openChart: {
     label: "Chart List",
