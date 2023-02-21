@@ -149,7 +149,11 @@ export class TimingAreaContainer extends Container {
         }
         break
       }
-      case "FAKES":
+      case "FAKES": {
+        yEnd = this.renderer.getYPos(event.beat + event.value)
+
+        break
+      }
       case "WARPS": {
         if (!Options.chart.CMod) {
           yEnd = this.renderer.getYPos(event.beat + event.value)

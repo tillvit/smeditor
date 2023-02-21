@@ -89,7 +89,6 @@ export class App {
       fpsUpdate()
     }, UPDATE_PRIORITY.LOW)
     this.ticker.start()
-    this.stage.sortableChildren = true
 
     BetterRoundedRect.init(this.renderer)
 

@@ -127,6 +127,7 @@ export class TimingBoxContainer extends Container {
     }
     if (!newChild) {
       newChild = new Container() as TimingBoxObject
+      newChild.zIndex = event.beat
       newChild.textObj = new BitmapText("", timingNumbers)
       newChild.backgroundObj = new BetterRoundedRect()
       newChild.addChild!(newChild.backgroundObj)

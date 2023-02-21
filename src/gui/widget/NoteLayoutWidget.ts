@@ -165,6 +165,7 @@ export class NoteLayoutWidget extends Widget {
     const endY = (t_endY - 0.5) * (this.backing.height - 10)
     this.overlay.y = startY
     this.overlay.height = endY - startY
+    this.overlay.height = Math.max(2, this.overlay.height)
     if (
       this.manager.app.renderer.screen.height != this.lastHeight ||
       this.lastCMod != Options.chart.CMod
