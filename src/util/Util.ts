@@ -281,10 +281,17 @@ export function isNumericKeyPress(event: KeyboardEvent) {
       "x",
       "c",
       "a",
+      "A",
+      "C",
+      "X",
     ].includes(event.key)
   )
     return false
-  if (["X", "C", "A"].includes(event.key) && !event.metaKey && !event.ctrlKey)
+  if (
+    ["X", "C", "A", "a", "c", "x"].includes(event.key) &&
+    !event.metaKey &&
+    !event.ctrlKey
+  )
     return false
   return true
 }

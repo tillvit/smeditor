@@ -127,7 +127,7 @@ export class App {
 
   registerFonts() {
     BitmapFont.from(
-      "Assistant",
+      "Main",
       {
         fontFamily: "Assistant",
         fontSize: 20,
@@ -146,7 +146,7 @@ export class App {
     )
 
     BitmapFont.from(
-      "Assistant-Fancy",
+      "Fancy",
       {
         fontFamily: "Assistant",
         fontSize: 40,

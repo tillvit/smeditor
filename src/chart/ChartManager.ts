@@ -235,7 +235,7 @@ export class ChartManager {
     this.widgetManager = new WidgetManager(this)
 
     this.noChartTextA = new BitmapText("No Chart", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 30,
     })
 
@@ -243,7 +243,7 @@ export class ChartManager {
     this.noChartTextA.tint = 0x555555
     this.app.stage.addChild(this.noChartTextA)
     this.noChartTextB = new BitmapText("Create a new chart", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 15,
     })
 
@@ -321,6 +321,7 @@ export class ChartManager {
         time > notedata[this.noteIndex].second + Options.audio.effectOffset
       ) {
         if (
+          this.mode != EditMode.Record &&
           this.songAudio.isPlaying() &&
           this.chart.gameType.gameLogic.shouldAssistTick(
             notedata[this.noteIndex]

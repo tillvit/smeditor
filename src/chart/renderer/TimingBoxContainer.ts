@@ -17,7 +17,7 @@ interface TimingBoxObject extends Container {
 }
 
 const timingNumbers = {
-  fontName: "Assistant",
+  fontName: "Main",
   fontSize: 15,
 }
 

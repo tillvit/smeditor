@@ -4,6 +4,7 @@ import { ChartManager } from "../../chart/ChartManager"
 import { InfoWidget } from "./InfoWidget"
 import { NoteLayoutWidget } from "./NoteLayoutWidget"
 import { PlayInfoWidget } from "./PlayInfoWidget"
+import { StatusWidget } from "./StatusWidget"
 import { Widget } from "./Widget"
 
 export class WidgetManager extends Container {
@@ -18,6 +19,7 @@ export class WidgetManager extends Container {
     this.addChild(new NoteLayoutWidget(this))
     this.addChild(new InfoWidget(this))
     this.addChild(new PlayInfoWidget(this))
+    this.addChild(new StatusWidget(this))
     this.zIndex = 2
   }
 
