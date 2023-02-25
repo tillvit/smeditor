@@ -318,7 +318,12 @@ export class ChartManager {
       let hasPlayed = false
       while (
         this.noteIndex < notedata.length &&
-        time > notedata[this.noteIndex].second + Options.audio.effectOffset
+        time >
+          notedata[this.noteIndex].second +
+            Options.audio.effectOffset -
+            (this.mode == EditMode.Record || this.mode == EditMode.Play
+              ? Options.play.offset
+              : 0)
       ) {
         if (
           this.mode != EditMode.Record &&
@@ -341,7 +346,13 @@ export class ChartManager {
         this.noteIndex++
       }
       const metronomeBeat = Math.floor(
-        this.chart.getBeat(this.time + Options.audio.effectOffset)
+        this.chart.getBeat(
+          this.time +
+            Options.audio.effectOffset -
+            (this.mode == EditMode.Record || this.mode == EditMode.Play
+              ? Options.play.offset
+              : 0)
+        )
       )
       if (metronomeBeat != this.lastBeat) {
         this.lastBeat = metronomeBeat
@@ -987,11 +998,13 @@ export class ChartManager {
     if (this.mode == mode) {
       if (mode == EditMode.Play || mode == EditMode.Record) {
         this.setMode(this.lastMode)
+        this.getAssistTickIndex()
         this.songAudio.pause()
       }
       return
     }
-    this.lastMode = this.mode
+    if (this.mode == EditMode.View || this.mode == EditMode.Edit)
+      this.lastMode = this.mode
     this.mode = mode
     if (this.mode == EditMode.Play) {
       this.chart.notedata.forEach(note => {

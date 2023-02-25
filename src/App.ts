@@ -77,6 +77,7 @@ export class App {
       resolution: Options.performance.resolution,
       autoDensity: true,
       view: this.view,
+      powerPreference: "low-power",
     })
 
     this.ticker = new Ticker()

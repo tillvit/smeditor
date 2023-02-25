@@ -1,9 +1,21 @@
 import { Parser } from "expr-eval"
+import { Container, Sprite, Texture } from "pixi.js"
 import { EditMode } from "../../chart/ChartManager"
+import { EventHandler } from "../../util/EventHandler"
+import { Options } from "../../util/Options"
 import { isNumericKeyPress, roundDigit } from "../../util/Util"
+import { Dropdown } from "../element/Dropdown"
 import { Icons } from "../Icons"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
+
+interface NoteArrow {
+  element: HTMLButtonElement
+  sprite: Container
+  bg: Sprite
+  type: string
+  hovered: boolean
+}
 
 export class StatusWidget extends Widget {
   private view: HTMLDivElement
@@ -21,16 +33,29 @@ export class StatusWidget extends Widget {
   private sec: HTMLDivElement
   private millis: HTMLDivElement
   private beat: HTMLDivElement
+  private beatDropdown: Dropdown<string>
 
   private editBar: HTMLDivElement
   private editSteps: HTMLButtonElement
   private editTiming: HTMLButtonElement
+  private stepsContainer: HTMLDivElement
+  private timingContainer: HTMLDivElement
+  private editChoiceContainer: HTMLDivElement
+
+  private noteArrows: NoteArrow[] = []
+  private noteArrowMask: Sprite
 
   private lastTime = 0
   private lastBeat = 0
   private lastMode = EditMode.Edit
   private lastHover = 0
+  private lastPlaying = false
   private hovering = false
+
+  private trackingMovement = true
+  private idleFrames = 0
+  private lastBounds?: DOMRect
+
   constructor(manager: WidgetManager) {
     super(manager)
     const view = document.createElement("div")
@@ -189,10 +214,17 @@ export class StatusWidget extends Widget {
       if (!isNumericKeyPress(ev)) ev.preventDefault()
       if (ev.key == "Enter") beat.blur()
       if (ev.key == "Escape") {
-        beat.innerText = roundDigit(
-          this.manager.chartManager.getBeat(),
-          3
-        ).toFixed(3)
+        if (this.beatDropdown.value == "Measure") {
+          beat.innerText = roundDigit(
+            this.manager.chartManager.getBeat() / 4,
+            3
+          ).toFixed(3)
+        } else {
+          beat.innerText = roundDigit(
+            this.manager.chartManager.getBeat(),
+            3
+          ).toFixed(3)
+        }
         beat.blur()
       }
     }
@@ -202,11 +234,25 @@ export class StatusWidget extends Widget {
     beat.onblur = () => this.updateBeat()
     beat.ondragstart = ev => ev.preventDefault()
     this.beat = beat
-    const beatLabel = document.createElement("div")
-    beatLabel.classList.add("playback-counter-label")
-    beatLabel.innerText = "Beat"
+    this.beatDropdown = Dropdown.create(["Beat", "Measure"], "Beat")
+    this.beatDropdown.view
+      .querySelector(".dropdown-selected")!
+      .classList.add("playback-counter-label")
     this.beatCounter.appendChild(beat)
-    this.beatCounter.appendChild(beatLabel)
+    this.beatCounter.appendChild(this.beatDropdown.view)
+    this.beatDropdown.onChange(() => {
+      if (this.beatDropdown.value == "Measure") {
+        beat.innerText = roundDigit(
+          this.manager.chartManager.getBeat() / 4,
+          3
+        ).toFixed(3)
+      } else {
+        beat.innerText = roundDigit(
+          this.manager.chartManager.getBeat(),
+          3
+        ).toFixed(3)
+      }
+    })
 
     this.playbackBar.appendChild(this.skipStart)
     this.playbackBar.appendChild(this.skipEnd)
@@ -232,12 +278,108 @@ export class StatusWidget extends Widget {
     this.editTiming.appendChild(editTimingIcon)
     this.editTiming.appendChild(document.createTextNode("Edit Timing"))
 
-    const line3 = document.createElement("div")
-    line3.classList.add("playback-seperator")
+    const line4 = document.createElement("div")
+    line4.classList.add("playback-seperator")
 
-    this.editBar.appendChild(this.editSteps)
-    this.editBar.appendChild(this.editTiming)
-    this.editBar.appendChild(line3)
+    const leftContainer = document.createElement("div")
+    leftContainer.classList.add("edit-bar-left")
+
+    leftContainer.appendChild(this.editSteps)
+    leftContainer.appendChild(this.editTiming)
+    leftContainer.appendChild(line4)
+    this.editBar.appendChild(leftContainer)
+
+    this.editChoiceContainer = document.createElement("div")
+    this.editChoiceContainer.classList.add("edit-choice-container")
+
+    this.stepsContainer = document.createElement("div")
+    this.stepsContainer.classList.add("edit-steps-container")
+
+    this.timingContainer = document.createElement("div")
+    this.timingContainer.classList.add("edit-timing-container")
+    this.editChoiceContainer.appendChild(this.stepsContainer)
+    this.editChoiceContainer.appendChild(this.timingContainer)
+
+    this.editBar.appendChild(this.editChoiceContainer)
+
+    const right = document.createElement("div")
+    right.classList.add("note-placeholder-right")
+    this.stepsContainer.appendChild(right)
+
+    EventHandler.on("resize", () => {
+      this.trackingMovement = true
+      this.idleFrames = 5
+    })
+
+    EventHandler.on("chartLoaded", () => {
+      this.stepsContainer.replaceChildren()
+      this.noteArrows.forEach(noteArrow => {
+        this.removeChild(noteArrow.sprite)
+        this.removeChild(noteArrow.bg)
+      })
+      this.noteArrows = []
+      const rightPlaceholder = document.createElement("div")
+      rightPlaceholder.classList.add("note-placeholder-right")
+      this.stepsContainer.appendChild(rightPlaceholder)
+      if (!this.manager.chartManager.chart) return
+      for (const type of this.manager.chartManager.chart.gameType
+        .editNoteTypes) {
+        const sprite =
+          this.manager.chartManager.chartView!.notefield.getNoteSprite({
+            type,
+            beat: 0,
+            col: 0,
+          })
+        sprite.width = 32
+        sprite.height = 32
+        const bg = new Sprite(Texture.WHITE)
+        bg.tint = 0
+        bg.alpha = 0.5
+        bg.width = 48
+        bg.height = 48
+        bg.anchor.set(0.5)
+        const element = document.createElement("button")
+        element.style.height = "48px"
+        element.style.width = "48px"
+        element.classList.add("note-placeholder")
+        element.onclick = () => {
+          this.manager.chartManager.setEditingNoteType(type)
+        }
+        const noteArrow = { element, sprite, type, bg, hovered: false }
+        element.onmouseover = () => {
+          noteArrow.hovered = true
+        }
+        element.onmouseleave = () => {
+          noteArrow.hovered = false
+        }
+        this.addChild(bg)
+        this.addChild(sprite)
+        const bound = element.getBoundingClientRect()
+        sprite.position.y =
+          bound.top -
+          this.manager.app.view.clientHeight / 2 -
+          this.manager.app.view.getBoundingClientRect().top +
+          24
+        sprite.position.x =
+          bound.left - this.manager.app.view.clientWidth / 2 + 24
+        bg.position = sprite.position
+        this.noteArrows.push(noteArrow)
+      }
+      this.stepsContainer.replaceChildren(
+        ...this.noteArrows.map(arrow => arrow.element),
+        rightPlaceholder
+      )
+      this.trackingMovement = true
+      this.idleFrames = 5
+    })
+
+    this.noteArrowMask = new Sprite(Texture.WHITE)
+    this.noteArrowMask.height = 48
+    this.noteArrowMask.width = 2500
+    this.noteArrowMask.anchor.y = 1
+    this.noteArrowMask.anchor.x = 0.5
+    this.addChild(this.noteArrowMask)
+    this.mask = this.noteArrowMask
 
     view.onmouseenter = () => {
       this.lastHover = Date.now()
@@ -274,8 +416,13 @@ export class StatusWidget extends Widget {
 
     const beat = this.manager.chartManager.getBeat()
     if (this.lastBeat != beat) {
-      if (document.activeElement != this.beat)
-        this.beat.innerText = roundDigit(beat, 3).toFixed(3)
+      if (document.activeElement != this.beat) {
+        if (this.beatDropdown.value == "Measure") {
+          this.beat.innerText = roundDigit(beat / 4, 3).toFixed(3)
+        } else {
+          this.beat.innerText = roundDigit(beat, 3).toFixed(3)
+        }
+      }
       this.lastBeat = beat
     }
 
@@ -297,19 +444,22 @@ export class StatusWidget extends Widget {
           this.view.style.opacity = ""
           this.view.style.transition = ""
           this.view.classList.remove("collapsed")
+          this.beatDropdown.disabled = false
           break
         case EditMode.Record:
           this.lastHover = Date.now()
           this.skipStart.disabled = true
           this.skipEnd.disabled = true
           this.record.disabled = false
-          this.record.style.background = "rgba(170, 0, 0, 0.2)"
+          this.record.style.background = "rgba(170, 0, 0, 0.35)"
           this.playtest.disabled = true
           this.min.contentEditable = "false"
           this.sec.contentEditable = "false"
           this.millis.contentEditable = "false"
           this.beat.contentEditable = "false"
           this.view.classList.add("collapsed")
+          this.beatDropdown.closeDropdown()
+          this.beatDropdown.disabled = true
           break
         case EditMode.Play:
           this.lastHover = Date.now()
@@ -317,19 +467,25 @@ export class StatusWidget extends Widget {
           this.skipEnd.disabled = true
           this.record.disabled = true
           this.playtest.disabled = false
-          this.playtest.style.background = "rgba(12, 97, 31, 0.2)"
+          this.playtest.style.background = "rgba(12, 97, 31, 0.35)"
           this.min.contentEditable = "false"
           this.sec.contentEditable = "false"
           this.millis.contentEditable = "false"
           this.beat.contentEditable = "false"
           this.view.classList.add("collapsed")
+          this.beatDropdown.closeDropdown()
+          this.beatDropdown.disabled = true
       }
+      this.trackingMovement = true
+      this.idleFrames = 5
       this.lastMode = mode
     }
 
-    this.playIcon.src = this.manager.chartManager.songAudio.isPlaying()
-      ? Icons.STOP
-      : Icons.PLAY
+    const playing = this.manager.chartManager.songAudio.isPlaying()
+    if (this.lastPlaying != playing) {
+      this.playIcon.src = playing ? Icons.STOP : Icons.PLAY
+      this.lastPlaying = playing
+    }
     this.playIcon.style.height = this.manager.chartManager.songAudio.isPlaying()
       ? "28px"
       : ""
@@ -344,6 +500,56 @@ export class StatusWidget extends Widget {
         this.view.style.transition = "2s cubic-bezier(.11,.72,.51,1.14)"
       }
     }
+
+    if (this.trackingMovement) {
+      const firstArrow = this.noteArrows[0]
+      if (firstArrow) {
+        const bounds = firstArrow.element.getBoundingClientRect()
+        this.noteArrows.forEach((noteArrow, index) => {
+          noteArrow.sprite.position.y =
+            bounds.top -
+            this.manager.app.view.clientHeight / 2 -
+            this.manager.app.view.getBoundingClientRect().top +
+            24
+          noteArrow.sprite.position.x =
+            bounds.left -
+            this.manager.app.view.clientWidth / 2 +
+            24 +
+            index * 48
+          noteArrow.bg.position = noteArrow.sprite.position
+        })
+        if (this.lastBounds) {
+          const delta =
+            Math.abs(this.lastBounds.top - bounds.top) +
+            Math.abs(this.lastBounds.left - bounds.left)
+          if (delta == 0) {
+            this.idleFrames--
+            if (this.idleFrames < 0) {
+              this.trackingMovement = false
+              this.lastBounds = undefined
+            }
+          }
+        }
+        this.lastBounds = bounds
+      }
+      const viewbounds = this.view.getBoundingClientRect()
+      this.noteArrowMask.y =
+        viewbounds.bottom -
+        this.manager.app.view.clientHeight / 2 -
+        this.manager.app.view.getBoundingClientRect().top
+    }
+
+    const noteType = this.manager.chartManager.getEditingNoteType()
+    this.noteArrows.forEach(arrow => {
+      if (Options.general.smoothAnimations) {
+        const target = noteType == arrow.type ? 1 : arrow.hovered ? 0.4 : 0.2
+        arrow.sprite.alpha =
+          (target - arrow.sprite.alpha) * 0.3 + arrow.sprite.alpha
+      } else {
+        arrow.sprite.alpha =
+          noteType == arrow.type ? 1 : arrow.hovered ? 0.4 : 0.2
+      }
+    })
   }
 
   private selectText(element: HTMLElement) {
@@ -367,6 +573,7 @@ export class StatusWidget extends Widget {
 
   private updateBeat() {
     let beat = this.safeParse(this.beat)
+    if (this.beatDropdown.value == "Measure") beat *= 4
     if (beat > 9999999) beat = 9999999
     this.manager.chartManager.setBeat(beat)
   }

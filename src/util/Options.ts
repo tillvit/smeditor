@@ -33,6 +33,26 @@ class DefaultOptions {
       opacity: 0.5,
       lineHeight: 1,
     },
+    timingEventOrder: {
+      left: [
+        "BPMS",
+        "STOPS",
+        "WARPS",
+        "DELAYS",
+        "TIMESIGNATURES",
+        "FAKES",
+        "LABELS",
+      ],
+      right: [
+        "SPEEDS",
+        "SCROLLS",
+        "TICKCOUNTS",
+        "COMBOS",
+        "ATTACKS",
+        "BGCHANGES",
+        "FGCHANGES",
+      ],
+    },
     renderTimingEvent: {
       BPMS: true,
       STOPS: true,
