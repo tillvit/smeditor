@@ -277,6 +277,10 @@ export class StatusWidget extends Widget {
     editTimingIcon.src = Icons.SPEED
     this.editTiming.appendChild(editTimingIcon)
     this.editTiming.appendChild(document.createTextNode("Edit Timing"))
+    this.editTiming.onclick = () => {
+      this.manager.chartManager.editingTiming =
+        !this.manager.chartManager.editingTiming
+    }
 
     const line4 = document.createElement("div")
     line4.classList.add("playback-seperator")

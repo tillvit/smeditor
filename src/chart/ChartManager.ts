@@ -14,6 +14,7 @@ import { TimerStats } from "../util/TimerStats"
 import {
   basename,
   bsearch,
+  clamp,
   decodeNotes,
   dirname,
   encodeNotes,
@@ -99,6 +100,8 @@ export class ChartManager {
     timingEvents: [],
   }
 
+  editingTiming = false
+
   private beat = 0
   private time = 0
 
@@ -178,13 +181,14 @@ export class ChartManager {
         )
           return
         if ((IS_OSX && event.metaKey) || (!IS_OSX && event.ctrlKey)) {
-          Options.chart.speed = Math.max(
-            10,
+          Options.chart.speed = clamp(
             Options.chart.speed *
               Math.pow(
                 1.01,
                 (event.deltaY / 5) * Options.general.scrollSensitivity
-              )
+              ),
+            10,
+            35000
           )
         } else {
           if (this.mode == EditMode.Play || this.mode == EditMode.Record) return
@@ -318,12 +322,7 @@ export class ChartManager {
       let hasPlayed = false
       while (
         this.noteIndex < notedata.length &&
-        time >
-          notedata[this.noteIndex].second +
-            Options.audio.effectOffset -
-            (this.mode == EditMode.Record || this.mode == EditMode.Play
-              ? Options.play.offset
-              : 0)
+        time > notedata[this.noteIndex].second + Options.audio.effectOffset
       ) {
         if (
           this.mode != EditMode.Record &&
@@ -346,13 +345,7 @@ export class ChartManager {
         this.noteIndex++
       }
       const metronomeBeat = Math.floor(
-        this.chart.getBeat(
-          this.time +
-            Options.audio.effectOffset -
-            (this.mode == EditMode.Record || this.mode == EditMode.Play
-              ? Options.play.offset
-              : 0)
-        )
+        this.chart.getBeat(this.time + Options.audio.effectOffset)
       )
       if (metronomeBeat != this.lastBeat) {
         this.lastBeat = metronomeBeat

@@ -10,7 +10,7 @@ import { SelectionAreaContainer } from "./renderer/SelectionAreaContainer"
 import { SnapContainer } from "./renderer/SnapContainer"
 import { TimingAreaContainer } from "./renderer/TimingAreaContainer"
 import { TimingBarContainer } from "./renderer/TimingBarContainer"
-import { TimingBoxContainer } from "./renderer/TimingBoxContainer"
+import { TimingTrackContainer } from "./renderer/TimingTrackContainer"
 import { Waveform } from "./renderer/Waveform"
 import { Chart } from "./sm/Chart"
 import { NotedataEntry } from "./sm/NoteTypes"
@@ -36,7 +36,7 @@ export class ChartRenderer extends Container {
   private waveform: Waveform
   private barlines: BarlineContainer
   private timingAreas: TimingAreaContainer
-  private timingBoxes: TimingBoxContainer
+  private timingTracks: TimingTrackContainer
   private timingBar: TimingBarContainer
   notefield: Notefield
   private snapDisplay: SnapContainer
@@ -55,7 +55,7 @@ export class ChartRenderer extends Container {
     this.waveform = new Waveform(this)
     this.barlines = new BarlineContainer(this)
     this.timingAreas = new TimingAreaContainer(this)
-    this.timingBoxes = new TimingBoxContainer(this)
+    this.timingTracks = new TimingTrackContainer(this)
     this.timingBar = new TimingBarContainer(this)
     this.notefield = new this.chart.gameType.notefield(this)
     this.snapDisplay = new SnapContainer(this)
@@ -70,7 +70,7 @@ export class ChartRenderer extends Container {
     this.addChild(this.barlines)
     this.addChild(this.timingAreas)
     this.addChild(this.selectionArea)
-    this.addChild(this.timingBoxes)
+    this.addChild(this.timingTracks)
     this.addChild(this.timingBar)
     this.addChild(this.combo)
     this.addChild(this.notefield)
@@ -264,7 +264,7 @@ export class ChartRenderer extends Container {
       renderBeatLimit,
       renderSecondLowerLimit
     )
-    this.timingBoxes.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
+    this.timingTracks.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
     this.timingBar.renderThis()
     this.judgment.renderThis()
     this.combo.renderThis()

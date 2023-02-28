@@ -1104,7 +1104,6 @@ input[type="range"] {
 
 #status-widget .edit-fancy-button {
   font-size: 9px;
-  pointer-events: none;
   padding: 0px 4px;
   width: 56px;
   height: 48px;

@@ -35,13 +35,13 @@ class DefaultOptions {
     },
     timingEventOrder: {
       left: [
-        "BPMS",
-        "STOPS",
-        "WARPS",
-        "DELAYS",
-        "TIMESIGNATURES",
-        "FAKES",
         "LABELS",
+        "FAKES",
+        "TIMESIGNATURES",
+        "DELAYS",
+        "WARPS",
+        "STOPS",
+        "BPMS",
       ],
       right: [
         "SPEEDS",
