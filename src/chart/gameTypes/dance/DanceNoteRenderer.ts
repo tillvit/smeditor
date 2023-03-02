@@ -12,7 +12,6 @@ const roll_cap_texture = Texture.from("assets/noteskin/dance/roll/cap.png")
 
 const ICONS: Record<string, Texture> = {
   Fake: Texture.from("assets/noteskin/dance/icon/fake.png"),
-  Lift: Texture.from("assets/noteskin/dance/icon/lift.png"),
 }
 
 export class NoteItem extends Container {

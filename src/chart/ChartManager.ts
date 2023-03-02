@@ -14,6 +14,7 @@ import { TimerStats } from "../util/TimerStats"
 import {
   basename,
   bsearch,
+  clamp,
   decodeNotes,
   dirname,
   encodeNotes,
@@ -99,6 +100,8 @@ export class ChartManager {
     timingEvents: [],
   }
 
+  editingTiming = false
+
   private beat = 0
   private time = 0
 
@@ -178,13 +181,14 @@ export class ChartManager {
         )
           return
         if ((IS_OSX && event.metaKey) || (!IS_OSX && event.ctrlKey)) {
-          Options.chart.speed = Math.max(
-            10,
+          Options.chart.speed = clamp(
             Options.chart.speed *
               Math.pow(
                 1.01,
                 (event.deltaY / 5) * Options.general.scrollSensitivity
-              )
+              ),
+            10,
+            35000
           )
         } else {
           if (this.mode == EditMode.Play || this.mode == EditMode.Record) return
@@ -235,7 +239,7 @@ export class ChartManager {
     this.widgetManager = new WidgetManager(this)
 
     this.noChartTextA = new BitmapText("No Chart", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 30,
     })
 
@@ -243,7 +247,7 @@ export class ChartManager {
     this.noChartTextA.tint = 0x555555
     this.app.stage.addChild(this.noChartTextA)
     this.noChartTextB = new BitmapText("Create a new chart", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 15,
     })
 
@@ -321,6 +325,7 @@ export class ChartManager {
         time > notedata[this.noteIndex].second + Options.audio.effectOffset
       ) {
         if (
+          this.mode != EditMode.Record &&
           this.songAudio.isPlaying() &&
           this.chart.gameType.gameLogic.shouldAssistTick(
             notedata[this.noteIndex]
@@ -986,11 +991,13 @@ export class ChartManager {
     if (this.mode == mode) {
       if (mode == EditMode.Play || mode == EditMode.Record) {
         this.setMode(this.lastMode)
+        this.getAssistTickIndex()
         this.songAudio.pause()
       }
       return
     }
-    this.lastMode = this.mode
+    if (this.mode == EditMode.View || this.mode == EditMode.Edit)
+      this.lastMode = this.mode
     this.mode = mode
     if (this.mode == EditMode.Play) {
       this.chart.notedata.forEach(note => {

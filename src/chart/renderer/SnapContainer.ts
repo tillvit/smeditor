@@ -4,7 +4,7 @@ import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 
 const snapNumbers = {
-  fontName: "Assistant",
+  fontName: "Main",
   fontSize: 10,
   fill: ["#ffffff"],
 }

@@ -77,6 +77,7 @@ export class App {
       resolution: Options.performance.resolution,
       autoDensity: true,
       view: this.view,
+      powerPreference: "low-power",
     })
 
     this.ticker = new Ticker()
@@ -89,7 +90,6 @@ export class App {
       fpsUpdate()
     }, UPDATE_PRIORITY.LOW)
     this.ticker.start()
-    this.stage.sortableChildren = true
 
     BetterRoundedRect.init(this.renderer)
 
@@ -128,7 +128,7 @@ export class App {
 
   registerFonts() {
     BitmapFont.from(
-      "Assistant",
+      "Main",
       {
         fontFamily: "Assistant",
         fontSize: 20,
@@ -147,7 +147,7 @@ export class App {
     )
 
     BitmapFont.from(
-      "Assistant-Fancy",
+      "Fancy",
       {
         fontFamily: "Assistant",
         fontSize: 40,

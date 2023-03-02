@@ -547,7 +547,7 @@ export class TimingData {
   isBeatFaked(beat: number): boolean {
     if (!isFinite(beat)) return false
     const flooredBeat = Math.floor(beat * 1000) / 1000
-    if (this.isBeatWarped(flooredBeat)) return true
+    if (this.isBeatWarped(beat)) return true
     const fakes = this.getTimingData("FAKES")
     if (fakes == undefined) return false
     for (const event of fakes) {

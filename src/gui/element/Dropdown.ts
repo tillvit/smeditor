@@ -85,6 +85,12 @@ export class Dropdown<T> {
     itemDisplay.innerText = this.selectedItem ? this.selectedItem + "" : ""
   }
 
+  closeDropdown() {
+    const itemList = this.view.querySelector<HTMLDivElement>(".dropdown-items")
+    if (!itemList) return
+    itemList.style.height = ""
+  }
+
   get value(): T {
     return this.selectedItem
   }
@@ -113,8 +119,8 @@ export class Dropdown<T> {
       itemEl.onclick = () => {
         itemList.style.height = ""
         if (this.selectedItem != item) {
-          this.onChangeHandlers.forEach(handler => handler(item))
           this.setSelected(item)
+          this.onChangeHandlers.forEach(handler => handler(item))
         }
       }
       return itemEl

@@ -97,7 +97,7 @@ export class PlayInfoWidget extends Widget {
     })
 
     const early = new BitmapText("Early", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 15,
     })
     early.x = -WIDGET_WIDTH / 2 + 5
@@ -106,7 +106,7 @@ export class PlayInfoWidget extends Widget {
     this.background.addChild(early)
 
     const late = new BitmapText("Late", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 15,
     })
     late.anchor.x = 1
@@ -116,7 +116,7 @@ export class PlayInfoWidget extends Widget {
     this.background.addChild(late)
 
     this.meanText = new BitmapText("-", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 15,
     })
     this.meanText.anchor.x = 0.5
@@ -125,7 +125,7 @@ export class PlayInfoWidget extends Widget {
     this.statText.addChild(this.meanText)
 
     this.medianText = new BitmapText("-", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 15,
     })
     this.medianText.anchor.x = 0.5
@@ -134,7 +134,7 @@ export class PlayInfoWidget extends Widget {
     this.statText.addChild(this.medianText)
 
     this.modeText = new BitmapText("-", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 15,
     })
     this.modeText.anchor.x = 0.5
@@ -143,7 +143,7 @@ export class PlayInfoWidget extends Widget {
     this.statText.addChild(this.modeText)
 
     this.stddevText = new BitmapText("-", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 15,
     })
     this.stddevText.anchor.x = 0.5
@@ -152,7 +152,7 @@ export class PlayInfoWidget extends Widget {
     this.statText.addChild(this.stddevText)
 
     const meanLabel = new BitmapText("Mean", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 10,
     })
     meanLabel.anchor.x = 0.5
@@ -161,7 +161,7 @@ export class PlayInfoWidget extends Widget {
     this.statText.addChild(meanLabel)
 
     const medianLabel = new BitmapText("Median", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 10,
     })
     medianLabel.anchor.x = 0.5
@@ -170,7 +170,7 @@ export class PlayInfoWidget extends Widget {
     this.statText.addChild(medianLabel)
 
     const modeLabel = new BitmapText("Mode", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 10,
     })
     modeLabel.anchor.x = 0.5
@@ -179,7 +179,7 @@ export class PlayInfoWidget extends Widget {
     this.statText.addChild(modeLabel)
 
     const stddevLabel = new BitmapText("Std Dev.", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 10,
     })
     stddevLabel.anchor.x = 0.5
@@ -297,10 +297,10 @@ export class PlayInfoWidget extends Widget {
       collection.getMissJudgment(),
     ]) {
       const label = new BitmapText(window.name, {
-        fontName: "Assistant",
+        fontName: "Main",
         fontSize: 15,
       })
-      const count = new BitmapText("0", { fontName: "Assistant", fontSize: 15 })
+      const count = new BitmapText("0", { fontName: "Main", fontSize: 15 })
       label.tint = window.color
       count.tint = window.color
       count.name = window.id
@@ -322,11 +322,11 @@ export class PlayInfoWidget extends Widget {
     ]) {
       const name = isHoldTimingWindow(window) ? window.noteType : "Mine"
       const label = new BitmapText(name, {
-        fontName: "Assistant",
+        fontName: "Main",
         fontSize: 15,
       })
       const count = new BitmapText("0", {
-        fontName: "Assistant",
+        fontName: "Main",
         fontSize: 15,
       })
       if (name != "Mine")
@@ -350,11 +350,11 @@ export class PlayInfoWidget extends Widget {
     }
 
     const label = new BitmapText("Max Combo", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 15,
     })
     const count = new BitmapText("0", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 15,
     })
     label.tint = 0xdddddd
@@ -371,7 +371,7 @@ export class PlayInfoWidget extends Widget {
     count.anchor.x = 1
 
     const score = new BitmapText("0.00 / 0.00", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 20,
     })
     score.tint = 0xdddddd
@@ -382,7 +382,7 @@ export class PlayInfoWidget extends Widget {
     score.anchor.set(0.5)
 
     const scoreLabel = new BitmapText("Score / Current Score", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 13,
     })
     scoreLabel.tint = 0x888888
@@ -392,7 +392,7 @@ export class PlayInfoWidget extends Widget {
     scoreLabel.anchor.set(0.5)
 
     const windowLabel = new BitmapText("Play Statistics", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 13,
     })
     windowLabel.y = -HISTOGRAM_HEIGHT - 195

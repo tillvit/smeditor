@@ -10,7 +10,7 @@ export class ComboNumber extends BitmapText {
 
   constructor(renderer: ChartRenderer) {
     super("", {
-      fontName: "Assistant-Fancy",
+      fontName: "Fancy",
     })
     this.y = 50
     this.anchor.set(0.5)

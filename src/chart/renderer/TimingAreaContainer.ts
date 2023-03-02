@@ -7,7 +7,6 @@ import {
   DelayTimingEvent,
   FakeTimingEvent,
   StopTimingEvent,
-  TimingEventProperty,
   WarpTimingEvent,
 } from "../sm/TimingTypes"
 
@@ -18,23 +17,23 @@ interface TimingAreaObject extends Sprite {
   dirtyTime: number
 }
 
-export const TIMING_EVENT_DATA: {
-  [key in TimingEventProperty]: ["right" | "left", number]
+export const TIMING_EVENT_COLORS: {
+  [key: string]: number
 } = {
-  BPMS: ["right", 0x661320],
-  STOPS: ["left", 0x9ea106],
-  DELAYS: ["left", 0x06a2d6],
-  WARPS: ["left", 0x800b55],
-  FAKES: ["left", 0x888888],
-  COMBOS: ["right", 0x0f5c25],
-  SPEEDS: ["right", 0x2d4c75],
-  LABELS: ["right", 0x6e331d],
-  SCROLLS: ["left", 0x161f45],
-  TIMESIGNATURES: ["left", 0x756941],
-  TICKCOUNTS: ["right", 0x339c37],
-  BGCHANGES: ["left", 0xad511c],
-  FGCHANGES: ["left", 0xcf302d],
-  ATTACKS: ["left", 0x08bf88],
+  BPMS: 0x661320,
+  STOPS: 0x9ea106,
+  DELAYS: 0x06a2d6,
+  WARPS: 0x800b55,
+  FAKES: 0x888888,
+  COMBOS: 0x0f5c25,
+  SPEEDS: 0x2d4c75,
+  LABELS: 0x6e331d,
+  SCROLLS: 0x161f45,
+  TIMESIGNATURES: 0x756941,
+  TICKCOUNTS: 0x339c37,
+  BGCHANGES: 0xad511c,
+  FGCHANGES: 0xcf302d,
+  ATTACKS: 0x08bf88,
 }
 
 export class TimingAreaContainer extends Container {
@@ -149,7 +148,11 @@ export class TimingAreaContainer extends Container {
         }
         break
       }
-      case "FAKES":
+      case "FAKES": {
+        yEnd = this.renderer.getYPos(event.beat + event.value)
+
+        break
+      }
       case "WARPS": {
         if (!Options.chart.CMod) {
           yEnd = this.renderer.getYPos(event.beat + event.value)
@@ -195,7 +198,7 @@ export class TimingAreaContainer extends Container {
     newChild.anchor!.y = 0
     newChild.width = this.renderer.chart.gameType.notefieldWidth + 128
     newChild.visible = true
-    newChild.tint = TIMING_EVENT_DATA[event.type][1]
+    newChild.tint = TIMING_EVENT_COLORS[event.type]
     newChild.alpha = 0.2
     this.timingAreaMap.set(event, newChild as TimingAreaObject)
     return newChild as TimingAreaObject

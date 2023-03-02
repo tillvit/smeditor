@@ -24,7 +24,7 @@ const BAR_WIDTH = 1
 const BAR_HEIGHT = 15
 
 const errorStyle = {
-  fontName: "Assistant-Fancy",
+  fontName: "Fancy",
   fontSize: 12,
 }
 

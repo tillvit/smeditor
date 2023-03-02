@@ -25,7 +25,7 @@ interface BarlineLabel extends BitmapText {
 type BarlineObject = Barline | BarlineLabel
 
 const measureNumbers = {
-  fontName: "Assistant",
+  fontName: "Main",
   fontSize: 20,
   fill: ["#ffffff"],
 }

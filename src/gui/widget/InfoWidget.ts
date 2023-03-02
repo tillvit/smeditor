@@ -65,7 +65,7 @@ export class InfoWidget extends Widget {
 
     this.items.mask = this.maskObj
     const mode = new BitmapText("", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 25,
     })
     mode.name = "Mode"
@@ -74,7 +74,7 @@ export class InfoWidget extends Widget {
     this.texts.addChild(mode)
 
     const info = new BitmapText("", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 18,
     })
     info.name = "Info"
@@ -84,7 +84,7 @@ export class InfoWidget extends Widget {
     this.texts.addChild(info)
 
     const chart = new BitmapText("", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 18,
     })
     chart.name = "Chart"
@@ -93,7 +93,7 @@ export class InfoWidget extends Widget {
     this.texts.addChild(chart)
 
     const renderStats = new BitmapText("", {
-      fontName: "Assistant",
+      fontName: "Main",
       fontSize: 18,
     })
     renderStats.name = "RStats"
@@ -112,7 +112,7 @@ export class InfoWidget extends Widget {
       let numLines = 0
       for (const type in stats) {
         const text = new BitmapText(`${type}: ${stats[type]}`, {
-          fontName: "Assistant",
+          fontName: "Main",
           fontSize: 18,
         })
         text.name = type
@@ -211,7 +211,7 @@ export class InfoWidget extends Widget {
         for (let chartIndex = 0; chartIndex < charts.length; chartIndex++) {
           const chart = charts[chartIndex]
           const text = new BitmapText(`${chart.difficulty} ${chart.meter}`, {
-            fontName: "Assistant",
+            fontName: "Main",
             fontSize: 18,
           })
           text.x = 5

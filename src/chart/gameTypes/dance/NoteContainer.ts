@@ -154,6 +154,8 @@ export class NoteContainer extends Container {
     }
     if (!newChild) {
       newChild = DanceNoteRenderer.createArrow() as ExtendedNoteObject
+      newChild.zIndex = note.beat
+      this.addChild(newChild as ExtendedNoteObject)
     }
     newChild.note = note
     newChild.visible = true
@@ -263,7 +265,6 @@ export class NoteContainer extends Container {
       newChild?.removeAllListeners!()
     })
     this.noteMap.set(note, newChild as ExtendedNoteObject)
-    this.addChild(newChild as ExtendedNoteObject)
     return newChild as ExtendedNoteObject
   }
 }

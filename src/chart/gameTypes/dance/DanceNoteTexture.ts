@@ -1,13 +1,13 @@
 import {
-  RenderTexture,
+  BaseTexture,
   Container,
   Geometry,
-  Texture,
-  Shader,
   Mesh,
-  Sprite,
   Rectangle,
-  BaseTexture,
+  RenderTexture,
+  Shader,
+  Sprite,
+  Texture,
 } from "pixi.js"
 import { App } from "../../../App"
 import { Options } from "../../../util/Options"
@@ -21,6 +21,7 @@ export class DanceNoteTexture {
   static noop_vert: string
   static arrow_gradient_frag: string
   static mine_gradient_frag: string
+  static lift_gradient_frag: string
 
   static arrow_parts_texture = BaseTexture.from(
     "assets/noteskin/dance/tap/parts.png"
@@ -28,9 +29,14 @@ export class DanceNoteTexture {
   static mine_parts_texture = BaseTexture.from(
     "assets/noteskin/dance/mine/parts.png"
   )
+  static lift_parts_texture = BaseTexture.from(
+    "assets/noteskin/dance/lift/parts.png"
+  )
 
   static arrow_body_geometry: Geometry
   static arrow_frame_geometry: Geometry
+
+  static lift_body_geometry: Geometry
 
   static mine_body_geometry: Geometry
 
@@ -46,6 +52,12 @@ export class DanceNoteTexture {
     resolution: Options.performance.resolution,
   })
   static arrow_container = new Container()
+  static lift_tex = RenderTexture.create({
+    width: 192,
+    height: 192,
+    resolution: Options.performance.resolution,
+  })
+  static lift_container = new Container()
   static mine_tex = RenderTexture.create({
     width: 64,
     height: 64,
@@ -69,6 +81,9 @@ export class DanceNoteTexture {
     this.mine_gradient_frag = await fetch(
       "assets/noteskin/dance/shader/mine_gradient.frag"
     ).then(response => response.text())
+    this.lift_gradient_frag = await fetch(
+      "assets/noteskin/dance/shader/lift_gradient.frag"
+    ).then(response => response.text())
 
     this.arrow_body_geometry = await this.loadGeometry(
       "assets/noteskin/dance/tap/body.txt"
@@ -78,6 +93,9 @@ export class DanceNoteTexture {
     )
     this.mine_body_geometry = await this.loadGeometry(
       "assets/noteskin/dance/mine/body.txt"
+    )
+    this.lift_body_geometry = await this.loadGeometry(
+      "assets/noteskin/dance/lift/body.txt"
     )
 
     {
@@ -116,6 +134,24 @@ export class DanceNoteTexture {
       }
     }
     {
+      for (let i = 0; i < 8; i++) {
+        const shader_body = Shader.from(
+          this.noop_vert,
+          this.lift_gradient_frag,
+          { sampler0: this.lift_parts_texture, time: 0, quant: i }
+        )
+        const arrow_body = new Mesh(
+          DanceNoteTexture.lift_body_geometry,
+          shader_body
+        )
+        arrow_body.x = (i % 3) * 64 + 32
+        arrow_body.y = Math.floor(i / 3) * 64 + 32
+        arrow_body.rotation = -Math.PI / 2
+        arrow_body.name = "body" + i
+        DanceNoteTexture.lift_container.addChild(arrow_body)
+      }
+    }
+    {
       const shader_body = Shader.from(this.noop_vert, this.mine_gradient_frag, {
         sampler0: this.mine_parts_texture,
         time: 0,
@@ -128,6 +164,7 @@ export class DanceNoteTexture {
       mine_frame.width = 64
       mine_frame.height = 64
       mine_frame.anchor.set(0.5)
+      mine_frame.pivot.y = 3 //epic recenter
       DanceNoteTexture.mine_container.position.set(32)
       DanceNoteTexture.mine_container.addChild(mine_body)
       DanceNoteTexture.mine_container.addChild(mine_frame)
@@ -142,6 +179,9 @@ export class DanceNoteTexture {
       })
       app.renderer.render(DanceNoteTexture.mine_container, {
         renderTexture: DanceNoteTexture.mine_tex,
+      })
+      app.renderer.render(DanceNoteTexture.lift_container, {
+        renderTexture: DanceNoteTexture.lift_tex,
       })
     })
 
@@ -193,9 +233,12 @@ export class DanceNoteTexture {
   static setArrowTexTime(beat: number, second: number) {
     if (!this.loaded) return
     for (let i = 0; i < 8; i++) {
-      const note: Mesh<Shader> =
+      const tapShader: Mesh<Shader> =
         DanceNoteTexture.arrow_container.getChildByName("body" + i)
-      note.shader.uniforms.time = beat
+      tapShader.shader.uniforms.time = beat
+      const liftShader: Mesh<Shader> =
+        DanceNoteTexture.lift_container.getChildByName("body" + i)
+      liftShader.shader.uniforms.time = beat
     }
     ;(<Mesh>DanceNoteTexture.mine_container.children[0]).shader.uniforms.time =
       second
@@ -208,7 +251,9 @@ export class DanceNoteTexture {
     } else {
       const i = Math.min(getQuantIndex(note.beat), 7)
       arrow.texture = new Texture(
-        DanceNoteTexture.arrow_tex.baseTexture,
+        note.type == "Lift"
+          ? DanceNoteTexture.lift_tex.baseTexture
+          : DanceNoteTexture.arrow_tex.baseTexture,
         new Rectangle((i % 3) * 64, Math.floor(i / 3) * 64, 64, 64)
       )
     }
