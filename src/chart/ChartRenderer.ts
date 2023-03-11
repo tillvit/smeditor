@@ -218,8 +218,8 @@ export class ChartRenderer extends Container {
   }
 
   renderThis() {
-    const beat = this.getBeatWithOffset()
-    const time = this.getTimeWithOffset()
+    const beat = this.getVisualBeat()
+    const time = this.getVisualTime()
 
     this.speedMult = Options.chart.doSpeedChanges
       ? this.chart.timingData.getSpeedMult(beat, time)
@@ -331,9 +331,31 @@ export class ChartRenderer extends Container {
     return beat
   }
 
+  getVisualTime(): number {
+    let time = this.chartManager.getTime()
+    if (
+      this.chartManager.getMode() == EditMode.Play ||
+      this.chartManager.getMode() == EditMode.Record
+    ) {
+      time += Options.play.offset + Options.play.visualOffset
+    }
+    return time
+  }
+
+  getVisualBeat(): number {
+    let beat = this.chartManager.getBeat()
+    if (
+      this.chartManager.getMode() == EditMode.Play ||
+      this.chartManager.getMode() == EditMode.Record
+    ) {
+      beat = this.chart.getBeat(this.getVisualTime())
+    }
+    return beat
+  }
+
   getYPos(beat: number): number {
-    const currentTime = this.getTimeWithOffset()
-    const currentBeat = this.getBeatWithOffset()
+    const currentTime = this.getVisualTime()
+    const currentBeat = this.getVisualBeat()
     if (Options.chart.CMod) {
       return (
         (((this.chart.getSeconds(beat) - currentTime) * Options.chart.speed) /
@@ -362,7 +384,7 @@ export class ChartRenderer extends Container {
   }
 
   getYPosFromTime(time: number): number {
-    const currentTime = this.getTimeWithOffset()
+    const currentTime = this.getVisualTime()
     if (Options.chart.CMod) {
       return (
         (((time - currentTime) * Options.chart.speed) / 100) * 64 * 4 +
@@ -372,7 +394,7 @@ export class ChartRenderer extends Container {
   }
 
   getTimeFromYPos(yp: number): number {
-    const currentTime = this.getTimeWithOffset()
+    const currentTime = this.getVisualTime()
     if (Options.chart.CMod) {
       const seconds =
         (((yp - Options.chart.receptorYPos / Options.chart.zoom) /
@@ -387,7 +409,7 @@ export class ChartRenderer extends Container {
   }
 
   getBeatFromYPos(yp: number, ignoreSpeeds?: boolean): number {
-    const currentBeat = this.getBeatWithOffset()
+    const currentBeat = this.getVisualBeat()
     if (Options.chart.CMod) {
       return this.chart.getBeat(this.getTimeFromYPos(yp))
     }

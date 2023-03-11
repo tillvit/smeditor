@@ -19,12 +19,12 @@ export class UserOptionsWindow extends Window {
       blocking: false,
     })
     this.app = app
-    this.initView(this.viewElement)
+    this.initView()
   }
 
-  initView(viewElement: HTMLDivElement): void {
+  initView(): void {
     // Create the window
-    viewElement.replaceChildren()
+    this.viewElement.replaceChildren()
 
     //Padding container
     const padding = document.createElement("div")
@@ -36,7 +36,7 @@ export class UserOptionsWindow extends Window {
     scroll.replaceChildren(...divs)
 
     padding.appendChild(scroll)
-    viewElement.appendChild(padding)
+    this.viewElement.appendChild(padding)
   }
 
   private createDiv(prefix?: string): HTMLDivElement[] {

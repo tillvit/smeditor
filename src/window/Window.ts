@@ -88,7 +88,7 @@ export abstract class Window {
     this.viewElement = viewElement
   }
 
-  abstract initView(viewElement: HTMLDivElement): void
+  abstract initView(): void
 
   addToManager(windowManager: WindowManager) {
     this.windowManager = windowManager

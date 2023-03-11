@@ -244,6 +244,7 @@ export class TimingData {
     properties: Partial<Extract<TimingEvent, { type: Type }>> | number,
     beat?: number
   ) {
+    if (Object.keys(properties).length == 0) return
     const target = songTiming ? this : this._fallback!
     if (type == "OFFSET") {
       target.offset = properties as number
@@ -264,54 +265,32 @@ export class TimingData {
     }
 
     beat = roundDigit(beat!, 3)
-    const event = target.getTimingEventAtBeat(type, beat)
+    const eventOnBeat = target.getTimingEventAtBeat(type, beat)
     const newEvent: Partial<TimingEvent> = { type: type, beat: beat }
     const toDelete: TimingEvent[] = []
     const toAdd: TimingEvent[] = []
-    if (event?.beat == beat) {
-      if (Object.keys(properties).length == 0) {
-        toDelete.push(event)
-
-        ActionHistory.instance.run({
-          action: () => {
-            for (const event of toDelete) {
-              this._delete(songTiming, event)
-            }
-            for (const event of toAdd) {
-              target._insert(type, event)
-            }
-          },
-          undo: () => {
-            for (const event of toAdd) {
-              target._insert(type, event)
-            }
-            for (const event of toDelete) {
-              this._delete(songTiming, event)
-            }
-          },
-        })
-        return
-      }
-      const prevEvent = target.getTimingEventAtBeat(type, beat - 0.001)
-      if (prevEvent == event) return
-      Object.assign(newEvent, properties)
-      toDelete.push(event)
-      if (!prevEvent || !this.isDuplicate(prevEvent, newEvent as TimingEvent)) {
-        toAdd.push(newEvent as TimingEvent)
-      }
-    } else {
-      if (Object.keys(properties).length == 0) return
-      Object.assign(newEvent, properties)
+    // Remove old event if same beat
+    if (eventOnBeat?.beat == beat) {
+      toDelete.push(eventOnBeat)
+    }
+    //Add new event if it doesn't match the previous one
+    const previousEvent = target.getTimingEventAtBeat(type, beat - 0.001)
+    Object.assign(newEvent, properties)
+    if (
+      !previousEvent ||
+      !this.isDuplicate(previousEvent, newEvent as TimingEvent)
+    ) {
       toAdd.push(newEvent as TimingEvent)
     }
-    const bpms = this.getTimingData("BPMS")
-    const nextEvent = bpms[target.searchCache(bpms, "beat", beat) + 1]
+    //Remove the next event if it matches the new event
+    const events = this.getTimingData(type)
+    const nextEvent = events[target.searchCache(events, "beat", beat) + 1]
+    console.log(nextEvent)
     if (nextEvent) {
       if (this.isDuplicate(newEvent as TimingEvent, nextEvent)) {
         toDelete.push(nextEvent)
       }
     }
-    console.log(toAdd, toDelete)
     ActionHistory.instance.run({
       action: () => {
         for (const event of toDelete) {

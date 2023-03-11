@@ -12,13 +12,13 @@ export class EQWindow extends Window {
       win_id: "audio-eq",
     })
     this.app = app
-    this.initView(this.viewElement)
+    this.initView()
   }
 
-  initView(viewElement: HTMLDivElement) {
-    viewElement.replaceChildren()
+  initView() {
+    this.viewElement.replaceChildren()
     const canvas = document.createElement("canvas")
-    viewElement.appendChild(canvas)
+    this.viewElement.appendChild(canvas)
     const frameDraw = this.drawEQ(canvas)
     requestAnimationFrame(frameDraw)
   }
