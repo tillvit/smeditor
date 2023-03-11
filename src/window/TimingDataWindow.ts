@@ -10,7 +10,7 @@ export class TimingDataWindow extends Window {
   private lastBeat: number
   private songTiming = false
   private interval
-  private changeHandler = () => this.setData(this.viewElement)
+  private changeHandler = () => this.setData()
 
   constructor(app: App) {
     super({
@@ -24,7 +24,7 @@ export class TimingDataWindow extends Window {
     this.app = app
     this.lastBeat = Math.round(this.app.chartManager.getBeat() * 1000) / 1000
     this.songTiming = !this.app.chartManager.chart!.timingData.isEmpty()
-    this.initView(this.viewElement)
+    this.initView()
     this.interval = setInterval(() => {
       if (
         Math.round(this.app.chartManager.getBeat() * 1000) / 1000 !=
@@ -32,7 +32,7 @@ export class TimingDataWindow extends Window {
       ) {
         this.lastBeat =
           Math.round(this.app.chartManager.getBeat() * 1000) / 1000
-        this.setData(this.viewElement)
+        this.setData()
       }
     }, 17)
     EventHandler.on("timingModified", this.changeHandler)
@@ -43,9 +43,9 @@ export class TimingDataWindow extends Window {
     clearInterval(this.interval)
   }
 
-  initView(viewElement: HTMLDivElement): void {
-    viewElement.replaceChildren()
-    viewElement.classList.add("timing-data")
+  initView(): void {
+    this.viewElement.replaceChildren()
+    this.viewElement.classList.add("timing-data")
     const padding = document.createElement("div")
     padding.classList.add("padding")
     const songLabel = document.createElement("div")
@@ -71,14 +71,14 @@ export class TimingDataWindow extends Window {
       padding.appendChild(label)
       padding.appendChild(item)
     })
-    viewElement.appendChild(padding)
-    this.setData(viewElement)
+    this.viewElement.appendChild(padding)
+    this.setData()
   }
 
-  setData(viewElement: HTMLDivElement) {
+  setData() {
     if (!this.app.chartManager.chart) return
     Object.values(TIMING_WINDOW_DATA).forEach((entry, index) => {
-      const item = viewElement.children[0].children[index * 2 + 3]
+      const item = this.viewElement.children[0].children[index * 2 + 3]
       entry.element.update(
         item,
         this.app.chartManager.chart!.timingData,

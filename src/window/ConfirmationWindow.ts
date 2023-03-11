@@ -32,12 +32,12 @@ export class ConfimationWindow extends Window {
     this.app = app
     this.message = message
     this.buttonOptions = buttonOptions
-    this.initView(this.viewElement)
+    this.initView()
   }
 
-  initView(viewElement: HTMLDivElement): void {
-    viewElement.replaceChildren()
-    viewElement.classList.add("confirmation")
+  initView(): void {
+    this.viewElement.replaceChildren()
+    this.viewElement.classList.add("confirmation")
     const padding = document.createElement("div")
     padding.classList.add("padding")
 
@@ -63,6 +63,6 @@ export class ConfimationWindow extends Window {
       menu_options.append(button)
     })
     padding.appendChild(menu_options)
-    viewElement.appendChild(padding)
+    this.viewElement.appendChild(padding)
   }
 }

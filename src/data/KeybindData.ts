@@ -7,6 +7,7 @@ import { Options } from "../util/Options"
 import { ChartListWindow } from "../window/ChartListWindow"
 import { DirectoryWindow } from "../window/DirectoryWindow"
 import { EQWindow } from "../window/EQWindow"
+import { OffsetWindow } from "../window/OffsetWindow"
 import { SMPropertiesWindow } from "../window/SMPropertiesWindow"
 import { TimingDataWindow } from "../window/TimingDataWindow"
 import { UserOptionsWindow } from "../window/UserOptionsWindow"
@@ -861,5 +862,11 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       if (data) await navigator.clipboard.writeText(data)
       app.chartManager.deleteSelection()
     },
+  },
+  adjustOffset: {
+    label: "Adjust Offset",
+    keybinds: [],
+    disabled: false,
+    callback: app => app.windowManager.openWindow(new OffsetWindow(app)),
   },
 }

@@ -50,12 +50,12 @@ export class ChartListWindow extends Window {
       gameType ??
       app.chartManager.chart?.gameType ??
       GameTypeRegistry.getPriority()[0]
-    this.initView(this.viewElement)
+    this.initView()
     EventHandler.on("smLoadedAfter", this.smLoadHandler)
   }
 
-  initView(viewElement: HTMLDivElement) {
-    viewElement.replaceChildren()
+  initView() {
+    this.viewElement.replaceChildren()
 
     const padding = document.createElement("div")
     padding.classList.add("padding")
@@ -99,7 +99,7 @@ export class ChartListWindow extends Window {
     scroller.appendChild(this.chartList)
     scroller.appendChild(this.chartInfo)
 
-    viewElement.appendChild(padding)
+    this.viewElement.appendChild(padding)
 
     this.loadCharts()
   }

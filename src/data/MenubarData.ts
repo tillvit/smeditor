@@ -385,6 +385,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
     title: "Audio",
     options: [
       {
+        type: "selection",
+        id: "adjustOffset",
+      },
+      {
         type: "checkbox",
         id: "assistTick",
         checked: () => Options.audio.assistTick,

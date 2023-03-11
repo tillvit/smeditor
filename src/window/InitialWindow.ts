@@ -8,12 +8,12 @@ export class InitialWindow extends Window {
   constructor(app: App) {
     super(INITIAL_WINDOW_DATA.window_options)
     this.app = app
-    this.initView(this.viewElement)
+    this.initView()
   }
 
-  initView(viewElement: HTMLDivElement): void {
-    viewElement.replaceChildren()
-    viewElement.classList.add("options")
+  initView(): void {
+    this.viewElement.replaceChildren()
+    this.viewElement.classList.add("options")
     const padding = document.createElement("div")
     padding.classList.add("padding")
     INITIAL_WINDOW_DATA.view.forEach(entry => {
@@ -45,6 +45,6 @@ export class InitialWindow extends Window {
       })
       padding.appendChild(section)
     })
-    viewElement.appendChild(padding)
+    this.viewElement.appendChild(padding)
   }
 }

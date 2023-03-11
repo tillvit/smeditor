@@ -31,11 +31,14 @@ export class NumberSpinner {
     input.autocomplete = "off"
     input.spellcheck = false
     input.onblur = () => {
+      if (input.value == "") {
+        this.onChange?.(undefined)
+        return
+      }
       let value = roundDigit(safeParse(input.value), 3)
       value = clamp(value, this.min, this.max)
       input.value = this.formatValue(value)
-      if (input.value == "") this.onChange?.(undefined)
-      else this.onChange?.(value)
+      this.onChange?.(value)
     }
     input.onkeydown = ev => {
       if (!isNumericKeyPress(ev)) ev.preventDefault()

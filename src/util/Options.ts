@@ -80,6 +80,7 @@ class DefaultOptions {
   }
   static play = {
     offset: 0,
+    visualOffset: 0,
     hideBarlines: false,
     judgmentTilt: true,
     timingCollection: "ITG",

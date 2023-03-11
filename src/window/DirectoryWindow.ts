@@ -54,15 +54,15 @@ export class DirectoryWindow extends Window {
     this.mouseHandler = this.handleMouseEvent.bind(this)
     this.dragHandler = this.handleDragEvent.bind(this)
 
-    this.initView(this.viewElement).then(() => {
+    this.initView().then(() => {
       if (selectedPath) this.selectPath(selectedPath)
       options.onload?.()
     })
   }
 
-  async initView(viewElement: HTMLDivElement) {
+  async initView() {
     // Create the window
-    viewElement.replaceChildren()
+    this.viewElement.replaceChildren()
 
     //Padding container
     const padding = document.createElement("div")
@@ -211,14 +211,14 @@ export class DirectoryWindow extends Window {
     padding.appendChild(scroll)
     padding.appendChild(file_options)
     padding.appendChild(menu_options)
-    viewElement.appendChild(padding)
+    this.viewElement.appendChild(padding)
 
     //Drag & drop
     window.addEventListener("keydown", this.keyHandler, true)
     window.addEventListener("drop", this.dropHandler, true)
     window.addEventListener("mousemove", this.dragHandler, true)
 
-    viewElement.addEventListener("dragover", this.mouseHandler)
+    this.viewElement.addEventListener("dragover", this.mouseHandler)
 
     await this.createDiv("").then(elements =>
       scroll.replaceChildren(...elements)

@@ -7,7 +7,7 @@ export class SMPropertiesWindow extends Window {
   app: App
 
   private callback?: (success: boolean) => void
-  private changeHandler = () => this.initView(this.viewElement)
+  private changeHandler = () => this.initView()
 
   constructor(
     app: App,
@@ -24,7 +24,7 @@ export class SMPropertiesWindow extends Window {
     })
     this.app = app
     this.callback = callback
-    this.initView(this.viewElement)
+    this.initView()
     EventHandler.on("smLoaded", this.changeHandler)
     EventHandler.on("undo", this.changeHandler)
     EventHandler.on("redo", this.changeHandler)
@@ -36,9 +36,9 @@ export class SMPropertiesWindow extends Window {
     EventHandler.off("redo", this.changeHandler)
   }
 
-  initView(viewElement: HTMLDivElement): void {
-    viewElement.replaceChildren()
-    viewElement.classList.add("sm-properties")
+  initView(): void {
+    this.viewElement.replaceChildren()
+    this.viewElement.classList.add("sm-properties")
     const padding = document.createElement("div")
     padding.classList.add("padding")
 
@@ -89,6 +89,6 @@ export class SMPropertiesWindow extends Window {
     menu_options_left.appendChild(cancel)
     menu_options_right.appendChild(create_btn)
     if (this.options.blocking) padding.appendChild(menu_options)
-    viewElement.appendChild(padding)
+    this.viewElement.appendChild(padding)
   }
 }
