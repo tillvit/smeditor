@@ -206,7 +206,7 @@ export class NoteContainer extends Container {
             const newCol = note.col + lastTriedColumnShift
             return (
               newCol >= 0 &&
-              newCol < this.renderer.chartManager.chart!.gameType.numCols
+              newCol < this.renderer.chartManager.loadedChart!.gameType.numCols
             )
           })
         ) {

@@ -43,7 +43,7 @@ export class GameplayStats {
   private bestJudge?: StandardTimingWindow
 
   constructor(chartManager: ChartManager) {
-    this.notedata = chartManager.chart!.notedata
+    this.notedata = chartManager.loadedChart!.getNotedata()
     this.chartManager = chartManager
     this.bestJudge = TimingWindowCollection.getCollection(
       Options.play.timingCollection
@@ -55,15 +55,24 @@ export class GameplayStats {
     this.handlers.push(handler)
   }
 
+  /**
+   * Adds a new judgement.
+   *
+   * @param {NotedataEntry[]} notes - The notes in this row.
+   * @param {TimingWindow} judge - The judgment received
+   * @param {number} error - The timing error in ms
+   * @memberof GameplayStats
+   */
   addDataPoint(notes: NotedataEntry[], judge: TimingWindow, error: number) {
     if (!this.judgmentCounts.has(judge)) this.judgmentCounts.set(judge, 0)
     this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
     this.dancePoints += judge.dancePoints
 
-    const comboMult = this.chartManager.chart!.timingData.getTimingEventAtBeat(
-      "COMBOS",
-      notes[0].beat
-    )
+    const comboMult =
+      this.chartManager.loadedChart!.timingData.getTimingEventAtBeat(
+        "COMBOS",
+        notes[0].beat
+      )
     const hitMult = comboMult?.hitMult ?? 1
     const missMult = comboMult?.missMult ?? 1
 
@@ -113,6 +122,13 @@ export class GameplayStats {
     })
   }
 
+  /**
+   * Add a new judgment for holds
+   *
+   * @param {HoldNotedataEntry} note - The hold note
+   * @param {(HoldTimingWindow | HoldDroppedTimingWindow)} judge - The judgment received
+   * @memberof GameplayStats
+   */
   addHoldDataPoint(
     note: HoldNotedataEntry,
     judge: HoldTimingWindow | HoldDroppedTimingWindow
@@ -138,11 +154,25 @@ export class GameplayStats {
     }
   }
 
+  /**
+   * Returns the score. 1 is 100%.
+   *
+   * @return {*}  {number}
+   * @memberof GameplayStats
+   */
   getScore(): number {
     if (this.maxDancePoints == 0) return 0
     return this.dancePoints / this.maxDancePoints
   }
 
+  /**
+   * Returns the cumulative score.
+   * Cumulative score is based on the number of arrows that have received a judgment.
+   * 1 is 100%.
+   *
+   * @return {*}  {number}
+   * @memberof GameplayStats
+   */
   getCumulativeScore(): number {
     if (this.maxCumulativeDancePoints == 0) return 0
     return this.dancePoints / this.maxCumulativeDancePoints
@@ -152,10 +182,21 @@ export class GameplayStats {
     return this.dataPoints
   }
 
+  /**
+   * Returns the max combo.
+   *
+   * @return {*}  {number}
+   * @memberof GameplayStats
+   */
   getMaxCombo(): number {
     return this.maxCombo
   }
 
+  /**
+   * Recalculates the judgments and scores of this object using the current timing windows.
+   *
+   * @memberof GameplayStats
+   */
   recalculate() {
     this.calculateMaxDP()
     this.dancePoints = 0
@@ -233,18 +274,43 @@ export class GameplayStats {
     )
   }
 
+  /**
+   * Returns the number of judgments for a given judgment.
+   *
+   * @param {TimingWindow} window
+   * @return {*}  {number}
+   * @memberof GameplayStats
+   */
   getCount(window: TimingWindow): number {
     return this.judgmentCounts.get(window) ?? 0
   }
 
+  /**
+   * Returns the current combo
+   *
+   * @return {*}  {number}
+   * @memberof GameplayStats
+   */
   getCombo(): number {
     return this.combo
   }
 
+  /**
+   * Returns the current miss combo.
+   *
+   * @return {*}  {number}
+   * @memberof GameplayStats
+   */
   getMissCombo(): number {
     return this.missCombo
   }
 
+  /**
+   * Returns the best judgment received
+   *
+   * @return {*}  {(StandardTimingWindow | undefined)}
+   * @memberof GameplayStats
+   */
   getBestJudge(): StandardTimingWindow | undefined {
     return this.bestJudge
   }

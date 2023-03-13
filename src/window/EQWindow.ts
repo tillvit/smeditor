@@ -65,17 +65,17 @@ export class EQWindow extends Window {
     ctx.canvas.width = 1200
     ctx.canvas.height = 400
     const call = () => {
-      if (!this.app.chartManager.songAudio) return
+      if (!this.app.chartManager.chartAudio) return
       ctx.fillStyle = "rgba(0, 0, 0, 1)"
       ctx.fillRect(0, 0, canvas.width, canvas.height)
-      const freqData = this.app.chartManager.songAudio.getFrequencyData()
+      const freqData = this.app.chartManager.chartAudio.getFrequencyData()
       ctx.fillStyle = "rgb(0, 50, 150)"
       for (let x = 0; x < 1200; x++) {
         const freq = Math.pow(500, x / 1170) * 20
         const bin =
-          (freq / this.app.chartManager.songAudio.getSampleRate()) *
+          (freq / this.app.chartManager.chartAudio.getSampleRate()) *
           2 *
-          this.app.chartManager.songAudio.getFFTSize()
+          this.app.chartManager.chartAudio.getFFTSize()
         const y = freqData[Math.floor(bin)] / 255
         ctx.fillRect(x, 400 - y * 500, 1, y * 500)
       }

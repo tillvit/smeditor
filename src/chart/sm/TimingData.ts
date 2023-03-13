@@ -244,14 +244,13 @@ export class TimingData {
     properties: Partial<Extract<TimingEvent, { type: Type }>> | number,
     beat?: number
   ) {
-    if (Object.keys(properties).length == 0) return
     const target = songTiming ? this : this._fallback!
     if (type == "OFFSET") {
       target.offset = properties as number
       this.reloadCache("OFFSET")
-
       return
     }
+    if (Object.keys(properties).length == 0) return
     if (!target.events[type satisfies TimingEventProperty]) {
       if (songTiming) {
         target.events[type satisfies TimingEventProperty] = JSON.parse(
@@ -422,7 +421,7 @@ export class TimingData {
       value: e.value,
       delay: e.delay,
       unit: e.unit,
-      second: this.getSeconds(e.beat),
+      second: this.getSecondsFromBeat(e.beat),
     }))
     this._cache.speeds = cache
   }
@@ -440,9 +439,10 @@ export class TimingData {
       .sort((a, b) => a.beat! - b.beat!)
     for (const event of this._cache.sortedEvents) {
       if (event.type == "DELAYS")
-        event.second = this.getSeconds(event.beat, "before")
-      else event.second = this.getSeconds(event.beat!)
-      if (event.type == "ATTACKS") event.beat = this.getBeat(event.second)
+        event.second = this.getSecondsFromBeat(event.beat, "before")
+      else event.second = this.getSecondsFromBeat(event.beat!)
+      if (event.type == "ATTACKS")
+        event.beat = this.getBeatFromSeconds(event.second)
     }
   }
 
@@ -454,7 +454,7 @@ export class TimingData {
     return bsearch(cache, value, a => a[property] as number)
   }
 
-  getBeat(seconds: number): number {
+  getBeatFromSeconds(seconds: number): number {
     if (!isFinite(seconds)) return 0
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
     if (seconds + this.getTimingData("OFFSET") < 0) {
@@ -471,7 +471,7 @@ export class TimingData {
     return event.beat + (timeElapsed * event.bpm) / 60
   }
 
-  getSeconds(
+  getSecondsFromBeat(
     beat: number,
     option?: "noclamp" | "before" | "after" | ""
   ): number {
@@ -515,7 +515,10 @@ export class TimingData {
       this._cache.warpedBeats[flooredBeat] = false
       return false
     }
-    if (event.warped || this.getSeconds(beat, "noclamp") < secondLimit) {
+    if (
+      event.warped ||
+      this.getSecondsFromBeat(beat, "noclamp") < secondLimit
+    ) {
       this._cache.warpedBeats[flooredBeat] = true
       return true
     }

@@ -23,7 +23,7 @@ import { WidgetManager } from "./WidgetManager"
 
 const QUANT_COLORS = [
   0xe74827, 0x3d89f7, 0xaa2df4, 0x82e247, 0xaa2df4, 0xeaa138, 0xaa2df4,
-  0x6be88e,
+  0x6be88e, 0x6be88e,
 ]
 
 export class NoteLayoutWidget extends Widget {
@@ -99,10 +99,10 @@ export class NoteLayoutWidget extends Widget {
       (this.bars.toLocal(event.global).y + this.bars.height / 2) /
       this.bars.height
     t = clamp(t, 0, 1)
-    const lastNote = this.getChart().notedata.at(-1)
+    const lastNote = this.getChart().getNotedata().at(-1)
     if (!lastNote) return
     const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
-    const lastSecond = this.getChart().getSeconds(lastBeat)
+    const lastSecond = this.getChart().getSecondsFromBeat(lastBeat)
     if (Options.chart.CMod) {
       this.manager.chartManager.setTime(
         lerp(-this.getChart().timingData.getTimingData("OFFSET"), lastSecond, t)
@@ -126,13 +126,13 @@ export class NoteLayoutWidget extends Widget {
       return
     }
     this.visible = true
-    const lastNote = chart.notedata.at(-1)
+    const lastNote = chart.getNotedata().at(-1)
     if (!lastNote) {
       this.overlay.height = 0
       return
     }
     const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
-    const lastSecond = chart.getSeconds(lastBeat)
+    const lastSecond = chart.getSecondsFromBeat(lastBeat)
     const start = Options.chart.CMod
       ? chartView.getTimeFromYPos(-this.manager.app.renderer.screen.height / 2)
       : chartView.getBeatFromYPos(
@@ -191,7 +191,7 @@ export class NoteLayoutWidget extends Widget {
     this.visible = true
     let childIndex = 0
     const numCols = chart.gameType.numCols
-    const lastNote = chart.notedata.at(-1)
+    const lastNote = chart.getNotedata().at(-1)
 
     const height = this.manager.app.renderer.screen.height - 40
     this.backing.height = height
@@ -209,11 +209,11 @@ export class NoteLayoutWidget extends Widget {
       return
     }
     const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
-    const lastSecond = chart.getSeconds(lastBeat)
+    const lastSecond = chart.getSecondsFromBeat(lastBeat)
 
     const songOffset = chart.timingData.getTimingData("OFFSET")
 
-    chart.notedata.forEach(note => {
+    chart.getNotedata().forEach(note => {
       let obj = this.barContainer.children[childIndex]
       if (!obj) {
         obj = new Sprite(Texture.WHITE)
@@ -242,7 +242,7 @@ export class NoteLayoutWidget extends Widget {
         h_obj.x = (note.col + 0.5) * 6
         const y_end =
           (Options.chart.CMod
-            ? chart.getSeconds(note.beat + note.hold) / lastSecond
+            ? chart.getSecondsFromBeat(note.beat + note.hold) / lastSecond
             : (note.beat + note.hold) / lastBeat) *
             height +
           1
@@ -265,6 +265,6 @@ export class NoteLayoutWidget extends Widget {
   }
 
   private getChart(): Chart {
-    return this.manager.chartManager.chart!
+    return this.manager.chartManager.loadedChart!
   }
 }

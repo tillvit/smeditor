@@ -42,7 +42,7 @@ export class BarlineContainer extends Container {
     this.renderer = renderer
   }
 
-  renderThis(beat: number, fromBeat: number, toBeat: number) {
+  update(beat: number, fromBeat: number, toBeat: number) {
     this.visible =
       this.renderer.chartManager.getMode() != EditMode.Play ||
       !Options.play.hideBarlines

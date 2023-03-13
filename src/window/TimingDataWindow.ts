@@ -23,7 +23,7 @@ export class TimingDataWindow extends Window {
     })
     this.app = app
     this.lastBeat = Math.round(this.app.chartManager.getBeat() * 1000) / 1000
-    this.songTiming = !this.app.chartManager.chart!.timingData.isEmpty()
+    this.songTiming = !this.app.chartManager.loadedChart!.timingData.isEmpty()
     this.initView()
     this.interval = setInterval(() => {
       if (
@@ -76,12 +76,12 @@ export class TimingDataWindow extends Window {
   }
 
   setData() {
-    if (!this.app.chartManager.chart) return
+    if (!this.app.chartManager.loadedChart) return
     Object.values(TIMING_WINDOW_DATA).forEach((entry, index) => {
       const item = this.viewElement.children[0].children[index * 2 + 3]
       entry.element.update(
         item,
-        this.app.chartManager.chart!.timingData,
+        this.app.chartManager.loadedChart!.timingData,
         this.lastBeat
       )
     })

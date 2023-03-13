@@ -11,6 +11,13 @@ export abstract class TimingWindow {
     this.lifeChange = lifeChange
   }
 
+  /**
+   * Returns the calculated milliseconds to achieve this timing window.
+   * Includes options timingWindowScale and timingWindowAdd.
+   *
+   * @return {*}
+   * @memberof TimingWindow
+   */
   getTimingWindowMS() {
     return (
       this.timingWindowMS * Options.play.timingWindowScale +

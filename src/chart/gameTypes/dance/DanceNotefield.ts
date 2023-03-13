@@ -85,7 +85,7 @@ export class DanceNotefield extends Notefield {
     this.holdJudges.addJudge(col, judge)
   }
 
-  reset(): void {
+  endPlay(): void {
     this.flashes.reset()
   }
 

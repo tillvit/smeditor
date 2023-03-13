@@ -32,7 +32,7 @@ export class Chart {
   sm: Simfile
   other_properties: { [key: string]: string } = {}
 
-  notedata: Notedata = []
+  private notedata: Notedata = []
 
   private _notedataStats?: NotedataStats
 
@@ -125,15 +125,15 @@ export class Chart {
     return this._notedataStats!
   }
 
-  getSeconds(
+  getSecondsFromBeat(
     beat: number,
     option?: "noclamp" | "before" | "after" | ""
   ): number {
-    return this.timingData.getSeconds(beat, option)
+    return this.timingData.getSecondsFromBeat(beat, option)
   }
 
-  getBeat(seconds: number): number {
-    return this.timingData.getBeat(seconds)
+  getBeatFromSeconds(seconds: number): number {
+    return this.timingData.getBeatFromSeconds(seconds)
   }
 
   getBeatFromEffectiveBeat(effBeat: number): number {
@@ -190,7 +190,7 @@ export class Chart {
     return Object.assign(note, {
       warped: this.timingData.isBeatWarped(note.beat),
       fake: note.type == "Fake" || this.timingData.isBeatFaked(note.beat),
-      second: this.timingData.getSeconds(note.beat),
+      second: this.timingData.getSecondsFromBeat(note.beat),
     })
   }
 
@@ -228,6 +228,10 @@ export class Chart {
   setNotedata(notedata: Notedata) {
     this.notedata = notedata
     EventHandler.emit("chartModified")
+  }
+
+  getNotedata(): Notedata {
+    return this.notedata
   }
 
   recalculateNotes() {

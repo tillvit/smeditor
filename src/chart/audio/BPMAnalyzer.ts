@@ -1,3 +1,5 @@
+// Will be deleted soon in favor of OfflineAudioContext
+
 import { BiquadFilter } from "./BiquadFilter"
 import { ChartAudio } from "./ChartAudio"
 

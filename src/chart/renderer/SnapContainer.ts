@@ -52,7 +52,7 @@ export class SnapContainer extends Container {
     }
   }
 
-  renderThis() {
+  update() {
     this.y = Options.chart.receptorYPos / Options.chart.zoom
 
     this.visible =
