@@ -1,4 +1,4 @@
-import { JudgmentTexture } from "../renderer/JudgmentTexture"
+import { JudgmentTexture } from "../component/JudgmentTexture"
 import { HoldNotedataEntry } from "../sm/NoteTypes"
 import { HoldDroppedTimingWindow } from "./HoldDroppedTimingWindow"
 import { HoldTimingWindow } from "./HoldTimingWindow"

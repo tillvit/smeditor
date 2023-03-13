@@ -1,5 +1,5 @@
 import { WaterfallManager } from "../../gui/element/WaterfallManager"
-import { Waveform } from "../renderer/Waveform"
+import { Waveform } from "../component/Waveform"
 
 export class ChartAudio {
   private _audioContext: AudioContext = new AudioContext()
