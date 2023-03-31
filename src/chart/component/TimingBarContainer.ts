@@ -66,7 +66,7 @@ export class TimingBarContainer extends Container {
     this.addChild(this.errorText)
   }
 
-  renderThis() {
+  update() {
     this.visible = this.renderer.chartManager.getMode() == EditMode.Play
     for (const child of this.barlines.children) {
       const barline = child

@@ -107,8 +107,9 @@ export class InfoWidget extends Widget {
     EventHandler.on("chartLoaded", () => {
       destroyChildIf(this.noteCounts.children, () => true)
       destroyChildIf(this.noteTypeContainer.children, () => true)
-      if (!this.manager.chartManager.chart) return
-      const stats = this.manager.chartManager.chart.getNotedataStats().counts
+      if (!this.manager.chartManager.loadedChart) return
+      const stats =
+        this.manager.chartManager.loadedChart.getNotedataStats().counts
       let numLines = 0
       for (const type in stats) {
         const text = new BitmapText(`${type}: ${stats[type]}`, {
@@ -122,7 +123,7 @@ export class InfoWidget extends Widget {
       }
       let numTypes = 0
       const active = this.manager.chartManager.getEditingNoteType()
-      for (const type of this.manager.chartManager.chart.gameType
+      for (const type of this.manager.chartManager.loadedChart.gameType
         .editNoteTypes) {
         const sprite =
           this.manager.chartManager.chartView!.notefield.getNoteSprite({
@@ -200,11 +201,14 @@ export class InfoWidget extends Widget {
         const bg = new BetterRoundedRect()
         this.dropdownItems.addChild(bg)
         this.dropdownItemList = []
-        if (!this.manager.chartManager.sm || !this.manager.chartManager.chart)
+        if (
+          !this.manager.chartManager.loadedSM ||
+          !this.manager.chartManager.loadedChart
+        )
           return
         const charts =
-          this.manager.chartManager.sm.charts[
-            this.manager.chartManager.chart.gameType.id
+          this.manager.chartManager.loadedSM.charts[
+            this.manager.chartManager.loadedChart.gameType.id
           ] ?? []
         if (charts.length == 0) return
         const dropdownItems: Partial<DropdownItem>[] = []
@@ -267,8 +271,9 @@ export class InfoWidget extends Widget {
     this.dropdownItems.mask = this.dropdownMask
 
     EventHandler.on("chartModifiedAfter", () => {
-      if (!this.manager.chartManager.chart) return
-      const stats = this.manager.chartManager.chart.getNotedataStats().counts
+      if (!this.manager.chartManager.loadedChart) return
+      const stats =
+        this.manager.chartManager.loadedChart.getNotedataStats().counts
       for (const type in stats) {
         const text = this.noteCounts.getChildByName<BitmapText>(type)
         text.text = `${type}: ${stats[type]}`
@@ -280,13 +285,13 @@ export class InfoWidget extends Widget {
   }
 
   update(): void {
-    this.visible = !!this.manager.chartManager.sm
+    this.visible = !!this.manager.chartManager.loadedSM
     this.x = -this.manager.app.renderer.screen.width / 2 + 15
     this.y = -this.manager.app.renderer.screen.height / 2 + 20
     this.background.height = 150
     this.maskObj.height = 150
 
-    const chart = this.manager.chartManager.chart
+    const chart = this.manager.chartManager.loadedChart
 
     const activeNoteType = this.manager.chartManager.getEditingNoteType()
 
@@ -359,7 +364,7 @@ export class InfoWidget extends Widget {
       }
       if (chart) {
         const charts =
-          this.manager.chartManager.sm?.charts[chart.gameType.id] ?? []
+          this.manager.chartManager.loadedSM?.charts[chart.gameType.id] ?? []
         const target = this.dropdownExtended ? charts.length * 22 : 0
         this.dropdownMask.height =
           (target - this.dropdownMask.height) * 0.3 + this.dropdownMask.height
@@ -374,7 +379,7 @@ export class InfoWidget extends Widget {
       }
       if (chart) {
         const charts =
-          this.manager.chartManager.sm?.charts[chart.gameType.id] ?? []
+          this.manager.chartManager.loadedSM?.charts[chart.gameType.id] ?? []
         const target = this.dropdownExtended ? charts.length * 22 : 0
         this.dropdownMask.height = target
       }

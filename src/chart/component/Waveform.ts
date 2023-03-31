@@ -43,7 +43,7 @@ export class Waveform extends Sprite {
     this.waveformTex = RenderTexture.create({
       resolution: Math.min(1, Options.performance.resolution),
     })
-    this.chartAudio = this.renderer.chartManager.songAudio
+    this.chartAudio = this.renderer.chartManager.chartAudio
     this.texture = this.waveformTex
 
     this.white = new Sprite(Texture.WHITE)
@@ -54,7 +54,7 @@ export class Waveform extends Sprite {
     this.lastZoom = this.getZoom()
     this.zoom = this.getZoom()
     this.lastReZoom = Date.now()
-    this.chartAudio.addWaveform(this)
+    this.chartAudio.bindWaveform(this)
     this.refilter()
 
     const timingHandler = () => (this.lastBeat = -1)
@@ -94,7 +94,7 @@ export class Waveform extends Sprite {
     this.lastBeat = -1
   }
 
-  renderThis(beat: number, time: number) {
+  update(beat: number, time: number) {
     this.visible =
       Options.chart.waveform.enabled &&
       (this.renderer.chartManager.getMode() != EditMode.Play ||
@@ -104,7 +104,7 @@ export class Waveform extends Sprite {
     if (this.chartAudio != this.renderer.chartManager.getAudio()) {
       this.chartAudio = this.renderer.chartManager.getAudio()
       this.refilter()
-      this.chartAudio.addWaveform(this)
+      this.chartAudio.bindWaveform(this)
     }
     if (this.lastZoom != this.getZoom()) {
       this.lastReZoom = Date.now()
@@ -177,7 +177,7 @@ export class Waveform extends Sprite {
       const pixelsToEffectiveBeats =
         100 / chartSpeed / speedMult / 64 / Options.chart.zoom
       const screenHeight = this.renderer.chartManager.app.renderer.screen.height
-      let curSec = this.renderer.chart.getSeconds(currentBeat)
+      let curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
 
       // Get the first scroll index after curBeat
       let scrollIndex = bsearch(scrolls, currentBeat, a => a.beat)
@@ -247,7 +247,7 @@ export class Waveform extends Sprite {
           else if (flooredBeat >= timingChanges[1]?.beat) {
             // Use getSeconds for every timing event
             while (flooredBeat >= timingChanges[1]?.beat) timingChanges.shift()
-            curSec = this.renderer.chart.getSeconds(currentBeat)
+            curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
           } else {
             // Use normal bpm to beats calculation to not use getSeconds
             const beatsElapsed = currentBeat - timingChanges[0].beat

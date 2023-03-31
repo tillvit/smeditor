@@ -21,17 +21,18 @@ export class BasicGameLogic extends GameLogic {
     TimingWindowCollection.getCollection("ITG")
 
   update(chartManager: ChartManager): void {
-    if (!chartManager.chart || !chartManager.chartView) return
+    if (!chartManager.loadedChart || !chartManager.chartView) return
     const hitTime = chartManager.chartView.getTimeWithOffset()
     const hitWindowStart =
       hitTime - (this.collection.maxWindowMS() / 1000) * Options.audio.rate
     let lastChord = -1
     // Do Misses
     while (
-      chartManager.chart.notedata[this.missNoteIndex] &&
-      chartManager.chart.notedata[this.missNoteIndex].second < hitWindowStart
+      chartManager.loadedChart.getNotedata()[this.missNoteIndex] &&
+      chartManager.loadedChart.getNotedata()[this.missNoteIndex].second <
+        hitWindowStart
     ) {
-      const note = chartManager.chart.notedata[this.missNoteIndex]
+      const note = chartManager.loadedChart.getNotedata()[this.missNoteIndex]
       if (
         note.beat != lastChord &&
         note.type != "Mine" &&
@@ -75,7 +76,7 @@ export class BasicGameLogic extends GameLogic {
       }
       if (
         chartManager.chartView.getTimeWithOffset() >=
-        chartManager.chartView.chart.getSeconds(hold.beat + hold.hold)
+        chartManager.chartView.chart.getSecondsFromBeat(hold.beat + hold.hold)
       ) {
         hold.gameplay!.hideNote = true
         chartManager.chartView.doJudgment(
@@ -94,7 +95,7 @@ export class BasicGameLogic extends GameLogic {
     //Do Mines
     for (const col of this.heldCols.getHeldCols()) {
       const mine = this.getClosestNote(
-        chartManager.chart.notedata,
+        chartManager.loadedChart.getNotedata(),
         chartManager.chartView.getTimeWithOffset() -
           this.collection.getMineJudgment().getTimingWindowMS() / 2000,
         col,
@@ -119,13 +120,13 @@ export class BasicGameLogic extends GameLogic {
     }
   }
 
-  reset(chartManager: ChartManager): void {
-    if (!chartManager.chart || !chartManager.chartView) return
+  endPlay(chartManager: ChartManager): void {
+    if (!chartManager.loadedChart || !chartManager.chartView) return
     this.collection = TimingWindowCollection.getCollection(
       Options.play.timingCollection
     )
     this.chordCohesion.clear()
-    for (const note of chartManager.chart.notedata) {
+    for (const note of chartManager.loadedChart.getNotedata()) {
       if (note.type == "Mine" || note.fake) continue
       if (!this.chordCohesion.has(note.beat))
         this.chordCohesion.set(note.beat, [])
@@ -135,11 +136,15 @@ export class BasicGameLogic extends GameLogic {
     const hitWindowStart =
       hitTime - (this.collection.maxWindowMS() / 1000) * Options.audio.rate
     let firstHittableNote =
-      bsearch(chartManager.chart.notedata, hitWindowStart, a => a.second) + 1
+      bsearch(
+        chartManager.loadedChart.getNotedata(),
+        hitWindowStart,
+        a => a.second
+      ) + 1
     if (
       firstHittableNote >= 1 &&
       hitWindowStart <=
-        chartManager.chart.notedata[firstHittableNote - 1].second
+        chartManager.loadedChart.getNotedata()[firstHittableNote - 1].second
     )
       firstHittableNote--
     this.missNoteIndex = firstHittableNote
@@ -148,10 +153,10 @@ export class BasicGameLogic extends GameLogic {
   }
 
   keyDown(chartManager: ChartManager, col: number): void {
-    if (!chartManager.chart || !chartManager.chartView) return
+    if (!chartManager.loadedChart || !chartManager.chartView) return
     const hitTime = chartManager.chartView.getTimeWithOffset()
     const closestNote = this.getClosestNote(
-      chartManager.chart.notedata,
+      chartManager.loadedChart.getNotedata(),
       hitTime,
       col,
       ["Tap", "Hold", "Roll"]
@@ -166,10 +171,10 @@ export class BasicGameLogic extends GameLogic {
   }
 
   keyUp(chartManager: ChartManager, col: number): void {
-    if (!chartManager.chart || !chartManager.chartView) return
+    if (!chartManager.loadedChart || !chartManager.chartView) return
     const hitTime = chartManager.chartView.getTimeWithOffset()
     const closestNote = this.getClosestNote(
-      chartManager.chart.notedata,
+      chartManager.loadedChart.getNotedata(),
       hitTime,
       col,
       ["Lift"]

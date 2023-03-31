@@ -1,10 +1,10 @@
 import { App } from "../App"
 import { SimfileProperty } from "../chart/sm/SimfileTypes"
 import { Icons } from "../gui/Icons"
+import { DirectoryWindow } from "../gui/window/DirectoryWindow"
 import { ActionHistory } from "../util/ActionHistory"
 import { FileHandler } from "../util/FileHandler"
 import { capitalize } from "../util/Util"
-import { DirectoryWindow } from "../window/DirectoryWindow"
 import { AUDIO_EXT, IMG_EXT } from "./FileData"
 
 type SMPropertiesWindowData = {
@@ -19,7 +19,7 @@ function simpleTextOption(
   return {
     title: name ?? capitalize(prop),
     element: app => {
-      const sm = app.chartManager.sm!
+      const sm = app.chartManager.loadedSM!
       const input = document.createElement("input")
       input.type = "text"
       input.autocomplete = "off"
@@ -49,7 +49,7 @@ function fileOption(
   return {
     title: name ?? capitalize(prop),
     element: app => {
-      const sm = app.chartManager.sm!
+      const sm = app.chartManager.loadedSM!
 
       const container = document.createElement("div")
       container.classList.add("flex-row", "flex-column-gap", "flex-static")
@@ -71,7 +71,7 @@ function fileOption(
       const dirButton = document.createElement("button")
       dirButton.style.height = "100%"
       dirButton.onclick = () => {
-        const dir = app.chartManager.sm_path.split("/").slice(0, -1).join("/")
+        const dir = app.chartManager.smPath.split("/").slice(0, -1).join("/")
 
         if (window.nw) {
           const fileSelector = document.createElement("input")
@@ -100,7 +100,7 @@ function fileOption(
               },
               sm.properties[prop]
                 ? dir + "/" + sm.properties[prop]
-                : app.chartManager.sm_path
+                : app.chartManager.smPath
             )
           )
         }

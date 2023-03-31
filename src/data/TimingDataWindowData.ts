@@ -25,7 +25,7 @@ const deleteEv = (
   type: TimingEventProperty
 ) => {
   const beat = app.chartManager.getBeat()
-  app.chartManager.chart?.timingData.delete(songTiming(), type, beat)
+  app.chartManager.loadedChart?.timingData.delete(songTiming(), type, beat)
 }
 
 export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
@@ -37,11 +37,11 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         input.onChange = value => {
           if (value == undefined) {
             input.setValue(
-              app.chartManager.chart!.timingData.getTimingData("OFFSET")
+              app.chartManager.loadedChart!.timingData.getTimingData("OFFSET")
             )
             return
           }
-          app.chartManager.chart?.timingData.insert(
+          app.chartManager.loadedChart?.timingData.insert(
             songTiming(),
             "OFFSET",
             value
@@ -70,7 +70,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             deleteEv(app, songTiming, "BPMS")
             return
           }
-          app.chartManager.chart?.timingData.insert(
+          app.chartManager.loadedChart?.timingData.insert(
             songTiming(),
             "BPMS",
             { value: value },
@@ -100,7 +100,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             deleteEv(app, songTiming, "STOPS")
             return
           }
-          app.chartManager.chart?.timingData.insert(
+          app.chartManager.loadedChart?.timingData.insert(
             songTiming(),
             "STOPS",
             { value: value },
@@ -131,7 +131,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             deleteEv(app, songTiming, "DELAYS")
             return
           }
-          app.chartManager.chart?.timingData.insert(
+          app.chartManager.loadedChart?.timingData.insert(
             songTiming(),
             "DELAYS",
             { value: value },
@@ -165,7 +165,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           if (value < 0) {
             const beat = app.chartManager.getBeat()
             const event =
-              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+              app.chartManager.loadedChart?.timingData.getTimingEventAtBeat(
                 "WARPS",
                 beat
               )
@@ -173,7 +173,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             if (beat != event?.beat) input.setValue(0)
             return
           }
-          app.chartManager.chart?.timingData.insert(
+          app.chartManager.loadedChart?.timingData.insert(
             songTiming(),
             "WARPS",
             { value: value },
@@ -210,14 +210,14 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           if (value < 1) {
             const beat = app.chartManager.getBeat()
             upperInput.setValue(
-              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+              app.chartManager.loadedChart?.timingData.getTimingEventAtBeat(
                 "TIMESIGNATURES",
                 beat
               )?.upper ?? 4
             )
             return
           }
-          app.chartManager.chart?.timingData.insert(
+          app.chartManager.loadedChart?.timingData.insert(
             songTiming(),
             "TIMESIGNATURES",
             { upper: value, lower: lowerInput.value },
@@ -233,14 +233,14 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           if (value < 1) {
             const beat = app.chartManager.getBeat()
             lowerInput.setValue(
-              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+              app.chartManager.loadedChart?.timingData.getTimingEventAtBeat(
                 "TIMESIGNATURES",
                 beat
               )?.lower ?? 4
             )
             return
           }
-          app.chartManager.chart?.timingData.insert(
+          app.chartManager.loadedChart?.timingData.insert(
             songTiming(),
             "TIMESIGNATURES",
             { upper: upperInput.value, lower: value },
@@ -284,7 +284,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           if (value < 0) {
             const beat = app.chartManager.getBeat()
             input.setValue(
-              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+              app.chartManager.loadedChart?.timingData.getTimingEventAtBeat(
                 "TICKCOUNTS",
                 beat
               )?.value ?? 0
@@ -292,7 +292,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             return
           }
 
-          app.chartManager.chart?.timingData.insert(
+          app.chartManager.loadedChart?.timingData.insert(
             songTiming(),
             "TICKCOUNTS",
             { value: value },
@@ -327,14 +327,14 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           if (value < 0) {
             const beat = app.chartManager.getBeat()
             upperInput.setValue(
-              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+              app.chartManager.loadedChart?.timingData.getTimingEventAtBeat(
                 "COMBOS",
                 beat
               )?.hitMult ?? 1
             )
             return
           }
-          app.chartManager.chart?.timingData.insert(
+          app.chartManager.loadedChart?.timingData.insert(
             songTiming(),
             "COMBOS",
             { hitMult: value, missMult: lowerInput.value },
@@ -346,7 +346,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           if (value == undefined) {
             const beat = app.chartManager.getBeat()
             lowerInput.setValue(
-              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+              app.chartManager.loadedChart?.timingData.getTimingEventAtBeat(
                 "COMBOS",
                 beat
               )?.missMult ?? 1
@@ -356,14 +356,14 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           if (value < 0) {
             const beat = app.chartManager.getBeat()
             lowerInput.setValue(
-              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+              app.chartManager.loadedChart?.timingData.getTimingEventAtBeat(
                 "COMBOS",
                 beat
               )?.missMult ?? 1
             )
             return
           }
-          app.chartManager.chart?.timingData.insert(
+          app.chartManager.loadedChart?.timingData.insert(
             songTiming(),
             "COMBOS",
             { hitMult: value, missMult: lowerInput.value },
@@ -402,7 +402,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         container.classList.add("flex-column-gap")
 
         const update = () => {
-          app.chartManager.chart?.timingData.insert(
+          app.chartManager.loadedChart?.timingData.insert(
             songTiming(),
             "SPEEDS",
             {
@@ -423,7 +423,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           if (value < 0) {
             const beat = app.chartManager.getBeat()
             valueInput.setValue(
-              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+              app.chartManager.loadedChart?.timingData.getTimingEventAtBeat(
                 "SPEEDS",
                 beat
               )?.value ?? 1
@@ -438,7 +438,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           if (value == undefined || value < 0) {
             const beat = app.chartManager.getBeat()
             delayInput.setValue(
-              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+              app.chartManager.loadedChart?.timingData.getTimingEventAtBeat(
                 "SPEEDS",
                 beat
               )?.delay ?? 0
@@ -497,7 +497,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             deleteEv(app, songTiming, "SCROLLS")
             return
           }
-          app.chartManager.chart?.timingData.insert(
+          app.chartManager.loadedChart?.timingData.insert(
             songTiming(),
             "SCROLLS",
             { value: value },
@@ -530,7 +530,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           if (value < 0) {
             const beat = app.chartManager.getBeat()
             const event =
-              app.chartManager.chart?.timingData.getTimingEventAtBeat(
+              app.chartManager.loadedChart?.timingData.getTimingEventAtBeat(
                 "FAKES",
                 beat
               )
@@ -538,7 +538,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             if (beat != event?.beat) input.setValue(0)
             return
           }
-          app.chartManager.chart?.timingData.insert(
+          app.chartManager.loadedChart?.timingData.insert(
             songTiming(),
             "FAKES",
             { value: value },
@@ -575,7 +575,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             deleteEv(app, songTiming, "LABELS")
             return
           }
-          app.chartManager.chart?.timingData.insert(
+          app.chartManager.loadedChart?.timingData.insert(
             songTiming(),
             "LABELS",
             { value: input.value },

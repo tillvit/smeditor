@@ -67,7 +67,7 @@ export class TimingTrackContainer extends Container {
     this.addChild(this.boxes)
   }
 
-  renderThis(beat: number, fromBeat: number, toBeat: number) {
+  update(beat: number, fromBeat: number, toBeat: number) {
     this.boxes.visible =
       this.renderer.chartManager.getMode() != EditMode.Play ||
       !Options.play.hideBarlines

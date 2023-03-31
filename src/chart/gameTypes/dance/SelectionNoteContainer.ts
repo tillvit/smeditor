@@ -44,11 +44,16 @@ export class SelectionNoteContainer extends Container {
       this.lastBeatShift = beatShift
       this.lastColShift = columnShift
       this.children.forEach(child => {
-        DanceNoteRenderer.setData(this.notefield, child, {
-          beat: child.note.beat + beatShift,
-          col: child.note.col + columnShift,
-          type: child.note.type,
-        })
+        DanceNoteRenderer.setData(
+          this.notefield,
+          child,
+          {
+            beat: child.note.beat + beatShift,
+            col: child.note.col + columnShift,
+            type: child.note.type,
+          },
+          this.renderer.chart.timingData
+        )
         child.x = this.notefield.getColX(child.note.col + columnShift)
       })
     }
@@ -126,11 +131,16 @@ export class SelectionNoteContainer extends Container {
     newChild.note = note
     newChild.visible = true
     newChild.zIndex = note.beat
-    DanceNoteRenderer.setData(this.notefield, newChild as ExtendedNoteObject, {
-      beat: note.beat + this.renderer.chartManager.selection.shift!.beatShift,
-      col: note.col + this.renderer.chartManager.selection.shift!.columnShift,
-      type: note.type,
-    })
+    DanceNoteRenderer.setData(
+      this.notefield,
+      newChild as ExtendedNoteObject,
+      {
+        beat: note.beat + this.renderer.chartManager.selection.shift!.beatShift,
+        col: note.col + this.renderer.chartManager.selection.shift!.columnShift,
+        type: note.type,
+      },
+      this.renderer.chart.timingData
+    )
     newChild.x = this.notefield.getColX(
       note.col + this.renderer.chartManager.selection.shift!.columnShift
     )

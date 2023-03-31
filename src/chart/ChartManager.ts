@@ -5,6 +5,8 @@ import { AUDIO_EXT } from "../data/FileData"
 import { IS_OSX, KEYBINDS } from "../data/KeybindData"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { WidgetManager } from "../gui/widget/WidgetManager"
+import { ChartListWindow } from "../gui/window/ChartListWindow"
+import { ConfimationWindow } from "../gui/window/ConfirmationWindow"
 import { Keybinds } from "../listener/Keybinds"
 import { ActionHistory } from "../util/ActionHistory"
 import { EventHandler } from "../util/EventHandler"
@@ -21,8 +23,6 @@ import {
   extname,
   tpsUpdate,
 } from "../util/Util"
-import { ChartListWindow } from "../window/ChartListWindow"
-import { ConfimationWindow } from "../window/ConfirmationWindow"
 import { ChartAudio } from "./audio/ChartAudio"
 import { ChartRenderer } from "./ChartRenderer"
 import { GameTypeRegistry } from "./gameTypes/GameTypeRegistry"
@@ -69,11 +69,10 @@ export enum EditMode {
 export class ChartManager {
   app: App
 
-  songAudio: ChartAudio = new ChartAudio()
+  chartAudio: ChartAudio = new ChartAudio()
   chartView?: ChartRenderer
   widgetManager: WidgetManager
-  noChartTextA: BitmapText
-  noChartTextB: BitmapText
+
   assistTick: Howl = new Howl({
     src: "assets/sound/assist_tick.ogg",
     volume: 0.5,
@@ -90,9 +89,10 @@ export class ChartManager {
     src: "assets/sound/mine.ogg",
     volume: 0.5,
   })
-  sm?: Simfile
-  sm_path = ""
-  chart?: Chart
+
+  loadedSM?: Simfile
+  smPath = ""
+  loadedChart?: Chart
 
   selection: Selection = {
     notes: [],
@@ -111,12 +111,16 @@ export class ChartManager {
   private snapIndex = 0
   private partialScroll = 0
   private noteIndex = 0
-  private lastBeat = -1
+  private lastMetronomeDivision = -1
+  private lastMetronomeMeasure = -1
 
   private lastSong = ""
 
   private mode: EditMode = EditMode.Edit
   private lastMode: EditMode = EditMode.Edit
+
+  private noChartTextA: BitmapText
+  private noChartTextB: BitmapText
 
   private virtualClipboard = ""
 
@@ -128,6 +132,7 @@ export class ChartManager {
   constructor(app: App) {
     this.app = app
 
+    // Override default cut/copy/paste
     document.addEventListener(
       "cut",
       e => {
@@ -171,12 +176,13 @@ export class ChartManager {
       true
     )
 
+    // Scrolling
     app.view.addEventListener?.(
       "wheel",
       (event: WheelEvent) => {
         if (
-          this.sm == undefined ||
-          this.chart == undefined ||
+          this.loadedSM == undefined ||
+          this.loadedChart == undefined ||
           this.chartView == undefined
         )
           return
@@ -237,12 +243,13 @@ export class ChartManager {
     )
 
     this.widgetManager = new WidgetManager(this)
+    this.app.stage.addChild(this.widgetManager)
 
+    // No chart text
     this.noChartTextA = new BitmapText("No Chart", {
       fontName: "Main",
       fontSize: 30,
     })
-
     this.noChartTextA.anchor.set(0.5)
     this.noChartTextA.tint = 0x555555
     this.app.stage.addChild(this.noChartTextA)
@@ -250,7 +257,6 @@ export class ChartManager {
       fontName: "Main",
       fontSize: 15,
     })
-
     this.noChartTextB.anchor.set(0.5)
     this.noChartTextB.tint = 0x556677
     this.noChartTextB.interactive = true
@@ -271,21 +277,25 @@ export class ChartManager {
     this.noChartTextA.y = this.app.renderer.screen.height / 2 - 20
     this.noChartTextB.x = this.app.renderer.screen.width / 2
     this.noChartTextB.y = this.app.renderer.screen.height / 2 + 10
-
     this.app.stage.addChild(this.noChartTextB)
-    this.app.stage.addChild(this.widgetManager)
+
+    // Update ChartRenderer every frame
     this.app.ticker.add(() => {
       this.widgetManager.update()
-      if (!this.sm || !this.chart || !this.chartView) return
-      this.chartView?.renderThis()
+      if (!this.loadedSM || !this.loadedChart || !this.chartView) return
+      this.chartView.update()
     })
 
+    // Faster update loop, more precision
     setInterval(() => {
-      if (!this.sm || !this.chart || !this.chartView) return
-      const time = this.songAudio.seek()
+      if (!this.loadedSM || !this.loadedChart || !this.chartView) return
+      const time = this.chartAudio.seek()
       TimerStats.time("Update Time")
-      if (this.songAudio.isPlaying()) {
+      if (this.chartAudio.isPlaying()) {
+        // Set the current beat from time
         this.setTime(time, true)
+
+        // If digit keys are pressed, modify the current chart
         if (!this.holdEditing.every(x => !x)) {
           for (let col = 0; col < this.holdEditing.length; col++) {
             if (
@@ -295,7 +305,9 @@ export class ChartManager {
               continue
             let tapBeat = this.beat
             if (this.mode == EditMode.Record) {
-              tapBeat = this.chart.getBeat(this.time + Options.play.offset)
+              tapBeat = this.loadedChart.getBeatFromSeconds(
+                this.time + Options.play.offset
+              )
             }
             const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
             const snapBeat = Math.round(tapBeat / snap) * snap
@@ -309,25 +321,27 @@ export class ChartManager {
                 0,
                 Math.round(Math.min(this.beat, hold.startBeat) * 48) / 48
               )
-            console.log(holdLength)
             if (
-              (holdLength * 60) / this.chart.timingData.getBPM(this.beat) >
+              (holdLength * 60) /
+                this.loadedChart.timingData.getBPM(this.beat) >
               0.3
             )
               this.editHoldBeat(col, snapBeat, false)
           }
         }
       }
-      const notedata = this.chart.notedata
-      let hasPlayed = false
+
+      const notedata = this.loadedChart.getNotedata()
+      // Play assist tick
+      let hasPlayedAssistTick = false
       while (
         this.noteIndex < notedata.length &&
         time > notedata[this.noteIndex].second + Options.audio.effectOffset
       ) {
         if (
           this.mode != EditMode.Record &&
-          this.songAudio.isPlaying() &&
-          this.chart.gameType.gameLogic.shouldAssistTick(
+          this.chartAudio.isPlaying() &&
+          this.loadedChart.gameType.gameLogic.shouldAssistTick(
             notedata[this.noteIndex]
           )
         ) {
@@ -337,25 +351,40 @@ export class ChartManager {
               0,
               TIMING_WINDOW_AUTOPLAY
             )
-          if (!hasPlayed && Options.audio.assistTick) {
+          if (!hasPlayedAssistTick && Options.audio.assistTick) {
             this.assistTick.play()
-            hasPlayed = true
+            hasPlayedAssistTick = true
           }
         }
         this.noteIndex++
       }
-      const metronomeBeat = Math.floor(
-        this.chart.getBeat(this.time + Options.audio.effectOffset)
+      // Play metronome
+      const offsetBeat = this.loadedChart.getBeatFromSeconds(
+        this.time + Options.audio.effectOffset
       )
-      if (metronomeBeat != this.lastBeat) {
-        this.lastBeat = metronomeBeat
-        if (this.songAudio.isPlaying() && Options.audio.metronome) {
-          if (this.lastBeat % 4 == 0) this.me_high.play()
+
+      const offsetDivision = Math.floor(
+        this.loadedChart.timingData.getDivisionOfMeasure(offsetBeat)
+      )
+
+      const offsetMeasure = Math.floor(
+        this.loadedChart.timingData.getMeasure(offsetBeat)
+      )
+
+      if (
+        offsetMeasure != this.lastMetronomeMeasure ||
+        offsetDivision != this.lastMetronomeDivision
+      ) {
+        this.lastMetronomeDivision = offsetDivision
+        this.lastMetronomeMeasure = offsetMeasure
+        if (this.chartAudio.isPlaying() && Options.audio.metronome) {
+          if (offsetDivision == 0) this.me_high.play()
           else this.me_low.play()
         }
       }
+      // Update the game logic
       if (this.mode == EditMode.Play) {
-        this.chart.gameType.gameLogic.update(this)
+        this.loadedChart.gameType.gameLogic.update(this)
       }
       this.updateSoundProperties()
       tpsUpdate()
@@ -374,8 +403,8 @@ export class ChartManager {
     })
 
     EventHandler.on("chartModified", () => {
-      if (this.chart) {
-        this.chart.recalculateStats()
+      if (this.loadedChart) {
+        this.loadedChart.recalculateStats()
         EventHandler.emit("chartModifiedAfter")
       }
     })
@@ -409,7 +438,7 @@ export class ChartManager {
           !event.ctrlKey
         ) {
           const col = parseInt(event.code.slice(5)) - 1
-          if (col < (this.chart?.gameType.numCols ?? 4) && col > -1) {
+          if (col < (this.loadedChart?.gameType.numCols ?? 4) && col > -1) {
             this.setNote(col, "key")
             event.preventDefault()
             event.stopImmediatePropagation()
@@ -463,40 +492,72 @@ export class ChartManager {
         if (this.mode != EditMode.Play && this.mode != EditMode.Record) return
         if (event.key == "Escape") {
           this.setMode(this.lastMode)
-          this.songAudio.pause()
+          this.chartAudio.pause()
         }
       },
       true
     )
   }
 
+  /**
+   * Returns the current beat.
+   *
+   * @return {*}  {number}
+   * @memberof ChartManager
+   */
   getBeat(): number {
     return this.beat
   }
 
+  /**
+   * Returns the current time.
+   *
+   * @return {*}  {number}
+   * @memberof ChartManager
+   */
   getTime(): number {
     return this.time
   }
 
+  /**
+   * Sets the current beat to the specified value. Also updates the current time.
+   *
+   * @param {number} beat
+   * @memberof ChartManager
+   */
   setBeat(beat: number) {
-    if (!this.chart) return
+    if (!this.loadedChart) return
     this.beat = beat
-    this.time = this.chart.getSeconds(this.beat)
-    this.songAudio.seek(this.time)
+    this.time = this.loadedChart.getSecondsFromBeat(this.beat)
+    this.chartAudio.seek(this.time)
     this.getAssistTickIndex()
   }
 
+  /**
+   * Sets the current time to the specified value. Also updates the current beat.
+   *
+   * @param {number} time
+   * @param {boolean} [ignoreSetSongTime] - If set to true, does not update the audio position.
+   * @memberof ChartManager
+   */
   setTime(time: number, ignoreSetSongTime?: boolean) {
-    if (!this.chart) return
+    if (!this.loadedChart) return
     this.time = time
-    this.beat = this.chart.getBeat(this.time)
+    this.beat = this.loadedChart.getBeatFromSeconds(this.time)
     if (!ignoreSetSongTime) {
-      this.songAudio.seek(this.time)
+      this.chartAudio.seek(this.time)
       this.getAssistTickIndex()
     }
   }
 
+  /**
+   * Loads the SM from the specified path. If no path is specified, the current SM is hidden.
+   *
+   * @param {string} [path]
+   * @memberof ChartManager
+   */
   async loadSM(path?: string) {
+    // Save confirmation
     if (ActionHistory.instance.isDirty()) {
       const window = new ConfimationWindow(
         this.app,
@@ -523,27 +584,29 @@ export class ChartManager {
       if (option == "Yes") this.save()
     }
 
+    // Destroy everything if no path specified
     if (!path) {
-      this.sm_path = ""
-      this.sm = undefined
-      this.songAudio.stop()
+      this.smPath = ""
+      this.loadedSM = undefined
+      this.chartAudio.stop()
       this.noChartTextA.visible = false
       this.noChartTextB.visible = false
       this.chartView?.destroy({ children: true })
       return
     }
 
-    this.songAudio.stop()
+    this.chartAudio.stop()
     this.lastSong = ""
-    this.sm_path = path
+    this.smPath = path
     this.time = 0
     this.beat = 0
 
-    const smHandle = await FileHandler.getFileHandle(this.sm_path)
+    // Load the SM file
+    const smHandle = await FileHandler.getFileHandle(this.smPath)
     const smFile = await smHandle!.getFile()
-    this.sm = new Simfile(smFile)
+    this.loadedSM = new Simfile(smFile)
 
-    await this.sm.loaded
+    await this.loadedSM.loaded
 
     this.noChartTextA.visible = true
     this.noChartTextB.visible = true
@@ -554,30 +617,39 @@ export class ChartManager {
     if (this.time == 0) this.setBeat(0)
   }
 
+  /**
+   * Loads the specified chart. If no chart is loaded, the chart with the highest difficulty is loaded.
+   *
+   * @param {Chart} [chart]
+   * @memberof ChartManager
+   */
   async loadChart(chart?: Chart) {
-    if (this.sm == undefined) return
+    if (this.loadedSM == undefined) return
+
+    // Find the chart with the highest difficulty
     if (chart == undefined) {
-      if (this.chart) {
-        const charts = this.sm.charts[this.chart.gameType.id]
+      if (this.loadedChart) {
+        const charts = this.loadedSM.charts[this.loadedChart.gameType.id]
         if (charts && charts.length > 0) {
           chart = charts.at(-1)
         }
       }
       if (!chart) {
         for (const gameType of GameTypeRegistry.getPriority()) {
-          const charts = this.sm.charts[gameType.id]
+          const charts = this.loadedSM.charts[gameType.id]
           if (charts && charts.length > 0) {
             chart = charts.at(-1)
             break
           }
         }
       }
+      // If no chart is found, display the no chart text.
       if (!chart) {
         this.chartView?.destroy({ children: true })
         this.chartView?.removeChildren()
         this.beat = 0
         this.time = 0
-        this.chart = undefined
+        this.loadedChart = undefined
         this.chartView = undefined
         this.noChartTextA.visible = true
         this.noChartTextB.visible = true
@@ -587,13 +659,14 @@ export class ChartManager {
       }
     }
 
-    if (chart == this.chart) return
+    if (chart == this.loadedChart) return
     this.chartView?.destroy({ children: true })
     this.chartView?.removeChildren()
 
+    // Load the chart
     this.clearSelection()
-    this.chart = chart
-    this.beat = this.chart.getBeat(this.time)
+    this.loadedChart = chart
+    this.beat = this.loadedChart.getBeatFromSeconds(this.time)
     ActionHistory.instance.reset()
 
     Options.play.timingCollection =
@@ -606,11 +679,11 @@ export class ChartManager {
     if (this.mode == EditMode.Play || this.mode == EditMode.Record)
       this.setMode(this.lastMode)
 
-    if (this.chart.getMusicPath() != this.lastSong) {
-      this.lastSong = this.chart.getMusicPath()
-      const audioPlaying = this.songAudio.isPlaying()
+    if (this.loadedChart.getMusicPath() != this.lastSong) {
+      this.lastSong = this.loadedChart.getMusicPath()
+      const audioPlaying = this.chartAudio.isPlaying()
       await this.loadAudio()
-      if (audioPlaying) this.songAudio.play()
+      if (audioPlaying) this.chartAudio.play()
     }
 
     this.noChartTextA.visible = false
@@ -629,17 +702,22 @@ export class ChartManager {
     EventHandler.emit("chartModified")
   }
 
+  /**
+   * Loads the audio of the current chart.
+   *
+   * @memberof ChartManager
+   */
   async loadAudio() {
-    if (!this.sm || !this.chart) return
-    this.songAudio.stop()
-    this.songAudio?.destroy()
-    const musicPath = this.chart.getMusicPath()
+    if (!this.loadedSM || !this.loadedChart) return
+    this.chartAudio.stop()
+    this.chartAudio?.destroy()
+    const musicPath = this.loadedChart.getMusicPath()
     if (musicPath == "") {
       WaterfallManager.createFormatted(
         "Failed to load audio: no audio file",
         "error"
       )
-      this.songAudio = new ChartAudio(undefined)
+      this.chartAudio = new ChartAudio(undefined)
       return
     }
     const audioHandle = await this.getAudioHandle(musicPath)
@@ -648,22 +726,31 @@ export class ChartManager {
         "Failed to load audio: couldn't find audio file " + musicPath,
         "error"
       )
-      this.songAudio = new ChartAudio(undefined)
+      this.chartAudio = new ChartAudio(undefined)
       return
     }
     const audioFile = await audioHandle.getFile()
-    this.songAudio = new ChartAudio(await audioFile.arrayBuffer())
-    this.songAudio.seek(this.time)
+    this.chartAudio = new ChartAudio(await audioFile.arrayBuffer())
+    this.chartAudio.seek(this.time)
     this.getAssistTickIndex()
   }
 
+  /**
+   * Finds the audio file associated with the music path.
+   * If none is found, attempt to find other audio files in the directory.
+   *
+   * @private
+   * @param {string} musicPath
+   * @return {*}
+   * @memberof ChartManager
+   */
   private async getAudioHandle(musicPath: string) {
     let audioHandle: FileSystemFileHandle | undefined =
-      await FileHandler.getFileHandleRelativeTo(this.sm_path, musicPath)
+      await FileHandler.getFileHandleRelativeTo(this.smPath, musicPath)
     if (audioHandle) return audioHandle
 
     //Capitalization error
-    const dirFiles = await FileHandler.getDirectoryFiles(dirname(this.sm_path))
+    const dirFiles = await FileHandler.getDirectoryFiles(dirname(this.smPath))
     audioHandle = dirFiles.filter(
       fileHandle =>
         fileHandle.name.toLowerCase() == basename(musicPath).toLowerCase()
@@ -698,21 +785,21 @@ export class ChartManager {
   }
 
   getAudio(): ChartAudio {
-    return this.songAudio
+    return this.chartAudio
   }
 
-  updateSoundProperties() {
+  private updateSoundProperties() {
     this.setEffectVolume(Options.audio.soundEffectVolume)
     this.setVolume(Options.audio.songVolume)
     this.setRate(Options.audio.rate)
   }
 
   setRate(rate: number) {
-    this.songAudio.rate(rate)
+    this.chartAudio.rate(rate)
   }
 
   setVolume(volume: number) {
-    this.songAudio.volume(volume)
+    this.chartAudio.volume(volume)
   }
 
   setEffectVolume(volume: number) {
@@ -722,34 +809,39 @@ export class ChartManager {
     if (this.mine.volume() != volume) this.mine.volume(volume)
   }
 
-  getAssistTickIndex() {
+  private getAssistTickIndex() {
     if (
-      this.sm == undefined ||
-      this.chart == undefined ||
+      this.loadedSM == undefined ||
+      this.loadedChart == undefined ||
       this.chartView == undefined ||
-      this.chart.notedata.length == 0
+      this.loadedChart.getNotedata().length == 0
     ) {
       this.noteIndex = 0
       return
     }
-    this.noteIndex = bsearch(this.chart.notedata, this.time, a => a.second) + 1
+    this.noteIndex =
+      bsearch(this.loadedChart.getNotedata(), this.time, a => a.second) + 1
     if (
       this.noteIndex >= 1 &&
-      this.time <= this.chart.notedata[this.noteIndex - 1].second
+      this.time <= this.loadedChart.getNotedata()[this.noteIndex - 1].second
     )
       this.noteIndex--
   }
 
   playPause() {
-    if (this.songAudio.isPlaying()) this.songAudio.pause()
-    else this.songAudio.play()
+    if (this.chartAudio.isPlaying()) this.chartAudio.pause()
+    else this.chartAudio.play()
   }
 
   setAndSnapBeat(beat: number) {
+    if (!this.loadedChart) return
     const snap = Math.max(0.001, Options.chart.snap)
-    let newbeat = Math.round(beat / snap) * snap
-    newbeat = Math.max(0, newbeat)
-    this.setBeat(newbeat)
+    const beatOfMeasure = this.loadedChart.timingData.getBeatOfMeasure(beat)
+    const measureBeat = beat - beatOfMeasure
+    const newBeatOfMeasure = Math.round(beatOfMeasure / snap) * snap
+    let newBeat = measureBeat + newBeatOfMeasure
+    newBeat = Math.max(0, newBeat)
+    this.setBeat(newBeat)
   }
 
   previousSnap() {
@@ -775,18 +867,25 @@ export class ChartManager {
     return ret
   }
 
+  /**
+   * Seeks to the previous note.
+   *
+   * @memberof ChartManager
+   */
   previousNote() {
     if (
-      this.sm == undefined ||
-      this.chart == undefined ||
+      this.loadedSM == undefined ||
+      this.loadedChart == undefined ||
       this.chartView == undefined
     )
       return
-    if (this.chart.notedata.length == 0) return
-    const holdTails = this.chart.notedata
+    if (this.loadedChart.getNotedata().length == 0) return
+    const holdTails = this.loadedChart
+      .getNotedata()
       .filter(isHoldNote)
       .map(note => note.beat + note.hold)
-    let beats = this.chart.notedata
+    let beats = this.loadedChart
+      .getNotedata()
       .map(note => note.beat)
       .concat(holdTails)
       .sort((a, b) => a - b)
@@ -796,18 +895,25 @@ export class ChartManager {
     this.setBeat(beats[Math.max(0, index)])
   }
 
+  /**
+   * Seeks to the next note.
+   *
+   * @memberof ChartManager
+   */
   nextNote() {
     if (
-      this.sm == undefined ||
-      this.chart == undefined ||
+      this.loadedSM == undefined ||
+      this.loadedChart == undefined ||
       this.chartView == undefined
     )
       return
-    if (this.chart.notedata.length == 0) return
-    const holdTails = this.chart.notedata
+    if (this.loadedChart.getNotedata().length == 0) return
+    const holdTails = this.loadedChart
+      .getNotedata()
       .filter(isHoldNote)
       .map(note => note.beat + note.hold)
-    let beats = this.chart.notedata
+    let beats = this.loadedChart
+      .getNotedata()
       .map(note => note.beat)
       .concat(holdTails)
       .sort((a, b) => a - b)
@@ -817,39 +923,59 @@ export class ChartManager {
     this.setBeat(beats[Math.min(beats.length - 1, index)])
   }
 
+  /**
+   * Seeks to the first note.
+   *
+   * @memberof ChartManager
+   */
   firstNote() {
     if (
-      this.sm == undefined ||
-      this.chart == undefined ||
+      this.loadedSM == undefined ||
+      this.loadedChart == undefined ||
       this.chartView == undefined
     )
       return
-    if (this.chart.notedata.length == 0) return
-    this.setBeat(this.chart.notedata[0].beat)
+    const notedata = this.loadedChart.getNotedata()
+    if (notedata.length == 0) return
+    this.setBeat(notedata[0].beat)
   }
 
+  /**
+   * Seeks to the last note.
+   *
+   * @memberof ChartManager
+   */
   lastNote() {
     if (
-      this.sm == undefined ||
-      this.chart == undefined ||
+      this.loadedSM == undefined ||
+      this.loadedChart == undefined ||
       this.chartView == undefined
     )
       return
-    if (this.chart.notedata.length == 0) return
-    const note = this.chart.notedata[this.chart.notedata.length - 1]
+    const notedata = this.loadedChart.getNotedata()
+    if (notedata.length == 0) return
+    const note = notedata[notedata.length - 1]
     this.setBeat(note.beat + (isHoldNote(note) ? note.hold : 0))
   }
 
+  /**
+   * Places/removes a note at the specified beat and column
+   *
+   * @param {number} col - The column to place the note at
+   * @param {("mouse" | "key")} type - The input type
+   * @param {number} [beat] - The beat to place the note at. Defaults to the current beat.
+   * @memberof ChartManager
+   */
   setNote(col: number, type: "mouse" | "key", beat?: number) {
     if (
-      this.sm == undefined ||
-      this.chart == undefined ||
+      this.loadedSM == undefined ||
+      this.loadedChart == undefined ||
       this.chartView == undefined
     )
       return
     beat = beat ?? this.beat
     beat = Math.max(0, Math.round(beat * 48) / 48)
-    const conflictingNote = this.chart.notedata.filter(note => {
+    const conflictingNote = this.loadedChart.getNotedata().filter(note => {
       if (note.col != col) return false
       if (Math.abs(note.beat - beat!) < 0.003) return true
       return (
@@ -877,20 +1003,32 @@ export class ChartManager {
     this.getAssistTickIndex()
     this.app.actionHistory.run({
       action: () => {
-        holdEdit.removedNotes.forEach(note => this.chart!.removeNote(note))
-        if (holdEdit.originalNote) this.chart!.addNote(holdEdit.originalNote)
+        holdEdit.removedNotes.forEach(note =>
+          this.loadedChart!.removeNote(note)
+        )
+        if (holdEdit.originalNote)
+          this.loadedChart!.addNote(holdEdit.originalNote)
       },
       undo: () => {
-        if (holdEdit.originalNote) this.chart!.removeNote(holdEdit.originalNote)
-        holdEdit.removedNotes.forEach(note => this.chart!.addNote(note))
+        if (holdEdit.originalNote)
+          this.loadedChart!.removeNote(holdEdit.originalNote)
+        holdEdit.removedNotes.forEach(note => this.loadedChart!.addNote(note))
       },
     })
   }
 
+  /**
+   * Extends the hold in the specified column to the current beat
+   *
+   * @param {number} col - The column of the hold.
+   * @param {number} beat - The beat to extend to
+   * @param {boolean} roll - Whether to convert holds into rolls
+   * @memberof ChartManager
+   */
   editHoldBeat(col: number, beat: number, roll: boolean) {
     if (
-      this.sm == undefined ||
-      this.chart == undefined ||
+      this.loadedSM == undefined ||
+      this.loadedChart == undefined ||
       this.chartView == undefined
     )
       return
@@ -908,7 +1046,7 @@ export class ChartManager {
     )
     hold.roll ||= roll
     if (!hold.originalNote) {
-      this.chart.addNote({
+      this.loadedChart.addNote({
         beat: hold.startBeat,
         col: col,
         type: hold.roll ? "Roll" : "Hold",
@@ -926,7 +1064,7 @@ export class ChartManager {
         !isHoldNote(hold.originalNote) ||
         props.hold != hold.originalNote.hold
       ) {
-        this.chart.modifyNote(hold.originalNote, props)
+        this.loadedChart.modifyNote(hold.originalNote, props)
       }
     }
     hold.originalNote = {
@@ -935,7 +1073,7 @@ export class ChartManager {
       type: hold.roll ? "Roll" : "Hold",
       hold: hold.endBeat - hold.startBeat,
     }
-    const conflictingNotes = this.chart.notedata.filter(note => {
+    const conflictingNotes = this.loadedChart.getNotedata().filter(note => {
       if (
         note.beat == hold.originalNote!.beat &&
         note.col == hold.originalNote!.col
@@ -950,120 +1088,164 @@ export class ChartManager {
       )
     })
     hold.removedNotes = hold.removedNotes.concat(conflictingNotes)
-    conflictingNotes.forEach(note => this.chart!.removeNote(note))
+    conflictingNotes.forEach(note => this.loadedChart!.removeNote(note))
     this.getAssistTickIndex()
   }
 
+  /**
+   * Stops editing in a column
+   *
+   * @param {number} col
+   * @memberof ChartManager
+   */
   endEditing(col: number) {
     this.holdEditing[col] = undefined
   }
 
   previousNoteType() {
-    const numNoteTypes = this.chart?.gameType.editNoteTypes.length ?? 0
+    const numNoteTypes = this.loadedChart?.gameType.editNoteTypes.length ?? 0
     this.editNoteTypeIndex =
       (this.editNoteTypeIndex - 1 + numNoteTypes) % numNoteTypes
   }
 
   nextNoteType() {
-    const numNoteTypes = this.chart?.gameType.editNoteTypes.length ?? 0
+    const numNoteTypes = this.loadedChart?.gameType.editNoteTypes.length ?? 0
     this.editNoteTypeIndex =
       (this.editNoteTypeIndex + 1 + numNoteTypes) % numNoteTypes
   }
 
   getEditingNoteType(): string {
-    return this.chart?.gameType.editNoteTypes[this.editNoteTypeIndex] ?? ""
+    return (
+      this.loadedChart?.gameType.editNoteTypes[this.editNoteTypeIndex] ?? ""
+    )
   }
 
   setEditingNoteType(type: string) {
-    if (!this.chart) return
-    const types = this.chart?.gameType.editNoteTypes
+    if (!this.loadedChart) return
+    const types = this.loadedChart?.gameType.editNoteTypes
     const index = types.indexOf(type)
     if (index == -1) return
     this.editNoteTypeIndex = index
   }
 
+  /**
+   * Gets the current mode.
+   *
+   * @return {*}  {EditMode}
+   * @memberof ChartManager
+   */
   getMode(): EditMode {
     return this.mode
   }
 
+  /**
+   * Sets the current mode to the specified mode.
+   *
+   * @param {EditMode} mode
+   * @memberof ChartManager
+   */
   setMode(mode: EditMode) {
-    if (!this.chart || !this.chartView) return
+    if (!this.loadedChart || !this.chartView) return
     if (this.mode == mode) {
       if (mode == EditMode.Play || mode == EditMode.Record) {
         this.setMode(this.lastMode)
         this.getAssistTickIndex()
-        this.songAudio.pause()
+        this.chartAudio.pause()
       }
       return
     }
     if (this.mode == EditMode.View || this.mode == EditMode.Edit)
       this.lastMode = this.mode
     this.mode = mode
+
+    const notedata = this.loadedChart.getNotedata()
     if (this.mode == EditMode.Play) {
-      this.chart.notedata.forEach(note => {
+      notedata.forEach(note => {
         note.gameplay = {
           hideNote: false,
           hasHit: false,
         }
       })
-      for (const note of this.chart.notedata) {
+      for (const note of notedata) {
         if (note.second < this.time) note.gameplay!.hasHit = true
         else break
       }
-      this.chart.gameType.gameLogic.reset(this)
+      this.loadedChart.gameType.gameLogic.endPlay(this)
       this.gameStats = new GameplayStats(this)
       this.widgetManager.startPlay()
-      this.songAudio.seek(Math.max(0, this.time) - 1)
-      this.songAudio.play()
+      this.chartAudio.seek(Math.max(0, this.time) - 1)
+      this.chartAudio.play()
     } else if (this.mode == EditMode.Record) {
-      this.songAudio.seek(Math.max(0, this.time) - 1)
-      this.songAudio.play()
+      this.chartAudio.seek(Math.max(0, this.time) - 1)
+      this.chartAudio.play()
     } else {
       this.chartView.endPlay()
-      this.chart?.notedata.forEach(note => (note.gameplay = undefined))
+      notedata.forEach(note => (note.gameplay = undefined))
     }
   }
 
+  /**
+   * Judges a key down on a certain column.
+   * Places notes if the current mode is Record Mode.
+   * @param {number} col
+   * @memberof ChartManager
+   */
   judgeCol(col: number) {
-    if (!this.chart || !this.chartView) return
+    if (!this.loadedChart || !this.chartView) return
     if (this.mode == EditMode.Play)
-      this.chart.gameType.gameLogic.keyDown(this, col)
+      this.loadedChart.gameType.gameLogic.keyDown(this, col)
     else if (this.mode == EditMode.Record) {
-      const tapBeat = this.chart.getBeat(this.time + Options.play.offset)
+      const tapBeat = this.loadedChart.getBeatFromSeconds(
+        this.time + Options.play.offset
+      )
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
       const snapBeat = Math.round(tapBeat / snap) * snap
       this.setNote(col, "key", snapBeat)
     }
   }
 
+  /**
+   * Judges a key up on a certain column.
+   *
+   * @param {number} col
+   * @memberof ChartManager
+   */
   judgeColUp(col: number) {
-    if (!this.chart || !this.chartView) return
+    if (!this.loadedChart || !this.chartView) return
     if (this.mode == EditMode.Play)
-      this.chart.gameType.gameLogic.keyUp(this, col)
+      this.loadedChart.gameType.gameLogic.keyUp(this, col)
     else if (this.mode == EditMode.Record) this.endEditing(col)
   }
 
+  /**
+   * Saves the current chart to disk.
+   *
+   * @memberof ChartManager
+   */
   async save() {
-    if (!this.sm) return
+    if (!this.loadedSM) return
     if (!ActionHistory.instance.isDirty()) {
       WaterfallManager.create("Saved")
       return
     }
-    const path_arr = this.sm_path.split("/")
+    const path_arr = this.smPath.split("/")
     const name = path_arr.pop()!.split(".").slice(0, -1).join(".")
     const path = path_arr.join("/")
     if (
-      !this.sm.usesSplitTiming() &&
+      !this.loadedSM.usesSplitTiming() &&
       (await FileHandler.getFileHandle(path + "/" + name + ".sm"))
     ) {
-      FileHandler.writeFile(path + "/" + name + ".sm", this.sm.serialize("sm"))
+      FileHandler.writeFile(
+        path + "/" + name + ".sm",
+        this.loadedSM.serialize("sm")
+      )
     }
     if (await FileHandler.getFileHandle(path + "/" + name + ".ssc"))
       FileHandler.writeFile(
         path + "/" + name + ".ssc",
-        this.sm.serialize("ssc")
+        this.loadedSM.serialize("ssc")
       )
-    if (this.sm.usesSplitTiming()) {
+    if (this.loadedSM.usesSplitTiming()) {
       WaterfallManager.create("Saved. No SM file since split timing was used.")
     } else {
       WaterfallManager.create("Saved")
@@ -1072,6 +1254,11 @@ export class ChartManager {
     return
   }
 
+  /**
+   * Clears the current selection
+   *
+   * @memberof ChartManager
+   */
   clearSelection() {
     this.selection = {
       notes: [],
@@ -1115,6 +1302,7 @@ export class ChartManager {
   }
 
   selectRegion() {
+    if (!this.loadedChart) return
     if (this.endRegion) {
       this.startRegion = undefined
       this.endRegion = undefined
@@ -1130,7 +1318,8 @@ export class ChartManager {
         this.endRegion = this.startRegion
         this.startRegion = this.beat
       }
-      this.chart?.notedata
+      this.loadedChart
+        .getNotedata()
         .filter(
           note => note.beat >= this.startRegion! && note.beat < this.endRegion!
         )
@@ -1141,6 +1330,7 @@ export class ChartManager {
   }
 
   modifySelection(modify: (note: NotedataEntry) => PartialNotedataEntry) {
+    if (!this.loadedChart) return
     const removedNotes = this.selection.notes
     const newNotes = structuredClone(this.selection.notes)
       .map(modify)
@@ -1149,21 +1339,18 @@ export class ChartManager {
         return a.beat - b.beat
       })
     if (newNotes.length == 0) return
-    let startIndex = bsearch(
-      this.chart!.notedata,
-      newNotes[0].beat,
-      note => note.beat
-    )
+
+    const notedata = this.loadedChart.getNotedata()
+    let startIndex = bsearch(notedata, newNotes[0].beat, note => note.beat)
     const conflictingNotes: NotedataEntry[] = []
     for (const newNote of newNotes) {
       let latestNoteIndex = startIndex
       const isHold = isHoldNote(newNote)
       while (
-        this.chart!.notedata[startIndex] &&
-        this.chart!.notedata[startIndex].beat <=
-          newNote.beat + (isHold ? newNote.hold : 0)
+        notedata[startIndex] &&
+        notedata[startIndex].beat <= newNote.beat + (isHold ? newNote.hold : 0)
       ) {
-        const note = this.chart!.notedata[startIndex]
+        const note = notedata[startIndex]
         startIndex++
         if (note.beat < newNote.beat) latestNoteIndex = startIndex
         if (removedNotes.includes(note)) continue
@@ -1184,13 +1371,13 @@ export class ChartManager {
 
     this.app.actionHistory.run({
       action: () => {
-        this.chart!.removeNotes(removedNotes.concat(conflictingNotes))
-        this.selection.notes = this.chart!.addNotes(newNotes)
+        this.loadedChart!.removeNotes(removedNotes.concat(conflictingNotes))
+        this.selection.notes = this.loadedChart!.addNotes(newNotes)
       },
       undo: () => {
-        this.chart!.removeNotes(newNotes)
-        this.chart!.addNotes(conflictingNotes)
-        this.selection.notes = this.chart!.addNotes(removedNotes)
+        this.loadedChart!.removeNotes(newNotes)
+        this.loadedChart!.addNotes(conflictingNotes)
+        this.selection.notes = this.loadedChart!.addNotes(removedNotes)
       },
     })
   }
@@ -1200,15 +1387,16 @@ export class ChartManager {
     const removedNotes = this.selection.notes
     this.app.actionHistory.run({
       action: () => {
-        this.chart!.removeNotes(removedNotes)
+        this.loadedChart!.removeNotes(removedNotes)
       },
       undo: () => {
-        this.selection.notes = this.chart!.addNotes(removedNotes)
+        this.selection.notes = this.loadedChart!.addNotes(removedNotes)
       },
     })
   }
 
   pasteNotes(data: string) {
+    if (!this.loadedChart) return
     const notes = decodeNotes(data) ?? decodeNotes(this.virtualClipboard)
     if (!notes) return
     if (notes.length == 0) return
@@ -1222,21 +1410,17 @@ export class ChartManager {
         if (a.beat == b.beat) return a.col - b.col
         return a.beat - b.beat
       })
-    let startIndex = bsearch(
-      this.chart!.notedata,
-      notes[0].beat,
-      note => note.beat
-    )
+    const notedata = this.loadedChart.getNotedata()
+    let startIndex = bsearch(notedata, notes[0].beat, note => note.beat)
     const conflictingNotes: NotedataEntry[] = []
     for (const newNote of notes) {
       let latestNoteIndex = startIndex
       const isHold = isHoldNote(newNote)
       while (
-        this.chart!.notedata[startIndex] &&
-        this.chart!.notedata[startIndex].beat <=
-          newNote.beat + (isHold ? newNote.hold : 0)
+        notedata[startIndex] &&
+        notedata[startIndex].beat <= newNote.beat + (isHold ? newNote.hold : 0)
       ) {
-        const note = this.chart!.notedata[startIndex]
+        const note = notedata[startIndex]
         startIndex++
         if (note.beat < newNote.beat) latestNoteIndex = startIndex
         if (note.col != newNote.col) continue
@@ -1255,12 +1439,12 @@ export class ChartManager {
     }
     this.app.actionHistory.run({
       action: () => {
-        this.chart!.removeNotes(conflictingNotes)
-        this.selection.notes = this.chart!.addNotes(notes)
+        this.loadedChart!.removeNotes(conflictingNotes)
+        this.selection.notes = this.loadedChart!.addNotes(notes)
       },
       undo: () => {
-        this.chart!.removeNotes(notes)
-        this.chart!.addNotes(conflictingNotes)
+        this.loadedChart!.removeNotes(notes)
+        this.loadedChart!.addNotes(conflictingNotes)
       },
     })
   }

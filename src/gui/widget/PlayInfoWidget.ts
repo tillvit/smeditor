@@ -332,9 +332,9 @@ export class PlayInfoWidget extends Widget {
       if (name != "Mine")
         count.text =
           "0 / " +
-          this.manager.chartManager.chart!.notedata.filter(
-            note => note.type == name
-          ).length
+          this.manager.chartManager
+            .loadedChart!.getNotedata()
+            .filter(note => note.type == name).length
       label.tint = 0xdddddd
       count.tint = 0xdddddd
       count.name = name

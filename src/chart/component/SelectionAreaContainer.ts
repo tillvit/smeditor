@@ -23,7 +23,7 @@ export class SelectionAreaContainer extends Container {
     this.startMarker.width = this.renderer.chart.gameType.notefieldWidth
   }
 
-  renderThis() {
+  update() {
     if (this.renderer.chartManager.getMode() == EditMode.Play) {
       this.visible = false
       return

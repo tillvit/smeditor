@@ -43,6 +43,14 @@ export interface BeatTimingCache {
   warped: boolean
 }
 
+export interface MeasureTimingCache {
+  beat: number
+  measure: number
+  beatsPerMeasure: number
+  divisionLength: number
+  numDivisions: number
+}
+
 export interface ScrollCacheTimingEvent extends ScrollTimingEvent {
   effectiveBeat?: number
 }

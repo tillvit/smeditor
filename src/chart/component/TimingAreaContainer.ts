@@ -50,12 +50,7 @@ export class TimingAreaContainer extends Container {
     this.renderer = renderer
   }
 
-  renderThis(
-    beat: number,
-    fromBeat: number,
-    toBeat: number,
-    fromSecond: number
-  ) {
+  update(beat: number, fromBeat: number, toBeat: number, fromSecond: number) {
     this.visible =
       this.renderer.chartManager.getMode() != EditMode.Play ||
       !Options.play.hideBarlines
@@ -143,7 +138,7 @@ export class TimingAreaContainer extends Container {
           yEnd = this.renderer.getYPosFromTime(event.second! + event.value)
         } else if (event.value < 0) {
           yEnd = this.renderer.getYPos(
-            this.renderer.chart.getBeat(event.second! + 0.0001)
+            this.renderer.chart.getBeatFromSeconds(event.second! + 0.0001)
           )
         }
         break

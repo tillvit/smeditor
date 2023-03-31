@@ -17,9 +17,10 @@ export class ComboNumber extends BitmapText {
     this.renderer = renderer
   }
 
-  renderThis() {
+  update() {
     const gameStats = this.renderer.chartManager.gameStats
     this.visible = this.renderer.chartManager.getMode() == EditMode.Play
+    this.scale.y = Options.chart.reverse ? -1 : 1
     if (!gameStats) return
     const val =
       gameStats.getCombo() == 0

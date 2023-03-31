@@ -37,10 +37,10 @@ export class Keybinds {
       if (
         (app.chartManager.getMode() == EditMode.Play ||
           app.chartManager.getMode() == EditMode.Record) &&
-        app.chartManager.chart?.gameType
+        app.chartManager.loadedChart?.gameType
       ) {
         const kbds =
-          GAMEPLAY_KEYBINDS[app.chartManager.chart?.gameType.id] ?? []
+          GAMEPLAY_KEYBINDS[app.chartManager.loadedChart?.gameType.id] ?? []
         const gp_matches = Object.values(kbds).filter(value => {
           for (const keybind of value.keybinds) {
             if (this.compareModifiers(keybind.mods, mods) && keybind.key == key)
@@ -96,10 +96,10 @@ export class Keybinds {
       if (
         (app.chartManager.getMode() == EditMode.Play ||
           app.chartManager.getMode() == EditMode.Record) &&
-        app.chartManager.chart?.gameType
+        app.chartManager.loadedChart?.gameType
       ) {
         const kbds =
-          GAMEPLAY_KEYBINDS[app.chartManager.chart?.gameType.id] ?? []
+          GAMEPLAY_KEYBINDS[app.chartManager.loadedChart?.gameType.id] ?? []
         const gp_matches = Object.values(kbds).filter(value => {
           for (const keybind of value.keybinds) {
             if (this.compareModifiers(keybind.mods, mods) && keybind.key == key)

@@ -1,10 +1,10 @@
 import { showDirectoryPicker, showOpenFilePicker } from "file-system-access"
 import scrollIntoView from "scroll-into-view-if-needed"
-import { App } from "../App"
-import { AUDIO_EXT, IMG_EXT } from "../data/FileData"
-import { Icons } from "../gui/Icons"
-import { FileHandler } from "../util/FileHandler"
-import { basename, dirname, extname } from "../util/Util"
+import { App } from "../../App"
+import { AUDIO_EXT, IMG_EXT } from "../../data/FileData"
+import { FileHandler } from "../../util/FileHandler"
+import { basename, dirname, extname } from "../../util/Util"
+import { Icons } from "../Icons"
 import { Window } from "./Window"
 
 interface DirectoryWindowOptions {

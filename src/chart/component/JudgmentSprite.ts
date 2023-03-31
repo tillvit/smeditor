@@ -23,7 +23,7 @@ export class JudgmentSprite extends Sprite {
     this.anchor.set(0.5)
   }
 
-  renderThis() {
+  update() {
     this.visible = this.active
     if (this.active) {
       const time = (Date.now() - this.createTime) / 1000

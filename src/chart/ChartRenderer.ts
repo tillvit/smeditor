@@ -1,17 +1,25 @@
-import { Container, Point, Rectangle, Sprite, Texture } from "pixi.js"
+import {
+  Container,
+  DisplayObject,
+  FederatedMouseEvent,
+  Point,
+  Rectangle,
+  Sprite,
+  Texture,
+} from "pixi.js"
 import { Options } from "../util/Options"
 import { ChartManager, EditMode } from "./ChartManager"
+import { BarlineContainer } from "./component/BarlineContainer"
+import { ComboNumber } from "./component/ComboNumber"
+import { JudgmentSprite } from "./component/JudgmentSprite"
+import { SelectionAreaContainer } from "./component/SelectionAreaContainer"
+import { SnapContainer } from "./component/SnapContainer"
+import { TimingAreaContainer } from "./component/TimingAreaContainer"
+import { TimingBarContainer } from "./component/TimingBarContainer"
+import { TimingTrackContainer } from "./component/TimingTrackContainer"
+import { Waveform } from "./component/Waveform"
 import { Notefield } from "./gameTypes/base/Notefield"
 import { TimingWindow } from "./play/TimingWindow"
-import { BarlineContainer } from "./renderer/BarlineContainer"
-import { ComboNumber } from "./renderer/ComboNumber"
-import { JudgmentSprite } from "./renderer/JudgmentSprite"
-import { SelectionAreaContainer } from "./renderer/SelectionAreaContainer"
-import { SnapContainer } from "./renderer/SnapContainer"
-import { TimingAreaContainer } from "./renderer/TimingAreaContainer"
-import { TimingBarContainer } from "./renderer/TimingBarContainer"
-import { TimingTrackContainer } from "./renderer/TimingTrackContainer"
-import { Waveform } from "./renderer/Waveform"
 import { Chart } from "./sm/Chart"
 import { NotedataEntry } from "./sm/NoteTypes"
 
@@ -50,7 +58,7 @@ export class ChartRenderer extends Container {
   constructor(chartManager: ChartManager) {
     super()
     this.chartManager = chartManager
-    this.chart = chartManager.chart!
+    this.chart = chartManager.loadedChart!
 
     this.waveform = new Waveform(this)
     this.barlines = new BarlineContainer(this)
@@ -106,6 +114,7 @@ export class ChartRenderer extends Container {
         selectionSpeed == 0
       )
         return
+      // Scroll the notefield if the cursor is near the edge of the screen
       const pos = this.getYPos(
         Math.max(0, this.chartManager.getBeat() + selectionSpeed)
       )
@@ -128,6 +137,7 @@ export class ChartRenderer extends Container {
 
     this.on("mousedown", event => {
       if (this.chartManager.getMode() == EditMode.Play) return
+      // Start selecting
       if (
         Options.general.mousePlacement &&
         this.lastMouseBeat != -1 &&
@@ -158,6 +168,7 @@ export class ChartRenderer extends Container {
     })
 
     this.on("mousemove", event => {
+      // Process selection
       this.lastMousePos = this.toLocal(event.global)
       if (this.editingCol != -1) {
         const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
@@ -181,6 +192,7 @@ export class ChartRenderer extends Container {
     })
 
     this.on("mouseup", () => {
+      // End selecting
       if (this.editingCol != -1) {
         this.chartManager.endEditing(this.editingCol)
         this.editingCol = -1
@@ -212,12 +224,12 @@ export class ChartRenderer extends Container {
   }
 
   endPlay() {
-    this.notefield.reset()
+    this.notefield.endPlay()
     this.timingBar.reset()
     this.judgment.reset()
   }
 
-  renderThis() {
+  update() {
     const beat = this.getVisualBeat()
     const time = this.getVisualTime()
 
@@ -228,7 +240,8 @@ export class ChartRenderer extends Container {
     let renderBeatLimit = beat + Options.chart.maxDrawBeats
     let renderBeatLowerLimit = beat - Options.chart.maxDrawBeatsBack
     // let renderSecondLimit = this.chart.getSeconds(renderBeatLimit)
-    let renderSecondLowerLimit = this.chart.getSeconds(renderBeatLowerLimit)
+    let renderSecondLowerLimit =
+      this.chart.getSecondsFromBeat(renderBeatLowerLimit)
 
     if (Options.chart.CMod) {
       renderBeatLimit = this.getBeatFromYPos(this.getLowerBound()) + 1
@@ -257,23 +270,24 @@ export class ChartRenderer extends Container {
     this.scale.x = Options.chart.zoom
     this.scale.y = (Options.chart.reverse ? -1 : 1) * Options.chart.zoom
 
-    this.barlines.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
-    this.timingAreas.renderThis(
+    this.barlines.update(beat, renderBeatLowerLimit, renderBeatLimit)
+    this.timingAreas.update(
       beat,
       renderBeatLowerLimit,
       renderBeatLimit,
       renderSecondLowerLimit
     )
-    this.timingTracks.renderThis(beat, renderBeatLowerLimit, renderBeatLimit)
-    this.timingBar.renderThis()
-    this.judgment.renderThis()
-    this.combo.renderThis()
-    this.snapDisplay.renderThis()
-    this.selectionArea.renderThis()
+    this.timingTracks.update(beat, renderBeatLowerLimit, renderBeatLimit)
+    this.timingBar.update()
+    this.judgment.update()
+    this.combo.update()
+    this.snapDisplay.update()
+    this.selectionArea.update()
 
     this.notefield.update(beat, renderBeatLowerLimit, renderBeatLimit)
-    this.waveform.renderThis(beat, time)
+    this.waveform.update(beat, time)
 
+    // Move the ghost note for mouse placement
     if (
       Options.general.mousePlacement &&
       this.lastMousePos &&
@@ -309,6 +323,12 @@ export class ChartRenderer extends Container {
     }
   }
 
+  /**
+   * Gets the current time including play offset
+   *
+   * @return {*}  {number}
+   * @memberof ChartRenderer
+   */
   getTimeWithOffset(): number {
     let time = this.chartManager.getTime()
     if (
@@ -320,17 +340,29 @@ export class ChartRenderer extends Container {
     return time
   }
 
+  /**
+   * Gets the current beat including play offset
+   *
+   * @return {*}  {number}
+   * @memberof ChartRenderer
+   */
   getBeatWithOffset(): number {
     let beat = this.chartManager.getBeat()
     if (
       this.chartManager.getMode() == EditMode.Play ||
       this.chartManager.getMode() == EditMode.Record
     ) {
-      beat = this.chart.getBeat(this.getTimeWithOffset())
+      beat = this.chart.getBeatFromSeconds(this.getTimeWithOffset())
     }
     return beat
   }
 
+  /**
+   * Gets the current time including play and visual offset
+   *
+   * @return {*}  {number}
+   * @memberof ChartRenderer
+   */
   getVisualTime(): number {
     let time = this.chartManager.getTime()
     if (
@@ -342,23 +374,37 @@ export class ChartRenderer extends Container {
     return time
   }
 
+  /**
+   * Gets the current beat including play and visual offset
+   *
+   * @return {*}  {number}
+   * @memberof ChartRenderer
+   */
   getVisualBeat(): number {
     let beat = this.chartManager.getBeat()
     if (
       this.chartManager.getMode() == EditMode.Play ||
       this.chartManager.getMode() == EditMode.Record
     ) {
-      beat = this.chart.getBeat(this.getVisualTime())
+      beat = this.chart.getBeatFromSeconds(this.getVisualTime())
     }
     return beat
   }
 
+  /**
+   * Returns the y position for a note on the given beat.
+   *
+   * @param {number} beat
+   * @return {*}  {number}
+   * @memberof ChartRenderer
+   */
   getYPos(beat: number): number {
     const currentTime = this.getVisualTime()
     const currentBeat = this.getVisualBeat()
     if (Options.chart.CMod) {
       return (
-        (((this.chart.getSeconds(beat) - currentTime) * Options.chart.speed) /
+        (((this.chart.getSecondsFromBeat(beat) - currentTime) *
+          Options.chart.speed) /
           100) *
           64 *
           4 +
@@ -383,6 +429,13 @@ export class ChartRenderer extends Container {
     )
   }
 
+  /**
+   * Returns the y position for a note at the given time.
+   *
+   * @param {number} time
+   * @return {*}  {number}
+   * @memberof ChartRenderer
+   */
   getYPosFromTime(time: number): number {
     const currentTime = this.getVisualTime()
     if (Options.chart.CMod) {
@@ -390,9 +443,17 @@ export class ChartRenderer extends Container {
         (((time - currentTime) * Options.chart.speed) / 100) * 64 * 4 +
         Options.chart.receptorYPos / Options.chart.zoom
       )
-    } else return this.getYPos(this.chart.timingData.getBeat(time))
+    } else return this.getYPos(this.chart.timingData.getBeatFromSeconds(time))
   }
 
+  /**
+   * Returns the time for a note at the specified y position.
+   * May return an incorrect value when negative scrolls are used.
+   *
+   * @param {number} yp
+   * @return {*}  {number}
+   * @memberof ChartRenderer
+   */
   getTimeFromYPos(yp: number): number {
     const currentTime = this.getVisualTime()
     if (Options.chart.CMod) {
@@ -405,15 +466,24 @@ export class ChartRenderer extends Container {
         currentTime
       return seconds
     }
-    return this.chart.getSeconds(this.getBeatFromYPos(yp))
+    return this.chart.getSecondsFromBeat(this.getBeatFromYPos(yp))
   }
 
-  getBeatFromYPos(yp: number, ignoreSpeeds?: boolean): number {
+  /**
+   * Returns the beat for a note at the specified y position.
+   * May return an incorrect value when negative scrolls are used.
+   *
+   * @param {number} yp
+   * @param {boolean} [ignoreScrolls] - Set to true to ignore scrolls
+   * @return {*}  {number}
+   * @memberof ChartRenderer
+   */
+  getBeatFromYPos(yp: number, ignoreScrolls?: boolean): number {
     const currentBeat = this.getVisualBeat()
     if (Options.chart.CMod) {
-      return this.chart.getBeat(this.getTimeFromYPos(yp))
+      return this.chart.getBeatFromSeconds(this.getTimeFromYPos(yp))
     }
-    if (Options.chart.doSpeedChanges && !ignoreSpeeds)
+    if (Options.chart.doSpeedChanges && !ignoreScrolls)
       return this.chart.getBeatFromEffectiveBeat(
         (((yp - Options.chart.receptorYPos / Options.chart.zoom) / 64) * 100) /
           Options.chart.speed /
@@ -427,6 +497,13 @@ export class ChartRenderer extends Container {
     )
   }
 
+  /**
+   * Returns true if the chart is current at a negative scroll.
+   *
+   * @param {number} beat
+   * @return {*}
+   * @memberof ChartRenderer
+   */
   isNegScroll(beat: number) {
     return (
       Options.chart.doSpeedChanges &&
@@ -437,6 +514,12 @@ export class ChartRenderer extends Container {
     )
   }
 
+  /**
+   * Returns the maximum y position to render.
+   *
+   * @return {*}  {number}
+   * @memberof ChartRenderer
+   */
   getLowerBound(): number {
     return (
       (this.chartManager.app.renderer.screen.height - this.y) /
@@ -445,19 +528,135 @@ export class ChartRenderer extends Container {
     )
   }
 
+  /**
+   * Returns the minimum y position to render
+   *
+   * @return {*}  {number}
+   * @memberof ChartRenderer
+   */
   getUpperBound(): number {
     return -32 - this.y / Options.chart.zoom
   }
 
+  /**
+   * Tests if an object is in the selection sprite.
+   *
+   * @param {Container} object
+   * @return {*}  {boolean}
+   * @memberof ChartRenderer
+   */
   selectionTest(object: Container): boolean {
     if (!this.selectionBounds) return false
     const ab = this.selectionSprite.getBounds()
     const bb = object.getBounds()
     return (
-      ab.x + ab.width > bb.x &&
-      ab.x < bb.x + bb.width &&
-      ab.y + ab.height > bb.y &&
-      ab.y < bb.y + bb.height
+      ab.x + ab.width > bb.x + bb.width / 4 &&
+      ab.x < bb.x + bb.width - bb.width / 4 &&
+      ab.y + ab.height > bb.y + bb.height / 4 &&
+      ab.y < bb.y + bb.height - bb.height / 4
     )
+  }
+
+  /**
+   * Adds the selection and drag handlers to this object. Call this function when creating a new note object.
+   *
+   * @param {(DisplayObject & { note: NotedataEntry })} newChild
+   * @memberof ChartRenderer
+   */
+  registerDragNote(newChild: DisplayObject & { note: NotedataEntry }) {
+    newChild.interactive = true
+    let lastTriedColumnShift = 0
+    let initalPosX = 0
+    let initalPosY = 0
+    let movedNote: NotedataEntry | undefined
+
+    const moveHandler = (event: FederatedMouseEvent) => {
+      const note = movedNote!
+      const position = this.toLocal(event.global)
+      if (
+        Math.abs(position.y - initalPosY) ** 2 +
+          Math.abs(position.x - initalPosX) ** 2 <
+        32 * 32
+      ) {
+        if (this.chartManager.selection.shift) {
+          this.chartManager.selection.shift = {
+            columnShift: 0,
+            beatShift: 0,
+          }
+        }
+        return
+      }
+      const newBeat = this.getBeatFromYPos(position.y)
+      const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
+      let snapBeat = Math.round(newBeat / snap) * snap
+      if (Math.abs(snapBeat - newBeat) > Math.abs(newBeat - note.beat)) {
+        snapBeat = note.beat
+      }
+      const col = Math.round((position.x + 96) / 64)
+      this.chartManager.selection.shift ||= {
+        columnShift: 0,
+        beatShift: 0,
+      }
+      if (lastTriedColumnShift != col - note.col) {
+        lastTriedColumnShift = col - note.col
+        if (
+          this.chartManager.selection.notes.every(note => {
+            const newCol = note.col + lastTriedColumnShift
+            return (
+              newCol >= 0 &&
+              newCol < this.chartManager.loadedChart!.gameType.numCols
+            )
+          })
+        ) {
+          this.chartManager.selection.shift.columnShift = col - note.col
+        }
+      }
+      this.chartManager.selection.shift.beatShift = snapBeat - note.beat
+    }
+    newChild.on("mousedown", event => {
+      if (
+        Options.general.mousePlacement &&
+        !event.getModifierState("Meta") &&
+        !event.getModifierState("Control") &&
+        !event.getModifierState("Shift") &&
+        !this.chartManager.selection.notes.includes(newChild.note)
+      )
+        return
+      event.stopImmediatePropagation()
+      if (this.chartManager.selection.notes.includes(newChild.note)) {
+        if (event.getModifierState("Control") || event.getModifierState("Meta"))
+          this.chartManager.removeNoteFromSelection(newChild.note)
+      } else {
+        if (
+          !event.getModifierState("Control") &&
+          !event.getModifierState("Meta") &&
+          !event.getModifierState("Shift")
+        )
+          this.chartManager.clearSelection()
+        this.chartManager.addNoteToSelection(newChild.note)
+      }
+      initalPosX = newChild.x!
+      initalPosY = newChild.y!
+      movedNote = newChild.note!
+      this.on("mousemove", moveHandler)
+      const mouseUp = () => {
+        this.off("mousemove", moveHandler)
+        this.off("mouseup", mouseUp)
+        if (
+          (this.chartManager.selection.shift?.beatShift ?? 0) != 0 ||
+          (this.chartManager.selection.shift?.columnShift ?? 0) != 0
+        )
+          this.chartManager.modifySelection(note => {
+            note.beat += this.chartManager.selection.shift!.beatShift
+            note.col += this.chartManager.selection.shift!.columnShift
+            return note
+          })
+        this.chartManager.selection.shift = undefined
+      }
+      this.on("mouseup", mouseUp)
+    })
+    newChild.on("destroyed", () => {
+      newChild?.removeAllListeners()
+    })
   }
 }

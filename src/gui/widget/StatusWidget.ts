@@ -325,8 +325,8 @@ export class StatusWidget extends Widget {
       const rightPlaceholder = document.createElement("div")
       rightPlaceholder.classList.add("note-placeholder-right")
       this.stepsContainer.appendChild(rightPlaceholder)
-      if (!this.manager.chartManager.chart) return
-      for (const type of this.manager.chartManager.chart.gameType
+      if (!this.manager.chartManager.loadedChart) return
+      for (const type of this.manager.chartManager.loadedChart.gameType
         .editNoteTypes) {
         const sprite =
           this.manager.chartManager.chartView!.notefield.getNoteSprite({
@@ -400,7 +400,7 @@ export class StatusWidget extends Widget {
   }
 
   update(): void {
-    this.view.style.display = this.manager.chartManager.sm ? "" : "none"
+    this.view.style.display = this.manager.chartManager.loadedSM ? "" : "none"
     const time = this.manager.chartManager.getTime()
     if (this.lastTime != time) {
       if (document.activeElement != this.min)
@@ -485,14 +485,13 @@ export class StatusWidget extends Widget {
       this.lastMode = mode
     }
 
-    const playing = this.manager.chartManager.songAudio.isPlaying()
+    const playing = this.manager.chartManager.chartAudio.isPlaying()
     if (this.lastPlaying != playing) {
       this.playIcon.src = playing ? Icons.STOP : Icons.PLAY
       this.lastPlaying = playing
     }
-    this.playIcon.style.height = this.manager.chartManager.songAudio.isPlaying()
-      ? "28px"
-      : ""
+    this.playIcon.style.height =
+      this.manager.chartManager.chartAudio.isPlaying() ? "28px" : ""
 
     if (mode == EditMode.Play || mode == EditMode.Record) {
       if (

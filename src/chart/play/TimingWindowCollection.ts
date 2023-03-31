@@ -1,4 +1,4 @@
-import { JudgmentTexture } from "../renderer/JudgmentTexture"
+import { JudgmentTexture } from "../component/JudgmentTexture"
 import { HoldNotedataEntry } from "../sm/NoteTypes"
 import { HoldDroppedTimingWindow } from "./HoldDroppedTimingWindow"
 import { HoldTimingWindow } from "./HoldTimingWindow"
@@ -270,6 +270,13 @@ export class TimingWindowCollection {
     this.hideLimitMS = minHideMS
   }
 
+  /**
+   * Returns the achieved judgment given an error in ms.
+   *
+   * @param {number} error
+   * @return {*}  {StandardTimingWindow}
+   * @memberof TimingWindowCollection
+   */
   judgeInput(error: number): StandardTimingWindow {
     for (const window of this.windows) {
       if (window.getTimingWindowMS() / 1000 >= Math.abs(error)) {
@@ -279,30 +286,76 @@ export class TimingWindowCollection {
     return this.missWindow
   }
 
+  /**
+   * Gets the held judgment in this collection for a given note.
+   *
+   * @param {HoldNotedataEntry} note
+   * @return {*}  {HoldTimingWindow}
+   * @memberof TimingWindowCollection
+   */
   getHeldJudgement(note: HoldNotedataEntry): HoldTimingWindow {
     return this.holdWindows[note.type]
   }
 
+  /**
+   * Gets this miss judgment in this collection.
+   *
+   * @return {*}  {StandardMissTimingWindow}
+   * @memberof TimingWindowCollection
+   */
   getMissJudgment(): StandardMissTimingWindow {
     return this.missWindow
   }
 
+  /**
+   * Gets the dropped judgment in this collection.
+   *
+   * @param {}
+   * @return {*}  {HoldDroppedTimingWindow}
+   * @memberof TimingWindowCollection
+   */
   getDroppedJudgment(): HoldDroppedTimingWindow {
     return this.droppedWindow
   }
 
+  /**
+   * Gets the mine judgment in this collection.
+   *
+   * @param {}
+   * @return {*}  {MineTimingWindow}
+   * @memberof TimingWindowCollection
+   */
   getMineJudgment(): MineTimingWindow {
     return this.mineWindow
   }
 
-  shouldHideNote(judgment: StandardTimingWindow) {
+  /**
+   * Determines if a note should be hidden.
+   *
+   * @param {StandardTimingWindow} judgment
+   * @return {*}  {boolean}
+   * @memberof TimingWindowCollection
+   */
+  shouldHideNote(judgment: StandardTimingWindow): boolean {
     return judgment.id != "miss" && judgment.timingWindowMS <= this.hideLimitMS
   }
 
+  /**
+   * Returns the maximum MS to get a judgment (non-miss).
+   *
+   * @return {*}  {number}
+   * @memberof TimingWindowCollection
+   */
   maxWindowMS(): number {
     return this.windows.at(-1)?.getTimingWindowMS() ?? 0
   }
 
+  /**
+   * Returns the maximum dance points achievable for one judgment.
+   *
+   * @return {*}  {number}
+   * @memberof TimingWindowCollection
+   */
   getMaxDancePoints(): number {
     return Math.max(
       ...this.windows.map(window => window.dancePoints),
@@ -310,6 +363,12 @@ export class TimingWindowCollection {
     )
   }
 
+  /**
+   * Returns the maximum dance points achievable for one hold judgment.
+   *
+   * @return {*}  {number}
+   * @memberof TimingWindowCollection
+   */
   getMaxHoldDancePoints(noteType: string): number {
     return Math.max(
       this.holdWindows[noteType].dancePoints ?? 0,
@@ -317,18 +376,45 @@ export class TimingWindowCollection {
     )
   }
 
+  /**
+   * Returns the standard timing windows.
+   *
+   * @return {*}  {StandardTimingWindow[]}
+   * @memberof TimingWindowCollection
+   */
   getStandardWindows(): StandardTimingWindow[] {
     return [...this.windows]
   }
 
+  /**
+   * Returns the hold timing windows.
+   *
+   * @return {*}  {HoldTimingWindow[]}
+   * @memberof TimingWindowCollection
+   */
   getHoldWindows(): HoldTimingWindow[] {
     return [...Object.values(this.holdWindows)]
   }
 
+  /**
+   * Returns the TimingWindowCollection with the given name.
+   *
+   * @static
+   * @param {string} name
+   * @return {*}  {TimingWindowCollection}
+   * @memberof TimingWindowCollection
+   */
   static getCollection(name: string): TimingWindowCollection {
     return this.COLLECTIONS[name] ?? this.COLLECTIONS.ITG
   }
 
+  /**
+   * Returns all the TimingWindowCollections registered.
+   *
+   * @static
+   * @return {*}
+   * @memberof TimingWindowCollection
+   */
   static getCollections() {
     return TimingWindowCollection.COLLECTIONS
   }

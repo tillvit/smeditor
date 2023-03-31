@@ -1,3 +1,5 @@
+// Will be deleted soon in favor of OfflineAudioContext
+
 interface BiquadOptions {
   sampleRate: number
   frequency: number

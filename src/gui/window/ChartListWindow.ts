@@ -1,12 +1,15 @@
-import { App } from "../App"
-import { GameType, GameTypeRegistry } from "../chart/gameTypes/GameTypeRegistry"
-import { Chart } from "../chart/sm/Chart"
-import { CHART_DIFFICULTIES } from "../chart/sm/ChartTypes"
-import { CHART_PROPERTIES_DATA } from "../data/ChartListWindowData"
-import { Dropdown } from "../gui/element/Dropdown"
-import { ActionHistory } from "../util/ActionHistory"
-import { EventHandler } from "../util/EventHandler"
-import { clamp, isNumericKeyPress, safeParse } from "../util/Util"
+import { App } from "../../App"
+import {
+  GameType,
+  GameTypeRegistry,
+} from "../../chart/gameTypes/GameTypeRegistry"
+import { Chart } from "../../chart/sm/Chart"
+import { CHART_DIFFICULTIES } from "../../chart/sm/ChartTypes"
+import { CHART_PROPERTIES_DATA } from "../../data/ChartListWindowData"
+import { ActionHistory } from "../../util/ActionHistory"
+import { EventHandler } from "../../util/EventHandler"
+import { clamp, isNumericKeyPress, safeParse } from "../../util/Util"
+import { Dropdown } from "../element/Dropdown"
 import { ConfimationWindow } from "./ConfirmationWindow"
 import { Window } from "./Window"
 
@@ -24,17 +27,18 @@ export class ChartListWindow extends Window {
   private smLoadHandler = () => {
     this.gameTypeDropdown!.setItems(
       GameTypeRegistry.getPriority().map(gameType => {
-        const charts = this.app.chartManager.sm?.charts[gameType.id] ?? []
+        const charts = this.app.chartManager.loadedSM?.charts[gameType.id] ?? []
         return gameType.id + " (" + charts.length + ")"
       })
     )
     this.gameTypeDropdown!.setSelected(
       this.gameType.id +
         " (" +
-        (this.app.chartManager.sm?.charts[this.gameType.id] ?? []).length +
+        (this.app.chartManager.loadedSM?.charts[this.gameType.id] ?? [])
+          .length +
         ") "
     )
-    this.gameType = this.app.chartManager.chart?.gameType ?? this.gameType
+    this.gameType = this.app.chartManager.loadedChart?.gameType ?? this.gameType
     this.loadCharts()
   }
 
@@ -48,7 +52,7 @@ export class ChartListWindow extends Window {
     this.app = app
     this.gameType =
       gameType ??
-      app.chartManager.chart?.gameType ??
+      app.chartManager.loadedChart?.gameType ??
       GameTypeRegistry.getPriority()[0]
     this.initView()
     EventHandler.on("smLoadedAfter", this.smLoadHandler)
@@ -69,12 +73,13 @@ export class ChartListWindow extends Window {
 
     this.gameTypeDropdown = Dropdown.create(
       GameTypeRegistry.getPriority().map(gameType => {
-        const charts = this.app.chartManager.sm?.charts[gameType.id] ?? []
+        const charts = this.app.chartManager.loadedSM?.charts[gameType.id] ?? []
         return gameType.id + " (" + charts.length + ")"
       }),
       this.gameType.id +
         " (" +
-        (this.app.chartManager.sm?.charts[this.gameType.id] ?? []).length +
+        (this.app.chartManager.loadedSM?.charts[this.gameType.id] ?? [])
+          .length +
         ") "
     )
     this.gameTypeDropdown.onChange(value => {
@@ -109,29 +114,31 @@ export class ChartListWindow extends Window {
   }
 
   private loadCharts() {
-    const charts = this.app.chartManager.sm?.charts[this.gameType.id] ?? []
+    const charts =
+      this.app.chartManager.loadedSM?.charts[this.gameType.id] ?? []
     const chartEls: HTMLElement[] = []
     this.gameTypeDropdown!.setItems(
       GameTypeRegistry.getPriority().map(gameType => {
-        const charts = this.app.chartManager.sm?.charts[gameType.id] ?? []
+        const charts = this.app.chartManager.loadedSM?.charts[gameType.id] ?? []
         return gameType.id + " (" + charts.length + ")"
       })
     )
     this.gameTypeDropdown!.setSelected(
       this.gameType.id +
         " (" +
-        (this.app.chartManager.sm?.charts[this.gameType.id] ?? []).length +
+        (this.app.chartManager.loadedSM?.charts[this.gameType.id] ?? [])
+          .length +
         ") "
     )
     charts.forEach(chart => {
       const chartListItem = document.createElement("div") as ChartListItem
       chartListItem.classList.add("chart-list-item")
       chartListItem.chart = chart
-      if (this.app.chartManager.chart == chart)
+      if (this.app.chartManager.loadedChart == chart)
         chartListItem.classList.add("selected")
 
       chartListItem.onclick = () => {
-        if (chartListItem.chart == this.app.chartManager.chart) return
+        if (chartListItem.chart == this.app.chartManager.loadedChart) return
         this.app.chartManager.loadChart(chartListItem.chart)
         this.chartList!.querySelectorAll(".selected").forEach(el =>
           el.classList.remove("selected")
@@ -155,7 +162,7 @@ export class ChartListWindow extends Window {
       credit.innerText = chart.credit
       credit.classList.add("title", "chart-credit")
       const stepCount = document.createElement("div")
-      stepCount.innerText = chart.notedata.length + ""
+      stepCount.innerText = chart.getNotedata().length + ""
       stepCount.classList.add("title", "chart-step-count")
 
       info.appendChild(credit)
@@ -196,9 +203,9 @@ export class ChartListWindow extends Window {
     addChart.appendChild(addTitle)
     addChart.appendChild(addInfo)
     addChart.onclick = () => {
-      const newChart = new Chart(this.app.chartManager.sm!)
+      const newChart = new Chart(this.app.chartManager.loadedSM!)
       newChart.gameType = this.gameType
-      this.app.chartManager.sm!.addChart(newChart)
+      this.app.chartManager.loadedSM!.addChart(newChart)
       this.app.chartManager.loadChart(newChart)
       this.loadCharts()
       // ActionHistory.instance.run({
@@ -220,7 +227,7 @@ export class ChartListWindow extends Window {
   }
 
   private loadChartDetails(chart?: Chart) {
-    chart = chart ?? this.app.chartManager.chart
+    chart = chart ?? this.app.chartManager.loadedChart
     if (chart?.gameType.id != this.gameType.id) {
       this.chartInfo!.replaceChildren()
       return
@@ -228,17 +235,19 @@ export class ChartListWindow extends Window {
     if (!chart) return
 
     const sortDifficulties = () =>
-      this.app.chartManager.sm!.charts[chart!.gameType.id]!.sort((a, b) => {
-        if (
-          CHART_DIFFICULTIES.indexOf(a.difficulty) ==
-          CHART_DIFFICULTIES.indexOf(b.difficulty)
-        )
-          return a.meter - b.meter
-        return (
-          CHART_DIFFICULTIES.indexOf(a.difficulty) -
-          CHART_DIFFICULTIES.indexOf(b.difficulty)
-        )
-      })
+      this.app.chartManager.loadedSM!.charts[chart!.gameType.id]!.sort(
+        (a, b) => {
+          if (
+            CHART_DIFFICULTIES.indexOf(a.difficulty) ==
+            CHART_DIFFICULTIES.indexOf(b.difficulty)
+          )
+            return a.meter - b.meter
+          return (
+            CHART_DIFFICULTIES.indexOf(a.difficulty) -
+            CHART_DIFFICULTIES.indexOf(b.difficulty)
+          )
+        }
+      )
 
     const main = document.createElement("div")
     main.classList.add("chart-info-main")
@@ -352,9 +361,9 @@ export class ChartListWindow extends Window {
         chart
       )
       newChart.setNotedata(
-        chart!.notedata.map(note => chart!.computeNote(note)) ?? []
+        chart!.getNotedata().map(note => chart!.computeNote(note)) ?? []
       )
-      this.app.chartManager.sm!.addChart(newChart)
+      this.app.chartManager.loadedSM!.addChart(newChart)
       this.app.chartManager.loadChart(newChart)
       this.loadCharts()
       // ActionHistory.instance.run({
@@ -389,10 +398,10 @@ export class ChartListWindow extends Window {
               type: "delete",
               label: "Delete",
               callback: () => {
-                if (this.app.chartManager.sm!.removeChart(chart!)) {
+                if (this.app.chartManager.loadedSM!.removeChart(chart!)) {
                   this.app.chartManager.loadChart()
                   this.gameType =
-                    this.app.chartManager.chart?.gameType ?? this.gameType
+                    this.app.chartManager.loadedChart?.gameType ?? this.gameType
                   this.loadCharts()
                 }
               },

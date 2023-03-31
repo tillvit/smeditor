@@ -1,9 +1,9 @@
 import { App } from "../App"
 import { Chart } from "../chart/sm/Chart"
 import { Icons } from "../gui/Icons"
+import { DirectoryWindow } from "../gui/window/DirectoryWindow"
 import { ActionHistory } from "../util/ActionHistory"
 import { FileHandler } from "../util/FileHandler"
-import { DirectoryWindow } from "../window/DirectoryWindow"
 import { AUDIO_EXT } from "./FileData"
 
 type ChartPropertyEditor = {
@@ -75,41 +75,41 @@ export const CHART_PROPERTIES_DATA: {
       const handleInput = () => {
         if (
           input.innerText ==
-          (chart.music ?? app.chartManager.sm!.properties.MUSIC ?? "")
+          (chart.music ?? app.chartManager.loadedSM!.properties.MUSIC ?? "")
         )
           return
-        const playing = app.chartManager.songAudio.isPlaying()
+        const playing = app.chartManager.chartAudio.isPlaying()
         if (
           input.innerText == "" ||
-          input.innerText == app.chartManager.sm!.properties.MUSIC
+          input.innerText == app.chartManager.loadedSM!.properties.MUSIC
         ) {
           chart.music = undefined
-          input.innerText = app.chartManager.sm!.properties.MUSIC + ""
+          input.innerText = app.chartManager.loadedSM!.properties.MUSIC + ""
           app.chartManager.loadAudio()
-          if (playing) app.chartManager.songAudio.play()
+          if (playing) app.chartManager.chartAudio.play()
           return
         }
         const lastVal = chart.music
         ActionHistory.instance.run({
           action: () =>
             (chart.music =
-              input.innerText == app.chartManager.sm!.properties.MUSIC
+              input.innerText == app.chartManager.loadedSM!.properties.MUSIC
                 ? undefined
                 : input.innerText),
           undo: () => (chart.music = lastVal),
         })
         app.chartManager.loadAudio()
-        if (playing) app.chartManager.songAudio.play()
+        if (playing) app.chartManager.chartAudio.play()
       }
       const input = createContentEditableDiv()
       input.style.flex = "1"
       input.onblur = handleInput
       input.innerText =
-        chart.music ?? app.chartManager.sm!.properties.MUSIC ?? ""
+        chart.music ?? app.chartManager.loadedSM!.properties.MUSIC ?? ""
 
       const dirButton = document.createElement("button")
       dirButton.onclick = () => {
-        const dir = app.chartManager.sm_path.split("/").slice(0, -1).join("/")
+        const dir = app.chartManager.smPath.split("/").slice(0, -1).join("/")
         if (window.nw) {
           const fileSelector = document.createElement("input")
           fileSelector.type = "file"
@@ -137,7 +137,9 @@ export const CHART_PROPERTIES_DATA: {
               },
               dir +
                 "/" +
-                (chart.music ?? app.chartManager.sm!.properties.MUSIC ?? "")
+                (chart.music ??
+                  app.chartManager.loadedSM!.properties.MUSIC ??
+                  "")
             )
           )
         }
@@ -150,9 +152,11 @@ export const CHART_PROPERTIES_DATA: {
 
       const revertButton = document.createElement("button")
       revertButton.onclick = () => {
-        if (input.innerText == (app.chartManager.sm!.properties.MUSIC ?? ""))
+        if (
+          input.innerText == (app.chartManager.loadedSM!.properties.MUSIC ?? "")
+        )
           return
-        input.innerText = app.chartManager.sm!.properties.MUSIC ?? ""
+        input.innerText = app.chartManager.loadedSM!.properties.MUSIC ?? ""
         handleInput()
       }
       const icon2 = document.createElement("img")

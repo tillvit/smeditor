@@ -1,5 +1,5 @@
-import { Icons } from "../gui/Icons"
-import { clamp } from "../util/Util"
+import { clamp } from "../../util/Util"
+import { Icons } from "../Icons"
 import { WindowManager } from "./WindowManager"
 
 export interface WindowOptions {

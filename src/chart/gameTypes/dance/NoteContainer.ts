@@ -1,4 +1,5 @@
-import { Container, FederatedMouseEvent } from "pixi.js"
+import { Container } from "pixi.js"
+import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
 import { destroyChildIf } from "../../../util/Util"
 import { EditMode } from "../../ChartManager"
@@ -28,13 +29,25 @@ export class NoteContainer extends Container {
     this.renderer = renderer
     this.notefield = notefield
     this.sortableChildren = true
+    const timeSig = () => {
+      this.children.forEach(child =>
+        DanceNoteRenderer.setData(
+          this.notefield,
+          child,
+          child.note,
+          this.renderer.chart.timingData
+        )
+      )
+    }
+    EventHandler.on("timeSigChanged", timeSig)
+    this.on("destroyed", () => [EventHandler.off("timeSigChanged", timeSig)])
   }
 
   renderThis(beat: number, fromBeat: number, toBeat: number) {
     //Reset mark of old objects
     this.children.forEach(child => (child.marked = false))
     const time = this.renderer.chartManager.getTime()
-    for (const note of this.renderer.chart.notedata) {
+    for (const note of this.renderer.chart.getNotedata()) {
       if (note.gameplay?.hideNote) continue
       if (Options.chart.CMod && Options.chart.hideWarpedArrows && note.warped)
         continue
@@ -163,107 +176,11 @@ export class NoteContainer extends Container {
     DanceNoteRenderer.setData(
       this.notefield,
       newChild as ExtendedNoteObject,
-      note
+      note,
+      this.renderer.chart.timingData
     )
     newChild.x = this.notefield.getColX(note.col)
-    newChild.interactive = true
-    let lastTriedColumnShift = 0
-    let initalPosX = 0
-    let initalPosY = 0
-    let movedNote: NotedataEntry | undefined
-
-    const moveHandler = (event: FederatedMouseEvent) => {
-      const note = movedNote!
-      const position = this.renderer.toLocal(event.global)
-      if (
-        Math.abs(position.y - initalPosY) ** 2 +
-          Math.abs(position.x - initalPosX) ** 2 <
-        32 * 32
-      ) {
-        if (this.renderer.chartManager.selection.shift) {
-          this.renderer.chartManager.selection.shift = {
-            columnShift: 0,
-            beatShift: 0,
-          }
-        }
-        return
-      }
-      const newBeat = this.renderer.getBeatFromYPos(position.y)
-      const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-      let snapBeat = Math.round(newBeat / snap) * snap
-      if (Math.abs(snapBeat - newBeat) > Math.abs(newBeat - note.beat)) {
-        snapBeat = note.beat
-      }
-      const col = Math.round((position.x + 96) / 64)
-      this.renderer.chartManager.selection.shift ||= {
-        columnShift: 0,
-        beatShift: 0,
-      }
-      if (lastTriedColumnShift != col - note.col) {
-        lastTriedColumnShift = col - note.col
-        if (
-          this.renderer.chartManager.selection.notes.every(note => {
-            const newCol = note.col + lastTriedColumnShift
-            return (
-              newCol >= 0 &&
-              newCol < this.renderer.chartManager.chart!.gameType.numCols
-            )
-          })
-        ) {
-          this.renderer.chartManager.selection.shift.columnShift =
-            col - note.col
-        }
-      }
-      this.renderer.chartManager.selection.shift.beatShift =
-        snapBeat - note.beat
-    }
-    newChild.on!("mousedown", event => {
-      if (
-        Options.general.mousePlacement &&
-        !event.getModifierState("Meta") &&
-        !event.getModifierState("Control") &&
-        !event.getModifierState("Shift") &&
-        !this.renderer.chartManager.selection.notes.includes(newChild!.note!)
-      )
-        return
-      event.stopImmediatePropagation()
-      if (
-        this.renderer.chartManager.selection.notes.includes(newChild!.note!)
-      ) {
-        if (event.getModifierState("Control") || event.getModifierState("Meta"))
-          this.renderer.chartManager.removeNoteFromSelection(newChild!.note!)
-      } else {
-        if (
-          !event.getModifierState("Control") &&
-          !event.getModifierState("Meta") &&
-          !event.getModifierState("Shift")
-        )
-          this.renderer.chartManager.clearSelection()
-        this.renderer.chartManager.addNoteToSelection(newChild!.note!)
-      }
-      initalPosX = newChild!.x!
-      initalPosY = newChild!.y!
-      movedNote = newChild!.note!
-      this.renderer.on("mousemove", moveHandler)
-      const mouseUp = () => {
-        this.renderer.off("mousemove", moveHandler)
-        this.renderer.off("mouseup", mouseUp)
-        if (
-          (this.renderer.chartManager.selection.shift?.beatShift ?? 0) != 0 ||
-          (this.renderer.chartManager.selection.shift?.columnShift ?? 0) != 0
-        )
-          this.renderer.chartManager.modifySelection(note => {
-            note.beat += this.renderer.chartManager.selection.shift!.beatShift
-            note.col += this.renderer.chartManager.selection.shift!.columnShift
-            return note
-          })
-        this.renderer.chartManager.selection.shift = undefined
-      }
-      this.renderer.on("mouseup", mouseUp)
-    })
-    newChild.on!("destroyed", () => {
-      newChild?.removeAllListeners!()
-    })
+    this.renderer.registerDragNote(newChild as ExtendedNoteObject)
     this.noteMap.set(note, newChild as ExtendedNoteObject)
     return newChild as ExtendedNoteObject
   }

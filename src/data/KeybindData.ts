@@ -2,15 +2,15 @@ import { App } from "../App"
 import { EditMode } from "../chart/ChartManager"
 import { isHoldNote } from "../chart/sm/NoteTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
+import { ChartListWindow } from "../gui/window/ChartListWindow"
+import { DirectoryWindow } from "../gui/window/DirectoryWindow"
+import { EQWindow } from "../gui/window/EQWindow"
+import { OffsetWindow } from "../gui/window/OffsetWindow"
+import { SMPropertiesWindow } from "../gui/window/SMPropertiesWindow"
+import { TimingDataWindow } from "../gui/window/TimingDataWindow"
+import { UserOptionsWindow } from "../gui/window/UserOptionsWindow"
 import { FileHandler } from "../util/FileHandler"
 import { Options } from "../util/Options"
-import { ChartListWindow } from "../window/ChartListWindow"
-import { DirectoryWindow } from "../window/DirectoryWindow"
-import { EQWindow } from "../window/EQWindow"
-import { OffsetWindow } from "../window/OffsetWindow"
-import { SMPropertiesWindow } from "../window/SMPropertiesWindow"
-import { TimingDataWindow } from "../window/TimingDataWindow"
-import { UserOptionsWindow } from "../window/UserOptionsWindow"
 
 export interface Keybind {
   label: string
@@ -98,10 +98,12 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
-    callback: app =>
-      app.chartManager.setAndSnapBeat(
-        app.chartManager.getBeat() - Math.max(0.001, Options.chart.snap)
-      ),
+    callback: app => {
+      const snap = Math.max(0.001, Options.chart.snap)
+      const change =
+        app.chartManager.getBeat() % snap < 0.0005 ? snap : snap / 2
+      app.chartManager.setAndSnapBeat(app.chartManager.getBeat() - change)
+    },
   },
   cursorDown: {
     label: "Move cursor down",
@@ -110,10 +112,12 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
-    callback: app =>
-      app.chartManager.setAndSnapBeat(
-        app.chartManager.getBeat() + Math.max(0.001, Options.chart.snap)
-      ),
+    callback: app => {
+      const snap = Math.max(0.001, Options.chart.snap)
+      const change =
+        app.chartManager.getBeat() % snap < 0.0005 ? snap : snap / 2
+      app.chartManager.setAndSnapBeat(app.chartManager.getBeat() + change)
+    },
   },
   increaseScrollSpeed: {
     label: "Increase scroll speed",
@@ -177,7 +181,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   openSong: {
     label: "Open Song...",
     keybinds: [{ key: "O", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.sm,
+    disabled: app => !app.chartManager.loadedSM,
     callback: app => {
       if (window.nw) {
         const fileSelector = document.createElement("input")
@@ -204,28 +208,28 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   songProperties: {
     label: "Song Properties...",
     keybinds: [{ key: "U", mods: [Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.sm,
+    disabled: app => !app.chartManager.loadedSM,
     callback: app => app.windowManager.openWindow(new SMPropertiesWindow(app)),
   },
   save: {
     label: "Save...",
     keybinds: [{ key: "S", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.sm,
+    disabled: app => !app.chartManager.loadedSM,
     callback: app => app.chartManager.save(),
   },
   export: {
     label: "Save and export current song",
     keybinds: [{ key: "E", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.sm,
+    disabled: app => !app.chartManager.loadedSM,
     callback: app => {
       app.chartManager.save()
-      FileHandler.saveDirectory(app.chartManager.sm_path)
+      FileHandler.saveDirectory(app.chartManager.smPath)
     },
   },
   openChart: {
     label: "Chart List",
     keybinds: [{ key: "O", mods: [DEF_MOD, Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.sm,
+    disabled: app => !app.chartManager.loadedSM,
     callback: app => app.windowManager.openWindow(new ChartListWindow(app)),
   },
   timingData: {
@@ -237,7 +241,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   selectRegion: {
     label: "Select Region",
     keybinds: [{ key: "Tab", mods: [] }],
-    disabled: app => !app.chartManager.chart,
+    disabled: app => !app.chartManager.loadedChart,
     callback: app => app.chartManager.selectRegion(),
   },
   volumeUp: {
@@ -341,10 +345,12 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
-    callback: app =>
-      app.chartManager.setAndSnapBeat(
-        Math.max(0, app.chartManager.getBeat() - 4)
-      ),
+    callback: app => {
+      const beat = app.chartManager.getBeat()
+      const measureLength =
+        app.chartManager.loadedChart!.timingData.getMeasureLength(beat - 0.001)
+      app.chartManager.setAndSnapBeat(Math.max(0, beat - measureLength))
+    },
   },
   nextMeasure: {
     label: "Next measure",
@@ -356,8 +362,12 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
-    callback: app =>
-      app.chartManager.setAndSnapBeat(app.chartManager.getBeat() + 4),
+    callback: app => {
+      const beat = app.chartManager.getBeat()
+      const measureLength =
+        app.chartManager.loadedChart!.timingData.getMeasureLength(beat)
+      app.chartManager.setAndSnapBeat(Math.max(0, beat + measureLength))
+    },
   },
   previousNote: {
     label: "Previous note",
@@ -403,7 +413,9 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
     callback: app =>
-      app.chartManager.setBeat(Math.max(0, app.chartManager.chart!.getBeat(0))),
+      app.chartManager.setBeat(
+        Math.max(0, app.chartManager.loadedChart!.getBeatFromSeconds(0))
+      ),
   },
   jumpSongEnd: {
     label: "Jump to song end",
@@ -414,8 +426,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Record,
     callback: app =>
       app.chartManager.setBeat(
-        app.chartManager.chart!.getBeat(
-          app.chartManager.songAudio.getSongLength()
+        app.chartManager.loadedChart!.getBeatFromSeconds(
+          app.chartManager.chartAudio.getSongLength()
         )
       ),
   },
@@ -501,7 +513,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   showEq: {
     label: "Equalizer",
     keybinds: [{ key: "E", mods: [Modifier.SHIFT, Modifier.ALT] }],
-    disabled: app => !app.chartManager.songAudio,
+    disabled: app => !app.chartManager.chartAudio,
     callback: app => app.windowManager.openWindow(new EQWindow(app)),
   },
   previousNoteType: {
@@ -646,7 +658,9 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     callback: app => {
       app.chartManager.modifySelection(note => {
         note.col =
-          app.chartManager.chart!.gameType.flipColumns.horizontal[note.col]
+          app.chartManager.loadedChart!.gameType.flipColumns.horizontal[
+            note.col
+          ]
         return note
       })
     },
@@ -660,7 +674,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     callback: app => {
       app.chartManager.modifySelection(note => {
         note.col =
-          app.chartManager.chart!.gameType.flipColumns.vertical[note.col]
+          app.chartManager.loadedChart!.gameType.flipColumns.vertical[note.col]
         return note
       })
     },
@@ -674,9 +688,11 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     callback: app => {
       app.chartManager.modifySelection(note => {
         note.col =
-          app.chartManager.chart!.gameType.flipColumns.horizontal[note.col]
+          app.chartManager.loadedChart!.gameType.flipColumns.horizontal[
+            note.col
+          ]
         note.col =
-          app.chartManager.chart!.gameType.flipColumns.vertical[note.col]
+          app.chartManager.loadedChart!.gameType.flipColumns.vertical[note.col]
         return note
       })
     },
@@ -684,9 +700,11 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   selectAll: {
     label: "Select All",
     keybinds: [{ key: "A", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.chart,
+    disabled: app => !app.chartManager.loadedChart,
     callback: app => {
-      app.chartManager.selection.notes = [...app.chartManager.chart!.notedata]
+      app.chartManager.selection.notes = [
+        ...app.chartManager.loadedChart!.getNotedata(),
+      ]
     },
   },
   expand2to1: {
