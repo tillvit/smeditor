@@ -996,6 +996,7 @@ input[type="range"] {
   align-items: center;
   height: 96px;
   overflow: hidden;
+  user-select: none;
 }
 
 #status-widget.collapsed {

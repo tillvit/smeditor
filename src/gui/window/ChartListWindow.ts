@@ -1,12 +1,15 @@
-import { App } from "../App"
-import { GameType, GameTypeRegistry } from "../chart/gameTypes/GameTypeRegistry"
-import { Chart } from "../chart/sm/Chart"
-import { CHART_DIFFICULTIES } from "../chart/sm/ChartTypes"
-import { CHART_PROPERTIES_DATA } from "../data/ChartListWindowData"
-import { Dropdown } from "../gui/element/Dropdown"
-import { ActionHistory } from "../util/ActionHistory"
-import { EventHandler } from "../util/EventHandler"
-import { clamp, isNumericKeyPress, safeParse } from "../util/Util"
+import { App } from "../../App"
+import {
+  GameType,
+  GameTypeRegistry,
+} from "../../chart/gameTypes/GameTypeRegistry"
+import { Chart } from "../../chart/sm/Chart"
+import { CHART_DIFFICULTIES } from "../../chart/sm/ChartTypes"
+import { CHART_PROPERTIES_DATA } from "../../data/ChartListWindowData"
+import { ActionHistory } from "../../util/ActionHistory"
+import { EventHandler } from "../../util/EventHandler"
+import { clamp, isNumericKeyPress, safeParse } from "../../util/Util"
+import { Dropdown } from "../element/Dropdown"
 import { ConfimationWindow } from "./ConfirmationWindow"
 import { Window } from "./Window"
 
@@ -159,7 +162,7 @@ export class ChartListWindow extends Window {
       credit.innerText = chart.credit
       credit.classList.add("title", "chart-credit")
       const stepCount = document.createElement("div")
-      stepCount.innerText = chart.notedata.length + ""
+      stepCount.innerText = chart.getNotedata().length + ""
       stepCount.classList.add("title", "chart-step-count")
 
       info.appendChild(credit)
@@ -358,7 +361,7 @@ export class ChartListWindow extends Window {
         chart
       )
       newChart.setNotedata(
-        chart!.notedata.map(note => chart!.computeNote(note)) ?? []
+        chart!.getNotedata().map(note => chart!.computeNote(note)) ?? []
       )
       this.app.chartManager.loadedSM!.addChart(newChart)
       this.app.chartManager.loadChart(newChart)

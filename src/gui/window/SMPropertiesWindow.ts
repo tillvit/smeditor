@@ -1,6 +1,6 @@
-import { App } from "../App"
-import { SM_PROPERTIES_WINDOW_DATA } from "../data/SMPropertiesWindowData"
-import { EventHandler } from "../util/EventHandler"
+import { App } from "../../App"
+import { SM_PROPERTIES_WINDOW_DATA } from "../../data/SMPropertiesWindowData"
+import { EventHandler } from "../../util/EventHandler"
 import { Window } from "./Window"
 
 export class SMPropertiesWindow extends Window {

@@ -1,4 +1,5 @@
 import { Container, FederatedMouseEvent } from "pixi.js"
+import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
 import { destroyChildIf } from "../../../util/Util"
 import { EditMode } from "../../ChartManager"
@@ -28,13 +29,25 @@ export class NoteContainer extends Container {
     this.renderer = renderer
     this.notefield = notefield
     this.sortableChildren = true
+    const timeSig = () => {
+      this.children.forEach(child =>
+        DanceNoteRenderer.setData(
+          this.notefield,
+          child,
+          child.note,
+          this.renderer.chart.timingData
+        )
+      )
+    }
+    EventHandler.on("timeSigChanged", timeSig)
+    this.on("destroyed", () => [EventHandler.off("timeSigChanged", timeSig)])
   }
 
   renderThis(beat: number, fromBeat: number, toBeat: number) {
     //Reset mark of old objects
     this.children.forEach(child => (child.marked = false))
     const time = this.renderer.chartManager.getTime()
-    for (const note of this.renderer.chart.notedata) {
+    for (const note of this.renderer.chart.getNotedata()) {
       if (note.gameplay?.hideNote) continue
       if (Options.chart.CMod && Options.chart.hideWarpedArrows && note.warped)
         continue
@@ -163,7 +176,8 @@ export class NoteContainer extends Container {
     DanceNoteRenderer.setData(
       this.notefield,
       newChild as ExtendedNoteObject,
-      note
+      note,
+      this.renderer.chart.timingData
     )
     newChild.x = this.notefield.getColX(note.col)
     newChild.interactive = true

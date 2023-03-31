@@ -9,6 +9,9 @@ import {
 import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
 import { MenubarManager } from "./gui/element/MenubarManager"
+import { DirectoryWindow } from "./gui/window/DirectoryWindow"
+import { InitialWindow } from "./gui/window/InitialWindow"
+import { WindowManager } from "./gui/window/WindowManager"
 import { Keybinds } from "./listener/Keybinds"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
@@ -17,9 +20,6 @@ import { FileHandler } from "./util/FileHandler"
 import { Options } from "./util/Options"
 import { TimerStats } from "./util/TimerStats"
 import { extname, fpsUpdate, getBrowser } from "./util/Util"
-import { DirectoryWindow } from "./window/DirectoryWindow"
-import { InitialWindow } from "./window/InitialWindow"
-import { WindowManager } from "./window/WindowManager"
 
 declare global {
   interface Window {

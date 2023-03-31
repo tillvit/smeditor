@@ -1,10 +1,10 @@
 import { App } from "../App"
 import { SimfileProperty } from "../chart/sm/SimfileTypes"
 import { Icons } from "../gui/Icons"
+import { DirectoryWindow } from "../gui/window/DirectoryWindow"
 import { ActionHistory } from "../util/ActionHistory"
 import { FileHandler } from "../util/FileHandler"
 import { capitalize } from "../util/Util"
-import { DirectoryWindow } from "../window/DirectoryWindow"
 import { AUDIO_EXT, IMG_EXT } from "./FileData"
 
 type SMPropertiesWindowData = {

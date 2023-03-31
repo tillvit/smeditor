@@ -1,4 +1,4 @@
-import { App } from "../App"
+import { App } from "../../App"
 import { Window } from "./Window"
 
 export class EQWindow extends Window {

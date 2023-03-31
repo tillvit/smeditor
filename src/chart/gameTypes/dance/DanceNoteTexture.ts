@@ -13,6 +13,7 @@ import { App } from "../../../App"
 import { Options } from "../../../util/Options"
 import { getQuantIndex } from "../../../util/Util"
 import { PartialNotedataEntry } from "../../sm/NoteTypes"
+import { TimingData } from "../../sm/TimingData"
 
 const mine_frame_texture = Texture.from("assets/noteskin/dance/mine/frame.png")
 
@@ -245,11 +246,18 @@ export class DanceNoteTexture {
     DanceNoteTexture.mine_container.rotation = (second % 1) * Math.PI * 2
   }
 
-  static setNoteTex(arrow: Sprite, note: PartialNotedataEntry) {
+  static setNoteTex(
+    arrow: Sprite,
+    note: PartialNotedataEntry,
+    timingData: TimingData
+  ) {
     if (note.type == "Mine") {
       arrow.texture = DanceNoteTexture.mine_tex
     } else {
-      const i = Math.min(getQuantIndex(note.beat), 7)
+      const i = Math.min(
+        getQuantIndex(timingData.getBeatOfMeasure(note.beat)),
+        7
+      )
       arrow.texture = new Texture(
         note.type == "Lift"
           ? DanceNoteTexture.lift_tex.baseTexture

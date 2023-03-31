@@ -51,13 +51,18 @@ export class DanceNotefield extends Notefield {
       this.ghostNote.visible = false
       return
     }
-    DanceNoteRenderer.setData(this, this.ghostNote, note)
+    DanceNoteRenderer.setData(
+      this,
+      this.ghostNote,
+      note,
+      this.renderer.chart.timingData
+    )
     this.ghostNote.x = this.getColX(note.col)
   }
 
   getNoteSprite(note: PartialNotedataEntry): Container {
     const spr = DanceNoteRenderer.createArrow()
-    DanceNoteRenderer.setData(this, spr, note)
+    DanceNoteRenderer.setData(this, spr, note, this.renderer.chart.timingData)
     return spr
   }
 

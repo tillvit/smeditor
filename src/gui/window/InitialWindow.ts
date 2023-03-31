@@ -1,5 +1,5 @@
-import { App } from "../App"
-import { INITIAL_WINDOW_DATA } from "../data/InitalWindowData"
+import { App } from "../../App"
+import { INITIAL_WINDOW_DATA } from "../../data/InitalWindowData"
 import { Window } from "./Window"
 
 export class InitialWindow extends Window {

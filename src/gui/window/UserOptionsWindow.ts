@@ -1,9 +1,9 @@
-import { App } from "../App"
-import { USER_OPTIONS_WINDOW_DATA } from "../data/UserOptionsWindowData"
-import { Dropdown } from "../gui/element/Dropdown"
-import { NumberSpinner } from "../gui/element/NumberSpinner"
-import { Options, OptionsObject, VIEW_BLACKLIST } from "../util/Options"
-import { clamp, roundDigit, safeParse } from "../util/Util"
+import { App } from "../../App"
+import { USER_OPTIONS_WINDOW_DATA } from "../../data/UserOptionsWindowData"
+import { Options, OptionsObject, VIEW_BLACKLIST } from "../../util/Options"
+import { clamp, roundDigit, safeParse } from "../../util/Util"
+import { Dropdown } from "../element/Dropdown"
+import { NumberSpinner } from "../element/NumberSpinner"
 import { Window } from "./Window"
 
 export class UserOptionsWindow extends Window {

@@ -28,11 +28,11 @@ export class BasicGameLogic extends GameLogic {
     let lastChord = -1
     // Do Misses
     while (
-      chartManager.loadedChart.notedata[this.missNoteIndex] &&
-      chartManager.loadedChart.notedata[this.missNoteIndex].second <
+      chartManager.loadedChart.getNotedata()[this.missNoteIndex] &&
+      chartManager.loadedChart.getNotedata()[this.missNoteIndex].second <
         hitWindowStart
     ) {
-      const note = chartManager.loadedChart.notedata[this.missNoteIndex]
+      const note = chartManager.loadedChart.getNotedata()[this.missNoteIndex]
       if (
         note.beat != lastChord &&
         note.type != "Mine" &&
@@ -95,7 +95,7 @@ export class BasicGameLogic extends GameLogic {
     //Do Mines
     for (const col of this.heldCols.getHeldCols()) {
       const mine = this.getClosestNote(
-        chartManager.loadedChart.notedata,
+        chartManager.loadedChart.getNotedata(),
         chartManager.chartView.getTimeWithOffset() -
           this.collection.getMineJudgment().getTimingWindowMS() / 2000,
         col,
@@ -126,7 +126,7 @@ export class BasicGameLogic extends GameLogic {
       Options.play.timingCollection
     )
     this.chordCohesion.clear()
-    for (const note of chartManager.loadedChart.notedata) {
+    for (const note of chartManager.loadedChart.getNotedata()) {
       if (note.type == "Mine" || note.fake) continue
       if (!this.chordCohesion.has(note.beat))
         this.chordCohesion.set(note.beat, [])
@@ -137,14 +137,14 @@ export class BasicGameLogic extends GameLogic {
       hitTime - (this.collection.maxWindowMS() / 1000) * Options.audio.rate
     let firstHittableNote =
       bsearch(
-        chartManager.loadedChart.notedata,
+        chartManager.loadedChart.getNotedata(),
         hitWindowStart,
         a => a.second
       ) + 1
     if (
       firstHittableNote >= 1 &&
       hitWindowStart <=
-        chartManager.loadedChart.notedata[firstHittableNote - 1].second
+        chartManager.loadedChart.getNotedata()[firstHittableNote - 1].second
     )
       firstHittableNote--
     this.missNoteIndex = firstHittableNote
@@ -156,7 +156,7 @@ export class BasicGameLogic extends GameLogic {
     if (!chartManager.loadedChart || !chartManager.chartView) return
     const hitTime = chartManager.chartView.getTimeWithOffset()
     const closestNote = this.getClosestNote(
-      chartManager.loadedChart.notedata,
+      chartManager.loadedChart.getNotedata(),
       hitTime,
       col,
       ["Tap", "Hold", "Roll"]
@@ -174,7 +174,7 @@ export class BasicGameLogic extends GameLogic {
     if (!chartManager.loadedChart || !chartManager.chartView) return
     const hitTime = chartManager.chartView.getTimeWithOffset()
     const closestNote = this.getClosestNote(
-      chartManager.loadedChart.notedata,
+      chartManager.loadedChart.getNotedata(),
       hitTime,
       col,
       ["Lift"]

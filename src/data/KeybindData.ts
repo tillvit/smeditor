@@ -2,15 +2,15 @@ import { App } from "../App"
 import { EditMode } from "../chart/ChartManager"
 import { isHoldNote } from "../chart/sm/NoteTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
+import { ChartListWindow } from "../gui/window/ChartListWindow"
+import { DirectoryWindow } from "../gui/window/DirectoryWindow"
+import { EQWindow } from "../gui/window/EQWindow"
+import { OffsetWindow } from "../gui/window/OffsetWindow"
+import { SMPropertiesWindow } from "../gui/window/SMPropertiesWindow"
+import { TimingDataWindow } from "../gui/window/TimingDataWindow"
+import { UserOptionsWindow } from "../gui/window/UserOptionsWindow"
 import { FileHandler } from "../util/FileHandler"
 import { Options } from "../util/Options"
-import { ChartListWindow } from "../window/ChartListWindow"
-import { DirectoryWindow } from "../window/DirectoryWindow"
-import { EQWindow } from "../window/EQWindow"
-import { OffsetWindow } from "../window/OffsetWindow"
-import { SMPropertiesWindow } from "../window/SMPropertiesWindow"
-import { TimingDataWindow } from "../window/TimingDataWindow"
-import { UserOptionsWindow } from "../window/UserOptionsWindow"
 
 export interface Keybind {
   label: string
@@ -98,10 +98,12 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
-    callback: app =>
-      app.chartManager.setAndSnapBeat(
-        app.chartManager.getBeat() - Math.max(0.001, Options.chart.snap)
-      ),
+    callback: app => {
+      const snap = Math.max(0.001, Options.chart.snap)
+      const change =
+        app.chartManager.getBeat() % snap < 0.0005 ? snap : snap / 2
+      app.chartManager.setAndSnapBeat(app.chartManager.getBeat() - change)
+    },
   },
   cursorDown: {
     label: "Move cursor down",
@@ -110,10 +112,12 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
-    callback: app =>
-      app.chartManager.setAndSnapBeat(
-        app.chartManager.getBeat() + Math.max(0.001, Options.chart.snap)
-      ),
+    callback: app => {
+      const snap = Math.max(0.001, Options.chart.snap)
+      const change =
+        app.chartManager.getBeat() % snap < 0.0005 ? snap : snap / 2
+      app.chartManager.setAndSnapBeat(app.chartManager.getBeat() + change)
+    },
   },
   increaseScrollSpeed: {
     label: "Increase scroll speed",
@@ -341,10 +345,12 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
-    callback: app =>
-      app.chartManager.setAndSnapBeat(
-        Math.max(0, app.chartManager.getBeat() - 4)
-      ),
+    callback: app => {
+      const beat = app.chartManager.getBeat()
+      const measureLength =
+        app.chartManager.loadedChart!.timingData.getMeasureLength(beat - 0.001)
+      app.chartManager.setAndSnapBeat(Math.max(0, beat - measureLength))
+    },
   },
   nextMeasure: {
     label: "Next measure",
@@ -356,8 +362,12 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
-    callback: app =>
-      app.chartManager.setAndSnapBeat(app.chartManager.getBeat() + 4),
+    callback: app => {
+      const beat = app.chartManager.getBeat()
+      const measureLength =
+        app.chartManager.loadedChart!.timingData.getMeasureLength(beat)
+      app.chartManager.setAndSnapBeat(Math.max(0, beat + measureLength))
+    },
   },
   previousNote: {
     label: "Previous note",
@@ -693,7 +703,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     disabled: app => !app.chartManager.loadedChart,
     callback: app => {
       app.chartManager.selection.notes = [
-        ...app.chartManager.loadedChart!.notedata,
+        ...app.chartManager.loadedChart!.getNotedata(),
       ]
     },
   },

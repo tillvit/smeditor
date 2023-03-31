@@ -8,6 +8,7 @@ import {
   BeatTimingEvent,
   BeatTimingEventProperty,
   BPMTimingEvent,
+  MeasureTimingCache,
   ScrollCacheTimingEvent,
   SpeedTimingEvent,
   StopTimingEvent,
@@ -27,6 +28,7 @@ type TimingCache = {
   events: TimingPropertyCollection
   beatTiming?: BeatTimingCache[]
   effectiveBeatTiming?: ScrollCacheTimingEvent[]
+  measureTiming?: MeasureTimingCache[]
   speeds?: SpeedTimingEvent[]
   sortedEvents?: TimingEvent[]
   warpedBeats: Record<number, boolean>
@@ -281,39 +283,48 @@ export class TimingData {
     ) {
       toAdd.push(newEvent as TimingEvent)
     }
+
     //Remove the next event if it matches the new event
     const events = this.getTimingData(type)
     const nextEvent = events[target.searchCache(events, "beat", beat) + 1]
-    console.log(nextEvent)
     if (nextEvent) {
       if (this.isDuplicate(newEvent as TimingEvent, nextEvent)) {
         toDelete.push(nextEvent)
       }
     }
-    ActionHistory.instance.run({
-      action: () => {
-        for (const event of toDelete) {
-          this._delete(songTiming, event)
-        }
-        for (const event of toAdd) {
-          target._insert(type, event)
-        }
-        this.reloadCache(type)
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-      },
-      undo: () => {
-        for (const event of toAdd) {
-          this._delete(songTiming, event)
-        }
-        for (const event of toDelete) {
-          target._insert(type, event)
-        }
-        this.reloadCache(type)
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-      },
-    })
+
+    if (toDelete.length || toAdd.length) {
+      ActionHistory.instance.run({
+        action: () => {
+          for (const event of toDelete) {
+            this._delete(songTiming, event)
+          }
+          for (const event of toAdd) {
+            target._insert(type, event)
+          }
+          this.reloadCache(type)
+          EventHandler.emit("timingModified")
+          EventHandler.emit("chartModified")
+          if (type == "TIMESIGNATURES") {
+            EventHandler.emit("timeSigChanged")
+          }
+        },
+        undo: () => {
+          for (const event of toAdd) {
+            this._delete(songTiming, event)
+          }
+          for (const event of toDelete) {
+            target._insert(type, event)
+          }
+          this.reloadCache(type)
+          EventHandler.emit("timingModified")
+          EventHandler.emit("chartModified")
+          if (type == "TIMESIGNATURES") {
+            EventHandler.emit("timeSigChanged")
+          }
+        },
+      })
+    }
   }
 
   private buildBeatTimingDataCache() {
@@ -412,6 +423,29 @@ export class TimingData {
     }
     cache[cache.length - 1].effectiveBeat = effBeat
     this._cache.effectiveBeatTiming = cache
+  }
+
+  private buildMeasureTimingCache() {
+    const timeSigs = this.getTimingData("TIMESIGNATURES")
+    if (timeSigs.length == 0 || timeSigs[0].beat != 0) {
+      timeSigs.push({ type: "TIMESIGNATURES", beat: 0, lower: 4, upper: 4 })
+    }
+    const cache = []
+    let measure = 0
+    for (let i = 0; i < timeSigs.length; i++) {
+      const timeSig = timeSigs[i]
+      const beatsPerMeasure = (4 / timeSig.lower) * timeSig.upper
+      cache.push({
+        measure,
+        beat: timeSig.beat,
+        beatsPerMeasure,
+        divisionLength: 4 / timeSig.lower,
+        numDivisions: timeSig.upper,
+      })
+      const deltaBeats = timeSigs[i + 1]?.beat - timeSig.beat
+      measure += Math.ceil(deltaBeats / beatsPerMeasure)
+    }
+    this._cache.measureTiming = cache
   }
 
   private buildSpeedsTimingDataCache() {
@@ -539,6 +573,64 @@ export class TimingData {
     return false
   }
 
+  getMeasure(beat: number): number {
+    if (!isFinite(beat)) return 0
+    if (this._cache.measureTiming == undefined) this.buildMeasureTimingCache()
+    const cache = this._cache.measureTiming!
+    if (cache.length == 0) return Math.floor(beat / 4)
+    const i = this.searchCache(cache, "beat", beat)
+    const event = cache[i]
+    const deltaBeats = beat - event.beat
+    return event.measure + Math.floor(deltaBeats / event.beatsPerMeasure)
+  }
+
+  getDivisionLength(beat: number): number {
+    if (!isFinite(beat)) return 1
+    if (this._cache.measureTiming == undefined) this.buildMeasureTimingCache()
+    const cache = this._cache.measureTiming!
+    if (cache.length == 0) return 1
+    const i = this.searchCache(cache, "beat", beat)
+    const event = cache[i]
+    return event.divisionLength
+  }
+
+  getMeasureLength(beat: number): number {
+    if (!isFinite(beat)) return 1
+    if (this._cache.measureTiming == undefined) this.buildMeasureTimingCache()
+    const cache = this._cache.measureTiming!
+    if (cache.length == 0) return 1
+    const i = this.searchCache(cache, "beat", beat)
+    const event = cache[i]
+    return event.divisionLength * event.numDivisions
+  }
+
+  getBeatOfMeasure(beat: number): number {
+    if (!isFinite(beat)) return 0
+    if (this._cache.measureTiming == undefined) this.buildMeasureTimingCache()
+    const cache = this._cache.measureTiming!
+    if (cache.length == 0) return beat % 4
+    const i = this.searchCache(cache, "beat", beat)
+    const event = cache[i]
+    const deltaBeats = beat - event.beat
+    return deltaBeats % event.beatsPerMeasure
+  }
+
+  getBeatFromMeasure(measure: number): number {
+    if (!isFinite(measure)) return 0
+    if (this._cache.measureTiming == undefined) this.buildMeasureTimingCache()
+    const cache = this._cache.measureTiming!
+    if (cache.length == 0) return measure * 4
+    const i = this.searchCache(cache, "measure", measure)
+    const event = cache[i]
+    const deltaMeasure = measure - event.measure
+    return event.measure + deltaMeasure * event.beatsPerMeasure
+  }
+
+  getDivisionOfMeasure(beat: number): number {
+    if (!isFinite(beat)) return 0
+    return this.getBeatOfMeasure(beat) / this.getDivisionLength(beat)
+  }
+
   getEffectiveBeat(beat: number): number {
     if (!isFinite(beat)) return 0
     if (this._cache.effectiveBeatTiming == undefined)
@@ -547,7 +639,7 @@ export class TimingData {
     if (cache.length == 0) return beat
     const i = this.searchCache(cache, "beat", beat)
     const event = cache[i]
-    // if (event.beat > beat) return beat
+    if (i == 0 && event.beat > beat) return beat
     let effBeat = event.effectiveBeat!
     const beats_left_over = beat - event.beat
     effBeat += beats_left_over * event.value
@@ -623,6 +715,8 @@ export class TimingData {
       this.buildBeatTimingDataCache()
     if (prop == undefined || prop == "SCROLLS")
       this.buildEffectiveBeatTimingDataCache()
+    if (prop == undefined || prop == "TIMESIGNATURES")
+      this.buildMeasureTimingCache()
     if (prop == undefined || prop == "SPEEDS") this.buildSpeedsTimingDataCache()
     this._chart?.recalculateNotes()
   }

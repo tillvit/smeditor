@@ -1,8 +1,8 @@
 import { App } from "../App"
+import { DirectoryWindow } from "../gui/window/DirectoryWindow"
+import { SMPropertiesWindow } from "../gui/window/SMPropertiesWindow"
+import { WindowOptions } from "../gui/window/Window"
 import { FileHandler } from "../util/FileHandler"
-import { DirectoryWindow } from "../window/DirectoryWindow"
-import { SMPropertiesWindow } from "../window/SMPropertiesWindow"
-import { WindowOptions } from "../window/Window"
 import { DEFAULT_SM } from "./SMData"
 
 type InitialWindowOption = {

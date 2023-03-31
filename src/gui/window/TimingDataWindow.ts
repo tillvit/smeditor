@@ -1,7 +1,7 @@
-import { App } from "../App"
-import { TIMING_WINDOW_DATA } from "../data/TimingDataWindowData"
-import { Dropdown } from "../gui/element/Dropdown"
-import { EventHandler } from "../util/EventHandler"
+import { App } from "../../App"
+import { TIMING_WINDOW_DATA } from "../../data/TimingDataWindowData"
+import { EventHandler } from "../../util/EventHandler"
+import { Dropdown } from "../element/Dropdown"
 import { Window } from "./Window"
 
 export class TimingDataWindow extends Window {
@@ -36,6 +36,7 @@ export class TimingDataWindow extends Window {
       }
     }, 17)
     EventHandler.on("timingModified", this.changeHandler)
+    EventHandler.on("chartLoaded", this.changeHandler)
   }
 
   onClose() {

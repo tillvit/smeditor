@@ -5,6 +5,8 @@ import { AUDIO_EXT } from "../data/FileData"
 import { IS_OSX, KEYBINDS } from "../data/KeybindData"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { WidgetManager } from "../gui/widget/WidgetManager"
+import { ChartListWindow } from "../gui/window/ChartListWindow"
+import { ConfimationWindow } from "../gui/window/ConfirmationWindow"
 import { Keybinds } from "../listener/Keybinds"
 import { ActionHistory } from "../util/ActionHistory"
 import { EventHandler } from "../util/EventHandler"
@@ -21,8 +23,6 @@ import {
   extname,
   tpsUpdate,
 } from "../util/Util"
-import { ChartListWindow } from "../window/ChartListWindow"
-import { ConfimationWindow } from "../window/ConfirmationWindow"
 import { ChartAudio } from "./audio/ChartAudio"
 import { ChartRenderer } from "./ChartRenderer"
 import { GameTypeRegistry } from "./gameTypes/GameTypeRegistry"
@@ -111,7 +111,8 @@ export class ChartManager {
   private snapIndex = 0
   private partialScroll = 0
   private noteIndex = 0
-  private lastBeat = -1
+  private lastMetronomeDivision = -1
+  private lastMetronomeMeasure = -1
 
   private lastSong = ""
 
@@ -320,7 +321,6 @@ export class ChartManager {
                 0,
                 Math.round(Math.min(this.beat, hold.startBeat) * 48) / 48
               )
-            console.log(holdLength)
             if (
               (holdLength * 60) /
                 this.loadedChart.timingData.getBPM(this.beat) >
@@ -359,15 +359,26 @@ export class ChartManager {
         this.noteIndex++
       }
       // Play metronome
-      const metronomeBeat = Math.floor(
-        this.loadedChart.getBeatFromSeconds(
-          this.time + Options.audio.effectOffset
-        )
+      const offsetBeat = this.loadedChart.getBeatFromSeconds(
+        this.time + Options.audio.effectOffset
       )
-      if (metronomeBeat != this.lastBeat) {
-        this.lastBeat = metronomeBeat
+
+      const offsetDivision = Math.floor(
+        this.loadedChart.timingData.getDivisionOfMeasure(offsetBeat)
+      )
+
+      const offsetMeasure = Math.floor(
+        this.loadedChart.timingData.getMeasure(offsetBeat)
+      )
+
+      if (
+        offsetMeasure != this.lastMetronomeMeasure ||
+        offsetDivision != this.lastMetronomeDivision
+      ) {
+        this.lastMetronomeDivision = offsetDivision
+        this.lastMetronomeMeasure = offsetMeasure
         if (this.chartAudio.isPlaying() && Options.audio.metronome) {
-          if (this.lastBeat % 4 == 0) this.me_high.play()
+          if (offsetDivision == 0) this.me_high.play()
           else this.me_low.play()
         }
       }
@@ -823,10 +834,14 @@ export class ChartManager {
   }
 
   setAndSnapBeat(beat: number) {
+    if (!this.loadedChart) return
     const snap = Math.max(0.001, Options.chart.snap)
-    let newbeat = Math.round(beat / snap) * snap
-    newbeat = Math.max(0, newbeat)
-    this.setBeat(newbeat)
+    const beatOfMeasure = this.loadedChart.timingData.getBeatOfMeasure(beat)
+    const measureBeat = beat - beatOfMeasure
+    const newBeatOfMeasure = Math.round(beatOfMeasure / snap) * snap
+    let newBeat = measureBeat + newBeatOfMeasure
+    newBeat = Math.max(0, newBeat)
+    this.setBeat(newBeat)
   }
 
   previousSnap() {

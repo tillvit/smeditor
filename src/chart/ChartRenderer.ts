@@ -535,10 +535,10 @@ export class ChartRenderer extends Container {
     const ab = this.selectionSprite.getBounds()
     const bb = object.getBounds()
     return (
-      ab.x + ab.width > bb.x &&
-      ab.x < bb.x + bb.width &&
-      ab.y + ab.height > bb.y &&
-      ab.y < bb.y + bb.height
+      ab.x + ab.width > bb.x + bb.width / 4 &&
+      ab.x < bb.x + bb.width - bb.width / 4 &&
+      ab.y + ab.height > bb.y + bb.height / 4 &&
+      ab.y < bb.y + bb.height - bb.height / 4
     )
   }
 }

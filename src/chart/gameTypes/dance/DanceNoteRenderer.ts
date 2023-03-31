@@ -1,6 +1,7 @@
 import { Container, Sprite, Texture, TilingSprite } from "pixi.js"
 import { rgbtoHex } from "../../../util/Util"
 import { PartialNotedataEntry } from "../../sm/NoteTypes"
+import { TimingData } from "../../sm/TimingData"
 import { DanceNotefield } from "./DanceNotefield"
 import { DanceNoteTexture } from "./DanceNoteTexture"
 
@@ -84,13 +85,14 @@ export class DanceNoteRenderer {
   static setData(
     notefield: DanceNotefield,
     arrow: NoteObject,
-    note: PartialNotedataEntry
+    note: PartialNotedataEntry,
+    timingData: TimingData
   ) {
     const col = note.col
     const type = note.type
 
     // Reuse the old item
-    DanceNoteTexture.setNoteTex(arrow.item.note, note)
+    DanceNoteTexture.setNoteTex(arrow.item.note, note, timingData)
     if (type == "Mine") arrow.item.note.rotation = 0
     else arrow.item.note.rotation = notefield.getRotFromCol(col)
 

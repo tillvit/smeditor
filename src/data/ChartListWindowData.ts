@@ -1,9 +1,9 @@
 import { App } from "../App"
 import { Chart } from "../chart/sm/Chart"
 import { Icons } from "../gui/Icons"
+import { DirectoryWindow } from "../gui/window/DirectoryWindow"
 import { ActionHistory } from "../util/ActionHistory"
 import { FileHandler } from "../util/FileHandler"
-import { DirectoryWindow } from "../window/DirectoryWindow"
 import { AUDIO_EXT } from "./FileData"
 
 type ChartPropertyEditor = {
