@@ -1,4 +1,12 @@
-import { Container, Point, Rectangle, Sprite, Texture } from "pixi.js"
+import {
+  Container,
+  DisplayObject,
+  FederatedMouseEvent,
+  Point,
+  Rectangle,
+  Sprite,
+  Texture,
+} from "pixi.js"
 import { Options } from "../util/Options"
 import { ChartManager, EditMode } from "./ChartManager"
 import { BarlineContainer } from "./component/BarlineContainer"
@@ -530,6 +538,13 @@ export class ChartRenderer extends Container {
     return -32 - this.y / Options.chart.zoom
   }
 
+  /**
+   * Tests if an object is in the selection sprite.
+   *
+   * @param {Container} object
+   * @return {*}  {boolean}
+   * @memberof ChartRenderer
+   */
   selectionTest(object: Container): boolean {
     if (!this.selectionBounds) return false
     const ab = this.selectionSprite.getBounds()
@@ -540,5 +555,108 @@ export class ChartRenderer extends Container {
       ab.y + ab.height > bb.y + bb.height / 4 &&
       ab.y < bb.y + bb.height - bb.height / 4
     )
+  }
+
+  /**
+   * Adds the selection and drag handlers to this object. Call this function when creating a new note object.
+   *
+   * @param {(DisplayObject & { note: NotedataEntry })} newChild
+   * @memberof ChartRenderer
+   */
+  registerDragNote(newChild: DisplayObject & { note: NotedataEntry }) {
+    newChild.interactive = true
+    let lastTriedColumnShift = 0
+    let initalPosX = 0
+    let initalPosY = 0
+    let movedNote: NotedataEntry | undefined
+
+    const moveHandler = (event: FederatedMouseEvent) => {
+      const note = movedNote!
+      const position = this.toLocal(event.global)
+      if (
+        Math.abs(position.y - initalPosY) ** 2 +
+          Math.abs(position.x - initalPosX) ** 2 <
+        32 * 32
+      ) {
+        if (this.chartManager.selection.shift) {
+          this.chartManager.selection.shift = {
+            columnShift: 0,
+            beatShift: 0,
+          }
+        }
+        return
+      }
+      const newBeat = this.getBeatFromYPos(position.y)
+      const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
+      let snapBeat = Math.round(newBeat / snap) * snap
+      if (Math.abs(snapBeat - newBeat) > Math.abs(newBeat - note.beat)) {
+        snapBeat = note.beat
+      }
+      const col = Math.round((position.x + 96) / 64)
+      this.chartManager.selection.shift ||= {
+        columnShift: 0,
+        beatShift: 0,
+      }
+      if (lastTriedColumnShift != col - note.col) {
+        lastTriedColumnShift = col - note.col
+        if (
+          this.chartManager.selection.notes.every(note => {
+            const newCol = note.col + lastTriedColumnShift
+            return (
+              newCol >= 0 &&
+              newCol < this.chartManager.loadedChart!.gameType.numCols
+            )
+          })
+        ) {
+          this.chartManager.selection.shift.columnShift = col - note.col
+        }
+      }
+      this.chartManager.selection.shift.beatShift = snapBeat - note.beat
+    }
+    newChild.on("mousedown", event => {
+      if (
+        Options.general.mousePlacement &&
+        !event.getModifierState("Meta") &&
+        !event.getModifierState("Control") &&
+        !event.getModifierState("Shift") &&
+        !this.chartManager.selection.notes.includes(newChild.note)
+      )
+        return
+      event.stopImmediatePropagation()
+      if (this.chartManager.selection.notes.includes(newChild.note)) {
+        if (event.getModifierState("Control") || event.getModifierState("Meta"))
+          this.chartManager.removeNoteFromSelection(newChild.note)
+      } else {
+        if (
+          !event.getModifierState("Control") &&
+          !event.getModifierState("Meta") &&
+          !event.getModifierState("Shift")
+        )
+          this.chartManager.clearSelection()
+        this.chartManager.addNoteToSelection(newChild.note)
+      }
+      initalPosX = newChild.x!
+      initalPosY = newChild.y!
+      movedNote = newChild.note!
+      this.on("mousemove", moveHandler)
+      const mouseUp = () => {
+        this.off("mousemove", moveHandler)
+        this.off("mouseup", mouseUp)
+        if (
+          (this.chartManager.selection.shift?.beatShift ?? 0) != 0 ||
+          (this.chartManager.selection.shift?.columnShift ?? 0) != 0
+        )
+          this.chartManager.modifySelection(note => {
+            note.beat += this.chartManager.selection.shift!.beatShift
+            note.col += this.chartManager.selection.shift!.columnShift
+            return note
+          })
+        this.chartManager.selection.shift = undefined
+      }
+      this.on("mouseup", mouseUp)
+    })
+    newChild.on("destroyed", () => {
+      newChild?.removeAllListeners()
+    })
   }
 }
