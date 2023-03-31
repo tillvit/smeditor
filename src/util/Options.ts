@@ -14,6 +14,7 @@ class DefaultOptions {
     scrollSensitivity: 1,
     mousePlacement: false,
     smoothAnimations: true,
+    warnBeforeExit: true,
   }
   static chart = {
     CMod: false,

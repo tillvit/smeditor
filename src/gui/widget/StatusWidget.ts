@@ -92,6 +92,12 @@ export class StatusWidget extends Widget {
     this.play.appendChild(playIcon)
     this.playIcon = playIcon
     this.play.onclick = () => {
+      if (
+        this.manager.chartManager.getMode() == EditMode.Record ||
+        this.manager.chartManager.getMode() == EditMode.Play
+      ) {
+        this.manager.chartManager.setMode(EditMode.Edit)
+      }
       this.manager.chartManager.playPause()
     }
 
@@ -215,10 +221,11 @@ export class StatusWidget extends Widget {
       if (ev.key == "Enter") beat.blur()
       if (ev.key == "Escape") {
         if (this.beatDropdown.value == "Measure") {
-          beat.innerText = roundDigit(
-            this.manager.chartManager.getBeat() / 4,
-            3
-          ).toFixed(3)
+          const measure =
+            this.manager.chartManager.loadedChart?.timingData?.getMeasure(
+              this.manager.chartManager.getBeat()
+            ) ?? this.manager.chartManager.getBeat() / 4
+          beat.innerText = roundDigit(measure, 3).toFixed(3)
         } else {
           beat.innerText = roundDigit(
             this.manager.chartManager.getBeat(),
@@ -242,10 +249,11 @@ export class StatusWidget extends Widget {
     this.beatCounter.appendChild(this.beatDropdown.view)
     this.beatDropdown.onChange(() => {
       if (this.beatDropdown.value == "Measure") {
-        beat.innerText = roundDigit(
-          this.manager.chartManager.getBeat() / 4,
-          3
-        ).toFixed(3)
+        const measure =
+          this.manager.chartManager.loadedChart?.timingData?.getMeasure(
+            this.manager.chartManager.getBeat()
+          ) ?? this.manager.chartManager.getBeat() / 4
+        beat.innerText = roundDigit(measure, 3).toFixed(3)
       } else {
         beat.innerText = roundDigit(
           this.manager.chartManager.getBeat(),
@@ -422,7 +430,11 @@ export class StatusWidget extends Widget {
     if (this.lastBeat != beat) {
       if (document.activeElement != this.beat) {
         if (this.beatDropdown.value == "Measure") {
-          this.beat.innerText = roundDigit(beat / 4, 3).toFixed(3)
+          const measure =
+            this.manager.chartManager.loadedChart?.timingData?.getMeasure(
+              beat
+            ) ?? beat / 4
+          this.beat.innerText = roundDigit(measure, 3).toFixed(3)
         } else {
           this.beat.innerText = roundDigit(beat, 3).toFixed(3)
         }
@@ -576,7 +588,10 @@ export class StatusWidget extends Widget {
 
   private updateBeat() {
     let beat = this.safeParse(this.beat)
-    if (this.beatDropdown.value == "Measure") beat *= 4
+    if (this.beatDropdown.value == "Measure") {
+      const timingData = this.manager.chartManager.loadedChart?.timingData
+      beat = timingData?.getBeatFromMeasure(beat) ?? beat * 4
+    }
     if (beat > 9999999) beat = 9999999
     this.manager.chartManager.setBeat(beat)
   }

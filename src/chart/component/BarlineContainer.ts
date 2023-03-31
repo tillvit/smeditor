@@ -196,7 +196,9 @@ export class BarlineContainer extends Container {
     newChild.anchor!.y = 0.5
     newChild.x = (this.renderer.chart.gameType.notefieldWidth + 128) / -2 - 16
     newChild.visible = true
-    newChild.text = `${this.renderer.chart.timingData.getMeasure(beat)}`
+    newChild.text = `${Math.round(
+      this.renderer.chart.timingData.getMeasure(beat)
+    )}`
     this.barlineLabelMap.set(beat, newChild as BarlineLabel)
     return newChild as BarlineLabel
   }
