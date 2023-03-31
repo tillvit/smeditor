@@ -116,10 +116,12 @@ export class App {
 
     this.windowManager.openWindow(new InitialWindow(this))
 
-    // window.onbeforeunload = event => {
-    //   event.preventDefault()
-    //   return (event.returnValue = "Are you sure you want to exit?")
-    // }
+    window.onbeforeunload = event => {
+      if (ActionHistory.instance.isDirty() && Options.general.warnBeforeExit) {
+        event.preventDefault()
+        return (event.returnValue = "Are you sure you want to exit?")
+      }
+    }
 
     window.onunload = () => {
       Options.saveOptions()

@@ -581,7 +581,7 @@ export class TimingData {
     const i = this.searchCache(cache, "beat", beat)
     const event = cache[i]
     const deltaBeats = beat - event.beat
-    return event.measure + Math.floor(deltaBeats / event.beatsPerMeasure)
+    return event.measure + deltaBeats / event.beatsPerMeasure
   }
 
   getDivisionLength(beat: number): number {
