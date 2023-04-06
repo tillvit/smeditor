@@ -13,6 +13,7 @@ export class NumberSpinner {
   max = Number.MAX_VALUE
   precision?: number
   step = 1
+  lastVal = ""
 
   constructor(
     view: HTMLDivElement,
@@ -31,6 +32,7 @@ export class NumberSpinner {
     input.autocomplete = "off"
     input.spellcheck = false
     input.onblur = () => {
+      if (input.value == this.lastVal) return
       if (input.value == "") {
         this.onChange?.(undefined)
         return
@@ -43,6 +45,13 @@ export class NumberSpinner {
     input.onkeydown = ev => {
       if (!isNumericKeyPress(ev)) ev.preventDefault()
       if (ev.key == "Enter") input.blur()
+      if (ev.key == "Escape") {
+        input.value = this.lastVal
+        input.blur()
+      }
+    }
+    input.onfocus = () => {
+      this.lastVal = input.value
     }
     this.input = input
     this.min = min ?? this.min
