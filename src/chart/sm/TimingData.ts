@@ -4,19 +4,19 @@ import { bsearch, clamp, roundDigit } from "../../util/Util"
 import { Chart } from "./Chart"
 import {
   AttackTimingEvent,
+  BPMTimingEvent,
   BeatTimingCache,
   BeatTimingEvent,
   BeatTimingEventProperty,
-  BPMTimingEvent,
   MeasureTimingCache,
   ScrollCacheTimingEvent,
   SpeedTimingEvent,
   StopTimingEvent,
+  TIMING_EVENT_NAMES,
   TimingEvent,
   TimingEventBase,
   TimingEventProperty,
   TimingProperty,
-  TIMING_EVENT_NAMES,
   WarpTimingEvent,
 } from "./TimingTypes"
 
@@ -228,6 +228,31 @@ export class TimingData {
     }
   }
 
+  private isNullEvent<Event extends TimingEvent>(event: Event): boolean {
+    switch (event.type) {
+      case "BPMS":
+      case "TICKCOUNTS":
+      case "TIMESIGNATURES":
+      case "COMBOS":
+        return false
+      case "STOPS":
+      case "WARPS":
+      case "DELAYS":
+      case "SCROLLS":
+      case "FAKES":
+        return event.value == 0
+
+      case "LABELS":
+      case "ATTACKS":
+        return event.value == ""
+      case "SPEEDS":
+        return event.value == 1 && event.delay == 0 && event.unit == "B"
+      case "FGCHANGES":
+      case "BGCHANGES":
+        return event.file == "" && event.file2 == ""
+    }
+  }
+
   insert<Type extends TimingProperty>(
     songTiming: boolean,
     type: Type,
@@ -277,6 +302,7 @@ export class TimingData {
     //Add new event if it doesn't match the previous one
     const previousEvent = target.getTimingEventAtBeat(type, beat - 0.001)
     Object.assign(newEvent, properties)
+    if (this.isNullEvent(newEvent as TimingEvent)) return
     if (
       !previousEvent ||
       !this.isDuplicate(previousEvent, newEvent as TimingEvent)
