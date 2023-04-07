@@ -565,6 +565,7 @@ export class ChartRenderer extends Container {
    */
   registerDragNote(newChild: DisplayObject & { note: NotedataEntry }) {
     newChild.interactive = true
+    newChild.removeAllListeners()
     let lastTriedColumnShift = 0
     let initalPosX = 0
     let initalPosY = 0

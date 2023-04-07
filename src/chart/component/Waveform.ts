@@ -2,9 +2,9 @@ import { ParticleContainer, RenderTexture, Sprite, Texture } from "pixi.js"
 import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
 import { bsearch, destroyChildIf } from "../../util/Util"
-import { ChartAudio } from "../audio/ChartAudio"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
+import { ChartAudio } from "../audio/ChartAudio"
 
 const MAX_ZOOM = 3500
 
@@ -178,6 +178,7 @@ export class Waveform extends Sprite {
         100 / chartSpeed / speedMult / 64 / Options.chart.zoom
       const screenHeight = this.renderer.chartManager.app.renderer.screen.height
       let curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
+      let finishedDrawing = false
 
       // Get the first scroll index after curBeat
       let scrollIndex = bsearch(scrolls, currentBeat, a => a.beat)
@@ -185,7 +186,7 @@ export class Waveform extends Sprite {
       let currentYPos = Math.round(
         this.renderer.getYPos(currentBeat) * Options.chart.zoom + this.parent.y
       )
-      while (currentBeat < maxDrawBeats) {
+      while (currentBeat < maxDrawBeats && !finishedDrawing) {
         const scroll = scrolls[scrollIndex] ?? { beat: 0, value: 1 }
         const scrollEndBeat = scrolls[scrollIndex + 1]?.beat ?? maxDrawBeats
         const scrollEndYPos =
@@ -227,7 +228,7 @@ export class Waveform extends Sprite {
           if (currentYPos > screenHeight) {
             // Stop, waveform finished rendering
             if (scroll.value > 0) {
-              currentBeat = maxDrawBeats
+              finishedDrawing = true
               break
             }
             // Skip to the bottom of the screen and keep stepping from there

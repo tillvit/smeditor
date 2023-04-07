@@ -62,7 +62,6 @@ export class RecentFileHandler {
     this._model = this._model!.filter(entry => {
       return FileHandler.getFileHandle(entry.path).then(file => {
         if (file == undefined) return false
-        console.log(file)
         return true
       })
     })

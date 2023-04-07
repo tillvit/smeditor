@@ -1,4 +1,5 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
+import { TimingEventPopup } from "../../gui/element/TimingEventPopup"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
 import { destroyChildIf, roundDigit } from "../../util/Util"
@@ -7,8 +8,9 @@ import { ChartRenderer } from "../ChartRenderer"
 import { TimingEvent } from "../sm/TimingTypes"
 import { TIMING_EVENT_COLORS } from "./TimingAreaContainer"
 
-interface TimingBox extends Container {
+export interface TimingBox extends Container {
   event: TimingEvent
+  songTiming: boolean
   deactivated: boolean
   marked: boolean
   dirtyTime: number
@@ -16,6 +18,7 @@ interface TimingBox extends Container {
   textObj: BitmapText
   targetX?: number
   targetAnchor?: number
+  popup?: TimingEventPopup
 }
 
 interface TimingTrack extends Sprite {
@@ -217,6 +220,7 @@ export class TimingTrackContainer extends Container {
       .forEach(child => {
         child.deactivated = true
         child.visible = false
+        child.popup?.close()
         this.timingBoxMap.delete(child.event)
       })
 
@@ -264,6 +268,9 @@ export class TimingTrackContainer extends Container {
     }
     newChild.event = event
     newChild.deactivated = false
+    newChild.songTiming = this.renderer.chart.timingData.isTypeChartSpecific(
+      event.type
+    )
     newChild.marked = true
     newChild.visible = true
     newChild.targetX = undefined
@@ -309,6 +316,19 @@ export class TimingTrackContainer extends Container {
     newChild.backgroundObj!.width = newChild.textObj!.width + 10
     newChild.backgroundObj!.height = 25
     newChild.zIndex = event.beat
+    newChild.interactive = true
+    newChild.popup?.close()
+    newChild.removeAllListeners!()
+    newChild.on!("mouseenter", () => {
+      newChild!.popup?.close()
+      newChild!.popup = new TimingEventPopup(
+        newChild as TimingBox,
+        this.renderer.chart.timingData
+      )
+    })
+    newChild.on!("mouseleave", () => {
+      newChild!.popup?.close()
+    })
     this.timingBoxMap.set(event, newChild as TimingBox)
     return newChild as TimingBox
   }
