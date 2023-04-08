@@ -135,11 +135,11 @@ export class TimingData {
             crossFade: temp[3] == "1",
             stretchRewind: temp[4] == "1",
             stretchNoLoop: temp[5] == "1",
-            effect: temp[6],
-            file2: temp[7],
-            transition: temp[8],
-            color1: temp[9],
-            color2: temp[10],
+            effect: temp[6] ?? "",
+            file2: temp[7] ?? "",
+            transition: temp[8] ?? "",
+            color1: temp[9] ?? "",
+            color2: temp[10] ?? "",
           }
       }
       this._insert(type, event!, false)
@@ -386,8 +386,6 @@ export class TimingData {
         },
       })
     }
-
-    return toAdd.length > 0
   }
 
   private buildBeatTimingDataCache() {
