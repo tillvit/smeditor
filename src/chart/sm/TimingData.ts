@@ -253,21 +253,9 @@ export class TimingData {
     }
   }
 
-  insert<Type extends TimingProperty>(
+  insert<Type extends TimingEventProperty>(
     songTiming: boolean,
-    type: Type,
-    properties: Partial<Extract<TimingEvent, { type: Type }>>,
-    beat: number
-  ): void
-  insert(
-    songTiming: boolean,
-    type: "OFFSET",
-    properties: number,
-    beat?: number
-  ): void
-  insert<Type extends TimingProperty>(
-    songTiming: boolean,
-    type: Type,
+    type: Type | "OFFSET",
     properties: Partial<Extract<TimingEvent, { type: Type }>> | number,
     beat?: number
   ) {
@@ -665,7 +653,7 @@ export class TimingData {
     if (cache.length == 0) return beat
     const i = this.searchCache(cache, "beat", beat)
     const event = cache[i]
-    if (i == 0 && event.beat > beat) return beat
+    if (i == 0 && event.beat > beat && event.beat > 0) return beat
     let effBeat = event.effectiveBeat!
     const beats_left_over = beat - event.beat
     effBeat += beats_left_over * event.value
@@ -806,6 +794,10 @@ export class TimingData {
       if (value) return false
     }
     return true
+  }
+
+  isTypeChartSpecific(type: TimingEventProperty): boolean {
+    return !!this.events[type]
   }
 
   serialize(type: "sm" | "ssc"): string {

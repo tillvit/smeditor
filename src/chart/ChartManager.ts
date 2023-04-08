@@ -12,6 +12,7 @@ import { ActionHistory } from "../util/ActionHistory"
 import { EventHandler } from "../util/EventHandler"
 import { FileHandler } from "../util/FileHandler"
 import { Options } from "../util/Options"
+import { RecentFileHandler } from "../util/RecentFileHandler"
 import { TimerStats } from "../util/TimerStats"
 import {
   basename,
@@ -23,17 +24,17 @@ import {
   extname,
   tpsUpdate,
 } from "../util/Util"
-import { ChartAudio } from "./audio/ChartAudio"
 import { ChartRenderer } from "./ChartRenderer"
+import { ChartAudio } from "./audio/ChartAudio"
 import { GameTypeRegistry } from "./gameTypes/GameTypeRegistry"
 import { GameplayStats } from "./play/GameplayStats"
 import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
 import { Chart } from "./sm/Chart"
 import {
-  isHoldNote,
   Notedata,
   NotedataEntry,
   PartialNotedataEntry,
+  isHoldNote,
 } from "./sm/NoteTypes"
 import { Simfile } from "./sm/Simfile"
 import { TimingEvent } from "./sm/TimingTypes"
@@ -615,6 +616,8 @@ export class ChartManager {
     await this.loadChart()
     EventHandler.emit("smLoadedAfter")
     if (this.time == 0) this.setBeat(0)
+
+    RecentFileHandler.addSM(this.smPath, this.loadedSM)
   }
 
   /**

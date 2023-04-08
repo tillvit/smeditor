@@ -1,14 +1,35 @@
+import scrollIntoView from "scroll-into-view-if-needed"
 import { App } from "../../App"
-import { INITIAL_WINDOW_DATA } from "../../data/InitalWindowData"
+
+import { DEFAULT_SM } from "../../data/SMData"
+import { FileHandler } from "../../util/FileHandler"
+import { RecentFileHandler } from "../../util/RecentFileHandler"
+import { Icons } from "../Icons"
+import { DirectoryWindow } from "./DirectoryWindow"
+import { SMPropertiesWindow } from "./SMPropertiesWindow"
 import { Window } from "./Window"
 
 export class InitialWindow extends Window {
   app: App
 
+  private keyHandler
+
   constructor(app: App) {
-    super(INITIAL_WINDOW_DATA.window_options)
+    super({
+      title: "Open a Song",
+      width: 400,
+      height: 320,
+      disableClose: true,
+      win_id: "select_sm_initial",
+    })
     this.app = app
+    this.keyHandler = this.handleKeyEvent.bind(this)
+    window.addEventListener("keydown", this.keyHandler)
     this.initView()
+  }
+
+  onClose(): void {
+    window.removeEventListener("keydown", this.keyHandler)
   }
 
   initView(): void {
@@ -16,35 +37,179 @@ export class InitialWindow extends Window {
     this.viewElement.classList.add("options")
     const padding = document.createElement("div")
     padding.classList.add("padding")
-    INITIAL_WINDOW_DATA.view.forEach(entry => {
-      const title = document.createElement("div")
-      title.innerText =
-        typeof entry.title == "function" ? entry.title(this.app) : entry.title
-      title.classList.add("title")
-      padding.appendChild(title)
 
-      const section = document.createElement("div")
-      section.classList.add("section")
-      entry.options.forEach(option => {
-        const container = document.createElement("div")
-        container.classList.add("container")
+    const initContainer = document.createElement("div")
+    initContainer.classList.add("initial-container")
+    padding.appendChild(initContainer)
 
-        const label = document.createElement("div")
-        label.classList.add("label")
+    const topContainer = document.createElement("div")
+    topContainer.classList.add("top-container")
+    const seperator = document.createElement("div")
+    seperator.classList.add("seperator")
+    seperator.style.margin = "10px"
+    const bottomContainer = document.createElement("div")
+    bottomContainer.classList.add("bottom-container")
+    initContainer.appendChild(topContainer)
+    initContainer.appendChild(seperator)
+    initContainer.appendChild(bottomContainer)
 
-        const item = option.element(this.app)
-        label.innerText =
-          typeof option.label == "function"
-            ? option.label(this.app)
-            : option.label
+    const openButton = document.createElement("button")
+    openButton.style.display = "flex"
+    openButton.style.flexDirection = "column"
+    openButton.style.padding = "10px"
+    openButton.style.backgroundColor = "#414352"
+    topContainer.appendChild(openButton)
 
-        container.appendChild(label)
-        container.appendChild(item)
+    const openIcon = document.createElement("img")
+    openIcon.src = Icons.UPLOAD
+    openIcon.classList.add("icon")
+    openIcon.style.width = "30px"
+    openIcon.style.height = "30px"
+    openButton.appendChild(openIcon)
 
-        section.appendChild(container)
-      })
-      padding.appendChild(section)
+    const openTitle = document.createElement("div")
+    openTitle.innerText = window.nw
+      ? "Open an existing song"
+      : "Import a song folder"
+    openButton.appendChild(openTitle)
+
+    openButton.onclick = () => {
+      if (window.nw) {
+        const fileSelector = document.createElement("input")
+        fileSelector.type = "file"
+        fileSelector.accept = ".sm,.ssc"
+        fileSelector.onchange = () => {
+          this.app.chartManager.loadSM(fileSelector.value)
+          this.closeWindow()
+        }
+        fileSelector.click()
+      } else {
+        this.app.windowManager.openWindow(
+          new DirectoryWindow(this.app, {
+            title: "Select an sm/ssc file...",
+            accepted_file_types: [".sm", ".ssc"],
+            disableClose: true,
+            callback: (path: string) => {
+              this.app.chartManager.loadSM(path)
+              this.closeWindow()
+            },
+          })
+        )
+      }
+    }
+    const newButton = document.createElement("button")
+    newButton.style.display = "flex"
+    newButton.style.flexDirection = "column"
+    newButton.style.padding = "10px"
+    newButton.style.backgroundColor = "#506352"
+    topContainer.appendChild(newButton)
+
+    const newIcon = document.createElement("img")
+    newIcon.src = Icons.PLUS
+    newIcon.classList.add("icon")
+    newIcon.style.width = "30px"
+    newIcon.style.height = "30px"
+    newButton.appendChild(newIcon)
+
+    const newTitle = document.createElement("div")
+    newTitle.innerText = "New Song"
+    newButton.appendChild(newTitle)
+
+    newButton.onclick = async () => {
+      let folder = "New Song"
+      if (await FileHandler.getDirectoryHandle(folder)) {
+        let i = 2
+        while (await FileHandler.getDirectoryHandle(folder)) {
+          folder = `New Song ${i++}`
+        }
+      }
+      await FileHandler.writeFile(folder + "/song.sm", DEFAULT_SM)
+      await this.app.chartManager.loadSM(folder + "/song.sm")
+      this.app.windowManager.openWindow(
+        new SMPropertiesWindow(this.app, true, async success => {
+          if (success) {
+            this.closeWindow()
+          } else {
+            await FileHandler.removeDirectory(folder)
+            this.app.chartManager.loadSM()
+          }
+        })
+      )
+    }
+
+    const recentTitle = document.createElement("div")
+    recentTitle.innerText = "Recently Opened"
+    recentTitle.classList.add("title")
+    bottomContainer.appendChild(recentTitle)
+
+    const recentScroll = document.createElement("div")
+    recentScroll.classList.add("recent-selector")
+    bottomContainer.appendChild(recentScroll)
+    RecentFileHandler.getRecents().forEach(entry => {
+      const row = document.createElement("div")
+      row.classList.add("recent-item")
+      const name = document.createElement("div")
+      name.classList.add("recent-name")
+      name.innerText = entry.name
+      const path = document.createElement("div")
+      path.classList.add("recent-path")
+      path.innerText = entry.path
+      row.appendChild(name)
+      row.appendChild(path)
+
+      row.onclick = () => {
+        recentScroll
+          .querySelectorAll(".selected")
+          .forEach(el => el.classList.remove("selected"))
+        row.classList.add("selected")
+      }
+
+      row.ondblclick = () => {
+        this.app.chartManager.loadSM(entry.path)
+        this.closeWindow()
+      }
+
+      recentScroll.appendChild(row)
     })
+
     this.viewElement.appendChild(padding)
+  }
+
+  private handleKeyEvent(event: KeyboardEvent) {
+    if (!this.windowElement.classList.contains("focused")) return
+    const selected = this.viewElement.querySelector(".selected") as HTMLElement
+    if (!selected) return
+    if (event.code == "ArrowUp") {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      const prev = selected.previousElementSibling
+      if (prev) {
+        selected
+          .parentElement!.querySelectorAll(".selected")
+          .forEach(el => el.classList.remove("selected"))
+        prev.classList.add("selected")
+        scrollIntoView(prev, {
+          scrollMode: "if-needed",
+          block: "nearest",
+          inline: "nearest",
+        })
+      }
+    }
+    if (event.code == "ArrowDown") {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      const next = selected.nextElementSibling
+      if (next) {
+        selected
+          .parentElement!.querySelectorAll(".selected")
+          .forEach(el => el.classList.remove("selected"))
+        next.classList.add("selected")
+        scrollIntoView(next, {
+          scrollMode: "if-needed",
+          block: "nearest",
+          inline: "nearest",
+        })
+      }
+    }
   }
 }
