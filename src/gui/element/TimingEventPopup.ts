@@ -16,23 +16,30 @@ export class TimingEventPopup {
   private static activePopup?: TimingEventPopup
   private timingBox
   private popup: HTMLDivElement
+  private zoomer?: HTMLDivElement
+  private editText?: HTMLDivElement
   private timingData
   private rows: FinalRow[] = []
   private onTimingChange
   private moveInterval
+  persistent = false
   constructor(timingBox: TimingBox, timingData: TimingData) {
     timingBox.popup = this
     this.timingBox = timingBox
     this.timingData = timingData
     this.popup = this.build()
     setTimeout(() => this.movePosition())
-    document.getElementById("popups")?.appendChild(this.popup)
 
     this.onTimingChange = this.updateValues.bind(this)
-    this.moveInterval = setInterval(() => this.movePosition(), 150)
     EventHandler.on("timingChanged", this.onTimingChange)
-    TimingEventPopup.activePopup?.close()
-    TimingEventPopup.activePopup = this
+    if (TimingEventPopup.activePopup?.persistent) {
+      timingBox.popup = undefined
+    } else {
+      document.getElementById("popups")?.appendChild(this.popup)
+      this.moveInterval = setInterval(() => this.movePosition(), 150)
+      TimingEventPopup.activePopup?.close()
+      TimingEventPopup.activePopup = this
+    }
   }
   private movePosition() {
     const point = this.timingBox.getBounds()
@@ -67,6 +74,7 @@ export class TimingEventPopup {
       "#333333",
       0.75
     )
+    this.zoomer = popupZoomer
     popup.appendChild(popupZoomer)
     const title = document.createElement("div")
     title.innerText = data.title
@@ -82,10 +90,47 @@ export class TimingEventPopup {
     grid.classList.add("popup-grid")
     popupZoomer.appendChild(grid)
     data.rows.forEach(row => grid.append(...this.buildRow(row)))
+    const editText = document.createElement("div")
+    editText.innerText = "click to edit"
+    editText.style.marginTop = "4px"
+    editText.style.height = "10px"
+    popupZoomer.appendChild(editText)
+    editText.classList.add("popup-desc")
+    this.editText = editText
+
+    const popupOptions = document.createElement("div")
+    popupOptions.classList.add("popup-options")
+
+    const okButton = document.createElement("button")
+    okButton.innerText = "Ok"
+    okButton.onclick = () => {
+      this.close()
+    }
+    okButton.classList.add("confirm")
+    popupOptions.append(okButton)
+
+    const deleteButton = document.createElement("button")
+    deleteButton.innerText = "Delete"
+    deleteButton.onclick = () => {
+      this.timingData.delete(
+        this.timingBox.songTiming,
+        this.timingBox.event.type,
+        this.timingBox.event.type == "ATTACKS"
+          ? this.timingBox.event.second
+          : this.timingBox.event.beat
+      )
+      this.close()
+    }
+    deleteButton.classList.add("delete")
+    popupOptions.append(deleteButton)
+    popupZoomer.append(popupOptions)
+
     return popup
   }
   private buildRow(data: PopupRow) {
-    const event = this.timingBox.event as { [key: string]: any }
+    const event = structuredClone(
+      this.timingBox.event as { [key: string]: any }
+    )
     // const container = document.createElement("div")
     // container.classList.add("popup-row")
     const label = document.createElement("div")
@@ -107,9 +152,9 @@ export class TimingEventPopup {
           this.timingData.insert(
             this.timingBox.songTiming,
             this.timingBox.event.type,
-            { [data.key]: value },
+            Object.assign(event, { [data.key]: value }),
             this.timingBox.event.beat
-          )
+          ) || this.close()
         }
         this.rows.push({ data: data, el: spinner })
         ret.push(spinner.view)
@@ -127,7 +172,7 @@ export class TimingEventPopup {
           this.timingData.insert(
             this.timingBox.songTiming,
             this.timingBox.event.type,
-            { [data.key]: input.value },
+            Object.assign(event, { [data.key]: input.value }),
             this.timingBox.event.beat
           )
         }
@@ -148,9 +193,11 @@ export class TimingEventPopup {
             this.timingData.insert(
               this.timingBox.songTiming,
               this.timingBox.event.type,
-              { [data.key]: deserializer(value) },
+              Object.assign(event, {
+                [data.key]: deserializer(value),
+              }),
               this.timingBox.event.beat
-            )
+            ) || this.close()
           })
           this.rows.push({ data: data, el: dropdown })
           ret.push(dropdown.view)
@@ -162,7 +209,7 @@ export class TimingEventPopup {
               this.timingBox.event.type,
               { [data.key]: value },
               this.timingBox.event.beat
-            )
+            ) || this.close()
           })
           this.rows.push({ data: data, el: dropdown })
           ret.push(dropdown.view)
@@ -177,9 +224,11 @@ export class TimingEventPopup {
           this.timingData.insert(
             this.timingBox.songTiming,
             this.timingBox.event.type,
-            { [data.key]: checkbox.checked },
+            Object.assign(event, {
+              [data.key]: checkbox.checked,
+            }),
             this.timingBox.event.beat
-          )
+          ) || this.close()
         }
         this.rows.push({ data: data, el: checkbox })
         ret.push(checkbox)
@@ -219,10 +268,23 @@ export class TimingEventPopup {
     })
   }
   close() {
+    this.persistent = false
     EventHandler.off("timingChanged", this.onTimingChange)
     clearInterval(this.moveInterval)
     this.popup.classList.add("exiting")
     setTimeout(() => this.popup.remove(), 200)
     this.timingBox.popup = undefined
+    TimingEventPopup.activePopup = undefined
+  }
+
+  select() {
+    this.persistent = true
+    this.zoomer!.classList.add("selected")
+    this.editText!.style.transform = "scale(0)"
+    this.editText!.style.height = "0px"
+  }
+
+  detach() {
+    clearInterval(this.moveInterval)
   }
 }

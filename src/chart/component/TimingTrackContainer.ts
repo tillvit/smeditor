@@ -220,7 +220,9 @@ export class TimingTrackContainer extends Container {
       .forEach(child => {
         child.deactivated = true
         child.visible = false
-        child.popup?.close()
+        if (child.popup?.persistent) child.popup.detach()
+        else child.popup?.close()
+        child.popup = undefined
         this.timingBoxMap.delete(child.event)
       })
 
@@ -317,16 +319,24 @@ export class TimingTrackContainer extends Container {
     newChild.backgroundObj!.height = 25
     newChild.zIndex = event.beat
     newChild.interactive = true
-    newChild.popup?.close()
+    if (newChild?.popup?.persistent !== true) newChild.popup?.close()
+    newChild.popup = undefined
     newChild.removeAllListeners!()
     newChild.on!("mouseenter", () => {
+      if (newChild?.popup?.persistent === true) return
       newChild!.popup?.close()
-      newChild!.popup = new TimingEventPopup(
-        newChild as TimingBox,
-        this.renderer.chart.timingData
-      )
+      if (this.renderer.chartManager.getMode() == EditMode.Edit) {
+        new TimingEventPopup(
+          newChild as TimingBox,
+          this.renderer.chart.timingData
+        )
+      }
+    })
+    newChild.on!("click", () => {
+      if (newChild!.popup) newChild!.popup.select()
     })
     newChild.on!("mouseleave", () => {
+      if (newChild?.popup?.persistent === true) return
       newChild!.popup?.close()
     })
     this.timingBoxMap.set(event, newChild as TimingBox)

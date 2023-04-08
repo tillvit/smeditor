@@ -209,7 +209,48 @@ export class TimingData {
       case "SCROLLS":
       case "TICKCOUNTS":
       case "LABELS":
+        return properties.type == event.type && event.value == properties.value
       case "SPEEDS":
+        return (
+          properties.type == event.type &&
+          event.value == properties.value &&
+          event.delay == properties.delay &&
+          event.unit == properties.unit
+        )
+      case "TIMESIGNATURES":
+        return (
+          properties.type == event.type &&
+          event.upper == properties.upper &&
+          event.lower == properties.lower
+        )
+      case "COMBOS":
+        return (
+          properties.type == event.type &&
+          event.hitMult == properties.hitMult &&
+          event.missMult == properties.missMult
+        )
+      default:
+        return false
+    }
+  }
+
+  private isSimilar<Event extends TimingEvent>(
+    event: Event,
+    properties: Event
+  ): boolean {
+    if (
+      ["STOPS", "WARPS", "DELAYS", "FAKES", "BGCHANGES", "FGCHANGES"].includes(
+        event.type
+      )
+    )
+      return false
+    if (properties.type != event.type) return false
+    switch (event.type) {
+      case "BPMS":
+      case "SCROLLS":
+      case "TICKCOUNTS":
+      case "SPEEDS":
+      case "LABELS":
         return properties.type == event.type && event.value == properties.value
       case "TIMESIGNATURES":
         return (
@@ -246,7 +287,7 @@ export class TimingData {
       case "ATTACKS":
         return event.value == ""
       case "SPEEDS":
-        return event.value == 1 && event.delay == 0 && event.unit == "B"
+        return false
       case "FGCHANGES":
       case "BGCHANGES":
         return event.file == "" && event.file2 == ""
@@ -283,17 +324,23 @@ export class TimingData {
     const newEvent: Partial<TimingEvent> = { type: type, beat: beat }
     const toDelete: TimingEvent[] = []
     const toAdd: TimingEvent[] = []
-    // Remove old event if same beat
+    Object.assign(newEvent, properties)
+    // Don't do anything if the event isn't changed
+    if (eventOnBeat && this.isDuplicate(newEvent as TimingEvent, eventOnBeat))
+      return
+
     if (eventOnBeat?.beat == beat) {
+      // Remove old event if same beat
       toDelete.push(eventOnBeat)
     }
     //Add new event if it doesn't match the previous one
     const previousEvent = target.getTimingEventAtBeat(type, beat - 0.001)
-    Object.assign(newEvent, properties)
+
     if (this.isNullEvent(newEvent as TimingEvent)) return
     if (
       !previousEvent ||
-      !this.isDuplicate(previousEvent, newEvent as TimingEvent)
+      !this.isSimilar(previousEvent, newEvent as TimingEvent) ||
+      (eventOnBeat && this.isDuplicate(previousEvent, eventOnBeat))
     ) {
       toAdd.push(newEvent as TimingEvent)
     }
@@ -339,6 +386,8 @@ export class TimingData {
         },
       })
     }
+
+    return toAdd.length > 0
   }
 
   private buildBeatTimingDataCache() {
@@ -781,7 +830,9 @@ export class TimingData {
     if (props.includes("OFFSET"))
       return this.offset ?? this._fallback?.offset ?? 0
     if (props.length == 1 && props[0] in this._cache.events)
-      return this._cache.events[props[0] as TimingEventProperty]
+      return structuredClone(
+        this._cache.events[props[0] as TimingEventProperty]
+      )
     if (this._cache.sortedEvents == undefined) this.buildTimingDataCache()
     const events = this._cache.sortedEvents!.filter(event =>
       props.includes(event.type)

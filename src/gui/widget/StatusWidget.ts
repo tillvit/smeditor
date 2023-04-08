@@ -4,8 +4,8 @@ import { EditMode } from "../../chart/ChartManager"
 import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
 import { isNumericKeyPress, roundDigit } from "../../util/Util"
-import { Dropdown } from "../element/Dropdown"
 import { Icons } from "../Icons"
+import { Dropdown } from "../element/Dropdown"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
 
@@ -41,6 +41,8 @@ export class StatusWidget extends Widget {
   private stepsContainer: HTMLDivElement
   private timingContainer: HTMLDivElement
   private editChoiceContainer: HTMLDivElement
+
+  private addTimingEvent: HTMLButtonElement
 
   private noteArrows: NoteArrow[] = []
   private noteArrowMask: Sprite
@@ -278,6 +280,17 @@ export class StatusWidget extends Widget {
     editStepsIcon.src = Icons.ADD
     this.editSteps.appendChild(editStepsIcon)
     this.editSteps.appendChild(document.createTextNode("Edit Steps"))
+    this.editSteps.onclick = () => {
+      this.visible = true
+      this.manager.chartManager.editingTiming = false
+      this.stepsContainer.style.transform = ""
+      this.timingContainer.style.transform = ""
+      this.trackingMovement = true
+      this.idleFrames = 5
+      this.editSteps.style.background = "rgba(255,255,255,0.35)"
+      this.editTiming.style.background = ""
+    }
+    this.editSteps.style.background = "rgba(255,255,255,0.35)"
 
     this.editTiming = document.createElement("button")
     this.editTiming.classList.add("edit-fancy-button")
@@ -286,8 +299,13 @@ export class StatusWidget extends Widget {
     this.editTiming.appendChild(editTimingIcon)
     this.editTiming.appendChild(document.createTextNode("Edit Timing"))
     this.editTiming.onclick = () => {
-      this.manager.chartManager.editingTiming =
-        !this.manager.chartManager.editingTiming
+      this.manager.chartManager.editingTiming = true
+      this.stepsContainer.style.transform = "translateY(-48px)"
+      this.timingContainer.style.transform = "translateY(-48px)"
+      this.trackingMovement = true
+      this.idleFrames = 5
+      this.editSteps.style.background = ""
+      this.editTiming.style.background = "rgba(255,255,255,0.35)"
     }
 
     const line4 = document.createElement("div")
@@ -311,6 +329,16 @@ export class StatusWidget extends Widget {
     this.timingContainer.classList.add("edit-timing-container")
     this.editChoiceContainer.appendChild(this.stepsContainer)
     this.editChoiceContainer.appendChild(this.timingContainer)
+
+    this.addTimingEvent = document.createElement("button")
+    const addTimingEventIcon = document.createElement("img")
+    addTimingEventIcon.style.height = "36px"
+    addTimingEventIcon.src = Icons.ADD_EVENT
+    this.addTimingEvent.appendChild(addTimingEventIcon)
+    this.addTimingEvent.onclick = () => {
+      this.manager.chartManager.setMode(EditMode.Record)
+    }
+    this.timingContainer.appendChild(this.addTimingEvent)
 
     this.editBar.appendChild(this.editChoiceContainer)
 
@@ -473,6 +501,9 @@ export class StatusWidget extends Widget {
           this.sec.contentEditable = "false"
           this.millis.contentEditable = "false"
           this.beat.contentEditable = "false"
+          if (this.manager.chartManager.editingTiming) {
+            this.visible = false
+          }
           this.view.classList.add("collapsed")
           this.beatDropdown.closeDropdown()
           this.beatDropdown.disabled = true
@@ -488,6 +519,9 @@ export class StatusWidget extends Widget {
           this.sec.contentEditable = "false"
           this.millis.contentEditable = "false"
           this.beat.contentEditable = "false"
+          if (this.manager.chartManager.editingTiming) {
+            this.visible = false
+          }
           this.view.classList.add("collapsed")
           this.beatDropdown.closeDropdown()
           this.beatDropdown.disabled = true
@@ -542,6 +576,9 @@ export class StatusWidget extends Widget {
             if (this.idleFrames < 0) {
               this.trackingMovement = false
               this.lastBounds = undefined
+              if (this.manager.chartManager.editingTiming) {
+                this.visible = false
+              }
             }
           }
         }
