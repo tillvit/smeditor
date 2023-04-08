@@ -165,7 +165,7 @@ export class TimingData {
     const event = target.events[type]![i]
     ActionHistory.instance.run({
       action: () => {
-        target._delete(true, event)
+        target._delete(event)
         target.reloadCache(type)
         if (this != target) this.reloadCache(type)
         EventHandler.emit("timingModified")
@@ -179,12 +179,7 @@ export class TimingData {
     })
   }
 
-  private _delete(songTiming: boolean, event: TimingEvent, doCache?: boolean) {
-    if (!songTiming) {
-      this._fallback!._delete(true, event, doCache)
-      if (doCache ?? true) this.reloadCache(event.type)
-      return
-    }
+  private _delete(event: TimingEvent, doCache?: boolean) {
     if (!this.events[event.type]) return
     const i = this.bindex(event.type, event)
     if (i > -1) {
@@ -235,34 +230,34 @@ export class TimingData {
   }
 
   private isSimilar<Event extends TimingEvent>(
-    event: Event,
-    properties: Event
+    eventA: Event,
+    eventB: Event
   ): boolean {
     if (
       ["STOPS", "WARPS", "DELAYS", "FAKES", "BGCHANGES", "FGCHANGES"].includes(
-        event.type
+        eventA.type
       )
     )
       return false
-    if (properties.type != event.type) return false
-    switch (event.type) {
+    if (eventB.type != eventA.type) return false
+    switch (eventA.type) {
       case "BPMS":
       case "SCROLLS":
       case "TICKCOUNTS":
       case "SPEEDS":
       case "LABELS":
-        return properties.type == event.type && event.value == properties.value
+        return eventB.type == eventA.type && eventA.value == eventB.value
       case "TIMESIGNATURES":
         return (
-          properties.type == event.type &&
-          event.upper == properties.upper &&
-          event.lower == properties.lower
+          eventB.type == eventA.type &&
+          eventA.upper == eventB.upper &&
+          eventA.lower == eventB.lower
         )
       case "COMBOS":
         return (
-          properties.type == event.type &&
-          event.hitMult == properties.hitMult &&
-          event.missMult == properties.missMult
+          eventB.type == eventA.type &&
+          eventA.hitMult == eventB.hitMult &&
+          eventA.missMult == eventB.missMult
         )
       default:
         return false
@@ -358,7 +353,7 @@ export class TimingData {
       ActionHistory.instance.run({
         action: () => {
           for (const event of toDelete) {
-            this._delete(songTiming, event)
+            target._delete(event)
           }
           for (const event of toAdd) {
             target._insert(type, event)
@@ -372,7 +367,7 @@ export class TimingData {
         },
         undo: () => {
           for (const event of toAdd) {
-            this._delete(songTiming, event)
+            target._delete(event)
           }
           for (const event of toDelete) {
             target._insert(type, event)
@@ -386,6 +381,50 @@ export class TimingData {
         },
       })
     }
+  }
+
+  rawDeleteMultiple(events: TimingEvent[]) {
+    for (const event of events) {
+      const songTiming = this.events[event.type]
+      const target = songTiming ? this : this._fallback!
+      event.beat = roundDigit(event.beat!, 3)
+      target._delete(event)
+    }
+  }
+
+  rawInsertMultiple(events: TimingEvent[]) {
+    for (const event of events) {
+      const songTiming = this.events[event.type]
+      const target = songTiming ? this : this._fallback!
+      if (!target.events[event.type]) {
+        if (songTiming) {
+          target.events[event.type] = JSON.parse(
+            JSON.stringify(this._fallback!.events[event.type])
+          )
+        } else {
+          target.events[event.type] = []
+        }
+      }
+      event.beat = roundDigit(event.beat!, 3)
+      target._insert(event.type, event)
+    }
+  }
+
+  findConflicts() {
+    const conflicts = []
+    for (const type of TIMING_EVENT_NAMES) {
+      const events = this.getTimingData(type)
+      if (events.length < 2) continue
+      let lastEvent = events[0]
+      for (let i = 1; i < events.length; i++) {
+        if (this.isSimilar(lastEvent, events[i])) {
+          conflicts.push(events[i])
+        } else {
+          lastEvent = events[i]
+        }
+      }
+    }
+    return conflicts
   }
 
   private buildBeatTimingDataCache() {
@@ -475,6 +514,12 @@ export class TimingData {
       this._cache.effectiveBeatTiming = []
       return
     }
+    if (cache[0].beat != 0)
+      cache.unshift({
+        type: "SCROLLS",
+        beat: 0,
+        value: 1,
+      })
     effBeat = cache[0].beat
     for (let i = 0; i < cache.length - 1; i++) {
       const event = cache[i]

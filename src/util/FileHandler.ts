@@ -17,21 +17,21 @@ export class FileHandler {
     return this._root
   }
 
-  static async init() {
+  static init() {
     if (window.nw) {
-      this._root = await getOriginPrivateDirectory(
+      getOriginPrivateDirectory(
         import("./node-adapter/NodeAdapter.js"),
         "/"
-      )
+      ).then(root => (this._root = root))
       this.persistentFiles = true
     } else {
       if (support.adapter.native && !getBrowser().includes("Safari")) {
-        this._root = await getOriginPrivateDirectory()
+        getOriginPrivateDirectory().then(root => (this._root = root))
         this.persistentFiles = true
       } else {
-        this._root = await getOriginPrivateDirectory(
+        getOriginPrivateDirectory(
           import("file-system-access/lib/adapters/memory.js")
-        )
+        ).then(root => (this._root = root))
       }
     }
     // this._root = await getOriginPrivateDirectory(

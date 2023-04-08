@@ -1,9 +1,15 @@
-import { BitmapText, Container, Sprite, Texture } from "pixi.js"
+import {
+  BitmapText,
+  Container,
+  FederatedMouseEvent,
+  Sprite,
+  Texture,
+} from "pixi.js"
 import { TimingEventPopup } from "../../gui/element/TimingEventPopup"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
 import { destroyChildIf, roundDigit } from "../../util/Util"
-import { EditMode } from "../ChartManager"
+import { EditMode, EditTimingMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { TimingEvent } from "../sm/TimingTypes"
 import { TIMING_EVENT_COLORS } from "./TimingAreaContainer"
@@ -33,12 +39,12 @@ interface TimingRow {
   rightOffset: number
 }
 
-const timingNumbers = {
+export const timingNumbers = {
   fontName: "Main",
   fontSize: 15,
 }
 
-const TIMING_TRACK_WIDTHS: { [key: string]: number } = {
+export const TIMING_TRACK_WIDTHS: { [key: string]: number } = {
   BPMS: 55,
   STOPS: 55,
   DELAYS: 55,
@@ -127,7 +133,7 @@ export class TimingTrackContainer extends Container {
       x += TIMING_TRACK_WIDTHS[type]
     }
     const editingTiming =
-      this.renderer.chartManager.editingTiming &&
+      this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
       this.renderer.chartManager.getMode() == EditMode.Edit
     for (const track of this.tracks.children) {
       if (!editingTiming) track.targetAlpha = 0
@@ -324,6 +330,7 @@ export class TimingTrackContainer extends Container {
     newChild.removeAllListeners!()
     newChild.on!("mouseenter", () => {
       if (newChild?.popup?.persistent === true) return
+      if (this.renderer.chartManager.eventSelection.shift) return
       newChild!.popup?.close()
       if (this.renderer.chartManager.getMode() == EditMode.Edit) {
         new TimingEventPopup(
@@ -332,12 +339,88 @@ export class TimingTrackContainer extends Container {
         )
       }
     })
-    newChild.on!("click", () => {
-      if (newChild!.popup) newChild!.popup.select()
-    })
     newChild.on!("mouseleave", () => {
       if (newChild?.popup?.persistent === true) return
       newChild!.popup?.close()
+    })
+    newChild.on!("destroyed", () => {
+      newChild!.removeAllListeners!()
+    })
+    let initalPosY = 0
+    let movedEvent: TimingEvent | undefined
+
+    const moveHandler = (event: FederatedMouseEvent) => {
+      const timingEvent = movedEvent!
+      const position = this.toLocal(event.global)
+      newChild!.alpha = this.renderer.chartManager.eventSelection.shift ? 0 : 1
+      if (Math.abs(position.y - initalPosY) < 32) {
+        if (this.renderer.chartManager.eventSelection.shift) {
+          this.renderer.chartManager.eventSelection.shift = {
+            beatShift: 0,
+          }
+        }
+        return
+      }
+      newChild?.popup?.close()
+      const newBeat = this.renderer.getBeatFromYPos(position.y)
+      const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
+      let snapBeat = Math.round(newBeat / snap) * snap
+      if (
+        Math.abs(snapBeat - newBeat) > Math.abs(newBeat - timingEvent.beat!)
+      ) {
+        snapBeat = timingEvent.beat!
+      }
+      this.renderer.chartManager.eventSelection.shift ||= {
+        beatShift: 0,
+      }
+      this.renderer.chartManager.eventSelection.shift.beatShift = Math.max(
+        -Math.min(
+          ...this.renderer.chartManager.eventSelection.timingEvents.map(
+            event => event.beat!
+          )
+        ),
+        snapBeat - timingEvent.beat!
+      )
+    }
+    newChild.on!("mousedown", event => {
+      if (newChild!.popup) newChild!.popup.select()
+      event.stopImmediatePropagation()
+      if (
+        this.renderer.chartManager.eventSelection.timingEvents.includes(
+          newChild!.event!
+        )
+      ) {
+        if (event.getModifierState("Control") || event.getModifierState("Meta"))
+          this.renderer.chartManager.eventSelection.timingEvents.includes(
+            newChild!.event!
+          )
+      } else {
+        if (
+          !event.getModifierState("Control") &&
+          !event.getModifierState("Meta") &&
+          !event.getModifierState("Shift")
+        )
+          this.renderer.chartManager.clearEventSelection()
+        this.renderer.chartManager.addEventToSelection(newChild!.event!)
+      }
+      initalPosY = newChild!.y!
+      movedEvent = newChild!.event!
+      this.renderer.on("mousemove", moveHandler)
+      const mouseUp = () => {
+        this.renderer.off("mousemove", moveHandler)
+        this.renderer.off("mouseup", mouseUp)
+        newChild!.alpha = 1
+        // if (
+        //   (this.renderer.chartManager.eventSelection.shift?.beatShift ?? 0) != 0
+        // )
+        //   this.renderer.chartManager.modifyEventSelection(event => {
+        //     event.beat! +=
+        //       this.renderer.chartManager.eventSelection.shift!.beatShift
+        //     return event
+        //   })
+        this.renderer.chartManager.eventSelection.shift = undefined
+      }
+      this.renderer.on("mouseup", mouseUp)
     })
     this.timingBoxMap.set(event, newChild as TimingBox)
     return newChild as TimingBox

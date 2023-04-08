@@ -57,7 +57,14 @@ interface Selection {
     beatShift: number
   }
   inProgressNotes: Notedata
+}
+
+interface EventSelection {
+  shift?: {
+    beatShift: number
+  }
   timingEvents: TimingEvent[]
+  inProgressTimingEvents: TimingEvent[]
 }
 
 export enum EditMode {
@@ -65,6 +72,12 @@ export enum EditMode {
   Edit = "Edit Mode",
   Play = "Play Mode",
   Record = "Record Mode",
+}
+
+export enum EditTimingMode {
+  Off,
+  Edit,
+  Add,
 }
 
 export class ChartManager {
@@ -98,10 +111,14 @@ export class ChartManager {
   selection: Selection = {
     notes: [],
     inProgressNotes: [],
-    timingEvents: [],
   }
 
-  editingTiming = false
+  eventSelection: EventSelection = {
+    timingEvents: [],
+    inProgressTimingEvents: [],
+  }
+
+  editTimingMode = EditTimingMode.Off
 
   private beat = 0
   private time = 0
@@ -611,6 +628,7 @@ export class ChartManager {
 
     this.noChartTextA.visible = true
     this.noChartTextB.visible = true
+    this.editTimingMode = EditTimingMode.Off
 
     EventHandler.emit("smLoaded")
     await this.loadChart()
@@ -668,6 +686,7 @@ export class ChartManager {
 
     // Load the chart
     this.clearSelection()
+    this.clearEventSelection()
     this.loadedChart = chart
     this.beat = this.loadedChart.getBeatFromSeconds(this.time)
     ActionHistory.instance.reset()
@@ -1266,7 +1285,18 @@ export class ChartManager {
     this.selection = {
       notes: [],
       inProgressNotes: [],
+    }
+  }
+
+  /**
+   * Clears the current event selection
+   *
+   * @memberof ChartManager
+   */
+  clearEventSelection() {
+    this.eventSelection = {
       timingEvents: [],
+      inProgressTimingEvents: [],
     }
   }
 
@@ -1277,6 +1307,16 @@ export class ChartManager {
   endDragSelection() {
     this.selection.notes = this.selection.notes.concat(
       this.selection.inProgressNotes
+    )
+  }
+
+  startDragEventSelection() {
+    this.eventSelection.inProgressTimingEvents = []
+  }
+
+  endDragEventSelection() {
+    this.eventSelection.timingEvents = this.eventSelection.timingEvents.concat(
+      this.eventSelection.inProgressTimingEvents
     )
   }
 
@@ -1301,7 +1341,7 @@ export class ChartManager {
   }
 
   addEventToSelection(event: TimingEvent) {
-    this.selection.timingEvents.push(event)
+    this.eventSelection.timingEvents.push(event)
   }
 
   selectRegion() {
@@ -1312,6 +1352,7 @@ export class ChartManager {
     }
     if (!this.startRegion) {
       this.clearSelection()
+      this.clearEventSelection()
       this.startRegion = this.beat
       return
     }
@@ -1381,6 +1422,54 @@ export class ChartManager {
         this.loadedChart!.removeNotes(newNotes)
         this.loadedChart!.addNotes(conflictingNotes)
         this.selection.notes = this.loadedChart!.addNotes(removedNotes)
+      },
+    })
+  }
+
+  modifyEventSelection(modify: (note: TimingEvent) => TimingEvent) {
+    if (!this.loadedChart) return
+    const timingData = this.loadedChart.timingData
+    const removedEvents = this.eventSelection.timingEvents
+    const newEvents = structuredClone(this.eventSelection.timingEvents).map(
+      modify
+    )
+    if (newEvents.length == 0) return
+
+    let conflicts: TimingEvent[] = []
+    this.app.actionHistory.run({
+      action: () => {
+        timingData.rawDeleteMultiple(removedEvents)
+        timingData.rawInsertMultiple(newEvents)
+        conflicts = timingData.findConflicts()
+        timingData.rawDeleteMultiple(conflicts)
+        this.eventSelection.timingEvents = newEvents
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (newEvents.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+      undo: () => {
+        timingData.rawInsertMultiple(conflicts)
+        timingData.rawDeleteMultiple(newEvents)
+        timingData.rawInsertMultiple(removedEvents)
+        this.eventSelection.timingEvents = removedEvents
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (newEvents.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+      redo: () => {
+        timingData.rawDeleteMultiple(removedEvents)
+        timingData.rawInsertMultiple(newEvents)
+        timingData.rawDeleteMultiple(conflicts)
+        this.eventSelection.timingEvents = newEvents
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (newEvents.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
       },
     })
   }

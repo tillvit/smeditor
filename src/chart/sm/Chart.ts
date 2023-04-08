@@ -1,20 +1,20 @@
 import { EventHandler } from "../../util/EventHandler"
 import { bsearch } from "../../util/Util"
 import { GameType, GameTypeRegistry } from "../gameTypes/GameTypeRegistry"
-import { ChartDifficulty, CHART_DIFFICULTIES } from "./ChartTypes"
+import { CHART_DIFFICULTIES, ChartDifficulty } from "./ChartTypes"
 import {
-  isHoldNote,
   Notedata,
   NotedataEntry,
   NotedataStats,
   PartialNotedataEntry,
+  isHoldNote,
 } from "./NoteTypes"
 import { Simfile } from "./Simfile"
 import { TimingData } from "./TimingData"
 import {
+  TIMING_EVENT_NAMES,
   TimingEventProperty,
   TimingProperty,
-  TIMING_EVENT_NAMES,
 } from "./TimingTypes"
 
 export class Chart {

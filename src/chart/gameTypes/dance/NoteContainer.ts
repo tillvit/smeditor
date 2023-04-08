@@ -101,11 +101,6 @@ export class NoteContainer extends Container {
       if (inSelection && !inSelectionBounds) {
         this.renderer.chartManager.removeNoteFromDragSelection(note)
       }
-      if (this.renderer.chartManager.selection.shift && inSelection) {
-        arrow.visible = false
-      } else {
-        arrow.visible = true
-      }
     }
 
     DanceNoteTexture.setArrowTexTime(beat, time)

@@ -1,6 +1,6 @@
 import { Parser } from "expr-eval"
 import { Container, Sprite, Texture } from "pixi.js"
-import { EditMode } from "../../chart/ChartManager"
+import { EditMode, EditTimingMode } from "../../chart/ChartManager"
 import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
 import { isNumericKeyPress, roundDigit } from "../../util/Util"
@@ -50,6 +50,7 @@ export class StatusWidget extends Widget {
   private lastTime = 0
   private lastBeat = 0
   private lastMode = EditMode.Edit
+  private lastTimingMode = EditTimingMode.Off
   private lastHover = 0
   private lastPlaying = false
   private hovering = false
@@ -281,14 +282,7 @@ export class StatusWidget extends Widget {
     this.editSteps.appendChild(editStepsIcon)
     this.editSteps.appendChild(document.createTextNode("Edit Steps"))
     this.editSteps.onclick = () => {
-      this.visible = true
-      this.manager.chartManager.editingTiming = false
-      this.stepsContainer.style.transform = ""
-      this.timingContainer.style.transform = ""
-      this.trackingMovement = true
-      this.idleFrames = 5
-      this.editSteps.style.background = "rgba(255,255,255,0.15)"
-      this.editTiming.style.background = ""
+      this.manager.chartManager.editTimingMode = EditTimingMode.Off
     }
     this.editSteps.style.background = "rgba(255,255,255,0.15)"
 
@@ -299,13 +293,7 @@ export class StatusWidget extends Widget {
     this.editTiming.appendChild(editTimingIcon)
     this.editTiming.appendChild(document.createTextNode("Edit Timing"))
     this.editTiming.onclick = () => {
-      this.manager.chartManager.editingTiming = true
-      this.stepsContainer.style.transform = "translateY(-48px)"
-      this.timingContainer.style.transform = "translateY(-48px)"
-      this.trackingMovement = true
-      this.idleFrames = 5
-      this.editSteps.style.background = ""
-      this.editTiming.style.background = "rgba(255,255,255,0.15)"
+      this.manager.chartManager.editTimingMode = EditTimingMode.Edit
     }
 
     const line4 = document.createElement("div")
@@ -332,11 +320,13 @@ export class StatusWidget extends Widget {
 
     this.addTimingEvent = document.createElement("button")
     const addTimingEventIcon = document.createElement("img")
-    addTimingEventIcon.style.height = "36px"
+    addTimingEventIcon.style.height = "32px"
     addTimingEventIcon.src = Icons.ADD_EVENT
     this.addTimingEvent.appendChild(addTimingEventIcon)
     this.addTimingEvent.onclick = () => {
-      this.manager.chartManager.setMode(EditMode.Record)
+      if (this.manager.chartManager.editTimingMode == EditTimingMode.Add)
+        this.manager.chartManager.editTimingMode = EditTimingMode.Edit
+      else this.manager.chartManager.editTimingMode = EditTimingMode.Add
     }
     this.timingContainer.appendChild(this.addTimingEvent)
 
@@ -471,6 +461,7 @@ export class StatusWidget extends Widget {
     }
 
     const mode = this.manager.chartManager.getMode()
+    const timingMode = this.manager.chartManager.editTimingMode
     if (this.lastMode != mode) {
       switch (mode) {
         case EditMode.Edit:
@@ -501,7 +492,7 @@ export class StatusWidget extends Widget {
           this.sec.contentEditable = "false"
           this.millis.contentEditable = "false"
           this.beat.contentEditable = "false"
-          if (this.manager.chartManager.editingTiming) {
+          if (timingMode != EditTimingMode.Off) {
             this.visible = false
           }
           this.view.classList.add("collapsed")
@@ -519,7 +510,7 @@ export class StatusWidget extends Widget {
           this.sec.contentEditable = "false"
           this.millis.contentEditable = "false"
           this.beat.contentEditable = "false"
-          if (this.manager.chartManager.editingTiming) {
+          if (timingMode != EditTimingMode.Off) {
             this.visible = false
           }
           this.view.classList.add("collapsed")
@@ -529,6 +520,34 @@ export class StatusWidget extends Widget {
       this.trackingMovement = true
       this.idleFrames = 5
       this.lastMode = mode
+    }
+
+    if (this.lastTimingMode != timingMode) {
+      switch (timingMode) {
+        case EditTimingMode.Off:
+          this.visible = true
+          this.stepsContainer.style.transform = ""
+          this.timingContainer.style.transform = ""
+          this.editSteps.style.background = "rgba(255,255,255,0.15)"
+          this.editTiming.style.background = ""
+          break
+        case EditTimingMode.Add:
+          this.addTimingEvent.style.background = "rgba(255,255,255,0.15)"
+          break
+        case EditTimingMode.Edit:
+          this.addTimingEvent.style.background = ""
+      }
+      this.trackingMovement = true
+      this.idleFrames = 5
+      this.lastTimingMode = timingMode
+      this.stepsContainer.style.transform =
+        timingMode == EditTimingMode.Off ? "" : "translateY(-48px)"
+      this.timingContainer.style.transform =
+        timingMode == EditTimingMode.Off ? "" : "translateY(-48px)"
+      this.editSteps.style.background =
+        timingMode == EditTimingMode.Off ? "rgba(255,255,255,0.15)" : ""
+      this.editTiming.style.background =
+        timingMode == EditTimingMode.Off ? "" : "rgba(255,255,255,0.15)"
     }
 
     const playing = this.manager.chartManager.chartAudio.isPlaying()
@@ -576,7 +595,7 @@ export class StatusWidget extends Widget {
             if (this.idleFrames < 0) {
               this.trackingMovement = false
               this.lastBounds = undefined
-              if (this.manager.chartManager.editingTiming) {
+              if (timingMode != EditTimingMode.Off) {
                 this.visible = false
               }
             }
