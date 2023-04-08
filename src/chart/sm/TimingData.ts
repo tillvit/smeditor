@@ -684,7 +684,7 @@ export class TimingData {
     const i = this.searchCache(cache, "measure", measure)
     const event = cache[i]
     const deltaMeasure = measure - event.measure
-    return event.measure + deltaMeasure * event.beatsPerMeasure
+    return event.beat + deltaMeasure * event.beatsPerMeasure
   }
 
   getDivisionOfMeasure(beat: number): number {

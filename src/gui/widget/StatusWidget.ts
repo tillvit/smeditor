@@ -287,10 +287,10 @@ export class StatusWidget extends Widget {
       this.timingContainer.style.transform = ""
       this.trackingMovement = true
       this.idleFrames = 5
-      this.editSteps.style.background = "rgba(255,255,255,0.35)"
+      this.editSteps.style.background = "rgba(255,255,255,0.15)"
       this.editTiming.style.background = ""
     }
-    this.editSteps.style.background = "rgba(255,255,255,0.35)"
+    this.editSteps.style.background = "rgba(255,255,255,0.15)"
 
     this.editTiming = document.createElement("button")
     this.editTiming.classList.add("edit-fancy-button")
@@ -305,7 +305,7 @@ export class StatusWidget extends Widget {
       this.trackingMovement = true
       this.idleFrames = 5
       this.editSteps.style.background = ""
-      this.editTiming.style.background = "rgba(255,255,255,0.35)"
+      this.editTiming.style.background = "rgba(255,255,255,0.15)"
     }
 
     const line4 = document.createElement("div")
