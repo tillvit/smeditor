@@ -390,6 +390,7 @@ export class TimingData {
       event.beat = roundDigit(event.beat!, 3)
       target._delete(event)
     }
+    this.reloadCache()
   }
 
   rawInsertMultiple(events: TimingEvent[]) {
@@ -408,6 +409,7 @@ export class TimingData {
       event.beat = roundDigit(event.beat!, 3)
       target._insert(event.type, event)
     }
+    this.reloadCache()
   }
 
   findConflicts() {
@@ -534,7 +536,7 @@ export class TimingData {
   private buildMeasureTimingCache() {
     const timeSigs = this.getTimingData("TIMESIGNATURES")
     if (timeSigs.length == 0 || timeSigs[0].beat != 0) {
-      timeSigs.push({ type: "TIMESIGNATURES", beat: 0, lower: 4, upper: 4 })
+      timeSigs.unshift({ type: "TIMESIGNATURES", beat: 0, lower: 4, upper: 4 })
     }
     const cache = []
     let measure = 0
@@ -1065,5 +1067,89 @@ export class TimingData {
     }
     if (str.includes(",")) str += "\n"
     return "#" + prop + ":" + str + ";\n"
+  }
+
+  getDefaultEvent(type: TimingEventProperty, beat: number): TimingEvent {
+    switch (type) {
+      case "BPMS":
+        return {
+          type,
+          beat,
+          value: 120,
+        }
+      case "STOPS":
+      case "WARPS":
+      case "DELAYS":
+      case "FAKES":
+        return {
+          type,
+          beat,
+          value: 0,
+        }
+      case "LABELS":
+        return {
+          type,
+          beat,
+          value: "",
+        }
+      case "SPEEDS":
+        return {
+          type,
+          beat,
+          value: 1,
+          delay: 0,
+          unit: "B",
+        }
+      case "SCROLLS":
+        return {
+          type,
+          beat,
+          value: 1,
+        }
+      case "TICKCOUNTS":
+        return {
+          type,
+          beat,
+          value: 4,
+        }
+      case "TIMESIGNATURES":
+        return {
+          type,
+          beat,
+          upper: 4,
+          lower: 4,
+        }
+      case "COMBOS":
+        return {
+          type,
+          beat,
+          hitMult: 1,
+          missMult: 1,
+        }
+      case "ATTACKS":
+        return {
+          type,
+          second: this.getSecondsFromBeat(beat),
+          endType: "LEN",
+          value: 1,
+          mods: "",
+        }
+      case "BGCHANGES":
+      case "FGCHANGES":
+        return {
+          type,
+          beat,
+          file: "",
+          updateRate: 1,
+          crossFade: false,
+          stretchRewind: false,
+          stretchNoLoop: false,
+          effect: "",
+          file2: "",
+          transition: "",
+          color1: "",
+          color2: "",
+        }
+    }
   }
 }

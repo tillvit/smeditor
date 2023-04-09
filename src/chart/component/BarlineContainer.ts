@@ -82,7 +82,7 @@ export class BarlineContainer extends Container {
       // go to next beat
       barBeat += divisionLength
       // have we new time sig ???
-      if (timeSigIndex != -1 && barBeat >= timeSigs[timeSigIndex + 1]?.beat) {
+      if (barBeat >= timeSigs[timeSigIndex + 1]?.beat) {
         // console.log("new time sig")
         timeSigIndex++
         // go to start of new sig

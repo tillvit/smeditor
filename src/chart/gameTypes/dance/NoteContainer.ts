@@ -94,6 +94,8 @@ export class NoteContainer extends Container {
       arrow.selection.alpha = inSelection
         ? Math.sin(Date.now() / 320) * 0.1 + 0.3
         : 0
+      arrow.visible =
+        !inSelection || !this.renderer.chartManager.selection.shift
       const inSelectionBounds = this.renderer.selectionTest(arrow)
       if (!inSelection && inSelectionBounds) {
         this.renderer.chartManager.addNoteToDragSelection(note)

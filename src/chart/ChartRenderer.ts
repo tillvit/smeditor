@@ -141,13 +141,18 @@ export class ChartRenderer extends Container {
 
     this.on("mousedown", event => {
       if (this.chartManager.getMode() == EditMode.Play) return
-      // Start selecting
       if (
+        this.chartManager.editTimingMode == EditTimingMode.Add &&
+        this.lastMousePos
+      ) {
+        this.timingTracks.placeGhostEvent()
+      } else if (
         Options.general.mousePlacement &&
         this.lastMouseBeat != -1 &&
         this.lastMouseCol != -1 &&
         !event.getModifierState("Shift")
       ) {
+        // Place a note
         this.chartManager.clearSelection()
         this.chartManager.clearEventSelection()
         this.editingCol = this.lastMouseCol
@@ -157,6 +162,7 @@ export class ChartRenderer extends Container {
           this.lastMouseBeat
         )
       } else {
+        // Start selecting
         if (
           !event.getModifierState("Control") &&
           !event.getModifierState("Meta") &&
@@ -331,6 +337,14 @@ export class ChartRenderer extends Container {
           })
         }
       }
+    }
+
+    // Move the ghost event when adding events
+    if (
+      this.lastMousePos &&
+      this.chartManager.editTimingMode == EditTimingMode.Add
+    ) {
+      this.timingTracks.setGhostEvent(this.lastMousePos)
     }
   }
 
@@ -585,11 +599,6 @@ export class ChartRenderer extends Container {
     const moveHandler = (event: FederatedMouseEvent) => {
       const note = movedNote!
       const position = this.toLocal(event.global)
-      if (this.chartManager.selection.shift) {
-        newChild.visible = false
-      } else {
-        newChild.visible = true
-      }
       if (
         Math.abs(position.y - initalPosY) ** 2 +
           Math.abs(position.x - initalPosX) ** 2 <

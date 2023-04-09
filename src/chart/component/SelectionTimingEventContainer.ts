@@ -77,8 +77,6 @@ export class SelectionTimingEventContainer extends Container {
 
       timingBox.backgroundObj.position.y = Options.chart.reverse ? -14 : -11
       timingBox.textObj.scale.y = Options.chart.reverse ? -1 : 1
-      // arrow.y = yPos
-      // arrow.selection.alpha = Math.sin(Date.now() / 320) * 0.1 + 0.3
     }
 
     this.children

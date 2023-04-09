@@ -1,6 +1,7 @@
 import { Parser } from "expr-eval"
 import { Container, Sprite, Texture } from "pixi.js"
 import { EditMode, EditTimingMode } from "../../chart/ChartManager"
+import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
 import { isNumericKeyPress, roundDigit } from "../../util/Util"
@@ -13,6 +14,7 @@ interface NoteArrow {
   element: HTMLButtonElement
   sprite: Container
   bg: Sprite
+  highlight: BetterRoundedRect
   type: string
   hovered: boolean
 }
@@ -346,6 +348,7 @@ export class StatusWidget extends Widget {
       this.noteArrows.forEach(noteArrow => {
         this.removeChild(noteArrow.sprite)
         this.removeChild(noteArrow.bg)
+        this.removeChild(noteArrow.highlight)
       })
       this.noteArrows = []
       const rightPlaceholder = document.createElement("div")
@@ -368,6 +371,12 @@ export class StatusWidget extends Widget {
         bg.width = 48
         bg.height = 48
         bg.anchor.set(0.5)
+        const highlight = new BetterRoundedRect("noBorder")
+        highlight.alpha = 0
+        highlight.width = 48
+        highlight.height = 48
+        highlight.pivot.x = 24
+        highlight.pivot.y = 24
         const element = document.createElement("button")
         element.style.height = "48px"
         element.style.width = "48px"
@@ -375,7 +384,14 @@ export class StatusWidget extends Widget {
         element.onclick = () => {
           this.manager.chartManager.setEditingNoteType(type)
         }
-        const noteArrow = { element, sprite, type, bg, hovered: false }
+        const noteArrow = {
+          element,
+          sprite,
+          type,
+          bg,
+          highlight,
+          hovered: false,
+        }
         element.onmouseover = () => {
           noteArrow.hovered = true
         }
@@ -384,6 +400,7 @@ export class StatusWidget extends Widget {
         }
         this.addChild(bg)
         this.addChild(sprite)
+        this.addChild(highlight)
         const bound = element.getBoundingClientRect()
         sprite.position.y =
           bound.top -
@@ -585,6 +602,7 @@ export class StatusWidget extends Widget {
             24 +
             index * 48
           noteArrow.bg.position = noteArrow.sprite.position
+          noteArrow.highlight.position = noteArrow.sprite.position
         })
         if (this.lastBounds) {
           const delta =
@@ -613,12 +631,12 @@ export class StatusWidget extends Widget {
     const noteType = this.manager.chartManager.getEditingNoteType()
     this.noteArrows.forEach(arrow => {
       if (Options.general.smoothAnimations) {
-        const target = noteType == arrow.type ? 1 : arrow.hovered ? 0.4 : 0.2
-        arrow.sprite.alpha =
-          (target - arrow.sprite.alpha) * 0.3 + arrow.sprite.alpha
+        const target = noteType == arrow.type ? 0.15 : arrow.hovered ? 0.05 : 0
+        arrow.highlight.alpha =
+          (target - arrow.highlight.alpha) * 0.3 + arrow.highlight.alpha
       } else {
-        arrow.sprite.alpha =
-          noteType == arrow.type ? 1 : arrow.hovered ? 0.4 : 0.2
+        arrow.highlight.alpha =
+          noteType == arrow.type ? 0.15 : arrow.hovered ? 0.05 : 0
       }
     })
   }
