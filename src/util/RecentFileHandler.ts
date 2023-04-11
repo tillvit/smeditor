@@ -31,10 +31,11 @@ export class RecentFileHandler {
           path: entry.path,
         })
       }
-      this.saveEntries()
     } catch {
+      console.log("failed to load entries")
       return
     }
+    this.saveEntries()
   }
 
   public static getRecents() {
@@ -57,14 +58,15 @@ export class RecentFileHandler {
     this.model.splice(15)
   }
 
-  private static saveEntries() {
+  private static async saveEntries() {
     this.limitEntries()
-    this._model = this._model!.filter(entry => {
-      return FileHandler.getFileHandle(entry.path).then(file => {
-        if (file == undefined) return false
-        return true
+    const results = await Promise.all(
+      this._model!.map(async entry => {
+        const fh = await FileHandler.getFileHandle(entry.path)
+        return fh !== undefined
       })
-    })
+    )
+    this._model = this._model!.filter((_v, index) => results[index])
     localStorage.setItem("recentFiles", JSON.stringify(this._model))
   }
 }
