@@ -444,6 +444,7 @@ export class ChartManager {
     window.addEventListener(
       "keydown",
       (event: KeyboardEvent) => {
+        const keyName = Keybinds.getKeyNameFromCode(event.code)
         if (this.mode != EditMode.Edit) return
         if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
         if (event.target instanceof HTMLTextAreaElement) return
@@ -465,7 +466,6 @@ export class ChartManager {
           }
         }
         if (!this.holdEditing.every(x => x == undefined)) {
-          const keyName = Keybinds.getKeyNameFromCode(event.code)
           // Override any move+key combos when editing a hold
           const keybinds = [
             "cursorUp",
@@ -1424,11 +1424,13 @@ export class ChartManager {
     this.app.actionHistory.run({
       action: () => {
         this.loadedChart!.removeNotes(removedNotes.concat(conflictingNotes))
+        this.clearSelections()
         this.selection.notes = this.loadedChart!.addNotes(newNotes)
       },
       undo: () => {
         this.loadedChart!.removeNotes(newNotes)
         this.loadedChart!.addNotes(conflictingNotes)
+        this.clearSelections()
         this.selection.notes = this.loadedChart!.addNotes(removedNotes)
       },
     })
@@ -1450,6 +1452,7 @@ export class ChartManager {
         timingData.rawInsertMultiple(newEvents)
         conflicts = timingData.findConflicts()
         timingData.rawDeleteMultiple(conflicts)
+        this.clearSelections()
         this.eventSelection.timingEvents = newEvents
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
@@ -1461,6 +1464,7 @@ export class ChartManager {
         timingData.rawInsertMultiple(conflicts)
         timingData.rawDeleteMultiple(newEvents)
         timingData.rawInsertMultiple(removedEvents)
+        this.clearSelections()
         this.eventSelection.timingEvents = removedEvents
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
@@ -1472,6 +1476,7 @@ export class ChartManager {
         timingData.rawDeleteMultiple(removedEvents)
         timingData.rawInsertMultiple(newEvents)
         timingData.rawDeleteMultiple(conflicts)
+        this.clearSelections()
         this.eventSelection.timingEvents = newEvents
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
@@ -1539,13 +1544,13 @@ export class ChartManager {
   paste(data: string) {
     if (!this.loadedChart) return
     if (data.startsWith("ArrowVortex:notes:")) {
-      this.pasteNotes(data) || this.pasteNotes(this.virtualClipboard)
+      if (!this.pasteNotes(data)) this.pasteNotes(this.virtualClipboard)
     }
     if (
       data.startsWith("ArrowVortex:tempo:") ||
       data.startsWith("SMEditor:tempo:")
     ) {
-      this.pasteTempo(data) || this.pasteTempo(this.virtualClipboard)
+      if (!this.pasteTempo(data)) this.pasteTempo(this.virtualClipboard)
       return
     }
   }
@@ -1595,11 +1600,13 @@ export class ChartManager {
     this.app.actionHistory.run({
       action: () => {
         this.loadedChart!.removeNotes(conflictingNotes)
+        this.clearSelections()
         this.selection.notes = this.loadedChart!.addNotes(notes)
       },
       undo: () => {
         this.loadedChart!.removeNotes(notes)
         this.loadedChart!.addNotes(conflictingNotes)
+        this.clearSelections()
       },
     })
     return true
@@ -1610,55 +1617,50 @@ export class ChartManager {
     const events = decodeTempo(data)
     console.log(events)
     if (!events) return false
+    if (events.length == 0) return false
+
+    const timingData = this.loadedChart.timingData
+    let conflicts: TimingEvent[] = []
+    events.forEach(event => {
+      if (event.type == "ATTACKS") event.second += this.time
+      else event.beat += this.beat
+    })
+    this.app.actionHistory.run({
+      action: () => {
+        timingData.rawInsertMultiple(events)
+        conflicts = timingData.findConflicts()
+        timingData.rawDeleteMultiple(conflicts)
+        this.clearSelections()
+        this.eventSelection.timingEvents = events
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (events.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+      undo: () => {
+        timingData.rawInsertMultiple(conflicts)
+        timingData.rawDeleteMultiple(events)
+        this.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (events.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+      redo: () => {
+        timingData.rawInsertMultiple(events)
+        timingData.rawDeleteMultiple(conflicts)
+        this.clearSelections()
+        this.eventSelection.timingEvents = events
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (events.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+    })
     return true
-    // if (notes.length == 0) return
-    // notes
-    //   .map(note => {
-    //     note.beat += this.beat
-    //     note.beat = Math.round(note.beat * 48) / 48
-    //     return note
-    //   })
-    //   .sort((a, b) => {
-    //     if (a.beat == b.beat) return a.col - b.col
-    //     return a.beat - b.beat
-    //   })
-    // const notedata = this.loadedChart.getNotedata()
-    // let startIndex = bsearch(notedata, notes[0].beat, note => note.beat)
-    // const conflictingNotes: NotedataEntry[] = []
-    // for (const newNote of notes) {
-    //   let latestNoteIndex = startIndex
-    //   const isHold = isHoldNote(newNote)
-    //   while (
-    //     notedata[startIndex] &&
-    //     notedata[startIndex].beat <= newNote.beat + (isHold ? newNote.hold : 0)
-    //   ) {
-    //     const note = notedata[startIndex]
-    //     startIndex++
-    //     if (note.beat < newNote.beat) latestNoteIndex = startIndex
-    //     if (note.col != newNote.col) continue
-    //     if (note.beat == newNote.beat) {
-    //       conflictingNotes.push(note)
-    //     }
-    //     if (
-    //       isHold &&
-    //       note.beat > newNote.beat &&
-    //       note.beat <= newNote.beat + newNote.hold
-    //     ) {
-    //       conflictingNotes.push(note)
-    //     }
-    //   }
-    //   startIndex = latestNoteIndex
-    // }
-    // this.app.actionHistory.run({
-    //   action: () => {
-    //     this.loadedChart!.removeNotes(conflictingNotes)
-    //     this.selection.notes = this.loadedChart!.addNotes(notes)
-    //   },
-    //   undo: () => {
-    //     this.loadedChart!.removeNotes(notes)
-    //     this.loadedChart!.addNotes(conflictingNotes)
-    //   },
-    // })
   }
 
   copy(): string | undefined {

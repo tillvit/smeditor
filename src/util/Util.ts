@@ -594,7 +594,6 @@ export function encodeAVTempo(events: TimingEvent[]): string {
     }
   }
   bytes.push(0)
-  console.log(bytes)
   return (
     "ArrowVortex:tempo:" +
     a85encode(bytes)
@@ -766,7 +765,6 @@ export function decodeAVTempo(data: string): TimingEvent[] | undefined {
 export function decodeSMETempo(data: string): TimingEvent[] | undefined {
   if (!data.startsWith("SMEditor:tempo:")) return
   const decoded = a85decode(data.slice(15))
-  console.log(decoded)
   const eventList: TimingEvent[] = []
   if (decoded === false) return
   const bytes = Array.from(decoded)

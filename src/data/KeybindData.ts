@@ -850,8 +850,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   },
   paste: {
     label: "Paste",
-    keybinds: [{ key: "V", mods: [DEF_MOD] }],
-    preventDefault: false,
+    keybinds: [],
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit,
@@ -862,8 +861,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   },
   copy: {
     label: "Copy",
-    keybinds: [{ key: "C", mods: [DEF_MOD] }],
-    preventDefault: false,
+    keybinds: [],
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit,
@@ -874,8 +872,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   },
   cut: {
     label: "Cut",
-    keybinds: [{ key: "X", mods: [DEF_MOD] }],
-    preventDefault: false,
+    keybinds: [],
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit,
