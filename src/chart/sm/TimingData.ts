@@ -135,11 +135,11 @@ export class TimingData {
             crossFade: temp[3] == "1",
             stretchRewind: temp[4] == "1",
             stretchNoLoop: temp[5] == "1",
-            effect: temp[6],
-            file2: temp[7],
-            transition: temp[8],
-            color1: temp[9],
-            color2: temp[10],
+            effect: temp[6] ?? "",
+            file2: temp[7] ?? "",
+            transition: temp[8] ?? "",
+            color1: temp[9] ?? "",
+            color2: temp[10] ?? "",
           }
       }
       this._insert(type, event!, false)
@@ -165,7 +165,7 @@ export class TimingData {
     const event = target.events[type]![i]
     ActionHistory.instance.run({
       action: () => {
-        target._delete(true, event)
+        target._delete(event)
         target.reloadCache(type)
         if (this != target) this.reloadCache(type)
         EventHandler.emit("timingModified")
@@ -179,12 +179,7 @@ export class TimingData {
     })
   }
 
-  private _delete(songTiming: boolean, event: TimingEvent, doCache?: boolean) {
-    if (!songTiming) {
-      this._fallback!._delete(true, event, doCache)
-      if (doCache ?? true) this.reloadCache(event.type)
-      return
-    }
+  private _delete(event: TimingEvent, doCache?: boolean) {
     if (!this.events[event.type]) return
     const i = this.bindex(event.type, event)
     if (i > -1) {
@@ -209,8 +204,14 @@ export class TimingData {
       case "SCROLLS":
       case "TICKCOUNTS":
       case "LABELS":
-      case "SPEEDS":
         return properties.type == event.type && event.value == properties.value
+      case "SPEEDS":
+        return (
+          properties.type == event.type &&
+          event.value == properties.value &&
+          event.delay == properties.delay &&
+          event.unit == properties.unit
+        )
       case "TIMESIGNATURES":
         return (
           properties.type == event.type &&
@@ -222,6 +223,41 @@ export class TimingData {
           properties.type == event.type &&
           event.hitMult == properties.hitMult &&
           event.missMult == properties.missMult
+        )
+      default:
+        return false
+    }
+  }
+
+  private isSimilar<Event extends TimingEvent>(
+    eventA: Event,
+    eventB: Event
+  ): boolean {
+    if (
+      ["STOPS", "WARPS", "DELAYS", "FAKES", "BGCHANGES", "FGCHANGES"].includes(
+        eventA.type
+      )
+    )
+      return false
+    if (eventB.type != eventA.type) return false
+    switch (eventA.type) {
+      case "BPMS":
+      case "SCROLLS":
+      case "TICKCOUNTS":
+      case "SPEEDS":
+      case "LABELS":
+        return eventB.type == eventA.type && eventA.value == eventB.value
+      case "TIMESIGNATURES":
+        return (
+          eventB.type == eventA.type &&
+          eventA.upper == eventB.upper &&
+          eventA.lower == eventB.lower
+        )
+      case "COMBOS":
+        return (
+          eventB.type == eventA.type &&
+          eventA.hitMult == eventB.hitMult &&
+          eventA.missMult == eventB.missMult
         )
       default:
         return false
@@ -246,7 +282,7 @@ export class TimingData {
       case "ATTACKS":
         return event.value == ""
       case "SPEEDS":
-        return event.value == 1 && event.delay == 0 && event.unit == "B"
+        return false
       case "FGCHANGES":
       case "BGCHANGES":
         return event.file == "" && event.file2 == ""
@@ -283,17 +319,23 @@ export class TimingData {
     const newEvent: Partial<TimingEvent> = { type: type, beat: beat }
     const toDelete: TimingEvent[] = []
     const toAdd: TimingEvent[] = []
-    // Remove old event if same beat
+    Object.assign(newEvent, properties)
+    // Don't do anything if the event isn't changed
+    if (eventOnBeat && this.isDuplicate(newEvent as TimingEvent, eventOnBeat))
+      return
+
     if (eventOnBeat?.beat == beat) {
+      // Remove old event if same beat
       toDelete.push(eventOnBeat)
     }
     //Add new event if it doesn't match the previous one
     const previousEvent = target.getTimingEventAtBeat(type, beat - 0.001)
-    Object.assign(newEvent, properties)
+
     if (this.isNullEvent(newEvent as TimingEvent)) return
     if (
       !previousEvent ||
-      !this.isDuplicate(previousEvent, newEvent as TimingEvent)
+      !this.isSimilar(previousEvent, newEvent as TimingEvent) ||
+      (eventOnBeat && this.isDuplicate(previousEvent, eventOnBeat))
     ) {
       toAdd.push(newEvent as TimingEvent)
     }
@@ -311,7 +353,7 @@ export class TimingData {
       ActionHistory.instance.run({
         action: () => {
           for (const event of toDelete) {
-            this._delete(songTiming, event)
+            target._delete(event)
           }
           for (const event of toAdd) {
             target._insert(type, event)
@@ -325,7 +367,7 @@ export class TimingData {
         },
         undo: () => {
           for (const event of toAdd) {
-            this._delete(songTiming, event)
+            target._delete(event)
           }
           for (const event of toDelete) {
             target._insert(type, event)
@@ -339,6 +381,52 @@ export class TimingData {
         },
       })
     }
+  }
+
+  rawDeleteMultiple(events: TimingEvent[]) {
+    for (const event of events) {
+      const songTiming = this.events[event.type]
+      const target = songTiming ? this : this._fallback!
+      event.beat = roundDigit(event.beat!, 3)
+      target._delete(event)
+    }
+    this.reloadCache()
+  }
+
+  rawInsertMultiple(events: TimingEvent[]) {
+    for (const event of events) {
+      const songTiming = this.events[event.type]
+      const target = songTiming ? this : this._fallback!
+      if (!target.events[event.type]) {
+        if (songTiming) {
+          target.events[event.type] = JSON.parse(
+            JSON.stringify(this._fallback!.events[event.type])
+          )
+        } else {
+          target.events[event.type] = []
+        }
+      }
+      event.beat = roundDigit(event.beat!, 3)
+      target._insert(event.type, event)
+    }
+    this.reloadCache()
+  }
+
+  findConflicts() {
+    const conflicts = []
+    for (const type of TIMING_EVENT_NAMES) {
+      const events = this.getTimingData(type)
+      if (events.length < 2) continue
+      let lastEvent = events[0]
+      for (let i = 1; i < events.length; i++) {
+        if (this.isSimilar(lastEvent, events[i])) {
+          conflicts.push(events[i])
+        } else {
+          lastEvent = events[i]
+        }
+      }
+    }
+    return conflicts
   }
 
   private buildBeatTimingDataCache() {
@@ -428,6 +516,12 @@ export class TimingData {
       this._cache.effectiveBeatTiming = []
       return
     }
+    if (cache[0].beat != 0)
+      cache.unshift({
+        type: "SCROLLS",
+        beat: 0,
+        value: 1,
+      })
     effBeat = cache[0].beat
     for (let i = 0; i < cache.length - 1; i++) {
       const event = cache[i]
@@ -440,9 +534,9 @@ export class TimingData {
   }
 
   private buildMeasureTimingCache() {
-    const timeSigs = this.getTimingData("TIMESIGNATURES")
+    const timeSigs = [...this.getTimingData("TIMESIGNATURES")]
     if (timeSigs.length == 0 || timeSigs[0].beat != 0) {
-      timeSigs.push({ type: "TIMESIGNATURES", beat: 0, lower: 4, upper: 4 })
+      timeSigs.unshift({ type: "TIMESIGNATURES", beat: 0, lower: 4, upper: 4 })
     }
     const cache = []
     let measure = 0
@@ -637,7 +731,7 @@ export class TimingData {
     const i = this.searchCache(cache, "measure", measure)
     const event = cache[i]
     const deltaMeasure = measure - event.measure
-    return event.measure + deltaMeasure * event.beatsPerMeasure
+    return event.beat + deltaMeasure * event.beatsPerMeasure
   }
 
   getDivisionOfMeasure(beat: number): number {
@@ -782,6 +876,7 @@ export class TimingData {
       return this.offset ?? this._fallback?.offset ?? 0
     if (props.length == 1 && props[0] in this._cache.events)
       return this._cache.events[props[0] as TimingEventProperty]
+
     if (this._cache.sortedEvents == undefined) this.buildTimingDataCache()
     const events = this._cache.sortedEvents!.filter(event =>
       props.includes(event.type)
@@ -971,5 +1066,89 @@ export class TimingData {
     }
     if (str.includes(",")) str += "\n"
     return "#" + prop + ":" + str + ";\n"
+  }
+
+  getDefaultEvent(type: TimingEventProperty, beat: number): TimingEvent {
+    switch (type) {
+      case "BPMS":
+        return {
+          type,
+          beat,
+          value: 120,
+        }
+      case "STOPS":
+      case "WARPS":
+      case "DELAYS":
+      case "FAKES":
+        return {
+          type,
+          beat,
+          value: 0,
+        }
+      case "LABELS":
+        return {
+          type,
+          beat,
+          value: "",
+        }
+      case "SPEEDS":
+        return {
+          type,
+          beat,
+          value: 1,
+          delay: 0,
+          unit: "B",
+        }
+      case "SCROLLS":
+        return {
+          type,
+          beat,
+          value: 1,
+        }
+      case "TICKCOUNTS":
+        return {
+          type,
+          beat,
+          value: 4,
+        }
+      case "TIMESIGNATURES":
+        return {
+          type,
+          beat,
+          upper: 4,
+          lower: 4,
+        }
+      case "COMBOS":
+        return {
+          type,
+          beat,
+          hitMult: 1,
+          missMult: 1,
+        }
+      case "ATTACKS":
+        return {
+          type,
+          second: this.getSecondsFromBeat(beat),
+          endType: "LEN",
+          value: 1,
+          mods: "",
+        }
+      case "BGCHANGES":
+      case "FGCHANGES":
+        return {
+          type,
+          beat,
+          file: "",
+          updateRate: 1,
+          crossFade: false,
+          stretchRewind: false,
+          stretchNoLoop: false,
+          effect: "",
+          file2: "",
+          transition: "",
+          color1: "",
+          color2: "",
+        }
+    }
   }
 }

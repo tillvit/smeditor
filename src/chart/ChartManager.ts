@@ -19,8 +19,10 @@ import {
   bsearch,
   clamp,
   decodeNotes,
+  decodeTempo,
   dirname,
   encodeNotes,
+  encodeTempo,
   extname,
   tpsUpdate,
 } from "../util/Util"
@@ -57,7 +59,14 @@ interface Selection {
     beatShift: number
   }
   inProgressNotes: Notedata
+}
+
+interface EventSelection {
+  shift?: {
+    beatShift: number
+  }
   timingEvents: TimingEvent[]
+  inProgressTimingEvents: TimingEvent[]
 }
 
 export enum EditMode {
@@ -65,6 +74,12 @@ export enum EditMode {
   Edit = "Edit Mode",
   Play = "Play Mode",
   Record = "Record Mode",
+}
+
+export enum EditTimingMode {
+  Off,
+  Edit,
+  Add,
 }
 
 export class ChartManager {
@@ -98,10 +113,14 @@ export class ChartManager {
   selection: Selection = {
     notes: [],
     inProgressNotes: [],
-    timingEvents: [],
   }
 
-  editingTiming = false
+  eventSelection: EventSelection = {
+    timingEvents: [],
+    inProgressTimingEvents: [],
+  }
+
+  editTimingMode = EditTimingMode.Off
 
   private beat = 0
   private time = 0
@@ -141,7 +160,7 @@ export class ChartManager {
         if (e.target instanceof HTMLTextAreaElement) return
         if (e.target instanceof HTMLInputElement) return
         if (this.mode != EditMode.Edit) return
-        const data = this.copyNotes()
+        const data = this.copy()
         if (data) e.clipboardData?.setData("text/plain", data)
         this.deleteSelection()
         e.preventDefault()
@@ -155,7 +174,7 @@ export class ChartManager {
         if (e.target instanceof HTMLTextAreaElement) return
         if (e.target instanceof HTMLInputElement) return
         if (this.mode != EditMode.Edit) return
-        const data = this.copyNotes()
+        const data = this.copy()
         if (data) e.clipboardData?.setData("text/plain", data)
         e.preventDefault()
         e.stopImmediatePropagation()
@@ -170,7 +189,7 @@ export class ChartManager {
         if (e.target instanceof HTMLInputElement) return
         if (this.mode != EditMode.Edit) return
         const clipboard = e.clipboardData?.getData("text/plain")
-        if (clipboard) this.pasteNotes(clipboard)
+        if (clipboard) this.paste(clipboard)
         e.preventDefault()
         e.stopImmediatePropagation()
       },
@@ -425,6 +444,7 @@ export class ChartManager {
     window.addEventListener(
       "keydown",
       (event: KeyboardEvent) => {
+        const keyName = Keybinds.getKeyNameFromCode(event.code)
         if (this.mode != EditMode.Edit) return
         if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
         if (event.target instanceof HTMLTextAreaElement) return
@@ -446,7 +466,6 @@ export class ChartManager {
           }
         }
         if (!this.holdEditing.every(x => x == undefined)) {
-          const keyName = Keybinds.getKeyNameFromCode(event.code)
           // Override any move+key combos when editing a hold
           const keybinds = [
             "cursorUp",
@@ -611,6 +630,7 @@ export class ChartManager {
 
     this.noChartTextA.visible = true
     this.noChartTextB.visible = true
+    this.editTimingMode = EditTimingMode.Off
 
     EventHandler.emit("smLoaded")
     await this.loadChart()
@@ -667,7 +687,7 @@ export class ChartManager {
     this.chartView?.removeChildren()
 
     // Load the chart
-    this.clearSelection()
+    this.clearSelections()
     this.loadedChart = chart
     this.beat = this.loadedChart.getBeatFromSeconds(this.time)
     ActionHistory.instance.reset()
@@ -1262,11 +1282,14 @@ export class ChartManager {
    *
    * @memberof ChartManager
    */
-  clearSelection() {
+  clearSelections() {
     this.selection = {
       notes: [],
       inProgressNotes: [],
+    }
+    this.eventSelection = {
       timingEvents: [],
+      inProgressTimingEvents: [],
     }
   }
 
@@ -1280,6 +1303,16 @@ export class ChartManager {
     )
   }
 
+  startDragEventSelection() {
+    this.eventSelection.inProgressTimingEvents = []
+  }
+
+  endDragEventSelection() {
+    this.eventSelection.timingEvents = this.eventSelection.timingEvents.concat(
+      this.eventSelection.inProgressTimingEvents
+    )
+  }
+
   addNoteToDragSelection(note: NotedataEntry) {
     this.selection.inProgressNotes.push(note)
   }
@@ -1288,6 +1321,16 @@ export class ChartManager {
     const index = this.selection.inProgressNotes.indexOf(note)
     if (index == -1) return
     this.selection.inProgressNotes.splice(index, 1)
+  }
+
+  addEventToDragSelection(event: TimingEvent) {
+    this.eventSelection.inProgressTimingEvents.push(event)
+  }
+
+  removeEventFromDragSelection(event: TimingEvent) {
+    const index = this.eventSelection.inProgressTimingEvents.indexOf(event)
+    if (index == -1) return
+    this.eventSelection.inProgressTimingEvents.splice(index, 1)
   }
 
   addNoteToSelection(note: NotedataEntry) {
@@ -1301,7 +1344,13 @@ export class ChartManager {
   }
 
   addEventToSelection(event: TimingEvent) {
-    this.selection.timingEvents.push(event)
+    this.eventSelection.timingEvents.push(event)
+  }
+
+  removeEventFromSelection(event: TimingEvent) {
+    const index = this.eventSelection.timingEvents.indexOf(event)
+    if (index == -1) return
+    this.eventSelection.timingEvents.splice(index, 1)
   }
 
   selectRegion() {
@@ -1311,7 +1360,7 @@ export class ChartManager {
       this.endRegion = undefined
     }
     if (!this.startRegion) {
-      this.clearSelection()
+      this.clearSelections()
       this.startRegion = this.beat
       return
     }
@@ -1375,12 +1424,65 @@ export class ChartManager {
     this.app.actionHistory.run({
       action: () => {
         this.loadedChart!.removeNotes(removedNotes.concat(conflictingNotes))
+        this.clearSelections()
         this.selection.notes = this.loadedChart!.addNotes(newNotes)
       },
       undo: () => {
         this.loadedChart!.removeNotes(newNotes)
         this.loadedChart!.addNotes(conflictingNotes)
+        this.clearSelections()
         this.selection.notes = this.loadedChart!.addNotes(removedNotes)
+      },
+    })
+  }
+
+  modifyEventSelection(modify: (note: TimingEvent) => TimingEvent) {
+    if (!this.loadedChart) return
+    const timingData = this.loadedChart.timingData
+    const removedEvents = this.eventSelection.timingEvents
+    const newEvents = structuredClone(this.eventSelection.timingEvents).map(
+      modify
+    )
+    if (newEvents.length == 0) return
+
+    let conflicts: TimingEvent[] = []
+    this.app.actionHistory.run({
+      action: () => {
+        timingData.rawDeleteMultiple(removedEvents)
+        timingData.rawInsertMultiple(newEvents)
+        conflicts = timingData.findConflicts()
+        timingData.rawDeleteMultiple(conflicts)
+        this.clearSelections()
+        this.eventSelection.timingEvents = newEvents
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (newEvents.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+      undo: () => {
+        timingData.rawInsertMultiple(conflicts)
+        timingData.rawDeleteMultiple(newEvents)
+        timingData.rawInsertMultiple(removedEvents)
+        this.clearSelections()
+        this.eventSelection.timingEvents = removedEvents
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (newEvents.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+      redo: () => {
+        timingData.rawDeleteMultiple(removedEvents)
+        timingData.rawInsertMultiple(newEvents)
+        timingData.rawDeleteMultiple(conflicts)
+        this.clearSelections()
+        this.eventSelection.timingEvents = newEvents
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (newEvents.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
       },
     })
   }
@@ -1391,6 +1493,7 @@ export class ChartManager {
     this.app.actionHistory.run({
       action: () => {
         this.loadedChart!.removeNotes(removedNotes)
+        this.clearSelections()
       },
       undo: () => {
         this.selection.notes = this.loadedChart!.addNotes(removedNotes)
@@ -1398,11 +1501,65 @@ export class ChartManager {
     })
   }
 
-  pasteNotes(data: string) {
+  deleteEventSelection() {
+    if (this.eventSelection.timingEvents.length == 0) return
+    const removedEvents = this.eventSelection.timingEvents
+    const timingData = this.loadedChart!.timingData
+    let conflicts: TimingEvent[] = []
+    this.app.actionHistory.run({
+      action: () => {
+        timingData.rawDeleteMultiple(removedEvents)
+        conflicts = timingData.findConflicts()
+        timingData.rawDeleteMultiple(conflicts)
+        this.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (removedEvents.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+      undo: () => {
+        timingData.rawInsertMultiple(conflicts)
+        timingData.rawInsertMultiple(removedEvents)
+        this.eventSelection.timingEvents = removedEvents
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (removedEvents.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+      redo: () => {
+        timingData.rawDeleteMultiple(removedEvents)
+        timingData.rawDeleteMultiple(conflicts)
+        this.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (removedEvents.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+    })
+  }
+
+  paste(data: string) {
     if (!this.loadedChart) return
-    const notes = decodeNotes(data) ?? decodeNotes(this.virtualClipboard)
-    if (!notes) return
-    if (notes.length == 0) return
+    if (data.startsWith("ArrowVortex:notes:")) {
+      if (!this.pasteNotes(data)) this.pasteNotes(this.virtualClipboard)
+    }
+    if (
+      data.startsWith("ArrowVortex:tempo:") ||
+      data.startsWith("SMEditor:tempo:")
+    ) {
+      if (!this.pasteTempo(data)) this.pasteTempo(this.virtualClipboard)
+      return
+    }
+  }
+
+  pasteNotes(data: string) {
+    if (!this.loadedChart) return true
+    const notes = decodeNotes(data)
+    if (!notes) return false
+    if (notes.length == 0) return false
     notes
       .map(note => {
         note.beat += this.beat
@@ -1443,29 +1600,107 @@ export class ChartManager {
     this.app.actionHistory.run({
       action: () => {
         this.loadedChart!.removeNotes(conflictingNotes)
+        this.clearSelections()
         this.selection.notes = this.loadedChart!.addNotes(notes)
       },
       undo: () => {
         this.loadedChart!.removeNotes(notes)
         this.loadedChart!.addNotes(conflictingNotes)
+        this.clearSelections()
       },
     })
+    return true
   }
 
-  copyNotes(): string | undefined {
-    if (this.selection.notes.length == 0) return
-    const firstBeat = Math.min(...this.selection.notes.map(note => note.beat))
-    const notes = structuredClone(this.selection.notes)
-      .map(note => {
-        note.beat -= firstBeat
-        return note
-      })
-      .sort((a, b) => {
-        if (a.beat == b.beat) return a.col - b.col
-        return a.beat - b.beat
-      })
-    const encoded = encodeNotes(notes)
-    this.virtualClipboard = encoded
-    return encoded
+  pasteTempo(data: string) {
+    if (!this.loadedChart) return true
+    const events = decodeTempo(data)
+    console.log(events)
+    if (!events) return false
+    if (events.length == 0) return false
+
+    const timingData = this.loadedChart.timingData
+    let conflicts: TimingEvent[] = []
+    events.forEach(event => {
+      if (event.type == "ATTACKS") event.second += this.time
+      else event.beat += this.beat
+    })
+    this.app.actionHistory.run({
+      action: () => {
+        timingData.rawInsertMultiple(events)
+        conflicts = timingData.findConflicts()
+        timingData.rawDeleteMultiple(conflicts)
+        this.clearSelections()
+        this.eventSelection.timingEvents = events
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (events.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+      undo: () => {
+        timingData.rawInsertMultiple(conflicts)
+        timingData.rawDeleteMultiple(events)
+        this.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (events.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+      redo: () => {
+        timingData.rawInsertMultiple(events)
+        timingData.rawDeleteMultiple(conflicts)
+        this.clearSelections()
+        this.eventSelection.timingEvents = events
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (events.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+    })
+    return true
+  }
+
+  copy(): string | undefined {
+    if (this.selection.notes.length != 0) {
+      const firstBeat = Math.min(...this.selection.notes.map(note => note.beat))
+      const notes = structuredClone(this.selection.notes)
+        .map(note => {
+          note.beat -= firstBeat
+          return note
+        })
+        .sort((a, b) => {
+          if (a.beat == b.beat) return a.col - b.col
+          return a.beat - b.beat
+        })
+      const encoded = encodeNotes(notes)
+      this.virtualClipboard = encoded
+      return encoded
+    } else if (this.eventSelection.timingEvents.length != 0) {
+      const firstBeat = Math.min(
+        ...this.eventSelection.timingEvents.map(note => note.beat!)
+      )
+      const firstSec =
+        this.loadedChart!.timingData.getSecondsFromBeat(firstBeat)
+      const events = structuredClone(this.eventSelection.timingEvents)
+        .map(note => {
+          if (note.type == "ATTACKS") {
+            note.second -= firstSec
+            return note
+          }
+          note.beat -= firstBeat
+          return note
+        })
+        .sort((a, b) => {
+          if (a.type != b.type) return a.type.localeCompare(b.type)
+          if (a.type == "ATTACKS") return a.second - b.second!
+          return a.beat - b.beat!
+        })
+      const encoded = encodeTempo(events)
+      this.virtualClipboard = encoded
+      return encoded
+    }
   }
 }

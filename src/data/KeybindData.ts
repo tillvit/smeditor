@@ -840,43 +840,44 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       { key: "Delete", mods: [] },
     ],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
-    callback: app => app.chartManager.deleteSelection(),
+      app.chartManager.getMode() != EditMode.Edit ||
+      (app.chartManager.selection.notes.length == 0 &&
+        app.chartManager.eventSelection.timingEvents.length == 0),
+    callback: app => {
+      app.chartManager.deleteSelection()
+      app.chartManager.deleteEventSelection()
+    },
   },
   paste: {
     label: "Paste",
-    keybinds: [{ key: "V", mods: [DEF_MOD] }],
-    preventDefault: false,
+    keybinds: [],
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: async app => {
       const data = await navigator.clipboard.readText()
-      app.chartManager.pasteNotes(data)
+      app.chartManager.paste(data)
     },
   },
   copy: {
     label: "Copy",
-    keybinds: [{ key: "C", mods: [DEF_MOD] }],
-    preventDefault: false,
+    keybinds: [],
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: async app => {
-      const data = app.chartManager.copyNotes()
+      const data = app.chartManager.copy()
       if (data) await navigator.clipboard.writeText(data)
     },
   },
   cut: {
     label: "Cut",
-    keybinds: [{ key: "X", mods: [DEF_MOD] }],
-    preventDefault: false,
+    keybinds: [],
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: async app => {
-      const data = app.chartManager.copyNotes()
+      const data = app.chartManager.copy()
       if (data) await navigator.clipboard.writeText(data)
       app.chartManager.deleteSelection()
     },

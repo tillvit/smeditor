@@ -704,6 +704,8 @@ input[type="number"] {
   flex: 1;
   height: 100%;
   font-size: 14px;
+  user-select: text;
+  caret-color: auto;
 }
 
 input:disabled {
@@ -1204,6 +1206,7 @@ input[type="range"] {
   top: 0;
   align-self: flex-start;
   width: 100%;
+  overflow: hidden;
 }
 
 .edit-steps-container,
@@ -1215,8 +1218,15 @@ input[type="range"] {
   width: 100%;
 }
 
-.animated .edit-choice-container {
+.animated .edit-choice-container,
+.animated .edit-steps-container,
+.animated .edit-timing-container {
   transition: 0.2s cubic-bezier(0.39, 0.575, 0.565, 1);
+}
+
+.edit-timing-container {
+  background-color: rgba(0, 0, 0, 0.5);
+  height: 48px;
 }
 
 #status-widget .edit-bar .edit-bar-left {
@@ -1247,6 +1257,12 @@ input[type="range"] {
   align-items: center;
   border: 1px solid black;
   animation: 0.01s popup-enter cubic-bezier(0.47, 0.02, 0, 0.95) forwards;
+  box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.6);
+}
+
+.popup-zoomer.selected {
+  filter: saturate(1.2) brightness(1.4);
+  border: 1px solid rgb(14, 83, 104);
 }
 
 .popup.exiting .popup-zoomer {
@@ -1255,6 +1271,7 @@ input[type="range"] {
 
 .animated .popup-zoomer {
   animation: 0.1s popup-enter cubic-bezier(0.47, 0.02, 0, 0.95) forwards;
+  transition: 0.2s cubic-bezier(0.47, 0.02, 0, 0.95);
 }
 
 .animated .popup.exiting .popup-zoomer {
@@ -1290,6 +1307,10 @@ input[type="range"] {
   color: #888;
 }
 
+.animated .popup-desc {
+  transition: 0.2s cubic-bezier(0.47, 0.02, 0, 0.95);
+}
+
 .popup .popup-title {
   text-align: center;
 }
@@ -1319,4 +1340,27 @@ input[type="range"] {
   width: 100%;
   justify-content: end;
   align-items: center;
+}
+
+.animated .popup-options {
+  transition: 0.2s cubic-bezier(0.47, 0.02, 0, 0.95);
+}
+.popup-options {
+  margin-top: 0px;
+  width: 100%;
+  justify-content: space-around;
+  transform: scale(0);
+  height: 0px;
+  display: flex;
+}
+
+.popup-options button {
+  min-width: 40px;
+}
+
+.popup-zoomer.selected .popup-options {
+  margin-top: 5px;
+  transform: scale(1);
+  height: 24.5px;
+  filter: saturate(0.8) brightness(0.7);
 }

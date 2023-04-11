@@ -8,11 +8,12 @@ import {
   Texture,
 } from "pixi.js"
 import { Options } from "../util/Options"
-import { ChartManager, EditMode } from "./ChartManager"
+import { ChartManager, EditMode, EditTimingMode } from "./ChartManager"
 import { BarlineContainer } from "./component/BarlineContainer"
 import { ComboNumber } from "./component/ComboNumber"
 import { JudgmentSprite } from "./component/JudgmentSprite"
 import { SelectionAreaContainer } from "./component/SelectionAreaContainer"
+import { SelectionTimingEventContainer } from "./component/SelectionTimingEventContainer"
 import { SnapContainer } from "./component/SnapContainer"
 import { TimingAreaContainer } from "./component/TimingAreaContainer"
 import { TimingBarContainer } from "./component/TimingBarContainer"
@@ -45,6 +46,7 @@ export class ChartRenderer extends Container {
   private barlines: BarlineContainer
   private timingAreas: TimingAreaContainer
   private timingTracks: TimingTrackContainer
+  private selectedEvents: SelectionTimingEventContainer
   private timingBar: TimingBarContainer
   notefield: Notefield
   private snapDisplay: SnapContainer
@@ -64,6 +66,7 @@ export class ChartRenderer extends Container {
     this.barlines = new BarlineContainer(this)
     this.timingAreas = new TimingAreaContainer(this)
     this.timingTracks = new TimingTrackContainer(this)
+    this.selectedEvents = new SelectionTimingEventContainer(this)
     this.timingBar = new TimingBarContainer(this)
     this.notefield = new this.chart.gameType.notefield(this)
     this.snapDisplay = new SnapContainer(this)
@@ -79,6 +82,7 @@ export class ChartRenderer extends Container {
     this.addChild(this.timingAreas)
     this.addChild(this.selectionArea)
     this.addChild(this.timingTracks)
+    this.addChild(this.selectedEvents)
     this.addChild(this.timingBar)
     this.addChild(this.combo)
     this.addChild(this.notefield)
@@ -137,14 +141,19 @@ export class ChartRenderer extends Container {
 
     this.on("mousedown", event => {
       if (this.chartManager.getMode() == EditMode.Play) return
-      // Start selecting
       if (
+        this.chartManager.editTimingMode == EditTimingMode.Add &&
+        this.lastMousePos
+      ) {
+        this.timingTracks.placeGhostEvent()
+      } else if (
         Options.general.mousePlacement &&
         this.lastMouseBeat != -1 &&
         this.lastMouseCol != -1 &&
         !event.getModifierState("Shift")
       ) {
-        this.chartManager.clearSelection()
+        // Place a note
+        this.chartManager.clearSelections()
         this.editingCol = this.lastMouseCol
         this.chartManager.setNote(
           this.lastMouseCol,
@@ -152,14 +161,19 @@ export class ChartRenderer extends Container {
           this.lastMouseBeat
         )
       } else {
+        // Start selecting
         if (
           !event.getModifierState("Control") &&
           !event.getModifierState("Meta") &&
           !event.getModifierState("Shift")
         ) {
-          this.chartManager.clearSelection()
+          this.chartManager.clearSelections()
         }
-        this.chartManager.startDragSelection()
+        this.chartManager[
+          this.chartManager.editTimingMode == EditTimingMode.Off
+            ? "startDragSelection"
+            : "startDragEventSelection"
+        ]()
         this.selectionBounds = {
           start: this.toLocal(event.global),
           end: this.toLocal(event.global),
@@ -197,10 +211,18 @@ export class ChartRenderer extends Container {
         this.chartManager.endEditing(this.editingCol)
         this.editingCol = -1
       }
-      this.chartManager.endDragSelection()
+      this.chartManager[
+        this.chartManager.editTimingMode == EditTimingMode.Off
+          ? "endDragSelection"
+          : "endDragEventSelection"
+      ]()
       this.selectionBounds = undefined
       selectionSpeed = 0
     })
+  }
+
+  isDragSelecting() {
+    return !!this.selectionBounds
   }
 
   doJudgment(note: NotedataEntry, error: number, judgment: TimingWindow) {
@@ -278,6 +300,7 @@ export class ChartRenderer extends Container {
       renderSecondLowerLimit
     )
     this.timingTracks.update(beat, renderBeatLowerLimit, renderBeatLimit)
+    this.selectedEvents.update(beat, renderBeatLimit)
     this.timingBar.update()
     this.judgment.update()
     this.combo.update()
@@ -285,6 +308,8 @@ export class ChartRenderer extends Container {
     this.selectionArea.update()
 
     this.notefield.update(beat, renderBeatLowerLimit, renderBeatLimit)
+    this.notefield.alpha =
+      this.chartManager.editTimingMode == EditTimingMode.Off ? 1 : 0.3
     this.waveform.update(beat, time)
 
     // Move the ghost note for mouse placement
@@ -320,6 +345,14 @@ export class ChartRenderer extends Container {
           })
         }
       }
+    }
+
+    // Move the ghost event when adding events
+    if (
+      this.lastMousePos &&
+      this.chartManager.editTimingMode == EditTimingMode.Add
+    ) {
+      this.timingTracks.setGhostEvent(this.lastMousePos)
     }
   }
 
@@ -612,7 +645,10 @@ export class ChartRenderer extends Container {
           this.chartManager.selection.shift.columnShift = col - note.col
         }
       }
-      this.chartManager.selection.shift.beatShift = snapBeat - note.beat
+      this.chartManager.selection.shift.beatShift = Math.max(
+        -Math.min(...this.chartManager.selection.notes.map(note => note.beat)),
+        snapBeat - note.beat
+      )
     }
     newChild.on("mousedown", event => {
       if (
@@ -632,8 +668,9 @@ export class ChartRenderer extends Container {
           !event.getModifierState("Control") &&
           !event.getModifierState("Meta") &&
           !event.getModifierState("Shift")
-        )
-          this.chartManager.clearSelection()
+        ) {
+          this.chartManager.clearSelections()
+        }
         this.chartManager.addNoteToSelection(newChild.note)
       }
       initalPosX = newChild.x!
@@ -643,6 +680,7 @@ export class ChartRenderer extends Container {
       const mouseUp = () => {
         this.off("mousemove", moveHandler)
         this.off("mouseup", mouseUp)
+        newChild.visible = true
         if (
           (this.chartManager.selection.shift?.beatShift ?? 0) != 0 ||
           (this.chartManager.selection.shift?.columnShift ?? 0) != 0

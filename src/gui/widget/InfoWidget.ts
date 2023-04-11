@@ -31,7 +31,7 @@ export class InfoWidget extends Widget {
   texts = new Container<BitmapText>()
   noteCounts = new Container<BitmapText>()
   dropdownExtended = false
-  dropdownBacking = new BetterRoundedRect(false)
+  dropdownBacking = new BetterRoundedRect("noBorder")
   dropdownBackingTarget = 0
   dropdownItems = new Container()
   dropdownItemList: DropdownItem[] = []

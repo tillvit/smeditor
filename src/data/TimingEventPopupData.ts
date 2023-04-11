@@ -194,7 +194,7 @@ export const POPUP_ROWS: { [key in TimingEventProperty]: Popup } = {
         key: "unit",
         input: {
           type: "dropdown",
-          items: ["B", "T"] as ("B" | "T")[],
+          items: ["Beats", "Seconds"],
           transformers: {
             serialize: (value: string) => (value == "B" ? "Beats" : "Seconds"),
             deserialize: (value: string) => (value == "Beats" ? "B" : "T"),

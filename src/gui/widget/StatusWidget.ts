@@ -1,11 +1,12 @@
 import { Parser } from "expr-eval"
 import { Container, Sprite, Texture } from "pixi.js"
-import { EditMode } from "../../chart/ChartManager"
+import { EditMode, EditTimingMode } from "../../chart/ChartManager"
+import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
 import { isNumericKeyPress, roundDigit } from "../../util/Util"
-import { Dropdown } from "../element/Dropdown"
 import { Icons } from "../Icons"
+import { Dropdown } from "../element/Dropdown"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
 
@@ -13,6 +14,7 @@ interface NoteArrow {
   element: HTMLButtonElement
   sprite: Container
   bg: Sprite
+  highlight: BetterRoundedRect
   type: string
   hovered: boolean
 }
@@ -42,12 +44,15 @@ export class StatusWidget extends Widget {
   private timingContainer: HTMLDivElement
   private editChoiceContainer: HTMLDivElement
 
+  private addTimingEvent: HTMLButtonElement
+
   private noteArrows: NoteArrow[] = []
   private noteArrowMask: Sprite
 
   private lastTime = 0
   private lastBeat = 0
   private lastMode = EditMode.Edit
+  private lastTimingMode = EditTimingMode.Off
   private lastHover = 0
   private lastPlaying = false
   private hovering = false
@@ -278,6 +283,10 @@ export class StatusWidget extends Widget {
     editStepsIcon.src = Icons.ADD
     this.editSteps.appendChild(editStepsIcon)
     this.editSteps.appendChild(document.createTextNode("Edit Steps"))
+    this.editSteps.onclick = () => {
+      this.manager.chartManager.editTimingMode = EditTimingMode.Off
+    }
+    this.editSteps.style.background = "rgba(255,255,255,0.15)"
 
     this.editTiming = document.createElement("button")
     this.editTiming.classList.add("edit-fancy-button")
@@ -286,8 +295,7 @@ export class StatusWidget extends Widget {
     this.editTiming.appendChild(editTimingIcon)
     this.editTiming.appendChild(document.createTextNode("Edit Timing"))
     this.editTiming.onclick = () => {
-      this.manager.chartManager.editingTiming =
-        !this.manager.chartManager.editingTiming
+      this.manager.chartManager.editTimingMode = EditTimingMode.Edit
     }
 
     const line4 = document.createElement("div")
@@ -312,6 +320,18 @@ export class StatusWidget extends Widget {
     this.editChoiceContainer.appendChild(this.stepsContainer)
     this.editChoiceContainer.appendChild(this.timingContainer)
 
+    this.addTimingEvent = document.createElement("button")
+    const addTimingEventIcon = document.createElement("img")
+    addTimingEventIcon.style.height = "32px"
+    addTimingEventIcon.src = Icons.ADD_EVENT
+    this.addTimingEvent.appendChild(addTimingEventIcon)
+    this.addTimingEvent.onclick = () => {
+      if (this.manager.chartManager.editTimingMode == EditTimingMode.Add)
+        this.manager.chartManager.editTimingMode = EditTimingMode.Edit
+      else this.manager.chartManager.editTimingMode = EditTimingMode.Add
+    }
+    this.timingContainer.appendChild(this.addTimingEvent)
+
     this.editBar.appendChild(this.editChoiceContainer)
 
     const right = document.createElement("div")
@@ -328,6 +348,7 @@ export class StatusWidget extends Widget {
       this.noteArrows.forEach(noteArrow => {
         this.removeChild(noteArrow.sprite)
         this.removeChild(noteArrow.bg)
+        this.removeChild(noteArrow.highlight)
       })
       this.noteArrows = []
       const rightPlaceholder = document.createElement("div")
@@ -350,6 +371,12 @@ export class StatusWidget extends Widget {
         bg.width = 48
         bg.height = 48
         bg.anchor.set(0.5)
+        const highlight = new BetterRoundedRect("noBorder")
+        highlight.alpha = 0
+        highlight.width = 48
+        highlight.height = 48
+        highlight.pivot.x = 24
+        highlight.pivot.y = 24
         const element = document.createElement("button")
         element.style.height = "48px"
         element.style.width = "48px"
@@ -357,7 +384,14 @@ export class StatusWidget extends Widget {
         element.onclick = () => {
           this.manager.chartManager.setEditingNoteType(type)
         }
-        const noteArrow = { element, sprite, type, bg, hovered: false }
+        const noteArrow = {
+          element,
+          sprite,
+          type,
+          bg,
+          highlight,
+          hovered: false,
+        }
         element.onmouseover = () => {
           noteArrow.hovered = true
         }
@@ -366,6 +400,7 @@ export class StatusWidget extends Widget {
         }
         this.addChild(bg)
         this.addChild(sprite)
+        this.addChild(highlight)
         const bound = element.getBoundingClientRect()
         sprite.position.y =
           bound.top -
@@ -443,6 +478,7 @@ export class StatusWidget extends Widget {
     }
 
     const mode = this.manager.chartManager.getMode()
+    const timingMode = this.manager.chartManager.editTimingMode
     if (this.lastMode != mode) {
       switch (mode) {
         case EditMode.Edit:
@@ -473,6 +509,9 @@ export class StatusWidget extends Widget {
           this.sec.contentEditable = "false"
           this.millis.contentEditable = "false"
           this.beat.contentEditable = "false"
+          if (timingMode != EditTimingMode.Off) {
+            this.visible = false
+          }
           this.view.classList.add("collapsed")
           this.beatDropdown.closeDropdown()
           this.beatDropdown.disabled = true
@@ -488,6 +527,9 @@ export class StatusWidget extends Widget {
           this.sec.contentEditable = "false"
           this.millis.contentEditable = "false"
           this.beat.contentEditable = "false"
+          if (timingMode != EditTimingMode.Off) {
+            this.visible = false
+          }
           this.view.classList.add("collapsed")
           this.beatDropdown.closeDropdown()
           this.beatDropdown.disabled = true
@@ -495,6 +537,41 @@ export class StatusWidget extends Widget {
       this.trackingMovement = true
       this.idleFrames = 5
       this.lastMode = mode
+    }
+
+    if (this.lastTimingMode != timingMode) {
+      switch (timingMode) {
+        case EditTimingMode.Off:
+          this.visible = true
+          this.stepsContainer.style.transform = ""
+          this.timingContainer.style.transform = ""
+          this.editSteps.style.background = "rgba(255,255,255,0.15)"
+          this.editTiming.style.background = ""
+          break
+        case EditTimingMode.Add:
+          this.addTimingEvent.style.background = "rgba(255,255,255,0.15)"
+          break
+        case EditTimingMode.Edit:
+          this.addTimingEvent.style.background = ""
+      }
+      if (
+        (this.lastTimingMode == EditTimingMode.Off &&
+          timingMode != EditTimingMode.Off) ||
+        (this.lastTimingMode != EditTimingMode.Off &&
+          timingMode == EditTimingMode.Off)
+      )
+        this.manager.chartManager.clearSelections()
+      this.trackingMovement = true
+      this.idleFrames = 5
+      this.lastTimingMode = timingMode
+      this.stepsContainer.style.transform =
+        timingMode == EditTimingMode.Off ? "" : "translateY(-48px)"
+      this.timingContainer.style.transform =
+        timingMode == EditTimingMode.Off ? "" : "translateY(-48px)"
+      this.editSteps.style.background =
+        timingMode == EditTimingMode.Off ? "rgba(255,255,255,0.15)" : ""
+      this.editTiming.style.background =
+        timingMode == EditTimingMode.Off ? "" : "rgba(255,255,255,0.15)"
     }
 
     const playing = this.manager.chartManager.chartAudio.isPlaying()
@@ -532,6 +609,7 @@ export class StatusWidget extends Widget {
             24 +
             index * 48
           noteArrow.bg.position = noteArrow.sprite.position
+          noteArrow.highlight.position = noteArrow.sprite.position
         })
         if (this.lastBounds) {
           const delta =
@@ -542,6 +620,9 @@ export class StatusWidget extends Widget {
             if (this.idleFrames < 0) {
               this.trackingMovement = false
               this.lastBounds = undefined
+              if (timingMode != EditTimingMode.Off) {
+                this.visible = false
+              }
             }
           }
         }
@@ -557,12 +638,12 @@ export class StatusWidget extends Widget {
     const noteType = this.manager.chartManager.getEditingNoteType()
     this.noteArrows.forEach(arrow => {
       if (Options.general.smoothAnimations) {
-        const target = noteType == arrow.type ? 1 : arrow.hovered ? 0.4 : 0.2
-        arrow.sprite.alpha =
-          (target - arrow.sprite.alpha) * 0.3 + arrow.sprite.alpha
+        const target = noteType == arrow.type ? 0.15 : arrow.hovered ? 0.05 : 0
+        arrow.highlight.alpha =
+          (target - arrow.highlight.alpha) * 0.3 + arrow.highlight.alpha
       } else {
-        arrow.sprite.alpha =
-          noteType == arrow.type ? 1 : arrow.hovered ? 0.4 : 0.2
+        arrow.highlight.alpha =
+          noteType == arrow.type ? 0.15 : arrow.hovered ? 0.05 : 0
       }
     })
   }

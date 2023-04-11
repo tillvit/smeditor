@@ -2,13 +2,13 @@ import { Container } from "pixi.js"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
 import { destroyChildIf } from "../../../util/Util"
-import { EditMode } from "../../ChartManager"
+import { EditMode, EditTimingMode } from "../../ChartManager"
 import { ChartRenderer } from "../../ChartRenderer"
 import { TimingWindowCollection } from "../../play/TimingWindowCollection"
-import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
-import { DanceNotefield } from "./DanceNotefield"
+import { NotedataEntry, isHoldNote } from "../../sm/NoteTypes"
 import { DanceNoteRenderer, NoteObject } from "./DanceNoteRenderer"
 import { DanceNoteTexture } from "./DanceNoteTexture"
+import { DanceNotefield } from "./DanceNotefield"
 
 interface ExtendedNoteObject extends NoteObject {
   note: NotedataEntry
@@ -87,24 +87,23 @@ export class NoteContainer extends Container {
           this.renderer.chartManager.getMode() == EditMode.Play
         )
       }
-      const inSelection =
-        this.renderer.chartManager.getMode() != EditMode.Play &&
-        (this.renderer.chartManager.selection.notes.includes(note) ||
-          this.renderer.chartManager.selection.inProgressNotes.includes(note))
-      arrow.selection.alpha = inSelection
-        ? Math.sin(Date.now() / 320) * 0.1 + 0.3
-        : 0
-      const inSelectionBounds = this.renderer.selectionTest(arrow)
-      if (!inSelection && inSelectionBounds) {
-        this.renderer.chartManager.addNoteToDragSelection(note)
-      }
-      if (inSelection && !inSelectionBounds) {
-        this.renderer.chartManager.removeNoteFromDragSelection(note)
-      }
-      if (this.renderer.chartManager.selection.shift && inSelection) {
-        arrow.visible = false
-      } else {
-        arrow.visible = true
+      if (this.renderer.chartManager.editTimingMode == EditTimingMode.Off) {
+        const inSelection =
+          this.renderer.chartManager.getMode() != EditMode.Play &&
+          (this.renderer.chartManager.selection.notes.includes(note) ||
+            this.renderer.chartManager.selection.inProgressNotes.includes(note))
+        arrow.selection.alpha = inSelection
+          ? Math.sin(Date.now() / 320) * 0.1 + 0.3
+          : 0
+        arrow.visible =
+          !inSelection || !this.renderer.chartManager.selection.shift
+        const inSelectionBounds = this.renderer.selectionTest(arrow)
+        if (!inSelection && inSelectionBounds) {
+          this.renderer.chartManager.addNoteToDragSelection(note)
+        }
+        if (inSelection && !inSelectionBounds) {
+          this.renderer.chartManager.removeNoteFromDragSelection(note)
+        }
       }
     }
 

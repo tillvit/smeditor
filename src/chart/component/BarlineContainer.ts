@@ -58,10 +58,13 @@ export class BarlineContainer extends Container {
     //Reset mark of old objects
     this.children.forEach(child => (child.marked = false))
 
+    fromBeat = Math.max(0, fromBeat)
     const td = this.renderer.chart.timingData
     const timeSigs = td.getTimingData("TIMESIGNATURES")
     let timeSig = td.getTimingEventAtBeat("TIMESIGNATURES", fromBeat)
-    let timeSigIndex = timeSig ? timeSigs.indexOf(timeSig) : -1
+    let timeSigIndex = timeSig
+      ? timeSigs.findIndex(t => t.beat == timeSig!.beat)
+      : -1
     let divisionLength = td.getDivisionLength(fromBeat)
     const distToDivision =
       (td.getDivisionOfMeasure(fromBeat) % 1) * divisionLength
@@ -79,7 +82,7 @@ export class BarlineContainer extends Container {
       // go to next beat
       barBeat += divisionLength
       // have we new time sig ???
-      if (timeSigIndex != -1 && barBeat >= timeSigs[timeSigIndex + 1]?.beat) {
+      if (barBeat >= timeSigs[timeSigIndex + 1]?.beat) {
         // console.log("new time sig")
         timeSigIndex++
         // go to start of new sig
