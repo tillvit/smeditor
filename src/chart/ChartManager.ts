@@ -19,8 +19,10 @@ import {
   bsearch,
   clamp,
   decodeNotes,
+  decodeTempo,
   dirname,
   encodeNotes,
+  encodeTempo,
   extname,
   tpsUpdate,
 } from "../util/Util"
@@ -158,7 +160,7 @@ export class ChartManager {
         if (e.target instanceof HTMLTextAreaElement) return
         if (e.target instanceof HTMLInputElement) return
         if (this.mode != EditMode.Edit) return
-        const data = this.copyNotes()
+        const data = this.copy()
         if (data) e.clipboardData?.setData("text/plain", data)
         this.deleteSelection()
         e.preventDefault()
@@ -172,7 +174,7 @@ export class ChartManager {
         if (e.target instanceof HTMLTextAreaElement) return
         if (e.target instanceof HTMLInputElement) return
         if (this.mode != EditMode.Edit) return
-        const data = this.copyNotes()
+        const data = this.copy()
         if (data) e.clipboardData?.setData("text/plain", data)
         e.preventDefault()
         e.stopImmediatePropagation()
@@ -187,7 +189,7 @@ export class ChartManager {
         if (e.target instanceof HTMLInputElement) return
         if (this.mode != EditMode.Edit) return
         const clipboard = e.clipboardData?.getData("text/plain")
-        if (clipboard) this.pasteNotes(clipboard)
+        if (clipboard) this.paste(clipboard)
         e.preventDefault()
         e.stopImmediatePropagation()
       },
@@ -685,8 +687,7 @@ export class ChartManager {
     this.chartView?.removeChildren()
 
     // Load the chart
-    this.clearSelection()
-    this.clearEventSelection()
+    this.clearSelections()
     this.loadedChart = chart
     this.beat = this.loadedChart.getBeatFromSeconds(this.time)
     ActionHistory.instance.reset()
@@ -1281,19 +1282,11 @@ export class ChartManager {
    *
    * @memberof ChartManager
    */
-  clearSelection() {
+  clearSelections() {
     this.selection = {
       notes: [],
       inProgressNotes: [],
     }
-  }
-
-  /**
-   * Clears the current event selection
-   *
-   * @memberof ChartManager
-   */
-  clearEventSelection() {
     this.eventSelection = {
       timingEvents: [],
       inProgressTimingEvents: [],
@@ -1330,6 +1323,16 @@ export class ChartManager {
     this.selection.inProgressNotes.splice(index, 1)
   }
 
+  addEventToDragSelection(event: TimingEvent) {
+    this.eventSelection.inProgressTimingEvents.push(event)
+  }
+
+  removeEventFromDragSelection(event: TimingEvent) {
+    const index = this.eventSelection.inProgressTimingEvents.indexOf(event)
+    if (index == -1) return
+    this.eventSelection.inProgressTimingEvents.splice(index, 1)
+  }
+
   addNoteToSelection(note: NotedataEntry) {
     this.selection.notes.push(note)
   }
@@ -1344,6 +1347,12 @@ export class ChartManager {
     this.eventSelection.timingEvents.push(event)
   }
 
+  removeEventFromSelection(event: TimingEvent) {
+    const index = this.eventSelection.timingEvents.indexOf(event)
+    if (index == -1) return
+    this.eventSelection.timingEvents.splice(index, 1)
+  }
+
   selectRegion() {
     if (!this.loadedChart) return
     if (this.endRegion) {
@@ -1351,8 +1360,7 @@ export class ChartManager {
       this.endRegion = undefined
     }
     if (!this.startRegion) {
-      this.clearSelection()
-      this.clearEventSelection()
+      this.clearSelections()
       this.startRegion = this.beat
       return
     }
@@ -1480,6 +1488,7 @@ export class ChartManager {
     this.app.actionHistory.run({
       action: () => {
         this.loadedChart!.removeNotes(removedNotes)
+        this.clearSelections()
       },
       undo: () => {
         this.selection.notes = this.loadedChart!.addNotes(removedNotes)
@@ -1487,11 +1496,65 @@ export class ChartManager {
     })
   }
 
-  pasteNotes(data: string) {
+  deleteEventSelection() {
+    if (this.eventSelection.timingEvents.length == 0) return
+    const removedEvents = this.eventSelection.timingEvents
+    const timingData = this.loadedChart!.timingData
+    let conflicts: TimingEvent[] = []
+    this.app.actionHistory.run({
+      action: () => {
+        timingData.rawDeleteMultiple(removedEvents)
+        conflicts = timingData.findConflicts()
+        timingData.rawDeleteMultiple(conflicts)
+        this.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (removedEvents.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+      undo: () => {
+        timingData.rawInsertMultiple(conflicts)
+        timingData.rawInsertMultiple(removedEvents)
+        this.eventSelection.timingEvents = removedEvents
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (removedEvents.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+      redo: () => {
+        timingData.rawDeleteMultiple(removedEvents)
+        timingData.rawDeleteMultiple(conflicts)
+        this.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (removedEvents.find(event => event.type == "TIMESIGNATURES")) {
+          EventHandler.emit("timeSigChanged")
+        }
+      },
+    })
+  }
+
+  paste(data: string) {
     if (!this.loadedChart) return
-    const notes = decodeNotes(data) ?? decodeNotes(this.virtualClipboard)
-    if (!notes) return
-    if (notes.length == 0) return
+    if (data.startsWith("ArrowVortex:notes:")) {
+      this.pasteNotes(data) || this.pasteNotes(this.virtualClipboard)
+    }
+    if (
+      data.startsWith("ArrowVortex:tempo:") ||
+      data.startsWith("SMEditor:tempo:")
+    ) {
+      this.pasteTempo(data) || this.pasteTempo(this.virtualClipboard)
+      return
+    }
+  }
+
+  pasteNotes(data: string) {
+    if (!this.loadedChart) return true
+    const notes = decodeNotes(data)
+    if (!notes) return false
+    if (notes.length == 0) return false
     notes
       .map(note => {
         note.beat += this.beat
@@ -1539,22 +1602,103 @@ export class ChartManager {
         this.loadedChart!.addNotes(conflictingNotes)
       },
     })
+    return true
   }
 
-  copyNotes(): string | undefined {
-    if (this.selection.notes.length == 0) return
-    const firstBeat = Math.min(...this.selection.notes.map(note => note.beat))
-    const notes = structuredClone(this.selection.notes)
-      .map(note => {
-        note.beat -= firstBeat
-        return note
-      })
-      .sort((a, b) => {
-        if (a.beat == b.beat) return a.col - b.col
-        return a.beat - b.beat
-      })
-    const encoded = encodeNotes(notes)
-    this.virtualClipboard = encoded
-    return encoded
+  pasteTempo(data: string) {
+    if (!this.loadedChart) return true
+    const events = decodeTempo(data)
+    console.log(events)
+    if (!events) return false
+    return true
+    // if (notes.length == 0) return
+    // notes
+    //   .map(note => {
+    //     note.beat += this.beat
+    //     note.beat = Math.round(note.beat * 48) / 48
+    //     return note
+    //   })
+    //   .sort((a, b) => {
+    //     if (a.beat == b.beat) return a.col - b.col
+    //     return a.beat - b.beat
+    //   })
+    // const notedata = this.loadedChart.getNotedata()
+    // let startIndex = bsearch(notedata, notes[0].beat, note => note.beat)
+    // const conflictingNotes: NotedataEntry[] = []
+    // for (const newNote of notes) {
+    //   let latestNoteIndex = startIndex
+    //   const isHold = isHoldNote(newNote)
+    //   while (
+    //     notedata[startIndex] &&
+    //     notedata[startIndex].beat <= newNote.beat + (isHold ? newNote.hold : 0)
+    //   ) {
+    //     const note = notedata[startIndex]
+    //     startIndex++
+    //     if (note.beat < newNote.beat) latestNoteIndex = startIndex
+    //     if (note.col != newNote.col) continue
+    //     if (note.beat == newNote.beat) {
+    //       conflictingNotes.push(note)
+    //     }
+    //     if (
+    //       isHold &&
+    //       note.beat > newNote.beat &&
+    //       note.beat <= newNote.beat + newNote.hold
+    //     ) {
+    //       conflictingNotes.push(note)
+    //     }
+    //   }
+    //   startIndex = latestNoteIndex
+    // }
+    // this.app.actionHistory.run({
+    //   action: () => {
+    //     this.loadedChart!.removeNotes(conflictingNotes)
+    //     this.selection.notes = this.loadedChart!.addNotes(notes)
+    //   },
+    //   undo: () => {
+    //     this.loadedChart!.removeNotes(notes)
+    //     this.loadedChart!.addNotes(conflictingNotes)
+    //   },
+    // })
+  }
+
+  copy(): string | undefined {
+    if (this.selection.notes.length != 0) {
+      const firstBeat = Math.min(...this.selection.notes.map(note => note.beat))
+      const notes = structuredClone(this.selection.notes)
+        .map(note => {
+          note.beat -= firstBeat
+          return note
+        })
+        .sort((a, b) => {
+          if (a.beat == b.beat) return a.col - b.col
+          return a.beat - b.beat
+        })
+      const encoded = encodeNotes(notes)
+      this.virtualClipboard = encoded
+      return encoded
+    } else if (this.eventSelection.timingEvents.length != 0) {
+      const firstBeat = Math.min(
+        ...this.eventSelection.timingEvents.map(note => note.beat!)
+      )
+      const firstSec =
+        this.loadedChart!.timingData.getSecondsFromBeat(firstBeat)
+      const events = structuredClone(this.eventSelection.timingEvents)
+        .map(note => {
+          if (note.type == "ATTACKS") {
+            note.second -= firstSec
+            return note
+          }
+          note.beat -= firstBeat
+          return note
+        })
+        .sort((a, b) => {
+          if (a.type != b.type) return a.type.localeCompare(b.type)
+          if (a.type == "ATTACKS") return a.second - b.second!
+          return a.beat - b.beat!
+        })
+      const encoded = encodeTempo(events)
+      this.virtualClipboard = encoded
+      return encoded
+    }
   }
 }

@@ -37,7 +37,7 @@ export class NumberSpinner {
         this.onChange?.(undefined)
         return
       }
-      let value = roundDigit(safeParse(input.value), 3)
+      let value = roundDigit(safeParse(input.value), this.precision ?? 3)
       value = clamp(value, this.min, this.max)
       input.value = this.formatValue(value)
       this.onChange?.(value)
@@ -109,7 +109,7 @@ export class NumberSpinner {
   }
 
   private formatValue(value: number) {
-    if (!this.precision) return roundDigit(value, 3).toString()
+    if (this.precision === undefined) return roundDigit(value, 3).toString()
     return roundDigit(value, this.precision).toFixed(this.precision)
   }
 }

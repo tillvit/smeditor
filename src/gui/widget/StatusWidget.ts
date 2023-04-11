@@ -554,6 +554,13 @@ export class StatusWidget extends Widget {
         case EditTimingMode.Edit:
           this.addTimingEvent.style.background = ""
       }
+      if (
+        (this.lastTimingMode == EditTimingMode.Off &&
+          timingMode != EditTimingMode.Off) ||
+        (this.lastTimingMode != EditTimingMode.Off &&
+          timingMode == EditTimingMode.Off)
+      )
+        this.manager.chartManager.clearSelections()
       this.trackingMovement = true
       this.idleFrames = 5
       this.lastTimingMode = timingMode

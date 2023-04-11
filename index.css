@@ -1262,7 +1262,7 @@ input[type="range"] {
 
 .popup-zoomer.selected {
   filter: saturate(1.2) brightness(1.4);
-  border: 1px solid rgb(15, 61, 75);
+  border: 1px solid rgb(14, 83, 104);
 }
 
 .popup.exiting .popup-zoomer {

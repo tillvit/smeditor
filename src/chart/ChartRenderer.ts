@@ -153,8 +153,7 @@ export class ChartRenderer extends Container {
         !event.getModifierState("Shift")
       ) {
         // Place a note
-        this.chartManager.clearSelection()
-        this.chartManager.clearEventSelection()
+        this.chartManager.clearSelections()
         this.editingCol = this.lastMouseCol
         this.chartManager.setNote(
           this.lastMouseCol,
@@ -168,8 +167,7 @@ export class ChartRenderer extends Container {
           !event.getModifierState("Meta") &&
           !event.getModifierState("Shift")
         ) {
-          this.chartManager.clearSelection()
-          this.chartManager.clearEventSelection()
+          this.chartManager.clearSelections()
         }
         this.chartManager[
           this.chartManager.editTimingMode == EditTimingMode.Off
@@ -213,10 +211,18 @@ export class ChartRenderer extends Container {
         this.chartManager.endEditing(this.editingCol)
         this.editingCol = -1
       }
-      this.chartManager.endDragSelection()
+      this.chartManager[
+        this.chartManager.editTimingMode == EditTimingMode.Off
+          ? "endDragSelection"
+          : "endDragEventSelection"
+      ]()
       this.selectionBounds = undefined
       selectionSpeed = 0
     })
+  }
+
+  isDragSelecting() {
+    return !!this.selectionBounds
   }
 
   doJudgment(note: NotedataEntry, error: number, judgment: TimingWindow) {
@@ -302,6 +308,8 @@ export class ChartRenderer extends Container {
     this.selectionArea.update()
 
     this.notefield.update(beat, renderBeatLowerLimit, renderBeatLimit)
+    this.notefield.alpha =
+      this.chartManager.editTimingMode == EditTimingMode.Off ? 1 : 0.3
     this.waveform.update(beat, time)
 
     // Move the ghost note for mouse placement
@@ -661,8 +669,7 @@ export class ChartRenderer extends Container {
           !event.getModifierState("Meta") &&
           !event.getModifierState("Shift")
         ) {
-          this.chartManager.clearSelection()
-          this.chartManager.clearEventSelection()
+          this.chartManager.clearSelections()
         }
         this.chartManager.addNoteToSelection(newChild.note)
       }

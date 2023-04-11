@@ -35,6 +35,9 @@ export class TimingEventPopup {
     this.timingData = timingData
     this.modifyBox = modifyBox
     this.popup = this.build()
+
+    // don't show until the position has been set
+    this.popup.style.display = `none`
     setTimeout(() => this.movePosition())
 
     this.onTimingChange = this.updateValues.bind(this)
@@ -52,6 +55,7 @@ export class TimingEventPopup {
     }
   }
   private movePosition() {
+    this.popup.style.display = ``
     const point = this.timingBox.getBounds()
     // will the box stay in bounds?
     const centerx = point.left + point.width / 2
@@ -265,7 +269,10 @@ export class TimingEventPopup {
       this.timingBox.event.type,
       this.timingBox.event.beat!
     ) as { [key: string]: any }
-    if (event.beat != this.timingBox.event.beat!) this.close()
+    if (!this.timingBox || !event || event.beat != this.timingBox.event.beat!) {
+      this.close()
+      return
+    }
     this.rows.forEach(row => {
       switch (row.data.input.type) {
         case "spinner": {

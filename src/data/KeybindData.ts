@@ -840,9 +840,13 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       { key: "Delete", mods: [] },
     ],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
-    callback: app => app.chartManager.deleteSelection(),
+      app.chartManager.getMode() != EditMode.Edit ||
+      (app.chartManager.selection.notes.length == 0 &&
+        app.chartManager.eventSelection.timingEvents.length == 0),
+    callback: app => {
+      app.chartManager.deleteSelection()
+      app.chartManager.deleteEventSelection()
+    },
   },
   paste: {
     label: "Paste",
@@ -853,7 +857,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       app.chartManager.getMode() != EditMode.Edit,
     callback: async app => {
       const data = await navigator.clipboard.readText()
-      app.chartManager.pasteNotes(data)
+      app.chartManager.paste(data)
     },
   },
   copy: {
@@ -864,7 +868,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: async app => {
-      const data = app.chartManager.copyNotes()
+      const data = app.chartManager.copy()
       if (data) await navigator.clipboard.writeText(data)
     },
   },
@@ -876,7 +880,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: async app => {
-      const data = app.chartManager.copyNotes()
+      const data = app.chartManager.copy()
       if (data) await navigator.clipboard.writeText(data)
       app.chartManager.deleteSelection()
     },

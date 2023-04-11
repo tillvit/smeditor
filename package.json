@@ -93,7 +93,8 @@
       "@typescript-eslint/no-misused-promises": "off",
       "@typescript-eslint/prefer-optional-chain": "warn",
       "@typescript-eslint/restrict-template-expressions": "off",
-      "@typescript-eslint/restrict-plus-operands": "off"
+      "@typescript-eslint/restrict-plus-operands": "off",
+      "no-constant-condition": ["error", { "checkLoops": false }]
     },
     "root": true,
     "globals": {
