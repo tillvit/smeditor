@@ -534,7 +534,7 @@ export class TimingData {
   }
 
   private buildMeasureTimingCache() {
-    const timeSigs = this.getTimingData("TIMESIGNATURES")
+    const timeSigs = [...this.getTimingData("TIMESIGNATURES")]
     if (timeSigs.length == 0 || timeSigs[0].beat != 0) {
       timeSigs.unshift({ type: "TIMESIGNATURES", beat: 0, lower: 4, upper: 4 })
     }
@@ -875,9 +875,8 @@ export class TimingData {
     if (props.includes("OFFSET"))
       return this.offset ?? this._fallback?.offset ?? 0
     if (props.length == 1 && props[0] in this._cache.events)
-      return structuredClone(
-        this._cache.events[props[0] as TimingEventProperty]
-      )
+      return this._cache.events[props[0] as TimingEventProperty]
+
     if (this._cache.sortedEvents == undefined) this.buildTimingDataCache()
     const events = this._cache.sortedEvents!.filter(event =>
       props.includes(event.type)
