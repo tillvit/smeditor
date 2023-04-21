@@ -109,28 +109,28 @@ class DefaultOptions {
 }
 
 export type OptionsObject = {
-  [key: string]: string | number | boolean | OptionsObject
+  [key: string]: any
 }
 
 export class Options extends DefaultOptions {
   private static extractOptions(
     obj: { [key: string]: any },
     prefix?: string
-  ): [string, string | number | boolean][] {
+  ): [string, any][] {
     return Object.entries(obj).reduce((options, entry) => {
       const p = prefix ? prefix + "." : ""
-      if (typeof entry[1] == "object") {
+      if (typeof entry[1] == "object" && !Array.isArray(entry[1])) {
         options = options.concat(
           this.extractOptions(entry[1] as { [key: string]: any }, p + entry[0])
         )
       } else {
         entry[0] = p + entry[0]
-        options.push([entry[0], entry[1] as string | number | boolean])
+        options.push([entry[0], entry[1]])
       }
       return options
-    }, [] as [string, string | number | boolean][])
+    }, [] as [string, any][])
   }
-  static applyOption(option: [string, string | number | boolean]) {
+  static applyOption(option: [string, any]) {
     if (typeof this.getDefaultOption(option[0]) != typeof option[1]) {
       return console.warn(
         "Couldn't load option " +
@@ -156,38 +156,28 @@ export class Options extends DefaultOptions {
     }
     obj[name] = option[1]
   }
-  static getDefaultOption(id: string): string | number | boolean | undefined {
+  static getDefaultOption(id: string): any {
     const path = id.split(".")
     let obj: OptionsObject = DefaultOptions as unknown as OptionsObject
     for (const part of path) {
       if (part in obj) obj = obj[part] as OptionsObject
       else return
     }
-    if (
-      typeof obj != "string" &&
-      typeof obj != "number" &&
-      typeof obj != "boolean"
-    )
-      return
-    return obj
+    if (typeof obj == "object" && !Array.isArray(obj)) return
+    return obj as any
   }
-  static getOption(id: string): string | number | boolean | undefined {
+  static getOption(id: string): any {
     const path = id.split(".")
     let obj: OptionsObject = this as unknown as OptionsObject
     for (const part of path) {
       if (part in obj) obj = obj[part] as OptionsObject
       else return
     }
-    if (
-      typeof obj != "string" &&
-      typeof obj != "number" &&
-      typeof obj != "boolean"
-    )
-      return
-    return obj
+    if (typeof obj == "object" && !Array.isArray(obj)) return
+    return obj as any
   }
   static saveOptions() {
-    const obj: { [key: string]: string | number | boolean } = {}
+    const obj: { [key: string]: any } = {}
     for (const option of this.extractOptions(this)) {
       if (SAVE_BLACKLIST.includes(option[0])) continue
       const defaultOption = this.getDefaultOption(option[0])
@@ -217,7 +207,7 @@ export class Options extends DefaultOptions {
     const data = localStorage.getItem("options")
     if (!data) return
     const items = JSON.parse(data) as {
-      [key: string]: string | number | boolean
+      [key: string]: any
     }
     if (typeof items != "object")
       return console.error("Couldn't load options from storage")

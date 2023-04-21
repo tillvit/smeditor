@@ -6,7 +6,7 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
-import { TimingEventPopup } from "../../gui/element/TimingEventPopup"
+import { TimingEventPopup } from "../../gui/popup/TimingEventPopup"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
 import { destroyChildIf, lighten, roundDigit } from "../../util/Util"

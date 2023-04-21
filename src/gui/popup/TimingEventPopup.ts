@@ -5,8 +5,8 @@ import { TimingEvent } from "../../chart/sm/TimingTypes"
 import { POPUP_ROWS, PopupRow } from "../../data/TimingEventPopupData"
 import { EventHandler } from "../../util/EventHandler"
 import { blendColors, clamp } from "../../util/Util"
-import { Dropdown } from "./Dropdown"
-import { NumberSpinner } from "./NumberSpinner"
+import { Dropdown } from "../element/Dropdown"
+import { NumberSpinner } from "../element/NumberSpinner"
 
 interface FinalRow {
   data: PopupRow

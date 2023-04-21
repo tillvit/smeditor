@@ -267,9 +267,9 @@ export class App {
 document.querySelector("body")!.innerHTML = `<div id="view-wrapper"> 
             <div id="menubar"></div>
             <div id="waterfall"></div>
-            <div id="popups"></div>
             <canvas id="pixi"></canvas>
           </div> 
+          <div id="popups"></div>
           <div id="blocker" style="display: none"></div>
           <div id="windows"></div>
         `
@@ -321,9 +321,9 @@ function init() {
       document.querySelector("body")!.innerHTML = `<div id="view-wrapper"> 
             <div id="menubar"></div>
             <div id="waterfall"></div>
-            <div id="popups"></div>
             <canvas id="pixi"></canvas>
           </div> 
+          <div id="popups"></div>
           <div id="blocker" style="display: none"></div>
           <div id="windows"></div>
         `

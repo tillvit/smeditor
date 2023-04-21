@@ -7,6 +7,7 @@ import { Options } from "../../util/Options"
 import { isNumericKeyPress, roundDigit } from "../../util/Util"
 import { Icons } from "../Icons"
 import { Dropdown } from "../element/Dropdown"
+import { TimingTrackOrderPopup } from "../popup/TimingTrackOrderPopup"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
 
@@ -45,12 +46,13 @@ export class StatusWidget extends Widget {
   private editChoiceContainer: HTMLDivElement
 
   private addTimingEvent: HTMLButtonElement
+  private arrangeTimingTracks: HTMLButtonElement
 
   private noteArrows: NoteArrow[] = []
   private noteArrowMask: Sprite
 
-  private lastTime = 0
-  private lastBeat = 0
+  private lastTime = -1
+  private lastBeat = -1
   private lastMode = EditMode.Edit
   private lastTimingMode = EditTimingMode.Off
   private lastHover = 0
@@ -331,6 +333,19 @@ export class StatusWidget extends Widget {
       else this.manager.chartManager.editTimingMode = EditTimingMode.Add
     }
     this.timingContainer.appendChild(this.addTimingEvent)
+
+    this.arrangeTimingTracks = document.createElement("button")
+    const arrangeTimingTracksIcon = document.createElement("img")
+    arrangeTimingTracksIcon.style.height = "32px"
+    arrangeTimingTracksIcon.src = Icons.EYE
+    this.arrangeTimingTracks.appendChild(arrangeTimingTracksIcon)
+    this.arrangeTimingTracks.onclick = () => {
+      TimingTrackOrderPopup.active
+        ? TimingTrackOrderPopup.close()
+        : TimingTrackOrderPopup.open()
+    }
+    this.arrangeTimingTracks.id = "arrange-tracks"
+    this.timingContainer.appendChild(this.arrangeTimingTracks)
 
     this.editBar.appendChild(this.editChoiceContainer)
 
