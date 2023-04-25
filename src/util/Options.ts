@@ -9,7 +9,7 @@ const SAVE_BLACKLIST = [
 
 export const VIEW_BLACKLIST: string[] = []
 
-class DefaultOptions {
+export class DefaultOptions {
   static general = {
     scrollSensitivity: 1,
     mousePlacement: false,
