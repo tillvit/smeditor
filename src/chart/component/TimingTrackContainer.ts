@@ -512,7 +512,11 @@ export class TimingTrackContainer extends Container {
       })
       this.ghostBox = newChild as TimingBox
     }
-    if (!this.ghostBox?.popup && this.ghostBox.event?.beat != snapBeat) {
+    if (
+      !this.ghostBox?.popup &&
+      (this.ghostBox.event?.beat != snapBeat ||
+        this.ghostBox.event?.type != type)
+    ) {
       this.ghostBox.event =
         structuredClone(
           this.renderer.chart.timingData.getTimingEventAtBeat(
