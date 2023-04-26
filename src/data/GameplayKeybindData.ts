@@ -14,6 +14,7 @@ export const GAMEPLAY_KEYBINDS: { [key: string]: GameplayKeybind[] } = {
       keybinds: [
         { key: "Left", mods: [] },
         { key: "A", mods: [] },
+        { key: "J", mods: [] },
       ],
     },
     {
@@ -22,6 +23,7 @@ export const GAMEPLAY_KEYBINDS: { [key: string]: GameplayKeybind[] } = {
       keybinds: [
         { key: "Down", mods: [] },
         { key: "S", mods: [] },
+        { key: "K", mods: [] },
       ],
     },
     {
@@ -30,6 +32,7 @@ export const GAMEPLAY_KEYBINDS: { [key: string]: GameplayKeybind[] } = {
       keybinds: [
         { key: "Up", mods: [] },
         { key: "W", mods: [] },
+        { key: "I", mods: [] },
       ],
     },
     {
@@ -38,6 +41,7 @@ export const GAMEPLAY_KEYBINDS: { [key: string]: GameplayKeybind[] } = {
       keybinds: [
         { key: "Right", mods: [] },
         { key: "D", mods: [] },
+        { key: "L", mods: [] },
       ],
     },
   ],
