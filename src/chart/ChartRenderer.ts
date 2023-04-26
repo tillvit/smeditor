@@ -309,7 +309,10 @@ export class ChartRenderer extends Container {
 
     this.notefield.update(beat, renderBeatLowerLimit, renderBeatLimit)
     this.notefield.alpha =
-      this.chartManager.editTimingMode == EditTimingMode.Off ? 1 : 0.3
+      this.chartManager.editTimingMode == EditTimingMode.Off ||
+      this.chartManager.getMode() == EditMode.Play
+        ? 1
+        : 0.3
     this.waveform.update(beat, time)
 
     // Move the ghost note for mouse placement

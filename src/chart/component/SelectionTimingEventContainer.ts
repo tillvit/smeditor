@@ -1,4 +1,4 @@
-import { BitmapText, Container } from "pixi.js"
+import { BitmapText, Container, Sprite, Texture } from "pixi.js"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
 import { destroyChildIf, roundDigit } from "../../util/Util"
@@ -10,6 +10,7 @@ import { TIMING_TRACK_WIDTHS, timingNumbers } from "./TimingTrackContainer"
 
 interface TimingBox extends Container {
   event: TimingEvent
+  guideLine: Sprite
   songTiming: boolean
   deactivated: boolean
   marked: boolean
@@ -51,6 +52,7 @@ export class SelectionTimingEventContainer extends Container {
       if (outOfBounds) continue
 
       const timingBox = this.getTimingBox(event)
+      const timingWidth = timingBox.backgroundObj.width
 
       const side = Options.chart.timingEventOrder.right.includes(event.type)
         ? "right"
@@ -59,23 +61,27 @@ export class SelectionTimingEventContainer extends Container {
         let x = this.getTrackPos(event.type)
         x += (TIMING_TRACK_WIDTHS[event.type] / 2) * (x > 0 ? 1 : -1)
         timingBox.position.x = x
-        timingBox.textObj.anchor.x = 0.5
+        timingBox.pivot.x = 0
       } else {
         let x =
           (side == "right" ? 1 : -1) *
           (this.renderer.chart.gameType.notefieldWidth * 0.5 + 80)
         if (side == "left") x -= 30
         timingBox.position.x = x
-        timingBox.textObj.anchor.x = side == "right" ? 0 : 1
+        timingBox.pivot.x = side == "right" ? -timingWidth / 2 : timingWidth / 2
       }
       timingBox.backgroundObj.tint = TIMING_EVENT_COLORS[event.type] ?? 0x000000
-      timingBox.backgroundObj.position.x =
-        -5 - timingBox.textObj.width * timingBox.textObj.anchor.x
+      timingBox.backgroundObj.position.x = -timingBox.backgroundObj.width / 2
+      timingBox.backgroundObj.position.y = -timingBox.backgroundObj.height / 2
+      timingBox.guideLine.anchor.x = side == "left" ? 0 : 1
+      timingBox.guideLine.width =
+        Math.abs(timingBox.position.x) + 192 - timingBox.backgroundObj.width / 2
+      timingBox.guideLine.position.x =
+        ((side == "left" ? 1 : -1) * timingBox.backgroundObj.width) / 2
       timingBox.y = yPos
       timingBox.marked = true
       timingBox.dirtyTime = Date.now()
 
-      timingBox.backgroundObj.position.y = Options.chart.reverse ? -14 : -11
       timingBox.textObj.scale.y = Options.chart.reverse ? -1 : 1
     }
 
@@ -122,8 +128,10 @@ export class SelectionTimingEventContainer extends Container {
     if (!newChild) {
       newChild = new Container() as TimingBox
       newChild.zIndex = event.beat
+      newChild.guideLine = new Sprite(Texture.WHITE)
       newChild.textObj = new BitmapText("", timingNumbers)
       newChild.backgroundObj = new BetterRoundedRect()
+      newChild.addChild!(newChild.guideLine)
       newChild.addChild!(newChild.backgroundObj)
       newChild.addChild!(newChild.textObj)
       this.addChild(newChild as TimingBox)
@@ -172,11 +180,14 @@ export class SelectionTimingEventContainer extends Container {
         label = `${event.mods} (${event.endType}=${event.value})`
     }
     newChild.textObj!.text = label
-    newChild.textObj!.anchor.y = 0.5
+    newChild.textObj!.anchor.x = 0.5
+    newChild.textObj!.anchor.y = 0.55
     newChild.visible = true
     newChild.backgroundObj!.width = newChild.textObj!.width + 10
     newChild.backgroundObj!.height = 25
     newChild.zIndex = event.beat
+    newChild.guideLine!.height = 1
+    newChild.guideLine!.anchor.y = 0.5
     this.eventMap.set(event, newChild as TimingBox)
     return newChild as TimingBox
   }
