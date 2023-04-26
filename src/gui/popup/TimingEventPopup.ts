@@ -56,7 +56,7 @@ export class TimingEventPopup {
   }
   private movePosition() {
     this.popup.style.display = ``
-    const point = this.timingBox.getBounds()
+    const point = this.timingBox.backgroundObj.getBounds()
     // will the box stay in bounds?
     const centerx = point.left + point.width / 2
     const width = POPUP_ROWS[this.timingBox.event.type].width ?? 150
