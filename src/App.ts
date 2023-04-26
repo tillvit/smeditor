@@ -252,9 +252,9 @@ export class App {
   }
 
   onResize() {
-    const screenWidth = window.innerWidth
+    const screenWidth = window.outerWidth
     const screenHeight =
-      window.innerHeight - document.getElementById("menubar")!.clientHeight
+      window.outerHeight - document.getElementById("menubar")!.clientHeight
     this.renderer.screen.width = screenWidth
     this.renderer.screen.height = screenHeight
     this.view.width = screenWidth * this.renderer.resolution
