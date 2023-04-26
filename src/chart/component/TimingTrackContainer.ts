@@ -24,9 +24,11 @@ export interface TimingBox extends Container {
   backgroundObj: BetterRoundedRect
   selection: BetterRoundedRect
   textObj: BitmapText
+  guideLine?: Sprite
   targetX?: number
   targetAnchor?: number
   popup?: TimingEventPopup
+  widthCache: number
 }
 
 interface TimingTrack extends Sprite {
@@ -176,6 +178,7 @@ export class TimingTrackContainer extends Container {
       if (outOfBounds) continue
 
       const timingBox = this.getTimingBox(event)
+      const timingWidth = timingBox.widthCache
 
       const side = Options.chart.timingEventOrder.right.includes(event.type)
         ? "right"
@@ -187,7 +190,7 @@ export class TimingTrackContainer extends Container {
           (TIMING_TRACK_WIDTHS[event.type] / 2) * (targetX > 0 ? 1 : -1)
         if (!timingBox.targetX) timingBox.position.x = targetX
         timingBox.targetX = targetX
-        if (!timingBox.targetAnchor) timingBox.textObj.anchor.x = 0.5
+        if (!timingBox.targetAnchor) timingBox.pivot.x = 0
         timingBox.targetAnchor = 0.5
       } else {
         let x =
@@ -205,29 +208,28 @@ export class TimingTrackContainer extends Container {
         if (side == "right") x += currentRow.rightOffset
         if (!timingBox.targetX) timingBox.position.x = x
         timingBox.targetX = x
-        if (side == "left")
-          currentRow.leftOffset += timingBox.textObj.width + 15
-        if (side == "right")
-          currentRow.rightOffset += timingBox.textObj.width + 15
+        if (side == "left") currentRow.leftOffset += timingWidth + 5
+        if (side == "right") currentRow.rightOffset += timingWidth + 5
         currentRow.beat = event.beat!
         currentRow.second = event.second!
         if (!timingBox.targetAnchor)
-          timingBox.textObj.anchor.x = side == "right" ? 0 : 1
+          timingBox.pivot.x =
+            side == "right" ? -timingWidth / 2 : timingWidth / 2
         timingBox.targetAnchor = side == "right" ? 0 : 1
       }
 
       timingBox.position.x =
         (timingBox.targetX - timingBox.position.x) * 0.2 + timingBox.position.x
-      timingBox.textObj.anchor.x =
-        (timingBox.targetAnchor - timingBox.textObj.anchor.x) * 0.2 +
-        timingBox.textObj.anchor.x
-      timingBox.backgroundObj.position.x =
-        -5 - timingBox.textObj.width * timingBox.textObj.anchor.x
+      timingBox.pivot.x =
+        ((timingBox.targetAnchor - 0.5) * timingWidth - timingBox.pivot.x) *
+          0.2 +
+        timingBox.pivot.x
+      timingBox.backgroundObj.position.x = -timingWidth / 2
+      timingBox.backgroundObj.position.y = -25 / 2
       timingBox.y = yPos
       timingBox.marked = true
       timingBox.dirtyTime = Date.now()
 
-      timingBox.backgroundObj.position.y = Options.chart.reverse ? -14 : -11
       timingBox.selection.position = timingBox.backgroundObj.position
       timingBox.textObj.scale.y = Options.chart.reverse ? -1 : 1
 
@@ -328,8 +330,10 @@ export class TimingTrackContainer extends Container {
     newChild.targetX = undefined
     newChild.targetAnchor = undefined
     newChild.textObj!.text = this.getLabelFromEvent(event)
-    newChild.textObj!.anchor.y = 0.5
+    newChild.textObj!.anchor.x = 0.5
+    newChild.textObj!.anchor.y = 0.55 //???
     newChild.backgroundObj!.width = newChild.textObj!.width + 10
+    newChild.widthCache = newChild.backgroundObj!.width
     newChild.backgroundObj!.height = 25
     newChild.selection!.width = newChild.textObj!.width + 10
     newChild.selection!.height = 25
@@ -487,11 +491,13 @@ export class TimingTrackContainer extends Container {
       const newChild: Partial<TimingBox> | undefined =
         new Container() as TimingBox
       newChild.zIndex = -1
+      newChild.guideLine = new Sprite(Texture.WHITE)
       newChild.textObj = new BitmapText("", timingNumbers)
       newChild.backgroundObj = new BetterRoundedRect()
       newChild.selection = new BetterRoundedRect("onlyBorder")
       newChild.selection.tint = 0x0f3d4b
       newChild.selection.alpha = 0
+      newChild.addChild!(newChild.guideLine)
       newChild.addChild!(newChild.backgroundObj)
       newChild.addChild!(newChild.textObj)
       newChild.addChild!(newChild.selection)
@@ -501,9 +507,12 @@ export class TimingTrackContainer extends Container {
       newChild.visible = true
       newChild.targetX = undefined
       newChild.targetAnchor = undefined
-      newChild.textObj.anchor.y = 0.5
+      newChild.textObj.anchor.x = 0.5
+      newChild.textObj.anchor.y = 0.55
       newChild.backgroundObj.height = 25
       newChild.selection.height = 25
+      newChild.guideLine.height = 1
+      newChild.guideLine.anchor.y = 0.5
       newChild.interactive = true
       newChild.popup = undefined
 
@@ -529,14 +538,12 @@ export class TimingTrackContainer extends Container {
           snapBeat
         )
       this.ghostBox.event.beat = snapBeat
+      this.ghostBox.textObj.text = this.getLabelFromEvent(this.ghostBox.event)
+      this.ghostBox.backgroundObj.width = this.ghostBox.textObj.width + 10
+      this.ghostBox.selection.width = this.ghostBox.textObj.width + 10
     }
     this.ghostBox.alpha = this.ghostBox?.popup ? 1 : 0.4
     this.ghostBox.selection.alpha = this.ghostBox?.popup ? 1 : 0
-    this.ghostBox.textObj.text = this.getLabelFromEvent(this.ghostBox.event)
-    this.ghostBox.backgroundObj.width = this.ghostBox.textObj.width + 10
-    this.ghostBox.selection.width = this.ghostBox.textObj.width + 10
-
-    // this.ghostBox.visible = !this.ghostBox.popup
 
     this.ghostBox.name = type
 
@@ -547,17 +554,23 @@ export class TimingTrackContainer extends Container {
     let targetX = this.tracks.getChildByName<TimingTrack>(type)!.x
     targetX += (TIMING_TRACK_WIDTHS[type] / 2) * (targetX > 0 ? 1 : -1)
     this.ghostBox.position.x = targetX
-    this.ghostBox.targetAnchor = 0.5
     this.ghostBox.backgroundObj.tint = TIMING_EVENT_COLORS[type] ?? 0x000000
-    this.ghostBox.textObj.anchor.x = 0.5
     this.ghostBox.backgroundObj.position.x =
-      -5 - this.ghostBox.textObj.width * this.ghostBox.textObj.anchor.x
+      -this.ghostBox.backgroundObj.width / 2
+    this.ghostBox.backgroundObj.position.y = -25 / 2
+    this.ghostBox.guideLine!.anchor.x = targetX < 0 ? 0 : 1
+    this.ghostBox.guideLine!.width =
+      Math.abs(this.ghostBox.position.x) +
+      192 -
+      this.ghostBox.backgroundObj.width / 2
+    this.ghostBox.guideLine!.position.x =
+      ((targetX < 0 ? 1 : -1) * this.ghostBox.backgroundObj.width) / 2
     this.ghostBox.y = yPos
 
-    this.ghostBox.backgroundObj.position.y = Options.chart.reverse ? -14 : -11
     this.ghostBox.selection.position = this.ghostBox.backgroundObj.position
     this.ghostBox.textObj.scale.y = Options.chart.reverse ? -1 : 1
   }
+
   placeGhostEvent() {
     if (!this.ghostBox) return
     this.renderer.chartManager.clearSelections()
