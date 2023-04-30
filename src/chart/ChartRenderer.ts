@@ -119,7 +119,7 @@ export class ChartRenderer extends Container {
       )
         return
       // Scroll the notefield if the cursor is near the edge of the screen
-      const pos = this.getYPos(
+      const pos = this.getYPosFromBeat(
         Math.max(0, this.chartManager.getBeat() + selectionSpeed)
       )
       this.chartManager.setBeat(
@@ -268,7 +268,7 @@ export class ChartRenderer extends Container {
     if (Options.chart.CMod) {
       renderBeatLimit = this.getBeatFromYPos(this.getLowerBound()) + 1
       renderBeatLowerLimit = this.getBeatFromYPos(this.getUpperBound())
-      renderSecondLowerLimit = this.getTimeFromYPos(this.getUpperBound())
+      renderSecondLowerLimit = this.getSecondFromYPos(this.getUpperBound())
     }
 
     this.selectionSprite.visible = !!this.selectionBounds
@@ -434,83 +434,60 @@ export class ChartRenderer extends Container {
    * @return {*}  {number}
    * @memberof ChartRenderer
    */
-  getYPos(beat: number): number {
+  getYPosFromBeat(beat: number): number {
     const currentTime = this.getVisualTime()
     const currentBeat = this.getVisualBeat()
     if (Options.chart.CMod) {
-      return (
-        (((this.chart.getSecondsFromBeat(beat) - currentTime) *
-          Options.chart.speed) /
-          100) *
-          64 *
-          4 +
-        Options.chart.receptorYPos / Options.chart.zoom
-      )
+      const deltaTime = this.chart.getSecondsFromBeat(beat) - currentTime
+      const deltaY = deltaTime * this.getSecondsToPixelsRatio()
+      return deltaY + this.getActualReceptorYPos()
     }
-    if (currentBeat == beat)
-      return Options.chart.receptorYPos / Options.chart.zoom
-    if (Options.chart.doSpeedChanges)
-      return (
-        (((this.chart.timingData.getEffectiveBeat(beat) -
-          this.chart.timingData.getEffectiveBeat(currentBeat)) *
-          Options.chart.speed) /
-          100) *
-          64 *
-          this.speedMult +
-        Options.chart.receptorYPos / Options.chart.zoom
-      )
-    return (
-      (((beat - currentBeat) * Options.chart.speed) / 100) * 64 +
-      Options.chart.receptorYPos / Options.chart.zoom
-    )
+    if (currentBeat == beat) return this.getActualReceptorYPos()
+    const deltaBeat = Options.chart.doSpeedChanges
+      ? this.chart.timingData.getEffectiveBeat(beat) -
+        this.chart.timingData.getEffectiveBeat(currentBeat)
+      : beat - currentBeat
+    const deltaY = deltaBeat * this.getEffectiveBeatsToPixelsRatio()
+    return deltaY + this.getActualReceptorYPos()
   }
 
   /**
-   * Returns the y position for a note at the given time.
+   * Returns the y position for a note at the given second.
+   * Use this method to prevent calculating the current second (usually in CMod).
    *
    * @param {number} time
    * @return {*}  {number}
    * @memberof ChartRenderer
    */
-  getYPosFromTime(time: number): number {
+  getYPosFromSecond(time: number): number {
     const currentTime = this.getVisualTime()
     if (Options.chart.CMod) {
-      return (
-        (((time - currentTime) * Options.chart.speed) / 100) * 64 * 4 +
-        Options.chart.receptorYPos / Options.chart.zoom
+      const deltaTime = time - currentTime
+      const deltaY = deltaTime * this.getSecondsToPixelsRatio()
+      return deltaY + this.getActualReceptorYPos()
+    } else {
+      return this.getYPosFromBeat(
+        this.chart.timingData.getBeatFromSeconds(time)
       )
-    } else return this.getYPos(this.chart.timingData.getBeatFromSeconds(time))
+    }
   }
 
   /**
-   * Returns the time for a note at the specified y position.
+   * Returns the second for a note at the specified y position.
    * May return an incorrect value when negative scrolls are used.
    *
    * @param {number} yp
    * @return {*}  {number}
    * @memberof ChartRenderer
    */
-  getTimeFromYPos(yp: number): number {
+  getSecondFromYPos(yp: number): number {
     if (Options.chart.CMod) {
-      const chartSpeed = Options.chart.speed
+      const pixelsToSeconds = this.getPixelsToSecondsRatio()
+      const currentTime = this.getVisualTime()
 
-      // Snap current time to the nearest nth of a beat (where n is number of beats per pixel)
-      const speedMult = 1 // Just putting this here so we remember if we ever need speedmults
-      const pixelsToEffectiveBeats =
-        100 / chartSpeed / speedMult / 64 / Options.chart.zoom / 4
-
-      const currentTime =
-        Math.floor(this.getVisualTime() / pixelsToEffectiveBeats) *
-        pixelsToEffectiveBeats
-
-      const seconds =
-        (((yp - Options.chart.receptorYPos / Options.chart.zoom) /
-          Options.chart.speed) *
-          100) /
-          64 /
-          4 +
-        currentTime
-      return seconds
+      const deltaY = yp - Options.chart.receptorYPos / Options.chart.zoom
+      const deltaTime = deltaY * pixelsToSeconds
+      return currentTime + deltaTime
     }
     return this.chart.getSecondsFromBeat(this.getBeatFromYPos(yp))
   }
@@ -527,20 +504,42 @@ export class ChartRenderer extends Container {
   getBeatFromYPos(yp: number, ignoreScrolls?: boolean): number {
     const currentBeat = this.getVisualBeat()
     if (Options.chart.CMod) {
-      return this.chart.getBeatFromSeconds(this.getTimeFromYPos(yp))
+      return this.chart.getBeatFromSeconds(this.getSecondFromYPos(yp))
     }
-    if (Options.chart.doSpeedChanges && !ignoreScrolls)
-      return this.chart.getBeatFromEffectiveBeat(
-        (((yp - Options.chart.receptorYPos / Options.chart.zoom) / 64) * 100) /
-          Options.chart.speed /
-          this.speedMult +
-          this.chart.timingData.getEffectiveBeat(currentBeat)
-      )
-    return (
-      (((yp - Options.chart.receptorYPos / Options.chart.zoom) / 64) * 100) /
-        Options.chart.speed +
-      currentBeat
-    )
+    const deltaY = yp - this.getActualReceptorYPos()
+    const deltaBeat = deltaY * this.getPixelsToEffectiveBeatsRatio()
+    if (Options.chart.doSpeedChanges && !ignoreScrolls) {
+      const effBeat =
+        this.chart.timingData.getEffectiveBeat(currentBeat) + deltaBeat
+      return this.chart.getBeatFromEffectiveBeat(effBeat)
+    }
+    return currentBeat + deltaBeat
+  }
+
+  /**
+   * Returns the y position of the receptors after zooming.
+   *
+   * @return {*}  {number}
+   * @memberof ChartRenderer
+   */
+  getActualReceptorYPos(): number {
+    return Options.chart.receptorYPos / Options.chart.zoom
+  }
+
+  getEffectiveBeatsToPixelsRatio(): number {
+    return (Options.chart.speed / 100) * 64 * this.speedMult
+  }
+
+  getPixelsToEffectiveBeatsRatio(): number {
+    return 1 / this.getEffectiveBeatsToPixelsRatio()
+  }
+
+  getSecondsToPixelsRatio(): number {
+    return (Options.chart.speed / 100) * 64 * 4
+  }
+
+  getPixelsToSecondsRatio(): number {
+    return 1 / this.getSecondsToPixelsRatio()
   }
 
   /**

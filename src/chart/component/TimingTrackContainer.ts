@@ -287,8 +287,8 @@ export class TimingTrackContainer extends Container {
   ): [boolean, boolean, number] {
     const y =
       Options.chart.CMod && event.second
-        ? this.renderer.getYPosFromTime(event.second)
-        : this.renderer.getYPos(event.beat!)
+        ? this.renderer.getYPosFromSecond(event.second)
+        : this.renderer.getYPosFromBeat(event.beat!)
     if (y < this.renderer.getUpperBound()) return [true, false, y]
     if (y > this.renderer.getLowerBound()) {
       if (event.beat! < beat || this.renderer.isNegScroll(event.beat!))
@@ -547,7 +547,7 @@ export class TimingTrackContainer extends Container {
 
     this.ghostBox.name = type
 
-    const yPos = this.renderer.getYPos(
+    const yPos = this.renderer.getYPosFromBeat(
       this.ghostBox?.popup ? this.ghostBox.event.beat! : snapBeat
     )
 

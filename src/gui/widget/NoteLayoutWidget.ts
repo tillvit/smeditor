@@ -134,13 +134,15 @@ export class NoteLayoutWidget extends Widget {
     const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
     const lastSecond = chart.getSecondsFromBeat(lastBeat)
     const start = Options.chart.CMod
-      ? chartView.getTimeFromYPos(-this.manager.app.renderer.screen.height / 2)
+      ? chartView.getSecondFromYPos(
+          -this.manager.app.renderer.screen.height / 2
+        )
       : chartView.getBeatFromYPos(
           -this.manager.app.renderer.screen.height / 2,
           true
         )
     const end = Options.chart.CMod
-      ? chartView.getTimeFromYPos(this.manager.app.renderer.screen.height / 2)
+      ? chartView.getSecondFromYPos(this.manager.app.renderer.screen.height / 2)
       : chartView.getBeatFromYPos(
           this.manager.app.renderer.screen.height / 2,
           true

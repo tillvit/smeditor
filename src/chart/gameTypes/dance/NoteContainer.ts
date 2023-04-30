@@ -132,10 +132,10 @@ export class NoteContainer extends Container {
       !note.gameplay?.lastHoldActivation ||
       beat < note.beat
     )
-      y = this.renderer.getYPos(note.beat)
+      y = this.renderer.getYPosFromBeat(note.beat)
     if (isHoldNote(note) && note.gameplay?.droppedHoldBeat)
-      y = this.renderer.getYPos(note.gameplay.droppedHoldBeat)
-    const y_hold = this.renderer.getYPos(
+      y = this.renderer.getYPosFromBeat(note.gameplay.droppedHoldBeat)
+    const y_hold = this.renderer.getYPosFromBeat(
       note.beat + (isHoldNote(note) ? note.hold : 0)
     )
     if (

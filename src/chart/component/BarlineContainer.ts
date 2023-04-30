@@ -146,7 +146,7 @@ export class BarlineContainer extends Container {
     bar_beat: number,
     beat: number
   ): [boolean, boolean, number] {
-    const y = this.renderer.getYPos(bar_beat)
+    const y = this.renderer.getYPosFromBeat(bar_beat)
     if (y < this.renderer.getUpperBound()) return [true, false, y]
     if (y > this.renderer.getLowerBound()) {
       if (bar_beat < beat || this.renderer.isNegScroll(bar_beat))

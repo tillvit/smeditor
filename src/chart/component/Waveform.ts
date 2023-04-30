@@ -167,12 +167,14 @@ export class Waveform extends Sprite {
       !Options.chart.CMod &&
       Options.chart.doSpeedChanges
     ) {
+      // XMod
+
       const chartSpeed = Options.chart.speed
       const speedMult = this.renderer.chart.timingData.getSpeedMult(
         beat,
         this.renderer.chartManager.getTime()
       )
-      let currentBeat = -Options.chart.maxDrawBeatsBack
+
       const maxDrawBeats = beat + Options.chart.maxDrawBeats
       const scrolls = this.renderer.chart.timingData.getTimingData("SCROLLS")
       const offset = this.renderer.chart.timingData.getTimingData("OFFSET")
@@ -181,20 +183,28 @@ export class Waveform extends Sprite {
       const pixelsToEffectiveBeats =
         100 / chartSpeed / speedMult / 64 / Options.chart.zoom
       const screenHeight = this.renderer.chartManager.app.renderer.screen.height
-      let curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
+
       let finishedDrawing = false
 
       // Get the first scroll index after curBeat
-      let scrollIndex = bsearch(scrolls, currentBeat, a => a.beat)
-      if (scrolls[scrollIndex]?.beat != 0) scrollIndex--
+      let scrollIndex = bsearch(
+        scrolls,
+        beat - Options.chart.maxDrawBeatsBack,
+        a => a.beat
+      )
+      let currentBeat = scrolls[scrollIndex].beat // start drawing from the start of the scroll section
+      if (currentBeat == 0) currentBeat = -Options.chart.maxDrawBeatsBack // Draw the waveform before beat 0
+      let curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
+
       let currentYPos = Math.round(
-        this.renderer.getYPos(currentBeat) * Options.chart.zoom + this.parent.y
+        this.renderer.getYPosFromBeat(currentBeat) * Options.chart.zoom +
+          this.parent.y
       )
       while (currentBeat < maxDrawBeats && !finishedDrawing) {
         const scroll = scrolls[scrollIndex] ?? { beat: 0, value: 1 }
         const scrollEndBeat = scrolls[scrollIndex + 1]?.beat ?? maxDrawBeats
         const scrollEndYPos =
-          this.renderer.getYPos(scrollEndBeat) * Options.chart.zoom +
+          this.renderer.getYPosFromBeat(scrollEndBeat) * Options.chart.zoom +
           this.parent.y
 
         // Skip this scroll if
@@ -282,14 +292,21 @@ export class Waveform extends Sprite {
         currentYPos = scrollEndYPos
       }
     } else {
+      // CMod
+
       for (
         let y = 0;
         y < this.renderer.chartManager.app.renderer.screen.height;
         y += Options.chart.waveform.lineHeight
       ) {
-        const calcTime = this.renderer.getTimeFromYPos(
+        let calcTime = this.renderer.getSecondFromYPos(
           (y - this.parent.y) / Options.chart.zoom
         )
+        // Snap current time to the nearest pixel to avoid flickering
+        const pixelsToSecondsRatio = this.renderer.getPixelsToSecondsRatio()
+        calcTime =
+          Math.floor(calcTime / pixelsToSecondsRatio) * pixelsToSecondsRatio
+
         const samp = Math.floor(calcTime * this.zoom * 4)
         for (let channel = 0; channel < data.length; channel++) {
           const v = data[channel][samp]
