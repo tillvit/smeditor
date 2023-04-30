@@ -405,6 +405,13 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
           deserialize: value => value / 100,
         },
       },
+    },
+
+    "general.scrollSnapEveryScroll": {
+      label: "Snap every scroll",
+      input: {
+        type: "checkbox",
+      },
       margin: true,
     },
 

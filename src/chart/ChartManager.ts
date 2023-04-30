@@ -227,22 +227,33 @@ export class ChartManager {
               this.beat +
               (event.deltaY / speed) * Options.general.scrollSensitivity
           } else {
-            this.partialScroll +=
-              (event.deltaY / speed) * Options.general.scrollSensitivity
-            if (Math.abs(this.partialScroll) > snap) {
-              if (this.partialScroll < 0)
-                newbeat =
-                  Math.round(
-                    (this.beat + Math.ceil(this.partialScroll / snap) * snap) /
-                      snap
-                  ) * snap
-              else
-                newbeat =
-                  Math.round(
-                    (this.beat + Math.floor(this.partialScroll / snap) * snap) /
-                      snap
-                  ) * snap
-              this.partialScroll %= snap
+            if (Options.general.scrollSnapEveryScroll) {
+              if (event.deltaY < 0) {
+                newbeat = Math.round((this.beat - snap) / snap) * snap
+              } else {
+                newbeat = Math.round((this.beat + snap) / snap) * snap
+              }
+            } else {
+              this.partialScroll +=
+                (event.deltaY / speed) * Options.general.scrollSensitivity
+
+              if (Math.abs(this.partialScroll) > snap) {
+                if (this.partialScroll < 0)
+                  newbeat =
+                    Math.round(
+                      (this.beat +
+                        Math.ceil(this.partialScroll / snap) * snap) /
+                        snap
+                    ) * snap
+                else
+                  newbeat =
+                    Math.round(
+                      (this.beat +
+                        Math.floor(this.partialScroll / snap) * snap) /
+                        snap
+                    ) * snap
+                this.partialScroll %= snap
+              }
             }
           }
           newbeat = Math.max(0, newbeat)
