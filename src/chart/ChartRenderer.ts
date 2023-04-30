@@ -491,8 +491,18 @@ export class ChartRenderer extends Container {
    * @memberof ChartRenderer
    */
   getTimeFromYPos(yp: number): number {
-    const currentTime = this.getVisualTime()
     if (Options.chart.CMod) {
+      const chartSpeed = Options.chart.speed
+
+      // Snap current time to the nearest nth of a beat (where n is number of beats per pixel)
+      const speedMult = 1 // Just putting this here so we remember if we ever need speedmults
+      const pixelsToEffectiveBeats =
+        100 / chartSpeed / speedMult / 64 / Options.chart.zoom / 4
+
+      const currentTime =
+        Math.floor(this.getVisualTime() / pixelsToEffectiveBeats) *
+        pixelsToEffectiveBeats
+
       const seconds =
         (((yp - Options.chart.receptorYPos / Options.chart.zoom) /
           Options.chart.speed) *

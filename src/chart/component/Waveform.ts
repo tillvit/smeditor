@@ -35,6 +35,7 @@ export class Waveform extends Sprite {
   private lastBeat = 0
   private lastTime = 0
   private lastHeight = 0
+  private lastCMod: boolean
   private lastLineHeight = Options.chart.waveform.lineHeight
 
   constructor(renderer: ChartRenderer) {
@@ -53,6 +54,7 @@ export class Waveform extends Sprite {
     this.anchor.set(0.5)
     this.lastZoom = this.getZoom()
     this.zoom = this.getZoom()
+    this.lastCMod = Options.chart.CMod
     this.lastReZoom = Date.now()
     this.chartAudio.bindWaveform(this)
     this.refilter()
@@ -137,6 +139,7 @@ export class Waveform extends Sprite {
       this.strippedWaveform &&
       (beat != this.lastBeat ||
         time != this.lastTime ||
+        this.lastCMod != Options.chart.CMod ||
         this.renderer.chartManager.app.renderer.screen.height *
           Options.chart.zoom !=
           this.lastHeight)
@@ -146,6 +149,7 @@ export class Waveform extends Sprite {
       this.lastHeight =
         this.renderer.chartManager.app.renderer.screen.height *
         Options.chart.zoom
+      this.lastCMod = Options.chart.CMod
       this.renderData(beat, this.strippedWaveform)
       this.renderer.chartManager.app.renderer.render(this.lineContainer, {
         renderTexture: this.waveformTex,
@@ -168,7 +172,7 @@ export class Waveform extends Sprite {
         beat,
         this.renderer.chartManager.getTime()
       )
-      let currentBeat = beat - Options.chart.maxDrawBeatsBack
+      let currentBeat = -Options.chart.maxDrawBeatsBack
       const maxDrawBeats = beat + Options.chart.maxDrawBeats
       const scrolls = this.renderer.chart.timingData.getTimingData("SCROLLS")
       const offset = this.renderer.chart.timingData.getTimingData("OFFSET")
