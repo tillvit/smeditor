@@ -398,7 +398,7 @@ export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
         type: "slider",
         min: 0,
         step: 1,
-        max: 100,
+        max: 200,
         hardMax: 2 ** 31 - 1,
         transformers: {
           serialize: value => value * 100,

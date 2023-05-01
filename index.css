@@ -535,15 +535,15 @@ textarea {
 }
 
 .chart-list-item.selected {
-  background-color: rgba(106, 123, 151, 0.4);
+  background-color: var(--bg-secondary-active);
 }
 
 .chart-list-item:active {
-  background-color: rgba(150, 150, 150, 0.45);
+  background-color: var(--bg-secondary-active);
 }
 
-.chart-list-item:hover {
-  background-color: rgba(150, 150, 150, 0.6);
+.chart-list-item:not(.selected):hover {
+  background-color: var(--bg-secondary-hover);
 }
 
 .chart-list-item .Beginner {
@@ -1191,6 +1191,7 @@ input[type="range"] {
   font-size: 18px;
   line-height: 18px;
   max-width: 100px;
+  align-items: baseline;
 }
 
 #status-widget .playback-counter .playback-counter-main,
