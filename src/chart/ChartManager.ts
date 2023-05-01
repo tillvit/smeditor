@@ -271,7 +271,7 @@ export class ChartManager {
           }
         }
       },
-      { passive: true }
+      { passive: false }
     )
 
     this.widgetManager = new WidgetManager(this)
