@@ -107,16 +107,16 @@ export class BarlineContainer extends Container {
         continue
       }
 
+      const isMeasure = divNumber % divisionsPerMeasure == 0
+
       //Move element
-      const barline = this.getBarline(
-        barBeat,
-        divNumber % divisionsPerMeasure == 0
-      )
+      const barline = this.getBarline(barBeat, isMeasure)
       barline.y = yPos
       barline.marked = true
       barline.deactivated = false
       barline.dirtyTime = Date.now()
-      if (divNumber % divisionsPerMeasure == 0) {
+      barline.height = (isMeasure ? 4 : 1) / Options.chart.zoom
+      if (isMeasure) {
         const barlineLabel = this.getBarlineLabel(barBeat)
         barlineLabel.y = yPos
         barlineLabel.marked = true
@@ -146,7 +146,7 @@ export class BarlineContainer extends Container {
     bar_beat: number,
     beat: number
   ): [boolean, boolean, number] {
-    const y = this.renderer.getYPos(bar_beat)
+    const y = this.renderer.getYPosFromBeat(bar_beat)
     if (y < this.renderer.getUpperBound()) return [true, false, y]
     if (y > this.renderer.getLowerBound()) {
       if (bar_beat < beat || this.renderer.isNegScroll(bar_beat))

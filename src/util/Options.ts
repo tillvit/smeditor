@@ -12,6 +12,7 @@ export const VIEW_BLACKLIST: string[] = []
 export class DefaultOptions {
   static general = {
     scrollSensitivity: 1,
+    scrollSnapEveryScroll: false,
     mousePlacement: false,
     smoothAnimations: true,
     warnBeforeExit: true,
