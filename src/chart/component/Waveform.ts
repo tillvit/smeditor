@@ -192,7 +192,7 @@ export class Waveform extends Sprite {
         beat - Options.chart.maxDrawBeatsBack,
         a => a.beat
       )
-      let currentBeat = scrolls[scrollIndex].beat // start drawing from the start of the scroll section
+      let currentBeat = scrolls[scrollIndex]?.beat ?? 0 // start drawing from the start of the scroll section
       if (currentBeat == 0) currentBeat = -Options.chart.maxDrawBeatsBack // Draw the waveform before beat 0
       let curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
 
