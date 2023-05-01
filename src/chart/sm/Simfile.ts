@@ -186,7 +186,7 @@ export class Simfile {
         str += `#DESCRIPTION:${chart.DESCRIPTION};\n`
         str += `#DIFFICULTY:${chart.DIFFICULTY};\n`
         str += `#METER:${chart.METER};\n`
-        str += `#METERF:${chart.METERF};\n`
+        str += `#METERF:${chart.METERF ?? chart.METER};\n`
         str += `#RADARVALUES:${chart.RADARVALUES};\n`
         str += `#NOTES:`
         for (const prop in chart) {
