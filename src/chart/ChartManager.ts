@@ -1271,7 +1271,10 @@ export class ChartManager {
         this.loadedSM.serialize("sm")
       )
     }
-    if (await FileHandler.getFileHandle(path + "/" + name + ".ssc"))
+    if (
+      this.loadedSM.requiresSSC() ||
+      (await FileHandler.getFileHandle(path + "/" + name + ".ssc"))
+    )
       FileHandler.writeFile(
         path + "/" + name + ".ssc",
         this.loadedSM.serialize("ssc")
