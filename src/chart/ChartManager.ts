@@ -197,82 +197,77 @@ export class ChartManager {
     )
 
     // Scrolling
-    app.view.addEventListener?.(
-      "wheel",
-      (event: WheelEvent) => {
-        if (
-          this.loadedSM == undefined ||
-          this.loadedChart == undefined ||
-          this.chartView == undefined
+    app.view.addEventListener?.("wheel", (event: WheelEvent) => {
+      if (
+        this.loadedSM == undefined ||
+        this.loadedChart == undefined ||
+        this.chartView == undefined
+      )
+        return
+      event.preventDefault()
+      if ((IS_OSX && event.metaKey) || (!IS_OSX && event.ctrlKey)) {
+        // Change the playfield's speed
+        Options.chart.speed = clamp(
+          Options.chart.speed *
+            Math.pow(
+              1.01,
+              (event.deltaY / 5) * Options.general.scrollSensitivity
+            ),
+          10,
+          35000
         )
-          return
-        event.preventDefault()
-        if ((IS_OSX && event.metaKey) || (!IS_OSX && event.ctrlKey)) {
-          Options.chart.speed = clamp(
-            Options.chart.speed *
-              Math.pow(
-                1.01,
-                (event.deltaY / 5) * Options.general.scrollSensitivity
-              ),
-            10,
-            35000
-          )
+      } else {
+        if (this.mode == EditMode.Play || this.mode == EditMode.Record) return
+        let newbeat = this.beat
+        const snap = Options.chart.snap
+        const speed = Options.chart.speed * (Options.chart.reverse ? -1 : 1)
+        if (snap == 0) {
+          this.partialScroll = 0
+          newbeat =
+            this.beat +
+            (event.deltaY / speed) * Options.general.scrollSensitivity
         } else {
-          if (this.mode == EditMode.Play || this.mode == EditMode.Record) return
-          let newbeat = this.beat
-          const snap = Options.chart.snap
-          const speed = Options.chart.speed * (Options.chart.reverse ? -1 : 1)
-          if (snap == 0) {
-            this.partialScroll = 0
-            newbeat =
-              this.beat +
-              (event.deltaY / speed) * Options.general.scrollSensitivity
-          } else {
-            if (Options.general.scrollSnapEveryScroll) {
-              if (event.deltaY < 0) {
-                newbeat = Math.round((this.beat - snap) / snap) * snap
-              } else {
-                newbeat = Math.round((this.beat + snap) / snap) * snap
-              }
+          if (Options.general.scrollSnapEveryScroll) {
+            if (event.deltaY < 0) {
+              newbeat = Math.round((this.beat - snap) / snap) * snap
             } else {
-              this.partialScroll +=
-                (event.deltaY / speed) * Options.general.scrollSensitivity
-
-              if (Math.abs(this.partialScroll) > snap) {
-                if (this.partialScroll < 0)
-                  newbeat =
-                    Math.round(
-                      (this.beat +
-                        Math.ceil(this.partialScroll / snap) * snap) /
-                        snap
-                    ) * snap
-                else
-                  newbeat =
-                    Math.round(
-                      (this.beat +
-                        Math.floor(this.partialScroll / snap) * snap) /
-                        snap
-                    ) * snap
-                this.partialScroll %= snap
-              }
+              newbeat = Math.round((this.beat + snap) / snap) * snap
             }
-          }
-          newbeat = Math.max(0, newbeat)
-          if (newbeat != this.beat) this.setBeat(newbeat)
-          if (!this.holdEditing.every(x => x == undefined)) {
-            for (let col = 0; col < this.holdEditing.length; col++) {
-              if (
-                !this.holdEditing[col] ||
-                this.holdEditing[col]!.type == "mouse"
-              )
-                continue
-              this.editHoldBeat(col, this.beat, event.shiftKey)
+          } else {
+            this.partialScroll +=
+              (event.deltaY / speed) * Options.general.scrollSensitivity
+
+            if (Math.abs(this.partialScroll) > snap) {
+              if (this.partialScroll < 0)
+                newbeat =
+                  Math.round(
+                    (this.beat + Math.ceil(this.partialScroll / snap) * snap) /
+                      snap
+                  ) * snap
+              else
+                newbeat =
+                  Math.round(
+                    (this.beat + Math.floor(this.partialScroll / snap) * snap) /
+                      snap
+                  ) * snap
+              this.partialScroll %= snap
             }
           }
         }
-      },
-      { passive: false }
-    )
+        newbeat = Math.max(0, newbeat)
+        if (newbeat != this.beat) this.setBeat(newbeat)
+        if (!this.holdEditing.every(x => x == undefined)) {
+          for (let col = 0; col < this.holdEditing.length; col++) {
+            if (
+              !this.holdEditing[col] ||
+              this.holdEditing[col]!.type == "mouse"
+            )
+              continue
+            this.editHoldBeat(col, this.beat, event.shiftKey)
+          }
+        }
+      }
+    })
 
     this.widgetManager = new WidgetManager(this)
     this.app.stage.addChild(this.widgetManager)
@@ -353,6 +348,7 @@ export class ChartManager {
                 0,
                 Math.round(Math.min(this.beat, hold.startBeat) * 48) / 48
               )
+            // Minimum hold length of 0.3 seconds
             if (
               (holdLength * 60) /
                 this.loadedChart.timingData.getBPM(this.beat) >

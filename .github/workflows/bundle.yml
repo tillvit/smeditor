@@ -3,35 +3,43 @@ name: Bundle js
 on:
   workflow_dispatch:
   push:
-    branches: ["master"]
+    branches: ["master", "development"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout master branch
+        uses: actions/checkout@v3
+        with:
+          ref: master
+
+      - name: Checkout dev branch
+        uses: actions/checkout@v3
+        with:
+          ref: development
+          path: development
 
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: "18.x"
 
-      - name: Cache
-        uses: actions/cache@v3.1.0-beta.1
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+      - name: Build development
+        run: |
+          cd development
+          npm install
+          npm run build
 
-      - name: Install packages
+      - name: Build master
         run: |
           npm install
-
-      - name: Build
-        run: |
           npm run build
+
+      - name: Move development
+        run: |
+          mv development/dist dist/beta
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
