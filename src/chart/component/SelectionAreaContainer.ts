@@ -33,13 +33,14 @@ export class SelectionAreaContainer extends Container {
     const end = this.renderer.chartManager.endRegion
     if (start && !end) {
       this.startMarker.alpha = Math.sin(Date.now() / 320) * 0.1 + 0.3
-      this.startMarker.y = this.renderer.getYPos(start)
+      this.startMarker.y = this.renderer.getYPosFromBeat(start)
     } else this.startMarker.alpha = 0
     if (start && end) {
       this.selectionArea.alpha = Math.sin(Date.now() / 320) * 0.1 + 0.3
-      this.selectionArea.y = this.renderer.getYPos(Math.min(start, end))
+      this.selectionArea.y = this.renderer.getYPosFromBeat(Math.min(start, end))
       this.selectionArea.height =
-        this.renderer.getYPos(Math.max(start, end)) - this.selectionArea.y
+        this.renderer.getYPosFromBeat(Math.max(start, end)) -
+        this.selectionArea.y
     } else this.selectionArea.alpha = 0
   }
 }

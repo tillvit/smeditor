@@ -3,6 +3,7 @@ import {
   Container,
   Geometry,
   Mesh,
+  MIPMAP_MODES,
   Rectangle,
   RenderTexture,
   Shader,
@@ -25,13 +26,16 @@ export class DanceNoteTexture {
   static lift_gradient_frag: string
 
   static arrow_parts_texture = BaseTexture.from(
-    "assets/noteskin/dance/tap/parts.png"
+    "assets/noteskin/dance/tap/parts.png",
+    { mipmap: MIPMAP_MODES.OFF }
   )
   static mine_parts_texture = BaseTexture.from(
-    "assets/noteskin/dance/mine/parts.png"
+    "assets/noteskin/dance/mine/parts.png",
+    { mipmap: MIPMAP_MODES.OFF }
   )
   static lift_parts_texture = BaseTexture.from(
-    "assets/noteskin/dance/lift/parts.png"
+    "assets/noteskin/dance/lift/parts.png",
+    { mipmap: MIPMAP_MODES.OFF }
   )
 
   static arrow_body_geometry: Geometry
@@ -41,35 +45,42 @@ export class DanceNoteTexture {
 
   static mine_body_geometry: Geometry
 
-  static arrow_frame_tex = RenderTexture.create({
-    width: 64,
-    height: 64,
-    resolution: Options.performance.resolution,
-  })
+  static arrow_frame_tex: RenderTexture
   static arrow_frame?: Mesh<Shader>
-  static arrow_tex = RenderTexture.create({
-    width: 192,
-    height: 192,
-    resolution: Options.performance.resolution,
-  })
+  static arrow_tex: RenderTexture
   static arrow_container = new Container()
-  static lift_tex = RenderTexture.create({
-    width: 192,
-    height: 192,
-    resolution: Options.performance.resolution,
-  })
+  static lift_tex: RenderTexture
   static lift_container = new Container()
-  static mine_tex = RenderTexture.create({
-    width: 64,
-    height: 64,
-    resolution: Options.performance.resolution,
-  })
+  static mine_tex: RenderTexture
   static mine_container = new Container()
 
   private static loaded = false
 
   static async initArrowTex(app: App) {
     if (this.loaded) return
+
+    // Initialize rendertextures in here so we can read options
+    DanceNoteTexture.arrow_frame_tex = RenderTexture.create({
+      width: 64,
+      height: 64,
+      resolution: Options.performance.resolution,
+    })
+    DanceNoteTexture.arrow_tex = RenderTexture.create({
+      width: 192,
+      height: 192,
+      resolution: Options.performance.resolution,
+    })
+    DanceNoteTexture.lift_tex = RenderTexture.create({
+      width: 192,
+      height: 192,
+      resolution: Options.performance.resolution,
+    })
+    DanceNoteTexture.mine_tex = RenderTexture.create({
+      width: 64,
+      height: 64,
+      resolution: Options.performance.resolution,
+    })
+
     this.noop_frag = await fetch("assets/noteskin/dance/shader/noop.frag").then(
       response => response.text()
     )

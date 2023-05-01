@@ -74,7 +74,7 @@ export class DanceNotefield extends Notefield {
     this.holdJudges.renderThis()
 
     if (this.ghostNoteEntry) {
-      this.ghostNote.y = this.renderer.getYPos(this.ghostNoteEntry.beat)
+      this.ghostNote.y = this.renderer.getYPosFromBeat(this.ghostNoteEntry.beat)
       this.ghostNote.item.scale.y = Options.chart.reverse ? -1 : 1
       this.ghostNote.visible =
         Options.general.mousePlacement &&

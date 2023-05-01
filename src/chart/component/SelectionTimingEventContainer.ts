@@ -104,8 +104,8 @@ export class SelectionTimingEventContainer extends Container {
       event.beat! + this.renderer.chartManager.eventSelection.shift!.beatShift
     const y =
       Options.chart.CMod && event.second
-        ? this.renderer.getYPosFromTime(event.second)
-        : this.renderer.getYPos(newBeat)
+        ? this.renderer.getYPosFromSecond(event.second)
+        : this.renderer.getYPosFromBeat(newBeat)
     if (y < this.renderer.getUpperBound()) return [true, false, y]
     if (y > this.renderer.getLowerBound()) {
       if (newBeat < beat || this.renderer.isNegScroll(newBeat))

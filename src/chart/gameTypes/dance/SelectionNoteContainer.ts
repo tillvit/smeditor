@@ -102,8 +102,8 @@ export class SelectionNoteContainer extends Container {
   ): [boolean, boolean, number, number] {
     const newBeat =
       note.beat + this.renderer.chartManager.selection.shift!.beatShift
-    const y = this.renderer.getYPos(newBeat)
-    const y_hold = this.renderer.getYPos(
+    const y = this.renderer.getYPosFromBeat(newBeat)
+    const y_hold = this.renderer.getYPosFromBeat(
       newBeat + (isHoldNote(note) ? note.hold : 0)
     )
     if (y_hold < this.renderer.getUpperBound())

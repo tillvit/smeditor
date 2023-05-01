@@ -128,29 +128,29 @@ export class TimingAreaContainer extends Container {
     beat: number
   ): [boolean, boolean, number, number] {
     const yStart = Options.chart.CMod
-      ? this.renderer.getYPosFromTime(event.second!)
-      : this.renderer.getYPos(event.beat)
+      ? this.renderer.getYPosFromSecond(event.second!)
+      : this.renderer.getYPosFromBeat(event.beat)
     let yEnd = yStart
     switch (event.type) {
       case "STOPS":
       case "DELAYS": {
         if (Options.chart.CMod && event.value > 0) {
-          yEnd = this.renderer.getYPosFromTime(event.second! + event.value)
+          yEnd = this.renderer.getYPosFromSecond(event.second! + event.value)
         } else if (event.value < 0) {
-          yEnd = this.renderer.getYPos(
+          yEnd = this.renderer.getYPosFromBeat(
             this.renderer.chart.getBeatFromSeconds(event.second! + 0.0001)
           )
         }
         break
       }
       case "FAKES": {
-        yEnd = this.renderer.getYPos(event.beat + event.value)
+        yEnd = this.renderer.getYPosFromBeat(event.beat + event.value)
 
         break
       }
       case "WARPS": {
         if (!Options.chart.CMod) {
-          yEnd = this.renderer.getYPos(event.beat + event.value)
+          yEnd = this.renderer.getYPosFromBeat(event.beat + event.value)
         }
         break
       }
