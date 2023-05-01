@@ -206,6 +206,7 @@ export class ChartManager {
           this.chartView == undefined
         )
           return
+        event.preventDefault()
         if ((IS_OSX && event.metaKey) || (!IS_OSX && event.ctrlKey)) {
           Options.chart.speed = clamp(
             Options.chart.speed *
