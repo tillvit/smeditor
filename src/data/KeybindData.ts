@@ -566,24 +566,24 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     label: "Enter/Exit Play Mode",
     keybinds: [{ key: "P", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView &&
-      app.chartManager.getMode() != EditMode.Record,
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Record,
     callback: app => app.chartManager.setMode(EditMode.Play),
   },
   recordMode: {
     label: "Enter/Exit Record Mode",
     keybinds: [{ key: "R", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView &&
-      app.chartManager.getMode() != EditMode.Play,
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Play,
     callback: app => app.chartManager.setMode(EditMode.Record),
   },
   playModeStart: {
     label: "Play from start",
     keybinds: [{ key: "P", mods: [Modifier.SHIFT] }],
     disabled: app =>
-      !app.chartManager.chartView &&
-      app.chartManager.getMode() != EditMode.Record,
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Record,
     callback: app => {
       app.chartManager.setBeat(0)
       app.chartManager.setMode(EditMode.Play)
