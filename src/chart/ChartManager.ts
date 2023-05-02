@@ -879,12 +879,14 @@ export class ChartManager {
     this.snapIndex = (this.snapIndex - 1 + SNAPS.length) % SNAPS.length
     Options.chart.snap =
       SNAPS[this.snapIndex] == -1 ? 0 : 1 / SNAPS[this.snapIndex]
+    EventHandler.emit("snapChanged")
   }
 
   nextSnap() {
     this.snapIndex = (this.snapIndex + 1 + SNAPS.length) % SNAPS.length
     Options.chart.snap =
       SNAPS[this.snapIndex] == -1 ? 0 : 1 / SNAPS[this.snapIndex]
+    EventHandler.emit("snapChanged")
   }
 
   private removeDuplicateBeats(arr: number[]): number[] {

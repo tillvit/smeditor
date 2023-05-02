@@ -100,8 +100,11 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
       const snap = Math.max(0.001, Options.chart.snap)
+      const closestTick = Math.round(app.chartManager.getBeat() / snap) * snap
       const change =
-        app.chartManager.getBeat() % snap < 0.0005 ? snap : snap / 2
+        Math.abs(closestTick - app.chartManager.getBeat()) < 0.0005
+          ? snap
+          : snap / 2
       app.chartManager.setAndSnapBeat(app.chartManager.getBeat() - change)
     },
   },
@@ -114,8 +117,11 @@ export const KEYBINDS: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
       const snap = Math.max(0.001, Options.chart.snap)
+      const closestTick = Math.round(app.chartManager.getBeat() / snap) * snap
       const change =
-        app.chartManager.getBeat() % snap < 0.0005 ? snap : snap / 2
+        Math.abs(closestTick - app.chartManager.getBeat()) < 0.0005
+          ? snap
+          : snap / 2
       app.chartManager.setAndSnapBeat(app.chartManager.getBeat() + change)
     },
   },
@@ -220,7 +226,7 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   export: {
     label: "Save and export current song",
     keybinds: [{ key: "E", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.loadedSM,
+    disabled: app => !!window.nw || !app.chartManager.loadedSM,
     callback: app => {
       app.chartManager.save()
       FileHandler.saveDirectory(app.chartManager.smPath)
