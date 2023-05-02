@@ -31,6 +31,7 @@ export class DefaultOptions {
     maxDrawBeatsBack: 10,
     waveform: {
       enabled: true,
+      antialiasing: false,
       color: 0x606172,
       opacity: 0.5,
       lineHeight: 1,

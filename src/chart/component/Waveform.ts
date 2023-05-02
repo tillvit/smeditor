@@ -1,4 +1,10 @@
-import { ParticleContainer, RenderTexture, Sprite, Texture } from "pixi.js"
+import {
+  ParticleContainer,
+  RenderTexture,
+  Sprite,
+  Texture,
+  filters,
+} from "pixi.js"
 import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
 import { bsearch, destroyChildIf } from "../../util/Util"
@@ -36,6 +42,7 @@ export class Waveform extends Sprite {
   private lastTime = 0
   private lastHeight = 0
   private lastCMod: boolean
+  private lastAntialias: boolean
   private lastAllowSpeed: boolean
   private lastLineHeight = Options.chart.waveform.lineHeight
 
@@ -59,7 +66,12 @@ export class Waveform extends Sprite {
     this.lastAllowSpeed = Options.chart.doSpeedChanges
     this.lastReZoom = Date.now()
     this.chartAudio.bindWaveform(this)
+    this.lastAntialias = Options.chart.waveform.antialiasing
     this.refilter()
+
+    this.filters = Options.chart.waveform.antialiasing
+      ? [new filters.FXAAFilter()]
+      : []
 
     const timingHandler = () => (this.lastBeat = -1)
     EventHandler.on("timingModified", timingHandler)
@@ -105,6 +117,12 @@ export class Waveform extends Sprite {
         !Options.play.hideBarlines)
 
     if (!Options.chart.waveform.enabled) return
+    if (this.lastAntialias != Options.chart.waveform.antialiasing) {
+      this.lastAntialias = Options.chart.waveform.antialiasing
+      this.filters = Options.chart.waveform.antialiasing
+        ? [new filters.FXAAFilter()]
+        : []
+    }
     if (this.chartAudio != this.renderer.chartManager.getAudio()) {
       this.chartAudio = this.renderer.chartManager.getAudio()
       this.refilter()
