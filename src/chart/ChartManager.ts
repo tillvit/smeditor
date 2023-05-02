@@ -1628,7 +1628,6 @@ export class ChartManager {
   pasteTempo(data: string) {
     if (!this.loadedChart) return true
     const events = decodeTempo(data)
-    console.log(events)
     if (!events) return false
     if (events.length == 0) return false
 

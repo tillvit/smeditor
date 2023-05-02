@@ -162,7 +162,7 @@ export class TimingEventPopup {
           data.input.max
         )
         spinner.onChange = value => {
-          if (!value) return
+          if (value === undefined) return
           this.modifyBox
             ? Object.assign(this.timingBox.event, { [data.key]: value })
             : this.timingData.insert(
