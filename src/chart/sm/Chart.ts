@@ -282,9 +282,14 @@ export class Chart {
       for (const key in this.other_properties) {
         str += `#${key}:${this.other_properties[key]};\n`
       }
+      if (!this.timingData.isEmpty()) str += this.timingData.serialize("ssc")
       str += `#NOTES:\n`
     }
     str += this.gameType.parser.serialize(this.notedata, this.gameType) + ";\n"
     return str
+  }
+
+  requiresSSC(): boolean {
+    return this.timingData.requiresSSC()
   }
 }

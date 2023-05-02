@@ -68,6 +68,7 @@ export class NumberSpinner {
     const upButton = document.createElement("button")
     upButton.classList.add("spinner-up")
     upButton.onclick = () => {
+      if (max !== undefined && parseFloat(input.value) + step > max) return
       input.value = this.formatValue(parseFloat(input.value) + step)
       this.onChange?.(parseFloat(input.value))
     }
@@ -76,6 +77,7 @@ export class NumberSpinner {
     const downButton = document.createElement("button")
     downButton.classList.add("spinner-down")
     downButton.onclick = () => {
+      if (min !== undefined && parseFloat(input.value) - step < min) return
       input.value = this.formatValue(parseFloat(input.value) - step)
       this.onChange?.(parseFloat(input.value))
     }

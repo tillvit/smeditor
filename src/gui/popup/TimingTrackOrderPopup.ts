@@ -10,6 +10,7 @@ export class TimingTrackOrderPopup {
 
   private static clickOutside?: (e: MouseEvent) => void
   private static moveInterval: NodeJS.Timer
+  private static exitTimeout: NodeJS.Timeout
   private static draggedElement?: HTMLDivElement
   private static dragOffsetX = 0
   private static dragOffsetY = 0
@@ -38,6 +39,7 @@ export class TimingTrackOrderPopup {
     // don't show until the position has been set
     this.popup.style.display = `none`
     setTimeout(() => this.movePosition())
+    clearTimeout(this.exitTimeout)
     this.moveInterval = setInterval(() => this.movePosition(), 150)
     this.active = true
   }
@@ -455,7 +457,7 @@ export class TimingTrackOrderPopup {
     if (!this.popup || !this.active) return
     window.removeEventListener("click", this.clickOutside!, true)
     this.popup.classList.add("exiting")
-    setTimeout(() => this.popup!.remove(), 200)
+    this.exitTimeout = setTimeout(() => this.popup!.remove(), 200)
     this.active = false
     clearInterval(this.moveInterval)
     this.clearBoundaries()

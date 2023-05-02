@@ -2,12 +2,12 @@ import { WaterfallManager } from "../../gui/element/WaterfallManager"
 import { getErrorMessage } from "../../util/Util"
 import { Chart } from "./Chart"
 import { CHART_DIFFICULTIES } from "./ChartTypes"
-import { SimfileProperty, SIMFILE_PROPERTIES } from "./SimfileTypes"
+import { SIMFILE_PROPERTIES, SimfileProperty } from "./SimfileTypes"
 import { TimingData } from "./TimingData"
 import {
+  TIMING_EVENT_NAMES,
   TimingEventProperty,
   TimingProperty,
-  TIMING_EVENT_NAMES,
 } from "./TimingTypes"
 
 export class Simfile {
@@ -217,6 +217,17 @@ export class Simfile {
     for (const type in this.charts) {
       for (const chart of this.charts[type]) {
         if (!chart.timingData.isEmpty()) return true
+      }
+    }
+    return false
+  }
+
+  requiresSSC(): boolean {
+    if (this.timingData.requiresSSC()) return true
+    if (this.usesSplitTiming()) return true
+    for (const type in this.charts) {
+      for (const chart of this.charts[type]) {
+        if (chart.requiresSSC()) return true
       }
     }
     return false

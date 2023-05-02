@@ -354,9 +354,12 @@ export class TimingTrackContainer extends Container {
           newChild as TimingBox,
           this.renderer.chart.timingData
         )
-        newChild!.popup!.onConfirm = () => {
-          this.renderer.chartManager.removeEventFromSelection(newChild!.event!)
-        }
+        if (newChild!.popup)
+          newChild!.popup.onConfirm = () => {
+            this.renderer.chartManager.removeEventFromSelection(
+              newChild!.event!
+            )
+          }
       }
     })
     newChild.on!("mouseleave", () => {

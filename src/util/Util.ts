@@ -483,7 +483,7 @@ function packFloat64(x: number): number[] {
 function unpackFloat64(bytes: number[]): number {
   const arr = new Uint8Array(bytes.splice(0, 8))
   const dataView = new DataView(arr.buffer)
-  return dataView.getFloat64(0, true)
+  return roundDigit(dataView.getFloat64(0, true), 3)
 }
 
 function packString(x: string): number[] {

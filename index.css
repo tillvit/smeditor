@@ -729,7 +729,6 @@ input[type="number"] {
   padding: 0px 3px;
   flex: 1;
   height: 100%;
-  font-size: 14px;
   user-select: text;
   caret-color: auto;
 }
@@ -1301,6 +1300,23 @@ input[type="range"] {
 
 .animated .popup.exiting .popup-zoomer {
   animation: 0.1s popup-exit cubic-bezier(0.47, 0.02, 0, 0.95) forwards;
+}
+
+.popup-row {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  color: var(--text-color-secondary);
+  white-space: nowrap;
+  font-size: 14px;
+  align-items: center;
+}
+
+.popup-flex {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
 }
 
 @keyframes popup-enter {

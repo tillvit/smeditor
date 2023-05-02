@@ -1,4 +1,10 @@
-import { ParticleContainer, RenderTexture, Sprite, Texture } from "pixi.js"
+import {
+  ParticleContainer,
+  RenderTexture,
+  Sprite,
+  Texture,
+  filters,
+} from "pixi.js"
 import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
 import { bsearch, destroyChildIf } from "../../util/Util"
@@ -36,6 +42,8 @@ export class Waveform extends Sprite {
   private lastTime = 0
   private lastHeight = 0
   private lastCMod: boolean
+  private lastAntialias: boolean
+  private lastAllowSpeed: boolean
   private lastLineHeight = Options.chart.waveform.lineHeight
 
   constructor(renderer: ChartRenderer) {
@@ -55,9 +63,15 @@ export class Waveform extends Sprite {
     this.lastZoom = this.getZoom()
     this.zoom = this.getZoom()
     this.lastCMod = Options.chart.CMod
+    this.lastAllowSpeed = Options.chart.doSpeedChanges
     this.lastReZoom = Date.now()
     this.chartAudio.bindWaveform(this)
+    this.lastAntialias = Options.chart.waveform.antialiasing
     this.refilter()
+
+    this.filters = Options.chart.waveform.antialiasing
+      ? [new filters.FXAAFilter()]
+      : []
 
     const timingHandler = () => (this.lastBeat = -1)
     EventHandler.on("timingModified", timingHandler)
@@ -103,6 +117,12 @@ export class Waveform extends Sprite {
         !Options.play.hideBarlines)
 
     if (!Options.chart.waveform.enabled) return
+    if (this.lastAntialias != Options.chart.waveform.antialiasing) {
+      this.lastAntialias = Options.chart.waveform.antialiasing
+      this.filters = Options.chart.waveform.antialiasing
+        ? [new filters.FXAAFilter()]
+        : []
+    }
     if (this.chartAudio != this.renderer.chartManager.getAudio()) {
       this.chartAudio = this.renderer.chartManager.getAudio()
       this.refilter()
@@ -140,6 +160,7 @@ export class Waveform extends Sprite {
       (beat != this.lastBeat ||
         time != this.lastTime ||
         this.lastCMod != Options.chart.CMod ||
+        this.lastAllowSpeed != Options.chart.doSpeedChanges ||
         this.renderer.chartManager.app.renderer.screen.height *
           Options.chart.zoom !=
           this.lastHeight)
@@ -150,6 +171,7 @@ export class Waveform extends Sprite {
         this.renderer.chartManager.app.renderer.screen.height *
         Options.chart.zoom
       this.lastCMod = Options.chart.CMod
+      this.lastAllowSpeed = Options.chart.doSpeedChanges
       this.renderData(beat, this.strippedWaveform)
       this.renderer.chartManager.app.renderer.render(this.lineContainer, {
         renderTexture: this.waveformTex,

@@ -895,6 +895,22 @@ export class TimingData {
     return !!this.events[type]
   }
 
+  requiresSSC(): boolean {
+    return (
+      this.getTimingData(
+        "WARPS",
+        "DELAYS",
+        "SCROLLS",
+        "TICKCOUNTS",
+        "FAKES",
+        "LABELS",
+        "SPEEDS",
+        "TIMESIGNATURES",
+        "COMBOS"
+      ).length != 0
+    )
+  }
+
   serialize(type: "sm" | "ssc"): string {
     let str = ""
     if (this.offset) str += "#OFFSET:" + this.offset + ";\n"

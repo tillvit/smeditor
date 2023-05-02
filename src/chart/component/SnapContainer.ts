@@ -1,4 +1,5 @@
 import { BitmapText, Container, Graphics } from "pixi.js"
+import { SnapPopup } from "../../gui/popup/SnapPopup"
 import { Options } from "../../util/Options"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
@@ -49,6 +50,11 @@ export class SnapContainer extends Container {
       container.addChild(graphic)
       container.addChild(text)
       this.addChild(container)
+
+      container.interactive = true
+      container.on("mouseenter", () => SnapPopup.open(graphic))
+      container.on("mousedown", () => SnapPopup.select())
+      container.on("mouseleave", () => SnapPopup.close())
     }
   }
 
