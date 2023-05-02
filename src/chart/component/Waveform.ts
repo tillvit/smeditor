@@ -36,6 +36,7 @@ export class Waveform extends Sprite {
   private lastTime = 0
   private lastHeight = 0
   private lastCMod: boolean
+  private lastAllowSpeed: boolean
   private lastLineHeight = Options.chart.waveform.lineHeight
 
   constructor(renderer: ChartRenderer) {
@@ -55,6 +56,7 @@ export class Waveform extends Sprite {
     this.lastZoom = this.getZoom()
     this.zoom = this.getZoom()
     this.lastCMod = Options.chart.CMod
+    this.lastAllowSpeed = Options.chart.doSpeedChanges
     this.lastReZoom = Date.now()
     this.chartAudio.bindWaveform(this)
     this.refilter()
@@ -140,6 +142,7 @@ export class Waveform extends Sprite {
       (beat != this.lastBeat ||
         time != this.lastTime ||
         this.lastCMod != Options.chart.CMod ||
+        this.lastAllowSpeed != Options.chart.doSpeedChanges ||
         this.renderer.chartManager.app.renderer.screen.height *
           Options.chart.zoom !=
           this.lastHeight)
@@ -150,6 +153,7 @@ export class Waveform extends Sprite {
         this.renderer.chartManager.app.renderer.screen.height *
         Options.chart.zoom
       this.lastCMod = Options.chart.CMod
+      this.lastAllowSpeed = Options.chart.doSpeedChanges
       this.renderData(beat, this.strippedWaveform)
       this.renderer.chartManager.app.renderer.render(this.lineContainer, {
         renderTexture: this.waveformTex,
