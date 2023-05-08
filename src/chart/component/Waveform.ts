@@ -184,11 +184,7 @@ export class Waveform extends Sprite {
   private renderData(beat: number, data: number[][]) {
     this.resetPool()
 
-    if (
-      Options.experimental.speedChangeWaveform &&
-      !Options.chart.CMod &&
-      Options.chart.doSpeedChanges
-    ) {
+    if (Options.experimental.speedChangeWaveform && !Options.chart.CMod) {
       // XMod
 
       const chartSpeed = Options.chart.speed
@@ -247,7 +243,6 @@ export class Waveform extends Sprite {
         }
 
         const pixelsToBeats = pixelsToEffectiveBeats / Math.abs(scroll.value)
-
         // Start drawing this scroll segment by stepping by 1 pixel
         while (currentBeat < Math.min(scrollEndBeat, maxDrawBeats)) {
           // Stop if the scroll is off the screen
@@ -317,18 +312,19 @@ export class Waveform extends Sprite {
     } else {
       // CMod
 
+      let calcTime = this.renderer.getSecondFromYPos(
+        -this.parent.y / Options.chart.zoom
+      )
+      // Snap current time to the nearest pixel to avoid flickering
+      const pixelsToSecondsRatio = this.renderer.getPixelsToSecondsRatio()
+      calcTime =
+        Math.floor(calcTime / pixelsToSecondsRatio) * pixelsToSecondsRatio
       for (
         let y = 0;
         y < this.renderer.chartManager.app.renderer.screen.height;
         y += Options.chart.waveform.lineHeight
       ) {
-        let calcTime = this.renderer.getSecondFromYPos(
-          (y - this.parent.y) / Options.chart.zoom
-        )
-        // Snap current time to the nearest pixel to avoid flickering
-        const pixelsToSecondsRatio = this.renderer.getPixelsToSecondsRatio()
-        calcTime =
-          Math.floor(calcTime / pixelsToSecondsRatio) * pixelsToSecondsRatio
+        calcTime += pixelsToSecondsRatio * Options.chart.waveform.lineHeight
 
         const samp = Math.floor(calcTime * this.zoom * 4)
         for (let channel = 0; channel < data.length; channel++) {
