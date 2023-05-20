@@ -278,7 +278,7 @@ document.querySelector("body")!.innerHTML = `<div id="view-wrapper">
 
 WebFont.load({
   google: {
-    families: ["Assistant:200,300,400,500,600,700,800"],
+    families: ["Assistant:200,300,400,500,600,700,800&display=swap"],
   },
   active: init,
   inactive: init,

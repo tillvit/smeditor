@@ -189,7 +189,7 @@ export class Waveform extends Sprite {
       !Options.chart.CMod &&
       Options.chart.doSpeedChanges
     ) {
-      // XMod
+      // XMod with speed changes
 
       const chartSpeed = Options.chart.speed
       const speedMult = this.renderer.chart.timingData.getSpeedMult(
@@ -247,7 +247,6 @@ export class Waveform extends Sprite {
         }
 
         const pixelsToBeats = pixelsToEffectiveBeats / Math.abs(scroll.value)
-
         // Start drawing this scroll segment by stepping by 1 pixel
         while (currentBeat < Math.min(scrollEndBeat, maxDrawBeats)) {
           // Stop if the scroll is off the screen
@@ -314,21 +313,76 @@ export class Waveform extends Sprite {
         currentBeat = scrollEndBeat
         currentYPos = scrollEndYPos
       }
-    } else {
-      // CMod
+    } else if (!Options.chart.CMod) {
+      // XMod no speed changes
 
+      let currentBeat = this.renderer.getBeatFromYPos(
+        -this.parent.y / Options.chart.zoom
+      )
+      const offset = this.renderer.chart.timingData.getTimingData("OFFSET")
+      const startBPM = this.renderer.chart.timingData.getBPM(0)
+      const timingChanges = this.renderer.chart.timingData.getBeatTiming()
+
+      // Snap current time to the nearest pixel to avoid flickering
+      const pixelsToBeatsRatio =
+        this.renderer.getPixelsToEffectiveBeatsRatio() / Options.chart.zoom
+      currentBeat =
+        Math.floor(currentBeat / pixelsToBeatsRatio) * pixelsToBeatsRatio
+
+      let curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
       for (
         let y = 0;
         y < this.renderer.chartManager.app.renderer.screen.height;
         y += Options.chart.waveform.lineHeight
       ) {
-        let calcTime = this.renderer.getSecondFromYPos(
-          (y - this.parent.y) / Options.chart.zoom
-        )
-        // Snap current time to the nearest pixel to avoid flickering
-        const pixelsToSecondsRatio = this.renderer.getPixelsToSecondsRatio()
-        calcTime =
-          Math.floor(calcTime / pixelsToSecondsRatio) * pixelsToSecondsRatio
+        currentBeat += pixelsToBeatsRatio * Options.chart.waveform.lineHeight
+
+        const flooredBeat = Math.floor(currentBeat * 1000) / 1000
+        if (currentBeat <= 0) curSec = -offset + (currentBeat * 60) / startBPM
+        else if (flooredBeat >= timingChanges[1]?.beat) {
+          // Use getSeconds for every timing event
+          while (flooredBeat >= timingChanges[1]?.beat) timingChanges.shift()
+          curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
+        } else {
+          // Use normal bpm to beats calculation to not use getSeconds
+          const beatsElapsed = currentBeat - timingChanges[0].beat
+          let timeElapsed = (beatsElapsed * 60) / timingChanges[0].bpm
+          if (timingChanges[0].warped) timeElapsed = 0
+          curSec = Math.max(
+            timingChanges[0].secondClamp,
+            timingChanges[0].secondAfter + timeElapsed
+          )
+        }
+
+        const samp = Math.floor(curSec * this.zoom * 4)
+        for (let channel = 0; channel < data.length; channel++) {
+          const v = data[channel][samp]
+          if (!v) continue
+          const line = this.getLine()
+          line.scale.x = v * 16 * Options.chart.zoom
+          line.y = y
+          line.x =
+            this.waveformTex.width / 2 +
+            288 * (channel + 0.5 - data.length / 2) * Options.chart.zoom
+        }
+      }
+    } else {
+      // CMod
+
+      let calcTime = this.renderer.getSecondFromYPos(
+        -this.parent.y / Options.chart.zoom
+      )
+      // Snap current time to the nearest pixel to avoid flickering
+      const pixelsToSecondsRatio =
+        this.renderer.getPixelsToSecondsRatio() / Options.chart.zoom
+      calcTime =
+        Math.floor(calcTime / pixelsToSecondsRatio) * pixelsToSecondsRatio
+      for (
+        let y = 0;
+        y < this.renderer.chartManager.app.renderer.screen.height;
+        y += Options.chart.waveform.lineHeight
+      ) {
+        calcTime += pixelsToSecondsRatio * Options.chart.waveform.lineHeight
 
         const samp = Math.floor(calcTime * this.zoom * 4)
         for (let channel = 0; channel < data.length; channel++) {
