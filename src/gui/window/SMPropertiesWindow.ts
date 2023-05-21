@@ -1,29 +1,28 @@
 import { App } from "../../App"
-import { SM_PROPERTIES_WINDOW_DATA } from "../../data/SMPropertiesWindowData"
+import { SimfileProperty } from "../../chart/sm/SimfileTypes"
+import { AUDIO_EXT, IMG_EXT } from "../../data/FileData"
+import { SM_PROPERTIES_DATA } from "../../data/SMPropertiesData"
 import { EventHandler } from "../../util/EventHandler"
+import { FileHandler } from "../../util/FileHandler"
+import { Icons } from "../Icons"
+import { DirectoryWindow } from "./DirectoryWindow"
 import { Window } from "./Window"
 
 export class SMPropertiesWindow extends Window {
   app: App
 
-  private callback?: (success: boolean) => void
   private changeHandler = () => this.initView()
 
-  constructor(
-    app: App,
-    isNewSM?: boolean,
-    callback?: (success: boolean) => void
-  ) {
+  constructor(app: App) {
     super({
       title: "Song Properties",
-      width: 400,
-      height: 365,
-      disableClose: !!isNewSM,
+      width: 450,
+      height: 397,
+      disableClose: false,
       win_id: "sm_properties",
-      blocking: !!isNewSM,
+      blocking: false,
     })
     this.app = app
-    this.callback = callback
     this.initView()
     EventHandler.on("smLoaded", this.changeHandler)
     EventHandler.on("undo", this.changeHandler)
@@ -42,53 +41,125 @@ export class SMPropertiesWindow extends Window {
     const padding = document.createElement("div")
     padding.classList.add("padding")
 
-    const grid = document.createElement("div")
-    grid.classList.add("property-grid")
     const songLabel = document.createElement("div")
     songLabel.classList.add("label")
     songLabel.innerText = "Apply to"
 
-    Object.values(SM_PROPERTIES_WINDOW_DATA).forEach(entry => {
-      const label = document.createElement("div")
-      label.classList.add("label")
-      label.innerText = entry.title
+    SM_PROPERTIES_DATA.forEach(group => {
+      const groupContainer = document.createElement("div")
+      groupContainer.classList.add("sm-container")
 
-      const item = entry.element(this.app)
+      const title = document.createElement("div")
+      title.classList.add("sm-title")
+      title.innerText = group.title
 
-      grid.appendChild(label)
-      grid.appendChild(item)
+      const grid = document.createElement("div")
+      grid.classList.add("property-grid")
+
+      group.items.forEach(item => {
+        const label = document.createElement("div")
+        label.classList.add("label")
+        label.innerText = item.title
+
+        grid.appendChild(label)
+        grid.appendChild(this.createInputElement(item.propName, item.type))
+      })
+      groupContainer.appendChild(title)
+      groupContainer.appendChild(grid)
+      padding.appendChild(groupContainer)
     })
 
-    padding.appendChild(grid)
-
-    //Menu Button Options
-    const menu_options = document.createElement("div")
-    menu_options.classList.add("menu-options")
-
-    const menu_options_left = document.createElement("div")
-    menu_options_left.classList.add("menu-left")
-    const menu_options_right = document.createElement("div")
-    menu_options_right.classList.add("menu-right")
-    menu_options.appendChild(menu_options_left)
-    menu_options.appendChild(menu_options_right)
-
-    const cancel = document.createElement("button")
-    cancel.innerText = "Cancel"
-    cancel.onclick = () => {
-      this.callback?.(false)
-      this.closeWindow()
-    }
-
-    const create_btn = document.createElement("button")
-    create_btn.innerText = "Create"
-    create_btn.classList.add("confirm")
-    create_btn.onclick = () => {
-      this.callback?.(true)
-      this.closeWindow()
-    }
-    menu_options_left.appendChild(cancel)
-    menu_options_right.appendChild(create_btn)
-    if (this.options.blocking) padding.appendChild(menu_options)
     this.viewElement.appendChild(padding)
+  }
+
+  createInputElement(
+    propName: SimfileProperty,
+    type: "string" | "audio" | "image"
+  ) {
+    switch (type) {
+      case "string": {
+        const input = document.createElement("input")
+        input.type = "text"
+        input.autocomplete = "off"
+        input.spellcheck = false
+        input.onkeydown = ev => {
+          if (ev.key == "Enter") input.blur()
+        }
+        input.onblur = () => {
+          this.app.chartManager.loadedSM!.properties[propName] = input.value
+        }
+        input.value = this.app.chartManager.loadedSM!.properties[propName] ?? ""
+        return input
+      }
+      case "audio":
+      case "image": {
+        const container = document.createElement("div")
+        container.classList.add("flex-row", "flex-column-gap")
+        const input = document.createElement("input")
+        input.type = "text"
+        input.autocomplete = "off"
+        input.spellcheck = false
+        input.placeholder = "click to select a file"
+        input.onclick = ev => {
+          ev.preventDefault()
+          input.blur()
+          const dir = this.app.chartManager.smPath
+            .split("/")
+            .slice(0, -1)
+            .join("/")
+          if (window.nw) {
+            const fileSelector = document.createElement("input")
+            fileSelector.type = "file"
+            fileSelector.accept = type == "audio" ? "audio/*" : "image/*"
+            fileSelector.onchange = () => {
+              input.value = FileHandler.getRelativePath(dir, fileSelector.value)
+              this.app.chartManager.loadedSM!.properties[propName] = input.value
+            }
+            fileSelector.click()
+          } else {
+            this.app.windowManager.openWindow(
+              new DirectoryWindow(
+                this.app,
+                {
+                  title:
+                    type == "audio"
+                      ? "Select an audio file..."
+                      : "Select an image file...",
+                  accepted_file_types: type == "audio" ? AUDIO_EXT : IMG_EXT,
+                  disableClose: true,
+                  callback: (path: string) => {
+                    input.value = FileHandler.getRelativePath(dir, path)
+                    this.app.chartManager.loadedSM!.properties[propName] =
+                      input.value
+                  },
+                },
+                this.app.chartManager.loadedSM!.properties[propName]
+                  ? dir +
+                    "/" +
+                    this.app.chartManager.loadedSM!.properties[propName]
+                  : this.app.chartManager.smPath
+              )
+            )
+          }
+        }
+        input.value = this.app.chartManager.loadedSM!.properties[propName] ?? ""
+        container.appendChild(input)
+        const deleteButton = document.createElement("button")
+        deleteButton.style.height = "100%"
+        deleteButton.classList.add("delete")
+        deleteButton.disabled = true
+        deleteButton.onclick = () => {
+          input.value = ""
+          deleteButton.disabled = true
+        }
+        const icon = document.createElement("img")
+        icon.classList.add("icon")
+        icon.style.height = "12px"
+        icon.src = Icons.TRASH
+        deleteButton.appendChild(icon)
+        container.appendChild(deleteButton)
+        return container
+      }
+    }
   }
 }

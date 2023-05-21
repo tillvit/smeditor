@@ -1,12 +1,10 @@
 import scrollIntoView from "scroll-into-view-if-needed"
 import { App } from "../../App"
 
-import { DEFAULT_SM } from "../../data/SMData"
-import { FileHandler } from "../../util/FileHandler"
 import { RecentFileHandler } from "../../util/RecentFileHandler"
 import { Icons } from "../Icons"
 import { DirectoryWindow } from "./DirectoryWindow"
-import { SMPropertiesWindow } from "./SMPropertiesWindow"
+import { NewSongWindow } from "./NewSongWindow"
 import { Window } from "./Window"
 
 export class InitialWindow extends Window {
@@ -115,26 +113,8 @@ export class InitialWindow extends Window {
     newTitle.innerText = "New Song"
     newButton.appendChild(newTitle)
 
-    newButton.onclick = async () => {
-      let folder = "New Song"
-      if (await FileHandler.getDirectoryHandle(folder)) {
-        let i = 2
-        while (await FileHandler.getDirectoryHandle(folder)) {
-          folder = `New Song ${i++}`
-        }
-      }
-      await FileHandler.writeFile(folder + "/song.sm", DEFAULT_SM)
-      await this.app.chartManager.loadSM(folder + "/song.sm")
-      this.app.windowManager.openWindow(
-        new SMPropertiesWindow(this.app, true, async success => {
-          if (success) {
-            this.closeWindow()
-          } else {
-            await FileHandler.removeDirectory(folder)
-            this.app.chartManager.loadSM()
-          }
-        })
-      )
+    newButton.onclick = () => {
+      this.app.windowManager.openWindow(new NewSongWindow(this.app))
     }
 
     const recentTitle = document.createElement("div")

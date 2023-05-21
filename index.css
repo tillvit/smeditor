@@ -1582,3 +1582,12 @@ input[type="range"] {
 .animated .track-selector {
   transition: 0.2s cubic-bezier(0, 0.91, 0.34, 1.05);
 }
+
+.sm-title {
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+
+.sm-container {
+  margin-bottom: 15px;
+}
