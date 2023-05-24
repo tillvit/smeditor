@@ -436,6 +436,7 @@ textarea {
   background-color: var(--bg-primary);
   border: 1px solid var(--bg-primary-border);
   position: absolute;
+  border-radius: 5px;
 }
 
 #menubar .menu-item:not(.disabled):hover > .menubar-dropdown,
@@ -1695,7 +1696,7 @@ input[type="range"] {
     forwards;
 }
 
-.animated .menubar-dropdown {
+.animated #context-menu .menubar-dropdown {
   animation: context-dropdown-exit 0.08s cubic-bezier(0.215, 0.61, 0.355, 1);
   transition: 0.08s cubic-bezier(0.215, 0.61, 0.355, 1);
 }
