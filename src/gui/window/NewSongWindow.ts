@@ -18,7 +18,7 @@ export class NewSongWindow extends Window {
     super({
       title: "New Song",
       width: 450,
-      height: 426,
+      height: 436,
       disableClose: true,
       win_id: "sm_properties",
       blocking: true,
@@ -158,7 +158,7 @@ export class NewSongWindow extends Window {
         input.type = "text"
         input.autocomplete = "off"
         input.spellcheck = false
-        input.placeholder = "click to select a file"
+        input.placeholder = "click to upload a file"
         input.onclick = ev => {
           ev.preventDefault()
           input.blur()

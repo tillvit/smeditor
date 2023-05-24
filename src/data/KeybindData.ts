@@ -5,6 +5,7 @@ import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
 import { DirectoryWindow } from "../gui/window/DirectoryWindow"
 import { EQWindow } from "../gui/window/EQWindow"
+import { NewSongWindow } from "../gui/window/NewSongWindow"
 import { OffsetWindow } from "../gui/window/OffsetWindow"
 import { SMPropertiesWindow } from "../gui/window/SMPropertiesWindow"
 import { TimingDataWindow } from "../gui/window/TimingDataWindow"
@@ -181,8 +182,10 @@ export const KEYBINDS: { [key: string]: Keybind } = {
   newSong: {
     label: "New Song...",
     keybinds: [{ key: "N", mods: [DEF_MOD] }],
-    disabled: true,
-    callback: () => 0,
+    disabled: app => !app.chartManager.loadedSM,
+    callback: app => {
+      app.windowManager.openWindow(new NewSongWindow(app))
+    },
   },
   openSong: {
     label: "Open Song...",
