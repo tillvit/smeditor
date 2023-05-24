@@ -8,6 +8,7 @@ import {
 } from "pixi.js"
 import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
+import { ContextMenuPopup } from "./gui/element/ContextMenu"
 import { MenubarManager } from "./gui/element/MenubarManager"
 import { DirectoryWindow } from "./gui/window/DirectoryWindow"
 import { InitialWindow } from "./gui/window/InitialWindow"
@@ -66,6 +67,17 @@ export class App {
     this.registerFonts()
 
     this.view = document.getElementById("pixi") as HTMLCanvasElement
+
+    document.oncontextmenu = event => {
+      event.preventDefault()
+      if (!this.chartManager.loadedChart) return
+      if (event.target != this.view) return
+      ContextMenuPopup.open(this, event)
+    }
+
+    this.view.onmousedown = () => {
+      ContextMenuPopup.close()
+    }
 
     this.stage = new Container()
     this.stage.sortableChildren = true
@@ -270,6 +282,7 @@ document.querySelector("body")!.innerHTML = `<div id="view-wrapper">
             <canvas id="pixi"></canvas>
           </div> 
           <div id="popups"></div>
+          <div id="context-menu"></div>
           <div id="blocker" style="display: none"></div>
           <div id="windows"></div>
         `
@@ -324,6 +337,7 @@ function init() {
             <canvas id="pixi"></canvas>
           </div> 
           <div id="popups"></div>
+          <div id="context-menu"></div>
           <div id="blocker" style="display: none"></div>
           <div id="windows"></div>
         `

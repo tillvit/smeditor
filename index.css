@@ -474,6 +474,10 @@ textarea {
   background-color: var(--bg-primary-hover);
 }
 
+.animated .menu-hover {
+  transition: 0.1s cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
 .seperator {
   border: 0.2px solid #333;
   margin: 4px;
@@ -1590,4 +1594,113 @@ input[type="range"] {
 
 .sm-container {
   margin-bottom: 15px;
+}
+
+#context-menu {
+  display: flex;
+  position: absolute;
+  flex-direction: column;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--bg-primary-border);
+  caret-color: transparent;
+  font-size: 15px;
+  border-radius: 5px;
+  transform-origin: top left;
+  opacity: 0.95;
+}
+
+.animated #context-menu.entering {
+  animation: context-enter 0.15s cubic-bezier(0.13, 0.61, 0.07, 0.98);
+}
+#context-menu.exiting {
+  transform: scale(0.8);
+  opacity: 0;
+}
+
+.animated #context-menu.exiting {
+  transition: 0.1s cubic-bezier(0.15, 0.73, 0.62, 0.75);
+}
+
+@keyframes context-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+}
+
+.menu-item {
+  position: relative;
+  z-index: 9999;
+}
+
+.menu-item > .menu-item-title {
+  padding: 3px 0px 3px 0px;
+  display: flex;
+  align-items: center;
+}
+
+.menu-item:first-child > .menu-item-title {
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+.menu-item:last-child > .menu-item-title {
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+}
+
+#context-menu .menubar-dropdown {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--bg-primary-border);
+  position: absolute;
+  left: 100%;
+  top: 0;
+  border-radius: 5px;
+  transform-origin: left;
+  transform: scale(0);
+  opacity: 0;
+}
+
+@keyframes context-dropdown-enter {
+  0% {
+    transform: scale(0.8);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes context-dropdown-exit {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0.8);
+  }
+}
+
+#context-menu .menu-item:not(.disabled):hover > .menubar-dropdown,
+#context-menu .menubar-dropdown:not(.disabled):hover {
+  opacity: 0.95;
+  transform: scale(1);
+}
+
+.animated #context-menu .menu-item:not(.disabled):hover > .menubar-dropdown,
+.animated #context-menu .menubar-dropdown:not(.disabled):hover {
+  animation: context-dropdown-enter 0.08s cubic-bezier(0.215, 0.61, 0.355, 1)
+    forwards;
+}
+
+.animated .menubar-dropdown {
+  animation: context-dropdown-exit 0.08s cubic-bezier(0.215, 0.61, 0.355, 1);
+  transition: 0.08s cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.menu-item .menubar-dropdown .menubar-dropdown {
+  left: 100%;
+  top: 0;
 }

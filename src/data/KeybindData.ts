@@ -870,7 +870,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     keybinds: [],
     disabled: app =>
       !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit,
+      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasSelection(),
     callback: async app => {
       const data = app.chartManager.copy()
       if (data) await navigator.clipboard.writeText(data)
@@ -881,7 +882,8 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     keybinds: [],
     disabled: app =>
       !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit,
+      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasSelection(),
     callback: async app => {
       const data = app.chartManager.copy()
       if (data) await navigator.clipboard.writeText(data)

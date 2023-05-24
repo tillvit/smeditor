@@ -1290,6 +1290,13 @@ export class ChartManager {
     return
   }
 
+  hasSelection() {
+    return (
+      this.selection.notes.length > 0 ||
+      this.eventSelection.timingEvents.length > 0
+    )
+  }
+
   /**
    * Clears the current selection
    *
