@@ -164,14 +164,18 @@ export class TimingTrackContainer extends Container {
       leftOffset: 0,
       rightOffset: 0,
     }
+    const fromSecond =
+      this.renderer.chart.timingData.getSecondsFromBeat(fromBeat)
+    const toSecond = this.renderer.chart.timingData.getSecondsFromBeat(toBeat)
+
     for (const event of this.renderer.chart.timingData.getTimingData()) {
-      if (toBeat < event.beat!) break
+      if (toBeat < event.beat! || toSecond < event.second!) break
       if (
         !Options.chart.timingEventOrder.left.includes(event.type) &&
         !Options.chart.timingEventOrder.right.includes(event.type)
       )
         continue
-      if (fromBeat > event.beat!) continue
+      if (fromBeat > event.beat! || fromSecond > event.second!) continue
 
       const [outOfBounds, endSearch, yPos] = this.checkBounds(event, beat)
       if (endSearch) break
@@ -283,15 +287,15 @@ export class TimingTrackContainer extends Container {
 
   private checkBounds(
     event: TimingEvent,
-    beat: number
+    currentBeat: number
   ): [boolean, boolean, number] {
     const y =
-      Options.chart.CMod && event.second
+      Options.chart.CMod && event.type == "ATTACKS"
         ? this.renderer.getYPosFromSecond(event.second)
         : this.renderer.getYPosFromBeat(event.beat!)
     if (y < this.renderer.getUpperBound()) return [true, false, y]
     if (y > this.renderer.getLowerBound()) {
-      if (event.beat! < beat || this.renderer.isNegScroll(event.beat!))
+      if (event.beat! < currentBeat || this.renderer.isNegScroll(event.beat!))
         return [true, false, y]
       else return [true, true, y]
     }
@@ -541,6 +545,10 @@ export class TimingTrackContainer extends Container {
           snapBeat
         )
       this.ghostBox.event.beat = snapBeat
+      if (type == "ATTACKS") {
+        this.ghostBox.event.second =
+          this.renderer.chart.getSecondsFromBeat(snapBeat)
+      }
       this.ghostBox.textObj.text = this.getLabelFromEvent(this.ghostBox.event)
       this.ghostBox.backgroundObj.width = this.ghostBox.textObj.width + 10
       this.ghostBox.selection.width = this.ghostBox.textObj.width + 10
@@ -576,6 +584,19 @@ export class TimingTrackContainer extends Container {
 
   placeGhostEvent() {
     if (!this.ghostBox) return
+    //Check if there is already an event there
+    const possibleEvent = this.renderer.chart.timingData.getTimingEventAtBeat(
+      this.ghostBox.event.type,
+      this.ghostBox.event.beat!
+    )
+    if (
+      (this.ghostBox.event.type == "ATTACKS" &&
+        this.ghostBox.event.second == possibleEvent?.second) ||
+      (this.ghostBox.event.type != "ATTACKS" &&
+        this.ghostBox.event.beat == possibleEvent?.beat)
+    ) {
+      return
+    }
     this.renderer.chartManager.clearSelections()
     this.ghostBox.songTiming =
       this.renderer.chart.timingData.isTypeChartSpecific(

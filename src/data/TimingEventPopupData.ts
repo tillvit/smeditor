@@ -259,6 +259,7 @@ export const POPUP_ROWS: { [key in TimingEventProperty]: Popup } = {
   },
   ATTACKS: {
     title: "Attack Event",
+    width: 200,
     description:
       "Applies a modifier to the playfield. Can specify the length of the applied attack in seconds or the end time of the attack.",
     rows: [
@@ -267,7 +268,7 @@ export const POPUP_ROWS: { [key in TimingEventProperty]: Popup } = {
         key: "endType",
         input: {
           type: "dropdown",
-          items: ["LEN", "END"] as ("LEN" | "END")[],
+          items: ["Length", "End"],
           transformers: {
             serialize: (value: string) => (value == "LEN" ? "Length" : "End"),
             deserialize: (value: string) => (value == "Length" ? "LEN" : "END"),

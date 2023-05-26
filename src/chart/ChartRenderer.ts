@@ -7,7 +7,9 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
+import { ContextMenuPopup } from "../gui/element/ContextMenu"
 import { Options } from "../util/Options"
+import { isRightClick } from "../util/Util"
 import { ChartManager, EditMode, EditTimingMode } from "./ChartManager"
 import { BarlineContainer } from "./component/BarlineContainer"
 import { ComboNumber } from "./component/ComboNumber"
@@ -662,7 +664,17 @@ export class ChartRenderer extends Container {
         snapBeat - note.beat
       )
     }
-    newChild.on("mousedown", event => {
+    newChild.on("pointerdown", event => {
+      if (isRightClick(event)) {
+        if (!this.chartManager.selection.notes.includes(newChild.note)) {
+          this.chartManager.clearSelections()
+          this.chartManager.addNoteToSelection(newChild.note)
+        }
+        console.log(this.chartManager.selection.notes)
+        ContextMenuPopup.open(this.chartManager.app, event)
+        event.preventDefault()
+        return
+      }
       if (
         Options.general.mousePlacement &&
         !event.getModifierState("Meta") &&

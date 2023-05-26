@@ -462,9 +462,11 @@ export class StatusWidget extends Widget {
     const time = this.manager.chartManager.getTime()
     if (this.lastTime != time) {
       if (document.activeElement != this.min)
-        this.min.innerText = Math.floor(Math.abs(time) / 60)
-          .toString()
-          .padStart(2, "0")
+        this.min.innerText =
+          (time < 0 ? "-" : "") +
+          Math.floor(Math.abs(time) / 60)
+            .toString()
+            .padStart(2, "0")
       if (document.activeElement != this.sec)
         this.sec.innerText = Math.floor(Math.abs(time) % 60)
           .toString()
@@ -680,6 +682,8 @@ export class StatusWidget extends Widget {
       this.safeParse(this.millis) / 1000
     if (time > 9999999) time = 9999999
     this.manager.chartManager.setTime(time)
+    //force update
+    this.lastTime = -999
   }
 
   private updateBeat() {
@@ -690,6 +694,8 @@ export class StatusWidget extends Widget {
     }
     if (beat > 9999999) beat = 9999999
     this.manager.chartManager.setBeat(beat)
+    //force update
+    this.lastBeat = -999
   }
 
   private safeParse(el: HTMLDivElement) {

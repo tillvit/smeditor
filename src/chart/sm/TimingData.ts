@@ -582,10 +582,14 @@ export class TimingData {
     for (const event of this._cache.sortedEvents) {
       if (event.type == "DELAYS")
         event.second = this.getSecondsFromBeat(event.beat, "before")
-      else event.second = this.getSecondsFromBeat(event.beat!)
-      if (event.type == "ATTACKS")
+      else if (event.type == "ATTACKS") {
         event.beat = this.getBeatFromSeconds(event.second)
+      } else {
+        event.second = this.getSecondsFromBeat(event.beat)
+      }
     }
+
+    this._cache.sortedEvents.sort((a, b) => a.beat! - b.beat!)
   }
 
   private searchCache<Type, Prop extends keyof Type>(

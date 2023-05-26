@@ -32,8 +32,8 @@ export class NumberSpinner {
     input.autocomplete = "off"
     input.spellcheck = false
     input.onblur = () => {
-      if (input.value == this.lastVal) return
-      if (input.value == "") {
+      if (input.value === this.lastVal) return
+      if (input.value === "") {
         this.onChange?.(undefined)
         return
       }

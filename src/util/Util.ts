@@ -1,7 +1,8 @@
 import { Parser } from "expr-eval"
-import { DisplayObject } from "pixi.js"
+import { DisplayObject, FederatedMouseEvent } from "pixi.js"
 import { PartialNotedata, isHoldNote } from "../chart/sm/NoteTypes"
 import { TimingEvent, TimingEventProperty } from "../chart/sm/TimingTypes"
+import { IS_OSX } from "../data/KeybindData"
 import { a85decode, a85encode } from "./Ascii85"
 
 declare global {
@@ -864,4 +865,8 @@ export function decodeSMETempo(data: string): TimingEvent[] | undefined {
     return
   }
   return eventList
+}
+
+export function isRightClick(event: FederatedMouseEvent) {
+  return event.button == 2 || (event.getModifierState("Control") && IS_OSX)
 }
