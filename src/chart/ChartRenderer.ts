@@ -141,7 +141,8 @@ export class ChartRenderer extends Container {
       this.chartManager.app.ticker.remove(tickHandler)
     })
 
-    this.on("mousedown", event => {
+    this.on("pointerdown", event => {
+      if (isRightClick(event)) return
       if (this.chartManager.getMode() == EditMode.Play) return
       if (
         this.chartManager.editTimingMode == EditTimingMode.Add &&
@@ -670,7 +671,6 @@ export class ChartRenderer extends Container {
           this.chartManager.clearSelections()
           this.chartManager.addNoteToSelection(newChild.note)
         }
-        console.log(this.chartManager.selection.notes)
         ContextMenuPopup.open(this.chartManager.app, event)
         event.preventDefault()
         return
