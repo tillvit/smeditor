@@ -6,7 +6,7 @@ import { IS_OSX, KEYBINDS } from "../data/KeybindData"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { WidgetManager } from "../gui/widget/WidgetManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
-import { ConfimationWindow } from "../gui/window/ConfirmationWindow"
+import { ConfirmationWindow } from "../gui/window/ConfirmationWindow"
 import { Keybinds } from "../listener/Keybinds"
 import { ActionHistory } from "../util/ActionHistory"
 import { EventHandler } from "../util/EventHandler"
@@ -587,7 +587,7 @@ export class ChartManager {
   async loadSM(path?: string) {
     // Save confirmation
     if (ActionHistory.instance.isDirty()) {
-      const window = new ConfimationWindow(
+      const window = new ConfirmationWindow(
         this.app,
         "Save",
         "Do you wish to save the current file?",

@@ -7,7 +7,7 @@ interface ConfirmationOption {
   type: "delete" | "confirm" | "default"
 }
 
-export class ConfimationWindow extends Window {
+export class ConfirmationWindow extends Window {
   app: App
 
   private buttonOptions: ConfirmationOption[]

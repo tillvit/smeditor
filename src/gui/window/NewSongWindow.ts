@@ -8,6 +8,7 @@ import {
 } from "../../data/SMPropertiesData"
 import { FileHandler } from "../../util/FileHandler"
 import { Icons } from "../Icons"
+import { ConfirmationWindow } from "./ConfirmationWindow"
 import { Window } from "./Window"
 
 export class NewSongWindow extends Window {
@@ -93,10 +94,36 @@ export class NewSongWindow extends Window {
     const create_btn = document.createElement("button")
     create_btn.innerText = "Create"
     create_btn.classList.add("confirm")
-    create_btn.disabled = true
     create_btn.onclick = () => {
-      this.createSong()
-      this.closeWindow()
+      if (
+        this.sm.properties.MUSIC === undefined ||
+        this.sm.properties.MUSIC === ""
+      ) {
+        this.app.windowManager.openWindow(
+          new ConfirmationWindow(
+            this.app,
+            "No audio file uploaded",
+            "Are you sure you want to create a file with no audio?",
+            [
+              {
+                type: "confirm",
+                label: "Yes",
+                callback: () => {
+                  this.createSong()
+                  this.closeWindow()
+                },
+              },
+              {
+                type: "default",
+                label: "No",
+              },
+            ]
+          )
+        )
+      } else {
+        this.createSong()
+        this.closeWindow()
+      }
     }
     this.createButton = create_btn
     menu_options_left.appendChild(cancel)
@@ -124,17 +151,13 @@ export class NewSongWindow extends Window {
     this.app.windowManager?.getWindowById("select_sm_initial")?.closeWindow()
   }
 
-  checkValid() {
-    if (
+  isValid() {
+    return (
       this.sm.properties.TITLE !== undefined &&
       this.sm.properties.TITLE !== "" &&
       this.sm.properties.MUSIC !== undefined &&
       this.sm.properties.MUSIC !== ""
-    ) {
-      this.createButton!.disabled = false
-    } else {
-      this.createButton!.disabled = true
-    }
+    )
   }
 
   createFileElement(propName: SimfileProperty, typeName: string) {
@@ -175,7 +198,6 @@ export class NewSongWindow extends Window {
         this.fileTable[fileName] = file
         input.value = fileName
         this.sm.properties[propName] = input.value
-        this.checkValid()
         deleteButton.disabled = false
       }
       fileSelector.click()
