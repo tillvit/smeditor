@@ -10,8 +10,10 @@ import { OffsetWindow } from "../gui/window/OffsetWindow"
 import { SMPropertiesWindow } from "../gui/window/SMPropertiesWindow"
 import { TimingDataWindow } from "../gui/window/TimingDataWindow"
 import { UserOptionsWindow } from "../gui/window/UserOptionsWindow"
+import { ActionHistory } from "../util/ActionHistory"
 import { FileHandler } from "../util/FileHandler"
 import { Options } from "../util/Options"
+import { roundDigit } from "../util/Util"
 
 export interface Keybind {
   label: string
@@ -898,5 +900,62 @@ export const KEYBINDS: { [key: string]: Keybind } = {
     keybinds: [],
     disabled: false,
     callback: app => app.windowManager.openWindow(new OffsetWindow(app)),
+  },
+  setSongPreview: {
+    label: "Set as song preview",
+    keybinds: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasRange(),
+    callback: app => {
+      const chart = app.chartManager.loadedChart!
+      const lastStart = app.chartManager.loadedSM!.properties.SAMPLESTART ?? "0"
+      const lastLength =
+        app.chartManager.loadedSM!.properties.SAMPLELENGTH ?? "10"
+
+      //Try using the region
+      if (
+        app.chartManager.startRegion !== undefined &&
+        app.chartManager.endRegion !== undefined
+      ) {
+        const startSec = chart.getSecondsFromBeat(app.chartManager.startRegion)
+        const endSec = chart.getSecondsFromBeat(app.chartManager.endRegion)
+        const newStart = roundDigit(startSec, 3).toString()
+        const newLength = roundDigit(endSec - startSec, 3).toString()
+        ActionHistory.instance.run({
+          action: app => {
+            app.chartManager.loadedSM!.properties.SAMPLESTART = newStart
+            app.chartManager.loadedSM!.properties.SAMPLELENGTH = newLength
+          },
+          undo: () => {
+            app.chartManager.loadedSM!.properties.SAMPLESTART = lastStart
+            app.chartManager.loadedSM!.properties.SAMPLELENGTH = lastLength
+          },
+        })
+        return
+      }
+
+      //Use notes/events
+      const selected =
+        app.chartManager.selection.notes.length > 0
+          ? app.chartManager.selection.notes
+          : app.chartManager.eventSelection.timingEvents
+      const beats = selected.map(item => item.beat!)
+      const startSec = chart.getSecondsFromBeat(Math.min(...beats))
+      const endSec = chart.getSecondsFromBeat(Math.max(...beats))
+      const newStart = roundDigit(startSec, 3).toString()
+      const newLength = roundDigit(endSec - startSec, 3).toString()
+      ActionHistory.instance.run({
+        action: app => {
+          app.chartManager.loadedSM!.properties.SAMPLESTART = newStart
+          app.chartManager.loadedSM!.properties.SAMPLELENGTH = newLength
+        },
+        undo: () => {
+          app.chartManager.loadedSM!.properties.SAMPLESTART = lastStart
+          app.chartManager.loadedSM!.properties.SAMPLELENGTH = lastLength
+        },
+      })
+    },
   },
 }

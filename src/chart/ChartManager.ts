@@ -1293,7 +1293,16 @@ export class ChartManager {
   hasSelection() {
     return (
       this.selection.notes.length > 0 ||
-      this.eventSelection.timingEvents.length > 0
+      this.eventSelection.timingEvents.length > 0 ||
+      (this.startRegion !== undefined && this.endRegion !== undefined)
+    )
+  }
+
+  hasRange() {
+    return (
+      this.selection.notes.length > 1 ||
+      this.eventSelection.timingEvents.length > 1 ||
+      (this.startRegion !== undefined && this.endRegion !== undefined)
     )
   }
 
@@ -1375,16 +1384,16 @@ export class ChartManager {
 
   selectRegion() {
     if (!this.loadedChart) return
-    if (this.endRegion) {
+    if (this.endRegion !== undefined) {
       this.startRegion = undefined
       this.endRegion = undefined
     }
-    if (!this.startRegion) {
+    if (this.startRegion === undefined) {
       this.clearSelections()
       this.startRegion = this.beat
       return
     }
-    if (!this.endRegion) {
+    if (this.endRegion === undefined) {
       this.endRegion = this.beat
       if (this.endRegion < this.startRegion) {
         this.endRegion = this.startRegion

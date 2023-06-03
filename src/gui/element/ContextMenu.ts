@@ -1,5 +1,6 @@
 import { FederatedMouseEvent } from "pixi.js"
 import { App } from "../../App"
+import { EditMode } from "../../chart/ChartManager"
 import { KEYBINDS } from "../../data/KeybindData"
 import { MENUBAR_DATA, MenuOption } from "../../data/MenubarData"
 import { Keybinds } from "../../listener/Keybinds"
@@ -66,13 +67,15 @@ export class ContextMenuPopup {
         id: "paste",
       })
     )
-    if (app.chartManager.selection.notes.length != 0) {
+    if (
+      app.chartManager.getMode() == EditMode.Edit &&
+      app.chartManager.hasSelection()
+    ) {
       const seperator = document.createElement("div")
       seperator.classList.add("seperator")
       menu.appendChild(seperator)
-      MENUBAR_DATA["selection"].options.forEach(option => {
-        if (option.type == "dropdown")
-          menu.appendChild(this.createElement(app, option))
+      MENUBAR_DATA["selection"].options.slice(0, -2).forEach(option => {
+        menu.appendChild(this.createElement(app, option))
       })
     }
     this.menuElement = menu

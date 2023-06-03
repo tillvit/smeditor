@@ -14,6 +14,7 @@ import { ChartManager, EditMode, EditTimingMode } from "./ChartManager"
 import { BarlineContainer } from "./component/BarlineContainer"
 import { ComboNumber } from "./component/ComboNumber"
 import { JudgmentSprite } from "./component/JudgmentSprite"
+import { PreviewAreaContainer } from "./component/PreviewAreaContainer"
 import { SelectionAreaContainer } from "./component/SelectionAreaContainer"
 import { SelectionTimingEventContainer } from "./component/SelectionTimingEventContainer"
 import { SnapContainer } from "./component/SnapContainer"
@@ -56,6 +57,7 @@ export class ChartRenderer extends Container {
   private combo: ComboNumber
   private selectionSprite: Sprite
   private selectionArea: SelectionAreaContainer
+  private previewArea: PreviewAreaContainer
 
   private selectionBounds?: SelectionBounds
 
@@ -72,6 +74,7 @@ export class ChartRenderer extends Container {
     this.timingBar = new TimingBarContainer(this)
     this.notefield = new this.chart.gameType.notefield(this)
     this.snapDisplay = new SnapContainer(this)
+    this.previewArea = new PreviewAreaContainer(this)
     this.selectionArea = new SelectionAreaContainer(this)
     this.judgment = new JudgmentSprite()
     this.combo = new ComboNumber(this)
@@ -82,6 +85,7 @@ export class ChartRenderer extends Container {
     this.addChild(this.waveform)
     this.addChild(this.barlines)
     this.addChild(this.timingAreas)
+    this.addChild(this.previewArea)
     this.addChild(this.selectionArea)
     this.addChild(this.timingTracks)
     this.addChild(this.selectedEvents)
@@ -309,6 +313,7 @@ export class ChartRenderer extends Container {
     this.combo.update()
     this.snapDisplay.update()
     this.selectionArea.update()
+    this.previewArea.update()
 
     this.notefield.update(beat, renderBeatLowerLimit, renderBeatLimit)
     this.notefield.alpha =

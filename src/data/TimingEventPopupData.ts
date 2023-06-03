@@ -20,7 +20,7 @@ type PopupInput =
 
 interface PopupInputSpinner {
   type: "spinner"
-  step: number
+  step?: number
   precision?: number
   min?: number
   max?: number
@@ -48,7 +48,6 @@ export const POPUP_ROWS: { [key in TimingEventProperty]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          step: 0.001,
           precision: 3,
         },
       },
@@ -64,7 +63,6 @@ export const POPUP_ROWS: { [key in TimingEventProperty]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          step: 0.001,
           precision: 3,
         },
       },
@@ -80,7 +78,6 @@ export const POPUP_ROWS: { [key in TimingEventProperty]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          step: 0.001,
           precision: 3,
           min: 0,
         },
@@ -97,7 +94,6 @@ export const POPUP_ROWS: { [key in TimingEventProperty]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          step: 0.001,
           precision: 3,
         },
       },
@@ -112,7 +108,6 @@ export const POPUP_ROWS: { [key in TimingEventProperty]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          step: 0.001,
           precision: 3,
         },
       },
@@ -145,7 +140,6 @@ export const POPUP_ROWS: { [key in TimingEventProperty]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          step: 0.001,
           precision: 3,
           min: 0,
         },
@@ -175,7 +169,6 @@ export const POPUP_ROWS: { [key in TimingEventProperty]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          step: 0.001,
           precision: 3,
         },
       },
@@ -184,7 +177,6 @@ export const POPUP_ROWS: { [key in TimingEventProperty]: Popup } = {
         key: "delay",
         input: {
           type: "spinner",
-          step: 0.001,
           precision: 3,
           min: 0,
         },
@@ -280,7 +272,6 @@ export const POPUP_ROWS: { [key in TimingEventProperty]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          step: 0.001,
           precision: 3,
         },
       },
@@ -309,7 +300,6 @@ export const POPUP_ROWS: { [key in TimingEventProperty]: Popup } = {
         key: "updateRate",
         input: {
           type: "spinner",
-          step: 0.001,
           precision: 3,
           min: 0,
         },
@@ -388,7 +378,6 @@ export const POPUP_ROWS: { [key in TimingEventProperty]: Popup } = {
         key: "updateRate",
         input: {
           type: "spinner",
-          step: 0.001,
           precision: 3,
           min: 0,
         },
