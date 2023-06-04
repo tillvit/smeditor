@@ -15,7 +15,6 @@ export class NewSongWindow extends Window {
   app: App
 
   private sm: Simfile
-  private createButton?: HTMLButtonElement
   private fileTable: { [key: string]: File } = {}
 
   constructor(app: App) {
@@ -125,7 +124,6 @@ export class NewSongWindow extends Window {
         this.closeWindow()
       }
     }
-    this.createButton = create_btn
     menu_options_left.appendChild(cancel)
     menu_options_right.appendChild(create_btn)
     padding.appendChild(menu_options)
