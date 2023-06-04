@@ -6,6 +6,7 @@ import {
   SM_PROPERTIES_DATA,
   createInputElement,
 } from "../../data/SMPropertiesData"
+import { ActionHistory } from "../../util/ActionHistory"
 import { FileHandler } from "../../util/FileHandler"
 import { Icons } from "../Icons"
 import { ConfirmationWindow } from "./ConfirmationWindow"
@@ -145,6 +146,7 @@ export class NewSongWindow extends Window {
         return FileHandler.writeFile(folder + `/${entry[0]}`, entry[1])
       })
     )
+    ActionHistory.instance.reset()
     await this.app.chartManager.loadSM(folder + "/song.sm")
     this.app.windowManager?.getWindowById("select_sm_initial")?.closeWindow()
   }
