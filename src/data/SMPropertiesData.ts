@@ -15,7 +15,7 @@ type SMPropertyGroupData = {
 
 type SMPropertyCustomInput = {
   type: "custom"
-  create: (app: App, sm?: Simfile) => HTMLElement
+  create: (app: App, sm?: Simfile, actionHist?: ActionHistory) => HTMLElement
 }
 type SMPropertyStringInput = {
   type: "string"
@@ -141,7 +141,8 @@ export const SM_PROPERTIES_DATA: SMPropertyGroupData[] = [
         propName: "SAMPLESTART",
         input: {
           type: "custom",
-          create: (app, sm) => {
+          create: (app, sm, actionHist) => {
+            const history = actionHist ?? ActionHistory.instance
             const updateValues = () => {
               if (toSpinner.value < fromSpinner.value) {
                 toSpinner.setValue(fromSpinner.value)
@@ -153,7 +154,7 @@ export const SM_PROPERTIES_DATA: SMPropertyGroupData[] = [
                 "10"
               const newStart = fromSpinner.value.toString()
               const newLength = (toSpinner.value - fromSpinner.value).toString()
-              ActionHistory.instance.run({
+              history.run({
                 action: app => {
                   ;(sm ?? app.chartManager.loadedSM!).properties.SAMPLESTART =
                     newStart
@@ -241,11 +242,13 @@ export const SM_PROPERTIES_DATA: SMPropertyGroupData[] = [
 export function createInputElement(
   app: App,
   data: SMPropertyData,
-  sm?: Simfile
+  sm?: Simfile,
+  actionHist?: ActionHistory
 ) {
+  const history = actionHist ?? ActionHistory.instance
   switch (data.input.type) {
     case "custom":
-      return data.input.create(app, sm)
+      return data.input.create(app, sm, actionHist)
     case "string": {
       const input = document.createElement("input")
       input.type = "text"
@@ -259,7 +262,7 @@ export function createInputElement(
           data.propName
         ]
         const newValue = input.value
-        ActionHistory.instance.run({
+        history.run({
           action: app => {
             ;(sm ?? app.chartManager.loadedSM!).properties[data.propName] =
               newValue
@@ -301,7 +304,7 @@ export function createInputElement(
           data.propName
         ]
         const newValue = value.toString()
-        ActionHistory.instance.run({
+        history.run({
           action: app => {
             ;(sm ?? app.chartManager.loadedSM!).properties[data.propName] =
               newValue
@@ -340,7 +343,7 @@ export function createInputElement(
             )
             const lastValue =
               (sm ?? app.chartManager.loadedSM!).properties[data.propName] ?? ""
-            ActionHistory.instance.run({
+            history.run({
               action: app => {
                 ;(sm ?? app.chartManager.loadedSM!).properties[data.propName] =
                   newValue
@@ -370,7 +373,7 @@ export function createInputElement(
                     (sm ?? app.chartManager.loadedSM!).properties[
                       data.propName
                     ] ?? ""
-                  ActionHistory.instance.run({
+                  history.run({
                     action: app => {
                       ;(sm ?? app.chartManager.loadedSM!).properties[
                         data.propName

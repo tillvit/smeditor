@@ -16,6 +16,7 @@ export class NewSongWindow extends Window {
   app: App
 
   private sm: Simfile
+  private actionHistory: ActionHistory
   private fileTable: { [key: string]: File } = {}
 
   constructor(app: App) {
@@ -33,6 +34,7 @@ export class NewSongWindow extends Window {
     const file = new File([blob], "song.sm", { type: "text/plain" })
     this.sm = new Simfile(file)
     this.app = app
+    this.actionHistory = new ActionHistory(this.app)
     this.initView()
   }
 
@@ -67,7 +69,10 @@ export class NewSongWindow extends Window {
           grid.appendChild(
             this.createFileElement(item.propName, item.input.typeName)
           )
-        else grid.appendChild(createInputElement(this.app, item, this.sm))
+        else
+          grid.appendChild(
+            createInputElement(this.app, item, this.sm, this.actionHistory)
+          )
       })
       groupContainer.appendChild(title)
       groupContainer.appendChild(grid)
@@ -146,7 +151,6 @@ export class NewSongWindow extends Window {
         return FileHandler.writeFile(folder + `/${entry[0]}`, entry[1])
       })
     )
-    ActionHistory.instance.reset()
     await this.app.chartManager.loadSM(folder + "/song.sm")
     this.app.windowManager?.getWindowById("select_sm_initial")?.closeWindow()
   }
