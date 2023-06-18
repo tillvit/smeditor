@@ -154,6 +154,7 @@ export class ChartRenderer extends Container {
       ) {
         this.timingTracks.placeGhostEvent()
       } else if (
+        this.chartManager.editTimingMode == EditTimingMode.Off &&
         Options.general.mousePlacement &&
         this.lastMouseBeat != -1 &&
         this.lastMouseCol != -1 &&
