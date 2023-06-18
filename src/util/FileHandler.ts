@@ -369,6 +369,7 @@ export class FileHandler {
   }
 
   static async renameFile(path: string, pathTo: string) {
+    if (path == pathTo) return
     try {
       const baseFromDirHandle = await this.getDirectoryHandle(dirname(path))
       const baseToDirHandle = await this.getDirectoryHandle(dirname(pathTo), {
