@@ -47,8 +47,7 @@ export class SnapContainer extends Container {
 
       text.anchor.set(0.5)
 
-      container.addChild(graphic)
-      container.addChild(text)
+      container.addChild(graphic, text)
       this.addChild(container)
 
       container.interactive = true

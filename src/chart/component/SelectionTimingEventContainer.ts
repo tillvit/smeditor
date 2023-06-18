@@ -79,8 +79,6 @@ export class SelectionTimingEventContainer extends Container {
       timingBox.guideLine.position.x =
         ((side == "left" ? 1 : -1) * timingBox.backgroundObj.width) / 2
       timingBox.y = yPos
-      timingBox.marked = true
-      timingBox.dirtyTime = Date.now()
 
       timingBox.textObj.scale.y = Options.chart.reverse ? -1 : 1
     }
@@ -116,8 +114,15 @@ export class SelectionTimingEventContainer extends Container {
   }
 
   private getTimingBox(event: TimingEvent): TimingBox {
-    if (this.eventMap.get(event)) return this.eventMap.get(event)!
-    let newChild: Partial<TimingBox> | undefined
+    if (this.eventMap.get(event)) {
+      const cached = this.eventMap.get(event)!
+      return Object.assign(cached, {
+        deactivated: false,
+        marked: true,
+        dirtyTime: Date.now(),
+      })
+    }
+    let newChild: (Partial<TimingBox> & Container) | undefined
     for (const child of this.children) {
       if (child.deactivated) {
         child.deactivated = false
@@ -127,23 +132,17 @@ export class SelectionTimingEventContainer extends Container {
     }
     if (!newChild) {
       newChild = new Container() as TimingBox
-      newChild.zIndex = event.beat
       newChild.guideLine = new Sprite(Texture.WHITE)
       newChild.textObj = new BitmapText("", timingNumbers)
       newChild.backgroundObj = new BetterRoundedRect()
-      newChild.addChild!(newChild.guideLine)
-      newChild.addChild!(newChild.backgroundObj)
-      newChild.addChild!(newChild.textObj)
+      newChild.addChild(
+        newChild.guideLine,
+        newChild.backgroundObj,
+        newChild.textObj
+      )
       this.addChild(newChild as TimingBox)
     }
-    newChild.alpha = 0.4
-    newChild.event = event
-    newChild.deactivated = false
-    newChild.songTiming = this.renderer.chart.timingData.isTypeChartSpecific(
-      event.type
-    )
-    newChild.marked = true
-    newChild.visible = true
+
     let label = ""
     switch (event.type) {
       case "BPMS":
@@ -179,13 +178,24 @@ export class SelectionTimingEventContainer extends Container {
       case "ATTACKS":
         label = `${event.mods} (${event.endType}=${event.value})`
     }
+
+    Object.assign(newChild, {
+      alpha: 0.4,
+      event,
+      songTiming: this.renderer.chart.timingData.isTypeChartSpecific(
+        event.type
+      ),
+      visible: true,
+      marked: true,
+      deactivated: false,
+      dirtyTime: Date.now(),
+      zIndex: event.beat!,
+    })
     newChild.textObj!.text = label
     newChild.textObj!.anchor.x = 0.5
     newChild.textObj!.anchor.y = 0.55
-    newChild.visible = true
     newChild.backgroundObj!.width = newChild.textObj!.width + 10
     newChild.backgroundObj!.height = 25
-    newChild.zIndex = event.beat
     newChild.guideLine!.height = 1
     newChild.guideLine!.anchor.y = 0.5
     this.eventMap.set(event, newChild as TimingBox)

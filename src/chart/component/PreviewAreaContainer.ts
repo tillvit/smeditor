@@ -16,13 +16,15 @@ export class PreviewAreaContainer extends Container {
   constructor(renderer: ChartRenderer) {
     super()
     this.renderer = renderer
-    this.previewArea.alpha = 0.2
-    this.addChild(this.previewArea, this.previewText)
-    this.previewArea.tint = 0xa8a5c2
+    Object.assign(this.previewArea, {
+      alpha: 0.2,
+      tint: 0xa8a5c2,
+      width: this.renderer.chart.gameType.notefieldWidth + 96,
+      height: 64,
+      x: -this.previewArea.width / 2 + 5,
+    })
     this.previewArea.anchor.x = 0.5
-    this.previewArea.height = 64
-    this.previewArea.width = this.renderer.chart.gameType.notefieldWidth + 96
-    this.previewText.x = -this.previewArea.width / 2 + 5
+    this.addChild(this.previewArea, this.previewText)
   }
 
   update() {

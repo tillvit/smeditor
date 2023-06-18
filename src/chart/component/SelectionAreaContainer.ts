@@ -11,16 +11,20 @@ export class SelectionAreaContainer extends Container {
   constructor(renderer: ChartRenderer) {
     super()
     this.renderer = renderer
-    this.startMarker.alpha = 0
-    this.selectionArea.alpha = 0
-    this.addChild(this.selectionArea, this.startMarker)
-    this.selectionArea.tint = 0x4e6fa3
+    Object.assign(this.startMarker, {
+      alpha: 0,
+      width: this.renderer.chart.gameType.notefieldWidth,
+      height: 64,
+    })
+    Object.assign(this.selectionArea, {
+      alpha: 0,
+      tint: 0x4e6fa3,
+      width: this.renderer.chart.gameType.notefieldWidth,
+      height: 64,
+    })
     this.startMarker.anchor.set(0.5)
     this.selectionArea.anchor.x = 0.5
-    this.startMarker.height = 64
-    this.selectionArea.height = 64
-    this.selectionArea.width = this.renderer.chart.gameType.notefieldWidth
-    this.startMarker.width = this.renderer.chart.gameType.notefieldWidth
+    this.addChild(this.selectionArea, this.startMarker)
   }
 
   update() {

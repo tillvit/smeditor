@@ -103,8 +103,6 @@ export class TimingAreaContainer extends Container {
       const area = this.getTimingArea(event)
       area.y = yPos
       area.height = length
-      area.marked = true
-      area.dirtyTime = Date.now()
     }
 
     //Remove old elements
@@ -173,8 +171,15 @@ export class TimingAreaContainer extends Container {
       | DelayTimingEvent
       | FakeTimingEvent
   ): TimingAreaObject {
-    if (this.timingAreaMap.get(event)) return this.timingAreaMap.get(event)!
-    let newChild: Partial<TimingAreaObject> | undefined
+    if (this.timingAreaMap.get(event)) {
+      const cached = this.timingAreaMap.get(event)!
+      return Object.assign(cached, {
+        deactivated: false,
+        marked: true,
+        dirtyTime: Date.now(),
+      })
+    }
+    let newChild: (Partial<TimingAreaObject> & Sprite) | undefined
     for (const child of this.children) {
       if (child.deactivated) {
         child.deactivated = false
@@ -186,15 +191,18 @@ export class TimingAreaContainer extends Container {
       newChild = new Sprite(Texture.WHITE) as TimingAreaObject
       this.addChild(newChild as TimingAreaObject)
     }
-    newChild.event = event
-    newChild.deactivated = false
-    newChild.marked = true
-    newChild.anchor!.x = 0.5
-    newChild.anchor!.y = 0
-    newChild.width = this.renderer.chart.gameType.notefieldWidth + 128
-    newChild.visible = true
-    newChild.tint = TIMING_EVENT_COLORS[event.type]
-    newChild.alpha = 0.2
+    Object.assign(newChild, {
+      alpha: 0.2,
+      width: this.renderer.chart.gameType.notefieldWidth + 128,
+      visible: true,
+      tint: TIMING_EVENT_COLORS[event.type],
+      event,
+      marked: true,
+      deactivated: false,
+      dirtyTime: Date.now(),
+    })
+    newChild.anchor.x = 0.5
+    newChild.anchor.y = 0
     this.timingAreaMap.set(event, newChild as TimingAreaObject)
     return newChild as TimingAreaObject
   }

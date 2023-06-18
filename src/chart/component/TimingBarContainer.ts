@@ -5,9 +5,9 @@ import { EditMode } from "../ChartManager"
 import { ChartRenderer } from "../ChartRenderer"
 import { TimingWindow } from "../play/TimingWindow"
 import {
+  TimingWindowCollection,
   isStandardMissTimingWindow,
   isStandardTimingWindow,
-  TimingWindowCollection,
 } from "../play/TimingWindowCollection"
 
 interface TimingBarlineObject extends Sprite {
@@ -58,12 +58,13 @@ export class TimingBarContainer extends Container {
     this.currentMedian.lineTo(0, -10)
     this.errorText.y = -25
     this.errorText.anchor.set(0.5)
-    this.addChild(this.barline)
-    this.addChild(target)
-    this.addChild(this.barlines)
-    this.addChild(this.currentMedian)
-
-    this.addChild(this.errorText)
+    this.addChild(
+      this.barline,
+      target,
+      this.barlines,
+      this.currentMedian,
+      this.errorText
+    )
   }
 
   update() {
