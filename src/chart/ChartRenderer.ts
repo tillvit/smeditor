@@ -212,7 +212,7 @@ export class ChartRenderer extends Container {
       }
     })
 
-    this.on("mouseup", () => {
+    this.on("pointerup", () => {
       // End selecting
       if (this.editingCol != -1) {
         this.chartManager.endEditing(this.editingCol)
@@ -705,10 +705,10 @@ export class ChartRenderer extends Container {
       initalPosX = newChild.x!
       initalPosY = newChild.y!
       movedNote = newChild.note!
-      this.on("mousemove", moveHandler)
+      this.on("pointermove", moveHandler)
       const mouseUp = () => {
-        this.off("mousemove", moveHandler)
-        this.off("mouseup", mouseUp)
+        this.off("pointermove", moveHandler)
+        this.off("pointerup", mouseUp)
         newChild.visible = true
         if (
           (this.chartManager.selection.shift?.beatShift ?? 0) != 0 ||
@@ -721,7 +721,7 @@ export class ChartRenderer extends Container {
           })
         this.chartManager.selection.shift = undefined
       }
-      this.on("mouseup", mouseUp)
+      this.on("pointerup", mouseUp)
     })
     newChild.on("destroyed", () => {
       newChild?.removeAllListeners()
