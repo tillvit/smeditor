@@ -376,6 +376,13 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "selection",
+        id: "setSongPreview",
+      },
+      {
+        type: "seperator",
+      },
+      {
+        type: "selection",
         id: "selectAll",
       },
     ],

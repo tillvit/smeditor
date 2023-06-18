@@ -31,11 +31,11 @@ export class SelectionAreaContainer extends Container {
     this.visible = true
     const start = this.renderer.chartManager.startRegion
     const end = this.renderer.chartManager.endRegion
-    if (start && !end) {
+    if (start !== undefined && end === undefined) {
       this.startMarker.alpha = Math.sin(Date.now() / 320) * 0.1 + 0.3
       this.startMarker.y = this.renderer.getYPosFromBeat(start)
     } else this.startMarker.alpha = 0
-    if (start && end) {
+    if (start !== undefined && end !== undefined) {
       this.selectionArea.alpha = Math.sin(Date.now() / 320) * 0.1 + 0.3
       this.selectionArea.y = this.renderer.getYPosFromBeat(Math.min(start, end))
       this.selectionArea.height =

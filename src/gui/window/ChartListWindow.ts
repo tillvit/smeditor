@@ -10,7 +10,7 @@ import { ActionHistory } from "../../util/ActionHistory"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, isNumericKeyPress, safeParse } from "../../util/Util"
 import { Dropdown } from "../element/Dropdown"
-import { ConfimationWindow } from "./ConfirmationWindow"
+import { ConfirmationWindow } from "./ConfirmationWindow"
 import { Window } from "./Window"
 
 type ChartListItem = HTMLDivElement & {
@@ -385,7 +385,7 @@ export class ChartListWindow extends Window {
     deleteButton.innerText = "Delete Chart"
     deleteButton.onclick = () => {
       this.app.windowManager.openWindow(
-        new ConfimationWindow(
+        new ConfirmationWindow(
           this.app,
           "Delete chart",
           "Are you sure you want to delete this chart?",

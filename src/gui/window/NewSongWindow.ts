@@ -2,23 +2,28 @@ import { App } from "../../App"
 import { Simfile } from "../../chart/sm/Simfile"
 import { SimfileProperty } from "../../chart/sm/SimfileTypes"
 import { DEFAULT_SM } from "../../data/SMData"
-import { SM_PROPERTIES_DATA } from "../../data/SMPropertiesData"
+import {
+  SM_PROPERTIES_DATA,
+  createInputElement,
+} from "../../data/SMPropertiesData"
+import { ActionHistory } from "../../util/ActionHistory"
 import { FileHandler } from "../../util/FileHandler"
 import { Icons } from "../Icons"
+import { ConfirmationWindow } from "./ConfirmationWindow"
 import { Window } from "./Window"
 
 export class NewSongWindow extends Window {
   app: App
 
   private sm: Simfile
-  private createButton?: HTMLButtonElement
+  private actionHistory: ActionHistory
   private fileTable: { [key: string]: File } = {}
 
   constructor(app: App) {
     super({
       title: "New Song",
       width: 450,
-      height: 436,
+      height: 492,
       disableClose: true,
       win_id: "sm_properties",
       blocking: true,
@@ -29,6 +34,7 @@ export class NewSongWindow extends Window {
     const file = new File([blob], "song.sm", { type: "text/plain" })
     this.sm = new Simfile(file)
     this.app = app
+    this.actionHistory = new ActionHistory(this.app)
     this.initView()
   }
 
@@ -59,7 +65,14 @@ export class NewSongWindow extends Window {
         label.innerText = item.title
 
         grid.appendChild(label)
-        grid.appendChild(this.createInputElement(item.propName, item.type))
+        if (item.input.type == "file")
+          grid.appendChild(
+            this.createFileElement(item.propName, item.input.typeName)
+          )
+        else
+          grid.appendChild(
+            createInputElement(this.app, item, this.sm, this.actionHistory)
+          )
       })
       groupContainer.appendChild(title)
       groupContainer.appendChild(grid)
@@ -86,12 +99,37 @@ export class NewSongWindow extends Window {
     const create_btn = document.createElement("button")
     create_btn.innerText = "Create"
     create_btn.classList.add("confirm")
-    create_btn.disabled = true
     create_btn.onclick = () => {
-      this.createSong()
-      this.closeWindow()
+      if (
+        this.sm.properties.MUSIC === undefined ||
+        this.sm.properties.MUSIC === ""
+      ) {
+        this.app.windowManager.openWindow(
+          new ConfirmationWindow(
+            this.app,
+            "No audio file uploaded",
+            "Are you sure you want to create a file with no audio?",
+            [
+              {
+                type: "confirm",
+                label: "Yes",
+                callback: () => {
+                  this.createSong()
+                  this.closeWindow()
+                },
+              },
+              {
+                type: "default",
+                label: "No",
+              },
+            ]
+          )
+        )
+      } else {
+        this.createSong()
+        this.closeWindow()
+      }
     }
-    this.createButton = create_btn
     menu_options_left.appendChild(cancel)
     menu_options_right.appendChild(create_btn)
     padding.appendChild(menu_options)
@@ -117,109 +155,81 @@ export class NewSongWindow extends Window {
     this.app.windowManager?.getWindowById("select_sm_initial")?.closeWindow()
   }
 
-  checkValid() {
-    if (
+  isValid() {
+    return (
       this.sm.properties.TITLE !== undefined &&
       this.sm.properties.TITLE !== "" &&
       this.sm.properties.MUSIC !== undefined &&
       this.sm.properties.MUSIC !== ""
-    ) {
-      this.createButton!.disabled = false
-    } else {
-      this.createButton!.disabled = true
-    }
+    )
   }
 
-  createInputElement(
-    propName: SimfileProperty,
-    type: "string" | "audio" | "image"
-  ) {
-    switch (type) {
-      case "string": {
-        const input = document.createElement("input")
-        input.type = "text"
-        input.autocomplete = "off"
-        input.spellcheck = false
-        input.onkeydown = ev => {
-          if (ev.key == "Enter") input.blur()
+  createFileElement(propName: SimfileProperty, typeName: string) {
+    const container = document.createElement("div")
+    container.classList.add("flex-row", "flex-column-gap")
+    const input = document.createElement("input")
+    input.type = "text"
+    input.autocomplete = "off"
+    input.spellcheck = false
+    input.placeholder = "click to upload a file"
+    input.onclick = ev => {
+      ev.preventDefault()
+      input.blur()
+      const fileSelector = document.createElement("input")
+      fileSelector.type = "file"
+      fileSelector.accept = typeName == "audio" ? "audio/*" : "image/*"
+      fileSelector.onchange = () => {
+        const file = fileSelector.files?.[0]
+        if (!file) return
+
+        // Remove the old file
+        if (
+          this.sm.properties[propName] &&
+          this.fileTable[this.sm.properties[propName]!]
+        ) {
+          delete this.fileTable[this.sm.properties[propName]!]
         }
-        input.onblur = () => {
-          this.sm.properties[propName] = input.value
-          this.checkValid()
+
+        let fileName = file.name
+        // Prevent file conflicts. Same file is ok, but same name different file not ok
+        while (
+          this.fileTable[file.name] &&
+          (this.fileTable[file.name].size != file.size ||
+            this.fileTable[file.name].type != file.type)
+        ) {
+          fileName = "_" + fileName
         }
-        input.value = this.sm.properties[propName] ?? ""
-        return input
+        this.fileTable[fileName] = file
+        input.value = fileName
+        this.sm.properties[propName] = input.value
+        deleteButton.disabled = false
       }
-      case "audio":
-      case "image": {
-        const container = document.createElement("div")
-        container.classList.add("flex-row", "flex-column-gap")
-        const input = document.createElement("input")
-        input.type = "text"
-        input.autocomplete = "off"
-        input.spellcheck = false
-        input.placeholder = "click to upload a file"
-        input.onclick = ev => {
-          ev.preventDefault()
-          input.blur()
-          const fileSelector = document.createElement("input")
-          fileSelector.type = "file"
-          fileSelector.accept = type == "audio" ? "audio/*" : "image/*"
-          fileSelector.onchange = () => {
-            const file = fileSelector.files?.[0]
-            if (!file) return
-
-            // Remove the old file
-            if (
-              this.sm.properties[propName] &&
-              this.fileTable[this.sm.properties[propName]!]
-            ) {
-              delete this.fileTable[this.sm.properties[propName]!]
-            }
-
-            let fileName = file.name
-            // Prevent file conflicts. Same file is ok, but same name different file not ok
-            while (
-              this.fileTable[file.name] &&
-              (this.fileTable[file.name].size != file.size ||
-                this.fileTable[file.name].type != file.type)
-            ) {
-              fileName = "_" + fileName
-            }
-            this.fileTable[fileName] = file
-            input.value = fileName
-            this.sm.properties[propName] = input.value
-            this.checkValid()
-            deleteButton.disabled = false
-          }
-          fileSelector.click()
-        }
-        input.value = this.sm.properties[propName] ?? ""
-        container.appendChild(input)
-
-        const deleteButton = document.createElement("button")
-        deleteButton.style.height = "100%"
-        deleteButton.classList.add("delete")
-        deleteButton.disabled = true
-        deleteButton.onclick = () => {
-          if (
-            this.sm.properties[propName] &&
-            this.fileTable[this.sm.properties[propName]!]
-          ) {
-            delete this.fileTable[this.sm.properties[propName]!]
-          }
-          this.sm.properties[propName] = undefined
-          input.value = ""
-          deleteButton.disabled = true
-        }
-        const icon = document.createElement("img")
-        icon.classList.add("icon")
-        icon.style.height = "12px"
-        icon.src = Icons.TRASH
-        deleteButton.appendChild(icon)
-        container.appendChild(deleteButton)
-        return container
-      }
+      fileSelector.click()
     }
+    input.value = this.sm.properties[propName] ?? ""
+    container.appendChild(input)
+
+    const deleteButton = document.createElement("button")
+    deleteButton.style.height = "100%"
+    deleteButton.classList.add("delete")
+    deleteButton.disabled = true
+    deleteButton.onclick = () => {
+      if (
+        this.sm.properties[propName] &&
+        this.fileTable[this.sm.properties[propName]!]
+      ) {
+        delete this.fileTable[this.sm.properties[propName]!]
+      }
+      this.sm.properties[propName] = undefined
+      input.value = ""
+      deleteButton.disabled = true
+    }
+    const icon = document.createElement("img")
+    icon.classList.add("icon")
+    icon.style.height = "12px"
+    icon.src = Icons.TRASH
+    deleteButton.appendChild(icon)
+    container.appendChild(deleteButton)
+    return container
   }
 }

@@ -13,6 +13,7 @@ export class DefaultOptions {
   static general = {
     scrollSensitivity: 1,
     scrollSnapEveryScroll: false,
+    spinnerStep: 1,
     mousePlacement: false,
     smoothAnimations: true,
     warnBeforeExit: true,

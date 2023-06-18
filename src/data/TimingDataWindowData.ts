@@ -49,7 +49,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "BPM",
     element: createElement({
       create: (app, isSongTiming) => {
-        const input = NumberSpinner.create(120, 0.001, 3)
+        const input = NumberSpinner.create(120, undefined, 3)
         input.onChange = value => {
           if (value == undefined) {
             const beat = app.chartManager.getBeat()
@@ -84,7 +84,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "Stop",
     element: createElement({
       create: (app, isSongTiming) => {
-        const input = NumberSpinner.create(0, 0.001, 3)
+        const input = NumberSpinner.create(0, undefined, 3)
         input.onChange = value => {
           if (value == undefined || value == 0) {
             const beat = app.chartManager.getBeat()
@@ -120,7 +120,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "Delay",
     element: createElement({
       create: (app, isSongTiming) => {
-        const input = NumberSpinner.create(0, 0.001, 3)
+        const input = NumberSpinner.create(0, undefined, 3)
         input.onChange = value => {
           if (value == undefined || value == 0) {
             const beat = app.chartManager.getBeat()
@@ -156,7 +156,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "Warp",
     element: createElement({
       create: (app, isSongTiming) => {
-        const input = NumberSpinner.create(0, 0.001, 3, 0)
+        const input = NumberSpinner.create(0, undefined, 3, 0)
         input.onChange = value => {
           if (value == undefined || value == 0) {
             const beat = app.chartManager.getBeat()
@@ -458,7 +458,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "Scroll",
     element: createElement({
       create: (app, isSongTiming) => {
-        const input = NumberSpinner.create(1, 0.001, 3)
+        const input = NumberSpinner.create(1, undefined, 3)
         input.onChange = value => {
           if (value == undefined) {
             const beat = app.chartManager.getBeat()
@@ -493,7 +493,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "Fake",
     element: createElement({
       create: (app, isSongTiming) => {
-        const input = NumberSpinner.create(1, 0.001, 3, 0)
+        const input = NumberSpinner.create(1, undefined, 3, 0)
         input.onChange = value => {
           if (value == undefined) {
             const beat = app.chartManager.getBeat()

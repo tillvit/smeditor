@@ -1,12 +1,12 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
 import { EditMode } from "../../chart/ChartManager"
 import {
+  TimingWindowCollection,
   isHoldDroppedTimingWindow,
   isHoldTimingWindow,
   isMineTimingWindow,
   isStandardMissTimingWindow,
   isStandardTimingWindow,
-  TimingWindowCollection,
 } from "../../chart/play/TimingWindowCollection"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
@@ -334,7 +334,7 @@ export class PlayInfoWidget extends Widget {
           "0 / " +
           this.manager.chartManager
             .loadedChart!.getNotedata()
-            .filter(note => note.type == name).length
+            .filter(note => note.type == name && !note.fake).length
       label.tint = 0xdddddd
       count.tint = 0xdddddd
       count.name = name
