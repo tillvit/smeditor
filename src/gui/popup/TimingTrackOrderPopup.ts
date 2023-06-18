@@ -151,7 +151,7 @@ export class TimingTrackOrderPopup {
     trackContainer.style.backgroundColor = blendColors(
       TIMING_EVENT_COLORS[type].toString(16).padStart(6, "0"),
       "#333333",
-      0.75
+      0.7
     )
     trackContainer.appendChild(trackLabel)
 
@@ -198,7 +198,7 @@ export class TimingTrackOrderPopup {
     container.style.backgroundColor = blendColors(
       TIMING_EVENT_COLORS[type].toString(16).padStart(6, "0"),
       "#333333",
-      0.75
+      0.7
     )
     container.appendChild(label)
 
