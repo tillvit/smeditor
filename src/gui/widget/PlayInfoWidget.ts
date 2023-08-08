@@ -405,16 +405,16 @@ export class PlayInfoWidget extends Widget {
         name = judge.id
       if (isHoldTimingWindow(judge)) name = judge.noteType
       if (isMineTimingWindow(judge)) name = "Mine"
-      const text = this.texts.getChildByName<BitmapText>(name)
+      const text = this.texts.getChildByName<BitmapText>(name)!
       if (isHoldTimingWindow(judge)) {
         const max = text.text.split(" / ")[1]
         text.text = gameStats.getCount(judge) + " / " + max
       } else if (!isHoldDroppedTimingWindow(judge)) {
         text.text = gameStats.getCount(judge) + ""
       }
-      this.texts.getChildByName<BitmapText>("Combo").text =
+      this.texts.getChildByName<BitmapText>("Combo")!.text =
         gameStats.getMaxCombo() + ""
-      this.texts.getChildByName<BitmapText>("Score").text =
+      this.texts.getChildByName<BitmapText>("Score")!.text =
         roundDigit(gameStats.getScore() * 100, 2).toFixed(2) +
         " / " +
         roundDigit(gameStats.getCumulativeScore() * 100, 2).toFixed(2)
