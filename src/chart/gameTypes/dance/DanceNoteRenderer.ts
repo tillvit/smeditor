@@ -2,8 +2,8 @@ import { Container, Sprite, Texture, TilingSprite } from "pixi.js"
 import { rgbtoHex } from "../../../util/Util"
 import { PartialNotedataEntry } from "../../sm/NoteTypes"
 import { TimingData } from "../../sm/TimingData"
-import { DanceNotefield } from "./DanceNotefield"
 import { DanceNoteTexture } from "./DanceNoteTexture"
+import { DanceNotefield } from "./DanceNotefield"
 
 const hold_body_texture = Texture.from("assets/noteskin/dance/hold/body.png")
 const hold_cap_texture = Texture.from("assets/noteskin/dance/hold/cap.png")
@@ -51,7 +51,7 @@ export class NoteObject extends Container {
 export class DanceNoteRenderer {
   static createArrow(): NoteObject {
     const arrow = new NoteObject()
-    arrow.interactive = true
+    arrow.eventMode = "static"
     return arrow
   }
 

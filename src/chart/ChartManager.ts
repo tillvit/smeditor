@@ -286,7 +286,7 @@ export class ChartManager {
     })
     this.noChartTextB.anchor.set(0.5)
     this.noChartTextB.tint = 0x556677
-    this.noChartTextB.interactive = true
+    this.noChartTextB.eventMode = "static"
     this.noChartTextB.on("mouseover", () => {
       this.noChartTextB.tint = 0x8899aa
     })

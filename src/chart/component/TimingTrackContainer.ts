@@ -148,7 +148,7 @@ export class TimingTrackContainer extends Container {
       targetX: 0,
       targetAnchor: 0,
       zIndex: event.beat!,
-      interactive: true,
+      eventMode: "static",
       visible: true,
       marked: true,
       deactivated: false,
@@ -537,7 +537,7 @@ export class TimingTrackContainer extends Container {
       newChild.selection.height = 25
       newChild.guideLine.height = 1
       newChild.guideLine.anchor.y = 0.5
-      newChild.interactive = true
+      newChild.eventMode = "static"
       newChild.popup = undefined
 
       newChild.on!("destroyed", () => {

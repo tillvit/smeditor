@@ -59,7 +59,7 @@ export class PlayInfoWidget extends Widget {
     this.background.addChild(this.backgroundRect)
     this.addChild(this.background)
     this.addChild(this.backgroundLines)
-    this.interactive = true
+    this.eventMode = "static"
 
     this.on("mousedown", () => {
       if (this.manager.chartManager.getMode() == EditMode.Play) return

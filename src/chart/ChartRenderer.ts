@@ -101,7 +101,7 @@ export class ChartRenderer extends Container {
     this.x = this.chartManager.app.renderer.screen.width / 2
     this.y = this.chartManager.app.renderer.screen.height / 2
 
-    this.interactive = true
+    this.eventMode = "static"
     this.hitArea = new Rectangle(-1e5, -1e5, 2e5, 2e5)
 
     const keyHandler = (event: KeyboardEvent) => {
@@ -618,7 +618,7 @@ export class ChartRenderer extends Container {
    * @memberof ChartRenderer
    */
   registerDragNote(newChild: DisplayObject & { note: NotedataEntry }) {
-    newChild.interactive = true
+    newChild.eventMode = "static"
     newChild.removeAllListeners()
     let lastTriedColumnShift = 0
     let initalPosX = 0

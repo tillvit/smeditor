@@ -50,7 +50,7 @@ export class SnapContainer extends Container {
       container.addChild(graphic, text)
       this.addChild(container)
 
-      container.interactive = true
+      container.eventMode = "static"
       container.on("mouseenter", () => SnapPopup.open(graphic))
       container.on("mousedown", () => SnapPopup.select())
       container.on("mouseleave", () => SnapPopup.close())

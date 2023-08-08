@@ -1,9 +1,9 @@
 import {
+  FXAAFilter,
   ParticleContainer,
   RenderTexture,
   Sprite,
   Texture,
-  filters,
 } from "pixi.js"
 import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
@@ -69,9 +69,7 @@ export class Waveform extends Sprite {
     this.lastAntialias = Options.chart.waveform.antialiasing
     this.refilter()
 
-    this.filters = Options.chart.waveform.antialiasing
-      ? [new filters.FXAAFilter()]
-      : []
+    this.filters = Options.chart.waveform.antialiasing ? [new FXAAFilter()] : []
 
     const timingHandler = () => (this.lastBeat = -1)
     EventHandler.on("timingModified", timingHandler)
@@ -120,7 +118,7 @@ export class Waveform extends Sprite {
     if (this.lastAntialias != Options.chart.waveform.antialiasing) {
       this.lastAntialias = Options.chart.waveform.antialiasing
       this.filters = Options.chart.waveform.antialiasing
-        ? [new filters.FXAAFilter()]
+        ? [new FXAAFilter()]
         : []
     }
     if (this.chartAudio != this.renderer.chartManager.getAudio()) {
