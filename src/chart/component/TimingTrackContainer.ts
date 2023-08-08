@@ -424,7 +424,7 @@ export class TimingTrackContainer extends Container {
           x -= currentRow.leftOffset
           currentRow.leftOffset += timingWidth + 5
         } else {
-          x += currentRow.leftOffset
+          x += currentRow.rightOffset
           currentRow.rightOffset += timingWidth + 5
         }
         if (!timingBox.targetX) timingBox.position.x = x

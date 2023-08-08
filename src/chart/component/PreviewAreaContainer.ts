@@ -21,8 +21,8 @@ export class PreviewAreaContainer extends Container {
       tint: 0xa8a5c2,
       width: this.renderer.chart.gameType.notefieldWidth + 96,
       height: 64,
-      x: -this.previewArea.width / 2 + 5,
     })
+    this.previewText.x = -this.previewArea.width / 2 + 5
     this.previewArea.anchor.x = 0.5
     this.addChild(this.previewArea, this.previewText)
   }
