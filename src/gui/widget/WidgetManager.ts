@@ -16,7 +16,6 @@ export class WidgetManager extends Container {
     this.app = chartManager.app
     this.chartManager = chartManager
     this.addChild(new NoteLayoutWidget(this))
-    // this.addChild(new InfoWidget(this))
     this.addChild(new PlayInfoWidget(this))
     this.addChild(new StatusWidget(this))
     this.zIndex = 2

@@ -6,7 +6,7 @@ import { IS_OSX, KEYBINDS } from "../data/KeybindData"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { WidgetManager } from "../gui/widget/WidgetManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
-import { ConfimationWindow } from "../gui/window/ConfirmationWindow"
+import { ConfirmationWindow } from "../gui/window/ConfirmationWindow"
 import { Keybinds } from "../listener/Keybinds"
 import { ActionHistory } from "../util/ActionHistory"
 import { EventHandler } from "../util/EventHandler"
@@ -286,7 +286,7 @@ export class ChartManager {
     })
     this.noChartTextB.anchor.set(0.5)
     this.noChartTextB.tint = 0x556677
-    this.noChartTextB.interactive = true
+    this.noChartTextB.eventMode = "static"
     this.noChartTextB.on("mouseover", () => {
       this.noChartTextB.tint = 0x8899aa
     })
@@ -587,7 +587,7 @@ export class ChartManager {
   async loadSM(path?: string) {
     // Save confirmation
     if (ActionHistory.instance.isDirty()) {
-      const window = new ConfimationWindow(
+      const window = new ConfirmationWindow(
         this.app,
         "Save",
         "Do you wish to save the current file?",
@@ -1293,7 +1293,16 @@ export class ChartManager {
   hasSelection() {
     return (
       this.selection.notes.length > 0 ||
-      this.eventSelection.timingEvents.length > 0
+      this.eventSelection.timingEvents.length > 0 ||
+      (this.startRegion !== undefined && this.endRegion !== undefined)
+    )
+  }
+
+  hasRange() {
+    return (
+      this.selection.notes.length > 1 ||
+      this.eventSelection.timingEvents.length > 1 ||
+      (this.startRegion !== undefined && this.endRegion !== undefined)
     )
   }
 
@@ -1375,16 +1384,16 @@ export class ChartManager {
 
   selectRegion() {
     if (!this.loadedChart) return
-    if (this.endRegion) {
+    if (this.endRegion !== undefined) {
       this.startRegion = undefined
       this.endRegion = undefined
     }
-    if (!this.startRegion) {
+    if (this.startRegion === undefined) {
       this.clearSelections()
       this.startRegion = this.beat
       return
     }
-    if (!this.endRegion) {
+    if (this.endRegion === undefined) {
       this.endRegion = this.beat
       if (this.endRegion < this.startRegion) {
         this.endRegion = this.startRegion

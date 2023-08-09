@@ -14,6 +14,7 @@ import { ChartManager, EditMode, EditTimingMode } from "./ChartManager"
 import { BarlineContainer } from "./component/BarlineContainer"
 import { ComboNumber } from "./component/ComboNumber"
 import { JudgmentSprite } from "./component/JudgmentSprite"
+import { PreviewAreaContainer } from "./component/PreviewAreaContainer"
 import { SelectionAreaContainer } from "./component/SelectionAreaContainer"
 import { SelectionTimingEventContainer } from "./component/SelectionTimingEventContainer"
 import { SnapContainer } from "./component/SnapContainer"
@@ -56,6 +57,7 @@ export class ChartRenderer extends Container {
   private combo: ComboNumber
   private selectionSprite: Sprite
   private selectionArea: SelectionAreaContainer
+  private previewArea: PreviewAreaContainer
 
   private selectionBounds?: SelectionBounds
 
@@ -72,6 +74,7 @@ export class ChartRenderer extends Container {
     this.timingBar = new TimingBarContainer(this)
     this.notefield = new this.chart.gameType.notefield(this)
     this.snapDisplay = new SnapContainer(this)
+    this.previewArea = new PreviewAreaContainer(this)
     this.selectionArea = new SelectionAreaContainer(this)
     this.judgment = new JudgmentSprite()
     this.combo = new ComboNumber(this)
@@ -82,6 +85,7 @@ export class ChartRenderer extends Container {
     this.addChild(this.waveform)
     this.addChild(this.barlines)
     this.addChild(this.timingAreas)
+    this.addChild(this.previewArea)
     this.addChild(this.selectionArea)
     this.addChild(this.timingTracks)
     this.addChild(this.selectedEvents)
@@ -97,7 +101,7 @@ export class ChartRenderer extends Container {
     this.x = this.chartManager.app.renderer.screen.width / 2
     this.y = this.chartManager.app.renderer.screen.height / 2
 
-    this.interactive = true
+    this.eventMode = "static"
     this.hitArea = new Rectangle(-1e5, -1e5, 2e5, 2e5)
 
     const keyHandler = (event: KeyboardEvent) => {
@@ -150,6 +154,7 @@ export class ChartRenderer extends Container {
       ) {
         this.timingTracks.placeGhostEvent()
       } else if (
+        this.chartManager.editTimingMode == EditTimingMode.Off &&
         Options.general.mousePlacement &&
         this.lastMouseBeat != -1 &&
         this.lastMouseCol != -1 &&
@@ -208,7 +213,7 @@ export class ChartRenderer extends Container {
       }
     })
 
-    this.on("mouseup", () => {
+    this.on("pointerup", () => {
       // End selecting
       if (this.editingCol != -1) {
         this.chartManager.endEditing(this.editingCol)
@@ -309,6 +314,7 @@ export class ChartRenderer extends Container {
     this.combo.update()
     this.snapDisplay.update()
     this.selectionArea.update()
+    this.previewArea.update()
 
     this.notefield.update(beat, renderBeatLowerLimit, renderBeatLimit)
     this.notefield.alpha =
@@ -612,7 +618,7 @@ export class ChartRenderer extends Container {
    * @memberof ChartRenderer
    */
   registerDragNote(newChild: DisplayObject & { note: NotedataEntry }) {
-    newChild.interactive = true
+    newChild.eventMode = "static"
     newChild.removeAllListeners()
     let lastTriedColumnShift = 0
     let initalPosX = 0
@@ -700,10 +706,10 @@ export class ChartRenderer extends Container {
       initalPosX = newChild.x!
       initalPosY = newChild.y!
       movedNote = newChild.note!
-      this.on("mousemove", moveHandler)
+      this.on("pointermove", moveHandler)
       const mouseUp = () => {
-        this.off("mousemove", moveHandler)
-        this.off("mouseup", mouseUp)
+        this.off("pointermove", moveHandler)
+        this.off("pointerup", mouseUp)
         newChild.visible = true
         if (
           (this.chartManager.selection.shift?.beatShift ?? 0) != 0 ||
@@ -716,7 +722,7 @@ export class ChartRenderer extends Container {
           })
         this.chartManager.selection.shift = undefined
       }
-      this.on("mouseup", mouseUp)
+      this.on("pointerup", mouseUp)
     })
     newChild.on("destroyed", () => {
       newChild?.removeAllListeners()

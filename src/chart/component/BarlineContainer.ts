@@ -112,22 +112,14 @@ export class BarlineContainer extends Container {
       //Move element
       const barline = this.getBarline(barBeat, isMeasure)
       barline.y = yPos
-      barline.marked = true
-      barline.deactivated = false
-      barline.dirtyTime = Date.now()
       barline.height = (isMeasure ? 4 : 1) / Options.chart.zoom
       if (isMeasure) {
         const barlineLabel = this.getBarlineLabel(barBeat)
         barlineLabel.y = yPos
-        barlineLabel.marked = true
-        barlineLabel.deactivated = false
-        barlineLabel.dirtyTime = Date.now()
         barlineLabel.scale.y = Options.chart.reverse ? -1 : 1
       }
       endLoop()
     }
-
-    // console.log(this.children.map(child=>child.beat + " (" + child.type + ") => " + (Date.now() - child.dirtyTime)).join("\n"))
 
     //Remove old elements
     this.children
@@ -157,8 +149,15 @@ export class BarlineContainer extends Container {
   }
 
   private getBarline(beat: number, isMeasure: boolean): Barline {
-    if (this.barlineMap.get(beat)) return this.barlineMap.get(beat)!
-    let newChild: Partial<Barline> | undefined
+    if (this.barlineMap.get(beat)) {
+      const cached = this.barlineMap.get(beat)!
+      return Object.assign(cached, {
+        deactivated: false,
+        marked: true,
+        dirtyTime: Date.now(),
+      })
+    }
+    let newChild: (Partial<Barline> & Sprite) | undefined
     for (const child of this.children) {
       if (child.type == "barline" && child.deactivated) {
         newChild = child
@@ -168,20 +167,31 @@ export class BarlineContainer extends Container {
       newChild = new Sprite(Texture.WHITE) as Barline
       this.addChild(newChild as Barline)
     }
-    newChild.type = "barline"
-    newChild.beat = beat
-    newChild.anchor!.x = 0.5
-    newChild.anchor!.y = 0.5
-    newChild.width = this.renderer.chart.gameType.notefieldWidth + 128
-    newChild.height = isMeasure ? 4 : 1
-    newChild.visible = true
+    Object.assign(newChild, {
+      type: "barline",
+      beat,
+      width: this.renderer.chart.gameType.notefieldWidth + 128,
+      height: isMeasure ? 4 : 1,
+      visible: true,
+      marked: true,
+      deactivated: false,
+      dirtyTime: Date.now(),
+    })
+    newChild.anchor.set(0.5)
     this.barlineMap.set(beat, newChild as Barline)
     return newChild as Barline
   }
 
   private getBarlineLabel(beat: number): BarlineLabel {
-    if (this.barlineLabelMap.get(beat)) return this.barlineLabelMap.get(beat)!
-    let newChild: Partial<BarlineLabel> | undefined
+    if (this.barlineLabelMap.get(beat)) {
+      const cached = this.barlineLabelMap.get(beat)!
+      return Object.assign(cached, {
+        deactivated: false,
+        marked: true,
+        dirtyTime: Date.now(),
+      })
+    }
+    let newChild: (Partial<BarlineLabel> & BitmapText) | undefined
     for (const child of this.children) {
       if (child.type == "label" && child.deactivated) {
         newChild = child
@@ -191,17 +201,19 @@ export class BarlineContainer extends Container {
       newChild = new BitmapText("", measureNumbers) as BarlineLabel
       this.addChild(newChild as BarlineLabel)
     }
-    newChild.type = "label"
-    newChild.beat = beat
-    newChild.deactivated = false
-    newChild.marked = true
-    newChild.anchor!.x = 1
-    newChild.anchor!.y = 0.5
-    newChild.x = (this.renderer.chart.gameType.notefieldWidth + 128) / -2 - 16
-    newChild.visible = true
-    newChild.text = `${Math.round(
-      this.renderer.chart.timingData.getMeasure(beat)
-    )}`
+    Object.assign(newChild, {
+      type: "label",
+      beat,
+      x: (this.renderer.chart.gameType.notefieldWidth + 128) / -2 - 16,
+      text: `${Math.round(this.renderer.chart.timingData.getMeasure(beat))}`,
+      visible: true,
+      marked: true,
+      deactivated: false,
+      dirtyTime: Date.now(),
+    })
+    newChild.anchor.x = 1
+    newChild.anchor.y = 0.5
+
     this.barlineLabelMap.set(beat, newChild as BarlineLabel)
     return newChild as BarlineLabel
   }

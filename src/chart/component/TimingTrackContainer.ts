@@ -79,8 +79,7 @@ export class TimingTrackContainer extends Container {
     this.renderer = renderer
     this.boxes.sortableChildren = true
     this.sortableChildren = true
-    this.addChild(this.tracks)
-    this.addChild(this.boxes)
+    this.addChild(this.tracks, this.boxes)
   }
 
   update(beat: number, fromBeat: number, toBeat: number) {
@@ -90,199 +89,8 @@ export class TimingTrackContainer extends Container {
       this.ghostBox = undefined
     }
 
-    this.boxes.visible =
-      this.renderer.chartManager.getMode() != EditMode.Play ||
-      !Options.play.hideBarlines
-
-    const leftTypes = Options.chart.timingEventOrder.left
-    const rightTypes = Options.chart.timingEventOrder.right
-
-    for (const track of this.tracks.children) {
-      track.targetAlpha = 0
-    }
-    let x = -this.renderer.chart.gameType.notefieldWidth * 0.5 - 128
-    for (let i = leftTypes.length - 1; i >= 0; i--) {
-      const type = leftTypes[i]
-      let track = this.tracks.getChildByName<TimingTrack>(type)
-      const exists = !!track
-      if (!exists) {
-        const newTrack = new Sprite(Texture.WHITE)
-        newTrack.width = TIMING_TRACK_WIDTHS[type]
-        newTrack.alpha = 0
-        newTrack.name = type
-        newTrack.height = 5000
-        newTrack.anchor.y = 0.5
-        track = newTrack as TimingTrack
-        this.tracks.addChild(track)
-      }
-      track.targetX = x
-      if (!exists) track.x = x
-      track.targetAlpha = i % 2 == 0 ? 0.1 : 0
-      track.anchor.x = 1
-      track.tint = 0x263252
-      x -= TIMING_TRACK_WIDTHS[type]
-    }
-
-    x = this.renderer.chart.gameType.notefieldWidth * 0.5 + 128
-    for (let i = 0; i < rightTypes.length; i++) {
-      const type = rightTypes[i]
-      let track = this.tracks.getChildByName<TimingTrack>(type)
-      const exists = !!track
-      if (!exists) {
-        const newTrack = new Sprite(Texture.WHITE)
-        newTrack.width = TIMING_TRACK_WIDTHS[type]
-        newTrack.alpha = 0
-        newTrack.name = type
-        newTrack.height = 5000
-        newTrack.anchor.y = 0.5
-        track = newTrack as TimingTrack
-        this.tracks.addChild(track)
-      }
-      track.targetX = x
-      if (!exists) track.x = x
-      track.targetAlpha = i % 2 == 0 ? 0.1 : 0
-      track.anchor.x = 0
-      track.tint = 0x263252
-      x += TIMING_TRACK_WIDTHS[type]
-    }
-    const editingTiming =
-      this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
-      this.renderer.chartManager.getMode() == EditMode.Edit
-    for (const track of this.tracks.children) {
-      if (!editingTiming) track.targetAlpha = 0
-      track.alpha = (track.alpha - track.targetAlpha) * 0.2 + track.targetAlpha
-      track.position.x =
-        (track.position.x - track.targetX) * 0.2 + track.targetX
-    }
-
-    //Reset mark of old objects
-    this.boxes.children.forEach(child => (child.marked = false))
-
-    const currentRow: TimingRow | undefined = {
-      beat: -1000,
-      second: -1000,
-      leftOffset: 0,
-      rightOffset: 0,
-    }
-    const fromSecond =
-      this.renderer.chart.timingData.getSecondsFromBeat(fromBeat)
-    const toSecond = this.renderer.chart.timingData.getSecondsFromBeat(toBeat)
-
-    for (const event of this.renderer.chart.timingData.getTimingData()) {
-      if (toBeat < event.beat! || toSecond < event.second!) break
-      if (
-        !Options.chart.timingEventOrder.left.includes(event.type) &&
-        !Options.chart.timingEventOrder.right.includes(event.type)
-      )
-        continue
-      if (fromBeat > event.beat! || fromSecond > event.second!) continue
-
-      const [outOfBounds, endSearch, yPos] = this.checkBounds(event, beat)
-      if (endSearch) break
-      if (outOfBounds) continue
-
-      const timingBox = this.getTimingBox(event)
-      const timingWidth = timingBox.widthCache
-
-      const side = Options.chart.timingEventOrder.right.includes(event.type)
-        ? "right"
-        : "left"
-      if (editingTiming) {
-        let targetX =
-          this.tracks.getChildByName<TimingTrack>(event.type)?.x ?? timingBox.x
-        targetX +=
-          (TIMING_TRACK_WIDTHS[event.type] / 2) * (targetX > 0 ? 1 : -1)
-        if (!timingBox.targetX) timingBox.position.x = targetX
-        timingBox.targetX = targetX
-        if (!timingBox.targetAnchor) timingBox.pivot.x = 0
-        timingBox.targetAnchor = 0.5
-      } else {
-        let x =
-          (side == "right" ? 1 : -1) *
-          (this.renderer.chart.gameType.notefieldWidth * 0.5 + 80)
-        if (side == "left") x -= 30
-        if (
-          currentRow.beat != event.beat ||
-          (event.second && currentRow.second != event.second)
-        ) {
-          currentRow.leftOffset = 0
-          currentRow.rightOffset = 0
-        }
-        if (side == "left") x -= currentRow.leftOffset
-        if (side == "right") x += currentRow.rightOffset
-        if (!timingBox.targetX) timingBox.position.x = x
-        timingBox.targetX = x
-        if (side == "left") currentRow.leftOffset += timingWidth + 5
-        if (side == "right") currentRow.rightOffset += timingWidth + 5
-        currentRow.beat = event.beat!
-        currentRow.second = event.second!
-        if (!timingBox.targetAnchor)
-          timingBox.pivot.x =
-            side == "right" ? -timingWidth / 2 : timingWidth / 2
-        timingBox.targetAnchor = side == "right" ? 0 : 1
-      }
-
-      timingBox.position.x =
-        (timingBox.targetX - timingBox.position.x) * 0.2 + timingBox.position.x
-      timingBox.pivot.x =
-        ((timingBox.targetAnchor - 0.5) * timingWidth - timingBox.pivot.x) *
-          0.2 +
-        timingBox.pivot.x
-      timingBox.backgroundObj.position.x = -timingWidth / 2
-      timingBox.backgroundObj.position.y = -25 / 2
-      timingBox.y = yPos
-      timingBox.marked = true
-      timingBox.dirtyTime = Date.now()
-
-      timingBox.selection.position = timingBox.backgroundObj.position
-      timingBox.textObj.scale.y = Options.chart.reverse ? -1 : 1
-
-      const inSelection =
-        this.renderer.chartManager.getMode() != EditMode.Play &&
-        (this.renderer.chartManager.eventSelection.timingEvents.includes(
-          timingBox.event
-        ) ||
-          this.renderer.chartManager.eventSelection.inProgressTimingEvents.includes(
-            timingBox.event
-          ))
-      timingBox.backgroundObj.tint = inSelection
-        ? lighten(
-            TIMING_EVENT_COLORS[event.type] ?? 0x000000,
-            Math.sin(Date.now() / 320) * 0.4 + 1.5
-          )
-        : TIMING_EVENT_COLORS[event.type] ?? 0x000000
-      timingBox.selection.alpha = inSelection ? 1 : 0
-      timingBox.visible =
-        !inSelection || !this.renderer.chartManager.eventSelection.shift
-      if (this.renderer.chartManager.editTimingMode != EditTimingMode.Off) {
-        const inSelectionBounds = this.renderer.selectionTest(timingBox)
-        if (!inSelection && inSelectionBounds) {
-          this.renderer.chartManager.addEventToDragSelection(timingBox.event)
-        }
-        if (inSelection && !inSelectionBounds) {
-          this.renderer.chartManager.removeEventFromDragSelection(
-            timingBox.event
-          )
-        }
-      }
-    }
-
-    //Remove old elements
-    this.boxes.children
-      .filter(child => !child.deactivated && !child.marked)
-      .forEach(child => {
-        child.deactivated = true
-        child.visible = false
-        if (child.popup?.persistent) child.popup.detach()
-        else child.popup?.close()
-        child.popup = undefined
-        this.timingBoxMap.delete(child.event)
-      })
-
-    destroyChildIf(
-      this.boxes.children,
-      child => Date.now() - child.dirtyTime > 5000
-    )
+    this.updateTracks()
+    this.updateBoxes(beat, fromBeat, toBeat)
   }
 
   private checkBounds(
@@ -303,8 +111,15 @@ export class TimingTrackContainer extends Container {
   }
 
   private getTimingBox(event: TimingEvent): TimingBox {
-    if (this.timingBoxMap.get(event)) return this.timingBoxMap.get(event)!
-    let newChild: Partial<TimingBox> | undefined
+    if (this.timingBoxMap.get(event)) {
+      const cached = this.timingBoxMap.get(event)!
+      return Object.assign(cached, {
+        deactivated: false,
+        marked: true,
+        dirtyTime: Date.now(),
+      })
+    }
+    let newChild: (Partial<TimingBox> & Container) | undefined
     for (const child of this.boxes.children) {
       if (child.deactivated) {
         child.deactivated = false
@@ -314,25 +129,32 @@ export class TimingTrackContainer extends Container {
     }
     if (!newChild) {
       newChild = new Container() as TimingBox
-      newChild.zIndex = event.beat
       newChild.textObj = new BitmapText("", timingNumbers)
       newChild.backgroundObj = new BetterRoundedRect()
       newChild.selection = new BetterRoundedRect("onlyBorder")
       newChild.selection.tint = 0x3a9bf0
-      newChild.addChild!(newChild.backgroundObj)
-      newChild.addChild!(newChild.textObj)
-      newChild.addChild!(newChild.selection)
+      newChild.addChild(
+        newChild.backgroundObj,
+        newChild.textObj,
+        newChild.selection
+      )
       this.boxes.addChild(newChild as TimingBox)
     }
-    newChild.event = event
-    newChild.deactivated = false
-    newChild.songTiming = this.renderer.chart.timingData.isTypeChartSpecific(
-      event.type
-    )
-    newChild.marked = true
-    newChild.visible = true
-    newChild.targetX = undefined
-    newChild.targetAnchor = undefined
+    Object.assign(newChild, {
+      event,
+      songTiming: this.renderer.chart.timingData.isTypeChartSpecific(
+        event.type
+      ),
+      targetX: 0,
+      targetAnchor: 0,
+      zIndex: event.beat!,
+      eventMode: "static",
+      visible: true,
+      marked: true,
+      deactivated: false,
+      dirtyTime: Date.now(),
+    })
+
     newChild.textObj!.text = this.getLabelFromEvent(event)
     newChild.textObj!.anchor.x = 0.5
     newChild.textObj!.anchor.y = 0.55 //???
@@ -341,12 +163,11 @@ export class TimingTrackContainer extends Container {
     newChild.backgroundObj!.height = 25
     newChild.selection!.width = newChild.textObj!.width + 10
     newChild.selection!.height = 25
-    newChild.zIndex = event.beat
-    newChild.interactive = true
+
     if (newChild?.popup?.persistent !== true) newChild.popup?.close()
     newChild.popup = undefined
-    newChild.removeAllListeners!()
-    newChild.on!("mouseenter", () => {
+    newChild.removeAllListeners()
+    newChild.on("mouseenter", () => {
       if (newChild?.popup?.persistent === true) return
       if (this.renderer.chartManager.eventSelection.timingEvents.length > 0)
         return
@@ -366,12 +187,12 @@ export class TimingTrackContainer extends Container {
           }
       }
     })
-    newChild.on!("mouseleave", () => {
+    newChild.on("mouseleave", () => {
       if (newChild?.popup?.persistent === true) return
       newChild!.popup?.close()
     })
-    newChild.on!("destroyed", () => {
-      newChild!.removeAllListeners!()
+    newChild.on("destroyed", () => {
+      newChild!.removeAllListeners()
     })
     let initalPosY = 0
     let movedEvent: TimingEvent | undefined
@@ -408,7 +229,7 @@ export class TimingTrackContainer extends Container {
         snapBeat - timingEvent.beat!
       )
     }
-    newChild.on!("mousedown", event => {
+    newChild.on("mousedown", event => {
       event.stopImmediatePropagation()
       if (
         this.renderer.chartManager.eventSelection.timingEvents.includes(
@@ -481,6 +302,202 @@ export class TimingTrackContainer extends Container {
     return newChild as TimingBox
   }
 
+  private makeTrack(type: string, x: number) {
+    const track: TimingTrack = Object.assign(new Sprite(Texture.WHITE), {
+      alpha: 0,
+      width: TIMING_TRACK_WIDTHS[type],
+      name: type,
+      height: 5000,
+      x,
+      targetX: x,
+      targetAlpha: 0,
+    })
+    track.anchor.y = 0.5
+    this.tracks.addChild(track)
+    return track
+  }
+
+  private updateTracks() {
+    const leftTypes = Options.chart.timingEventOrder.left
+    const rightTypes = Options.chart.timingEventOrder.right
+
+    for (const track of this.tracks.children) {
+      track.targetAlpha = 0
+    }
+    let x = -this.renderer.chart.gameType.notefieldWidth * 0.5 - 128
+    for (let i = leftTypes.length - 1; i >= 0; i--) {
+      const type = leftTypes[i]
+      const track =
+        this.tracks.getChildByName<TimingTrack>(type) ?? this.makeTrack(type, x)
+      track.targetX = x
+      track.targetAlpha = i % 2 == 0 ? 0.1 : 0
+      track.anchor.x = 1
+      track.tint = 0x263252
+      x -= TIMING_TRACK_WIDTHS[type]
+    }
+
+    x = this.renderer.chart.gameType.notefieldWidth * 0.5 + 128
+    for (let i = 0; i < rightTypes.length; i++) {
+      const type = rightTypes[i]
+      const track =
+        this.tracks.getChildByName<TimingTrack>(type) ?? this.makeTrack(type, x)
+      track.targetX = x
+      track.targetAlpha = i % 2 == 0 ? 0.1 : 0
+      track.anchor.x = 0
+      track.tint = 0x263252
+      x += TIMING_TRACK_WIDTHS[type]
+    }
+    const editingTiming =
+      this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
+      this.renderer.chartManager.getMode() == EditMode.Edit
+    for (const track of this.tracks.children) {
+      if (!editingTiming) track.targetAlpha = 0
+      track.alpha = (track.alpha - track.targetAlpha) * 0.2 + track.targetAlpha
+      track.position.x =
+        (track.position.x - track.targetX) * 0.2 + track.targetX
+    }
+  }
+
+  private updateBoxes(beat: number, fromBeat: number, toBeat: number) {
+    const editingTiming =
+      this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
+      this.renderer.chartManager.getMode() == EditMode.Edit
+
+    this.boxes.visible =
+      this.renderer.chartManager.getMode() != EditMode.Play ||
+      !Options.play.hideBarlines
+
+    //Reset mark of old objects
+    this.boxes.children.forEach(child => (child.marked = false))
+
+    const currentRow: TimingRow | undefined = {
+      beat: -Number.MAX_SAFE_INTEGER,
+      second: -Number.MAX_SAFE_INTEGER,
+      leftOffset: 0,
+      rightOffset: 0,
+    }
+    const fromSecond =
+      this.renderer.chart.timingData.getSecondsFromBeat(fromBeat)
+    const toSecond = this.renderer.chart.timingData.getSecondsFromBeat(toBeat)
+
+    for (const event of this.renderer.chart.timingData.getTimingData()) {
+      if (toBeat < event.beat! || toSecond < event.second!) break
+      if (
+        !Options.chart.timingEventOrder.left.includes(event.type) &&
+        !Options.chart.timingEventOrder.right.includes(event.type)
+      )
+        continue
+      if (fromBeat > event.beat! || fromSecond > event.second!) continue
+
+      const [outOfBounds, endSearch, yPos] = this.checkBounds(event, beat)
+      if (endSearch) break
+      if (outOfBounds) continue
+
+      const timingBox = this.getTimingBox(event)
+      const timingWidth = timingBox.widthCache
+
+      const side = Options.chart.timingEventOrder.right.includes(event.type)
+        ? "right"
+        : "left"
+      if (editingTiming) {
+        let targetX =
+          this.tracks.getChildByName<TimingTrack>(event.type)?.x ?? timingBox.x
+        targetX +=
+          (TIMING_TRACK_WIDTHS[event.type] / 2) * (targetX > 0 ? 1 : -1)
+        if (!timingBox.targetX) timingBox.position.x = targetX
+        timingBox.targetX = targetX
+        if (!timingBox.targetAnchor) timingBox.pivot.x = 0
+        timingBox.targetAnchor = 0.5
+      } else {
+        let x =
+          (side == "right" ? 1 : -1) *
+          (this.renderer.chart.gameType.notefieldWidth * 0.5 + 80)
+        if (side == "left") x -= 30
+        if (
+          currentRow.beat != event.beat ||
+          (event.second && currentRow.second != event.second)
+        ) {
+          currentRow.leftOffset = 0
+          currentRow.rightOffset = 0
+        }
+        if (side == "left") {
+          x -= currentRow.leftOffset
+          currentRow.leftOffset += timingWidth + 5
+        } else {
+          x += currentRow.rightOffset
+          currentRow.rightOffset += timingWidth + 5
+        }
+        if (!timingBox.targetX) timingBox.position.x = x
+        timingBox.targetX = x
+        currentRow.beat = event.beat!
+        currentRow.second = event.second!
+        if (!timingBox.targetAnchor)
+          timingBox.pivot.x =
+            side == "right" ? -timingWidth / 2 : timingWidth / 2
+        timingBox.targetAnchor = side == "right" ? 0 : 1
+      }
+
+      timingBox.position.x =
+        (timingBox.targetX - timingBox.position.x) * 0.2 + timingBox.position.x
+      timingBox.pivot.x =
+        ((timingBox.targetAnchor - 0.5) * timingWidth - timingBox.pivot.x) *
+          0.2 +
+        timingBox.pivot.x
+      timingBox.backgroundObj.position.x = -timingWidth / 2
+      timingBox.backgroundObj.position.y = -25 / 2
+      timingBox.y = yPos
+
+      timingBox.selection.position = timingBox.backgroundObj.position
+      timingBox.textObj.scale.y = Options.chart.reverse ? -1 : 1
+
+      const inSelection =
+        this.renderer.chartManager.getMode() != EditMode.Play &&
+        (this.renderer.chartManager.eventSelection.timingEvents.includes(
+          timingBox.event
+        ) ||
+          this.renderer.chartManager.eventSelection.inProgressTimingEvents.includes(
+            timingBox.event
+          ))
+      timingBox.backgroundObj.tint = inSelection
+        ? lighten(
+            TIMING_EVENT_COLORS[event.type] ?? 0x000000,
+            Math.sin(Date.now() / 320) * 0.4 + 1.5
+          )
+        : TIMING_EVENT_COLORS[event.type] ?? 0x000000
+      timingBox.selection.alpha = inSelection ? 1 : 0
+      timingBox.visible =
+        !inSelection || !this.renderer.chartManager.eventSelection.shift
+      if (this.renderer.chartManager.editTimingMode != EditTimingMode.Off) {
+        const inSelectionBounds = this.renderer.selectionTest(timingBox)
+        if (!inSelection && inSelectionBounds) {
+          this.renderer.chartManager.addEventToDragSelection(timingBox.event)
+        }
+        if (inSelection && !inSelectionBounds) {
+          this.renderer.chartManager.removeEventFromDragSelection(
+            timingBox.event
+          )
+        }
+      }
+    }
+
+    //Remove old elements
+    this.boxes.children
+      .filter(child => !child.deactivated && !child.marked)
+      .forEach(child => {
+        child.deactivated = true
+        child.visible = false
+        if (child.popup?.persistent) child.popup.detach()
+        else child.popup?.close()
+        child.popup = undefined
+        this.timingBoxMap.delete(child.event)
+      })
+
+    destroyChildIf(
+      this.boxes.children,
+      child => Date.now() - child.dirtyTime > 5000
+    )
+  }
+
   setGhostEvent(pos: Point) {
     const snap = Options.chart.snap == 0 ? 1 / 1000 : Options.chart.snap
     const snapBeat =
@@ -520,7 +537,7 @@ export class TimingTrackContainer extends Container {
       newChild.selection.height = 25
       newChild.guideLine.height = 1
       newChild.guideLine.anchor.y = 0.5
-      newChild.interactive = true
+      newChild.eventMode = "static"
       newChild.popup = undefined
 
       newChild.on!("destroyed", () => {

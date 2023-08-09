@@ -246,10 +246,10 @@ export class DanceNoteTexture {
     if (!this.loaded) return
     for (let i = 0; i < 8; i++) {
       const tapShader: Mesh<Shader> =
-        DanceNoteTexture.arrow_container.getChildByName("body" + i)
+        DanceNoteTexture.arrow_container.getChildByName("body" + i)!
       tapShader.shader.uniforms.time = beat
       const liftShader: Mesh<Shader> =
-        DanceNoteTexture.lift_container.getChildByName("body" + i)
+        DanceNoteTexture.lift_container.getChildByName("body" + i)!
       liftShader.shader.uniforms.time = beat
     }
     ;(<Mesh>DanceNoteTexture.mine_container.children[0]).shader.uniforms.time =

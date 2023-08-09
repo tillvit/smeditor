@@ -1,6 +1,6 @@
 import { Container } from "pixi.js"
 import { Options } from "../../../util/Options"
-import { EditMode } from "../../ChartManager"
+import { EditMode, EditTimingMode } from "../../ChartManager"
 import { ChartRenderer } from "../../ChartRenderer"
 import { TimingWindow } from "../../play/TimingWindow"
 import { PartialNotedataEntry } from "../../sm/NoteTypes"
@@ -79,6 +79,7 @@ export class DanceNotefield extends Notefield {
       this.ghostNote.visible =
         Options.general.mousePlacement &&
         this.renderer.chartManager.getMode() == EditMode.Edit &&
+        this.renderer.chartManager.editTimingMode == EditTimingMode.Off &&
         this.ghostNoteEntry.beat >= fromBeat &&
         this.ghostNoteEntry.beat <= toBeat &&
         this.ghostNoteEntry.beat >= 0

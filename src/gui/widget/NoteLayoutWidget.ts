@@ -23,7 +23,7 @@ import { WidgetManager } from "./WidgetManager"
 
 const QUANT_COLORS = [
   0xe74827, 0x3d89f7, 0xaa2df4, 0x82e247, 0xaa2df4, 0xeaa138, 0xaa2df4,
-  0x6be88e, 0x6be88e,
+  0x6be88e, 0x6be88e, 0x6be88e,
 ]
 
 export class NoteLayoutWidget extends Widget {
@@ -79,7 +79,7 @@ export class NoteLayoutWidget extends Widget {
     this.on("destroyed", () => clearInterval(interval))
     this.populate()
 
-    this.interactive = true
+    this.eventMode = "static"
     this.on("mousedown", event => {
       this.mouseDown = true
       this.handleMouse(event)

@@ -145,7 +145,7 @@ export class SelectionNoteContainer extends Container {
       note.col + this.renderer.chartManager.selection.shift!.columnShift
     )
     newChild.alpha = 0.4
-    newChild.interactive = true
+    newChild.eventMode = "static"
     this.noteMap.set(note, newChild as ExtendedNoteObject)
     this.addChild(newChild as ExtendedNoteObject)
     return newChild as ExtendedNoteObject

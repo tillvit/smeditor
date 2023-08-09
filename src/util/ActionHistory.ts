@@ -16,7 +16,7 @@ export class ActionHistory {
 
   constructor(app: App) {
     this.app = app
-    ActionHistory.instance = this
+    if (!ActionHistory.instance) ActionHistory.instance = this
   }
 
   run(action: UndoableAction) {

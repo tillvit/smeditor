@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "app-dev": "cross-env EXECUTION_MODE='DEBUG' NODE_ENV='production' nwbuild './nw/**/*' --mode=run --version=latest --flavor=sdk --outDir=build",
+    "app-dev": "node nwrun.js",
     "app-build": "node nwbuild.js",
     "preview": "vite preview",
     "prepare": "husky install"
@@ -14,22 +14,22 @@
   "devDependencies": {
     "@types/file-saver": "^2.0.5",
     "@types/howler": "^2.2.7",
-    "@types/node": "^18.11.18",
+    "@types/node": "^20.4.8",
     "@types/nw.js": "^0.13.16",
     "@types/webfontloader": "^1.6.35",
-    "@typescript-eslint/eslint-plugin": "^5.48.0",
-    "@typescript-eslint/parser": "^5.48.0",
+    "@typescript-eslint/eslint-plugin": "^6.3.0",
+    "@typescript-eslint/parser": "^6.3.0",
     "cross-env": "^7.0.3",
     "eslint": "^8.31.0",
-    "eslint-config-prettier": "^8.6.0",
-    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
     "husky": "^8.0.3",
     "lint-staged": "^13.1.0",
-    "nw-builder": "^4.0.9",
-    "prettier": "^2.8.1",
-    "prettier-plugin-glsl": "^0.0.8",
-    "typescript": "^4.9.4",
-    "vite": "^3.2.3"
+    "nw-builder": "^4.3.5",
+    "prettier": "^3.0.1",
+    "prettier-plugin-glsl": "^0.1.2",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.9"
   },
   "dependencies": {
     "@pixi/filter-adjustment": "^5.0.0",
@@ -94,7 +94,12 @@
       "@typescript-eslint/prefer-optional-chain": "warn",
       "@typescript-eslint/restrict-template-expressions": "off",
       "@typescript-eslint/restrict-plus-operands": "off",
-      "no-constant-condition": ["error", { "checkLoops": false }]
+      "no-constant-condition": [
+        "error",
+        {
+          "checkLoops": false
+        }
+      ]
     },
     "root": true,
     "globals": {

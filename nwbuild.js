@@ -1,10 +1,12 @@
 import nwbuild from "nw-builder";
 
+
 const baseOptions = {
-  srcDir: "./nw/**/*",
+  srcDir: "./nw/",
   mode: "build",
   version: "latest",
   flavor: "normal",
+  glob: false,
 }
 
 const mac = Object.assign(structuredClone(baseOptions), {

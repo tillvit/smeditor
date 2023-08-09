@@ -1,12 +1,12 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
 import { EditMode } from "../../chart/ChartManager"
 import {
+  TimingWindowCollection,
   isHoldDroppedTimingWindow,
   isHoldTimingWindow,
   isMineTimingWindow,
   isStandardMissTimingWindow,
   isStandardTimingWindow,
-  TimingWindowCollection,
 } from "../../chart/play/TimingWindowCollection"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
@@ -59,7 +59,7 @@ export class PlayInfoWidget extends Widget {
     this.background.addChild(this.backgroundRect)
     this.addChild(this.background)
     this.addChild(this.backgroundLines)
-    this.interactive = true
+    this.eventMode = "static"
 
     this.on("mousedown", () => {
       if (this.manager.chartManager.getMode() == EditMode.Play) return
@@ -334,7 +334,7 @@ export class PlayInfoWidget extends Widget {
           "0 / " +
           this.manager.chartManager
             .loadedChart!.getNotedata()
-            .filter(note => note.type == name).length
+            .filter(note => note.type == name && !note.fake).length
       label.tint = 0xdddddd
       count.tint = 0xdddddd
       count.name = name
@@ -405,16 +405,16 @@ export class PlayInfoWidget extends Widget {
         name = judge.id
       if (isHoldTimingWindow(judge)) name = judge.noteType
       if (isMineTimingWindow(judge)) name = "Mine"
-      const text = this.texts.getChildByName<BitmapText>(name)
+      const text = this.texts.getChildByName<BitmapText>(name)!
       if (isHoldTimingWindow(judge)) {
         const max = text.text.split(" / ")[1]
         text.text = gameStats.getCount(judge) + " / " + max
       } else if (!isHoldDroppedTimingWindow(judge)) {
         text.text = gameStats.getCount(judge) + ""
       }
-      this.texts.getChildByName<BitmapText>("Combo").text =
+      this.texts.getChildByName<BitmapText>("Combo")!.text =
         gameStats.getMaxCombo() + ""
-      this.texts.getChildByName<BitmapText>("Score").text =
+      this.texts.getChildByName<BitmapText>("Score")!.text =
         roundDigit(gameStats.getScore() * 100, 2).toFixed(2) +
         " / " +
         roundDigit(gameStats.getCumulativeScore() * 100, 2).toFixed(2)

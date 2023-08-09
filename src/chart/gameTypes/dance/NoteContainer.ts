@@ -62,9 +62,6 @@ export class NoteContainer extends Container {
       if (outOfBounds) continue
 
       const arrow = this.getNote(note)
-      arrow.deactivated = false
-      arrow.marked = true
-      arrow.dirtyTime = Date.now()
       arrow.y = yPos
       arrow.item.scale.y = Options.chart.reverse ? -1 : 1
       if (isHoldNote(note)) {
@@ -156,8 +153,15 @@ export class NoteContainer extends Container {
   }
 
   private getNote(note: NotedataEntry): ExtendedNoteObject {
-    if (this.noteMap.get(note)) return this.noteMap.get(note)!
-    let newChild: Partial<ExtendedNoteObject> | undefined
+    if (this.noteMap.get(note)) {
+      const cached = this.noteMap.get(note)!
+      return Object.assign(cached, {
+        deactivated: false,
+        marked: true,
+        dirtyTime: Date.now(),
+      })
+    }
+    let newChild: (Partial<ExtendedNoteObject> & NoteObject) | undefined
     for (const child of this.children) {
       if (child.deactivated) {
         newChild = child
@@ -166,12 +170,16 @@ export class NoteContainer extends Container {
     }
     if (!newChild) {
       newChild = DanceNoteRenderer.createArrow() as ExtendedNoteObject
-      newChild.zIndex = note.beat
       this.addChild(newChild as ExtendedNoteObject)
     }
-    newChild.note = note
-    newChild.visible = true
-    newChild.zIndex = note.beat
+    Object.assign(newChild, {
+      note,
+      zIndex: note.beat,
+      visible: true,
+      deactivated: false,
+      marked: true,
+      dirtyTime: Date.now(),
+    })
     DanceNoteRenderer.setData(
       this.notefield,
       newChild as ExtendedNoteObject,

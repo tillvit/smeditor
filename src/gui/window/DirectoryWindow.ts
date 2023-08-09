@@ -686,10 +686,11 @@ export class DirectoryWindow extends Window {
           : this.fileDropPath +
             "/" +
             basename(this.draggedElement!.dataset.path!)
-      await FileHandler[isFolder ? "renameDirectory" : "renameFile"](
-        path,
-        targetPath
-      )
+      if (path != targetPath)
+        await FileHandler[isFolder ? "renameDirectory" : "renameFile"](
+          path,
+          targetPath
+        )
 
       await this.refreshDirectory(dirname(path))
       await this.refreshDirectory(dirname(targetPath))

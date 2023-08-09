@@ -1,3 +1,4 @@
+import { Options } from "../../util/Options"
 import {
   clamp,
   isNumericKeyPress,
@@ -12,13 +13,13 @@ export class NumberSpinner {
   min = -Number.MAX_VALUE
   max = Number.MAX_VALUE
   precision?: number
-  step = 1
+  step? = 1
   lastVal = ""
 
   constructor(
     view: HTMLDivElement,
     value: number,
-    step: number,
+    step?: number,
     precision?: number,
     min?: number,
     max?: number
@@ -68,8 +69,14 @@ export class NumberSpinner {
     const upButton = document.createElement("button")
     upButton.classList.add("spinner-up")
     upButton.onclick = () => {
-      if (max !== undefined && parseFloat(input.value) + step > max) return
-      input.value = this.formatValue(parseFloat(input.value) + step)
+      if (
+        max !== undefined &&
+        parseFloat(input.value) + (step ?? Options.general.spinnerStep) > max
+      )
+        return
+      input.value = this.formatValue(
+        parseFloat(input.value) + (step ?? Options.general.spinnerStep)
+      )
       this.onChange?.(parseFloat(input.value))
     }
     spinner.appendChild(upButton)
@@ -77,8 +84,14 @@ export class NumberSpinner {
     const downButton = document.createElement("button")
     downButton.classList.add("spinner-down")
     downButton.onclick = () => {
-      if (min !== undefined && parseFloat(input.value) - step < min) return
-      input.value = this.formatValue(parseFloat(input.value) - step)
+      if (
+        min !== undefined &&
+        parseFloat(input.value) - (step ?? Options.general.spinnerStep) < min
+      )
+        return
+      input.value = this.formatValue(
+        parseFloat(input.value) - (step ?? Options.general.spinnerStep)
+      )
       this.onChange?.(parseFloat(input.value))
     }
     spinner.appendChild(downButton)
@@ -90,7 +103,7 @@ export class NumberSpinner {
 
   static create(
     value: number,
-    step: number,
+    step?: number,
     precision?: number,
     min?: number,
     max?: number
