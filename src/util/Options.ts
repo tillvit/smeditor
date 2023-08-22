@@ -120,18 +120,24 @@ export class Options extends DefaultOptions {
     obj: { [key: string]: any },
     prefix?: string
   ): [string, any][] {
-    return Object.entries(obj).reduce((options, entry) => {
-      const p = prefix ? prefix + "." : ""
-      if (typeof entry[1] == "object" && !Array.isArray(entry[1])) {
-        options = options.concat(
-          this.extractOptions(entry[1] as { [key: string]: any }, p + entry[0])
-        )
-      } else {
-        entry[0] = p + entry[0]
-        options.push([entry[0], entry[1]])
-      }
-      return options
-    }, [] as [string, any][])
+    return Object.entries(obj).reduce(
+      (options, entry) => {
+        const p = prefix ? prefix + "." : ""
+        if (typeof entry[1] == "object" && !Array.isArray(entry[1])) {
+          options = options.concat(
+            this.extractOptions(
+              entry[1] as { [key: string]: any },
+              p + entry[0]
+            )
+          )
+        } else {
+          entry[0] = p + entry[0]
+          options.push([entry[0], entry[1]])
+        }
+        return options
+      },
+      [] as [string, any][]
+    )
   }
   static applyOption(option: [string, any]) {
     if (typeof this.getDefaultOption(option[0]) != typeof option[1]) {

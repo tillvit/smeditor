@@ -261,7 +261,7 @@ export class UserOptionsWindow extends Window {
     const defaultOption = Options.getDefaultOption(prefix + entry[0])!
     const input = document.createElement("input")
     input.type = "text"
-    input.value = entry[1].toString()
+    input.value = (entry[1] as string | number | boolean) + ""
     input.onblur = () => {
       Options.applyOption([prefix + entry[0], input.value])
     }

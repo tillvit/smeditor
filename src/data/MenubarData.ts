@@ -290,7 +290,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "selection",
-        id: "timingData",
+        id: "timingDataRow",
       },
     ],
   },
@@ -470,13 +470,21 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
     ],
   },
-  help: {
+  preferences: {
     type: "menu",
-    title: "Help",
+    title: "Preferences",
     options: [
       {
         type: "selection",
         id: "options",
+      },
+      {
+        type: "selection",
+        id: "keybinds",
+      },
+      {
+        type: "selection",
+        id: "gameplayKeybinds",
       },
     ],
   },

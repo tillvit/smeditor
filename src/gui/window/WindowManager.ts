@@ -17,6 +17,13 @@ export class WindowManager {
     }
   }
 
+  getFocusedWindow() {
+    for (const window of this.windows) {
+      if (window.windowElement.classList.contains("focused")) return window
+    }
+    return null
+  }
+
   isBlocked(): boolean {
     return !this.windows.every(window => !window.options.blocking)
   }

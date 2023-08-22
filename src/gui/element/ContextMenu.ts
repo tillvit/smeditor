@@ -1,9 +1,9 @@
 import { FederatedMouseEvent } from "pixi.js"
 import { App } from "../../App"
 import { EditMode } from "../../chart/ChartManager"
-import { KEYBINDS } from "../../data/KeybindData"
+import { KEYBIND_DATA } from "../../data/KeybindData"
 import { MENUBAR_DATA, MenuOption } from "../../data/MenubarData"
-import { Keybinds } from "../../listener/Keybinds"
+import { Keybinds } from "../../util/Keybinds"
 import { Icons } from "../Icons"
 
 export class ContextMenuPopup {
@@ -99,7 +99,7 @@ export class ContextMenuPopup {
       const title = document.createElement("div")
       let title_bar_right
       if (data.type == "selection" || data.type == "checkbox") {
-        const meta = KEYBINDS[data.id]
+        const meta = KEYBIND_DATA[data.id]
         title_bar_right = document.createElement("div")
         title_bar_right.innerText = Keybinds.getKeybindString(data.id)
         title_bar_right.classList.add("keybind", "unselectable")

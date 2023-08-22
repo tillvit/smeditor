@@ -13,11 +13,11 @@ import { MenubarManager } from "./gui/element/MenubarManager"
 import { DirectoryWindow } from "./gui/window/DirectoryWindow"
 import { InitialWindow } from "./gui/window/InitialWindow"
 import { WindowManager } from "./gui/window/WindowManager"
-import { Keybinds } from "./listener/Keybinds"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
 import { EventHandler } from "./util/EventHandler"
 import { FileHandler } from "./util/FileHandler"
+import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
 import { TimerStats } from "./util/TimerStats"
 import { extname, fpsUpdate, getBrowser } from "./util/Util"
@@ -38,8 +38,6 @@ export class App {
   ticker: Ticker
   stage: Container
   view: HTMLCanvasElement
-  options: Options
-  keybinds: Keybinds
   chartManager: ChartManager
   windowManager: WindowManager
   menubarManager: MenubarManager
@@ -61,6 +59,8 @@ export class App {
     }
 
     Options.loadOptions()
+    Keybinds.load(this)
+
     setInterval(() => Options.saveOptions(), 10000)
     if (Options.general.smoothAnimations)
       document.body.classList.add("animated")
@@ -105,7 +105,6 @@ export class App {
 
     BetterRoundedRect.init(this.renderer)
 
-    this.options = Options
     this.chartManager = new ChartManager(this)
     this.menubarManager = new MenubarManager(
       this,
@@ -118,7 +117,6 @@ export class App {
     this.actionHistory = new ActionHistory(this)
 
     this.registerListeners()
-    this.keybinds = new Keybinds(this)
 
     this.onResize()
 

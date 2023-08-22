@@ -1,134 +1,183 @@
-import { KeyCombo } from "./KeybindData"
-
 interface GameplayKeybind {
   label: string
-  col: number
-  keybinds: KeyCombo[]
+  keys: string[]
 }
 
 export const GAMEPLAY_KEYBINDS: { [key: string]: GameplayKeybind[] } = {
   "dance-single": [
     {
       label: "Left",
-      col: 0,
-      keybinds: [
-        { key: "Left", mods: [] },
-        { key: "A", mods: [] },
-        { key: "J", mods: [] },
-      ],
+      keys: ["Left", "A"],
     },
     {
       label: "Down",
-      col: 1,
-      keybinds: [
-        { key: "Down", mods: [] },
-        { key: "S", mods: [] },
-        { key: "K", mods: [] },
-      ],
+      keys: ["Down", "S"],
     },
     {
       label: "Up",
-      col: 2,
-      keybinds: [
-        { key: "Up", mods: [] },
-        { key: "W", mods: [] },
-        { key: "I", mods: [] },
-      ],
+      keys: ["Up", "W"],
     },
     {
       label: "Right",
-      col: 3,
-      keybinds: [
-        { key: "Right", mods: [] },
-        { key: "D", mods: [] },
-        { key: "L", mods: [] },
-      ],
+      keys: ["Right", "D"],
     },
   ],
   "dance-double": [
     {
-      label: "Left",
-      col: 4,
-      keybinds: [{ key: "Left", mods: [] }],
+      label: "P1 Left",
+      keys: ["Left"],
     },
     {
-      label: "Down",
-      col: 5,
-      keybinds: [{ key: "Down", mods: [] }],
+      label: "P1 Down",
+      keys: ["Down"],
     },
     {
-      label: "Up",
-      col: 6,
-      keybinds: [{ key: "Up", mods: [] }],
+      label: "P1 Up",
+      keys: ["Up"],
     },
     {
-      label: "Right",
-      col: 7,
-      keybinds: [{ key: "Right", mods: [] }],
+      label: "P1 Right",
+      keys: ["Right"],
     },
     {
-      label: "Left",
-      col: 0,
-      keybinds: [{ key: "A", mods: [] }],
+      label: "P2 Left",
+      keys: ["A"],
     },
     {
-      label: "Down",
-      col: 1,
-      keybinds: [{ key: "S", mods: [] }],
+      label: "P2 Down",
+      keys: ["S"],
     },
     {
-      label: "Up",
-      col: 2,
-      keybinds: [{ key: "W", mods: [] }],
+      label: "P2 Up",
+      keys: ["W"],
     },
     {
-      label: "Right",
-      col: 3,
-      keybinds: [{ key: "D", mods: [] }],
+      label: "P2 Right",
+      keys: ["D"],
+    },
+  ],
+  "dance-couple": [
+    {
+      label: "P1 Left",
+      keys: ["Left"],
+    },
+    {
+      label: "P1 Down",
+      keys: ["Down"],
+    },
+    {
+      label: "P1 Up",
+      keys: ["Up"],
+    },
+    {
+      label: "P1 Right",
+      keys: ["Right"],
+    },
+    {
+      label: "P2 Left",
+      keys: ["A"],
+    },
+    {
+      label: "P2 Down",
+      keys: ["S"],
+    },
+    {
+      label: "P2 Up",
+      keys: ["W"],
+    },
+    {
+      label: "P2 Right",
+      keys: ["D"],
     },
   ],
   "dance-solo": [
     {
       label: "Left",
-      col: 0,
-      keybinds: [
-        { key: "Left", mods: [] },
-        { key: "A", mods: [] },
-      ],
+      keys: ["Left", "A"],
     },
     {
       label: "UpLeft",
-      col: 1,
-      keybinds: [{ key: "Q", mods: [] }],
+      keys: ["Q"],
     },
     {
       label: "Down",
-      col: 2,
-      keybinds: [
-        { key: "Down", mods: [] },
-        { key: "S", mods: [] },
-      ],
+      keys: ["Down", "S"],
     },
     {
       label: "Up",
-      col: 3,
-      keybinds: [
-        { key: "Up", mods: [] },
-        { key: "W", mods: [] },
-      ],
+      keys: ["Up", "W"],
     },
     {
       label: "UpRight",
-      col: 4,
-      keybinds: [{ key: "E", mods: [] }],
+      keys: ["E"],
     },
     {
       label: "Right",
-      col: 5,
-      keybinds: [
-        { key: "Right", mods: [] },
-        { key: "D", mods: [] },
-      ],
+      keys: ["Right", "D"],
+    },
+  ],
+  "dance-solodouble": [
+    {
+      label: "P1 Left",
+      keys: ["A"],
+    },
+    {
+      label: "P1 UpLeft",
+      keys: ["Q"],
+    },
+    {
+      label: "P1 Down",
+      keys: ["S"],
+    },
+    {
+      label: "P1 Up",
+      keys: ["W"],
+    },
+    {
+      label: "P1 UpRight",
+      keys: ["E"],
+    },
+    {
+      label: "P1 Right",
+      keys: ["D"],
+    },
+    {
+      label: "P2 Left",
+      keys: ["J"],
+    },
+    {
+      label: "P2 UpLeft",
+      keys: ["U"],
+    },
+    {
+      label: "P2 Down",
+      keys: ["K"],
+    },
+    {
+      label: "P2 Up",
+      keys: ["I"],
+    },
+    {
+      label: "P2 UpRight",
+      keys: ["O"],
+    },
+    {
+      label: "P2 Right",
+      keys: ["L"],
+    },
+  ],
+  "dance-3panel": [
+    {
+      label: "UpLeft",
+      keys: ["Left", "Q"],
+    },
+    {
+      label: "Down",
+      keys: ["Down", "S"],
+    },
+    {
+      label: "UpRight",
+      keys: ["Right", "E"],
     },
   ],
 }
