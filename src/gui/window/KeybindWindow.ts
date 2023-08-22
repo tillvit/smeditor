@@ -292,7 +292,10 @@ export class KeybindWindow extends Window {
             const conflicts =
               this.conflictMap
                 .get(Keybinds.getComboString(combo))
-                ?.map(data => data[0]) ?? []
+                ?.map(data => data[0])
+                .map(
+                  id => KEYBIND_DATA[id].bindLabel ?? KEYBIND_DATA[id].label
+                ) ?? []
             if (conflicts.includes(id)) return "self"
             return conflicts
           }
