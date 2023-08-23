@@ -36,6 +36,7 @@ export class DefaultOptions {
       color: 0x606172,
       opacity: 0.5,
       lineHeight: 1,
+      speedChanges: true,
     },
     timingEventOrder: {
       left: [
@@ -80,10 +81,10 @@ export class DefaultOptions {
     rate: 1,
     songVolume: 0.2,
     soundEffectVolume: 0.5,
-    effectOffset: 0,
   }
   static play = {
     offset: 0,
+    effectOffset: 0,
     visualOffset: 0,
     hideBarlines: false,
     judgmentTilt: true,
@@ -106,9 +107,7 @@ export class DefaultOptions {
     renderingStats: false,
     showTimers: false,
   }
-  static experimental = {
-    speedChangeWaveform: true,
-  }
+  static experimental = {}
 }
 
 export type OptionsObject = {

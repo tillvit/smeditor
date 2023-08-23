@@ -1,10 +1,26 @@
 import { TimingWindowCollection } from "../chart/play/TimingWindowCollection"
 
-interface UserOption<T> {
+export type UserOption = UserOptionGroup | UserOptionSubgroup | UserOptionItem
+
+export interface UserOptionGroup {
+  type: "group"
+  id: string
+  label: string
+  children: UserOption[]
+}
+
+interface UserOptionSubgroup {
+  type: "subgroup"
+  label?: string
+  children: UserOption[]
+}
+
+interface UserOptionItem {
+  type: "item"
+  id: string
   label: string
   tooltip?: string
-  input?: UserOptionInput<T>
-  margin?: boolean
+  input: UserOptionInput<any>
 }
 
 interface UserOptionTextInput {
@@ -79,375 +95,456 @@ type UserOptionInput<T> =
   | UserOptionCheckboxInput
   | UserOptionSliderInput
 
-export const USER_OPTIONS_WINDOW_DATA: { [key: string]: UserOption<unknown> } =
+export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
   {
-    "chart.CMod": {
-      label: "Toggle CMod",
-      input: {
-        type: "checkbox",
+    type: "group",
+    id: "general",
+    label: "General",
+    children: [
+      {
+        type: "subgroup",
+        children: [
+          {
+            type: "item",
+            label: "Smooth Animations",
+            id: "general.smoothAnimations",
+            input: {
+              type: "checkbox",
+              onChange: (value: boolean) => {
+                if (value) document.body.classList.add("animated")
+                else document.body.classList.remove("animated")
+              },
+            },
+          },
+        ],
       },
-      margin: true,
-    },
-    "chart.reverse": {
-      label: "Reverse playfield",
-      input: {
-        type: "checkbox",
+      {
+        type: "subgroup",
+        label: "Scrolling",
+        children: [
+          {
+            type: "item",
+            label: "Scroll sensitivity",
+            id: "general.scrollSensitivity",
+            input: {
+              type: "slider",
+              min: 0,
+              step: 1,
+              max: 200,
+              hardMax: 2 ** 31 - 1,
+              transformers: {
+                serialize: value => value * 100,
+                deserialize: value => value / 100,
+              },
+            },
+          },
+
+          {
+            type: "item",
+            label: "Snap every scroll",
+            id: "general.scrollSnapEveryScroll",
+            input: {
+              type: "checkbox",
+            },
+          },
+        ],
       },
-    },
-    "chart.hideWarpedArrows": {
-      label: "Hide warped arrows",
-      input: {
-        type: "checkbox",
+    ],
+  },
+  {
+    type: "group",
+    id: "chart",
+    label: "Chart",
+    children: [
+      {
+        type: "subgroup",
+        label: "Playfield",
+        children: [
+          {
+            type: "subgroup",
+            children: [
+              {
+                type: "item",
+                label: "Zoom",
+                id: "chart.zoom",
+                input: {
+                  type: "slider",
+                  min: 50,
+                  step: 1,
+                  max: 200,
+                  hardMax: 2 ** 31 - 1,
+                  transformers: {
+                    serialize: value => value * 100,
+                    deserialize: value => value / 100,
+                  },
+                },
+              },
+              {
+                type: "item",
+                label: "Reverse playfield",
+                id: "chart.reverse",
+                input: {
+                  type: "checkbox",
+                },
+              },
+            ],
+          },
+          {
+            type: "subgroup",
+            children: [
+              {
+                type: "item",
+                label: "Y position",
+                id: "chart.receptorYPos",
+                input: {
+                  type: "slider",
+                  min: -400,
+                  max: 0,
+                  hardMin: -(2 ** 31 - 1),
+                  hardMax: 2 ** 31 - 1,
+                },
+              },
+              {
+                type: "item",
+                label: "Draw length",
+                id: "chart.maxDrawBeats",
+                input: {
+                  type: "slider",
+                  min: 0,
+                  max: 30,
+                  hardMax: 2 ** 31 - 1,
+                },
+              },
+              {
+                type: "item",
+                label: "Draw length past receptors",
+                id: "chart.maxDrawBeatsBack",
+                input: {
+                  type: "slider",
+                  min: 0,
+                  max: 30,
+                  hardMax: 2 ** 31 - 1,
+                },
+              },
+            ],
+          },
+
+          {
+            type: "subgroup",
+            children: [
+              {
+                type: "item",
+                label: "Draw noteflashes",
+                id: "chart.drawNoteFlash",
+                input: {
+                  type: "checkbox",
+                },
+              },
+            ],
+          },
+        ],
       },
-    },
-    "chart.doSpeedChanges": {
-      label: "Do speed changes",
-      input: {
-        type: "checkbox",
+      {
+        type: "subgroup",
+        label: "Waveform",
+        children: [
+          {
+            type: "item",
+            label: "Draw waveform",
+            id: "chart.waveform.enabled",
+            input: {
+              type: "checkbox",
+            },
+          },
+
+          {
+            type: "item",
+            label: "Opacity",
+            id: "chart.waveform.opacity",
+            input: {
+              type: "slider",
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+          },
+          {
+            type: "item",
+            label: "Line height",
+            id: "chart.waveform.lineHeight",
+            input: {
+              type: "slider",
+              min: 1,
+              max: 3,
+              step: 0.1,
+              hardMax: 100,
+            },
+          },
+        ],
       },
-      margin: true,
-    },
-    "chart.speed": {
-      label: "Scroll speed",
-      input: {
-        type: "slider",
-        min: 0,
-        max: 750,
-        hardMax: 2 ** 31 - 1,
+    ],
+  },
+  {
+    type: "group",
+    id: "audio",
+    label: "Audio",
+    children: [
+      {
+        type: "subgroup",
+        children: [
+          {
+            type: "item",
+            label: "Song volume",
+            id: "audio.songVolume",
+            input: {
+              type: "slider",
+              min: 0,
+              step: 1,
+              max: 100,
+              hardMax: 2 ** 31 - 1,
+              transformers: {
+                serialize: value => value * 100,
+                deserialize: value => value / 100,
+              },
+            },
+          },
+          {
+            type: "item",
+            label: "Sound effect volume",
+            id: "audio.soundEffectVolume",
+            input: {
+              type: "slider",
+              min: 0,
+              step: 1,
+              max: 100,
+              hardMax: 2 ** 31 - 1,
+              transformers: {
+                serialize: value => value * 100,
+                deserialize: value => value / 100,
+              },
+            },
+          },
+        ],
       },
-    },
-    "chart.receptorYPos": {
-      label: "Receptor Y position",
-      input: {
-        type: "slider",
-        min: -400,
-        max: 0,
-        hardMin: -(2 ** 31 - 1),
-        hardMax: 2 ** 31 - 1,
+      {
+        type: "subgroup",
+        children: [
+          {
+            type: "item",
+            label: "Enable assist tick",
+            id: "audio.assistTick",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "item",
+            label: "Enable metronome",
+            id: "audio.metronome",
+            input: {
+              type: "checkbox",
+            },
+          },
+        ],
       },
-    },
-    "chart.snap": {
-      label: "Cursor snap",
-      input: {
-        type: "number",
-        step: 1,
-        min: 1,
-        transformers: {
-          serialize: value => 4 / value,
-          deserialize: value => 4 / value,
+    ],
+  },
+  {
+    type: "group",
+    id: "play",
+    label: "Play mode",
+    children: [
+      {
+        type: "subgroup",
+        label: "Calibration",
+        children: [
+          {
+            type: "item",
+            label: "Global offset",
+            id: "play.offset",
+            input: {
+              type: "slider",
+              min: -1,
+              step: 0.001,
+              max: 1,
+              hardMin: -(2 ** 31 - 1),
+              hardMax: 2 ** 31 - 1,
+            },
+          },
+          {
+            type: "item",
+            label: "Sound effect offset",
+            id: "play.effectOffset",
+            input: {
+              type: "slider",
+              min: -1,
+              step: 0.001,
+              max: 1,
+              hardMin: -(2 ** 31 - 1),
+              hardMax: 2 ** 31 - 1,
+            },
+          },
+          {
+            type: "item",
+            label: "Visual offset",
+            id: "play.visualOffset",
+            input: {
+              type: "slider",
+              min: -1,
+              step: 0.001,
+              max: 1,
+              hardMin: -(2 ** 31 - 1),
+              hardMax: 2 ** 31 - 1,
+            },
+          },
+          {
+            type: "item",
+            label: "Sound effect volume",
+            id: "audio.soundEffectVolume",
+            input: {
+              type: "slider",
+              min: 0,
+              step: 1,
+              max: 100,
+              hardMax: 2 ** 31 - 1,
+              transformers: {
+                serialize: value => value * 100,
+                deserialize: value => value / 100,
+              },
+            },
+          },
+        ],
+      },
+      {
+        type: "subgroup",
+        children: [
+          {
+            type: "item",
+            label: "Judgment tilt",
+            id: "audio.judgmentTilt",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "item",
+            label: "Hide barlines during play",
+            id: "audio.hideBarlines",
+            input: {
+              type: "checkbox",
+            },
+          },
+        ],
+      },
+      {
+        type: "subgroup",
+        label: "Timing windows",
+        children: [
+          {
+            type: "item",
+            id: "play.timingCollection",
+            label: "Timing window collection",
+            input: {
+              type: "dropdown",
+              advanced: false,
+              get items(): string[] {
+                return Object.keys(TimingWindowCollection.getCollections())
+              },
+            },
+          },
+          {
+            type: "item",
+            id: "play.timingWindowScale",
+            label: "Timing window scale",
+            input: {
+              type: "slider",
+              min: 0,
+              step: 0.001,
+              max: 2,
+              hardMax: 2 ** 31 - 1,
+            },
+          },
+          {
+            type: "item",
+            id: "play.timingWindowAdd",
+            label: "Timing window add",
+            input: {
+              type: "slider",
+              min: 0,
+              step: 0.001,
+              max: 1,
+              hardMax: 2 ** 31 - 1,
+            },
+          },
+        ],
+      },
+    ],
+  },
+  {
+    type: "group",
+    id: "performance",
+    label: "Performance",
+    children: [
+      {
+        type: "item",
+
+        label: "Antialiasing",
+        id: "performance.antialiasing",
+        input: {
+          type: "checkbox",
         },
       },
-      margin: true,
-    },
-    "chart.maxDrawBeats": {
-      label: "Draw length (beats)",
-      input: {
-        type: "slider",
-        min: 0,
-        max: 30,
-        hardMax: 2 ** 31 - 1,
-      },
-    },
-    "chart.maxDrawBeatsBack": {
-      label: "Draw length past receptors (beats)",
-      input: {
-        type: "slider",
-        min: 0,
-        max: 30,
-        hardMax: 2 ** 31 - 1,
-      },
-    },
-    "chart.zoom": {
-      label: "Playfield zoom",
-      input: {
-        type: "slider",
-        min: 0,
-        step: 1,
-        max: 200,
-        hardMax: 2 ** 31 - 1,
-        transformers: {
-          serialize: value => value * 100,
-          deserialize: value => value / 100,
+      {
+        type: "item",
+        label: "Resolution",
+        id: "performance.resolution",
+        input: {
+          type: "slider",
+          min: 1,
+          step: 1,
+          max: 4,
+          hardMin: 0,
+          hardMax: 2 ** 31 - 1,
         },
       },
-    },
-    "chart.drawNoteFlash": {
-      label: "Toggle noteflashes",
-      input: {
-        type: "checkbox",
-      },
-      margin: true,
-    },
+    ],
+  },
+  {
+    type: "group",
+    id: "debug",
+    label: "Debug",
+    children: [
+      {
+        type: "item",
 
-    "audio.assistTick": {
-      label: "Assist tick",
-      input: {
-        type: "checkbox",
-      },
-    },
-    "audio.metronome": {
-      label: "Metronome",
-      input: {
-        type: "checkbox",
-      },
-      margin: true,
-    },
-    "audio.rate": {
-      label: "Playback rate",
-      input: {
-        type: "slider",
-        min: 0,
-        step: 1,
-        max: 100,
-        hardMax: 2 ** 31 - 1,
-        transformers: {
-          serialize: value => value * 100,
-          deserialize: value => value / 100,
+        label: "Show rendering stats",
+        id: "debug.renderingStats",
+        input: {
+          type: "checkbox",
         },
       },
-    },
-    "audio.songVolume": {
-      label: "Song Volume",
-      input: {
-        type: "slider",
-        min: 0,
-        step: 1,
-        max: 100,
-        hardMax: 2 ** 31 - 1,
-        transformers: {
-          serialize: value => value * 100,
-          deserialize: value => value / 100,
+      {
+        type: "item",
+
+        label: "Show rendering timers",
+        id: "debug.showTimers",
+        input: {
+          type: "checkbox",
         },
       },
-    },
-    "audio.soundEffectVolume": {
-      label: "Sound effect volume",
-      input: {
-        type: "slider",
-        min: 0,
-        step: 1,
-        max: 100,
-        hardMax: 2 ** 31 - 1,
-        transformers: {
-          serialize: value => value * 100,
-          deserialize: value => value / 100,
+      {
+        type: "item",
+
+        label: "Show rendering stats",
+        id: "debug.renderingStats",
+        input: {
+          type: "checkbox",
         },
       },
-      margin: true,
-    },
-    "audio.effectOffset": {
-      label: "Sound effect offset",
-      input: {
-        type: "slider",
-        min: -1,
-        step: 0.001,
-        max: 1,
-        hardMin: -(2 ** 31 - 1),
-        hardMax: 2 ** 31 - 1,
-      },
-    },
-    "play.offset": {
-      label: "Global offset",
-      input: {
-        type: "slider",
-        min: -1,
-        step: 0.001,
-        max: 1,
-        hardMin: -(2 ** 31 - 1),
-        hardMax: 2 ** 31 - 1,
-      },
-      margin: true,
-    },
-    "play.hideBarlines": {
-      label: "Hide barlines during play",
-      input: {
-        type: "checkbox",
-      },
-    },
-    "play.judgmentTilt": {
-      label: "Judgment tilt",
-      input: {
-        type: "checkbox",
-      },
-      margin: true,
-    },
+    ],
+  },
+]
 
-    "play.timingCollection": {
-      label: "Timing windows",
-      input: {
-        type: "dropdown",
-        advanced: false,
-        get items(): string[] {
-          return Object.keys(TimingWindowCollection.getCollections())
-        },
-      },
-    },
-
-    "play.timingWindowScale": {
-      label: "Timing window scale",
-      input: {
-        type: "slider",
-        min: 0,
-        step: 0.001,
-        max: 2,
-        hardMax: 2 ** 31 - 1,
-      },
-    },
-
-    "play.timingWindowAdd": {
-      label: "Timing window add",
-      input: {
-        type: "slider",
-        min: 0,
-        step: 0.001,
-        max: 1,
-        hardMax: 2 ** 31 - 1,
-      },
-    },
-
-    "performance.antialiasing": {
-      label: "Antialiasing",
-      input: {
-        type: "checkbox",
-      },
-    },
-
-    "performance.resolution": {
-      label: "Resolution",
-      input: {
-        type: "slider",
-        min: 1,
-        step: 1,
-        max: 4,
-        hardMin: 0,
-        hardMax: 2 ** 31 - 1,
-      },
-    },
-
-    "general.smoothAnimations": {
-      label: "Smooth Animations",
-      input: {
-        type: "checkbox",
-        onChange: (value: boolean) => {
-          if (value) document.body.classList.add("animated")
-          else document.body.classList.remove("animated")
-        },
-      },
-    },
-
-    "debug.renderingStats": {
-      label: "Show rendering stats",
-      input: {
-        type: "checkbox",
-      },
-    },
-
-    "debug.showTimers": {
-      label: "Show rendering timers",
-      input: {
-        type: "checkbox",
-      },
-    },
-
-    "experimental.speedChangeWaveform": {
-      label: "Allow waveform speed changes",
-      input: {
-        type: "checkbox",
-      },
-    },
-
-    "chart.renderTimingEvent": {
-      label: "Show timing event boxes",
-    },
-
-    "chart.waveform": {
-      label: "Waveform",
-    },
-
-    "chart.waveform.enabled": {
-      label: "Enable waveform",
-      input: {
-        type: "checkbox",
-      },
-    },
-
-    "chart.waveform.opacity": {
-      label: "Opacity",
-      input: {
-        type: "slider",
-        min: 0,
-        max: 1,
-        step: 0.01,
-      },
-    },
-
-    "chart.waveform.lineHeight": {
-      label: "Line height",
-      input: {
-        type: "slider",
-        min: 1,
-        max: 3,
-        step: 0.1,
-        hardMax: 100,
-      },
-    },
-
-    "general.scrollSensitivity": {
-      label: "Scroll sensitivity",
-      input: {
-        type: "slider",
-        min: 0,
-        step: 1,
-        max: 200,
-        hardMax: 2 ** 31 - 1,
-        transformers: {
-          serialize: value => value * 100,
-          deserialize: value => value / 100,
-        },
-      },
-    },
-
-    "general.scrollSnapEveryScroll": {
-      label: "Snap every scroll",
-      input: {
-        type: "checkbox",
-      },
-      margin: true,
-    },
-
-    "general.mousePlacement": {
-      label: "Mouse note placement",
-      input: {
-        type: "checkbox",
-      },
-      margin: true,
-    },
-
-    general: {
-      label: "General",
-    },
-
-    chart: {
-      label: "Chart",
-    },
-
-    audio: {
-      label: "Audio",
-    },
-
-    play: {
-      label: "Play Mode",
-    },
-
-    performance: {
-      label: "Performance",
-    },
-
-    debug: {
-      label: "Debug",
-    },
-
-    experimental: {
-      label: "Experimental",
-    },
-  }
+// "chart.renderTimingEvent": {
+//   label: "Show timing event boxes",
+// },

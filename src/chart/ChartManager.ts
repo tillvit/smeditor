@@ -364,7 +364,7 @@ export class ChartManager {
       let hasPlayedAssistTick = false
       while (
         this.noteIndex < notedata.length &&
-        time > notedata[this.noteIndex].second + Options.audio.effectOffset
+        time > notedata[this.noteIndex].second + Options.play.effectOffset
       ) {
         if (
           this.mode != EditMode.Record &&
@@ -388,7 +388,7 @@ export class ChartManager {
       }
       // Play metronome
       const offsetBeat = this.loadedChart.getBeatFromSeconds(
-        this.time + Options.audio.effectOffset
+        this.time + Options.play.effectOffset
       )
 
       const offsetDivision = Math.floor(
