@@ -4,7 +4,7 @@ Online web tool to view and edit StepMania chart (.sm/.ssc files).
 You can view the tool at https://tillvit.github.io/smeditor  
 Inspired by [ArrowVortex](https://arrowvortex.ddrnl.com/index.html)
 
-SMEditor is currently a work in progress. You can check the planned features [here](https://trello.com/b/8vTJTf1W/smeditor)
+SMEditor is currently a work in progress. You can check the planned features [here](https://github.com/users/tillvit/projects/2)
 
 # Building/Testing
 
