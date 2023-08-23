@@ -774,6 +774,7 @@ input.right {
 
 .dropdown {
   height: 100%;
+  position: relative;
 }
 
 .dropdown.no-border .dropdown-selected {
@@ -841,6 +842,11 @@ input.right {
   height: 0px;
   box-shadow: 0px 3px 15px 0px rgba(0, 0, 0, 0.6);
   cursor: pointer;
+  top: 100%;
+}
+
+.dropdown-right > .dropdown-items {
+  right: 0;
 }
 
 .animated .dropdown-items {
@@ -1799,7 +1805,6 @@ input[type="range"] {
   flex-direction: row;
   align-items: center;
   width: 100%;
-  position: relative; /* ??? */
 }
 
 .pref-item-input {

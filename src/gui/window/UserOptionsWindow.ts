@@ -484,7 +484,7 @@ export class UserOptionsWindow extends Window {
                   : "block"
               callback?.(deserializer(value))
             })
-            dropdown.view.classList.add("pref-input", "right")
+            dropdown.view.classList.add("pref-input", "dropdown-right")
             input = dropdown.view
           } else {
             const callback = option.input.onChange
@@ -498,7 +498,7 @@ export class UserOptionsWindow extends Window {
                   : "block"
               callback?.(value)
             })
-            dropdown.view.classList.add("pref-input", "right")
+            dropdown.view.classList.add("pref-input", "dropdown-right")
             input = dropdown.view
           }
           break
