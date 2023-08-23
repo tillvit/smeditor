@@ -584,7 +584,6 @@ export class UserOptionsWindow extends Window {
                 ? "none"
                 : "block"
           }
-          numberInput.classList.add("pref-input", "right")
           numberInput.style.width = "50px"
           numberInput.onkeydown = ev => {
             if (ev.key == "Enter") numberInput.blur()
@@ -608,7 +607,6 @@ export class UserOptionsWindow extends Window {
                 : "block"
             callback?.(textInput.value)
           }
-          textInput.classList.add("pref-input", "right")
           textInput.onkeydown = ev => {
             if (ev.key == "Enter") textInput.blur()
           }
@@ -616,12 +614,20 @@ export class UserOptionsWindow extends Window {
           break
         }
       }
+      input.classList.add("pref-item-input")
       item.appendChild(input)
     } else {
       const children = document.createElement("div")
       children.classList.add("pref-children")
       item.appendChild(children)
       children.replaceChildren(...this.createOptions(option.children))
+    }
+
+    if (option.type == "item" && option.tooltip !== undefined) {
+      const tooltip = document.createElement("div")
+      tooltip.classList.add(`pref-item-tooltip`)
+      tooltip.innerText = option.tooltip
+      item.appendChild(tooltip)
     }
 
     return item

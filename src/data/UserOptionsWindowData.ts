@@ -137,6 +137,8 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                 deserialize: value => value / 100,
               },
             },
+            tooltip:
+              "Adjust the scroll sensitivity when scrolling through the chart.",
           },
 
           {
@@ -146,6 +148,8 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             input: {
               type: "checkbox",
             },
+            tooltip:
+              "Whether each scroll movement corresponds to moving one snap unit when scrolling. Turning this on will have the same behavior as ArrowVortex.",
           },
         ],
       },
@@ -214,6 +218,8 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                   max: 30,
                   hardMax: 2 ** 31 - 1,
                 },
+                tooltip:
+                  "Maximum number of beats to draw notes. Increasing this works well for songs with high bpm but can affect performance.",
               },
               {
                 type: "item",
@@ -225,6 +231,8 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                   max: 30,
                   hardMax: 2 ** 31 - 1,
                 },
+                tooltip:
+                  "Maximum number of beats to draw notes past the receptors. Increasing this can affect performance.",
               },
             ],
           },
@@ -279,6 +287,8 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               step: 0.1,
               hardMax: 100,
             },
+            tooltip:
+              "The height of each line of the waveform. Increasing this can help performance.",
           },
         ],
       },
@@ -336,6 +346,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             input: {
               type: "checkbox",
             },
+            tooltip: "Plays a sound when a note passes the receptors",
           },
           {
             type: "item",
@@ -370,6 +381,8 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               hardMin: -(2 ** 31 - 1),
               hardMax: 2 ** 31 - 1,
             },
+            tooltip:
+              "Offset in seconds when playing a chart. Set to positive if you are hitting early and negative if you are hitting late.",
           },
           {
             type: "item",
@@ -383,6 +396,8 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               hardMin: -(2 ** 31 - 1),
               hardMax: 2 ** 31 - 1,
             },
+            tooltip:
+              "Offset in seconds when playing sound effects like assist tick and metronome.",
           },
           {
             type: "item",
@@ -396,22 +411,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               hardMin: -(2 ** 31 - 1),
               hardMax: 2 ** 31 - 1,
             },
-          },
-          {
-            type: "item",
-            label: "Sound effect volume",
-            id: "audio.soundEffectVolume",
-            input: {
-              type: "slider",
-              min: 0,
-              step: 1,
-              max: 100,
-              hardMax: 2 ** 31 - 1,
-              transformers: {
-                serialize: value => value * 100,
-                deserialize: value => value / 100,
-              },
-            },
+            tooltip: "Offset in seconds when displaying notes.",
           },
         ],
       },
@@ -425,6 +425,8 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             input: {
               type: "checkbox",
             },
+            tooltip:
+              "Tilts the judgement text left if you are hitting early and right if you are hitting late.",
           },
           {
             type: "item",
@@ -463,6 +465,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               max: 2,
               hardMax: 2 ** 31 - 1,
             },
+            tooltip: "Scales all timing windows by the given amount.",
           },
           {
             type: "item",
@@ -475,6 +478,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               max: 1,
               hardMax: 2 ** 31 - 1,
             },
+            tooltip: "Adds this value (in seconds) to all timing windows.",
           },
         ],
       },
@@ -506,6 +510,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           hardMin: 0,
           hardMax: 2 ** 31 - 1,
         },
+        tooltip: "Requires a reload.",
       },
     ],
   },

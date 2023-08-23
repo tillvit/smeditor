@@ -1063,20 +1063,6 @@ input.right {
   min-width: 55px;
 }
 
-.pref-label > *:last-child {
-  max-width: 160px;
-  align-content: center;
-  display: flex;
-}
-
-.pref-label > .spinner {
-  max-width: 50px;
-}
-
-.pref-label .spinner-input {
-  text-align: right;
-}
-
 input[type="range"] {
   width: 100px;
   margin-right: 10px;
@@ -1771,7 +1757,9 @@ input[type="range"] {
 
 .animated .pref-section,
 .animated .pref-keybind-combo,
-.animated .pref-keybind {
+.animated .pref-keybind,
+.animated .pref-item,
+.animated .pref-item-tooltip {
   transition: 0.1s cubic-bezier(0.445, 0.05, 0.55, 0.95);
 }
 
@@ -1781,7 +1769,8 @@ input[type="range"] {
 }
 
 .pref-section:hover,
-.pref-keybind:hover {
+.pref-keybind:hover,
+.pref-item:hover {
   background-color: var(--bg-secondary-hover);
 }
 
@@ -1804,16 +1793,27 @@ input[type="range"] {
 }
 
 .pref-item {
+  padding: 3px 5px;
   border-radius: 2px;
   display: flex;
   flex-direction: row;
   align-items: center;
   width: 100%;
-  cursor: pointer;
+  position: relative; /* ??? */
 }
 
-.pref-item > :last-child {
+.pref-item-input {
   margin-left: auto;
+  max-width: 160px;
+  display: flex;
+}
+
+.pref-item > .spinner {
+  max-width: 50px;
+}
+
+.pref-item .spinner-input {
+  text-align: right;
 }
 
 .pref-keybind img,
@@ -1901,4 +1901,24 @@ input[type="range"] {
   font-style: italic;
   text-align: center;
   color: var(--text-color-detail);
+}
+
+.pref-item-tooltip {
+  position: absolute;
+  align-self: normal;
+  margin-top: 25px;
+  text-align: center;
+  padding: 3px 5px;
+  background-color: rgba(31, 31, 31, 0.789);
+  border-radius: 5px;
+  font-size: 12px;
+  z-index: 4;
+  opacity: 0;
+  pointer-events: none;
+  scale: 0.98;
+}
+
+.pref-item:hover .pref-item-tooltip {
+  opacity: 1;
+  scale: 1;
 }
