@@ -1816,7 +1816,8 @@ input[type="range"] {
   margin-left: auto;
 }
 
-.pref-keybind img {
+.pref-keybind img,
+.pref-item > img {
   margin-left: 5px;
   display: block;
   bottom: 10px;

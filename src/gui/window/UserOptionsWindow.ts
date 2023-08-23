@@ -310,6 +310,7 @@ import {
 } from "../../data/UserOptionsWindowData"
 import { Options } from "../../util/Options"
 import { clamp, roundDigit, safeParse } from "../../util/Util"
+import { Icons } from "../Icons"
 import { Dropdown } from "../element/Dropdown"
 import { NumberSpinner } from "../element/NumberSpinner"
 import { Window } from "./Window"
@@ -420,6 +421,22 @@ export class UserOptionsWindow extends Window {
       item.appendChild(label)
     }
 
+    const revert = document.createElement("img")
+    if (option.type == "item") {
+      revert.src = Icons.REVERT
+      revert.style.width = "12px"
+      revert.addEventListener("click", () => {
+        Options.applyOption([option.id, Options.getDefaultOption(option.id)])
+        // Reload the option
+        item.replaceWith(this.makeOption(option))
+      })
+      revert.style.display =
+        Options.getDefaultOption(option.id) === Options.getOption(option.id)
+          ? "none"
+          : "block"
+      item.appendChild(revert)
+    }
+
     if (option.type == "item") {
       const optionValue = Options.getOption(option.id)
       let input: HTMLElement
@@ -434,6 +451,11 @@ export class UserOptionsWindow extends Window {
           checkbox.onblur = null
           checkbox.onchange = () => {
             Options.applyOption([option.id, checkbox.checked])
+            revert.style.display =
+              Options.getDefaultOption(option.id) ===
+              Options.getOption(option.id)
+                ? "none"
+                : "block"
             callback?.(checkbox.checked)
           }
           checkbox.classList.add("pref-input", "right")
@@ -454,6 +476,11 @@ export class UserOptionsWindow extends Window {
             )
             dropdown.onChange(value => {
               Options.applyOption([option.id, deserializer(value)])
+              revert.style.display =
+                Options.getDefaultOption(option.id) ===
+                Options.getOption(option.id)
+                  ? "none"
+                  : "block"
               callback?.(deserializer(value))
             })
             dropdown.view.classList.add("pref-input", "right")
@@ -463,6 +490,11 @@ export class UserOptionsWindow extends Window {
             const dropdown = Dropdown.create(option.input.items, optionValue)
             dropdown.onChange(value => {
               Options.applyOption([option.id, value])
+              revert.style.display =
+                Options.getDefaultOption(option.id) ===
+                Options.getOption(option.id)
+                  ? "none"
+                  : "block"
               callback?.(value)
             })
             dropdown.view.classList.add("pref-input", "right")
@@ -489,6 +521,11 @@ export class UserOptionsWindow extends Window {
               return
             }
             Options.applyOption([option.id, deserializer(value)])
+            revert.style.display =
+              Options.getDefaultOption(option.id) ===
+              Options.getOption(option.id)
+                ? "none"
+                : "block"
             callback?.(deserializer(value))
           }
           input = spinner.view
@@ -501,6 +538,8 @@ export class UserOptionsWindow extends Window {
             option.input.transformers?.serialize ?? ((value: number) => value)
           const callback = option.input.onChange
           const container = document.createElement("div")
+          container.style.display = "flex"
+          container.style.alignItems = "center"
           const slider = document.createElement("input")
           slider.type = "range"
           slider.min = option.input.min?.toString() ?? ""
@@ -525,6 +564,11 @@ export class UserOptionsWindow extends Window {
               numberInput.value = serializer(value).toString()
             else Options.applyOption([option.id, deserializer(value)])
             slider.value = value.toString()
+            revert.style.display =
+              Options.getDefaultOption(option.id) ===
+              Options.getOption(option.id)
+                ? "none"
+                : "block"
             callback?.(deserializer(value))
           }
           numberInput.oninput = () => {
@@ -534,6 +578,11 @@ export class UserOptionsWindow extends Window {
             const value = parseFloat(slider.value)
             numberInput.value = roundDigit(value, 3).toString()
             Options.applyOption([option.id, deserializer(value)])
+            revert.style.display =
+              Options.getDefaultOption(option.id) ===
+              Options.getOption(option.id)
+                ? "none"
+                : "block"
           }
           numberInput.classList.add("pref-input", "right")
           numberInput.style.width = "50px"
@@ -552,6 +601,11 @@ export class UserOptionsWindow extends Window {
           textInput.value = optionValue.toString()
           textInput.onblur = () => {
             Options.applyOption([option.id, textInput.value])
+            revert.style.display =
+              Options.getDefaultOption(option.id) ===
+              Options.getOption(option.id)
+                ? "none"
+                : "block"
             callback?.(textInput.value)
           }
           textInput.classList.add("pref-input", "right")
