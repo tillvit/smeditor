@@ -1903,22 +1903,20 @@ input[type="range"] {
   color: var(--text-color-detail);
 }
 
-.pref-item-tooltip {
-  position: absolute;
-  align-self: normal;
-  margin-top: 25px;
-  text-align: center;
-  padding: 3px 5px;
-  background-color: rgba(31, 31, 31, 0.789);
-  border-radius: 5px;
-  font-size: 12px;
-  z-index: 4;
-  opacity: 0;
-  pointer-events: none;
-  scale: 0.98;
+.tippy-box[data-theme~="sm"] {
+  background-color: rgb(30, 30, 30);
+  color: white;
 }
 
-.pref-item:hover .pref-item-tooltip {
-  opacity: 1;
-  scale: 1;
+.tippy-box[data-theme~="sm"][data-placement^="top"] > .tippy-arrow::before {
+  border-top-color: rgb(30, 30, 30);
+}
+.tippy-box[data-theme~="sm"][data-placement^="bottom"] > .tippy-arrow::before {
+  border-bottom-color: rgb(30, 30, 30);
+}
+.tippy-box[data-theme~="sm"][data-placement^="left"] > .tippy-arrow::before {
+  border-left-color: rgb(30, 30, 30);
+}
+.tippy-box[data-theme~="sm"][data-placement^="right"] > .tippy-arrow::before {
+  border-right-color: rgb(30, 30, 30);
 }

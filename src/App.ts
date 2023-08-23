@@ -6,6 +6,9 @@ import {
   Ticker,
   UPDATE_PRIORITY,
 } from "pixi.js"
+import tippy from "tippy.js"
+import "tippy.js/animations/scale-subtle.css"
+import "tippy.js/dist/tippy.css"
 import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
 import { ContextMenuPopup } from "./gui/element/ContextMenu"
@@ -21,7 +24,6 @@ import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
 import { TimerStats } from "./util/TimerStats"
 import { extname, fpsUpdate, getBrowser } from "./util/Util"
-
 declare global {
   interface Window {
     app: App
@@ -47,6 +49,8 @@ export class App {
   private lastHeight = window.innerHeight
 
   constructor() {
+    tippy.setDefaultProps({ duration: [200, 100], theme: "sm" })
+
     if (window.nw) {
       const activeWin = nw.Window.get()
       activeWin.enterFullscreen()

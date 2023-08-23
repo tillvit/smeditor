@@ -301,6 +301,7 @@
 //     return obj
 //   }
 // }
+import tippy from "tippy.js"
 import { App } from "../../App"
 import { MenuOption } from "../../data/MenubarData"
 import {
@@ -624,10 +625,9 @@ export class UserOptionsWindow extends Window {
     }
 
     if (option.type == "item" && option.tooltip !== undefined) {
-      const tooltip = document.createElement("div")
-      tooltip.classList.add(`pref-item-tooltip`)
-      tooltip.innerText = option.tooltip
-      item.appendChild(tooltip)
+      tippy(item, {
+        content: option.tooltip,
+      })
     }
 
     return item
