@@ -6,6 +6,9 @@ import {
   Ticker,
   UPDATE_PRIORITY,
 } from "pixi.js"
+import tippy from "tippy.js"
+import "tippy.js/animations/scale-subtle.css"
+import "tippy.js/dist/tippy.css"
 import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
 import { ContextMenuPopup } from "./gui/element/ContextMenu"
@@ -13,15 +16,14 @@ import { MenubarManager } from "./gui/element/MenubarManager"
 import { DirectoryWindow } from "./gui/window/DirectoryWindow"
 import { InitialWindow } from "./gui/window/InitialWindow"
 import { WindowManager } from "./gui/window/WindowManager"
-import { Keybinds } from "./listener/Keybinds"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
 import { EventHandler } from "./util/EventHandler"
 import { FileHandler } from "./util/FileHandler"
+import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
 import { TimerStats } from "./util/TimerStats"
 import { extname, fpsUpdate, getBrowser } from "./util/Util"
-
 declare global {
   interface Window {
     app: App
@@ -38,8 +40,6 @@ export class App {
   ticker: Ticker
   stage: Container
   view: HTMLCanvasElement
-  options: Options
-  keybinds: Keybinds
   chartManager: ChartManager
   windowManager: WindowManager
   menubarManager: MenubarManager
@@ -49,6 +49,8 @@ export class App {
   private lastHeight = window.innerHeight
 
   constructor() {
+    tippy.setDefaultProps({ duration: [200, 100], theme: "sm" })
+
     if (window.nw) {
       const activeWin = nw.Window.get()
       activeWin.enterFullscreen()
@@ -61,6 +63,8 @@ export class App {
     }
 
     Options.loadOptions()
+    Keybinds.load(this)
+
     setInterval(() => Options.saveOptions(), 10000)
     if (Options.general.smoothAnimations)
       document.body.classList.add("animated")
@@ -105,7 +109,6 @@ export class App {
 
     BetterRoundedRect.init(this.renderer)
 
-    this.options = Options
     this.chartManager = new ChartManager(this)
     this.menubarManager = new MenubarManager(
       this,
@@ -118,7 +121,6 @@ export class App {
     this.actionHistory = new ActionHistory(this)
 
     this.registerListeners()
-    this.keybinds = new Keybinds(this)
 
     this.onResize()
 
@@ -152,7 +154,7 @@ export class App {
         chars: [
           ["a", "z"],
           ["A", "Z"],
-          "!@#$%^&*()~{}[]:.-?=,",
+          "!@#$%^&*()~{}[]:.-?=,_",
           "0123456789/",
           " ",
         ],
@@ -175,7 +177,7 @@ export class App {
         chars: [
           ["a", "z"],
           ["A", "Z"],
-          "!@#$%^&*()~{}[]:.-?=,",
+          "!@#$%^&*()~{}[]:.-?=,_",
           "0123456789/",
           " ",
         ],

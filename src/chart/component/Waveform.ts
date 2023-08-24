@@ -183,7 +183,7 @@ export class Waveform extends Sprite {
     this.resetPool()
 
     if (
-      Options.experimental.speedChangeWaveform &&
+      Options.chart.waveform.speedChanges &&
       !Options.chart.CMod &&
       Options.chart.doSpeedChanges
     ) {

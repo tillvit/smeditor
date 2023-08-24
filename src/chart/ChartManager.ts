@@ -2,15 +2,15 @@ import { Howl } from "howler/dist/howler.core.min.js"
 import { BitmapText } from "pixi.js"
 import { App } from "../App"
 import { AUDIO_EXT } from "../data/FileData"
-import { IS_OSX, KEYBINDS } from "../data/KeybindData"
+import { IS_OSX, KEYBIND_DATA } from "../data/KeybindData"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { WidgetManager } from "../gui/widget/WidgetManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
 import { ConfirmationWindow } from "../gui/window/ConfirmationWindow"
-import { Keybinds } from "../listener/Keybinds"
 import { ActionHistory } from "../util/ActionHistory"
 import { EventHandler } from "../util/EventHandler"
 import { FileHandler } from "../util/FileHandler"
+import { Keybinds } from "../util/Keybinds"
 import { Options } from "../util/Options"
 import { RecentFileHandler } from "../util/RecentFileHandler"
 import { TimerStats } from "../util/TimerStats"
@@ -364,7 +364,7 @@ export class ChartManager {
       let hasPlayedAssistTick = false
       while (
         this.noteIndex < notedata.length &&
-        time > notedata[this.noteIndex].second + Options.audio.effectOffset
+        time > notedata[this.noteIndex].second + Options.play.effectOffset
       ) {
         if (
           this.mode != EditMode.Record &&
@@ -388,7 +388,7 @@ export class ChartManager {
       }
       // Play metronome
       const offsetBeat = this.loadedChart.getBeatFromSeconds(
-        this.time + Options.audio.effectOffset
+        this.time + Options.play.effectOffset
       )
 
       const offsetDivision = Math.floor(
@@ -488,10 +488,12 @@ export class ChartManager {
             "jumpSongEnd",
           ]
           for (const keybind of keybinds) {
-            if (KEYBINDS[keybind].keybinds.map(x => x.key).includes(keyName)) {
+            if (
+              KEYBIND_DATA[keybind].combos.map(x => x.key).includes(keyName)
+            ) {
               event.preventDefault()
               event.stopImmediatePropagation()
-              KEYBINDS[keybind].callback(this.app)
+              KEYBIND_DATA[keybind].callback(this.app)
               for (let col = 0; col < this.holdEditing.length; col++) {
                 if (
                   !this.holdEditing[col] ||
@@ -505,7 +507,9 @@ export class ChartManager {
           }
           // Stop editing when undo/redo pressed
           for (const keybind of ["undo", "redo"]) {
-            if (KEYBINDS[keybind].keybinds.map(x => x.key).includes(keyName)) {
+            if (
+              KEYBIND_DATA[keybind].combos.map(x => x.key).includes(keyName)
+            ) {
               this.holdEditing = []
               return
             }

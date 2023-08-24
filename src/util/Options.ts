@@ -36,6 +36,7 @@ export class DefaultOptions {
       color: 0x606172,
       opacity: 0.5,
       lineHeight: 1,
+      speedChanges: true,
     },
     timingEventOrder: {
       left: [
@@ -80,10 +81,10 @@ export class DefaultOptions {
     rate: 1,
     songVolume: 0.2,
     soundEffectVolume: 0.5,
-    effectOffset: 0,
   }
   static play = {
     offset: 0,
+    effectOffset: 0,
     visualOffset: 0,
     hideBarlines: false,
     judgmentTilt: true,
@@ -106,9 +107,7 @@ export class DefaultOptions {
     renderingStats: false,
     showTimers: false,
   }
-  static experimental = {
-    speedChangeWaveform: true,
-  }
+  static experimental = {}
 }
 
 export type OptionsObject = {
@@ -120,18 +119,24 @@ export class Options extends DefaultOptions {
     obj: { [key: string]: any },
     prefix?: string
   ): [string, any][] {
-    return Object.entries(obj).reduce((options, entry) => {
-      const p = prefix ? prefix + "." : ""
-      if (typeof entry[1] == "object" && !Array.isArray(entry[1])) {
-        options = options.concat(
-          this.extractOptions(entry[1] as { [key: string]: any }, p + entry[0])
-        )
-      } else {
-        entry[0] = p + entry[0]
-        options.push([entry[0], entry[1]])
-      }
-      return options
-    }, [] as [string, any][])
+    return Object.entries(obj).reduce(
+      (options, entry) => {
+        const p = prefix ? prefix + "." : ""
+        if (typeof entry[1] == "object" && !Array.isArray(entry[1])) {
+          options = options.concat(
+            this.extractOptions(
+              entry[1] as { [key: string]: any },
+              p + entry[0]
+            )
+          )
+        } else {
+          entry[0] = p + entry[0]
+          options.push([entry[0], entry[1]])
+        }
+        return options
+      },
+      [] as [string, any][]
+    )
   }
   static applyOption(option: [string, any]) {
     if (typeof this.getDefaultOption(option[0]) != typeof option[1]) {

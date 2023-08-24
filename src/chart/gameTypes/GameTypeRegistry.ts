@@ -36,6 +36,10 @@ export class GameTypeRegistry {
   static getGameType(id: string): GameType | undefined {
     return GameTypeRegistry.gameTypes[id]
   }
+
+  static getTypes() {
+    return this.gameTypes
+  }
 }
 
 GameTypeRegistry.register({
