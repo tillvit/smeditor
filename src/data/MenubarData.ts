@@ -256,6 +256,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         id: "recordMode",
       },
       {
+        type: "selection",
+        id: "recordModeStart",
+      },
+      {
         type: "seperator",
       },
       {

@@ -237,7 +237,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   songProperties: {
     label: "Song properties...",
     bindLabel: "Open song properties",
-    combos: [{ key: "U", mods: [Modifier.SHIFT] }],
+    combos: [{ key: "O", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.loadedSM,
     callback: app => app.windowManager.openWindow(new SMPropertiesWindow(app)),
   },
@@ -266,7 +266,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   timingDataRow: {
     label: "Edit timing data at row",
-    combos: [{ key: "T", mods: [Modifier.SHIFT, Modifier.ALT] }],
+    combos: [{ key: "T", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartView,
     callback: app => app.windowManager.openWindow(new TimingDataWindow(app)),
   },
@@ -487,7 +487,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   renderWaveform: {
     label: "Render waveform",
-    combos: [{ key: "W", mods: [Modifier.SHIFT, Modifier.ALT] }],
+    combos: [],
     disabled: false,
     callback: () => {
       Options.chart.waveform.enabled = !Options.chart.waveform.enabled
@@ -545,7 +545,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   showEq: {
     label: "Equalizer",
-    combos: [{ key: "E", mods: [Modifier.SHIFT, Modifier.ALT] }],
+    combos: [{ key: "E", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartAudio,
     callback: app => app.windowManager.openWindow(new EQWindow(app)),
   },
@@ -622,6 +622,14 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.setMode(EditMode.Play)
     },
   },
+  recordModeStart: {
+    label: "Record from start",
+    combos: [{ key: "R", mods: [Modifier.SHIFT] }],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Play,
+    callback: app => app.chartManager.setMode(EditMode.Record),
+  },
   options: {
     label: "Options...",
     bindLabel: "Edit options",
@@ -641,7 +649,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     },
   },
   gameplayKeybinds: {
-    label: "Gameplay Keybinds...",
+    label: "Gameplay keybinds...",
     bindLabel: "Edit gameplay keybinds",
     combos: [],
     disabled: false,
