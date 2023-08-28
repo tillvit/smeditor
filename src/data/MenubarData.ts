@@ -387,6 +387,13 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "selection",
+        id: "exportNotedata",
+      },
+      {
+        type: "seperator",
+      },
+      {
+        type: "selection",
         id: "selectAll",
       },
     ],
@@ -415,7 +422,9 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       {
         type: "dropdown",
         title: () =>
-          "Volume (" + Math.round(Options.audio.songVolume * 100) + "%)",
+          "Master Volume (" +
+          Math.round(Options.audio.masterVolume * 100) +
+          "%)",
         options: [
           {
             type: "selection",
@@ -424,6 +433,21 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
           {
             type: "selection",
             id: "volumeDown",
+          },
+        ],
+      },
+      {
+        type: "dropdown",
+        title: () =>
+          "Song Volume (" + Math.round(Options.audio.songVolume * 100) + "%)",
+        options: [
+          {
+            type: "selection",
+            id: "songVolumeUp",
+          },
+          {
+            type: "selection",
+            id: "songVolumeDown",
           },
         ],
       },
@@ -446,7 +470,8 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "dropdown",
-        title: () => "Rate (" + Math.round(Options.audio.rate * 100) + "%)",
+        title: () =>
+          "Playback rate (" + Math.round(Options.audio.rate * 100) + "%)",
         options: [
           {
             type: "selection",

@@ -375,13 +375,16 @@ export class TimingTrackOrderPopup {
       }
     }
     window.addEventListener("mousemove", moveHandler)
-    window.addEventListener("mouseup", () => {
+
+    const upHandler = () => {
       this.draggedElement?.remove()
       this.draggedElement = undefined
       window.removeEventListener("mousemove", moveHandler)
       element.style.opacity = ""
       this.clearBoundaries()
-    })
+      window.removeEventListener("mouseup", upHandler)
+    }
+    window.addEventListener("mouseup", upHandler)
   }
 
   private static saveOptions(options: string[]) {

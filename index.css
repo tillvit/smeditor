@@ -1478,19 +1478,23 @@ input[type="range"] {
   }
 }
 
-.draggable-track.entering {
+.draggable-track.entering,
+.draggable-option.entering {
   animation: draggable-enter 0s cubic-bezier(0, 0.91, 0.34, 1.05) forwards;
 }
 
-.draggable-track.exiting {
+.draggable-track.exiting,
+.draggable-option.exiting {
   animation: draggable-exit 0s cubic-bezier(0, 0.91, 0.34, 1.05) forwards;
 }
 
-.animated .draggable-track.entering {
+.animated .draggable-track.entering,
+.animated .draggable-option.entering {
   animation: draggable-enter 0.4s cubic-bezier(0, 0.91, 0.34, 1.05) forwards;
 }
 
-.animated .draggable-track.exiting {
+.animated .draggable-track.exiting,
+.animated .draggable-option.exiting {
   animation: draggable-exit 0.4s cubic-bezier(0, 0.91, 0.34, 1.05) forwards;
 }
 
@@ -1505,11 +1509,13 @@ input[type="range"] {
     transform: scale(1);
   }
 }
-.leftover-track.entering {
+.leftover-track.entering,
+.leftover-option.entering {
   animation: leftover-enter 0s cubic-bezier(0, 0.91, 0.34, 1.05) forwards;
 }
 
-.animated .leftover-track.entering {
+.animated .leftover-track.entering,
+.animated .leftover-option.entering {
   animation: leftover-enter 0.4s cubic-bezier(0, 0.91, 0.34, 1.05) forwards;
 }
 
@@ -1588,7 +1594,10 @@ input[type="range"] {
 .animated .draggable-track,
 .animated .draggable-track img,
 .animated .leftover-track,
-.animated .track-selector {
+.animated .track-selector,
+.animated .draggable-option,
+.animated .draggable-option img,
+.animated .leftover-option {
   transition: 0.2s cubic-bezier(0, 0.91, 0.34, 1.05);
 }
 
@@ -1924,4 +1933,47 @@ input[type="range"] {
 }
 .tippy-box[data-theme~="sm"][data-placement^="right"] > .tippy-arrow::before {
   border-right-color: rgb(30, 30, 30);
+}
+
+.export-container {
+  display: flex;
+  flex-direction: row;
+  gap: 15px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.export-section-label {
+  font-weight: bold;
+  margin-bottom: 6px;
+  margin-top: 6px;
+}
+
+.export-option {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  align-items: center;
+  padding: 3px 5px;
+}
+
+.export-output {
+  flex: 1;
+  border-radius: 5px;
+  background-color: var(--bg-secondary);
+  padding: 5px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: monospace;
+  font-size: 12px;
+  overflow: auto;
+  tab-size: 2;
+}
+
+.export-output:hover {
+  background-color: var(--bg-secondary-hover);
+}
+
+.animated .export-output {
+  transition: 0.1s cubic-bezier(0.39, 0.575, 0.565, 1);
 }

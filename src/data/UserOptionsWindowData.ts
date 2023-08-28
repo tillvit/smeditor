@@ -264,7 +264,6 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               type: "checkbox",
             },
           },
-
           {
             type: "item",
             label: "Opacity",
@@ -290,6 +289,24 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             tooltip:
               "The height of each line of the waveform. Increasing this can help performance.",
           },
+          {
+            type: "item",
+            label: "Antialiasing",
+            id: "chart.waveform.antialiasing",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "item",
+            label: "Allow speed changes",
+            id: "chart.waveform.speedChanges",
+            input: {
+              type: "checkbox",
+            },
+            tooltip:
+              "Allows the waveform to be affected by SPEEDS and SCROLLS.",
+          },
         ],
       },
     ],
@@ -302,6 +319,22 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
       {
         type: "subgroup",
         children: [
+          {
+            type: "item",
+            label: "Master volume",
+            id: "audio.masterVolume",
+            input: {
+              type: "slider",
+              min: 0,
+              step: 1,
+              max: 100,
+              hardMax: 2 ** 31 - 1,
+              transformers: {
+                serialize: value => value * 100,
+                deserialize: value => value / 100,
+              },
+            },
+          },
           {
             type: "item",
             label: "Song volume",

@@ -824,8 +824,10 @@ export class ChartManager {
   }
 
   private updateSoundProperties() {
-    this.setEffectVolume(Options.audio.soundEffectVolume)
-    this.setVolume(Options.audio.songVolume)
+    this.setEffectVolume(
+      Options.audio.soundEffectVolume * Options.audio.masterVolume
+    )
+    this.setVolume(Options.audio.songVolume * Options.audio.masterVolume)
     this.setRate(Options.audio.rate)
   }
 
