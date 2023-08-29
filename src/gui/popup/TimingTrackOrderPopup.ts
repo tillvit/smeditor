@@ -9,7 +9,7 @@ export class TimingTrackOrderPopup {
   static popup?: HTMLDivElement
 
   private static clickOutside?: (e: MouseEvent) => void
-  private static moveInterval: NodeJS.Timer
+  private static moveInterval: NodeJS.Timeout
   private static exitTimeout: NodeJS.Timeout
   private static draggedElement?: HTMLDivElement
   private static dragOffsetX = 0

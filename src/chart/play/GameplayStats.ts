@@ -1,4 +1,5 @@
 import { Options } from "../../util/Options"
+import { median } from "../../util/Util"
 import { ChartManager } from "../ChartManager"
 import {
   HoldNotedataEntry,
@@ -53,6 +54,19 @@ export class GameplayStats {
 
   onJudge(handler: (error: number, judge: TimingWindow) => void) {
     this.handlers.push(handler)
+  }
+
+  applyOffset(offset: number) {
+    this.dataPoints = this.dataPoints.map(point => {
+      if (isStandardMissTimingWindow(point.judgment)) return point
+      if (!isStandardTimingWindow(point.judgment)) return point
+      return {
+        ...point,
+        error: point.error + offset,
+      }
+    })
+    this.recalculate()
+    console.log(this.getMedian())
   }
 
   /**
@@ -180,6 +194,18 @@ export class GameplayStats {
 
   getDataPoints(): JudgmentDataPoint[] {
     return this.dataPoints
+  }
+
+  getMedian(): number {
+    return median(
+      this.dataPoints
+        .filter(
+          point =>
+            !isStandardMissTimingWindow(point.judgment) &&
+            isStandardTimingWindow(point.judgment)
+        )
+        .map(data => data.error)
+    )
   }
 
   /**

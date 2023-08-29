@@ -17,6 +17,7 @@ import {
   roundDigit,
   stdDev,
 } from "../../util/Util"
+import { WaterfallManager } from "../element/WaterfallManager"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
 
@@ -69,7 +70,7 @@ export class PlayInfoWidget extends Widget {
 
     window.addEventListener("mousemove", event => {
       if (this.drag) {
-        this.showEase += event.movementY / -350
+        this.showEase += event.movementY / -400
       }
     })
 
@@ -101,7 +102,7 @@ export class PlayInfoWidget extends Widget {
       fontSize: 15,
     })
     early.x = -WIDGET_WIDTH / 2 + 5
-    early.y = -HISTOGRAM_HEIGHT + 10
+    early.y = -HISTOGRAM_HEIGHT - 40
     early.alpha = 0.3
     this.background.addChild(early)
 
@@ -111,7 +112,7 @@ export class PlayInfoWidget extends Widget {
     })
     late.anchor.x = 1
     late.x = WIDGET_WIDTH / 2 - 5
-    late.y = -HISTOGRAM_HEIGHT + 10
+    late.y = -HISTOGRAM_HEIGHT - 40
     late.alpha = 0.3
     this.background.addChild(late)
 
@@ -121,7 +122,7 @@ export class PlayInfoWidget extends Widget {
     })
     this.meanText.anchor.x = 0.5
     this.meanText.x = (WIDGET_WIDTH / 4) * -1.5
-    this.meanText.y = -HISTOGRAM_HEIGHT - 20
+    this.meanText.y = -HISTOGRAM_HEIGHT - 70
     this.statText.addChild(this.meanText)
 
     this.medianText = new BitmapText("-", {
@@ -130,7 +131,7 @@ export class PlayInfoWidget extends Widget {
     })
     this.medianText.anchor.x = 0.5
     this.medianText.x = (WIDGET_WIDTH / 4) * -0.5
-    this.medianText.y = -HISTOGRAM_HEIGHT - 20
+    this.medianText.y = -HISTOGRAM_HEIGHT - 70
     this.statText.addChild(this.medianText)
 
     this.modeText = new BitmapText("-", {
@@ -139,7 +140,7 @@ export class PlayInfoWidget extends Widget {
     })
     this.modeText.anchor.x = 0.5
     this.modeText.x = (WIDGET_WIDTH / 4) * 0.5
-    this.modeText.y = -HISTOGRAM_HEIGHT - 20
+    this.modeText.y = -HISTOGRAM_HEIGHT - 70
     this.statText.addChild(this.modeText)
 
     this.stddevText = new BitmapText("-", {
@@ -148,7 +149,7 @@ export class PlayInfoWidget extends Widget {
     })
     this.stddevText.anchor.x = 0.5
     this.stddevText.x = (WIDGET_WIDTH / 4) * 1.5
-    this.stddevText.y = -HISTOGRAM_HEIGHT - 20
+    this.stddevText.y = -HISTOGRAM_HEIGHT - 70
     this.statText.addChild(this.stddevText)
 
     const meanLabel = new BitmapText("Mean", {
@@ -157,7 +158,7 @@ export class PlayInfoWidget extends Widget {
     })
     meanLabel.anchor.x = 0.5
     meanLabel.x = (WIDGET_WIDTH / 4) * -1.5
-    meanLabel.y = -HISTOGRAM_HEIGHT - 30
+    meanLabel.y = -HISTOGRAM_HEIGHT - 80
     this.statText.addChild(meanLabel)
 
     const medianLabel = new BitmapText("Median", {
@@ -166,7 +167,7 @@ export class PlayInfoWidget extends Widget {
     })
     medianLabel.anchor.x = 0.5
     medianLabel.x = (WIDGET_WIDTH / 4) * -0.5
-    medianLabel.y = -HISTOGRAM_HEIGHT - 30
+    medianLabel.y = -HISTOGRAM_HEIGHT - 80
     this.statText.addChild(medianLabel)
 
     const modeLabel = new BitmapText("Mode", {
@@ -175,7 +176,7 @@ export class PlayInfoWidget extends Widget {
     })
     modeLabel.anchor.x = 0.5
     modeLabel.x = (WIDGET_WIDTH / 4) * 0.5
-    modeLabel.y = -HISTOGRAM_HEIGHT - 30
+    modeLabel.y = -HISTOGRAM_HEIGHT - 80
     this.statText.addChild(modeLabel)
 
     const stddevLabel = new BitmapText("Std Dev.", {
@@ -184,8 +185,87 @@ export class PlayInfoWidget extends Widget {
     })
     stddevLabel.anchor.x = 0.5
     stddevLabel.x = (WIDGET_WIDTH / 4) * 1.5
-    stddevLabel.y = -HISTOGRAM_HEIGHT - 30
+    stddevLabel.y = -HISTOGRAM_HEIGHT - 80
     this.statText.addChild(stddevLabel)
+
+    const alignSongContainer = new Container()
+
+    const alignSongBg = new BetterRoundedRect()
+    alignSongBg.tint = 0x333333
+    alignSongBg.alpha = 0.3
+    alignSongBg.width = WIDGET_WIDTH / 2 - 10
+    alignSongBg.height = 30
+    alignSongBg.y = -25
+    alignSongBg.x = -WIDGET_WIDTH / 4
+    alignSongBg.pivot.x = (WIDGET_WIDTH / 2 - 10) / 2
+    alignSongBg.pivot.y = 15
+
+    const alignSongText = new BitmapText("Adjust song offset", {
+      fontName: "Main",
+      fontSize: 10,
+    })
+    alignSongText.anchor.set(0.5)
+    alignSongText.x = -WIDGET_WIDTH / 4
+    alignSongText.y = -25
+    alignSongContainer.addChild(alignSongBg, alignSongText)
+
+    alignSongContainer.eventMode = "static"
+    alignSongContainer.addEventListener("mouseenter", () => {
+      alignSongBg.alpha = 0.6
+    })
+    alignSongContainer.addEventListener("mousedown", event => {
+      event.stopImmediatePropagation()
+      this.adjustOffset("song")
+    })
+    alignSongContainer.addEventListener("mouseleave", () => {
+      alignSongBg.alpha = 0.3
+    })
+    this.statText.addChild(alignSongContainer)
+
+    const alignGlobalContainer = new Container()
+
+    const alignGlobalBg = new BetterRoundedRect()
+    alignGlobalBg.tint = 0x333333
+    alignGlobalBg.alpha = 0.3
+    alignGlobalBg.width = WIDGET_WIDTH / 2 - 10
+    alignGlobalBg.height = 30
+    alignGlobalBg.y = -25
+    alignGlobalBg.x = WIDGET_WIDTH / 4
+    alignGlobalBg.pivot.x = (WIDGET_WIDTH / 2 - 10) / 2
+    alignGlobalBg.pivot.y = 15
+    alignGlobalBg.eventMode = "static"
+    alignGlobalContainer.addEventListener("mouseenter", () => {
+      alignGlobalBg.alpha = 0.6
+    })
+    alignGlobalContainer.addEventListener("mouseleave", () => {
+      alignGlobalBg.alpha = 0.3
+    })
+
+    const alignGlobalText = new BitmapText("Adjust global offset", {
+      fontName: "Main",
+      fontSize: 10,
+    })
+    alignGlobalText.anchor.set(0.5)
+    alignGlobalText.x = WIDGET_WIDTH / 4
+    alignGlobalText.y = -25
+    alignGlobalContainer.addChild(alignGlobalBg, alignGlobalText)
+
+    alignGlobalContainer.eventMode = "static"
+    alignGlobalContainer.addEventListener("mouseenter", () => {
+      alignGlobalBg.alpha = 0.6
+    })
+    alignGlobalContainer.addEventListener("mousedown", event => {
+      event.stopImmediatePropagation()
+      this.adjustOffset("global")
+    })
+    alignGlobalContainer.addEventListener("mouseleave", () => {
+      alignGlobalBg.alpha = 0.3
+    })
+    this.statText.addChild(alignGlobalContainer)
+
+    this.addChild(this.background)
+    this.addChild(this.backgroundLines)
+    this.eventMode = "static"
 
     this.addChild(this.statText)
     this.addChild(this.barlines)
@@ -200,9 +280,9 @@ export class PlayInfoWidget extends Widget {
       WIDGET_WIDTH / 2
     this.y = this.manager.chartManager.app.renderer.screen.height / 2 - 20
     this.backgroundRect.width = WIDGET_WIDTH + 10
-    this.backgroundRect.height = HISTOGRAM_HEIGHT + 210
+    this.backgroundRect.height = HISTOGRAM_HEIGHT + 260
     this.backgroundRect.x = -WIDGET_WIDTH / 2 - 5
-    this.backgroundRect.y = -HISTOGRAM_HEIGHT - 210
+    this.backgroundRect.y = -HISTOGRAM_HEIGHT - 260
     this.visible = !!this.manager.chartManager.gameStats
     for (const line of this.barlines.children) {
       if (Options.general.smoothAnimations)
@@ -221,9 +301,9 @@ export class PlayInfoWidget extends Widget {
       }
       if (this.easeVelocity < 0 && this.showEase < 0) this.easeVelocity *= -1
       this.easeVelocity *= 0.75
-      this.y += (1 - this.showEase) * 350
+      this.y += (1 - this.showEase) * 400
     } else {
-      if (this.manager.chartManager.getMode() != EditMode.Play) this.y += 350
+      if (this.manager.chartManager.getMode() != EditMode.Play) this.y += 400
     }
   }
 
@@ -235,7 +315,6 @@ export class PlayInfoWidget extends Widget {
     line.anchor.x = 0.5
     line.height = 0
     line.visible = false
-    this.barlines.addChild(line)
     return line
   }
 
@@ -262,6 +341,7 @@ export class PlayInfoWidget extends Widget {
       const line = this.newLine()
       line.width = WIDGET_WIDTH / windowSize / 2
       line.x = (i - windowSize) * line.width
+      line.y = -50
       this.barlines.addChild(line)
     }
     let i = 0
@@ -277,6 +357,7 @@ export class PlayInfoWidget extends Widget {
         line.alpha = 0.2
         line.width = 1
         line.x = (ms * mult * WIDGET_WIDTH) / windowSize / 2
+        line.y = -50
         this.backgroundLines.addChild(line)
       }
       for (let i = -ms + windowSize; i < ms + windowSize; i++) {
@@ -290,6 +371,7 @@ export class PlayInfoWidget extends Widget {
     line.alpha = 0.2
     line.width = 1
     line.tint = 0x888888
+    line.y = -50
     this.backgroundLines.addChild(line)
 
     for (const window of [
@@ -308,8 +390,8 @@ export class PlayInfoWidget extends Widget {
       this.texts.addChild(count)
       label.x = -WIDGET_WIDTH / 2 + 10
       count.x = -WIDGET_WIDTH / 2 + 140
-      label.y = (130 / numWindows) * i - HISTOGRAM_HEIGHT - 170
-      count.y = (130 / numWindows) * i++ - HISTOGRAM_HEIGHT - 170
+      label.y = (130 / numWindows) * i - HISTOGRAM_HEIGHT - 220
+      count.y = (130 / numWindows) * i++ - HISTOGRAM_HEIGHT - 220
       label.anchor.y = 0.5
       count.anchor.y = 0.5
       count.anchor.x = 1
@@ -342,8 +424,8 @@ export class PlayInfoWidget extends Widget {
       this.texts.addChild(count)
       label.x = -WIDGET_WIDTH / 2 + 160
       count.x = -WIDGET_WIDTH / 2 + 290
-      label.y = (80 / extraNumWindows) * i - HISTOGRAM_HEIGHT - 170
-      count.y = (80 / extraNumWindows) * i++ - HISTOGRAM_HEIGHT - 170
+      label.y = (80 / extraNumWindows) * i - HISTOGRAM_HEIGHT - 220
+      count.y = (80 / extraNumWindows) * i++ - HISTOGRAM_HEIGHT - 220
       label.anchor.y = 0.5
       count.anchor.y = 0.5
       count.anchor.x = 1
@@ -364,8 +446,8 @@ export class PlayInfoWidget extends Widget {
     this.texts.addChild(count)
     label.x = -WIDGET_WIDTH / 2 + 160
     count.x = -WIDGET_WIDTH / 2 + 290
-    label.y = (80 / extraNumWindows) * i - HISTOGRAM_HEIGHT - 170
-    count.y = (80 / extraNumWindows) * i++ - HISTOGRAM_HEIGHT - 170
+    label.y = (80 / extraNumWindows) * i - HISTOGRAM_HEIGHT - 220
+    count.y = (80 / extraNumWindows) * i++ - HISTOGRAM_HEIGHT - 220
     label.anchor.y = 0.5
     count.anchor.y = 0.5
     count.anchor.x = 1
@@ -376,7 +458,7 @@ export class PlayInfoWidget extends Widget {
     })
     score.tint = 0xdddddd
     score.x = -WIDGET_WIDTH / 2 + 225
-    score.y = -HISTOGRAM_HEIGHT - 62
+    score.y = -HISTOGRAM_HEIGHT - 112
     score.name = "Score"
     this.texts.addChild(score)
     score.anchor.set(0.5)
@@ -387,7 +469,7 @@ export class PlayInfoWidget extends Widget {
     })
     scoreLabel.tint = 0x888888
     scoreLabel.x = -WIDGET_WIDTH / 2 + 225
-    scoreLabel.y = -HISTOGRAM_HEIGHT - 85
+    scoreLabel.y = -HISTOGRAM_HEIGHT - 135
     this.texts.addChild(scoreLabel)
     scoreLabel.anchor.set(0.5)
 
@@ -395,7 +477,7 @@ export class PlayInfoWidget extends Widget {
       fontName: "Main",
       fontSize: 13,
     })
-    windowLabel.y = -HISTOGRAM_HEIGHT - 195
+    windowLabel.y = -HISTOGRAM_HEIGHT - 245
     windowLabel.anchor.set(0.5)
     this.texts.addChild(windowLabel)
 
@@ -446,5 +528,67 @@ export class PlayInfoWidget extends Widget {
       line.targetHeight =
         (line.smoothCount * (HISTOGRAM_HEIGHT - 20)) / this.max
     }
+  }
+
+  private adjustOffset(type: string) {
+    const gameStats = this.manager.chartManager.gameStats
+    if (!gameStats) return
+    const offset = Math.round(gameStats.getMedian() * 1000) / 1000
+    if (offset == 0) return
+    gameStats.applyOffset(-offset)
+    this.barlines.children.forEach(bar => {
+      bar.smoothCount = 0
+    })
+    const collection = TimingWindowCollection.getCollection(
+      Options.play.timingCollection
+    )
+    const windowSize = Math.round(collection.maxWindowMS())
+    gameStats.getDataPoints().forEach(point => {
+      if (isStandardMissTimingWindow(point.judgment)) return
+      if (!isStandardTimingWindow(point.judgment)) return
+      const ms = Math.round(point.error * 1000)
+      for (let i = -3; i <= 3; i++) {
+        if (!this.barlines.children[ms + windowSize + i]) continue
+        this.barlines.children[ms + windowSize + i].smoothCount +=
+          SCALING[i + 3]
+        this.barlines.children[ms + windowSize + i].visible = true
+        if (
+          this.barlines.children[ms + windowSize + i].smoothCount > this.max
+        ) {
+          this.modeText.text = ms + "ms"
+          this.max = this.barlines.children[ms + windowSize + i].smoothCount
+        }
+      }
+    })
+    this.redraw()
+    const oldOffset =
+      type == "global"
+        ? Options.play.offset
+        : this.manager.app.chartManager.loadedChart!.timingData.getTimingData(
+            "OFFSET"
+          )
+    if (type == "global") {
+      Options.play.offset = roundDigit(Options.play.offset - offset, 3)
+    } else if (type == "song") {
+      this.manager.app.chartManager.loadedChart?.timingData.insert(
+        this.manager.app.chartManager.loadedChart?.timingData.offset !==
+          undefined,
+        "OFFSET",
+        roundDigit(
+          this.manager.app.chartManager.loadedChart.timingData.getTimingData(
+            "OFFSET"
+          ) - offset,
+          3
+        )
+      )
+    }
+    WaterfallManager.create(
+      `Adjusted ${type} offset from ${roundDigit(oldOffset, 3).toFixed(
+        3
+      )} to ${roundDigit(oldOffset - offset, 3).toFixed(3)}`
+    )
+    this.manager.app.chartManager.setBeat(
+      this.manager.app.chartManager.getBeat()
+    )
   }
 }
