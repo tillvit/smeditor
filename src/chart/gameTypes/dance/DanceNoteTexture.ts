@@ -66,13 +66,13 @@ export class DanceNoteTexture {
       resolution: Options.performance.resolution,
     })
     DanceNoteTexture.arrow_tex = RenderTexture.create({
-      width: 192,
-      height: 192,
+      width: 256,
+      height: 256,
       resolution: Options.performance.resolution,
     })
     DanceNoteTexture.lift_tex = RenderTexture.create({
-      width: 192,
-      height: 192,
+      width: 256,
+      height: 256,
       resolution: Options.performance.resolution,
     })
     DanceNoteTexture.mine_tex = RenderTexture.create({

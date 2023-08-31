@@ -202,7 +202,7 @@ export class PlayInfoWidget extends Widget {
 
     const alignSongText = new BitmapText("Adjust song offset", {
       fontName: "Main",
-      fontSize: 10,
+      fontSize: 12,
     })
     alignSongText.anchor.set(0.5)
     alignSongText.x = -WIDGET_WIDTH / 4
@@ -243,7 +243,7 @@ export class PlayInfoWidget extends Widget {
 
     const alignGlobalText = new BitmapText("Adjust global offset", {
       fontName: "Main",
-      fontSize: 10,
+      fontSize: 12,
     })
     alignGlobalText.anchor.set(0.5)
     alignGlobalText.x = WIDGET_WIDTH / 4
