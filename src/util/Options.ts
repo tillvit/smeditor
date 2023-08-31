@@ -105,7 +105,7 @@ export class DefaultOptions {
     resolution: window.devicePixelRatio,
   }
   static debug = {
-    renderingStats: false,
+    showFPS: false,
     showTimers: false,
   }
   static experimental = {}

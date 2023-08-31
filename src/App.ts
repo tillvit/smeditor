@@ -13,6 +13,7 @@ import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
 import { ContextMenuPopup } from "./gui/element/ContextMenu"
 import { MenubarManager } from "./gui/element/MenubarManager"
+import { DebugWidget } from "./gui/widget/DebugWidget"
 import { DirectoryWindow } from "./gui/window/DirectoryWindow"
 import { InitialWindow } from "./gui/window/InitialWindow"
 import { WindowManager } from "./gui/window/WindowManager"
@@ -22,7 +23,6 @@ import { EventHandler } from "./util/EventHandler"
 import { FileHandler } from "./util/FileHandler"
 import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
-import { TimerStats } from "./util/TimerStats"
 import { extname, fpsUpdate, getBrowser } from "./util/Util"
 declare global {
   interface Window {
@@ -99,10 +99,13 @@ export class App {
     this.ticker = new Ticker()
     this.ticker.maxFPS = 120
     this.ticker.add(() => {
-      TimerStats.time("Render Time")
+      const startTime = performance.now()
       this.renderer.render(this.stage)
-      TimerStats.endTime("Render Time")
-      TimerStats.endFrame()
+      DebugWidget.instance?.addFrameTimeValue(performance.now() - startTime)
+      if (performance.memory?.usedJSHeapSize)
+        DebugWidget.instance?.addMemoryTimeValue(
+          performance.memory.usedJSHeapSize
+        )
       fpsUpdate()
     }, UPDATE_PRIORITY.LOW)
     this.ticker.start()

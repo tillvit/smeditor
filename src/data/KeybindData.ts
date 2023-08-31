@@ -317,7 +317,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   songVolumeUp: {
     label: "Increase song volume",
-    combos: [],
+    combos: [{ key: "Up", mods: [Modifier.SHIFT, DEF_MOD] }],
     disabled: false,
     callback: () => {
       Options.audio.songVolume = Math.min(Options.audio.songVolume + 0.05, 1)
@@ -328,7 +328,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   songVolumeDown: {
     label: "Decrease song volume",
-    combos: [],
+    combos: [{ key: "Down", mods: [Modifier.SHIFT, DEF_MOD] }],
     disabled: false,
     callback: () => {
       Options.audio.songVolume = Math.max(Options.audio.songVolume - 0.05, 0)
@@ -339,7 +339,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   effectvolumeUp: {
     label: "Increase tick/metronome volume",
-    combos: [],
+    combos: [{ key: "Up", mods: [Modifier.SHIFT, DEF_MOD, Modifier.ALT] }],
     disabled: false,
     callback: () => {
       Options.audio.soundEffectVolume = Math.min(
@@ -355,7 +355,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   effectvolumeDown: {
     label: "Decrease tick/metronome volume",
-    combos: [],
+    combos: [{ key: "Down", mods: [Modifier.SHIFT, DEF_MOD, Modifier.ALT] }],
     disabled: false,
     callback: () => {
       Options.audio.soundEffectVolume = Math.max(
@@ -1051,6 +1051,22 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
           app.chartManager.loadedSM!.properties.SAMPLELENGTH = lastLength
         },
       })
+    },
+  },
+  showDebugTimers: {
+    label: "Toggle Debug Timers",
+    combos: [{ key: "F3", mods: [Modifier.SHIFT] }],
+    disabled: false,
+    callback: () => {
+      Options.debug.showTimers = !Options.debug.showTimers
+    },
+  },
+  showFPSCounter: {
+    label: "Toggle FPS Counter",
+    combos: [{ key: "F3", mods: [] }],
+    disabled: false,
+    callback: () => {
+      Options.debug.showFPS = !Options.debug.showFPS
     },
   },
 }

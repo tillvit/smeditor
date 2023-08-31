@@ -4,6 +4,7 @@ import { App } from "../App"
 import { AUDIO_EXT } from "../data/FileData"
 import { IS_OSX, KEYBIND_DATA } from "../data/KeybindData"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
+import { DebugWidget } from "../gui/widget/DebugWidget"
 import { WidgetManager } from "../gui/widget/WidgetManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
 import { ConfirmationWindow } from "../gui/window/ConfirmationWindow"
@@ -13,7 +14,6 @@ import { FileHandler } from "../util/FileHandler"
 import { Keybinds } from "../util/Keybinds"
 import { Options } from "../util/Options"
 import { RecentFileHandler } from "../util/RecentFileHandler"
-import { TimerStats } from "../util/TimerStats"
 import {
   basename,
   bsearch,
@@ -308,16 +308,21 @@ export class ChartManager {
 
     // Update ChartRenderer every frame
     this.app.ticker.add(() => {
+      const updateStart = performance.now()
       this.widgetManager.update()
-      if (!this.loadedSM || !this.loadedChart || !this.chartView) return
-      this.chartView.update()
+      if (this.loadedSM && this.loadedChart && this.chartView) {
+        this.chartView.update()
+      }
+      DebugWidget.instance?.addDrawUpdateTimeValue(
+        performance.now() - updateStart
+      )
     })
 
     // Faster update loop, more precision
     setInterval(() => {
       if (!this.loadedSM || !this.loadedChart || !this.chartView) return
+      const updateStart = performance.now()
       const time = this.chartAudio.seek()
-      TimerStats.time("Update Time")
       if (this.chartAudio.isPlaying()) {
         // Set the current beat from time
         this.setTime(time, true)
@@ -416,7 +421,7 @@ export class ChartManager {
       }
       this.updateSoundProperties()
       tpsUpdate()
-      TimerStats.endTime("Update Time")
+      DebugWidget.instance?.addUpdateTimeValue(performance.now() - updateStart)
     }, 5)
 
     EventHandler.on("resize", () => {

@@ -555,8 +555,8 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
       {
         type: "item",
 
-        label: "Show rendering stats",
-        id: "debug.renderingStats",
+        label: "Show FPS",
+        id: "debug.showFPS",
         input: {
           type: "checkbox",
         },
@@ -566,15 +566,6 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
 
         label: "Show rendering timers",
         id: "debug.showTimers",
-        input: {
-          type: "checkbox",
-        },
-      },
-      {
-        type: "item",
-
-        label: "Show rendering stats",
-        id: "debug.renderingStats",
         input: {
           type: "checkbox",
         },

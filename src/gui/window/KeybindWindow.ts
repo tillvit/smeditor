@@ -2,6 +2,7 @@ import { App } from "../../App"
 import { KEYBIND_DATA, Modifier } from "../../data/KeybindData"
 import { MENUBAR_DATA, MenuOption } from "../../data/MenubarData"
 import { Keybinds } from "../../util/Keybinds"
+import { capitalize } from "../../util/Util"
 import { Icons } from "../Icons"
 import { Dropdown } from "../element/Dropdown"
 import { KeyComboWindow } from "./KeyComboWindow"
@@ -11,6 +12,7 @@ const KEYBIND_BLACKLIST = ["cut", "copy", "paste", "undo", "redo", "delete"]
 const KEYBIND_INSERTS: Record<string, string[]> = {
   edit: ["previousNoteType", "nextNoteType"],
   view: ["playback", "selectRegion"],
+  debug: ["showFPSCounter", "showDebugTimers"],
 }
 
 export class KeybindWindow extends Window {
@@ -109,7 +111,9 @@ export class KeybindWindow extends Window {
       .filter(groupID =>
         KeybindWindow.GROUPS[groupID].some(id => this.filterID(filter, id))
       )
-      .map(id => this.createEmptySection(MENUBAR_DATA[id].title, id))
+      .map(id =>
+        this.createEmptySection(MENUBAR_DATA[id]?.title ?? capitalize(id), id)
+      )
   }
 
   private createOptions(filter = "") {
@@ -127,7 +131,7 @@ export class KeybindWindow extends Window {
 
         const label = document.createElement("div")
         label.classList.add("pref-group-label")
-        label.innerText = MENUBAR_DATA[groupID].title
+        label.innerText = MENUBAR_DATA[groupID]?.title ?? capitalize(groupID)
 
         groupElement.replaceChildren(label, ...options)
         this.observer!.observe(groupElement)
