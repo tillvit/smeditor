@@ -15,7 +15,7 @@ interface ResultLine {
 
 export class OffsetWindow extends Window {
   app: App
-  metronomeInterval: NodeJS.Timer
+  metronomeInterval: NodeJS.Timeout
   startTime: number
 
   me_high: Howl = new Howl({

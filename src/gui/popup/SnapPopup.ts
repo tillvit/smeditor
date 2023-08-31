@@ -11,8 +11,8 @@ export class SnapPopup {
 
   private static clickOutside?: (e: MouseEvent) => void
   private static onSnapChange = this.updateValues.bind(this)
-  private static moveInterval: NodeJS.Timer
-  private static updateInterval: NodeJS.Timer
+  private static moveInterval: NodeJS.Timeout
+  private static updateInterval: NodeJS.Timeout
   private static exitTimeout?: NodeJS.Timeout
   private static editText: HTMLDivElement
   private static zoomer: HTMLDivElement
