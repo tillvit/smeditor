@@ -12,7 +12,7 @@ export class ChartAudio {
   private _rate = 1
   private _isPlaying = false
   private _buffer: AudioBuffer
-  private _delay?: NodeJS.Timer
+  private _delay?: NodeJS.Timeout
   private _listeners: Waveform[] = []
   private _volume = 1
   private _destroyed = false
