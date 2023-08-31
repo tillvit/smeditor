@@ -9,7 +9,7 @@ export class TimingTrackOrderPopup {
   static popup?: HTMLDivElement
 
   private static clickOutside?: (e: MouseEvent) => void
-  private static moveInterval: NodeJS.Timer
+  private static moveInterval: NodeJS.Timeout
   private static exitTimeout: NodeJS.Timeout
   private static draggedElement?: HTMLDivElement
   private static dragOffsetX = 0
@@ -375,13 +375,16 @@ export class TimingTrackOrderPopup {
       }
     }
     window.addEventListener("mousemove", moveHandler)
-    window.addEventListener("mouseup", () => {
+
+    const upHandler = () => {
       this.draggedElement?.remove()
       this.draggedElement = undefined
       window.removeEventListener("mousemove", moveHandler)
       element.style.opacity = ""
       this.clearBoundaries()
-    })
+      window.removeEventListener("mouseup", upHandler)
+    }
+    window.addEventListener("mouseup", upHandler)
   }
 
   private static saveOptions(options: string[]) {

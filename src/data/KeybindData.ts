@@ -5,6 +5,7 @@ import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
 import { DirectoryWindow } from "../gui/window/DirectoryWindow"
 import { EQWindow } from "../gui/window/EQWindow"
+import { ExportNotedataWindow } from "../gui/window/ExportNotedataWindow"
 import { GameplayKeybindWindow } from "../gui/window/GameplayKeybindWindow"
 import { KeybindWindow } from "../gui/window/KeybindWindow"
 import { NewSongWindow } from "../gui/window/NewSongWindow"
@@ -257,6 +258,16 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       FileHandler.saveDirectory(app.chartManager.smPath)
     },
   },
+  exportNotedata: {
+    label: "Export to notedata...",
+    bindLabel: "Export to notedata",
+    combos: [{ key: "E", mods: [DEF_MOD, Modifier.SHIFT] }],
+    disabled: app => !!window.nw || !app.chartManager.loadedSM,
+    callback: app =>
+      app.windowManager.openWindow(
+        new ExportNotedataWindow(app, app.chartManager.selection.notes)
+      ),
+  },
   openChart: {
     label: "Chart list",
     bindLabel: "Open chart list",
@@ -277,30 +288,58 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     callback: app => app.chartManager.selectRegion(),
   },
   volumeUp: {
-    label: "Increase volume",
+    label: "Increase master volume",
     combos: [{ key: "Up", mods: [Modifier.SHIFT] }],
     disabled: false,
     callback: () => {
-      Options.audio.songVolume = Math.min(Options.audio.songVolume + 0.05, 1)
+      Options.audio.masterVolume = Math.min(
+        Options.audio.masterVolume + 0.05,
+        1
+      )
       WaterfallManager.create(
-        "Volume: " + Math.round(Options.audio.songVolume * 100) + "%"
+        "Master volume: " + Math.round(Options.audio.masterVolume * 100) + "%"
       )
     },
   },
   volumeDown: {
-    label: "Decrease volume",
+    label: "Decrease master volume",
     combos: [{ key: "Down", mods: [Modifier.SHIFT] }],
+    disabled: false,
+    callback: () => {
+      Options.audio.masterVolume = Math.max(
+        Options.audio.masterVolume - 0.05,
+        0
+      )
+      WaterfallManager.create(
+        "Master volume: " + Math.round(Options.audio.masterVolume * 100) + "%"
+      )
+    },
+  },
+  songVolumeUp: {
+    label: "Increase song volume",
+    combos: [],
+    disabled: false,
+    callback: () => {
+      Options.audio.songVolume = Math.min(Options.audio.songVolume + 0.05, 1)
+      WaterfallManager.create(
+        "Song volume: " + Math.round(Options.audio.songVolume * 100) + "%"
+      )
+    },
+  },
+  songVolumeDown: {
+    label: "Decrease song volume",
+    combos: [],
     disabled: false,
     callback: () => {
       Options.audio.songVolume = Math.max(Options.audio.songVolume - 0.05, 0)
       WaterfallManager.create(
-        "Volume: " + Math.round(Options.audio.songVolume * 100) + "%"
+        "Song volume: " + Math.round(Options.audio.songVolume * 100) + "%"
       )
     },
   },
   effectvolumeUp: {
     label: "Increase tick/metronome volume",
-    combos: [{ key: "Up", mods: [Modifier.SHIFT, Modifier.ALT] }],
+    combos: [],
     disabled: false,
     callback: () => {
       Options.audio.soundEffectVolume = Math.min(
@@ -308,7 +347,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
         1
       )
       WaterfallManager.create(
-        "Effect Volume: " +
+        "Effect volume: " +
           Math.round(Options.audio.soundEffectVolume * 100) +
           "%"
       )
@@ -316,7 +355,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   effectvolumeDown: {
     label: "Decrease tick/metronome volume",
-    combos: [{ key: "Down", mods: [Modifier.SHIFT, Modifier.ALT] }],
+    combos: [],
     disabled: false,
     callback: () => {
       Options.audio.soundEffectVolume = Math.max(
@@ -715,7 +754,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   mirrorHorizontally: {
     label: "Horizontally",
-    bindLabel: "Mirror Horizontally",
+    bindLabel: "Mirror horizontally",
     combos: [],
     disabled: app =>
       app.chartManager.selection.notes.length == 0 ||
@@ -778,7 +817,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Expand 2:1 (8th to 4th)",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.selection.notes.length < 2 ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       const baseBeat = Math.min(
@@ -799,7 +838,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Expand 3:2 (12th to 8th)",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.selection.notes.length < 2 ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       const baseBeat = Math.min(
@@ -820,7 +859,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Expand 4:3 (16th to 2th)",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.selection.notes.length < 2 ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       const baseBeat = Math.min(
@@ -841,7 +880,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Compress 1:2 (4th to 8th)",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.selection.notes.length < 2 ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       const baseBeat = Math.min(
@@ -862,7 +901,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Compress 2:3 (8th to 12th)",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.selection.notes.length < 2 ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       const baseBeat = Math.min(
@@ -883,7 +922,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Compress 3:4 (12th to 16th)",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.selection.notes.length < 2 ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       const baseBeat = Math.min(
