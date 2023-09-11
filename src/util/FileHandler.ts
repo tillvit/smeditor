@@ -8,6 +8,8 @@ import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { SafariFileWorker } from "./SafariFileWorker"
 import { basename, dirname, extname, getBrowser } from "./Util"
 
+const SEPERATOR = window.nw?.require("path").sep ?? "/"
+
 export class FileHandler {
   private static _root: FileSystemDirectoryHandle
   private static persistentFiles = false
@@ -21,7 +23,7 @@ export class FileHandler {
     if (window.nw) {
       getOriginPrivateDirectory(
         import("./node-adapter/NodeAdapter.js"),
-        "/"
+        SEPERATOR
       ).then(root => (this._root = root))
       this.persistentFiles = true
     } else {
@@ -34,19 +36,6 @@ export class FileHandler {
         ).then(root => (this._root = root))
       }
     }
-    // this._root = await getOriginPrivateDirectory(
-    //   import("file-system-access/lib/adapters/node.js"),
-    //   "."
-    // )
-    // // Fix for tauri
-    // if (!window.isNative) {
-    //   this._root = await getOriginPrivateDirectory()
-    // } else {
-    //   this._root = await getOriginPrivateDirectory(
-    //     import("file-system-access/lib/adapters/node.js"),
-    //     "."
-    //   )
-    // }
   }
 
   static isPersistent(): boolean {
@@ -189,12 +178,16 @@ export class FileHandler {
     dir ||= this.root
     if (path == "" || path == ".") return dir
     try {
-      const pathParts = this.resolvePath(path).split("/")
+      const pathParts = this.resolvePath(path).split(SEPERATOR)
       const dirname = pathParts.shift()!
       const dirHandle = await dir.getDirectoryHandle(dirname, options)
       if (!dirHandle) return undefined
       if (pathParts.length == 0) return dirHandle
-      return this.getDirectoryHandle(pathParts.join("/"), options, dirHandle)
+      return this.getDirectoryHandle(
+        pathParts.join(SEPERATOR),
+        options,
+        dirHandle
+      )
     } catch (err) {
       console.log(err)
       return undefined
@@ -206,10 +199,10 @@ export class FileHandler {
     options?: FileSystemGetFileOptions
   ): Promise<FileSystemFileHandle | undefined> {
     try {
-      const pathParts = this.resolvePath(path).split("/")
+      const pathParts = this.resolvePath(path).split(SEPERATOR)
       const filename = pathParts.pop()!
       const dirHandle = await this.getDirectoryHandle(
-        pathParts.join("/"),
+        pathParts.join(SEPERATOR),
         options
       )
       if (!dirHandle) return undefined
@@ -227,7 +220,7 @@ export class FileHandler {
     try {
       if (extname(absolutePath) != "") absolutePath = dirname(absolutePath)
       return this.getFileHandle(
-        this.resolvePath(absolutePath + "/" + relativePath)
+        this.resolvePath(absolutePath + SEPERATOR + relativePath)
       )
     } catch (err) {
       console.log(err)
@@ -319,16 +312,16 @@ export class FileHandler {
   }
 
   static resolvePath(path: string): string {
-    let pathParts = path.split("/")
+    let pathParts = path.split(SEPERATOR)
     pathParts = pathParts.filter(item => item != "." && item != "")
     while (pathParts.indexOf("..") > -1) {
       const ind = pathParts.indexOf("..")
       if (ind == 0) {
-        throw Error("Path" + pathParts.join("/") + "is invalid!")
+        throw Error("Path" + pathParts.join(SEPERATOR) + "is invalid!")
       }
       pathParts.splice(ind - 1, 2)
     }
-    return pathParts.join("/")
+    return pathParts.join(SEPERATOR)
   }
 
   static async zipDirectory(path: string, folderZip?: JSZip) {
@@ -343,11 +336,11 @@ export class FileHandler {
       const zipFolder = zip.folder(directoryHandle.name)
       if (!zipFolder) {
         console.error(
-          "Failed to zip folder " + path + "/" + directoryHandle.name
+          "Failed to zip folder " + path + SEPERATOR + directoryHandle.name
         )
         continue
       }
-      this.zipDirectory(path + "/" + directoryHandle.name, zipFolder)
+      this.zipDirectory(path + SEPERATOR + directoryHandle.name, zipFolder)
     }
     return zip
   }
@@ -434,8 +427,8 @@ export class FileHandler {
   }
 
   static getRelativePath(from: string, to: string): string {
-    const fromParts = from.split("/")
-    const toParts = to.split("/")
+    const fromParts = from.split(SEPERATOR)
+    const toParts = to.split(SEPERATOR)
 
     const length = Math.min(fromParts.length, toParts.length)
     let samePartsLength = length
@@ -455,7 +448,7 @@ export class FileHandler {
 
     outputParts = outputParts.concat(toParts.slice(samePartsLength))
 
-    return outputParts.join("/")
+    return outputParts.join(SEPERATOR)
   }
 
   private static async writeHandle(
@@ -469,7 +462,7 @@ export class FileHandler {
     } else {
       const path = await this.root.resolve(handle)
       if (!path) return
-      await SafariFileWorker.writeHandle(path.join("/"), data)
+      await SafariFileWorker.writeHandle(path.join(SEPERATOR), data)
     }
   }
 }
