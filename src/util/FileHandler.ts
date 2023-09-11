@@ -189,7 +189,7 @@ export class FileHandler {
         dirHandle
       )
     } catch (err) {
-      console.log(err)
+      console.error("Failed to get directory " + path + ": " + err)
       return undefined
     }
   }
@@ -208,7 +208,7 @@ export class FileHandler {
       if (!dirHandle) return undefined
       return await dirHandle.getFileHandle(filename, options)
     } catch (err) {
-      console.log(err)
+      console.error("Failed to get file " + path + ": " + err)
       return undefined
     }
   }
@@ -223,7 +223,7 @@ export class FileHandler {
         this.resolvePath(absolutePath + SEPERATOR + relativePath)
       )
     } catch (err) {
-      console.log(err)
+      console.error("Failed to get relative file " + relativePath + ": " + err)
       return undefined
     }
   }
@@ -245,7 +245,7 @@ export class FileHandler {
       }
       return files
     } catch (err) {
-      console.log(err)
+      console.error(err)
       return []
     }
   }
@@ -267,7 +267,7 @@ export class FileHandler {
       }
       return files
     } catch (err) {
-      console.log(err)
+      console.error(err)
       return []
     }
   }
@@ -294,7 +294,7 @@ export class FileHandler {
       if (!dirHandle) return
       await dirHandle.removeEntry(basename(path), options)
     } catch (err) {
-      console.log(err)
+      console.error(err)
       return
     }
   }
@@ -373,7 +373,7 @@ export class FileHandler {
       await this.copyToHandle(baseToDirHandle, fileHandle, basename(pathTo))
       await baseFromDirHandle.removeEntry(basename(path))
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   }
 
@@ -389,7 +389,7 @@ export class FileHandler {
       await this.copyToHandle(baseToDirHandle, dirHandle, basename(pathTo))
       await baseFromDirHandle.removeEntry(basename(path), { recursive: true })
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   }
 
@@ -422,7 +422,7 @@ export class FileHandler {
         await this.writeHandle(newFileHandle, file)
       }
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   }
 
