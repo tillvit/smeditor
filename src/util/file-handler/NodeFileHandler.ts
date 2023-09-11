@@ -1,13 +1,28 @@
-import { FileSystemDirectoryHandle } from "file-system-access"
-import { SafariFileWorker } from "../SafariFileWorker"
-import { FolderHandle } from "../node-adapter/NodeAdapter"
+import {
+  FileSystemDirectoryHandle,
+  FileSystemFileHandle,
+} from "file-system-access"
 import { BaseFileHandler } from "./FileHandler"
+import { FileHandle, FolderHandle } from "./NodeAdapter"
 
-const join: (...paths: string[]) => string = window.nw.require("path").join
+const {
+  join,
+  dirname,
+  extname,
+  basename,
+}: {
+  join: (...paths: string[]) => string
+  dirname: (path: string) => string
+  extname: (path: string) => string
+  basename: (path: string) => string
+} = window.nw.require("path")
+
+const fs = window.nw.require("fs").promises
+
+import { errors } from "file-system-access/lib/util.js"
+const { GONE, MISMATCH } = errors
 
 export class NodeFileHandler implements BaseFileHandler {
-  private root = new FileSystemDirectoryHandle(new FolderHandle("."))
-
   async handleDropEvent(event: DragEvent, _prefix?: string) {
     event.stopPropagation()
     event.preventDefault()
@@ -15,39 +30,28 @@ export class NodeFileHandler implements BaseFileHandler {
     const items = event.dataTransfer!.items
     console.log(items)
     return ""
-    // if (!prefix) {
-    //   prefix = ""
-    //   for (let i = 0; i < items.length; i++) {
-    //     const item = items[i].webkitGetAsEntry()
-    //     if (item?.isFile) {
-    //       if (item.name.endsWith(".sm") || item.name.endsWith(".ssc")) {
-    //         prefix = "New Song"
-    //         break
-    //       }
-    //     }
-    //   }
-    // }
-
-    // const queue = []
-    // for (let i = 0; i < items.length; i++) {
-    //   const item = items[i].webkitGetAsEntry()
-    //   if (!item) continue
-    //   queue.push(this.uploadFiles(item, prefix))
-    // }
-    // let returnVal = undefined
-    // if (items.length == 1 && items[0].webkitGetAsEntry()!.isDirectory)
-    //   returnVal = items[0].webkitGetAsEntry()!.name
-    // await Promise.all(queue)
-    // return returnVal
   }
 
   async getDirectoryHandle(
     path: string,
-    options?: FileSystemGetFileOptions,
-    _dir?: FileSystemDirectoryHandle
+    options?: FileSystemGetFileOptions
   ): Promise<FileSystemDirectoryHandle | undefined> {
     try {
-      return this.root.getDirectoryHandle(path, options)
+      const stat = await fs.lstat(path).catch((err: any) => {
+        if (err.code !== "ENOENT") throw err
+      })
+      const isDirectory =
+        stat === null || stat === void 0 ? void 0 : stat.isDirectory()
+      if (stat && isDirectory)
+        return new FileSystemDirectoryHandle(
+          new FolderHandle(path, dirname(path))
+        )
+      if (stat && !isDirectory) throw new DOMException(...MISMATCH)
+      if (!options?.create) throw new DOMException(...GONE)
+      await fs.mkdir(path)
+      return new FileSystemDirectoryHandle(
+        new FolderHandle(path, dirname(path))
+      )
     } catch (err) {
       console.error(`Failed to get directory ${path}): ` + err)
       return undefined
@@ -59,7 +63,16 @@ export class NodeFileHandler implements BaseFileHandler {
     options?: FileSystemGetFileOptions
   ): Promise<FileSystemFileHandle | undefined> {
     try {
-      return this.root.getFileHandle(path, options)
+      const stat = await fs.lstat(path).catch((err: any) => {
+        if (err.code !== "ENOENT") throw err
+      })
+      const isFile = stat === null || stat === void 0 ? void 0 : stat.isFile()
+      if (stat && isFile)
+        return new FileSystemFileHandle(new FileHandle(path, basename(path)))
+      if (stat && !isFile) throw new DOMException(...MISMATCH)
+      if (!options?.create) throw new DOMException(...GONE)
+      await (await fs.open(path, "w")).close()
+      return new FileSystemFileHandle(new FileHandle(path, basename(path)))
     } catch (err) {
       console.error("Failed to get file " + path + ": " + err)
       return undefined
@@ -67,14 +80,18 @@ export class NodeFileHandler implements BaseFileHandler {
   }
 
   async getFileHandleRelativeTo(
-    absolutePath: string,
-    relativePath: string
+    songPath: string,
+    fileName: string
   ): Promise<FileSystemFileHandle | undefined> {
     try {
-      const dir = await this.root.getDirectoryHandle(absolutePath)
-      return dir.getFileHandle(relativePath)
+      if (extname(songPath) != "") songPath = dirname(songPath)
+      const dir = await this.getDirectoryHandle(songPath)
+      if (!dir) {
+        throw new DOMException(...GONE)
+      }
+      return dir.getFileHandle(fileName)
     } catch (err) {
-      console.error("Failed to get relative file " + relativePath + ": " + err)
+      console.error("Failed to get relative file " + fileName + ": " + err)
       return undefined
     }
   }
@@ -136,15 +153,9 @@ export class NodeFileHandler implements BaseFileHandler {
   }
 
   private async writeHandle(handle: FileSystemFileHandle, data: Blob | string) {
-    if (handle.createWritable) {
-      const writable = await handle.createWritable()
-      await writable.write(data)
-      await writable.close()
-    } else {
-      const path = await this.root.resolve(handle)
-      if (!path) return
-      await SafariFileWorker.writeHandle(path.join("/"), data)
-    }
+    const writable = await handle.createWritable()
+    await writable.write(data)
+    await writable.close()
   }
 
   getRelativePath(from: string, to: string) {

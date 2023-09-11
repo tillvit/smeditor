@@ -10,7 +10,7 @@ import { basename, dirname, extname, getBrowser } from "../Util"
 import { BaseFileHandler } from "./FileHandler"
 
 export class WebFileHandler implements BaseFileHandler {
-  private root: FileSystemDirectoryHandle | undefined
+  private root!: FileSystemDirectoryHandle
 
   constructor() {
     if (support.adapter.native && !getBrowser().includes("Safari")) {
@@ -32,7 +32,7 @@ export class WebFileHandler implements BaseFileHandler {
       if (!basedir) return
       baseHandle = basedir
     } else {
-      baseHandle = base ?? this.root!
+      baseHandle = base ?? this.root
     }
     if (handle.kind == "file") {
       const fileHandle = await baseHandle.getFileHandle(handle.name, {
@@ -61,7 +61,7 @@ export class WebFileHandler implements BaseFileHandler {
       if (!basedir) return
       dirHandle = basedir
     } else {
-      dirHandle = base ?? this.root!
+      dirHandle = base ?? this.root
     }
     if (item.isFile) {
       const file = item as FileSystemFileEntry
@@ -132,7 +132,7 @@ export class WebFileHandler implements BaseFileHandler {
       if (!basedir) return
       baseHandle = basedir
     } else {
-      baseHandle = base ?? this.root!
+      baseHandle = base ?? this.root
     }
     const dirHandle = await baseHandle.getDirectoryHandle(dir.name, {
       create: true,
@@ -155,7 +155,7 @@ export class WebFileHandler implements BaseFileHandler {
     options?: FileSystemGetFileOptions,
     dir?: FileSystemDirectoryHandle
   ): Promise<FileSystemDirectoryHandle | undefined> {
-    dir ||= this.root!
+    dir ||= this.root
     if (path == "" || path == ".") return dir
     const pathParts = this.resolvePath(path).split("/")
     const dirname = pathParts.shift()!
@@ -190,16 +190,14 @@ export class WebFileHandler implements BaseFileHandler {
   }
 
   async getFileHandleRelativeTo(
-    absolutePath: string,
-    relativePath: string
+    songPath: string,
+    fileName: string
   ): Promise<FileSystemFileHandle | undefined> {
     try {
-      if (extname(absolutePath) != "") absolutePath = dirname(absolutePath)
-      return this.getFileHandle(
-        this.resolvePath(absolutePath + "/" + relativePath)
-      )
+      if (extname(songPath) != "") songPath = dirname(songPath)
+      return this.getFileHandle(this.resolvePath(songPath + "/" + fileName))
     } catch (err) {
-      console.error("Failed to get relative file " + relativePath + ": " + err)
+      console.error("Failed to get relative file " + fileName + ": " + err)
       return undefined
     }
   }
@@ -313,7 +311,7 @@ export class WebFileHandler implements BaseFileHandler {
         )
         continue
       }
-      this.zipDirectory(path + "/" + directoryHandle.name, zipFolder)
+      await this.zipDirectory(path + "/" + directoryHandle.name, zipFolder)
     }
     return zip
   }
@@ -430,7 +428,7 @@ export class WebFileHandler implements BaseFileHandler {
       await writable.write(data)
       await writable.close()
     } else {
-      const path = await this.root!.resolve(handle)
+      const path = await this.root.resolve(handle)
       if (!path) return
       await SafariFileWorker.writeHandle(path.join("/"), data)
     }

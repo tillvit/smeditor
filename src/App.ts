@@ -20,10 +20,10 @@ import { WindowManager } from "./gui/window/WindowManager"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
 import { EventHandler } from "./util/EventHandler"
-import { FileHandler } from "./util/FileHandler"
 import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
 import { extname, fpsUpdate, getBrowser } from "./util/Util"
+import { FileHandler } from "./util/file-handler/FileHandler"
 declare global {
   interface Window {
     app: App
@@ -53,7 +53,6 @@ export class App {
 
     if (window.nw) {
       const activeWin = nw.Window.get()
-      activeWin.enterFullscreen()
       window.addEventListener("keydown", e => {
         if ((e.key == "r" && (e.metaKey || e.ctrlKey)) || e.key == "F5") {
           e.preventDefault()

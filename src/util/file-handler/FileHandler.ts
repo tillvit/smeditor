@@ -8,8 +8,7 @@ export interface BaseFileHandler {
 
   getDirectoryHandle(
     path: string,
-    options?: FileSystemGetFileOptions,
-    dir?: FileSystemDirectoryHandle
+    options?: FileSystemGetFileOptions
   ): Promise<FileSystemDirectoryHandle | undefined>
 
   getFileHandle(
@@ -18,8 +17,8 @@ export interface BaseFileHandler {
   ): Promise<FileSystemFileHandle | undefined>
 
   getFileHandleRelativeTo(
-    absolutePath: string,
-    relativePath: string
+    songPath: string,
+    fileName: string
   ): Promise<FileSystemFileHandle | undefined>
 
   getDirectoryFiles(
