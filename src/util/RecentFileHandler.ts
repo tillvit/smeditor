@@ -1,5 +1,5 @@
 import { Simfile } from "../chart/sm/Simfile"
-import { FileHandler } from "./FileHandler"
+import { FileHandler } from "./file-handler/FileHandler"
 
 interface RecentFileEntry {
   name: string

@@ -5,7 +5,7 @@ import { Icons } from "../gui/Icons"
 import { NumberSpinner } from "../gui/element/NumberSpinner"
 import { DirectoryWindow } from "../gui/window/DirectoryWindow"
 import { ActionHistory } from "../util/ActionHistory"
-import { FileHandler } from "../util/FileHandler"
+import { FileHandler } from "../util/file-handler/FileHandler"
 import { AUDIO_EXT, IMG_EXT } from "./FileData"
 
 type SMPropertyGroupData = {

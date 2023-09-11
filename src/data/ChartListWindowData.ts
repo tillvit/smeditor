@@ -3,7 +3,7 @@ import { Chart } from "../chart/sm/Chart"
 import { Icons } from "../gui/Icons"
 import { DirectoryWindow } from "../gui/window/DirectoryWindow"
 import { ActionHistory } from "../util/ActionHistory"
-import { FileHandler } from "../util/FileHandler"
+import { FileHandler } from "../util/file-handler/FileHandler"
 import { AUDIO_EXT } from "./FileData"
 
 type ChartPropertyEditor = {

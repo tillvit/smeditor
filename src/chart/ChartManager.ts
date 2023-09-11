@@ -10,7 +10,6 @@ import { ChartListWindow } from "../gui/window/ChartListWindow"
 import { ConfirmationWindow } from "../gui/window/ConfirmationWindow"
 import { ActionHistory } from "../util/ActionHistory"
 import { EventHandler } from "../util/EventHandler"
-import { FileHandler } from "../util/FileHandler"
 import { Keybinds } from "../util/Keybinds"
 import { Options } from "../util/Options"
 import { RecentFileHandler } from "../util/RecentFileHandler"
@@ -26,6 +25,7 @@ import {
   extname,
   tpsUpdate,
 } from "../util/Util"
+import { FileHandler } from "../util/file-handler/FileHandler"
 import { ChartRenderer } from "./ChartRenderer"
 import { ChartAudio } from "./audio/ChartAudio"
 import { GameTypeRegistry } from "./gameTypes/GameTypeRegistry"

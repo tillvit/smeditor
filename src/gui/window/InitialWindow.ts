@@ -32,13 +32,12 @@ export class InitialWindow extends Window {
 
   initView(): void {
     this.viewElement.replaceChildren()
-    this.viewElement.classList.add("options")
     const padding = document.createElement("div")
     padding.classList.add("padding")
 
-    const initContainer = document.createElement("div")
-    initContainer.classList.add("initial-container")
-    padding.appendChild(initContainer)
+    const openContainer = document.createElement("div")
+    openContainer.classList.add("open-container")
+    padding.appendChild(openContainer)
 
     const topContainer = document.createElement("div")
     topContainer.classList.add("top-container")
@@ -47,9 +46,9 @@ export class InitialWindow extends Window {
     seperator.style.margin = "10px"
     const bottomContainer = document.createElement("div")
     bottomContainer.classList.add("bottom-container")
-    initContainer.appendChild(topContainer)
-    initContainer.appendChild(seperator)
-    initContainer.appendChild(bottomContainer)
+    openContainer.appendChild(topContainer)
+    openContainer.appendChild(seperator)
+    openContainer.appendChild(bottomContainer)
 
     const openButton = document.createElement("button")
     openButton.style.display = "flex"

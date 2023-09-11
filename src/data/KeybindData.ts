@@ -14,7 +14,8 @@ import { SMPropertiesWindow } from "../gui/window/SMPropertiesWindow"
 import { TimingDataWindow } from "../gui/window/TimingDataWindow"
 import { UserOptionsWindow } from "../gui/window/UserOptionsWindow"
 import { ActionHistory } from "../util/ActionHistory"
-import { FileHandler } from "../util/FileHandler"
+import { FileHandler } from "../util/file-handler/FileHandler"
+import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 import { Options } from "../util/Options"
 import { roundDigit } from "../util/Util"
 
@@ -255,7 +256,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     disabled: app => !!window.nw || !app.chartManager.loadedSM,
     callback: app => {
       app.chartManager.save()
-      FileHandler.saveDirectory(app.chartManager.smPath)
+      ;(FileHandler as WebFileHandler).saveDirectory(app.chartManager.smPath)
     },
   },
   exportNotedata: {

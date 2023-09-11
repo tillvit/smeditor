@@ -4,45 +4,25 @@ import {
   support,
 } from "file-system-access"
 import JSZip from "jszip"
-import { WaterfallManager } from "../gui/element/WaterfallManager"
-import { SafariFileWorker } from "./SafariFileWorker"
-import { basename, dirname, extname, getBrowser } from "./Util"
+import { WaterfallManager } from "../../gui/element/WaterfallManager"
+import { SafariFileWorker } from "../SafariFileWorker"
+import { basename, dirname, extname, getBrowser } from "../Util"
+import { BaseFileHandler } from "./FileHandler"
 
-const SEPERATOR = window.nw?.require("path").sep ?? "/"
+export class WebFileHandler implements BaseFileHandler {
+  private root: FileSystemDirectoryHandle | undefined
 
-export class FileHandler {
-  private static _root: FileSystemDirectoryHandle
-  private static persistentFiles = false
-
-  static get root(): FileSystemDirectoryHandle {
-    if (!this._root) this.init()
-    return this._root
-  }
-
-  static init() {
-    if (window.nw) {
-      getOriginPrivateDirectory(
-        import("./node-adapter/NodeAdapter.js"),
-        SEPERATOR
-      ).then(root => (this._root = root))
-      this.persistentFiles = true
+  constructor() {
+    if (support.adapter.native && !getBrowser().includes("Safari")) {
+      getOriginPrivateDirectory().then(root => (this.root = root))
     } else {
-      if (support.adapter.native && !getBrowser().includes("Safari")) {
-        getOriginPrivateDirectory().then(root => (this._root = root))
-        this.persistentFiles = true
-      } else {
-        getOriginPrivateDirectory(
-          import("file-system-access/lib/adapters/memory.js")
-        ).then(root => (this._root = root))
-      }
+      getOriginPrivateDirectory(
+        import("file-system-access/lib/adapters/memory.js")
+      ).then(root => (this.root = root))
     }
   }
 
-  static isPersistent(): boolean {
-    return this.persistentFiles
-  }
-
-  static async uploadHandle(
+  async uploadHandle(
     handle: FileSystemFileHandle | FileSystemDirectoryHandle,
     base?: FileSystemDirectoryHandle | string
   ): Promise<void> {
@@ -52,7 +32,7 @@ export class FileHandler {
       if (!basedir) return
       baseHandle = basedir
     } else {
-      baseHandle = base ?? this.root
+      baseHandle = base ?? this.root!
     }
     if (handle.kind == "file") {
       const fileHandle = await baseHandle.getFileHandle(handle.name, {
@@ -71,7 +51,7 @@ export class FileHandler {
     }
   }
 
-  static async uploadFiles(
+  async uploadFiles(
     item: FileSystemEntry,
     base?: FileSystemDirectoryHandle | string
   ): Promise<void> {
@@ -81,7 +61,7 @@ export class FileHandler {
       if (!basedir) return
       dirHandle = basedir
     } else {
-      dirHandle = base ?? this.root
+      dirHandle = base ?? this.root!
     }
     if (item.isFile) {
       const file = item as FileSystemFileEntry
@@ -111,7 +91,7 @@ export class FileHandler {
     }
   }
 
-  static async handleDropEvent(event: DragEvent, prefix?: string) {
+  async handleDropEvent(event: DragEvent, prefix?: string) {
     event.stopPropagation()
     event.preventDefault()
 
@@ -142,7 +122,7 @@ export class FileHandler {
     return returnVal
   }
 
-  static async uploadDir(
+  async uploadDir(
     dir: FileSystemDirectoryHandle,
     base?: FileSystemDirectoryHandle | string
   ): Promise<void> {
@@ -152,7 +132,7 @@ export class FileHandler {
       if (!basedir) return
       baseHandle = basedir
     } else {
-      baseHandle = base ?? this.root
+      baseHandle = base ?? this.root!
     }
     const dirHandle = await baseHandle.getDirectoryHandle(dir.name, {
       create: true,
@@ -170,39 +150,35 @@ export class FileHandler {
     }
   }
 
-  static async getDirectoryHandle(
+  async getDirectoryHandle(
     path: string,
     options?: FileSystemGetFileOptions,
     dir?: FileSystemDirectoryHandle
   ): Promise<FileSystemDirectoryHandle | undefined> {
-    dir ||= this.root
+    dir ||= this.root!
     if (path == "" || path == ".") return dir
+    const pathParts = this.resolvePath(path).split("/")
+    const dirname = pathParts.shift()!
     try {
-      const pathParts = this.resolvePath(path).split(SEPERATOR)
-      const dirname = pathParts.shift()!
       const dirHandle = await dir.getDirectoryHandle(dirname, options)
       if (!dirHandle) return undefined
       if (pathParts.length == 0) return dirHandle
-      return this.getDirectoryHandle(
-        pathParts.join(SEPERATOR),
-        options,
-        dirHandle
-      )
+      return this.getDirectoryHandle(pathParts.join("/"), options, dirHandle)
     } catch (err) {
-      console.error("Failed to get directory " + path + ": " + err)
+      console.error(`Failed to get directory ${path} (${dirname}): ` + err)
       return undefined
     }
   }
 
-  static async getFileHandle(
+  async getFileHandle(
     path: string,
     options?: FileSystemGetFileOptions
   ): Promise<FileSystemFileHandle | undefined> {
     try {
-      const pathParts = this.resolvePath(path).split(SEPERATOR)
+      const pathParts = this.resolvePath(path).split("/")
       const filename = pathParts.pop()!
       const dirHandle = await this.getDirectoryHandle(
-        pathParts.join(SEPERATOR),
+        pathParts.join("/"),
         options
       )
       if (!dirHandle) return undefined
@@ -213,14 +189,14 @@ export class FileHandler {
     }
   }
 
-  static async getFileHandleRelativeTo(
+  async getFileHandleRelativeTo(
     absolutePath: string,
     relativePath: string
   ): Promise<FileSystemFileHandle | undefined> {
     try {
       if (extname(absolutePath) != "") absolutePath = dirname(absolutePath)
       return this.getFileHandle(
-        this.resolvePath(absolutePath + SEPERATOR + relativePath)
+        this.resolvePath(absolutePath + "/" + relativePath)
       )
     } catch (err) {
       console.error("Failed to get relative file " + relativePath + ": " + err)
@@ -228,7 +204,7 @@ export class FileHandler {
     }
   }
 
-  static async getDirectoryFiles(
+  async getDirectoryFiles(
     path: FileSystemDirectoryHandle | string
   ): Promise<FileSystemFileHandle[]> {
     try {
@@ -250,7 +226,7 @@ export class FileHandler {
     }
   }
 
-  static async getDirectoryFolders(
+  async getDirectoryFolders(
     path: FileSystemDirectoryHandle | string
   ): Promise<FileSystemDirectoryHandle[]> {
     try {
@@ -272,10 +248,7 @@ export class FileHandler {
     }
   }
 
-  static async writeFile(
-    path: FileSystemFileHandle | string,
-    data: File | string
-  ) {
+  async writeFile(path: FileSystemFileHandle | string, data: File | string) {
     let fileHandle
     if (typeof path == "string") {
       fileHandle = await this.getFileHandle(path, { create: true })
@@ -287,7 +260,7 @@ export class FileHandler {
     return
   }
 
-  static async removeFile(path: string, options?: FileSystemRemoveOptions) {
+  async removeFile(path: string, options?: FileSystemRemoveOptions) {
     try {
       const dir = dirname(path)
       const dirHandle = await this.getDirectoryHandle(dir)
@@ -299,11 +272,11 @@ export class FileHandler {
     }
   }
 
-  static async removeDirectory(path: string) {
+  async removeDirectory(path: string) {
     return this.removeFile(path, { recursive: true })
   }
 
-  static async remove(path: string) {
+  async remove(path: string) {
     if (extname(path) == "") {
       return this.removeDirectory(path)
     } else {
@@ -311,20 +284,20 @@ export class FileHandler {
     }
   }
 
-  static resolvePath(path: string): string {
-    let pathParts = path.split(SEPERATOR)
+  resolvePath(path: string): string {
+    let pathParts = path.split("/")
     pathParts = pathParts.filter(item => item != "." && item != "")
     while (pathParts.indexOf("..") > -1) {
       const ind = pathParts.indexOf("..")
       if (ind == 0) {
-        throw Error("Path" + pathParts.join(SEPERATOR) + "is invalid!")
+        throw Error("Path" + pathParts.join("/") + "is invalid!")
       }
       pathParts.splice(ind - 1, 2)
     }
-    return pathParts.join(SEPERATOR)
+    return pathParts.join("/")
   }
 
-  static async zipDirectory(path: string, folderZip?: JSZip) {
+  async zipDirectory(path: string, folderZip?: JSZip) {
     const zip = folderZip ?? new JSZip()
     const dirName = extname(path) == "" ? path : dirname(path)
     const dirHandle = await this.getDirectoryHandle(dirName)
@@ -336,16 +309,16 @@ export class FileHandler {
       const zipFolder = zip.folder(directoryHandle.name)
       if (!zipFolder) {
         console.error(
-          "Failed to zip folder " + path + SEPERATOR + directoryHandle.name
+          "Failed to zip folder " + path + "/" + directoryHandle.name
         )
         continue
       }
-      this.zipDirectory(path + SEPERATOR + directoryHandle.name, zipFolder)
+      this.zipDirectory(path + "/" + directoryHandle.name, zipFolder)
     }
     return zip
   }
 
-  static async saveDirectory(path: string) {
+  async saveDirectory(path: string) {
     const dirName = extname(path) == "" ? path : dirname(path)
     WaterfallManager.create("Exporting " + dirName + ".zip")
     const fileHandle = await showSaveFilePicker({
@@ -361,7 +334,7 @@ export class FileHandler {
     })
   }
 
-  static async renameFile(path: string, pathTo: string) {
+  async renameFile(path: string, pathTo: string) {
     if (path == pathTo) return
     try {
       const baseFromDirHandle = await this.getDirectoryHandle(dirname(path))
@@ -377,7 +350,7 @@ export class FileHandler {
     }
   }
 
-  static async renameDirectory(path: string, pathTo: string) {
+  async renameDirectory(path: string, pathTo: string) {
     if (pathTo.startsWith(path)) return
     try {
       const baseFromDirHandle = await this.getDirectoryHandle(dirname(path))
@@ -393,7 +366,7 @@ export class FileHandler {
     }
   }
 
-  static async copyToHandle(
+  async copyToHandle(
     directory: FileSystemDirectoryHandle,
     handle: FileSystemDirectoryHandle | FileSystemFileHandle,
     name?: string
@@ -426,9 +399,9 @@ export class FileHandler {
     }
   }
 
-  static getRelativePath(from: string, to: string): string {
-    const fromParts = from.split(SEPERATOR)
-    const toParts = to.split(SEPERATOR)
+  getRelativePath(from: string, to: string): string {
+    const fromParts = from.split("/")
+    const toParts = to.split("/")
 
     const length = Math.min(fromParts.length, toParts.length)
     let samePartsLength = length
@@ -448,23 +421,18 @@ export class FileHandler {
 
     outputParts = outputParts.concat(toParts.slice(samePartsLength))
 
-    return outputParts.join(SEPERATOR)
+    return outputParts.join("/")
   }
 
-  private static async writeHandle(
-    handle: FileSystemFileHandle,
-    data: Blob | string
-  ) {
+  private async writeHandle(handle: FileSystemFileHandle, data: Blob | string) {
     if (handle.createWritable) {
       const writable = await handle.createWritable()
       await writable.write(data)
       await writable.close()
     } else {
-      const path = await this.root.resolve(handle)
+      const path = await this.root!.resolve(handle)
       if (!path) return
-      await SafariFileWorker.writeHandle(path.join(SEPERATOR), data)
+      await SafariFileWorker.writeHandle(path.join("/"), data)
     }
   }
 }
-
-export const fsRoot = FileHandler.root
