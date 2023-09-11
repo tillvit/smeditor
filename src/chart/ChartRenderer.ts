@@ -603,11 +603,12 @@ export class ChartRenderer extends Container {
     if (!this.selectionBounds) return false
     const ab = this.selectionSprite.getBounds()
     const bb = object.getBounds()
+    const margin = 16 * Options.chart.zoom
     return (
-      ab.x + ab.width > bb.x + bb.width / 4 &&
-      ab.x < bb.x + bb.width - bb.width / 4 &&
-      ab.y + ab.height > bb.y + bb.height / 4 &&
-      ab.y < bb.y + bb.height - bb.height / 4
+      ab.x + ab.width > bb.x + margin &&
+      ab.x < bb.x + bb.width - margin &&
+      ab.y + ab.height > bb.y + margin &&
+      ab.y < bb.y + bb.height - margin
     )
   }
 
@@ -623,6 +624,7 @@ export class ChartRenderer extends Container {
     let lastTriedColumnShift = 0
     let initalPosX = 0
     let initalPosY = 0
+    let dragYOffset = 0
     let movedNote: NotedataEntry | undefined
 
     const moveHandler = (event: FederatedMouseEvent) => {
@@ -641,7 +643,7 @@ export class ChartRenderer extends Container {
         }
         return
       }
-      const newBeat = this.getBeatFromYPos(position.y)
+      const newBeat = this.getBeatFromYPos(position.y - dragYOffset)
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
       let snapBeat = Math.round(newBeat / snap) * snap
       if (Math.abs(snapBeat - newBeat) > Math.abs(newBeat - note.beat)) {
@@ -705,6 +707,7 @@ export class ChartRenderer extends Container {
       }
       initalPosX = newChild.x!
       initalPosY = newChild.y!
+      dragYOffset = this.toLocal(event.global).y - newChild.y
       movedNote = newChild.note!
       this.on("pointermove", moveHandler)
       const mouseUp = () => {
