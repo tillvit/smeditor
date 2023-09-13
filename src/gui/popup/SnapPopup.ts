@@ -1,7 +1,7 @@
 import { Graphics } from "pixi.js"
 import { EventHandler } from "../../util/EventHandler"
+import { clamp } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { clamp } from "../../util/Util"
 import { NumberSpinner } from "../element/NumberSpinner"
 
 export class SnapPopup {

@@ -6,8 +6,9 @@ import {
 import JSZip from "jszip"
 import { WaterfallManager } from "../../gui/element/WaterfallManager"
 import { SafariFileWorker } from "../SafariFileWorker"
-import { basename, dirname, extname, getBrowser } from "../Util"
 import { BaseFileHandler } from "./FileHandler"
+import { extname, dirname, basename } from "../Path"
+import { getBrowser } from "../Util"
 
 export class WebFileHandler implements BaseFileHandler {
   private root!: FileSystemDirectoryHandle

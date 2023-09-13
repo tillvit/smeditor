@@ -2,11 +2,11 @@ import { showDirectoryPicker, showOpenFilePicker } from "file-system-access"
 import scrollIntoView from "scroll-into-view-if-needed"
 import { App } from "../../App"
 import { AUDIO_EXT, IMG_EXT } from "../../data/FileData"
-import { basename, dirname, extname } from "../../util/Util"
 import { FileHandler } from "../../util/file-handler/FileHandler"
 import { WebFileHandler } from "../../util/file-handler/WebFileHandler"
 import { Icons } from "../Icons"
 import { Window } from "./Window"
+import { extname, dirname, basename } from "../../util/Path"
 
 interface DirectoryWindowOptions {
   title: string

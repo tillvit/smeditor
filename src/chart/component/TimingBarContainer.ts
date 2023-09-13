@@ -1,8 +1,9 @@
 import { BitmapText, Container, Graphics, Sprite, Texture } from "pixi.js"
+import { clamp, lerp, median } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { clamp, destroyChildIf, lerp, median } from "../../util/Util"
+import { destroyChildIf } from "../../util/Util"
 import { EditMode } from "../ChartManager"
-import { ChartRenderer } from "../ChartRenderer"
+import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
 import { TimingWindow } from "../play/TimingWindow"
 import {
   TimingWindowCollection,
@@ -28,7 +29,10 @@ const errorStyle = {
   fontSize: 12,
 }
 
-export class TimingBarContainer extends Container {
+export class TimingBarContainer
+  extends Container
+  implements ChartRendererComponent
+{
   private barlines: TimingBarlineContainer =
     new Container() as TimingBarlineContainer
   private barline: Sprite

@@ -1,4 +1,5 @@
-import { getDivision, lcm, lcm2, roundDigit } from "../../../util/Util"
+import { lcm, lcm2, roundDigit } from "../../../util/Math"
+import { getDivision } from "../../../util/Util"
 import {
   isHoldNote,
   Notedata,

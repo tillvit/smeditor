@@ -3,8 +3,9 @@ import { Container, Sprite, Texture } from "pixi.js"
 import { EditMode, EditTimingMode } from "../../chart/ChartManager"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
+import { roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { isNumericKeyPress, roundDigit } from "../../util/Util"
+import { isNumericKeyPress } from "../../util/Util"
 import { Icons } from "../Icons"
 import { Dropdown } from "../element/Dropdown"
 import { TimingTrackOrderPopup } from "../popup/TimingTrackOrderPopup"
@@ -372,8 +373,9 @@ export class StatusWidget extends Widget {
       if (!this.manager.chartManager.loadedChart) return
       for (const type of this.manager.chartManager.loadedChart.gameType
         .editNoteTypes) {
-        const sprite =
-          this.manager.chartManager.chartView!.notefield.getNoteSprite({
+        const sprite = this.manager.chartManager
+          .chartView!.getNotefield()
+          .getNoteSprite({
             type,
             beat: 0,
             col: 0,

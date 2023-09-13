@@ -9,22 +9,20 @@ import { WidgetManager } from "../gui/widget/WidgetManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
 import { ConfirmationWindow } from "../gui/window/ConfirmationWindow"
 import { ActionHistory } from "../util/ActionHistory"
-import { EventHandler } from "../util/EventHandler"
-import { Keybinds } from "../util/Keybinds"
-import { Options } from "../util/Options"
-import { RecentFileHandler } from "../util/RecentFileHandler"
 import {
-  basename,
-  bsearch,
-  clamp,
   decodeNotes,
   decodeTempo,
-  dirname,
   encodeNotes,
   encodeTempo,
-  extname,
-  tpsUpdate,
-} from "../util/Util"
+} from "../util/Ascii85"
+import { EventHandler } from "../util/EventHandler"
+import { Keybinds } from "../util/Keybinds"
+import { clamp } from "../util/Math"
+import { Options } from "../util/Options"
+import { basename, dirname, extname } from "../util/Path"
+import { tpsUpdate } from "../util/Performance"
+import { RecentFileHandler } from "../util/RecentFileHandler"
+import { bsearch } from "../util/Util"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { ChartRenderer } from "./ChartRenderer"
 import { ChartAudio } from "./audio/ChartAudio"

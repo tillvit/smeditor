@@ -219,7 +219,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                   hardMax: 2 ** 31 - 1,
                 },
                 tooltip:
-                  "Maximum number of beats to draw notes. Increasing this works well for songs with high bpm but can affect performance.",
+                  "Maximum number of beats to draw notes. Increasing this works well for songs with high bpm but can affect performance. Only applies to XMod.",
               },
               {
                 type: "item",
@@ -232,7 +232,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                   hardMax: 2 ** 31 - 1,
                 },
                 tooltip:
-                  "Maximum number of beats to draw notes past the receptors. Increasing this can affect performance.",
+                  "Maximum number of beats to draw notes past the receptors. Increasing this can affect performance. Only applies to XMod.",
               },
             ],
           },

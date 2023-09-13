@@ -1,8 +1,11 @@
 import { Container, Sprite, Texture } from "pixi.js"
 import { EditMode } from "../ChartManager"
-import { ChartRenderer } from "../ChartRenderer"
+import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
 
-export class SelectionAreaContainer extends Container {
+export class SelectionAreaContainer
+  extends Container
+  implements ChartRendererComponent
+{
   private startMarker: Sprite = new Sprite(Texture.WHITE)
   private selectionArea: Sprite = new Sprite(Texture.WHITE)
 

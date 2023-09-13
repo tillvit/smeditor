@@ -1288,6 +1288,7 @@ input[type="range"] {
 
 .popup.exiting .popup-zoomer {
   animation: 0.01s popup-exit cubic-bezier(0.47, 0.02, 0, 0.95) forwards;
+  pointer-events: none;
 }
 
 .animated .popup-zoomer {
@@ -1297,6 +1298,7 @@ input[type="range"] {
 
 .animated .popup.exiting .popup-zoomer {
   animation: 0.1s popup-exit cubic-bezier(0.47, 0.02, 0, 0.95) forwards;
+  pointer-events: none;
 }
 
 .popup-row {

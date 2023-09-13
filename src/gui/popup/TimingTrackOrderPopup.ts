@@ -1,7 +1,8 @@
 import { TIMING_EVENT_COLORS } from "../../chart/component/TimingAreaContainer"
 import { TIMING_EVENT_NAMES } from "../../chart/sm/TimingTypes"
+import { blendColors } from "../../util/Color"
+import { clamp } from "../../util/Math"
 import { DefaultOptions, Options } from "../../util/Options"
-import { blendColors, clamp } from "../../util/Util"
 import { Icons } from "../Icons"
 
 export class TimingTrackOrderPopup {

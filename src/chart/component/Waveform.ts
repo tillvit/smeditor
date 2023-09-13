@@ -9,7 +9,7 @@ import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
 import { bsearch, destroyChildIf } from "../../util/Util"
 import { EditMode } from "../ChartManager"
-import { ChartRenderer } from "../ChartRenderer"
+import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
 import { ChartAudio } from "../audio/ChartAudio"
 
 const MAX_ZOOM = 3500
@@ -18,21 +18,24 @@ interface WaveformLine extends Sprite {
   lastUsed: number
 }
 
-export class Waveform extends Sprite {
-  lineContainer: ParticleContainer = new ParticleContainer(
+export class Waveform extends Sprite implements ChartRendererComponent {
+  private lineContainer: ParticleContainer = new ParticleContainer(
     1500,
     { position: true, scale: true },
     16384,
     true
   )
-  waveformTex: RenderTexture
-  lineTex: RenderTexture = RenderTexture.create({ width: 16, height: 16 })
+  private waveformTex: RenderTexture
+  private lineTex: RenderTexture = RenderTexture.create({
+    width: 16,
+    height: 16,
+  })
 
-  chartAudio: ChartAudio
-  renderer: ChartRenderer
-  white: Sprite
+  private chartAudio: ChartAudio
+  private renderer: ChartRenderer
+  private white: Sprite
 
-  strippedWaveform: number[][] | undefined
+  private strippedWaveform: number[][] | undefined
 
   private lastReZoom: number
   private lastZoom: number
@@ -108,7 +111,7 @@ export class Waveform extends Sprite {
     this.lastBeat = -1
   }
 
-  update(beat: number, time: number) {
+  update() {
     this.visible =
       Options.chart.waveform.enabled &&
       (this.renderer.chartManager.getMode() != EditMode.Play ||
@@ -155,22 +158,22 @@ export class Waveform extends Sprite {
     })
     if (
       this.strippedWaveform &&
-      (beat != this.lastBeat ||
-        time != this.lastTime ||
+      (this.renderer.chartManager.getBeat() != this.lastBeat ||
+        this.renderer.chartManager.getTime() != this.lastTime ||
         this.lastCMod != Options.chart.CMod ||
         this.lastAllowSpeed != Options.chart.doSpeedChanges ||
         this.renderer.chartManager.app.renderer.screen.height *
           Options.chart.zoom !=
           this.lastHeight)
     ) {
-      this.lastBeat = beat
-      this.lastTime = time
+      this.lastBeat = this.renderer.chartManager.getBeat()
+      this.lastTime = this.renderer.chartManager.getTime()
       this.lastHeight =
         this.renderer.chartManager.app.renderer.screen.height *
         Options.chart.zoom
       this.lastCMod = Options.chart.CMod
       this.lastAllowSpeed = Options.chart.doSpeedChanges
-      this.renderData(beat, this.strippedWaveform)
+      this.renderData(this.strippedWaveform)
       this.renderer.chartManager.app.renderer.render(this.lineContainer, {
         renderTexture: this.waveformTex,
       })
@@ -179,7 +182,7 @@ export class Waveform extends Sprite {
     this.scale.set(1 / Options.chart.zoom)
   }
 
-  private renderData(beat: number, data: number[][]) {
+  private renderData(data: number[][]) {
     this.resetPool()
 
     if (
@@ -191,11 +194,12 @@ export class Waveform extends Sprite {
 
       const chartSpeed = Options.chart.speed
       const speedMult = this.renderer.chart.timingData.getSpeedMult(
-        beat,
+        this.renderer.chartManager.getBeat(),
         this.renderer.chartManager.getTime()
       )
 
-      const maxDrawBeats = beat + Options.chart.maxDrawBeats
+      const maxDrawBeats =
+        this.renderer.chartManager.getBeat() + Options.chart.maxDrawBeats
       const scrolls = this.renderer.chart.timingData.getTimingData("SCROLLS")
       const offset = this.renderer.chart.timingData.getTimingData("OFFSET")
       const startBPM = this.renderer.chart.timingData.getBPM(0)
@@ -209,7 +213,7 @@ export class Waveform extends Sprite {
       // Get the first scroll index after curBeat
       let scrollIndex = bsearch(
         scrolls,
-        beat - Options.chart.maxDrawBeatsBack,
+        this.renderer.chartManager.getBeat() - Options.chart.maxDrawBeatsBack,
         a => a.beat
       )
 

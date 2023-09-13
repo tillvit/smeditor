@@ -1,7 +1,8 @@
 import { Container } from "pixi.js"
 import { ChartRenderer } from "../../ChartRenderer"
 import { TimingWindow } from "../../play/TimingWindow"
-import { PartialNotedataEntry } from "../../sm/NoteTypes"
+import { Notedata, PartialNotedataEntry } from "../../sm/NoteTypes"
+import { TimingData } from "../../sm/TimingData"
 
 export abstract class Notefield extends Container {
   protected renderer: ChartRenderer
@@ -15,12 +16,11 @@ export abstract class Notefield extends Container {
    * Called every frame to update the notefield.
    *
    * @abstract
-   * @param {number} beat - The current beat.
    * @param {number} fromBeat - The earliest beat to render.
    * @param {number} toBeat - The latest beat to render.
    * @memberof Notefield
    */
-  abstract update(beat: number, fromBeat: number, toBeat: number): void
+  abstract update(fromBeat: number, toBeat: number): void
 
   /**
    * Creates a note sprite given a note entry.
@@ -85,4 +85,54 @@ export abstract class Notefield extends Container {
    * @memberof Notefield
    */
   abstract keyUp(col: number): void
+
+  /**
+   * Gets the current beat.
+   *
+   * @return {*}  {number}
+   * @memberof Notefield
+   */
+  getBeat(): number {
+    return this.renderer.chartManager.getBeat()
+  }
+
+  /**
+   * Gets the current second.
+   *
+   * @return {*}  {number}
+   * @memberof Notefield
+   */
+  getTime(): number {
+    return this.renderer.chartManager.getTime()
+  }
+
+  /**
+   * Gets the current notedata.
+   *
+   * @return {*}  {Notedata}
+   * @memberof Notefield
+   */
+  getNotedata(): Notedata {
+    return this.renderer.chart.getNotedata()
+  }
+
+  /**
+   * Gets the current notedata.
+   *
+   * @return {*}  {TimingData}
+   * @memberof Notefield
+   */
+  getTimingData(): TimingData {
+    return this.renderer.chart.timingData
+  }
+
+  /**
+   * Gets the ChartRenderer.
+   *
+   * @return {*}  {ChartRenderer}
+   * @memberof Notefield
+   */
+  getRenderer(): ChartRenderer {
+    return this.renderer
+  }
 }

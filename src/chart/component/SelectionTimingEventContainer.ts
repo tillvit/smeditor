@@ -1,9 +1,10 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
+import { DisplayObjectPool } from "../../util/DisplayObjectPool"
+import { roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { destroyChildIf, roundDigit } from "../../util/Util"
 import { EditTimingMode } from "../ChartManager"
-import { ChartRenderer } from "../ChartRenderer"
+import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
 import { TimingEvent, TimingEventProperty } from "../sm/TimingTypes"
 import { TIMING_EVENT_COLORS } from "./TimingAreaContainer"
 import { TIMING_TRACK_WIDTHS, timingNumbers } from "./TimingTrackContainer"
@@ -19,187 +20,154 @@ interface TimingBox extends Container {
   textObj: BitmapText
 }
 
-export class SelectionTimingEventContainer extends Container {
+export class SelectionTimingEventContainer
+  extends Container
+  implements ChartRendererComponent
+{
   children: TimingBox[] = []
 
   private renderer: ChartRenderer
-  private eventMap: Map<TimingEvent, TimingBox> = new Map()
+  private timingBoxMap: Map<TimingEvent, TimingBox> = new Map()
   private trackPosCache: Map<string, number> = new Map()
+  private timingBoxPool = new DisplayObjectPool({
+    create: () => {
+      const box = new Container() as TimingBox
+      box.guideLine = new Sprite(Texture.WHITE)
+      box.textObj = new BitmapText("", timingNumbers)
+      box.backgroundObj = new BetterRoundedRect()
+      box.addChild(box.guideLine, box.backgroundObj, box.textObj)
+      return box
+    },
+  })
 
   constructor(renderer: ChartRenderer) {
     super()
     this.renderer = renderer
-    this.sortableChildren = true
+    this.timingBoxPool.sortableChildren = true
+    this.addChild(this.timingBoxPool)
   }
 
-  update(beat: number, toBeat: number) {
+  update(fromBeat: number, toBeat: number) {
     if (!this.renderer.chartManager.eventSelection.shift) {
-      destroyChildIf(this.children, () => true)
-      this.eventMap.clear()
+      this.timingBoxPool.destroyAll()
+      this.timingBoxMap.clear()
       this.trackPosCache.clear()
       return
     }
     const beatShift = this.renderer.chartManager.eventSelection.shift.beatShift
-    this.visible = true
-    this.children.forEach(child => (child.marked = false))
-    //Reset mark of old objects
+
     for (const event of this.renderer.chartManager.eventSelection
       .timingEvents) {
-      if (event.beat! + beatShift > toBeat) continue
+      if (toBeat < event.beat! + beatShift) continue
+      if (fromBeat > event.beat! + beatShift) continue
 
-      const [outOfBounds, endSearch, yPos] = this.checkBounds(event, beat)
-      if (endSearch) continue
-      if (outOfBounds) continue
+      if (!this.timingBoxMap.has(event)) {
+        const box = this.timingBoxPool.createChild()
+        if (!box) continue
+        this.timingBoxMap.set(event, box)
 
-      const timingBox = this.getTimingBox(event)
-      const timingWidth = timingBox.backgroundObj.width
+        let label = ""
+        switch (event.type) {
+          case "BPMS":
+          case "STOPS":
+          case "WARPS":
+          case "DELAYS":
+          case "TICKCOUNTS":
+          case "FAKES":
+          case "SCROLLS":
+            label = roundDigit(event.value, 3).toString()
+            break
+          case "SPEEDS":
+            label = `${roundDigit(event.value, 3)}/${roundDigit(
+              event.delay,
+              3
+            )}/${event.unit}`
+            break
+          case "LABELS":
+            label = event.value
+            break
+          case "TIMESIGNATURES":
+            label = `${roundDigit(event.upper, 3)}/${roundDigit(
+              event.lower,
+              3
+            )}`
+            break
+          case "COMBOS":
+            label = `${roundDigit(event.hitMult, 3)}/${roundDigit(
+              event.missMult,
+              3
+            )}`
+            break
+          case "BGCHANGES":
+          case "FGCHANGES":
+            label = event.file
+            break
+          case "ATTACKS":
+            label = `${event.mods} (${event.endType}=${event.value})`
+        }
 
-      const side = Options.chart.timingEventOrder.right.includes(event.type)
-        ? "right"
-        : "left"
-      if (this.renderer.chartManager.editTimingMode != EditTimingMode.Off) {
-        let x = this.getTrackPos(event.type)
-        x += (TIMING_TRACK_WIDTHS[event.type] / 2) * (x > 0 ? 1 : -1)
-        timingBox.position.x = x
-        timingBox.pivot.x = 0
-      } else {
-        let x =
-          (side == "right" ? 1 : -1) *
-          (this.renderer.chart.gameType.notefieldWidth * 0.5 + 80)
-        if (side == "left") x -= 30
-        timingBox.position.x = x
-        timingBox.pivot.x = side == "right" ? -timingWidth / 2 : timingWidth / 2
+        const side = Options.chart.timingEventOrder.right.includes(event.type)
+          ? "right"
+          : "left"
+
+        Object.assign(box, {
+          alpha: 0.4,
+          songTiming: this.renderer.chart.timingData.isTypeChartSpecific(
+            event.type
+          ),
+          zIndex: event.beat!,
+        })
+        box.textObj.text = label
+        box.textObj.anchor.set(0.5, 0.55)
+
+        box.backgroundObj.width = box.textObj.width + 10
+        box.backgroundObj.height = 25
+        box.backgroundObj.tint = TIMING_EVENT_COLORS[event.type] ?? 0x000000
+        box.backgroundObj.position.x = -box.backgroundObj.width / 2
+        box.backgroundObj.position.y = -box.backgroundObj.height / 2
+
+        box.guideLine.height = 1
+        box.guideLine.anchor.set(side == "left" ? 0 : 1, 0.5)
+        box.guideLine.width =
+          Math.abs(box.position.x) + 192 - box.backgroundObj.width / 2
+        box.guideLine.position.x =
+          ((side == "left" ? 1 : -1) * box.backgroundObj.width) / 2
+
+        if (this.renderer.chartManager.editTimingMode != EditTimingMode.Off) {
+          let x = this.getTrackPos(event.type)
+          x += (TIMING_TRACK_WIDTHS[event.type] / 2) * (x > 0 ? 1 : -1)
+          box.position.x = x
+          box.pivot.x = 0
+        } else {
+          let x =
+            (side == "right" ? 1 : -1) *
+            (this.renderer.chart.gameType.notefieldWidth * 0.5 + 80)
+          if (side == "left") x -= 30
+          box.position.x = x
+          box.pivot.x =
+            side == "right"
+              ? -box.backgroundObj.width / 2
+              : box.backgroundObj.width / 2
+        }
       }
-      timingBox.backgroundObj.tint = TIMING_EVENT_COLORS[event.type] ?? 0x000000
-      timingBox.backgroundObj.position.x = -timingBox.backgroundObj.width / 2
-      timingBox.backgroundObj.position.y = -timingBox.backgroundObj.height / 2
-      timingBox.guideLine.anchor.x = side == "left" ? 0 : 1
-      timingBox.guideLine.width =
-        Math.abs(timingBox.position.x) + 192 - timingBox.backgroundObj.width / 2
-      timingBox.guideLine.position.x =
-        ((side == "left" ? 1 : -1) * timingBox.backgroundObj.width) / 2
-      timingBox.y = yPos
-
-      timingBox.textObj.scale.y = Options.chart.reverse ? -1 : 1
     }
 
-    this.children
-      .filter(child => !child.deactivated && !child.marked)
-      .forEach(child => {
-        child.deactivated = true
-        child.visible = false
-        this.eventMap.delete(child.event)
-      })
-
-    destroyChildIf(this.children, child => Date.now() - child.dirtyTime > 5000)
-  }
-
-  private checkBounds(
-    event: TimingEvent,
-    beat: number
-  ): [boolean, boolean, number] {
-    const newBeat =
-      event.beat! + this.renderer.chartManager.eventSelection.shift!.beatShift
-    const y =
-      Options.chart.CMod && event.second
-        ? this.renderer.getYPosFromSecond(event.second)
-        : this.renderer.getYPosFromBeat(newBeat)
-    if (y < this.renderer.getUpperBound()) return [true, false, y]
-    if (y > this.renderer.getLowerBound()) {
-      if (newBeat < beat || this.renderer.isNegScroll(newBeat))
-        return [true, false, y]
-      else return [true, true, y]
-    }
-    return [false, false, y]
-  }
-
-  private getTimingBox(event: TimingEvent): TimingBox {
-    if (this.eventMap.get(event)) {
-      const cached = this.eventMap.get(event)!
-      return Object.assign(cached, {
-        deactivated: false,
-        marked: true,
-        dirtyTime: Date.now(),
-      })
-    }
-    let newChild: (Partial<TimingBox> & Container) | undefined
-    for (const child of this.children) {
-      if (child.deactivated) {
-        child.deactivated = false
-        newChild = child
-        break
+    for (const [event, box] of this.timingBoxMap.entries()) {
+      if (
+        toBeat < event.beat! + beatShift ||
+        fromBeat > event.beat! + beatShift
+      ) {
+        console.log("delet")
+        this.timingBoxPool.destroyChild(box)
+        this.timingBoxMap.delete(event)
+        continue
       }
+      box.textObj.scale.y = Options.chart.reverse ? -1 : 1
+      box.y =
+        Options.chart.CMod && event.second
+          ? this.renderer.getYPosFromSecond(event.second)
+          : this.renderer.getYPosFromBeat(event.beat! + beatShift)
     }
-    if (!newChild) {
-      newChild = new Container() as TimingBox
-      newChild.guideLine = new Sprite(Texture.WHITE)
-      newChild.textObj = new BitmapText("", timingNumbers)
-      newChild.backgroundObj = new BetterRoundedRect()
-      newChild.addChild(
-        newChild.guideLine,
-        newChild.backgroundObj,
-        newChild.textObj
-      )
-      this.addChild(newChild as TimingBox)
-    }
-
-    let label = ""
-    switch (event.type) {
-      case "BPMS":
-      case "STOPS":
-      case "WARPS":
-      case "DELAYS":
-      case "TICKCOUNTS":
-      case "FAKES":
-      case "SCROLLS":
-        label = roundDigit(event.value, 3).toString()
-        break
-      case "SPEEDS":
-        label = `${roundDigit(event.value, 3)}/${roundDigit(event.delay, 3)}/${
-          event.unit
-        }`
-        break
-      case "LABELS":
-        label = event.value
-        break
-      case "TIMESIGNATURES":
-        label = `${roundDigit(event.upper, 3)}/${roundDigit(event.lower, 3)}`
-        break
-      case "COMBOS":
-        label = `${roundDigit(event.hitMult, 3)}/${roundDigit(
-          event.missMult,
-          3
-        )}`
-        break
-      case "BGCHANGES":
-      case "FGCHANGES":
-        label = event.file
-        break
-      case "ATTACKS":
-        label = `${event.mods} (${event.endType}=${event.value})`
-    }
-
-    Object.assign(newChild, {
-      alpha: 0.4,
-      event,
-      songTiming: this.renderer.chart.timingData.isTypeChartSpecific(
-        event.type
-      ),
-      visible: true,
-      marked: true,
-      deactivated: false,
-      dirtyTime: Date.now(),
-      zIndex: event.beat!,
-    })
-    newChild.textObj!.text = label
-    newChild.textObj!.anchor.x = 0.5
-    newChild.textObj!.anchor.y = 0.55
-    newChild.backgroundObj!.width = newChild.textObj!.width + 10
-    newChild.backgroundObj!.height = 25
-    newChild.guideLine!.height = 1
-    newChild.guideLine!.anchor.y = 0.5
-    this.eventMap.set(event, newChild as TimingBox)
-    return newChild as TimingBox
   }
 
   getTrackPos(type: TimingEventProperty) {

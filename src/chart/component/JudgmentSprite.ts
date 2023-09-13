@@ -1,18 +1,19 @@
 import { Sprite } from "pixi.js"
+import { clamp } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { clamp } from "../../util/Util"
+import { ChartRendererComponent } from "../ChartRenderer"
 import {
   StandardTimingWindow,
   TIMING_WINDOW_AUTOPLAY,
 } from "../play/StandardTimingWindow"
 import { TimingWindow } from "../play/TimingWindow"
 import {
+  TimingWindowCollection,
   isStandardMissTimingWindow,
   isStandardTimingWindow,
-  TimingWindowCollection,
 } from "../play/TimingWindowCollection"
 
-export class JudgmentSprite extends Sprite {
+export class JudgmentSprite extends Sprite implements ChartRendererComponent {
   private createTime = -1
   private active = false
   private type: StandardTimingWindow = TIMING_WINDOW_AUTOPLAY

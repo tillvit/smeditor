@@ -11,15 +11,10 @@ import { isHoldNote } from "../../chart/sm/NoteTypes"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
-import {
-  clamp,
-  destroyChildIf,
-  getQuantIndex,
-  lerp,
-  unlerp,
-} from "../../util/Util"
+import { destroyChildIf, getQuantIndex } from "../../util/Util"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
+import { clamp, lerp, unlerp } from "../../util/Math"
 
 const QUANT_COLORS = [
   0xe74827, 0x3d89f7, 0xaa2df4, 0x82e247, 0xaa2df4, 0xeaa138, 0xaa2df4,

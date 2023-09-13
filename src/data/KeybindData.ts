@@ -16,8 +16,8 @@ import { UserOptionsWindow } from "../gui/window/UserOptionsWindow"
 import { ActionHistory } from "../util/ActionHistory"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { WebFileHandler } from "../util/file-handler/WebFileHandler"
+import { roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
-import { roundDigit } from "../util/Util"
 
 export interface Keybind {
   label: string

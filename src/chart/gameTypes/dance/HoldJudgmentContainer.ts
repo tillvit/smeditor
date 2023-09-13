@@ -1,14 +1,6 @@
-import {
-  Assets,
-  BaseTexture,
-  Container,
-  Rectangle,
-  Sprite,
-  Texture,
-} from "pixi.js"
+import { Assets, Container, Rectangle, Sprite, Texture } from "pixi.js"
 import { Options } from "../../../util/Options"
 import { destroyChildIf } from "../../../util/Util"
-import { ChartRenderer } from "../../ChartRenderer"
 import { TimingWindow } from "../../play/TimingWindow"
 import {
   isHoldDroppedTimingWindow,
@@ -22,26 +14,24 @@ interface HoldJudgmentObject extends Sprite {
 
 export class HoldJudgmentContainer extends Container {
   children: HoldJudgmentObject[] = []
-  renderer: ChartRenderer
 
   private static held_tex?: Texture
   private static dropped_tex?: Texture
 
   private notefield: DanceNotefield
 
-  constructor(notefield: DanceNotefield, renderer: ChartRenderer) {
+  constructor(notefield: DanceNotefield) {
     super()
     if (!HoldJudgmentContainer.held_tex) this.loadTex()
     this.notefield = notefield
-    this.renderer = renderer
   }
 
   async loadTex() {
     let tHeight = 0
     let tWidth = 0
-    const judge_tex = (await Assets.load(
+    const judge_tex = await Assets.load(
       "assets/noteskin/dance/hold_judgment.png"
-    )) as BaseTexture
+    )
     tHeight = judge_tex.height
     tWidth = judge_tex.width
     HoldJudgmentContainer.held_tex = new Texture(
@@ -54,7 +44,7 @@ export class HoldJudgmentContainer extends Container {
     )
   }
 
-  renderThis() {
+  update() {
     this.y = Options.chart.receptorYPos / Options.chart.zoom + 48
     this.scale.y = Options.chart.reverse ? -1 : 1
 

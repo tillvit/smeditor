@@ -1,10 +1,6 @@
+import { roundDigit, clamp } from "../../util/Math"
 import { Options } from "../../util/Options"
-import {
-  clamp,
-  isNumericKeyPress,
-  roundDigit,
-  safeParse,
-} from "../../util/Util"
+import { isNumericKeyPress, safeParse } from "../../util/Util"
 
 export class NumberSpinner {
   view: HTMLDivElement

@@ -1,7 +1,7 @@
-import { JudgmentTexture } from "../component/JudgmentTexture"
 import { HoldNotedataEntry } from "../sm/NoteTypes"
 import { HoldDroppedTimingWindow } from "./HoldDroppedTimingWindow"
 import { HoldTimingWindow } from "./HoldTimingWindow"
+import { JudgmentTexture } from "./JudgmentTexture"
 import { MineTimingWindow } from "./MineTimingWindow"
 import { StandardMissTimingWindow } from "./StandardMissTimingWindow"
 import { StandardTimingWindow } from "./StandardTimingWindow"

@@ -1,4 +1,4 @@
-import { JudgmentTexture } from "../component/JudgmentTexture"
+import { JudgmentTexture } from "./JudgmentTexture"
 import { TimingWindow } from "./TimingWindow"
 
 export class StandardTimingWindow extends TimingWindow {

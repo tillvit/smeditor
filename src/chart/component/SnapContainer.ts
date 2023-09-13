@@ -2,7 +2,7 @@ import { BitmapText, Container, Graphics } from "pixi.js"
 import { SnapPopup } from "../../gui/popup/SnapPopup"
 import { Options } from "../../util/Options"
 import { EditMode } from "../ChartManager"
-import { ChartRenderer } from "../ChartRenderer"
+import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
 
 const snapNumbers = {
   fontName: "Main",
@@ -23,7 +23,7 @@ const SNAP_COLORS: { [key: number]: number } = {
   192: 0x6be88e,
 }
 
-export class SnapContainer extends Container {
+export class SnapContainer extends Container implements ChartRendererComponent {
   private renderer: ChartRenderer
 
   children: Container[] = []

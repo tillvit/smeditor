@@ -7,9 +7,10 @@ import {
 } from "pixi.js"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
-import { clamp, getFPS, getTPS, roundDigit } from "../../util/Util"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
+import { clamp, roundDigit } from "../../util/Math"
+import { getFPS, getTPS } from "../../util/Performance"
 
 const GRAPH_HEIGHT = 50
 

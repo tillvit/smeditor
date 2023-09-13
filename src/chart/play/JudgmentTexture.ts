@@ -1,5 +1,5 @@
 import { Assets, Rectangle, Texture } from "pixi.js"
-import { StandardTimingWindow } from "../play/StandardTimingWindow"
+import { StandardTimingWindow } from "./StandardTimingWindow"
 
 export class JudgmentTexture {
   static ITG = new JudgmentTexture("assets/judgment/judgmentITG.png", [
@@ -16,8 +16,8 @@ export class JudgmentTexture {
     ["w0", "w1", "w2", "w3", "w4", "w5", "miss"]
   )
 
-  private tHeight = 0
-  private tWidth = 0
+  private texHeight = 0
+  private texWidth = 0
   private texture?: Texture
   private judgeNames: string[] = []
 
@@ -27,10 +27,10 @@ export class JudgmentTexture {
   }
 
   private async loadTex(path: string) {
-    const judge_tex = (await Assets.load(path)) as Texture
+    const judge_tex = await Assets.load(path)
     this.texture = judge_tex
-    this.tHeight = judge_tex.height
-    this.tWidth = judge_tex.width
+    this.texHeight = judge_tex.height
+    this.texWidth = judge_tex.width
   }
 
   getTexture(
@@ -40,14 +40,14 @@ export class JudgmentTexture {
     if (!this.judgeNames.includes(judgment.id)) return
     let tex_coord_x = 0
     const tex_coord_y =
-      (this.judgeNames.indexOf(judgment.id) * this.tHeight) /
+      (this.judgeNames.indexOf(judgment.id) * this.texHeight) /
       this.judgeNames.length
-    if (error >= 0) tex_coord_x += this.tWidth / 2
+    if (error >= 0) tex_coord_x += this.texWidth / 2
     this.texture!.frame = new Rectangle(
       tex_coord_x,
       tex_coord_y,
-      this.tWidth / 2,
-      this.tHeight / this.judgeNames.length
+      this.texWidth / 2,
+      this.texHeight / this.judgeNames.length
     )
     return this.texture
   }

@@ -1,5 +1,5 @@
 import { Container, Sprite, Texture, TilingSprite } from "pixi.js"
-import { rgbtoHex } from "../../../util/Util"
+import { rgbtoHex } from "../../../util/Color"
 import { PartialNotedataEntry } from "../../sm/NoteTypes"
 import { TimingData } from "../../sm/TimingData"
 import { DanceNoteTexture } from "./DanceNoteTexture"

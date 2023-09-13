@@ -1,4 +1,4 @@
-import { clamp } from "../../util/Util"
+import { clamp } from "../../util/Math"
 import { Icons } from "../Icons"
 import { WindowManager } from "./WindowManager"
 

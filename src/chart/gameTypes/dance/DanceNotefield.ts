@@ -1,7 +1,7 @@
 import { Container } from "pixi.js"
 import { Options } from "../../../util/Options"
 import { EditMode, EditTimingMode } from "../../ChartManager"
-import { ChartRenderer } from "../../ChartRenderer"
+import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import { TimingWindow } from "../../play/TimingWindow"
 import { PartialNotedataEntry } from "../../sm/NoteTypes"
 import { Notefield } from "../base/Notefield"
@@ -13,7 +13,10 @@ import { NoteFlashContainer } from "./NoteFlashContainer"
 import { ReceptorContainer } from "./ReceptorContainer"
 import { SelectionNoteContainer } from "./SelectionNoteContainer"
 
-export class DanceNotefield extends Notefield {
+export class DanceNotefield
+  extends Notefield
+  implements ChartRendererComponent
+{
   private receptors: ReceptorContainer
   private notes: NoteContainer
   private selectionNotes: SelectionNoteContainer
@@ -28,10 +31,10 @@ export class DanceNotefield extends Notefield {
     DanceNoteTexture.initArrowTex(renderer.chartManager.app)
 
     this.receptors = new ReceptorContainer(this)
-    this.notes = new NoteContainer(this, renderer)
-    this.selectionNotes = new SelectionNoteContainer(this, renderer)
+    this.notes = new NoteContainer(this)
+    this.selectionNotes = new SelectionNoteContainer(this)
     this.flashes = new NoteFlashContainer(this)
-    this.holdJudges = new HoldJudgmentContainer(this, renderer)
+    this.holdJudges = new HoldJudgmentContainer(this)
     this.ghostNote = DanceNoteRenderer.createArrow()
     this.ghostNote.visible = false
     this.ghostNote.alpha = 0.4
@@ -66,12 +69,12 @@ export class DanceNotefield extends Notefield {
     return spr
   }
 
-  update(beat: number, fromBeat: number, toBeat: number): void {
-    this.receptors.renderThis(beat)
-    this.notes.renderThis(beat, fromBeat, toBeat)
-    this.selectionNotes.renderThis(beat, fromBeat, toBeat)
-    this.flashes.renderThis()
-    this.holdJudges.renderThis()
+  update(fromBeat: number, toBeat: number): void {
+    this.receptors.update()
+    this.notes.update(fromBeat, toBeat)
+    this.selectionNotes.update(fromBeat, toBeat)
+    this.flashes.update()
+    this.holdJudges.update()
 
     if (this.ghostNoteEntry) {
       this.ghostNote.y = this.renderer.getYPosFromBeat(this.ghostNoteEntry.beat)

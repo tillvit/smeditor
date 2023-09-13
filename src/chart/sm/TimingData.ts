@@ -1,6 +1,7 @@
 import { ActionHistory } from "../../util/ActionHistory"
 import { EventHandler } from "../../util/EventHandler"
-import { bsearch, clamp, roundDigit } from "../../util/Util"
+import { clamp, roundDigit } from "../../util/Math"
+import { bsearch } from "../../util/Util"
 import { Chart } from "./Chart"
 import {
   AttackTimingEvent,
@@ -510,7 +511,7 @@ export class TimingData {
   }
 
   private buildEffectiveBeatTimingDataCache() {
-    const cache: ScrollCacheTimingEvent[] = this.getTimingData("SCROLLS")
+    const cache: ScrollCacheTimingEvent[] = [...this.getTimingData("SCROLLS")]
     let effBeat = 0
     if (cache.length == 0) {
       this._cache.effectiveBeatTiming = []
@@ -647,7 +648,7 @@ export class TimingData {
   isBeatWarped(beat: number): boolean {
     if (!isFinite(beat)) return false
     const flooredBeat = Math.floor(beat * 1000) / 1000
-    if (this._cache.warpedBeats[flooredBeat])
+    if (this._cache.warpedBeats[flooredBeat] !== undefined)
       return this._cache.warpedBeats[flooredBeat]
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
     const cache = this._cache.beatTiming!

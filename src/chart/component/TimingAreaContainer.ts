@@ -1,21 +1,15 @@
 import { Container, Sprite, Texture } from "pixi.js"
+import { DisplayObjectPool } from "../../util/DisplayObjectPool"
+import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
-import { destroyChildIf } from "../../util/Util"
 import { EditMode } from "../ChartManager"
-import { ChartRenderer } from "../ChartRenderer"
+import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
 import {
   DelayTimingEvent,
   FakeTimingEvent,
   StopTimingEvent,
   WarpTimingEvent,
 } from "../sm/TimingTypes"
-
-interface TimingAreaObject extends Sprite {
-  event: StopTimingEvent | WarpTimingEvent | DelayTimingEvent | FakeTimingEvent
-  deactivated: boolean
-  marked: boolean
-  dirtyTime: number
-}
 
 export const TIMING_EVENT_COLORS: {
   [key: string]: number
@@ -36,174 +30,142 @@ export const TIMING_EVENT_COLORS: {
   ATTACKS: 1856083,
 }
 
-export class TimingAreaContainer extends Container {
-  children: TimingAreaObject[] = []
-
+export class TimingAreaContainer
+  extends Container
+  implements ChartRendererComponent
+{
   private renderer: ChartRenderer
+  private areaPool = new DisplayObjectPool({
+    create: () => {
+      const newChild = new Sprite(Texture.WHITE)
+      Object.assign(newChild, {
+        alpha: 0.2,
+        width: this.renderer.chart.gameType.notefieldWidth + 128,
+      })
+      newChild.anchor.set(0.5, 0)
+      return newChild
+    },
+  })
   private timingAreaMap: Map<
     StopTimingEvent | WarpTimingEvent | DelayTimingEvent | FakeTimingEvent,
-    TimingAreaObject
+    Sprite
   > = new Map()
+
+  private timingDirty = false
 
   constructor(renderer: ChartRenderer) {
     super()
     this.renderer = renderer
+    this.addChild(this.areaPool)
+
+    const timingEventListener = () => (this.timingDirty = true)
+
+    EventHandler.on("timingModified", timingEventListener)
+    this.on("destroyed", () =>
+      EventHandler.off("timingModified", timingEventListener)
+    )
   }
 
-  update(beat: number, fromBeat: number, toBeat: number, fromSecond: number) {
+  update(fromBeat: number, toBeat: number) {
+    if (this.timingDirty) {
+      this.timingAreaMap.clear()
+      this.areaPool.destroyAll()
+      this.timingDirty = false
+    }
+
     this.visible =
       this.renderer.chartManager.getMode() != EditMode.Play ||
       !Options.play.hideBarlines
 
-    //Reset mark of old objects
-    this.children.forEach(child => (child.marked = false))
-
-    //Add new objects
     for (const event of this.renderer.chart.timingData.getTimingData(
       "STOPS",
       "WARPS",
       "DELAYS",
       "FAKES"
     )) {
-      if (!Options.chart.renderTimingEvent[event.type]) continue
-
       //Check beat requirements
-      if (
-        (event.type == "STOPS" || event.type == "DELAYS") &&
-        event.second! + Math.abs(event.value) <= fromSecond
-      )
-        continue
-      if (
-        (event.type == "WARPS" || event.type == "FAKES") &&
-        event.beat + event.value < fromBeat
-      )
-        continue
       if (event.beat > toBeat) break
+      if (!this.shouldDrawEvent(event, fromBeat, toBeat)) continue
 
-      //Check if box should be displayed
-      if (event.type == "STOPS" || event.type == "DELAYS") {
-        if (
-          !(
-            (!Options.chart.CMod && event.value < 0) ||
-            (Options.chart.CMod && event.value > 0)
-          )
-        )
-          continue
+      if (!this.timingAreaMap.has(event)) {
+        const area = this.areaPool.createChild()
+        if (!area) break
+        area.tint = TIMING_EVENT_COLORS[event.type]
+        this.timingAreaMap.set(event, area)
       }
-      if (event.type == "WARPS" && Options.chart.CMod) continue
-
-      const [outOfBounds, endSearch, yPos, length] = this.checkBounds(
-        event,
-        beat
-      )
-      if (endSearch) break
-      if (outOfBounds) continue
-
-      //Move element
-      const area = this.getTimingArea(event)
-      area.y = yPos
-      area.height = length
     }
 
-    //Remove old elements
-    this.children
-      .filter(child => !child.deactivated && !child.marked)
-      .forEach(child => {
-        child.deactivated = true
-        child.visible = false
-        this.timingAreaMap.delete(child.event)
-      })
+    for (const [event, area] of this.timingAreaMap.entries()) {
+      if (!this.shouldDrawEvent(event, fromBeat, toBeat)) {
+        this.timingAreaMap.delete(event)
+        this.areaPool.destroyChild(area)
+        continue
+      }
+      const yStart = Options.chart.CMod
+        ? this.renderer.getYPosFromSecond(event.second!)
+        : this.renderer.getYPosFromBeat(event.beat)
+      let yEnd = yStart
+      switch (event.type) {
+        case "STOPS":
+        case "DELAYS": {
+          if (Options.chart.CMod && event.value > 0) {
+            yEnd = this.renderer.getYPosFromSecond(event.second! + event.value)
+          } else if (event.value < 0) {
+            yEnd = this.renderer.getYPosFromBeat(
+              this.renderer.chart.getBeatFromSeconds(event.second! + 0.0001)
+            )
+          }
+          break
+        }
+        case "FAKES": {
+          yEnd = this.renderer.getYPosFromBeat(event.beat + event.value)
 
-    destroyChildIf(this.children, child => Date.now() - child.dirtyTime > 5000)
+          break
+        }
+        case "WARPS": {
+          if (!Options.chart.CMod) {
+            yEnd = this.renderer.getYPosFromBeat(event.beat + event.value)
+          }
+          break
+        }
+      }
+      const length = yEnd - yStart
+      area.y = yStart
+      area.height = length
+    }
   }
 
-  private checkBounds(
+  private shouldDrawEvent(
     event:
       | StopTimingEvent
       | WarpTimingEvent
       | DelayTimingEvent
       | FakeTimingEvent,
-    beat: number
-  ): [boolean, boolean, number, number] {
-    const yStart = Options.chart.CMod
-      ? this.renderer.getYPosFromSecond(event.second!)
-      : this.renderer.getYPosFromBeat(event.beat)
-    let yEnd = yStart
-    switch (event.type) {
-      case "STOPS":
-      case "DELAYS": {
-        if (Options.chart.CMod && event.value > 0) {
-          yEnd = this.renderer.getYPosFromSecond(event.second! + event.value)
-        } else if (event.value < 0) {
-          yEnd = this.renderer.getYPosFromBeat(
-            this.renderer.chart.getBeatFromSeconds(event.second! + 0.0001)
-          )
-        }
-        break
-      }
-      case "FAKES": {
-        yEnd = this.renderer.getYPosFromBeat(event.beat + event.value)
-
-        break
-      }
-      case "WARPS": {
-        if (!Options.chart.CMod) {
-          yEnd = this.renderer.getYPosFromBeat(event.beat + event.value)
-        }
-        break
-      }
+    fromBeat: number,
+    toBeat: number
+  ) {
+    if (
+      (event.type == "STOPS" || event.type == "DELAYS") &&
+      event.second! + Math.abs(event.value) <=
+        this.renderer.chart.timingData.getSecondsFromBeat(fromBeat)
+    )
+      return false
+    if (
+      (event.type == "WARPS" || event.type == "FAKES") &&
+      event.beat + event.value < fromBeat
+    )
+      return false
+    if (event.type == "STOPS" || event.type == "DELAYS") {
+      if (
+        !(
+          (!Options.chart.CMod && event.value < 0) ||
+          (Options.chart.CMod && event.value > 0)
+        )
+      )
+        return false
     }
-    const length = yEnd - yStart
-    if (yStart + length < this.renderer.getUpperBound())
-      return [true, false, yStart, length]
-    if (yStart > this.renderer.getLowerBound()) {
-      if (event.beat < beat || this.renderer.isNegScroll(event.beat))
-        return [true, false, yStart, length]
-      else return [true, true, yStart, length]
-    }
-    return [false, false, yStart, length]
-  }
-
-  private getTimingArea(
-    event:
-      | StopTimingEvent
-      | WarpTimingEvent
-      | DelayTimingEvent
-      | FakeTimingEvent
-  ): TimingAreaObject {
-    if (this.timingAreaMap.get(event)) {
-      const cached = this.timingAreaMap.get(event)!
-      return Object.assign(cached, {
-        deactivated: false,
-        marked: true,
-        dirtyTime: Date.now(),
-      })
-    }
-    let newChild: (Partial<TimingAreaObject> & Sprite) | undefined
-    for (const child of this.children) {
-      if (child.deactivated) {
-        child.deactivated = false
-        newChild = child
-        break
-      }
-    }
-    if (!newChild) {
-      newChild = new Sprite(Texture.WHITE) as TimingAreaObject
-      this.addChild(newChild as TimingAreaObject)
-    }
-    Object.assign(newChild, {
-      alpha: 0.2,
-      width: this.renderer.chart.gameType.notefieldWidth + 128,
-      visible: true,
-      tint: TIMING_EVENT_COLORS[event.type],
-      event,
-      marked: true,
-      deactivated: false,
-      dirtyTime: Date.now(),
-    })
-    newChild.anchor.x = 0.5
-    newChild.anchor.y = 0
-    this.timingAreaMap.set(event, newChild as TimingAreaObject)
-    return newChild as TimingAreaObject
+    if (event.type == "WARPS" && Options.chart.CMod) return false
+    if (event.beat > toBeat) return false
+    return true
   }
 }

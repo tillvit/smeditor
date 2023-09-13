@@ -10,16 +10,11 @@ import {
 } from "../../chart/play/TimingWindowCollection"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { Options } from "../../util/Options"
-import {
-  destroyChildIf,
-  mean,
-  median,
-  roundDigit,
-  stdDev,
-} from "../../util/Util"
+import { destroyChildIf } from "../../util/Util"
 import { WaterfallManager } from "../element/WaterfallManager"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
+import { roundDigit, mean, median, stdDev } from "../../util/Math"
 
 const WIDGET_WIDTH = 300
 const HISTOGRAM_HEIGHT = 150

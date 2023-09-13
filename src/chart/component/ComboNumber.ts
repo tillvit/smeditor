@@ -1,11 +1,11 @@
 import { BitmapText } from "pixi.js"
+import { lighten } from "../../util/Color"
 import { Options } from "../../util/Options"
-import { lighten } from "../../util/Util"
 import { EditMode } from "../ChartManager"
-import { ChartRenderer } from "../ChartRenderer"
+import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
 import { TimingWindowCollection } from "../play/TimingWindowCollection"
 
-export class ComboNumber extends BitmapText {
+export class ComboNumber extends BitmapText implements ChartRendererComponent {
   private renderer: ChartRenderer
 
   constructor(renderer: ChartRenderer) {
@@ -22,12 +22,13 @@ export class ComboNumber extends BitmapText {
     this.visible = this.renderer.chartManager.getMode() == EditMode.Play
     this.scale.y = Options.chart.reverse ? -1 : 1
     if (!gameStats) return
-    const val =
+    const combo =
       gameStats.getCombo() == 0
         ? gameStats.getMissCombo()
         : gameStats.getCombo()
-    if (val < 4) this.text = ""
-    else this.text = val + ""
+    if (combo < 4) this.text = ""
+    else this.text = combo + ""
+
     if (gameStats.getCombo() == 0) {
       this.tint = TimingWindowCollection.getCollection(
         Options.play.timingCollection

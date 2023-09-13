@@ -1,8 +1,8 @@
 import { Howl } from "howler/dist/howler.core.min.js"
 import { App } from "../../App"
 import { Options } from "../../util/Options"
-import { lerp, median, stdDev } from "../../util/Util"
 import { Window } from "./Window"
+import { stdDev, median, lerp } from "../../util/Math"
 
 interface TickLine {
   time: number

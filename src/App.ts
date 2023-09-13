@@ -22,8 +22,10 @@ import { BetterRoundedRect } from "./util/BetterRoundedRect"
 import { EventHandler } from "./util/EventHandler"
 import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
-import { extname, fpsUpdate, getBrowser } from "./util/Util"
 import { FileHandler } from "./util/file-handler/FileHandler"
+import { extname } from "./util/Path"
+import { fpsUpdate } from "./util/Performance"
+import { getBrowser } from "./util/Util"
 declare global {
   interface Window {
     app: App
