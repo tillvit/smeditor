@@ -4,14 +4,14 @@ import { defineConfig } from "vite"
 export default defineConfig({
   base: "",
   server: {
-    host: '127.0.0.1'
+    host: "127.0.0.1",
   },
   build: {
-    target: "es2020"
+    target: "esnext",
   },
   optimizeDeps: {
     esbuildOptions: {
-      target: "es2020"
-    }
-  }
+      target: "esnext",
+    },
+  },
 })
