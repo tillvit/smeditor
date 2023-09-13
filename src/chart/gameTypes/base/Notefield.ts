@@ -103,7 +103,7 @@ export abstract class Notefield extends Container {
    * @memberof Notefield
    */
   getTime(): number {
-    return this.renderer.getVisualBeat()
+    return this.renderer.getVisualTime()
   }
 
   /**

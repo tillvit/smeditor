@@ -22,10 +22,10 @@ import { BetterRoundedRect } from "./util/BetterRoundedRect"
 import { EventHandler } from "./util/EventHandler"
 import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
-import { FileHandler } from "./util/file-handler/FileHandler"
 import { extname } from "./util/Path"
 import { fpsUpdate } from "./util/Performance"
 import { getBrowser } from "./util/Util"
+import { FileHandler } from "./util/file-handler/FileHandler"
 declare global {
   interface Window {
     app: App
@@ -127,10 +127,6 @@ export class App {
     this.registerListeners()
 
     this.onResize()
-
-    console.log(
-      `smeditor is currently a work in progress. check the github repo for more info!`
-    )
 
     this.windowManager.openWindow(new InitialWindow(this))
 

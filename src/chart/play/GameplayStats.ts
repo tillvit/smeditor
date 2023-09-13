@@ -67,7 +67,6 @@ export class GameplayStats {
       }
     })
     this.recalculate()
-    console.log(this.getMedian())
   }
 
   /**

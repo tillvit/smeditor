@@ -1,8 +1,8 @@
 import { Howl } from "howler/dist/howler.core.min.js"
 import { App } from "../../App"
+import { lerp, median, stdDev } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { Window } from "./Window"
-import { stdDev, median, lerp } from "../../util/Math"
 
 interface TickLine {
   time: number
@@ -94,12 +94,8 @@ export class OffsetWindow extends Window {
             if (stdDev(this.previousOffsets) < 70) {
               Options.play.offset -= median(this.previousOffsets) / 1000
             }
-            // console.log(median(this.previousOffsets))
-            // console.log("stddev> " + stdDev(this.previousOffsets))
-            // Options.play.offset += median(this.previousOffsets)/1000
             this.previousOffsets = []
           }
-          console.log(offset)
         }
       }
     }

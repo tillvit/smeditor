@@ -157,7 +157,6 @@ export class SelectionTimingEventContainer
         toBeat < event.beat! + beatShift ||
         fromBeat > event.beat! + beatShift
       ) {
-        console.log("delet")
         this.timingBoxPool.destroyChild(box)
         this.timingBoxMap.delete(event)
         continue

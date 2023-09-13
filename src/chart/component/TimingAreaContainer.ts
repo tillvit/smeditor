@@ -101,7 +101,7 @@ export class TimingAreaContainer
         this.areaPool.destroyChild(area)
         continue
       }
-      const yStart = Options.chart.CMod
+      let yStart = Options.chart.CMod
         ? this.renderer.getYPosFromSecond(event.second!)
         : this.renderer.getYPosFromBeat(event.beat)
       let yEnd = yStart
@@ -129,6 +129,8 @@ export class TimingAreaContainer
           break
         }
       }
+      if (yEnd < yStart) [yEnd, yStart] = [yStart, yEnd]
+
       const length = yEnd - yStart
       area.y = yStart
       area.height = length

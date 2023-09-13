@@ -43,11 +43,14 @@ export class PreviewAreaContainer
       return
     }
     this.visible = true
-    this.previewArea.y = this.renderer.getYPosFromSecond(sampleStart)
 
-    this.previewArea.height =
-      this.renderer.getYPosFromSecond(sampleStart + sampleLength) -
-      this.previewArea.y
+    let yStart = this.renderer.getYPosFromSecond(sampleStart)
+    let yEnd = this.renderer.getYPosFromSecond(sampleStart + sampleLength)
+    if (yEnd < yStart) [yEnd, yStart] = [yStart, yEnd]
+
+    this.previewArea.y = yStart
+
+    this.previewArea.height = yEnd - yStart
 
     this.previewText.y = clamp(
       this.renderer.getUpperBound() + 35,
