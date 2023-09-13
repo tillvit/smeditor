@@ -87,13 +87,13 @@ export abstract class Notefield extends Container {
   abstract keyUp(col: number): void
 
   /**
-   * Gets the current beat.
+   * Gets the current beat. This is affected by offsets.
    *
    * @return {*}  {number}
    * @memberof Notefield
    */
   getBeat(): number {
-    return this.renderer.chartManager.getBeat()
+    return this.renderer.getVisualBeat()
   }
 
   /**
@@ -103,7 +103,7 @@ export abstract class Notefield extends Container {
    * @memberof Notefield
    */
   getTime(): number {
-    return this.renderer.chartManager.getTime()
+    return this.renderer.getVisualBeat()
   }
 
   /**

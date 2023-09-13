@@ -75,7 +75,8 @@
     ],
     "ignorePatterns": [
       "vite.config.js",
-      "nwbuild.js"
+      "nwbuild.js",
+      "nwrun.js"
     ],
     "rules": {
       "require-await": "off",

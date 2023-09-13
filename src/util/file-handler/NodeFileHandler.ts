@@ -1,7 +1,4 @@
-import {
-  FileSystemDirectoryHandle,
-  FileSystemFileHandle,
-} from "file-system-access"
+import * as fsa from "file-system-access"
 import { BaseFileHandler } from "./FileHandler"
 import { FileHandle, FolderHandle } from "./NodeAdapter"
 
@@ -43,13 +40,13 @@ export class NodeFileHandler implements BaseFileHandler {
       const isDirectory =
         stat === null || stat === void 0 ? void 0 : stat.isDirectory()
       if (stat && isDirectory)
-        return new FileSystemDirectoryHandle(
+        return new fsa.FileSystemDirectoryHandle(
           new FolderHandle(path, dirname(path))
         )
       if (stat && !isDirectory) throw new DOMException(...MISMATCH)
       if (!options?.create) throw new DOMException(...GONE)
       await fs.mkdir(path)
-      return new FileSystemDirectoryHandle(
+      return new fsa.FileSystemDirectoryHandle(
         new FolderHandle(path, dirname(path))
       )
     } catch (err) {
@@ -68,11 +65,13 @@ export class NodeFileHandler implements BaseFileHandler {
       })
       const isFile = stat === null || stat === void 0 ? void 0 : stat.isFile()
       if (stat && isFile)
-        return new FileSystemFileHandle(new FileHandle(path, basename(path)))
+        return new fsa.FileSystemFileHandle(
+          new FileHandle(path, basename(path))
+        )
       if (stat && !isFile) throw new DOMException(...MISMATCH)
       if (!options?.create) throw new DOMException(...GONE)
       await (await fs.open(path, "w")).close()
-      return new FileSystemFileHandle(new FileHandle(path, basename(path)))
+      return new fsa.FileSystemFileHandle(new FileHandle(path, basename(path)))
     } catch (err) {
       console.error("Failed to get file " + path + ": " + err)
       return undefined

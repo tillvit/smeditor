@@ -5,10 +5,10 @@ import {
 } from "file-system-access"
 import JSZip from "jszip"
 import { WaterfallManager } from "../../gui/element/WaterfallManager"
+import { basename, dirname, extname } from "../Path"
 import { SafariFileWorker } from "../SafariFileWorker"
-import { BaseFileHandler } from "./FileHandler"
-import { extname, dirname, basename } from "../Path"
 import { getBrowser } from "../Util"
+import { BaseFileHandler } from "./FileHandler"
 
 export class WebFileHandler implements BaseFileHandler {
   private root!: FileSystemDirectoryHandle
