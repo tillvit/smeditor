@@ -75,19 +75,22 @@ export class BarlineContainer
     }
 
     for (const [beat, child] of this.barlineMap.entries()) {
-      child.y = this.renderer.getYPosFromBeat(beat)
       if (beat < fromBeat || beat > toBeat) {
         this.barlineMap.delete(beat)
         this.barlinePool.destroyChild(child)
+        continue
       }
+      child.y = this.renderer.getYPosFromBeat(beat)
     }
 
     for (const [beat, child] of this.barlineLabelMap.entries()) {
-      child.y = this.renderer.getYPosFromBeat(beat)
       if (beat < fromBeat || beat > toBeat) {
         this.barlineLabelMap.delete(beat)
         this.barlineLabelPool.destroyChild(child)
+        continue
       }
+      child.y = this.renderer.getYPosFromBeat(beat)
+      child.scale.y = Options.chart.reverse ? -1 : 1
     }
   }
 

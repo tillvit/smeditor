@@ -11,6 +11,7 @@ import { bsearch, isRightClick } from "../util/Util"
 import { ChartManager, EditMode, EditTimingMode } from "./ChartManager"
 import { BarlineContainer } from "./component/BarlineContainer"
 import { ComboNumber } from "./component/ComboNumber"
+import { ErrorBarContainer } from "./component/ErrorBarContainer"
 import { JudgmentSprite } from "./component/JudgmentSprite"
 import { PreviewAreaContainer } from "./component/PreviewAreaContainer"
 import { SelectionAreaContainer } from "./component/SelectionAreaContainer"
@@ -18,7 +19,6 @@ import { SelectionBoundary } from "./component/SelectionSprite"
 import { SelectionTimingEventContainer } from "./component/SelectionTimingEventContainer"
 import { SnapContainer } from "./component/SnapContainer"
 import { TimingAreaContainer } from "./component/TimingAreaContainer"
-import { TimingBarContainer } from "./component/TimingBarContainer"
 import { TimingTrackContainer } from "./component/TimingTrackContainer"
 import { Waveform } from "./component/Waveform"
 import { Notefield } from "./gameTypes/base/Notefield"
@@ -54,7 +54,7 @@ export class ChartRenderer extends Container<
   private timingAreas: TimingAreaContainer
   private timingTracks: TimingTrackContainer
   private selectedEvents: SelectionTimingEventContainer
-  private timingBar: TimingBarContainer
+  private timingBar: ErrorBarContainer
   private notefield: Notefield
   private snapDisplay: SnapContainer
   private judgment: JudgmentSprite
@@ -75,7 +75,7 @@ export class ChartRenderer extends Container<
     this.timingAreas = new TimingAreaContainer(this)
     this.timingTracks = new TimingTrackContainer(this)
     this.selectedEvents = new SelectionTimingEventContainer(this)
-    this.timingBar = new TimingBarContainer(this)
+    this.timingBar = new ErrorBarContainer(this)
     this.notefield = new this.chart.gameType.notefield(this)
     this.snapDisplay = new SnapContainer(this)
     this.previewArea = new PreviewAreaContainer(this)

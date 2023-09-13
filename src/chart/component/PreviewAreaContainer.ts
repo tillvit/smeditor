@@ -57,5 +57,6 @@ export class PreviewAreaContainer
       this.previewArea.y + 5,
       this.previewArea.y + this.previewArea.height - 15
     )
+    this.previewText.scale.y = Options.chart.reverse ? -1 : 1
   }
 }

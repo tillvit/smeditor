@@ -24,6 +24,7 @@ type SMPropertyFileInput = {
   type: "file"
   typeName: string
   accept: string[]
+  onChange?: (app: App) => void
 }
 type SMPropertyNumberInput = {
   type: "number"
@@ -99,7 +100,12 @@ export const SM_PROPERTIES_DATA: SMPropertyGroupData[] = [
       {
         title: "Audio Track",
         propName: "MUSIC",
-        input: { type: "file", typeName: "audio", accept: AUDIO_EXT },
+        input: {
+          type: "file",
+          typeName: "audio",
+          accept: AUDIO_EXT,
+          onChange: app => app.chartManager.loadAudio(),
+        },
       },
       {
         title: "Background Image",
@@ -321,6 +327,7 @@ export function createInputElement(
     }
     case "file": {
       const inputData = data.input
+      const callback = data.input.onChange
       const container = document.createElement("div")
       container.classList.add("flex-row", "flex-column-gap")
       const input = document.createElement("input")
@@ -355,6 +362,7 @@ export function createInputElement(
                 input.value = lastValue
               },
             })
+            callback?.(app)
           }
           fileSelector.click()
         } else {
@@ -387,6 +395,7 @@ export function createInputElement(
                       input.value = lastValue
                     },
                   })
+                  callback?.(app)
                 },
               },
               (sm ?? app.chartManager.loadedSM!).properties[data.propName]
