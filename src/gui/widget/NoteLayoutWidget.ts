@@ -10,11 +10,11 @@ import { Chart } from "../../chart/sm/Chart"
 import { isHoldNote } from "../../chart/sm/NoteTypes"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
+import { clamp, lerp, unlerp } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { destroyChildIf, getQuantIndex } from "../../util/Util"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
-import { clamp, lerp, unlerp } from "../../util/Math"
 
 const QUANT_COLORS = [
   0xe74827, 0x3d89f7, 0xaa2df4, 0x82e247, 0xaa2df4, 0xeaa138, 0xaa2df4,
@@ -24,7 +24,7 @@ const QUANT_COLORS = [
 export class NoteLayoutWidget extends Widget {
   barContainer = new ParticleContainer(
     1500,
-    { position: true, scale: true },
+    { position: true, scale: true, tint: true },
     16384,
     true
   )
