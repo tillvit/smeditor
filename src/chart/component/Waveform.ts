@@ -158,16 +158,16 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     })
     if (
       this.strippedWaveform &&
-      (this.renderer.chartManager.getBeat() != this.lastBeat ||
-        this.renderer.chartManager.getTime() != this.lastTime ||
+      (this.renderer.getVisualBeat() != this.lastBeat ||
+        this.renderer.getVisualTime() != this.lastTime ||
         this.lastCMod != Options.chart.CMod ||
         this.lastAllowSpeed != Options.chart.doSpeedChanges ||
         this.renderer.chartManager.app.renderer.screen.height *
           Options.chart.zoom !=
           this.lastHeight)
     ) {
-      this.lastBeat = this.renderer.chartManager.getBeat()
-      this.lastTime = this.renderer.chartManager.getTime()
+      this.lastBeat = this.renderer.getVisualBeat()
+      this.lastTime = this.renderer.getVisualTime()
       this.lastHeight =
         this.renderer.chartManager.app.renderer.screen.height *
         Options.chart.zoom
@@ -194,12 +194,12 @@ export class Waveform extends Sprite implements ChartRendererComponent {
 
       const chartSpeed = Options.chart.speed
       const speedMult = this.renderer.chart.timingData.getSpeedMult(
-        this.renderer.chartManager.getBeat(),
-        this.renderer.chartManager.getTime()
+        this.renderer.getVisualBeat(),
+        this.renderer.getVisualTime()
       )
 
       const maxDrawBeats =
-        this.renderer.chartManager.getBeat() + Options.chart.maxDrawBeats
+        this.renderer.getVisualBeat() + Options.chart.maxDrawBeats
       const scrolls = this.renderer.chart.timingData.getTimingData("SCROLLS")
       const offset = this.renderer.chart.timingData.getTimingData("OFFSET")
       const startBPM = this.renderer.chart.timingData.getBPM(0)
@@ -213,7 +213,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       // Get the first scroll index after curBeat
       let scrollIndex = bsearch(
         scrolls,
-        this.renderer.chartManager.getBeat() - Options.chart.maxDrawBeatsBack,
+        this.renderer.getVisualBeat() - Options.chart.maxDrawBeatsBack,
         a => a.beat
       )
 
