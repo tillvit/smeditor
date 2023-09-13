@@ -60,7 +60,13 @@ export class DanceNoteRenderer {
     arrow.hold.holdBody!.height = length
     arrow.hold.holdBody!.y = length
     arrow.hold.holdCap!.y = length
-    arrow.selection.height = 64 + length
+    arrow.hold.holdCap!.scale.y = length < 0 ? -0.5 : 0.5
+    if (length < 0) {
+      arrow.selection.y = length - 32
+    } else {
+      arrow.selection.y = -32
+    }
+    arrow.selection.height = 64 + Math.abs(length)
   }
 
   static setHoldBrightness(arrow: NoteObject, brightness: number) {

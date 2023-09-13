@@ -274,8 +274,6 @@ export class ChartRenderer extends Container<
     const fromBeat = this.getUpperBoundBeat()
     const toBeat = this.getLowerBoundBeat()
 
-    console.log(fromBeat, toBeat)
-
     this.scale.x = Options.chart.zoom
     this.scale.y = (Options.chart.reverse ? -1 : 1) * Options.chart.zoom
 
@@ -617,7 +615,6 @@ export class ChartRenderer extends Container<
       const scrollStartY = this.getYPosFromBeat(scrollBeat) * Options.chart.zoom
       const scrollValue = scrolls[scrollIndex]?.value ?? 1
       const pixelsToBeats = pixelsToEffectiveBeats / Math.abs(scrollValue)
-      console.log(scrolls[scrollIndex], upperBound - scrollStartY)
 
       if (scrollValue > 0) {
         return Math.max(

@@ -24,6 +24,7 @@ export class NoteContainer extends Container {
   private arrowPool = new DisplayObjectPool({
     create: () => DanceNoteRenderer.createArrow(),
   })
+  private notesDirty = false
 
   constructor(notefield: DanceNotefield) {
     super()
@@ -40,15 +41,8 @@ export class NoteContainer extends Container {
         )
       }
     }
-    const purgeNotes = () => {
-      const notedata = this.notefield.getNotedata()
-      for (const [note, arrow] of this.arrowMap.entries()) {
-        if (!notedata.includes(note)) {
-          this.arrowPool.destroyChild(arrow)
-          this.arrowMap.delete(note)
-        }
-      }
-    }
+    const purgeNotes = () => (this.notesDirty = true)
+
     EventHandler.on("timeSigChanged", timeSig)
     EventHandler.on("chartModified", purgeNotes)
     this.on("destroyed", () => {
@@ -58,6 +52,16 @@ export class NoteContainer extends Container {
   }
 
   update(fromBeat: number, toBeat: number) {
+    if (this.notesDirty) {
+      const notedata = this.notefield.getNotedata()
+      for (const [note, arrow] of this.arrowMap.entries()) {
+        if (!notedata.includes(note)) {
+          this.arrowPool.destroyChild(arrow)
+          this.arrowMap.delete(note)
+        }
+      }
+    }
+
     DanceNoteTexture.setArrowTexTime(
       this.notefield.getBeat(),
       this.notefield.getTime()
