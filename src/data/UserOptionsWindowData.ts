@@ -116,6 +116,16 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               },
             },
           },
+          {
+            type: "item",
+            label: "Warn before exit",
+            id: "general.warnBeforeExit",
+            input: {
+              type: "checkbox",
+            },
+            tooltip:
+              "Warn before exiting the editor if you have unsaved changes.",
+          },
         ],
       },
       {
