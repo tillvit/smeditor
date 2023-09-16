@@ -464,7 +464,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           {
             type: "item",
             label: "Judgment tilt",
-            id: "audio.judgmentTilt",
+            id: "play.judgmentTilt",
             input: {
               type: "checkbox",
             },
@@ -474,7 +474,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           {
             type: "item",
             label: "Hide barlines during play",
-            id: "audio.hideBarlines",
+            id: "play.hideBarlines",
             input: {
               type: "checkbox",
             },
