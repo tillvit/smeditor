@@ -6,11 +6,11 @@ import {
   Texture,
 } from "pixi.js"
 import { EventHandler } from "../../util/EventHandler"
+import { clamp } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { bsearch, destroyChildIf } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
-import { ChartAudio } from "../audio/ChartAudio"
 
 const MAX_ZOOM = 3500
 
@@ -21,7 +21,7 @@ interface WaveformLine extends Sprite {
 export class Waveform extends Sprite implements ChartRendererComponent {
   private lineContainer: ParticleContainer = new ParticleContainer(
     1500,
-    { position: true, scale: true },
+    { position: true, scale: true, tint: true },
     16384,
     true
   )
@@ -31,23 +31,25 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     height: 16,
   })
 
-  private chartAudio: ChartAudio
   private renderer: ChartRenderer
   private white: Sprite
 
-  private strippedWaveform: number[][] | undefined
+  private rawData: Float32Array[] = []
+  private filteredRawData: Float32Array[] = []
 
-  private lastReZoom: number
-  private lastZoom: number
-  private zoom: number
+  private speed
+  private lastSpeed
+  private lastSpeedTimeout?: NodeJS.Timeout
+  private sampleRate = 44100
+
   private poolSearch = 0
-  private lastBeat = 0
-  private lastTime = 0
-  private lastHeight = 0
-  private lastCMod: boolean
-  private lastAntialias: boolean
-  private lastAllowSpeed: boolean
-  private lastLineHeight = Options.chart.waveform.lineHeight
+  private trackedVariables = new Map<
+    () => any,
+    { value: any; cb?: (value: any) => void }
+  >()
+
+  private drawDirty = true
+  private blockCache = new Map<string, number[]>()
 
   constructor(renderer: ChartRenderer) {
     super()
@@ -55,60 +57,105 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     this.waveformTex = RenderTexture.create({
       resolution: Math.min(1, Options.performance.resolution),
     })
-    this.chartAudio = this.renderer.chartManager.chartAudio
     this.texture = this.waveformTex
 
     this.white = new Sprite(Texture.WHITE)
     this.white.width = 16
     this.white.height = 16
+    this.white.alpha = Options.chart.waveform.opacity
+    this.renderer.chartManager.app.renderer.render(this.white, {
+      renderTexture: this.lineTex,
+    })
+
+    this.speed = this.getSpeed()
+    this.lastSpeed = this.getSpeed()
+
+    this.trackVariable(() => this.renderer.getVisualBeat())
+    this.trackVariable(() => this.renderer.getVisualTime())
+    this.trackVariable(
+      () => this.getSpeed(),
+      value => {
+        this.speed = value
+        clearTimeout(this.lastSpeedTimeout)
+        this.lastSpeedTimeout = setTimeout(() => {
+          this.blockCache.clear()
+          this.lastSpeed = this.speed
+          this.drawDirty = true
+        }, 200)
+      }
+    )
+    this.trackVariable(() => Options.chart.zoom)
+    this.trackVariable(() => Options.chart.CMod)
+    this.trackVariable(() => Options.chart.doSpeedChanges)
+    this.trackVariable(
+      () => Options.chart.waveform.antialiasing,
+      value => {
+        this.filters = value ? [new FXAAFilter()] : []
+      }
+    )
+    this.trackVariable(
+      () => this.renderer.chartManager.app.renderer.screen.height,
+      () => this.resizeWaveform()
+    )
+    this.trackVariable(
+      () => Options.chart.waveform.opacity,
+      value => {
+        this.white.alpha = value
+        this.renderer.chartManager.app.renderer.render(this.white, {
+          renderTexture: this.lineTex,
+        })
+      }
+    )
+    this.trackVariable(
+      () => Options.chart.waveform.lineHeight,
+      () => {
+        if (Options.chart.waveform.lineHeight <= 0)
+          Options.chart.waveform.lineHeight = 1
+        this.updateLineHeight()
+      }
+    )
 
     this.anchor.set(0.5)
-    this.lastZoom = this.getZoom()
-    this.zoom = this.getZoom()
-    this.lastCMod = Options.chart.CMod
-    this.lastAllowSpeed = Options.chart.doSpeedChanges
-    this.lastReZoom = Date.now()
-    this.chartAudio.bindWaveform(this)
-    this.lastAntialias = Options.chart.waveform.antialiasing
-    this.refilter()
+    this.renderer.chartManager.chartAudio.onUpdate(() => this.getData())
+    this.getData()
+    this.resizeWaveform()
 
     this.filters = Options.chart.waveform.antialiasing ? [new FXAAFilter()] : []
 
-    const timingHandler = () => (this.lastBeat = -1)
+    const timingHandler = () => (this.drawDirty = true)
+    const audioChanged = () => {
+      this.getData()
+      this.resizeWaveform()
+      this.renderer.chartManager.chartAudio.onUpdate(() => this.getData())
+    }
     EventHandler.on("timingModified", timingHandler)
     this.on("destroyed", () => {
       EventHandler.off("timingModified", timingHandler)
     })
-  }
-
-  private async stripWaveform(
-    rawData: Float32Array[] | undefined
-  ): Promise<void> {
-    return new Promise(resolve => {
-      if (rawData == undefined) {
-        resolve()
-        return
-      }
-      this.strippedWaveform = Array.from({ length: rawData.length }, () => [])
-      const blockSize = this.chartAudio.getSampleRate() / (this.zoom * 4) // Number of samples in each subdivision
-      for (let channel = 0; channel < rawData.length; channel++) {
-        const samples = Math.floor(rawData[channel].length / blockSize)
-        for (let i = 0; i < samples; i++) {
-          const blockStart = Math.floor(blockSize * i) // the location of the first sample in the block
-          let sum = 0
-          for (let j = 0; j < blockSize; j++) {
-            sum = sum + Math.abs(rawData[channel][blockStart + j]) // find the sum of all the samples in the block
-          }
-          this.strippedWaveform[channel].push(sum / blockSize) // divide the sum by the block size to get the average
-        }
-      }
-      resolve()
+    EventHandler.on("audioLoaded", audioChanged)
+    this.on("destroyed", () => {
+      EventHandler.off("audioLoaded", audioChanged)
     })
   }
 
-  refilter() {
-    this.stripWaveform(this.chartAudio.getRawData())
-    this.lastBeat = -1
+  private getData() {
+    this.rawData = this.renderer.chartManager.chartAudio.getRawData()
+    this.filteredRawData =
+      this.renderer.chartManager.chartAudio.getFilteredRawData()
+    this.sampleRate = this.renderer.chartManager.chartAudio.getSampleRate()
+    this.blockCache.clear()
+    this.drawDirty = true
+  }
+
+  private resizeWaveform() {
+    this.waveformTex.resize(
+      clamp(
+        (this.rawData?.length ?? 0) * 288 * Options.chart.zoom,
+        1,
+        this.renderer.chartManager.app.renderer.screen.width
+      ),
+      this.renderer.chartManager.app.renderer.screen.height
+    )
   }
 
   update() {
@@ -118,62 +165,9 @@ export class Waveform extends Sprite implements ChartRendererComponent {
         !Options.play.hideBarlines)
 
     if (!Options.chart.waveform.enabled) return
-    if (this.lastAntialias != Options.chart.waveform.antialiasing) {
-      this.lastAntialias = Options.chart.waveform.antialiasing
-      this.filters = Options.chart.waveform.antialiasing
-        ? [new FXAAFilter()]
-        : []
-    }
-    if (this.chartAudio != this.renderer.chartManager.getAudio()) {
-      this.chartAudio = this.renderer.chartManager.getAudio()
-      this.refilter()
-      this.chartAudio.bindWaveform(this)
-    }
-    if (this.lastZoom != this.getZoom()) {
-      this.lastReZoom = Date.now()
-      this.lastZoom = this.getZoom()
-      this.lastBeat = -1
-    } else {
-      if (Date.now() - this.lastReZoom > 120 && this.zoom != this.getZoom()) {
-        this.zoom = this.getZoom()
-        this.refilter()
-      }
-    }
-    if (this.lastLineHeight != Options.chart.waveform.lineHeight) {
-      this.lastLineHeight = Options.chart.waveform.lineHeight
-      if (Options.chart.waveform.lineHeight <= 0)
-        Options.chart.waveform.lineHeight = 1
-      this.updateLineHeight()
-    }
-    this.waveformTex.resize(
-      Math.min(
-        this.renderer.chartManager.app.renderer.screen.width,
-        (this.strippedWaveform?.length ?? 0) * 288 * Options.chart.zoom
-      ),
-      this.renderer.chartManager.app.renderer.screen.height
-    )
-    this.white.alpha = Options.chart.waveform.opacity
-    this.renderer.chartManager.app.renderer.render(this.white, {
-      renderTexture: this.lineTex,
-    })
-    if (
-      this.strippedWaveform &&
-      (this.renderer.getVisualBeat() != this.lastBeat ||
-        this.renderer.getVisualTime() != this.lastTime ||
-        this.lastCMod != Options.chart.CMod ||
-        this.lastAllowSpeed != Options.chart.doSpeedChanges ||
-        this.renderer.chartManager.app.renderer.screen.height *
-          Options.chart.zoom !=
-          this.lastHeight)
-    ) {
-      this.lastBeat = this.renderer.getVisualBeat()
-      this.lastTime = this.renderer.getVisualTime()
-      this.lastHeight =
-        this.renderer.chartManager.app.renderer.screen.height *
-        Options.chart.zoom
-      this.lastCMod = Options.chart.CMod
-      this.lastAllowSpeed = Options.chart.doSpeedChanges
-      this.renderData(this.strippedWaveform)
+    if (this.drawDirty || this.variableChanged()) {
+      this.drawDirty = false
+      this.renderData()
       this.renderer.chartManager.app.renderer.render(this.lineContainer, {
         renderTexture: this.waveformTex,
       })
@@ -182,7 +176,38 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     this.scale.set(1 / Options.chart.zoom)
   }
 
-  private renderData(data: number[][]) {
+  private trackVariable<T>(get: () => T, onchange?: (value: T) => void) {
+    this.trackedVariables.set(get, { value: get(), cb: onchange })
+  }
+
+  private variableChanged() {
+    let hasChanged = false
+    for (const [get, last] of this.trackedVariables.entries()) {
+      if (get() != last.value) {
+        this.trackedVariables.get(get)!.value = get()
+        this.trackedVariables.get(get)!.cb?.(get())
+        hasChanged = true
+      }
+    }
+    return hasChanged
+  }
+
+  private getSample(data: Float32Array, second: number, cacheId: string) {
+    const blockSize = this.sampleRate / (this.lastSpeed * 4)
+    const blockNum = Math.floor(second * this.lastSpeed * 4)
+    if (this.blockCache.get(cacheId)?.[blockNum] !== undefined)
+      return this.blockCache.get(cacheId)![blockNum]
+    const blockStart = Math.floor(blockNum * blockSize)
+    const value =
+      data
+        .slice(blockStart, Math.floor(blockStart + blockSize))
+        .reduce((acc, samp) => acc + Math.abs(samp), 0) / blockSize
+    if (!this.blockCache.has(cacheId)) this.blockCache.set(cacheId, [])
+    this.blockCache.get(cacheId)![blockNum] = value
+    return value
+  }
+
+  private renderData() {
     this.resetPool()
 
     if (
@@ -299,16 +324,31 @@ export class Waveform extends Sprite implements ChartRendererComponent {
           }
           if (curSec < 0) continue
           // Draw the line
-          const samp = Math.floor(curSec * this.zoom * 4)
-          for (let channel = 0; channel < data.length; channel++) {
-            const v = data[channel][samp]
-            if (!v) continue
+          for (let channel = 0; channel < this.rawData.length; channel++) {
             const line = this.getLine()
-            line.scale.x = v * 16 * Options.chart.zoom
+            line.scale.x =
+              this.getSample(this.rawData[channel], curSec, "main") *
+              16 *
+              Options.chart.zoom
             line.y = currentYPos
+            line.tint = 0xffffff
             line.x =
               this.waveformTex.width / 2 +
-              288 * (channel + 0.5 - data.length / 2) * Options.chart.zoom
+              288 *
+                (channel + 0.5 - this.rawData.length / 2) *
+                Options.chart.zoom
+            const filteredLine = this.getLine()
+            filteredLine.scale.x =
+              this.getSample(this.filteredRawData[channel], curSec, "filter") *
+              16 *
+              Options.chart.zoom
+            filteredLine.tint = 0xff0000
+            filteredLine.y = currentYPos
+            filteredLine.x =
+              this.waveformTex.width / 2 +
+              288 *
+                (channel + 0.5 - this.filteredRawData.length / 2) *
+                Options.chart.zoom
           }
         }
         scrollIndex++
@@ -356,16 +396,29 @@ export class Waveform extends Sprite implements ChartRendererComponent {
           )
         }
 
-        const samp = Math.floor(curSec * this.zoom * 4)
-        for (let channel = 0; channel < data.length; channel++) {
-          const v = data[channel][samp]
-          if (!v) continue
+        for (let channel = 0; channel < this.rawData.length; channel++) {
           const line = this.getLine()
-          line.scale.x = v * 16 * Options.chart.zoom
+          line.scale.x =
+            this.getSample(this.rawData[channel], curSec, "main") *
+            16 *
+            Options.chart.zoom
           line.y = y
           line.x =
             this.waveformTex.width / 2 +
-            288 * (channel + 0.5 - data.length / 2) * Options.chart.zoom
+            288 * (channel + 0.5 - this.rawData.length / 2) * Options.chart.zoom
+          line.tint = 0xffffff
+          const filteredLine = this.getLine()
+          filteredLine.scale.x =
+            this.getSample(this.filteredRawData[channel], curSec, "filter") *
+            16 *
+            Options.chart.zoom
+          filteredLine.tint = 0xff0000
+          filteredLine.y = y
+          filteredLine.x =
+            this.waveformTex.width / 2 +
+            288 *
+              (channel + 0.5 - this.filteredRawData.length / 2) *
+              Options.chart.zoom
         }
       }
     } else {
@@ -386,16 +439,30 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       ) {
         calcTime += pixelsToSecondsRatio * Options.chart.waveform.lineHeight
 
-        const samp = Math.floor(calcTime * this.zoom * 4)
-        for (let channel = 0; channel < data.length; channel++) {
-          const v = data[channel][samp]
-          if (!v) continue
+        for (let channel = 0; channel < this.rawData.length; channel++) {
           const line = this.getLine()
-          line.scale.x = v * 16 * Options.chart.zoom
+          line.scale.x =
+            this.getSample(this.rawData[channel], calcTime, "main") *
+            16 *
+            Options.chart.zoom
           line.y = y
           line.x =
             this.waveformTex.width / 2 +
-            288 * (channel + 0.5 - data.length / 2) * Options.chart.zoom
+            288 * (channel + 0.5 - this.rawData.length / 2) * Options.chart.zoom
+          line.tint = 0xffffff
+
+          const filteredLine = this.getLine()
+          filteredLine.scale.x =
+            this.getSample(this.filteredRawData[channel], calcTime, "filter") *
+            16 *
+            Options.chart.zoom
+          filteredLine.tint = 0xff0000
+          filteredLine.y = y
+          filteredLine.x =
+            this.waveformTex.width / 2 +
+            288 *
+              (channel + 0.5 - this.filteredRawData.length / 2) *
+              Options.chart.zoom
         }
       }
     }
@@ -439,7 +506,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     return line
   }
 
-  private getZoom(): number {
+  private getSpeed(): number {
     return Math.min(Options.chart.speed, MAX_ZOOM)
   }
 }

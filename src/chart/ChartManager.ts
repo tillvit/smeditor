@@ -721,6 +721,7 @@ export class ChartManager {
       this.lastSong = this.loadedChart.getMusicPath()
       const audioPlaying = this.chartAudio.isPlaying()
       await this.loadAudio()
+      EventHandler.emit("audioLoaded")
       if (audioPlaying) this.chartAudio.play()
     }
 
@@ -737,6 +738,7 @@ export class ChartManager {
     )
 
     EventHandler.emit("chartLoaded")
+    EventHandler.emit("audioLoaded")
     EventHandler.emit("chartModified")
   }
 
