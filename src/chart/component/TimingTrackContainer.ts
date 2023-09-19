@@ -1,3 +1,4 @@
+import bezier from "bezier-easing"
 import {
   BitmapText,
   Container,
@@ -8,6 +9,7 @@ import {
 } from "pixi.js"
 import { TimingEventPopup } from "../../gui/popup/TimingEventPopup"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
+import { BezierAnimator } from "../../util/BezierEasing"
 import { lighten } from "../../util/Color"
 import { DisplayObjectPool } from "../../util/DisplayObjectPool"
 import { EventHandler } from "../../util/EventHandler"
@@ -26,14 +28,16 @@ export interface TimingBox extends Container {
   selection: BetterRoundedRect
   textObj: BitmapText
   guideLine?: Sprite
-  targetX?: number
-  targetAnchor?: number
+  lastX?: number
+  lastAnchor?: number
+  animationId?: string
   popup?: TimingEventPopup
 }
 
 interface TimingTrack extends Sprite {
-  targetX: number
+  lastX: number
   targetAlpha: number
+  type: string
 }
 
 interface TimingRow {
@@ -73,6 +77,7 @@ export class TimingTrackContainer
 
   private renderer: ChartRenderer
   private timingBoxMap: Map<TimingEvent, TimingBox> = new Map()
+  private wasEditingTiming = false
 
   private boxPool = new DisplayObjectPool({
     create: () => {
@@ -127,7 +132,9 @@ export class TimingTrackContainer
       name: type,
       height: 5000,
       x,
-      targetX: x,
+      type,
+      lastX: 0,
+      tint: 0x263252,
       targetAlpha: 0,
     })
     track.anchor.y = 0.5
@@ -150,9 +157,12 @@ export class TimingTrackContainer
     box.textObj.anchor.set(0.5, 0.55)
     box.backgroundObj.width = box.textObj.width + 10
     box.backgroundObj.height = 25
+    box.backgroundObj.position.x = -box.backgroundObj.width / 2
+    box.backgroundObj.position.y = -25 / 2
 
     box.selection.width = box.textObj.width + 10
     box.selection.height = 25
+    box.selection.position = box.backgroundObj.position
 
     if (box?.popup?.persistent !== true) box.popup?.close()
     box.popup = undefined
@@ -287,8 +297,9 @@ export class TimingTrackContainer
   private updateTracks() {
     const leftTypes = Options.chart.timingEventOrder.left
     const rightTypes = Options.chart.timingEventOrder.right
-
-    this.tracks.children.forEach(track => (track.targetAlpha = 0))
+    const editingTiming =
+      this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
+      this.renderer.chartManager.getMode() == EditMode.Edit
 
     let x = -this.renderer.chart.gameType.notefieldWidth * 0.5 - 128
     for (let i = leftTypes.length - 1; i >= 0; i--) {
@@ -296,10 +307,32 @@ export class TimingTrackContainer
       const track =
         this.tracks.getChildByName<TimingTrack>(type) ??
         this.createTrack(type, x)
-      track.targetX = x
-      track.targetAlpha = i % 2 == 0 ? 0.1 : 0
-      track.anchor.x = 1
-      track.tint = 0x263252
+      if (track.lastX != x) {
+        track.lastX = x
+        track.targetAlpha = i % 2 == 0 ? 0.1 : 0
+        BezierAnimator.animate(
+          track,
+          {
+            0: { x: "inherit", "anchor.x": "inherit" },
+            1: { x, "anchor.x": 1 },
+          },
+          0.3,
+          bezier(0, 0, 0.16, 1.01),
+          () => {},
+          `track-${type}-x`
+        )
+        BezierAnimator.animate(
+          track,
+          {
+            0: { alpha: "inherit" },
+            1: { alpha: editingTiming ? track.targetAlpha : 0 },
+          },
+          0.3,
+          bezier(0, 0, 0.16, 1.01),
+          () => {},
+          `track-${type}-alpha`
+        )
+      }
       x -= TIMING_TRACK_WIDTHS[type]
     }
 
@@ -309,20 +342,49 @@ export class TimingTrackContainer
       const track =
         this.tracks.getChildByName<TimingTrack>(type) ??
         this.createTrack(type, x)
-      track.targetX = x
-      track.targetAlpha = i % 2 == 0 ? 0.1 : 0
-      track.anchor.x = 0
-      track.tint = 0x263252
+      if (track.lastX != x) {
+        track.lastX = x
+        track.targetAlpha = i % 2 == 0 ? 0.1 : 0
+        BezierAnimator.animate(
+          track,
+          {
+            0: { x: "inherit", "anchor.x": "inherit" },
+            1: { x, "anchor.x": 0 },
+          },
+          0.3,
+          bezier(0, 0, 0.16, 1.01),
+          () => {},
+          `track-${type}-x`
+        )
+        BezierAnimator.animate(
+          track,
+          {
+            0: { alpha: "inherit" },
+            1: { alpha: editingTiming ? track.targetAlpha : 0 },
+          },
+          0.3,
+          bezier(0, 0, 0.16, 1.01),
+          () => {},
+          `track-${type}-alpha`
+        )
+      }
       x += TIMING_TRACK_WIDTHS[type]
     }
-    const editingTiming =
-      this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
-      this.renderer.chartManager.getMode() == EditMode.Edit
-    for (const track of this.tracks.children) {
-      if (!editingTiming) track.targetAlpha = 0
-      track.alpha = (track.alpha - track.targetAlpha) * 0.2 + track.targetAlpha
-      track.position.x =
-        (track.position.x - track.targetX) * 0.2 + track.targetX
+    if (this.wasEditingTiming != editingTiming) {
+      this.wasEditingTiming = editingTiming
+      for (const track of this.tracks.children) {
+        BezierAnimator.animate(
+          track,
+          {
+            0: { alpha: "inherit" },
+            1: { alpha: editingTiming ? track.targetAlpha : 0 },
+          },
+          0.3,
+          bezier(0, 0, 0.16, 1.01),
+          () => {},
+          `track-${track.type}-alpha`
+        )
+      }
     }
   }
 
@@ -381,58 +443,66 @@ export class TimingTrackContainer
         continue
       }
 
+      let targetX = 0
+      let targetAnchor = 0
       const boxWidth = box.backgroundObj.width
       const side = Options.chart.timingEventOrder.right.includes(event.type)
         ? "right"
         : "left"
       if (editingTiming) {
-        let targetX =
+        targetX =
           this.tracks.getChildByName<TimingTrack>(event.type)?.x ?? box.x
         targetX +=
           (TIMING_TRACK_WIDTHS[event.type] / 2) * (targetX > 0 ? 1 : -1)
-        if (!box.targetX) box.position.x = targetX
-        box.targetX = targetX
-        if (!box.targetAnchor) box.pivot.x = 0
-        box.targetAnchor = 0.5
+        targetAnchor = 0.5
       } else {
-        let x =
+        targetX =
           (side == "right" ? 1 : -1) *
           (this.renderer.chart.gameType.notefieldWidth * 0.5 + 80)
-        if (side == "left") x -= 30
+        if (side == "left") targetX -= 30
         if (
           currentRow.beat != event.beat ||
           (event.second && currentRow.second != event.second)
         ) {
           currentRow.leftOffset = 0
           currentRow.rightOffset = 0
+          currentRow.beat = event.beat!
+          currentRow.second = event.second!
         }
         if (side == "left") {
-          x -= currentRow.leftOffset
+          targetX -= currentRow.leftOffset
           currentRow.leftOffset += boxWidth + 5
         } else {
-          x += currentRow.rightOffset
+          targetX += currentRow.rightOffset
           currentRow.rightOffset += boxWidth + 5
         }
-        if (!box.targetX) box.position.x = x
-        box.targetX = x
-        currentRow.beat = event.beat!
-        currentRow.second = event.second!
-        if (!box.targetAnchor)
-          box.pivot.x = side == "right" ? -boxWidth / 2 : boxWidth / 2
-        box.targetAnchor = side == "right" ? 0 : 1
+        targetAnchor = side == "right" ? 0 : 1
       }
 
-      box.position.x = (box.targetX - box.position.x) * 0.2 + box.position.x
-      box.pivot.x =
-        ((box.targetAnchor - 0.5) * boxWidth - box.pivot.x) * 0.2 + box.pivot.x
-      box.backgroundObj.position.x = -boxWidth / 2
-      box.backgroundObj.position.y = -25 / 2
+      if (box.lastX === undefined || box.lastAnchor === undefined) {
+        box.position.x = targetX
+        box.pivot.x = (targetAnchor - 0.5) * boxWidth
+        console.log("easing ", event, "to pos " + targetX)
+      } else if (box.lastX != targetX || box.lastAnchor != targetAnchor) {
+        box.animationId = BezierAnimator.animate(
+          box,
+          {
+            0: { x: "inherit", "pivot.x": "inherit" },
+            1: { x: targetX, "pivot.x": (targetAnchor - 0.5) * boxWidth },
+          },
+          0.3,
+          bezier(0, 0, 0.16, 1.01),
+          () => {},
+          box.animationId
+        )
+      }
+      box.lastX = targetX
+      box.lastAnchor = targetAnchor
       box.y =
         Options.chart.CMod && event.type == "ATTACKS"
           ? this.renderer.getYPosFromSecond(event.second)
           : this.renderer.getYPosFromBeat(event.beat!)
 
-      box.selection.position = box.backgroundObj.position
       box.textObj.scale.y = Options.chart.reverse ? -1 : 1
 
       const inSelection =
@@ -493,8 +563,6 @@ export class TimingTrackContainer
       )
       this.addChild(ghostBox)
       ghostBox.visible = true
-      ghostBox.targetX = undefined
-      ghostBox.targetAnchor = undefined
       ghostBox.textObj.anchor.set(0.5, 0.55)
       ghostBox.backgroundObj.height = 25
       ghostBox.selection.height = 25

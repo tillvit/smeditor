@@ -1,3 +1,4 @@
+import bezier from "bezier-easing"
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
 import { EditMode } from "../../chart/ChartManager"
 import {
@@ -9,12 +10,13 @@ import {
   isStandardTimingWindow,
 } from "../../chart/play/TimingWindowCollection"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
+import { BezierAnimator } from "../../util/BezierEasing"
+import { mean, median, roundDigit, stdDev } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { destroyChildIf } from "../../util/Util"
 import { WaterfallManager } from "../element/WaterfallManager"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
-import { roundDigit, mean, median, stdDev } from "../../util/Math"
 
 const WIDGET_WIDTH = 300
 const HISTOGRAM_HEIGHT = 150
@@ -40,12 +42,11 @@ export class PlayInfoWidget extends Widget {
 
   private texts = new Container<BitmapText>()
 
-  private showEase = 0
-  private easeVelocity = 0
+  showEase = 0
   private toggled = false
-  private hovered = false
   private drag = false
   private dragStart = 0
+  private lastMode = this.manager.chartManager.getMode()
 
   constructor(manager: WidgetManager) {
     super(manager)
@@ -61,6 +62,7 @@ export class PlayInfoWidget extends Widget {
       if (this.manager.chartManager.getMode() == EditMode.Play) return
       this.drag = true
       this.dragStart = Date.now()
+      BezierAnimator.stop("play-widget")
     })
 
     window.addEventListener("mousemove", event => {
@@ -69,27 +71,64 @@ export class PlayInfoWidget extends Widget {
       }
     })
 
-    this.on("mouseup", () => {
+    window.addEventListener("mouseup", () => {
       if (this.drag) {
         if (Date.now() - this.dragStart > 400) {
           this.toggled = this.showEase > 0.5
         } else {
-          this.hovered = false
           this.toggled = !this.toggled
         }
+        BezierAnimator.animate(
+          this,
+          {
+            0: { showEase: "inherit" },
+            1: { showEase: this.toggled ? 1 : 0 },
+          },
+          0.6,
+          bezier(0.11, 0.71, 0.33, 1.39),
+          () => {},
+          "play-widget"
+        )
       }
-    })
-
-    window.addEventListener("mouseup", () => {
       this.drag = false
     })
 
     this.on("mouseenter", () => {
-      this.hovered = true
+      if (
+        !this.toggled &&
+        this.manager.chartManager.getMode() != EditMode.Play
+      ) {
+        BezierAnimator.animate(
+          this,
+          {
+            0: { showEase: "inherit" },
+            1: { showEase: 0.05 },
+          },
+          0.6,
+          bezier(0.11, 0.71, 0.33, 1.39),
+          () => {},
+          "play-widget"
+        )
+      }
     })
 
     this.on("mouseleave", () => {
-      this.hovered = false
+      if (
+        !this.toggled &&
+        this.manager.chartManager.getMode() != EditMode.Play
+      ) {
+        BezierAnimator.animate(
+          this,
+          {
+            0: { showEase: "inherit" },
+            1: { showEase: 0 },
+          },
+          0.6,
+          bezier(0.11, 0.71, 0.33, 1.39),
+          () => {},
+          "play-widget"
+        )
+      }
     })
 
     const early = new BitmapText("Early", {
@@ -285,18 +324,26 @@ export class PlayInfoWidget extends Widget {
       else line.height = line.targetHeight
     }
 
+    if (this.lastMode != this.manager.chartManager.getMode()) {
+      this.lastMode = this.manager.chartManager.getMode()
+      BezierAnimator.animate(
+        this,
+        {
+          0: { showEase: "inherit" },
+          1: {
+            showEase:
+              this.manager.chartManager.getMode() == EditMode.Play ? 1 : 0,
+          },
+        },
+        0.6,
+        bezier(0.11, 0.71, 0.33, 1.39),
+        () => {},
+        "play-widget"
+      )
+    }
+
     if (Options.general.smoothAnimations) {
-      const easeTo =
-        this.manager.chartManager.getMode() == EditMode.Play || this.toggled
-          ? 1
-          : Number(this.hovered) * 0.05
-      if (!this.drag) {
-        this.easeVelocity += (easeTo - this.showEase) * 0.05
-        this.showEase += this.easeVelocity
-      }
-      if (this.easeVelocity < 0 && this.showEase < 0) this.easeVelocity *= -1
-      this.easeVelocity *= 0.75
-      this.y += (1 - this.showEase) * 400
+      this.y += (1 - Math.abs(this.showEase)) * 400
     } else {
       if (this.manager.chartManager.getMode() != EditMode.Play) this.y += 400
     }

@@ -1,4 +1,6 @@
+import bezier from "bezier-easing"
 import { App } from "../../App"
+import { BezierAnimator } from "../../util/BezierEasing"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp } from "../../util/Math"
 import { Window } from "./Window"
@@ -210,6 +212,7 @@ class EQPoint {
   private type
   private response = new Float32Array(freqPool.length)
   private _empty = new Float32Array(freqPool.length)
+  pointSize = 0.4
   constructor(window: EQWindow, filterIndex: number) {
     this.filterIndex = filterIndex
     this.window = window
@@ -258,7 +261,6 @@ class EQPoint {
   mouseDown(event: MouseEvent) {
     this.calcResponse()
     this.dragging = true
-    console.log("started dragging")
     const xStart = this.x
     const yStart = this.y
     const xOffset = event.clientX
@@ -280,10 +282,40 @@ class EQPoint {
       this.calcResponse()
     }
     const mouseup = () => {
+      BezierAnimator.animate(
+        this,
+        {
+          0: {
+            pointSize: "inherit",
+          },
+          1: {
+            pointSize: 0.3,
+          },
+        },
+        0.3,
+        bezier(0.11, 0.71, 0.41, 0.86),
+        () => {},
+        `eq-point${this.filterIndex}`
+      )
       this.dragging = false
       window.removeEventListener("mousemove", mousemove)
       window.removeEventListener("mouseup", mouseup)
     }
+    BezierAnimator.animate(
+      this,
+      {
+        0: {
+          pointSize: "inherit",
+        },
+        1: {
+          pointSize: 0.9,
+        },
+      },
+      0.3,
+      bezier(0.11, 0.71, 0.41, 0.86),
+      () => {},
+      `eq-point${this.filterIndex}`
+    )
     window.addEventListener("mousemove", mousemove)
     window.addEventListener("mouseup", mouseup)
   }
@@ -309,6 +341,10 @@ class EQPoint {
     ctx.fillStyle = fills[this.filterIndex] + "80"
     ctx.beginPath()
     ctx.arc(this.x, this.y, POINT_SIZE, 0, 2 * Math.PI)
+    ctx.closePath()
+    ctx.fill()
+    ctx.beginPath()
+    ctx.arc(this.x, this.y, POINT_SIZE * this.pointSize, 0, 2 * Math.PI)
     ctx.closePath()
     ctx.fill()
   }
