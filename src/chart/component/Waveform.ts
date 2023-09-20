@@ -193,6 +193,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
   }
 
   private getSample(data: Float32Array, second: number, cacheId: string) {
+    if (second < 0) return 0
     const blockSize = this.sampleRate / (this.lastSpeed * 4)
     const blockNum = Math.floor(second * this.lastSpeed * 4)
     if (this.blockCache.get(cacheId)?.[blockNum] !== undefined)

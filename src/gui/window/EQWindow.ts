@@ -243,11 +243,13 @@ class EQPoint {
         this.window.app.chartManager.chartAudio.getFilter(this.filterIndex).gain
           .value / 2 ?? 0
       )
-    } else {
+    } else if (this.canChangeGain()) {
       this.y = gainToY(
         this.window.app.chartManager.chartAudio.getFilter(this.filterIndex).gain
           .value ?? 0
       )
+    } else {
+      this.y = graphHeight / 2
     }
   }
   getGain() {
@@ -268,6 +270,7 @@ class EQPoint {
     const mousemove = (event: MouseEvent) => {
       this.x = (event.clientX - xOffset) * 2 + xStart
       if (this.canChangeGain()) this.y = (event.clientY - yOffset) * 2 + yStart
+      else this.y = graphHeight / 2
       this.x = clamp(this.x, 0, graphWidth)
       this.y = clamp(
         this.y,

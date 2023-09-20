@@ -1,5 +1,23 @@
 import { WaterfallManager } from "../../gui/element/WaterfallManager"
 
+class SafeAudioBufferSourceNode extends AudioBufferSourceNode {
+  private started = false
+  start(when?: number, offset?: number, duration?: number): void {
+    if (!this.started) super.start(when, offset, duration)
+    this.started = true
+  }
+  stop(when?: number): void {
+    if (this.started) super.stop(when)
+    this.started = false
+  }
+  static create(node: AudioBufferSourceNode) {
+    const safe = node as SafeAudioBufferSourceNode
+    safe.started = false
+    Object.setPrototypeOf(safe, SafeAudioBufferSourceNode.prototype)
+    return safe
+  }
+}
+
 export class ChartAudio {
   private _audioContext: AudioContext = new AudioContext()
   private _audioAnalyzer: AnalyserNode
@@ -7,7 +25,7 @@ export class ChartAudio {
   private _freqData: Uint8Array
   private _filteredFreqData: Uint8Array
   private _gainNode: GainNode
-  private _source?: AudioBufferSourceNode
+  private _source?: SafeAudioBufferSourceNode
   private _playbackTime = 0
   private _startTimestamp = 0
   private _rate = 1
@@ -353,7 +371,10 @@ export class ChartAudio {
   }
 
   private initSource() {
-    this._source = this._audioContext.createBufferSource()
+    this._source?.stop()
+    this._source = SafeAudioBufferSourceNode.create(
+      this._audioContext.createBufferSource()
+    )
     this._source.buffer = this._buffer
     this._source.connect(this._audioAnalyzer)
     let input: AudioNode = this._audioAnalyzer
@@ -483,11 +504,7 @@ export class ChartAudio {
     clearTimeout(this._delay)
     this._isPlaying = false
     if (this._playbackTime <= this._buffer.duration) {
-      try {
-        this._source.stop()
-      } catch {
-        ;("")
-      }
+      this._source.stop()
     }
     this._playbackTime = pause
       ? (this._audioContext.currentTime - this._startTimestamp) *
