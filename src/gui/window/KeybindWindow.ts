@@ -8,11 +8,45 @@ import { Dropdown } from "../element/Dropdown"
 import { KeyComboWindow } from "./KeyComboWindow"
 import { Window } from "./Window"
 
+interface KeybindInserts {
+  ids: string[]
+  after?: string
+}
+
 const KEYBIND_BLACKLIST = ["cut", "copy", "paste", "undo", "redo", "delete"]
-const KEYBIND_INSERTS: Record<string, string[]> = {
-  edit: ["previousNoteType", "nextNoteType"],
-  view: ["playback", "selectRegion"],
-  debug: ["showFPSCounter", "showDebugTimers"],
+const KEYBIND_INSERTS: Record<string, KeybindInserts[]> = {
+  edit: [
+    {
+      ids: [
+        "previousNoteType",
+        "nextNoteType",
+        "noteTypeTap",
+        "noteTypeMine",
+        "noteTypeFake",
+        "noteTypeLift",
+        "quant4",
+        "quant8",
+        "quant12",
+        "quant16",
+        "quant24",
+        "quant32",
+        "quant48",
+        "quant96",
+        "quant192",
+      ],
+      after: "mousePlacement",
+    },
+  ],
+  view: [
+    {
+      ids: ["playback", "selectRegion"],
+    },
+  ],
+  debug: [
+    {
+      ids: ["showFPSCounter", "showDebugTimers"],
+    },
+  ],
 }
 
 export class KeybindWindow extends Window {
@@ -154,10 +188,15 @@ export class KeybindWindow extends Window {
     })
     Object.keys(KEYBIND_INSERTS).forEach(id => {
       if (GROUPS[id] === undefined) GROUPS[id] = []
-      GROUPS[id].unshift(...KEYBIND_INSERTS[id])
-      KEYBIND_INSERTS[id].forEach(option => {
-        const idx = missingKeybindTest.indexOf(option)
-        if (idx != -1) missingKeybindTest.splice(idx, 1)
+      KEYBIND_INSERTS[id].forEach(insert => {
+        const insertIndex = !insert.after
+          ? 0
+          : GROUPS[id].findIndex(id => insert.after == id) + 1 ?? 0
+        GROUPS[id].splice(insertIndex, 0, ...insert.ids)
+        insert.ids.forEach(option => {
+          const idx = missingKeybindTest.indexOf(option)
+          if (idx != -1) missingKeybindTest.splice(idx, 1)
+        })
       })
     })
     KEYBIND_BLACKLIST.forEach(option => {

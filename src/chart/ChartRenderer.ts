@@ -24,7 +24,7 @@ import { Waveform } from "./component/Waveform"
 import { Notefield } from "./gameTypes/base/Notefield"
 import { TimingWindow } from "./play/TimingWindow"
 import { Chart } from "./sm/Chart"
-import { NotedataEntry } from "./sm/NoteTypes"
+import { NoteType, NotedataEntry } from "./sm/NoteTypes"
 
 interface SelectionBounds {
   start: Point
@@ -46,7 +46,7 @@ export class ChartRenderer extends Container<
   private lastMousePos?: Point
   private lastMouseBeat = -1
   private lastMouseCol = -1
-  private lastNoteType = ""
+  private lastNoteType: NoteType | null = null
   private editingCol = -1
 
   private waveform: Waveform
@@ -313,7 +313,7 @@ export class ChartRenderer extends Container<
           this.notefield.setGhostNote({
             beat: snapBeat,
             col: this.lastMouseCol,
-            type: this.chartManager.getEditingNoteType(),
+            type: this.chartManager.getEditingNoteType()!,
           })
         }
       }

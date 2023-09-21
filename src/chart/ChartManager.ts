@@ -32,6 +32,7 @@ import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
 import { Chart } from "./sm/Chart"
 import {
   HoldNotedataEntry,
+  NoteType,
   Notedata,
   NotedataEntry,
   PartialHoldNotedataEntry,
@@ -132,7 +133,6 @@ export class ChartManager {
   private holdEditing: (PartialHold | undefined)[] = []
   private editNoteTypeIndex = 0
 
-  private snapIndex = 0
   private partialScroll = 0
   private noteIndex = 0
   private lastMetronomeDivision = -1
@@ -896,17 +896,28 @@ export class ChartManager {
   }
 
   previousSnap() {
-    this.snapIndex = (this.snapIndex - 1 + SNAPS.length) % SNAPS.length
-    Options.chart.snap =
-      SNAPS[this.snapIndex] == -1 ? 0 : 1 / SNAPS[this.snapIndex]
+    let curIndex = this.getSnapIndex() - 1
+    curIndex = (curIndex + SNAPS.length) % SNAPS.length
+    Options.chart.snap = SNAPS[curIndex] == -1 ? 0 : 1 / SNAPS[curIndex]
     EventHandler.emit("snapChanged")
   }
 
   nextSnap() {
-    this.snapIndex = (this.snapIndex + 1 + SNAPS.length) % SNAPS.length
-    Options.chart.snap =
-      SNAPS[this.snapIndex] == -1 ? 0 : 1 / SNAPS[this.snapIndex]
+    let curIndex = this.getSnapIndex()
+    if (
+      curIndex == SNAPS.length - 1 ||
+      Math.abs(1 / Options.chart.snap - SNAPS[curIndex]) <= 0.0005
+    ) {
+      curIndex++
+    }
+    curIndex = (curIndex + SNAPS.length) % SNAPS.length
+    Options.chart.snap = SNAPS[curIndex] == -1 ? 0 : 1 / SNAPS[curIndex]
     EventHandler.emit("snapChanged")
+  }
+
+  private getSnapIndex() {
+    if (Options.chart.snap == 0) return SNAPS.length - 1
+    return SNAPS.findIndex(s => 1 / s <= Options.chart.snap)
   }
 
   private removeDuplicateBeats(arr: number[]): number[] {
@@ -1086,7 +1097,7 @@ export class ChartManager {
       holdEdit.originalNote = {
         beat: beat,
         col: col,
-        type: this.getEditingNoteType(),
+        type: this.getEditingNoteType()!,
       }
     }
     this.getAssistTickIndex()
@@ -1214,13 +1225,13 @@ export class ChartManager {
       (this.editNoteTypeIndex + 1 + numNoteTypes) % numNoteTypes
   }
 
-  getEditingNoteType(): string {
+  getEditingNoteType(): NoteType | null {
     return (
-      this.loadedChart?.gameType.editNoteTypes[this.editNoteTypeIndex] ?? ""
+      this.loadedChart?.gameType.editNoteTypes[this.editNoteTypeIndex] ?? null
     )
   }
 
-  setEditingNoteType(type: string) {
+  setEditingNoteType(type: NoteType) {
     if (!this.loadedChart) return
     const types = this.loadedChart?.gameType.editNoteTypes
     const index = types.indexOf(type)

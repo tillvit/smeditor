@@ -766,6 +766,20 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       })
     },
   },
+  convertNotesLifts: {
+    label: "Notes to lifts",
+    bindLabel: "Convert notes to lifts",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.type = "Lift"
+        return note
+      })
+    },
+  },
   convertTapsFakes: {
     label: "Taps to fakes",
     bindLabel: "Convert taps to fakes",
@@ -1095,6 +1109,110 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     disabled: false,
     callback: () => {
       Options.debug.showFPS = !Options.debug.showFPS
+    },
+  },
+  noteTypeTap: {
+    label: "Switch to Taps",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: app => {
+      app.chartManager.setEditingNoteType("Tap")
+    },
+  },
+  noteTypeLift: {
+    label: "Switch to Lifts",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: app => {
+      app.chartManager.setEditingNoteType("Lift")
+    },
+  },
+  noteTypeMine: {
+    label: "Switch to Mines",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: app => {
+      app.chartManager.setEditingNoteType("Mine")
+    },
+  },
+  noteTypeFake: {
+    label: "Switch to Fakes",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: app => {
+      app.chartManager.setEditingNoteType("Fake")
+    },
+  },
+  quant4: {
+    label: "Switch to 4ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1
+    },
+  },
+  quant8: {
+    label: "Switch to 8ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 2
+    },
+  },
+  quant12: {
+    label: "Switch to 12ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 3
+    },
+  },
+  quant16: {
+    label: "Switch to 16ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 4
+    },
+  },
+  quant24: {
+    label: "Switch to 24ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 6
+    },
+  },
+  quant32: {
+    label: "Switch to 32ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 8
+    },
+  },
+  quant48: {
+    label: "Switch to 48ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 12
+    },
+  },
+  quant96: {
+    label: "Switch to 96ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 24
+    },
+  },
+  quant192: {
+    label: "Switch to 192nds",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 48
     },
   },
 }

@@ -67,12 +67,12 @@ export class DanceNoteTexture {
     })
     DanceNoteTexture.arrow_tex = RenderTexture.create({
       width: 256,
-      height: 256,
+      height: 320,
       resolution: Options.performance.resolution,
     })
     DanceNoteTexture.lift_tex = RenderTexture.create({
       width: 256,
-      height: 256,
+      height: 320,
       resolution: Options.performance.resolution,
     })
     DanceNoteTexture.mine_tex = RenderTexture.create({
@@ -124,7 +124,7 @@ export class DanceNoteTexture {
       this.arrow_frame = arrow_frame
     }
     {
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 10; i++) {
         const shader_body = Shader.from(
           this.noop_vert,
           this.arrow_gradient_frag,
@@ -146,7 +146,7 @@ export class DanceNoteTexture {
       }
     }
     {
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 10; i++) {
         const shader_body = Shader.from(
           this.noop_vert,
           this.lift_gradient_frag,
@@ -244,7 +244,7 @@ export class DanceNoteTexture {
 
   static setArrowTexTime(beat: number, second: number) {
     if (!this.loaded) return
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 10; i++) {
       const tapShader: Mesh<Shader> =
         DanceNoteTexture.arrow_container.getChildByName("body" + i)!
       tapShader.shader.uniforms.time = beat
@@ -265,10 +265,7 @@ export class DanceNoteTexture {
     if (note.type == "Mine") {
       arrow.texture = DanceNoteTexture.mine_tex
     } else {
-      const i = Math.min(
-        getQuantIndex(timingData.getBeatOfMeasure(note.beat)),
-        7
-      )
+      const i = getQuantIndex(timingData.getBeatOfMeasure(note.beat))
       arrow.texture = new Texture(
         note.type == "Lift"
           ? DanceNoteTexture.lift_tex.baseTexture

@@ -1,5 +1,5 @@
-import { PartialNotedata, isHoldNote } from "../chart/sm/NoteTypes"
-import { TimingEventProperty, TimingEvent } from "../chart/sm/TimingTypes"
+import { NoteType, PartialNotedata, isHoldNote } from "../chart/sm/NoteTypes"
+import { TimingEvent, TimingEventProperty } from "../chart/sm/TimingTypes"
 import { roundDigit } from "./Math"
 
 const _a85chars = Array(85)
@@ -151,6 +151,8 @@ export function packValue(value: number): number[] {
   return bytes
 }
 
+const noteTypeOrder: NoteType[] = ["Hold", "Mine", "Roll", "Lift", "Fake"]
+
 export function decodeNotes(data: string): PartialNotedata | undefined {
   if (data.startsWith("ArrowVortex:notes:")) {
     const decoded = a85decode(data.slice(18))
@@ -169,7 +171,7 @@ export function decodeNotes(data: string): PartialNotedata | undefined {
           const type = data_arr.shift()
 
           if (type == undefined || type > 4) continue
-          const noteType = ["Hold", "Mine", "Roll", "Lift", "Fake"][type]
+          const noteType = noteTypeOrder[type]
           if (start == end) {
             if (noteType == "Hold" || noteType == "Roll") continue
             noteList.push({

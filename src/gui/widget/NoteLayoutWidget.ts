@@ -6,20 +6,16 @@ import {
   Texture,
 } from "pixi.js"
 import { EditMode } from "../../chart/ChartManager"
+import { QUANT_COLORS } from "../../chart/component/SnapContainer"
 import { Chart } from "../../chart/sm/Chart"
 import { isHoldNote } from "../../chart/sm/NoteTypes"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, lerp, unlerp } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { destroyChildIf, getQuantIndex } from "../../util/Util"
+import { destroyChildIf, getDivision } from "../../util/Util"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
-
-const QUANT_COLORS = [
-  0xe74827, 0x3d89f7, 0xaa2df4, 0x82e247, 0xaa2df4, 0xeaa138, 0xaa2df4,
-  0x6be88e, 0x6be88e, 0x6be88e,
-]
 
 export class NoteLayoutWidget extends Widget {
   barContainer = new ParticleContainer(
@@ -223,7 +219,7 @@ export class NoteLayoutWidget extends Widget {
       let t = unlerp(0, lastBeat, note.beat)
       if (Options.chart.CMod) t = unlerp(songOffset, lastSecond, note.second)
       obj.y = t * height
-      obj.tint = QUANT_COLORS[getQuantIndex(note.beat)]
+      obj.tint = QUANT_COLORS[getDivision(note.beat)]
       if (note.type == "Mine") obj.tint = 0x808080
       childIndex++
       if (isHoldNote(note)) {

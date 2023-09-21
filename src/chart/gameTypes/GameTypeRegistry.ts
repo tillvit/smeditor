@@ -1,4 +1,5 @@
 import { ChartRenderer } from "../ChartRenderer"
+import { NoteType } from "../sm/NoteTypes"
 import { GameLogic } from "./base/GameLogic"
 import { NotedataParser } from "./base/NotedataParser"
 import { Notefield } from "./base/Notefield"
@@ -13,7 +14,7 @@ export interface GameType {
   gameLogic: GameLogic
   parser: NotedataParser
   notefield: new (renderer: ChartRenderer) => Notefield
-  editNoteTypes: string[]
+  editNoteTypes: NoteType[]
   flipColumns: {
     horizontal: number[]
     vertical: number[]
