@@ -148,8 +148,9 @@ export class TimingTrackContainer
       songTiming: this.renderer.chart.timingData.isTypeChartSpecific(
         event.type
       ),
-      targetX: 0,
-      targetAnchor: 0,
+      lastX: undefined,
+      lastAnchor: undefined,
+      animationId: undefined,
       zIndex: event.beat!,
       eventMode: "static",
     })

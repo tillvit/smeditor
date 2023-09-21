@@ -126,40 +126,19 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             tooltip:
               "Warn before exiting the editor if you have unsaved changes.",
           },
-        ],
-      },
-      {
-        type: "subgroup",
-        label: "Scrolling",
-        children: [
           {
             type: "item",
-            label: "Scroll sensitivity",
-            id: "general.scrollSensitivity",
+            label: "Spinner step",
+            id: "general.spinnerStep",
             input: {
               type: "slider",
               min: 0,
-              step: 1,
-              max: 200,
+              step: 0.1,
+              max: 5,
+              hardMin: 0,
               hardMax: 2 ** 31 - 1,
-              transformers: {
-                serialize: value => value * 100,
-                deserialize: value => value / 100,
-              },
             },
-            tooltip:
-              "Adjust the scroll sensitivity when scrolling through the chart.",
-          },
-
-          {
-            type: "item",
-            label: "Snap every scroll",
-            id: "general.scrollSnapEveryScroll",
-            input: {
-              type: "checkbox",
-            },
-            tooltip:
-              "Whether each scroll movement corresponds to moving one snap unit when scrolling. Turning this on will have the same behavior as ArrowVortex.",
+            tooltip: "The default increment for all number spinners.",
           },
         ],
       },
@@ -174,6 +153,19 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
         type: "subgroup",
         label: "Playfield",
         children: [
+          {
+            type: "subgroup",
+            children: [
+              {
+                type: "item",
+                label: "Enable mouse placement",
+                id: "chart.mousePlacement",
+                input: {
+                  type: "checkbox",
+                },
+              },
+            ],
+          },
           {
             type: "subgroup",
             children: [
@@ -259,6 +251,57 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                 },
               },
             ],
+          },
+        ],
+      },
+      {
+        type: "subgroup",
+        label: "Scrolling",
+        children: [
+          {
+            type: "item",
+            label: "Scroll sensitivity",
+            id: "chart.scroll.scrollSensitivity",
+            input: {
+              type: "slider",
+              min: 0,
+              step: 1,
+              max: 200,
+              hardMax: 2 ** 31 - 1,
+              transformers: {
+                serialize: value => value * 100,
+                deserialize: value => value / 100,
+              },
+            },
+            tooltip:
+              "Adjust the scroll sensitivity when scrolling through the chart.",
+          },
+          {
+            type: "item",
+            label: "Snap every scroll",
+            id: "chart.scroll.scrollSnapEveryScroll",
+            input: {
+              type: "checkbox",
+            },
+            tooltip:
+              "Whether each scroll movement corresponds to moving one snap unit when scrolling. Turning this on will have the same behavior as ArrowVortex.",
+          },
+          {
+            type: "item",
+            label: "Invert zoom in/out",
+            id: "chart.scroll.invertZoomScroll",
+            input: {
+              type: "checkbox",
+            },
+            tooltip: "Inverts the zoom in/out control when scrolling.",
+          },
+          {
+            type: "item",
+            label: "Invert scroll direction when in reverse",
+            id: "chart.scroll.invertReverseScroll",
+            input: {
+              type: "checkbox",
+            },
           },
         ],
       },

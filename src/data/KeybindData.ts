@@ -290,7 +290,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   volumeUp: {
     label: "Increase master volume",
-    combos: [{ key: "Up", mods: [Modifier.SHIFT] }],
+    combos: [{ key: "Up", mods: [Modifier.ALT] }],
     disabled: false,
     callback: () => {
       Options.audio.masterVolume = Math.min(
@@ -304,7 +304,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   volumeDown: {
     label: "Decrease master volume",
-    combos: [{ key: "Down", mods: [Modifier.SHIFT] }],
+    combos: [{ key: "Down", mods: [Modifier.ALT] }],
     disabled: false,
     callback: () => {
       Options.audio.masterVolume = Math.max(
@@ -318,7 +318,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   songVolumeUp: {
     label: "Increase song volume",
-    combos: [{ key: "Up", mods: [Modifier.SHIFT, DEF_MOD] }],
+    combos: [{ key: "Up", mods: [Modifier.SHIFT, Modifier.ALT] }],
     disabled: false,
     callback: () => {
       Options.audio.songVolume = Math.min(Options.audio.songVolume + 0.05, 1)
@@ -329,7 +329,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   songVolumeDown: {
     label: "Decrease song volume",
-    combos: [{ key: "Down", mods: [Modifier.SHIFT, DEF_MOD] }],
+    combos: [{ key: "Down", mods: [Modifier.SHIFT, Modifier.ALT] }],
     disabled: false,
     callback: () => {
       Options.audio.songVolume = Math.max(Options.audio.songVolume - 0.05, 0)
@@ -628,10 +628,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ key: "M", mods: [Modifier.SHIFT] }],
     disabled: false,
     callback: () => {
-      Options.general.mousePlacement = !Options.general.mousePlacement
+      Options.chart.mousePlacement = !Options.chart.mousePlacement
       WaterfallManager.create(
-        "Mouse Note Placement: " +
-          (Options.general.mousePlacement ? "on" : "off")
+        "Mouse Note Placement: " + (Options.chart.mousePlacement ? "on" : "off")
       )
     },
   },
@@ -707,6 +706,34 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     callback: app => {
       app.chartManager.modifySelection(note => {
         if (note.type == "Hold") note.type = "Roll"
+        return note
+      })
+    },
+  },
+  convertRollsHolds: {
+    label: "Rolls to holds",
+    bindLabel: "Convert rolls to holds",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        if (note.type == "Roll") note.type = "Hold"
+        return note
+      })
+    },
+  },
+  swapHoldsRolls: {
+    label: "Swap holds and rolls",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        if (note.type == "Hold") note.type = "Roll"
+        else if (note.type == "Roll") note.type = "Hold"
         return note
       })
     },

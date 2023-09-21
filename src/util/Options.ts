@@ -11,16 +11,14 @@ export const VIEW_BLACKLIST: string[] = []
 
 export class DefaultOptions {
   static general = {
-    scrollSensitivity: 1,
-    scrollSnapEveryScroll: false,
     spinnerStep: 1,
-    mousePlacement: false,
     smoothAnimations: true,
     warnBeforeExit: true,
   }
   static chart = {
     CMod: false,
     reverse: false,
+    mousePlacement: false,
     zoom: 1,
     speed: 250,
     snap: 1,
@@ -30,6 +28,12 @@ export class DefaultOptions {
     receptorYPos: -200,
     maxDrawBeats: 20,
     maxDrawBeatsBack: 10,
+    scroll: {
+      scrollSensitivity: 1,
+      scrollSnapEveryScroll: false,
+      invertZoomScroll: false,
+      invertReverseScroll: true,
+    },
     waveform: {
       enabled: true,
       antialiasing: true,

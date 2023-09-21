@@ -31,8 +31,10 @@ import { GameplayStats } from "./play/GameplayStats"
 import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
 import { Chart } from "./sm/Chart"
 import {
+  HoldNotedataEntry,
   Notedata,
   NotedataEntry,
+  PartialHoldNotedataEntry,
   PartialNotedataEntry,
   isHoldNote,
 } from "./sm/NoteTypes"
@@ -48,6 +50,10 @@ interface PartialHold {
   type: "mouse" | "key"
   originalNote: PartialNotedataEntry | undefined
   removedNotes: PartialNotedataEntry[]
+  truncatedHolds: {
+    oldNote: PartialHoldNotedataEntry
+    newNote: PartialNotedataEntry
+  }[]
 }
 
 interface Selection {
@@ -205,12 +211,12 @@ export class ChartManager {
       event.preventDefault()
       if ((IS_OSX && event.metaKey) || (!IS_OSX && event.ctrlKey)) {
         // Change the playfield's speed
+        const delta =
+          (event.deltaY / 5) *
+          Options.chart.scroll.scrollSensitivity *
+          (Options.chart.scroll.invertZoomScroll ? -1 : 1)
         Options.chart.speed = clamp(
-          Options.chart.speed *
-            Math.pow(
-              1.01,
-              (event.deltaY / 5) * Options.general.scrollSensitivity
-            ),
+          Options.chart.speed * Math.pow(1.01, delta),
           10,
           35000
         )
@@ -218,22 +224,25 @@ export class ChartManager {
         if (this.mode == EditMode.Play || this.mode == EditMode.Record) return
         let newbeat = this.beat
         const snap = Options.chart.snap
-        const speed = Options.chart.speed * (Options.chart.reverse ? -1 : 1)
+        const speed =
+          Options.chart.speed *
+          (Options.chart.reverse && Options.chart.scroll.invertZoomScroll
+            ? -1
+            : 1)
+        const delta =
+          (event.deltaY / speed) * Options.chart.scroll.scrollSensitivity
         if (snap == 0) {
           this.partialScroll = 0
-          newbeat =
-            this.beat +
-            (event.deltaY / speed) * Options.general.scrollSensitivity
+          newbeat = this.beat + delta
         } else {
-          if (Options.general.scrollSnapEveryScroll) {
+          if (Options.chart.scroll.scrollSnapEveryScroll) {
             if (event.deltaY < 0) {
               newbeat = Math.round((this.beat - snap) / snap) * snap
             } else {
               newbeat = Math.round((this.beat + snap) / snap) * snap
             }
           } else {
-            this.partialScroll +=
-              (event.deltaY / speed) * Options.general.scrollSensitivity
+            this.partialScroll += delta
 
             if (Math.abs(this.partialScroll) > snap) {
               if (this.partialScroll < 0)
@@ -1002,6 +1011,29 @@ export class ChartManager {
     this.setBeat(note.beat + (isHoldNote(note) ? note.hold : 0))
   }
 
+  private truncateHold(
+    hold: PartialHoldNotedataEntry,
+    beat: number
+  ): PartialNotedataEntry {
+    const newHoldEndBeat = clamp(
+      Math.round((beat - Options.chart.snap) * 48) / 48,
+      hold.beat,
+      hold.beat + hold.hold - 1 / 48
+    )
+    if (newHoldEndBeat == hold.beat)
+      return {
+        beat: hold.beat,
+        col: hold.col,
+        type: "Tap",
+      }
+    return {
+      beat: hold.beat,
+      col: hold.col,
+      type: hold.type,
+      hold: newHoldEndBeat - hold.beat,
+    }
+  }
+
   /**
    * Places/removes a note at the specified beat and column
    *
@@ -1010,22 +1042,34 @@ export class ChartManager {
    * @param {number} [beat] - The beat to place the note at. Defaults to the current beat.
    * @memberof ChartManager
    */
-  setNote(col: number, type: "mouse" | "key", beat?: number) {
+  setNote(col: number, type: "mouse" | "key", beat: number = this.beat) {
     if (
       this.loadedSM == undefined ||
       this.loadedChart == undefined ||
       this.chartView == undefined
     )
       return
-    beat = beat ?? this.beat
     beat = Math.max(0, Math.round(beat * 48) / 48)
-    const conflictingNote = this.loadedChart.getNotedata().filter(note => {
+    const conflictingNotes = this.loadedChart.getNotedata().filter(note => {
       if (note.col != col) return false
-      if (Math.abs(note.beat - beat!) < 0.003) return true
-      return (
-        isHoldNote(note) && note.beat <= beat! && note.beat + note.hold >= beat!
-      )
+      if (Math.abs(note.beat - beat) < 0.003) return true
+      return isHoldNote(note) && note.beat == beat
     })
+    const truncatedHolds = this.loadedChart
+      .getNotedata()
+      .filter(
+        note =>
+          isHoldNote(note) &&
+          note.col == col &&
+          beat > note.beat &&
+          beat <= note.beat + note.hold
+      )
+      .map(hold => {
+        return {
+          oldNote: hold as HoldNotedataEntry,
+          newNote: this.truncateHold(hold as HoldNotedataEntry, beat),
+        }
+      })
 
     const holdEdit: PartialHold = {
       startBeat: beat,
@@ -1033,11 +1077,12 @@ export class ChartManager {
       roll: false,
       originalNote: undefined,
       type,
-      removedNotes: conflictingNote,
+      removedNotes: conflictingNotes,
+      truncatedHolds: truncatedHolds,
     }
     this.holdEditing[col] = holdEdit
 
-    if (conflictingNote.length == 0) {
+    if (conflictingNotes.length == 0) {
       holdEdit.originalNote = {
         beat: beat,
         col: col,
@@ -1050,12 +1095,18 @@ export class ChartManager {
         holdEdit.removedNotes.forEach(note =>
           this.loadedChart!.removeNote(note)
         )
+        holdEdit.truncatedHolds.forEach(data =>
+          this.loadedChart!.modifyNote(data.oldNote, data.newNote)
+        )
         if (holdEdit.originalNote)
           this.loadedChart!.addNote(holdEdit.originalNote)
       },
       undo: () => {
         if (holdEdit.originalNote)
           this.loadedChart!.removeNote(holdEdit.originalNote)
+        holdEdit.truncatedHolds.forEach(data =>
+          this.loadedChart!.modifyNote(data.newNote, data.oldNote)
+        )
         holdEdit.removedNotes.forEach(note => this.loadedChart!.addNote(note))
       },
     })
@@ -1080,14 +1131,7 @@ export class ChartManager {
     if (hold == undefined) return
     if (beat == hold.startBeat && beat == hold.endBeat) return
 
-    hold.startBeat = Math.max(
-      0,
-      Math.round(Math.min(beat, hold.startBeat) * 48) / 48
-    )
-    hold.endBeat = Math.max(
-      0,
-      Math.round(Math.max(beat, hold.endBeat) * 48) / 48
-    )
+    hold.endBeat = Math.max(hold.startBeat, Math.round(beat * 48) / 48)
     hold.roll ||= roll
     if (!hold.originalNote) {
       this.loadedChart.addNote({
@@ -1097,16 +1141,19 @@ export class ChartManager {
         hold: hold.endBeat - hold.startBeat,
       })
     } else {
-      const props = {
+      const props: Partial<PartialNotedataEntry> = {
         beat: hold.startBeat,
         type: hold.roll ? "Roll" : "Hold",
         hold: hold.endBeat - hold.startBeat,
       }
+      if (hold.endBeat - hold.startBeat == 0) {
+        props.hold = undefined
+        props.type = "Tap"
+      }
       if (
         props.beat != hold.originalNote.beat ||
         props.type != hold.originalNote.type ||
-        !isHoldNote(hold.originalNote) ||
-        props.hold != hold.originalNote.hold
+        (isHoldNote(hold.originalNote) && props.hold != hold.originalNote.hold)
       ) {
         this.loadedChart.modifyNote(hold.originalNote, props)
       }
@@ -1114,9 +1161,18 @@ export class ChartManager {
     hold.originalNote = {
       beat: hold.startBeat,
       col: col,
-      type: hold.roll ? "Roll" : "Hold",
-      hold: hold.endBeat - hold.startBeat,
+      type:
+        hold.endBeat - hold.startBeat == 0
+          ? "Tap"
+          : hold.roll
+          ? "Roll"
+          : "Hold",
+      hold:
+        hold.endBeat - hold.startBeat == 0
+          ? undefined
+          : hold.endBeat - hold.startBeat,
     }
+
     const conflictingNotes = this.loadedChart.getNotedata().filter(note => {
       if (
         note.beat == hold.originalNote!.beat &&
@@ -1413,7 +1469,7 @@ export class ChartManager {
       this.loadedChart
         .getNotedata()
         .filter(
-          note => note.beat >= this.startRegion! && note.beat < this.endRegion!
+          note => note.beat >= this.startRegion! && note.beat <= this.endRegion!
         )
         .filter(note => !this.selection.notes.includes(note))
         .forEach(note => this.addNoteToSelection(note))
@@ -1423,7 +1479,7 @@ export class ChartManager {
 
   modifySelection(modify: (note: NotedataEntry) => PartialNotedataEntry) {
     if (!this.loadedChart) return
-    const removedNotes = this.selection.notes
+    const selectionNotes = this.selection.notes
     const newNotes = structuredClone(this.selection.notes)
       .map(modify)
       .sort((a, b) => {
@@ -1431,49 +1487,83 @@ export class ChartManager {
         return a.beat - b.beat
       })
     if (newNotes.length == 0) return
-
-    const notedata = this.loadedChart.getNotedata()
-    let startIndex = bsearch(notedata, newNotes[0].beat, note => note.beat)
-    const conflictingNotes: NotedataEntry[] = []
-    for (const newNote of newNotes) {
-      let latestNoteIndex = startIndex
-      const isHold = isHoldNote(newNote)
-      while (
-        notedata[startIndex] &&
-        notedata[startIndex].beat <= newNote.beat + (isHold ? newNote.hold : 0)
-      ) {
-        const note = notedata[startIndex]
-        startIndex++
-        if (note.beat < newNote.beat) latestNoteIndex = startIndex
-        if (removedNotes.includes(note)) continue
-        if (note.col != newNote.col) continue
-        if (note.beat == newNote.beat) {
-          conflictingNotes.push(note)
-        }
-        if (
-          isHold &&
-          note.beat > newNote.beat &&
-          note.beat <= newNote.beat + newNote.hold
-        ) {
-          conflictingNotes.push(note)
-        }
-      }
-      startIndex = latestNoteIndex
-    }
+    const { removedNotes, truncatedHolds } = this.checkConflicts(
+      newNotes,
+      selectionNotes
+    )
 
     this.app.actionHistory.run({
       action: () => {
-        this.loadedChart!.removeNotes(removedNotes.concat(conflictingNotes))
+        this.loadedChart!.removeNotes(selectionNotes.concat(removedNotes))
+        truncatedHolds.forEach(data =>
+          this.loadedChart!.modifyNote(data.oldNote, data.newNote)
+        )
         this.clearSelections()
         this.selection.notes = this.loadedChart!.addNotes(newNotes)
       },
       undo: () => {
         this.loadedChart!.removeNotes(newNotes)
-        this.loadedChart!.addNotes(conflictingNotes)
+        truncatedHolds.forEach(data =>
+          this.loadedChart!.modifyNote(data.newNote, data.oldNote)
+        )
+        this.loadedChart!.addNotes(removedNotes)
         this.clearSelections()
-        this.selection.notes = this.loadedChart!.addNotes(removedNotes)
+        this.selection.notes = this.loadedChart!.addNotes(selectionNotes)
       },
     })
+  }
+
+  private checkConflicts(
+    notes: PartialNotedataEntry[],
+    exclude: PartialNotedataEntry[] = []
+  ) {
+    const notedata = this.loadedChart!.getNotedata()
+    let notedataIndex = notedata.findIndex(
+      note =>
+        notes[0].beat <= (isHoldNote(note) ? note.beat + note.hold : note.beat)
+    )
+    const removedNotes: NotedataEntry[] = []
+    const truncatedHolds: {
+      oldNote: PartialHoldNotedataEntry
+      newNote: PartialNotedataEntry
+    }[] = []
+    const modifiedNotes: NotedataEntry[] = []
+    for (const newNote of notes) {
+      while (notedata[notedataIndex]) {
+        const note = notedata[notedataIndex]
+        const newNoteEndBeat = isHoldNote(newNote)
+          ? newNote.beat + newNote.hold
+          : newNote.beat
+        if (
+          note.col == newNote.col &&
+          !exclude.includes(note) &&
+          !modifiedNotes.includes(note)
+        ) {
+          if (newNote.beat <= note.beat && newNoteEndBeat >= note.beat) {
+            modifiedNotes.push(note)
+            removedNotes.push(note)
+          } else if (
+            isHoldNote(note) &&
+            note.beat + note.hold >= newNote.beat &&
+            note.beat < newNote.beat
+          ) {
+            console.log("truncating")
+            modifiedNotes.push(note)
+            truncatedHolds.push({
+              oldNote: note,
+              newNote: this.truncateHold(note, newNote.beat),
+            })
+          }
+        }
+        notedataIndex++
+        const nextNote = notedata[notedataIndex]
+        if (nextNote.beat > newNoteEndBeat) {
+          notedataIndex--
+          break
+        }
+      }
+    }
+    return { removedNotes, truncatedHolds }
   }
 
   modifyEventSelection(modify: (note: TimingEvent) => TimingEvent) {
@@ -1610,42 +1700,23 @@ export class ChartManager {
         if (a.beat == b.beat) return a.col - b.col
         return a.beat - b.beat
       })
-    const notedata = this.loadedChart.getNotedata()
-    let startIndex = bsearch(notedata, notes[0].beat, note => note.beat)
-    const conflictingNotes: NotedataEntry[] = []
-    for (const newNote of notes) {
-      let latestNoteIndex = startIndex
-      const isHold = isHoldNote(newNote)
-      while (
-        notedata[startIndex] &&
-        notedata[startIndex].beat <= newNote.beat + (isHold ? newNote.hold : 0)
-      ) {
-        const note = notedata[startIndex]
-        startIndex++
-        if (note.beat < newNote.beat) latestNoteIndex = startIndex
-        if (note.col != newNote.col) continue
-        if (note.beat == newNote.beat) {
-          conflictingNotes.push(note)
-        }
-        if (
-          isHold &&
-          note.beat > newNote.beat &&
-          note.beat <= newNote.beat + newNote.hold
-        ) {
-          conflictingNotes.push(note)
-        }
-      }
-      startIndex = latestNoteIndex
-    }
+    const { removedNotes, truncatedHolds } = this.checkConflicts(notes)
+
     this.app.actionHistory.run({
       action: () => {
-        this.loadedChart!.removeNotes(conflictingNotes)
+        this.loadedChart!.removeNotes(removedNotes)
+        truncatedHolds.forEach(data => {
+          this.loadedChart!.modifyNote(data.oldNote, data.newNote)
+        })
         this.clearSelections()
         this.selection.notes = this.loadedChart!.addNotes(notes)
       },
       undo: () => {
         this.loadedChart!.removeNotes(notes)
-        this.loadedChart!.addNotes(conflictingNotes)
+        truncatedHolds.forEach(data => {
+          this.loadedChart!.modifyNote(data.newNote, data.oldNote)
+        })
+        this.loadedChart!.addNotes(removedNotes)
         this.clearSelections()
       },
     })

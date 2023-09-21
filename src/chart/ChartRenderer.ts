@@ -159,7 +159,7 @@ export class ChartRenderer extends Container<
         this.timingTracks.placeGhostEvent()
       } else if (
         this.chartManager.editTimingMode == EditTimingMode.Off &&
-        Options.general.mousePlacement &&
+        Options.chart.mousePlacement &&
         this.lastMouseBeat != -1 &&
         this.lastMouseCol != -1 &&
         !event.getModifierState("Shift")
@@ -286,7 +286,7 @@ export class ChartRenderer extends Container<
 
     // Move the ghost note for mouse placement
     if (
-      Options.general.mousePlacement &&
+      Options.chart.mousePlacement &&
       this.lastMousePos &&
       this.chartManager.getMode() != EditMode.Play
     ) {
@@ -778,7 +778,7 @@ export class ChartRenderer extends Container<
       const note = movedNote!
       const position = this.toLocal(event.global)
       if (
-        Math.abs(position.y - initalPosY) ** 2 +
+        Math.abs(position.y - dragYOffset - initalPosY) ** 2 +
           Math.abs(position.x - initalPosX) ** 2 <
         32 * 32
       ) {
@@ -790,6 +790,7 @@ export class ChartRenderer extends Container<
         }
         return
       }
+      console.log(this.chartManager.selection.shift)
       const newBeat = this.getBeatFromYPos(position.y - dragYOffset)
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
       let snapBeat = Math.round(newBeat / snap) * snap
@@ -831,7 +832,7 @@ export class ChartRenderer extends Container<
         return
       }
       if (
-        Options.general.mousePlacement &&
+        Options.chart.mousePlacement &&
         !event.getModifierState("Meta") &&
         !event.getModifierState("Control") &&
         !event.getModifierState("Shift") &&
