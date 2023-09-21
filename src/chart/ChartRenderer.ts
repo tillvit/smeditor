@@ -790,7 +790,6 @@ export class ChartRenderer extends Container<
         }
         return
       }
-      console.log(this.chartManager.selection.shift)
       const newBeat = this.getBeatFromYPos(position.y - dragYOffset)
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
       let snapBeat = Math.round(newBeat / snap) * snap

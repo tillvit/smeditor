@@ -483,7 +483,6 @@ export class TimingTrackContainer
       if (box.lastX === undefined || box.lastAnchor === undefined) {
         box.position.x = targetX
         box.pivot.x = (targetAnchor - 0.5) * boxWidth
-        console.log("easing ", event, "to pos " + targetX)
       } else if (box.lastX != targetX || box.lastAnchor != targetAnchor) {
         box.animationId = BezierAnimator.animate(
           box,

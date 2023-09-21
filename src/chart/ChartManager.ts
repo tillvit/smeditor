@@ -1547,7 +1547,6 @@ export class ChartManager {
             note.beat + note.hold >= newNote.beat &&
             note.beat < newNote.beat
           ) {
-            console.log("truncating")
             modifiedNotes.push(note)
             truncatedHolds.push({
               oldNote: note,
