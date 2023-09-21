@@ -1567,6 +1567,7 @@ export class ChartManager {
         }
         notedataIndex++
         const nextNote = notedata[notedataIndex]
+        if (!nextNote) break
         if (nextNote.beat > newNoteEndBeat) {
           notedataIndex--
           break

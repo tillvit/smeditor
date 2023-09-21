@@ -752,30 +752,30 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       })
     },
   },
-  convertNotesMines: {
-    label: "Notes to mines",
-    bindLabel: "Convert notes to mines",
+  convertTapsMines: {
+    label: "Taps to mines",
+    bindLabel: "Convert ntapsotes to mines",
     combos: [],
     disabled: app =>
       app.chartManager.selection.notes.length == 0 ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.modifySelection(note => {
-        note.type = "Mine"
+        if (note.type == "Tap") note.type = "Mine"
         return note
       })
     },
   },
-  convertNotesLifts: {
-    label: "Notes to lifts",
-    bindLabel: "Convert notes to lifts",
+  convertTapsLifts: {
+    label: "Taps to lifts",
+    bindLabel: "Convert taps to lifts",
     combos: [],
     disabled: app =>
       app.chartManager.selection.notes.length == 0 ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.modifySelection(note => {
-        note.type = "Lift"
+        if (note.type == "Tap") note.type = "Lift"
         return note
       })
     },

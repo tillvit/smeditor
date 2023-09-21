@@ -327,11 +327,11 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
           },
           {
             type: "selection",
-            id: "convertNotesMines",
+            id: "convertTapsMines",
           },
           {
             type: "selection",
-            id: "convertNotesLifts",
+            id: "convertTapsLifts",
           },
           {
             type: "selection",
