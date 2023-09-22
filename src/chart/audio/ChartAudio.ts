@@ -18,6 +18,15 @@ class SafeAudioBufferSourceNode extends AudioBufferSourceNode {
   }
 }
 
+class TogglableBiquadFilterNode extends BiquadFilterNode {
+  enabled = false
+  static create(filter: BiquadFilterNode) {
+    const toggle = filter as TogglableBiquadFilterNode
+    toggle.enabled = false
+    return toggle
+  }
+}
+
 export class ChartAudio {
   private _audioContext: AudioContext = new AudioContext()
   private _audioAnalyzer: AnalyserNode
@@ -38,7 +47,7 @@ export class ChartAudio {
   private _volume = 1
   private _destroyed = false
   private _renderTimeout?: NodeJS.Timeout
-  private _filters: BiquadFilterNode[] = [
+  private _filters: TogglableBiquadFilterNode[] = [
     this.createFilter({ type: "highpass", frequency: 20, Q: 0.71 }),
     this.createFilter({ type: "lowshelf", frequency: 75, gain: 0 }),
     this.createFilter({ type: "peaking", frequency: 100, gain: 0, Q: 0.6 }),
@@ -182,8 +191,10 @@ export class ChartAudio {
     Q?: number
     gain?: number
     frequency?: number
-  }): BiquadFilterNode {
-    const node = this._audioContext.createBiquadFilter()
+  }): TogglableBiquadFilterNode {
+    const node = TogglableBiquadFilterNode.create(
+      this._audioContext.createBiquadFilter()
+    )
     node.type = options.type
     if (options.Q !== undefined) node.Q.value = options.Q
     if (options.gain !== undefined) node.gain.value = options.gain
@@ -219,6 +230,16 @@ export class ChartAudio {
         ),
       500
     )
+  }
+
+  enableFilter(filterIndex: number) {
+    this._filters[filterIndex].enabled = true
+    this.initSource()
+  }
+
+  disableFilter(filterIndex: number) {
+    this._filters[filterIndex].enabled = false
+    this.initSource()
   }
 
   /**
@@ -338,7 +359,11 @@ export class ChartAudio {
 
   getFrequencyResponse(frequencies: number[]): number[] {
     const floatArray = new Float32Array(frequencies)
+    if (!this._filters.some(filter => filter.enabled)) {
+      return new Array(frequencies.length).fill(1) as number[]
+    }
     return this._filters
+      .filter(filter => filter.enabled)
       .map(filter => {
         const out = new Float32Array(frequencies.length)
         filter.getFrequencyResponse(
@@ -379,6 +404,7 @@ export class ChartAudio {
     this._source.connect(this._audioAnalyzer)
     let input: AudioNode = this._audioAnalyzer
     for (const filter of this._filters) {
+      if (!filter.enabled) continue
       input.connect(filter)
       input = filter
     }

@@ -6,13 +6,13 @@ import {
   UserOption,
   UserOptionGroup,
 } from "../../data/UserOptionsWindowData"
+import { clamp, roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { safeParse } from "../../util/Util"
+import { parseString } from "../../util/Util"
 import { Icons } from "../Icons"
 import { Dropdown } from "../element/Dropdown"
 import { NumberSpinner } from "../element/NumberSpinner"
 import { Window } from "./Window"
-import { clamp, roundDigit } from "../../util/Math"
 
 export class UserOptionsWindow extends Window {
   app: App
@@ -255,7 +255,7 @@ export class UserOptionsWindow extends Window {
           const hardMax =
             option.input.max ?? option.input.hardMax ?? Number.MAX_VALUE
           numberInput.onblur = () => {
-            let value = safeParse(numberInput.value)
+            let value = parseString(numberInput.value)
             value = clamp(value, hardMin, hardMax)
             numberInput.value = roundDigit(value, 3).toString()
             numberInput.blur()

@@ -2,7 +2,8 @@ import bezier from "bezier-easing"
 import { App } from "../../App"
 import { BezierAnimator } from "../../util/BezierEasing"
 import { EventHandler } from "../../util/EventHandler"
-import { clamp } from "../../util/Math"
+import { clamp, roundDigit } from "../../util/Math"
+import { parseString as numericParse } from "../../util/Util"
 import { Window } from "./Window"
 
 const FREQUENCY_LINES = [
@@ -65,12 +66,15 @@ export class EQWindow extends Window {
   private cachedReponse = new Array(graphWidth).fill(0)
   private onAudioLoad = this.onAudio.bind(this)
   private points: EQPoint[] = []
+  private icons!: HTMLDivElement
+  private info!: HTMLDivElement
+  private trackedFilter: number | null = null
 
   constructor(app: App) {
     super({
       title: "Audio Equalizer",
       width: 600,
-      height: 200,
+      height: 245,
       win_id: "audio-eq",
     })
     this.app = app
@@ -86,18 +90,190 @@ export class EQWindow extends Window {
 
   initView() {
     this.viewElement.replaceChildren()
+
+    const container = document.createElement("div")
+    container.classList.add("eq-container")
+
+    const iconContainer = document.createElement("div")
+    iconContainer.classList.add("icon-container")
+    this.app.chartManager.chartAudio.getFilters().forEach((filter, index) => {
+      const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+      icon.dataset.src = `assets/svg/${filter.type}.svg`
+      icon.classList.add("eq-icon")
+      icon.setAttribute("fill", fills[index])
+      icon.style.backgroundColor = `${fills[index]}40`
+      icon.setAttribute("width", "36px")
+      icon.setAttribute("height", "24px")
+      icon.onclick = () => {
+        const enabled =
+          this.app.chartManager.chartAudio.getFilter(index).enabled
+        if (enabled) this.app.chartManager.chartAudio.disableFilter(index)
+        else this.app.chartManager.chartAudio.enableFilter(index)
+        this.endTrack()
+        this.updateIcons()
+      }
+      icon.onmouseenter = () => this.points[index].highlight()
+      icon.onmouseleave = () => this.points[index].unhighlight()
+      iconContainer.appendChild(icon)
+    })
+    this.icons = iconContainer
+    this.updateIcons()
+
     const canvas = document.createElement("canvas")
     canvas.style.width = "600px"
     canvas.style.height = "200px"
-    canvas.onmousedown = event =>
-      this.points
+    canvas.onmousedown = event => {
+      const hitPoint = this.points
         .filter(point => point.hitTest(event.offsetX * 2, event.offsetY * 2))
         .at(-1)
-        ?.mouseDown(event)
+      this.endTrack()
+      hitPoint?.mouseDown(event)
+    }
 
-    this.viewElement.appendChild(canvas)
+    const infoContainer = document.createElement("div")
+    infoContainer.classList.add("eq-info-container")
+
+    const typeContainer = document.createElement("div")
+    typeContainer.classList.add("eq-info")
+    const typeText = document.createElement("div")
+    typeText.innerText = "Type"
+    typeText.classList.add("eq-info-label")
+    const typeValue = document.createElement("div")
+    typeValue.classList.add("eq-info-value")
+    typeContainer.replaceChildren(typeText, typeValue)
+
+    const freqContainer = document.createElement("div")
+    freqContainer.classList.add("eq-info")
+    const freqText = document.createElement("div")
+    freqText.innerText = "Frequency"
+    freqText.classList.add("eq-info-label")
+    const freqValue = document.createElement("div")
+    freqValue.contentEditable = "false"
+    freqValue.classList.add("eq-info-value", "inlineEdit")
+    freqContainer.replaceChildren(freqText, freqValue)
+    this.setupInput(freqValue, "frequency", 20, 22050, " Hz")
+
+    const gainContainer = document.createElement("div")
+    gainContainer.classList.add("eq-info")
+    const gainText = document.createElement("div")
+    gainText.innerText = "Gain"
+    gainText.classList.add("eq-info-label")
+    const gainValue = document.createElement("div")
+    gainValue.contentEditable = "false"
+    gainValue.classList.add("eq-info-value", "inlineEdit")
+    gainContainer.replaceChildren(gainText, gainValue)
+    this.setupInput(gainValue, "gain", -24, 24, " dB", 1)
+
+    const qContainer = document.createElement("div")
+    qContainer.classList.add("eq-info")
+    const qText = document.createElement("div")
+    qText.innerText = "Q"
+    qText.classList.add("eq-info-label")
+    const qValue = document.createElement("div")
+    qValue.contentEditable = "false"
+    qValue.classList.add("eq-info-value", "inlineEdit")
+    qContainer.replaceChildren(qText, qValue)
+    this.setupInput(qValue, "Q", 0.0001, 1000, "", 4)
+
+    infoContainer.replaceChildren(
+      typeContainer,
+      freqContainer,
+      gainContainer,
+      qContainer
+    )
+    this.info = infoContainer
+
+    container.replaceChildren(iconContainer, canvas, infoContainer)
+    this.viewElement.appendChild(container)
     const frameDraw = this.drawEQ(canvas)
     requestAnimationFrame(frameDraw)
+  }
+
+  private selectText(element: HTMLElement) {
+    const sel = window.getSelection()
+    const range = document.createRange()
+    if (!sel || !range) return
+    range.selectNodeContents(element)
+    sel.removeAllRanges()
+    sel.addRange(range)
+  }
+
+  private setupInput(
+    element: HTMLDivElement,
+    prop: "Q" | "gain" | "frequency",
+    min: number,
+    max: number,
+    suffix = "",
+    precision = 0
+  ) {
+    let lastValue = 0
+    element.onfocus = () => {
+      lastValue = this.app.chartManager.chartAudio.getFilter(
+        this.trackedFilter!
+      )[prop].value
+      element.innerText = roundDigit(lastValue, precision) + ""
+      this.selectText(element)
+    }
+    element.onkeydown = ev => {
+      if (ev.key == "Enter") {
+        element.blur()
+        return
+      }
+      if (ev.key == "Tab") {
+        const parent = element.parentElement!.parentElement!
+        const inputContainers = [...parent.children]
+        const currentContainer = inputContainers.indexOf(element.parentElement!)
+        for (let i = 1; i < inputContainers.length; i++) {
+          const container =
+            inputContainers[(i + currentContainer) % inputContainers.length]
+          const input = container.children[1] as HTMLDivElement
+          if (input.contentEditable === "true") {
+            input.focus()
+            break
+          }
+        }
+        return
+      }
+      if (ev.key == "Escape") {
+        element.innerText = lastValue + suffix
+        this.app.chartManager.chartAudio.updateFilter(this.trackedFilter!, {
+          gain: clamp(lastValue, min, max),
+        })
+        this.points[this.trackedFilter!].refreshPoint()
+        this.getResponse()
+        element.blur()
+        return
+      }
+      // wait until the value has changed
+      setTimeout(() => {
+        const value = numericParse(element.innerText)
+        if (value === null) {
+          return
+        }
+        this.app.chartManager.chartAudio.updateFilter(this.trackedFilter!, {
+          [prop]: clamp(value, min, max),
+        })
+        this.points[this.trackedFilter!].refreshPoint()
+        this.getResponse()
+      })
+    }
+
+    element.onblur = () => {
+      const value = numericParse(element.innerText)
+      if (value === null) {
+        this.app.chartManager.chartAudio.updateFilter(this.trackedFilter!, {
+          [prop]: clamp(lastValue, min, max),
+        })
+        this.points[this.trackedFilter!].refreshPoint()
+        this.getResponse()
+      }
+      element.innerText =
+        roundDigit(
+          this.app.chartManager.chartAudio.getFilter(this.trackedFilter!)[prop]
+            .value,
+          precision
+        ) + suffix
+    }
   }
 
   onAudio() {
@@ -118,7 +294,7 @@ export class EQWindow extends Window {
     ctx.canvas.height = 400
     const call = () => {
       if (!this.app.chartManager.chartAudio) return
-      ctx.fillStyle = "rgba(0, 0, 0, 1)"
+      ctx.fillStyle = "rgb(11, 14, 26)"
       ctx.fillRect(0, 0, canvas.width, canvas.height)
       ctx.fillStyle = "rgb(0, 50, 150)"
       this.drawFrequencies(
@@ -188,6 +364,55 @@ export class EQWindow extends Window {
       if (i != 0) ctx.fillText(i + "", graphLeft, y)
     }
   }
+
+  updateIcons() {
+    ;[...this.icons.children].forEach((icon, index) => {
+      if (this.app.chartManager.chartAudio.getFilter(index).enabled)
+        icon.classList.remove("disabled")
+      else icon.classList.add("disabled")
+    })
+    this.getResponse()
+  }
+
+  trackFilter(index: number) {
+    this.trackedFilter = index
+    const filter = this.app.chartManager.chartAudio.getFilter(index)
+    const [typeText, freqText, gainText, qText] = [...this.info.children].map(
+      container => container.children[1]
+    ) as HTMLElement[]
+    typeText.innerText = filter.type
+    freqText.innerText = Math.round(filter.frequency.value) + " Hz"
+    gainText.innerText = filter.type.endsWith("pass")
+      ? "-"
+      : roundDigit(filter.gain.value, 1) + " dB"
+    qText.innerText = filter.type.endsWith("shelf")
+      ? "-"
+      : roundDigit(filter.Q.value, 2) + ""
+    typeText.style.color = fills[index]
+    freqText.style.color = fills[index]
+    gainText.style.color = fills[index]
+    qText.style.color = fills[index]
+    freqText.contentEditable = "true"
+    gainText.contentEditable = `${!filter.type.endsWith("pass")}`
+    qText.contentEditable = `${!filter.type.endsWith("shelf")}`
+  }
+
+  endTrack() {
+    setTimeout(() => {
+      this.trackedFilter = null
+      this.points.forEach(point => point.unhighlight())
+      const [typeText, freqText, gainText, qText] = [...this.info.children].map(
+        container => container.children[1]
+      ) as HTMLElement[]
+      typeText.innerText = ""
+      freqText.innerText = ""
+      gainText.innerText = ""
+      qText.innerText = ""
+      freqText.contentEditable = "false"
+      gainText.contentEditable = "false"
+      qText.contentEditable = "false"
+    })
+  }
 }
 
 const POINT_SIZE = 16
@@ -212,6 +437,7 @@ class EQPoint {
   private type
   private response = new Float32Array(freqPool.length)
   private _empty = new Float32Array(freqPool.length)
+  private highlighted = false
   pointSize = 0.4
   constructor(window: EQWindow, filterIndex: number) {
     this.filterIndex = filterIndex
@@ -236,6 +462,9 @@ class EQPoint {
       this.type == "highshelf" ||
       this.type == "peaking"
     )
+  }
+  canChangeQ() {
+    return !this.type.endsWith("shelf")
   }
   getY() {
     if (this.type.endsWith("shelf")) {
@@ -263,6 +492,14 @@ class EQPoint {
   mouseDown(event: MouseEvent) {
     this.calcResponse()
     this.dragging = true
+    this.highlighted = true
+    if (
+      !this.window.app.chartManager.chartAudio.getFilter(this.filterIndex)
+        .enabled
+    ) {
+      this.window.app.chartManager.chartAudio.enableFilter(this.filterIndex)
+      this.window.updateIcons()
+    }
     const xStart = this.x
     const yStart = this.y
     const xOffset = event.clientX
@@ -274,16 +511,18 @@ class EQPoint {
       this.x = clamp(this.x, 0, graphWidth)
       this.y = clamp(
         this.y,
-        this.type.endsWith("shelf") ? graphHeight / 4 : 0,
-        this.type.endsWith("shelf") ? (3 * graphHeight) / 4 : graphHeight
+        this.type.endsWith("shelf") ? graphHeight / 4 : gainToY(24),
+        this.type.endsWith("shelf") ? (3 * graphHeight) / 4 : gainToY(-24)
       )
       this.window.app.chartManager.chartAudio.updateFilter(this.filterIndex, {
         frequency: xToFreq(this.x),
         gain: this.getGain(),
       })
       this.window.getResponse()
+      this.window.trackFilter(this.filterIndex)
       this.calcResponse()
     }
+    this.window.trackFilter(this.filterIndex)
     const mouseup = () => {
       BezierAnimator.animate(
         this,
@@ -328,7 +567,13 @@ class EQPoint {
       .getFrequencyResponse(freqPoolTyped, this.response, this._empty)
   }
   draw(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = fills[this.filterIndex] + "60"
+    const fill =
+      this.highlighted ||
+      this.window.app.chartManager.chartAudio.getFilter(this.filterIndex)
+        .enabled
+        ? fills[this.filterIndex]
+        : "#888888"
+    ctx.fillStyle = fill + "60"
     if (this.dragging) {
       for (let x = 0; x < this.response.length; x++) {
         const gain = Math.log(this.response[x]) / 0.115241
@@ -341,7 +586,7 @@ class EQPoint {
         )
       }
     }
-    ctx.fillStyle = fills[this.filterIndex] + "80"
+    ctx.fillStyle = fill + "80"
     ctx.beginPath()
     ctx.arc(this.x, this.y, POINT_SIZE, 0, 2 * Math.PI)
     ctx.closePath()
@@ -350,5 +595,21 @@ class EQPoint {
     ctx.arc(this.x, this.y, POINT_SIZE * this.pointSize, 0, 2 * Math.PI)
     ctx.closePath()
     ctx.fill()
+  }
+
+  refreshPoint() {
+    this.x = freqToX(
+      this.window.app.chartManager.chartAudio.getFilter(this.filterIndex)
+        .frequency.value ?? 10
+    )
+    this.getY()
+  }
+
+  highlight() {
+    this.highlighted = true
+  }
+
+  unhighlight() {
+    this.highlighted = false
   }
 }

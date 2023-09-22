@@ -1,6 +1,6 @@
-import { roundDigit, clamp } from "../../util/Math"
+import { clamp, roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { isNumericKeyPress, safeParse } from "../../util/Util"
+import { parseString } from "../../util/Util"
 
 export class NumberSpinner {
   view: HTMLDivElement
@@ -34,13 +34,17 @@ export class NumberSpinner {
         this.onChange?.(undefined)
         return
       }
-      let value = roundDigit(safeParse(input.value), this.precision ?? 3)
+      const val = parseString(input.value)
+      if (val === null) {
+        input.value = this.lastVal
+        return
+      }
+      let value = roundDigit(val, this.precision ?? 3)
       value = clamp(value, this.min, this.max)
       input.value = this.formatValue(value)
       this.onChange?.(value)
     }
     input.onkeydown = ev => {
-      if (!isNumericKeyPress(ev)) ev.preventDefault()
       if (ev.key == "Enter") input.blur()
       if (ev.key == "Escape") {
         input.value = this.lastVal

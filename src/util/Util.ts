@@ -93,11 +93,11 @@ export function bsearch<T>(
   return Math.max(0, high)
 }
 
-export function safeParse(expr: string): number {
+export function parseString(expr: string) {
   try {
     return Parser.evaluate(expr)
   } catch {
-    return 0
+    return null
   }
 }
 
@@ -117,51 +117,6 @@ export function destroyChildIf<Child extends DisplayObject>(
 export function capitalize(str: string): string {
   if (str == "") return ""
   return str.slice(0, 1).toUpperCase() + str.slice(1).toLowerCase()
-}
-
-export function isNumericKeyPress(event: KeyboardEvent) {
-  if (
-    ![
-      "Backspace",
-      "Tab",
-      "Escape",
-      "Enter",
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9",
-      "0",
-      "+",
-      "-",
-      "*",
-      "/",
-      ".",
-      "ArrowLeft",
-      "ArrowRight",
-      "ArrowUp",
-      "ArrowDown",
-      "Delete",
-      "x",
-      "c",
-      "a",
-      "A",
-      "C",
-      "X",
-    ].includes(event.key)
-  )
-    return false
-  if (
-    ["X", "C", "A", "a", "c", "x"].includes(event.key) &&
-    !event.metaKey &&
-    !event.ctrlKey
-  )
-    return false
-  return true
 }
 
 export function isRightClick(event: FederatedMouseEvent) {

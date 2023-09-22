@@ -37,6 +37,7 @@
     "bezier-easing": "^2.1.0",
     "buffer": "^6.0.3",
     "expr-eval": "^2.0.2",
+    "external-svg-loader": "^1.6.10",
     "file-saver": "^2.0.5",
     "file-system-access": "^1.0.4",
     "howler": "^2.2.3",

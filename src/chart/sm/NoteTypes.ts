@@ -55,7 +55,7 @@ export function isTapNote<T extends PartialNotedataEntry>(
 
 export function isHoldNote<T extends PartialNotedataEntry>(
   note: T
-): note is T & { hold: number } {
+): note is Extract<T, { hold: number }> {
   return note.type == "Hold" || note.type == "Roll"
 }
 
