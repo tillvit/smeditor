@@ -57,10 +57,12 @@ export class ChartAudio {
     this.createFilter({ type: "highshelf", frequency: 7500, gain: 0 }),
     this.createFilter({ type: "lowpass", frequency: 20000, Q: 0.71 }),
   ]
+  private type
 
   loaded: Promise<void>
 
-  constructor(data?: ArrayBuffer) {
+  constructor(data?: ArrayBuffer, type?: string) {
+    this.type = type ?? ""
     this._filters[0].gain.value = -25
     this._audioAnalyzer = this._audioContext.createAnalyser()
     this._audioAnalyzer.fftSize = 8192
@@ -409,10 +411,23 @@ export class ChartAudio {
         resolve()
         return
       }
-      this._audioContext
-        .decodeAudioData(data)
-        .then(buffer => resolve(buffer))
-        .catch(reason => reject(reason))
+      ;(async () => {
+        try {
+          resolve(await this._audioContext.decodeAudioData(data))
+        } catch (e) {
+          if (this.type == ".ogg") {
+            // attempt to decode with ogg
+            const oggdec = await (await import("../../util/OggDec")).default
+            try {
+              resolve(await oggdec.decodeOggData(data))
+            } catch (err) {
+              reject(err)
+            }
+            return
+          }
+          reject(e)
+        }
+      })()
     })
   }
 

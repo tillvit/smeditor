@@ -779,7 +779,10 @@ export class ChartManager {
       return
     }
     const audioFile = await audioHandle.getFile()
-    this.chartAudio = new ChartAudio(await audioFile.arrayBuffer())
+    this.chartAudio = new ChartAudio(
+      await audioFile.arrayBuffer(),
+      extname(audioFile.name)
+    )
     this.chartAudio.seek(this.time)
     this.getAssistTickIndex()
   }
