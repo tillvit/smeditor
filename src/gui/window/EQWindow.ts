@@ -301,11 +301,13 @@ export class EQWindow extends Window {
         ctx,
         this.app.chartManager.chartAudio.getFrequencyData()
       )
-      ctx.fillStyle = "rgba(0, 150, 50, 0.3)"
-      this.drawFrequencies(
-        ctx,
-        this.app.chartManager.chartAudio.getFilteredFrequencyData()
-      )
+      if (this.app.chartManager.chartAudio.hasFilters()) {
+        ctx.fillStyle = "rgba(200, 200, 200, 0.2)"
+        this.drawFrequencies(
+          ctx,
+          this.app.chartManager.chartAudio.getFilteredFrequencyData()
+        )
+      }
 
       ctx.fillStyle = "rgba(200, 200, 200, 0.5)"
       this.drawResponse(ctx)

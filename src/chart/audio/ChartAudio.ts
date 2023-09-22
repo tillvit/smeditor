@@ -163,6 +163,7 @@ export class ChartAudio {
     source.buffer = buffer
     let input: AudioNode = source
     for (const filter of this._filters) {
+      if (!filter.enabled) continue
       const newFilter = offlineCtx.createBiquadFilter()
       newFilter.type = filter.type
       newFilter.Q.setValueAtTime(filter.Q.value, 0)
@@ -235,11 +236,31 @@ export class ChartAudio {
   enableFilter(filterIndex: number) {
     this._filters[filterIndex].enabled = true
     this.initSource()
+    clearTimeout(this._renderTimeout)
+    this._renderTimeout = setTimeout(
+      () =>
+        this.renderFilteredBuffer(this._loadedBuffer).then(() =>
+          this.callListeners()
+        ),
+      500
+    )
   }
 
   disableFilter(filterIndex: number) {
     this._filters[filterIndex].enabled = false
     this.initSource()
+    clearTimeout(this._renderTimeout)
+    this._renderTimeout = setTimeout(
+      () =>
+        this.renderFilteredBuffer(this._loadedBuffer).then(() =>
+          this.callListeners()
+        ),
+      500
+    )
+  }
+
+  hasFilters() {
+    return this._filters.some(filter => filter.enabled)
   }
 
   /**
@@ -396,6 +417,13 @@ export class ChartAudio {
   }
 
   private initSource() {
+    for (const filter of this._filters) {
+      filter.disconnect()
+    }
+    this._audioAnalyzer.disconnect()
+    this._filteredAudioAnalyzer.disconnect()
+    this._gainNode.disconnect()
+    this._audioContext.destination.disconnect()
     this._source?.stop()
     this._source = SafeAudioBufferSourceNode.create(
       this._audioContext.createBufferSource()
