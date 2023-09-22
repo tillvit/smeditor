@@ -281,6 +281,8 @@ export class EQWindow extends Window {
       .getFilters()
       .map((_, index) => new EQPoint(this, index))
     this.getResponse()
+    this.updateIcons()
+    this.endTrack()
   }
 
   getResponse() {
