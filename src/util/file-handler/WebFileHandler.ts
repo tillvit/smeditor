@@ -6,15 +6,14 @@ import {
 import JSZip from "jszip"
 import { WaterfallManager } from "../../gui/element/WaterfallManager"
 import { basename, dirname, extname } from "../Path"
-import { SafariFileWorker } from "../SafariFileWorker"
-import { getBrowser } from "../Util"
 import { BaseFileHandler } from "./FileHandler"
+import { SafariFileWriter } from "./SafariFileWriter"
 
 export class WebFileHandler implements BaseFileHandler {
   private root!: FileSystemDirectoryHandle
 
   constructor() {
-    if (support.adapter.native && !getBrowser().includes("Safari")) {
+    if (support.adapter.native) {
       getOriginPrivateDirectory().then(root => (this.root = root))
     } else {
       getOriginPrivateDirectory(
@@ -173,8 +172,7 @@ export class WebFileHandler implements BaseFileHandler {
 
   async hasFile(path: string): Promise<boolean> {
     try {
-      await this.getFileHandle(path)
-      return true
+      return (await this.getFileHandle(path)) !== undefined
     } catch (err) {
       return false
     }
@@ -440,7 +438,7 @@ export class WebFileHandler implements BaseFileHandler {
     } else {
       const path = await this.root.resolve(handle)
       if (!path) return
-      await SafariFileWorker.writeHandle(path.join("/"), data)
+      await SafariFileWriter.writeHandle(path.join("/"), data)
     }
   }
 }

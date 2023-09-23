@@ -745,6 +745,7 @@ input[type="number"] {
   height: 100%;
   user-select: text;
   caret-color: auto;
+  font-size: 13.33px;
 }
 
 input:disabled {

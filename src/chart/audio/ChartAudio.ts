@@ -425,7 +425,7 @@ export class ChartAudio {
         } catch (e) {
           if (this.type == ".ogg") {
             // attempt to decode with ogg
-            const oggdec = await (await import("../../util/OggDec")).default
+            const oggdec = (await import("../../util/OggDec")).default
             try {
               resolve(await oggdec.decodeOggData(data))
             } catch (err) {

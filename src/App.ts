@@ -25,7 +25,6 @@ import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
 import { extname } from "./util/Path"
 import { fpsUpdate } from "./util/Performance"
-import { getBrowser } from "./util/Util"
 import { FileHandler } from "./util/file-handler/FileHandler"
 declare global {
   interface Window {
@@ -317,36 +316,6 @@ function init() {
       <div>Please visit your browser settings and enable WebGL.</div>
       </div>
     </div>`
-  } else if (getBrowser().includes("Safari")) {
-    document.querySelector(
-      "body"
-    )!.innerHTML = `<div class='browser-unsupported'>
-      <div class='browser-unsupported-item'>
-      <h1>Safari is currently not supported</h1>
-      <div>Please use Chrome/Firefox instead.</div>
-      <div class='browser-unsupported-detail'>Check the console for more info.</div>
-      </div>
-    </div>`
-    console.log(
-      `SMEditor is not supported for Safari due to various issues involving rendering and sound.
-      PIXI.js, the library used in SMEditor, takes an extremely long time to load and does not perform well on Safari.
-      Additionally, many audio files cannot be played in Safari.
-      If you still want to try loading SMEditor, run the command runSafari()`
-    )
-    window.runSafari = () => {
-      document.querySelector("body")!.innerHTML = `<div id="view-wrapper"> 
-            <div id="menubar"></div>
-            <div id="waterfall"></div>
-            <canvas id="pixi"></canvas>
-          </div> 
-          <div id="popups"></div>
-          <div id="context-menu"></div>
-          <div id="blocker" style="display: none"></div>
-          <div id="windows"></div>
-        `
-      window.app = new App()
-      window.runSafari = undefined
-    }
   } else {
     window.app = new App()
   }

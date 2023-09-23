@@ -6,11 +6,11 @@ import {
   Texture,
 } from "pixi.js"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
+import { clamp, roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
+import { getFPS, getTPS } from "../../util/Performance"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
-import { clamp, roundDigit } from "../../util/Math"
-import { getFPS, getTPS } from "../../util/Performance"
 
 const GRAPH_HEIGHT = 50
 
@@ -115,8 +115,8 @@ export class DebugWidget extends Widget {
     this.fpsBg.width = this.fpsText.width + 10
     this.fpsBg.height = this.fpsText.height + 10
     if (Options.debug.showTimers) {
-      this.fpsBg.y = (GRAPH_HEIGHT + 5) * (this.children.length + 2) - 5
-      this.fpsText.y = (GRAPH_HEIGHT + 5) * (this.children.length + 2)
+      this.fpsBg.y = (GRAPH_HEIGHT + 5) * this.graphs.children.length - 5
+      this.fpsText.y = (GRAPH_HEIGHT + 5) * this.graphs.children.length
     } else {
       this.fpsBg.y = -5
       this.fpsText.y = 0

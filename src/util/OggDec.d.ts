@@ -1,5 +1,6 @@
-interface OggDec {
-  decodeOggData(data: ArrayBuffer): ArrayBuffer
-}
+const ogg: OggDec
+export default ogg
 
-export default oggdec = OggDec
+interface OggDec {
+  decodeOggData(data: ArrayBuffer): Promise<AudioBuffer>
+}
