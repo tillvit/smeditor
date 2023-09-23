@@ -11,6 +11,8 @@ export interface BaseFileHandler {
     options?: FileSystemGetFileOptions
   ): Promise<FileSystemDirectoryHandle | undefined>
 
+  hasFile(path: string): Promise<boolean>
+
   getFileHandle(
     path: string,
     options?: FileSystemGetFileOptions

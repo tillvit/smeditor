@@ -171,6 +171,15 @@ export class WebFileHandler implements BaseFileHandler {
     }
   }
 
+  async hasFile(path: string): Promise<boolean> {
+    try {
+      await this.getFileHandle(path)
+      return true
+    } catch (err) {
+      return false
+    }
+  }
+
   async getFileHandle(
     path: string,
     options?: FileSystemGetFileOptions

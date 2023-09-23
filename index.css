@@ -2087,3 +2087,33 @@ input[type="range"] {
   display: flex;
   flex-direction: column;
 }
+
+input[type="color"] {
+  appearance: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  height: 19.5px;
+  padding: 0;
+  width: 29.5px;
+}
+
+::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+::-webkit-color-swatch {
+  border: 1px rgb(105, 105, 105) solid;
+  border-radius: 3px;
+}
+
+::-moz-color-swatch,
+::-moz-focus-inner {
+  border: 0;
+}
+
+::-moz-focus-inner {
+  padding: 0;
+}

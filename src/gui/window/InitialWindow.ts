@@ -124,32 +124,34 @@ export class InitialWindow extends Window {
     const recentScroll = document.createElement("div")
     recentScroll.classList.add("recent-selector")
     bottomContainer.appendChild(recentScroll)
-    RecentFileHandler.getRecents().forEach(entry => {
-      const row = document.createElement("div")
-      row.classList.add("recent-item")
-      const name = document.createElement("div")
-      name.classList.add("recent-name")
-      name.innerText = entry.name
-      const path = document.createElement("div")
-      path.classList.add("recent-path")
-      path.innerText = entry.path
-      row.appendChild(name)
-      row.appendChild(path)
+    RecentFileHandler.getRecents().then(recents =>
+      recents.forEach(entry => {
+        const row = document.createElement("div")
+        row.classList.add("recent-item")
+        const name = document.createElement("div")
+        name.classList.add("recent-name")
+        name.innerText = entry.name
+        const path = document.createElement("div")
+        path.classList.add("recent-path")
+        path.innerText = entry.path
+        row.appendChild(name)
+        row.appendChild(path)
 
-      row.onclick = () => {
-        recentScroll
-          .querySelectorAll(".selected")
-          .forEach(el => el.classList.remove("selected"))
-        row.classList.add("selected")
-      }
+        row.onclick = () => {
+          recentScroll
+            .querySelectorAll(".selected")
+            .forEach(el => el.classList.remove("selected"))
+          row.classList.add("selected")
+        }
 
-      row.ondblclick = () => {
-        this.app.chartManager.loadSM(entry.path)
-        this.closeWindow()
-      }
+        row.ondblclick = () => {
+          this.app.chartManager.loadSM(entry.path)
+          this.closeWindow()
+        }
 
-      recentScroll.appendChild(row)
-    })
+        recentScroll.appendChild(row)
+      })
+    )
 
     this.viewElement.appendChild(padding)
   }

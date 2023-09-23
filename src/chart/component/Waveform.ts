@@ -21,18 +21,13 @@ interface WaveformLine extends Sprite {
 export class Waveform extends Sprite implements ChartRendererComponent {
   private lineContainer: ParticleContainer = new ParticleContainer(
     1500,
-    { position: true, scale: true, tint: true },
+    { position: true, scale: true, tint: true, alpha: true },
     16384,
     true
   )
   private waveformTex: RenderTexture
-  private lineTex: RenderTexture = RenderTexture.create({
-    width: 16,
-    height: 16,
-  })
 
   private renderer: ChartRenderer
-  private white: Sprite
 
   private rawData: Float32Array[] = []
   private filteredRawData: Float32Array[] = []
@@ -59,14 +54,6 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     })
     this.texture = this.waveformTex
 
-    this.white = new Sprite(Texture.WHITE)
-    this.white.width = 16
-    this.white.height = 16
-    this.white.alpha = Options.chart.waveform.opacity
-    this.renderer.chartManager.app.renderer.render(this.white, {
-      renderTexture: this.lineTex,
-    })
-
     this.speed = this.getSpeed()
     this.lastSpeed = this.getSpeed()
 
@@ -87,6 +74,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     this.trackVariable(() => Options.chart.zoom)
     this.trackVariable(() => Options.chart.CMod)
     this.trackVariable(() => Options.chart.doSpeedChanges)
+    this.trackVariable(() => Options.chart.waveform.allowFilter)
     this.trackVariable(
       () => Options.chart.waveform.antialiasing,
       value => {
@@ -97,15 +85,11 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       () => this.renderer.chartManager.app.renderer.screen.height,
       () => this.resizeWaveform()
     )
-    this.trackVariable(
-      () => Options.chart.waveform.opacity,
-      value => {
-        this.white.alpha = value
-        this.renderer.chartManager.app.renderer.render(this.white, {
-          renderTexture: this.lineTex,
-        })
-      }
-    )
+    this.trackVariable(() => Options.chart.waveform.opacity)
+    this.trackVariable(() => Options.chart.waveform.filteredOpacity)
+    this.trackVariable(() => Options.chart.waveform.filteredColor)
+    this.trackVariable(() => Options.chart.waveform.color)
+    this.trackVariable(() => Options.chart.waveform.speedChanges)
     this.trackVariable(
       () => Options.chart.waveform.lineHeight,
       () => {
@@ -114,6 +98,12 @@ export class Waveform extends Sprite implements ChartRendererComponent {
         this.updateLineHeight()
       }
     )
+
+    this.trackVariable(
+      () => Options.chart.zoom,
+      () => this.resizeWaveform()
+    )
+    this.trackVariable(() => this.renderer.chartManager.chartAudio.hasFilters())
 
     this.anchor.set(0.5)
     this.renderer.chartManager.chartAudio.onUpdate(() => this.getData())
@@ -171,7 +161,6 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       this.renderer.chartManager.app.renderer.render(this.lineContainer, {
         renderTexture: this.waveformTex,
       })
-      this.tint = Options.chart.waveform.color
     }
     this.scale.set(1 / Options.chart.zoom)
   }
@@ -210,6 +199,9 @@ export class Waveform extends Sprite implements ChartRendererComponent {
 
   private renderData() {
     this.resetPool()
+    const hasFilters =
+      Options.chart.waveform.allowFilter &&
+      this.renderer.chartManager.chartAudio.hasFilters()
 
     if (
       Options.chart.waveform.speedChanges &&
@@ -332,18 +324,21 @@ export class Waveform extends Sprite implements ChartRendererComponent {
               16 *
               Options.chart.zoom
             line.y = currentYPos
-            line.tint = 0xffffff
+            line.tint = Options.chart.waveform.color
+            line.alpha = Options.chart.waveform.opacity
             line.x =
               this.waveformTex.width / 2 +
               288 *
                 (channel + 0.5 - this.rawData.length / 2) *
                 Options.chart.zoom
+            if (!hasFilters) continue
             const filteredLine = this.getLine()
             filteredLine.scale.x =
               this.getSample(this.filteredRawData[channel], curSec, "filter") *
               16 *
               Options.chart.zoom
-            filteredLine.tint = 0xff0000
+            filteredLine.tint = Options.chart.waveform.filteredColor
+            filteredLine.alpha = Options.chart.waveform.filteredOpacity
             filteredLine.y = currentYPos
             filteredLine.x =
               this.waveformTex.width / 2 +
@@ -407,13 +402,16 @@ export class Waveform extends Sprite implements ChartRendererComponent {
           line.x =
             this.waveformTex.width / 2 +
             288 * (channel + 0.5 - this.rawData.length / 2) * Options.chart.zoom
-          line.tint = 0xffffff
+          line.tint = Options.chart.waveform.color
+          line.alpha = Options.chart.waveform.opacity
+          if (!hasFilters) continue
           const filteredLine = this.getLine()
           filteredLine.scale.x =
             this.getSample(this.filteredRawData[channel], curSec, "filter") *
             16 *
             Options.chart.zoom
-          filteredLine.tint = 0xff0000
+          filteredLine.tint = Options.chart.waveform.filteredColor
+          filteredLine.alpha = Options.chart.waveform.filteredOpacity
           filteredLine.y = y
           filteredLine.x =
             this.waveformTex.width / 2 +
@@ -450,14 +448,16 @@ export class Waveform extends Sprite implements ChartRendererComponent {
           line.x =
             this.waveformTex.width / 2 +
             288 * (channel + 0.5 - this.rawData.length / 2) * Options.chart.zoom
-          line.tint = 0xffffff
-
+          line.tint = Options.chart.waveform.color
+          line.alpha = Options.chart.waveform.opacity
+          if (!hasFilters) continue
           const filteredLine = this.getLine()
           filteredLine.scale.x =
             this.getSample(this.filteredRawData[channel], calcTime, "filter") *
             16 *
             Options.chart.zoom
-          filteredLine.tint = 0xff0000
+          filteredLine.tint = Options.chart.waveform.filteredColor
+          filteredLine.alpha = Options.chart.waveform.filteredOpacity
           filteredLine.y = y
           filteredLine.x =
             this.waveformTex.width / 2 +
@@ -498,7 +498,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       this.poolSearch++
       return w_line
     }
-    const line = new Sprite(this.lineTex) as WaveformLine
+    const line = new Sprite(Texture.WHITE) as WaveformLine
     line.height = Options.chart.waveform.lineHeight
     line.anchor.set(0.5)
     line.visible = true

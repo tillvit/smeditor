@@ -155,7 +155,7 @@ export class UserOptionsWindow extends Window {
               Options.getOption(option.id)
                 ? "none"
                 : "block"
-            callback?.(checkbox.checked)
+            callback?.(this.app, checkbox.checked)
           }
           checkbox.classList.add("pref-input", "right")
           checkbox.onkeydown = ev => {
@@ -256,6 +256,12 @@ export class UserOptionsWindow extends Window {
             option.input.max ?? option.input.hardMax ?? Number.MAX_VALUE
           numberInput.onblur = () => {
             let value = parseString(numberInput.value)
+            if (!value) {
+              numberInput.value = (
+                Math.round(serializer(optionValue as number) * 1000) / 1000
+              ).toString()
+              return
+            }
             value = clamp(value, hardMin, hardMax)
             numberInput.value = roundDigit(value, 3).toString()
             numberInput.blur()
@@ -311,6 +317,23 @@ export class UserOptionsWindow extends Window {
           }
           input = textInput
           break
+        }
+        case "color": {
+          const colorInput = document.createElement("input")
+          colorInput.type = "color"
+          colorInput.value = "#" + optionValue.toString(16)
+          colorInput.onblur = () => {
+            Options.applyOption([
+              option.id,
+              parseInt(colorInput.value.slice(1), 16),
+            ])
+            revert.style.display =
+              Options.getDefaultOption(option.id) ===
+              Options.getOption(option.id)
+                ? "none"
+                : "block"
+          }
+          input = colorInput
         }
       }
       input.classList.add("pref-item-input")
@@ -384,49 +407,6 @@ export class UserOptionsWindow extends Window {
 
     return sectionElement
   }
-
-  // private createKeybindItem(id: string) {
-  //   const keybindElement = document.createElement("div")
-  //   keybindElement.classList.add("pref-keybind")
-  //   keybindElement.dataset.id = id
-
-  //   const label = document.createElement("div")
-  //   label.classList.add("pref-keybind-label")
-  //   label.innerText = KEYBIND_DATA[id].bindLabel ?? KEYBIND_DATA[id].label
-
-  //   const revert = document.createElement("img")
-  //   revert.src = Icons.REVERT
-  //   revert.style.width = "12px"
-  //   revert.addEventListener("click", () => {
-  //     Keybinds.revertKeybind(id)
-  //     this.conflictMap = this.calculateConflicts()
-  //     keybindElement.replaceWith(this.createKeybindItem(id))
-  //   })
-  //   revert.style.display = Keybinds.checkIsDefault(id) ? "none" : "block"
-
-  //   const combos = document.createElement("div")
-  //   combos.classList.add("pref-keybind-combos")
-
-  //   combos.replaceChildren(
-  //     ...Keybinds.getCombosForKeybind(id).map(combo => {
-  //       const comboElement = document.createElement("button")
-  //       comboElement.classList.add("pref-keybind-combo")
-  //       comboElement.innerText = Keybinds.getComboString(combo)
-  //       if (this.conflictMap.get(Keybinds.getComboString(combo))!.length > 1)
-  //         comboElement.classList.add("conflict")
-  //       comboElement.onclick = () => {
-  //         Keybinds.removeKeybind(id, combo)
-  //         this.conflictMap = this.calculateConflicts()
-  //         keybindElement.replaceWith(this.createKeybindItem(id))
-  //       }
-  //       return comboElement
-  //     })
-  //   )
-
-  //   keybindElement.replaceChildren(label, revert, combos)
-
-  //   return keybindElement
-  // }
 
   onClose(): void {
     this.observer?.disconnect()

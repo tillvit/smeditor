@@ -1,3 +1,4 @@
+import { App } from "../App"
 import { TimingWindowCollection } from "../chart/play/TimingWindowCollection"
 
 export type UserOption = UserOptionGroup | UserOptionSubgroup | UserOptionItem
@@ -85,7 +86,11 @@ interface UserOptionSliderInput {
 
 interface UserOptionCheckboxInput {
   type: "checkbox"
-  onChange?: (value: boolean) => void
+  onChange?: (app: App, value: boolean) => void
+}
+
+interface UserOptionColorInput {
+  type: "color"
 }
 
 type UserOptionInput<T> =
@@ -94,6 +99,7 @@ type UserOptionInput<T> =
   | UserOptionNumberInput
   | UserOptionCheckboxInput
   | UserOptionSliderInput
+  | UserOptionColorInput
 
 export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
   {
@@ -110,7 +116,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             id: "general.smoothAnimations",
             input: {
               type: "checkbox",
-              onChange: (value: boolean) => {
+              onChange: (_, value: boolean) => {
                 if (value) document.body.classList.add("animated")
                 else document.body.classList.remove("animated")
               },
@@ -318,15 +324,60 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             },
           },
           {
-            type: "item",
-            label: "Opacity",
-            id: "chart.waveform.opacity",
-            input: {
-              type: "slider",
-              min: 0,
-              max: 1,
-              step: 0.01,
-            },
+            type: "subgroup",
+            children: [
+              {
+                type: "item",
+                label: "Color",
+                id: "chart.waveform.color",
+                input: {
+                  type: "color",
+                },
+              },
+              {
+                type: "item",
+                label: "Opacity",
+                id: "chart.waveform.opacity",
+                input: {
+                  type: "slider",
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                },
+              },
+            ],
+          },
+          {
+            type: "subgroup",
+            children: [
+              {
+                type: "item",
+                label: "Draw filtered waveform",
+                id: "chart.waveform.allowFilter",
+                input: {
+                  type: "checkbox",
+                },
+              },
+              {
+                type: "item",
+                label: "Filtered color",
+                id: "chart.waveform.filteredColor",
+                input: {
+                  type: "color",
+                },
+              },
+              {
+                type: "item",
+                label: "Filtered opacity",
+                id: "chart.waveform.filteredOpacity",
+                input: {
+                  type: "slider",
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                },
+              },
+            ],
           },
           {
             type: "item",
@@ -433,6 +484,30 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               type: "checkbox",
             },
             tooltip: "Plays a sound when a note passes the receptors",
+          },
+          {
+            type: "item",
+            label: "Enable metronome",
+            id: "audio.metronome",
+            input: {
+              type: "checkbox",
+            },
+          },
+        ],
+      },
+      {
+        type: "subgroup",
+        children: [
+          {
+            type: "item",
+            label: "Allow filters to affect audio",
+            id: "audio.allowFilter",
+            input: {
+              type: "checkbox",
+              onChange: app => {
+                app.chartManager.chartAudio.reload()
+              },
+            },
           },
           {
             type: "item",
@@ -626,7 +701,3 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
     ],
   },
 ]
-
-// "chart.renderTimingEvent": {
-//   label: "Show timing event boxes",
-// },

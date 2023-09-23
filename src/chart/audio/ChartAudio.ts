@@ -1,4 +1,5 @@
 import { WaterfallManager } from "../../gui/element/WaterfallManager"
+import { Options } from "../../util/Options"
 
 class SafeAudioBufferSourceNode extends AudioBufferSourceNode {
   private started = false
@@ -57,6 +58,7 @@ export class ChartAudio {
     this.createFilter({ type: "highshelf", frequency: 7500, gain: 0 }),
     this.createFilter({ type: "lowpass", frequency: 20000, Q: 0.71 }),
   ]
+  private _filtersEnabled = false
   private type
 
   loaded: Promise<void>
@@ -246,6 +248,7 @@ export class ChartAudio {
         ),
       500
     )
+    this._filtersEnabled = true
   }
 
   disableFilter(filterIndex: number) {
@@ -259,10 +262,11 @@ export class ChartAudio {
         ),
       500
     )
+    this._filtersEnabled = this._filters.some(filter => filter.enabled)
   }
 
   hasFilters() {
-    return this._filters.some(filter => filter.enabled)
+    return this._filtersEnabled
   }
 
   /**
@@ -366,6 +370,10 @@ export class ChartAudio {
     return this._isPlaying
   }
 
+  reload() {
+    this.initSource()
+  }
+
   /**
    * Destroys this instance and frees up memory. Unbinds all bound waveforms.
    * Destroyed instances cannot be used again.
@@ -443,6 +451,7 @@ export class ChartAudio {
     this._source = SafeAudioBufferSourceNode.create(
       this._audioContext.createBufferSource()
     )
+
     this._source.buffer = this._buffer
     this._source.connect(this._audioAnalyzer)
     let input: AudioNode = this._audioAnalyzer
@@ -452,8 +461,13 @@ export class ChartAudio {
       input = filter
     }
     input.connect(this._filteredAudioAnalyzer)
-    this._filteredAudioAnalyzer.connect(this._gainNode)
+    if (Options.audio.allowFilter) {
+      this._filteredAudioAnalyzer.connect(this._gainNode)
+    } else {
+      this._audioAnalyzer.connect(this._gainNode)
+    }
     this._gainNode.connect(this._audioContext.destination)
+
     this._source.playbackRate.value = this._rate
     if (this._isPlaying) {
       this.pause()

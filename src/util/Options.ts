@@ -39,6 +39,9 @@ export class DefaultOptions {
       antialiasing: true,
       color: 0x606172,
       opacity: 0.5,
+      allowFilter: true,
+      filteredColor: 0x1e523e,
+      filteredOpacity: 0.5,
       lineHeight: 1,
       speedChanges: true,
     },
@@ -86,6 +89,7 @@ export class DefaultOptions {
     masterVolume: 1,
     songVolume: 0.2,
     soundEffectVolume: 0.5,
+    allowFilter: true,
   }
   static play = {
     offset: 0,
