@@ -1594,7 +1594,7 @@ export class ChartManager {
       action: () => {
         timingData.rawDeleteMultiple(removedEvents)
         timingData.rawInsertMultiple(newEvents)
-        conflicts = timingData.findConflicts()
+        conflicts = timingData.findConflicts(newEvents)
         timingData.rawDeleteMultiple(conflicts)
         this.clearSelections()
         this.eventSelection.timingEvents = newEvents
@@ -1752,7 +1752,7 @@ export class ChartManager {
     this.app.actionHistory.run({
       action: () => {
         timingData.rawInsertMultiple(events)
-        conflicts = timingData.findConflicts()
+        conflicts = timingData.findConflicts(events)
         timingData.rawDeleteMultiple(conflicts)
         this.clearSelections()
         this.eventSelection.timingEvents = events

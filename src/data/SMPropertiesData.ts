@@ -413,7 +413,9 @@ export function createInputElement(
       const deleteButton = document.createElement("button")
       deleteButton.style.height = "100%"
       deleteButton.classList.add("delete")
-      deleteButton.disabled = true
+      deleteButton.disabled = !(sm ?? app.chartManager.loadedSM!).properties[
+        data.propName
+      ]
       deleteButton.onclick = () => {
         input.value = ""
         deleteButton.disabled = true

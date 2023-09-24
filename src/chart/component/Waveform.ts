@@ -218,7 +218,10 @@ export class Waveform extends Sprite implements ChartRendererComponent {
 
       const maxDrawBeats =
         this.renderer.getVisualBeat() + Options.chart.maxDrawBeats
-      const scrolls = this.renderer.chart.timingData.getTimingData("SCROLLS")
+      const scrolls = [
+        ...this.renderer.chart.timingData.getTimingData("SCROLLS"),
+      ]
+      scrolls.unshift({ type: "SCROLLS", beat: 0, value: 1 })
       const offset = this.renderer.chart.timingData.getTimingData("OFFSET")
       const startBPM = this.renderer.chart.timingData.getBPM(0)
       const timingChanges = this.renderer.chart.timingData.getBeatTiming()

@@ -58,9 +58,17 @@ export class TimingData {
       return
     }
 
+    // detect seperator
+    let entries = data
+      .split("\n")
+      .map(line => line.trim())
+      .filter(line => line !== "")
+    if (!entries.slice(0, -1).some(line => !line.endsWith(","))) {
+      // All lines ends with comma, split by comma
+      entries = entries.map(line => line.slice(0, -1))
+    }
     this.events[type] ||= []
 
-    let entries = data.replaceAll(/[\n\r\t]/g, "").split(",")
     if (type == "ATTACKS") entries = [data.replaceAll(/[\n\r\t]/g, "")]
     for (const str of entries) {
       if (type == "ATTACKS") {
@@ -184,8 +192,15 @@ export class TimingData {
 
   private _delete(event: TimingEvent, doCache?: boolean) {
     if (!this.events[event.type]) return
-    const i = this.bindex(event.type, event)
-    if (i > -1) {
+    const events = this.events[event.type]!
+    let i = this.bindex(event.type, event)
+    if (i == -1) return
+    // rewind to start of events that share the same beat
+    while (events[i - 1]?.beat == event.beat) i--
+
+    // search for the event
+    while (events[i].beat == event.beat && !this.isEqual(events[i], event)) i++
+    if (events[i].beat == event.beat) {
       this.events[event.type]!.splice(i, 1)
       if (doCache ?? true) this.reloadCache(event.type)
     }
@@ -230,6 +245,13 @@ export class TimingData {
       default:
         return false
     }
+  }
+
+  private isEqual<Event extends TimingEvent>(a: Event, b: Event): boolean {
+    for (const key of Object.keys(a)) {
+      if (b[key as keyof Event] != a[key as keyof Event]) return false
+    }
+    return true
   }
 
   private isSimilar<Event extends TimingEvent>(
@@ -277,14 +299,13 @@ export class TimingData {
       case "STOPS":
       case "WARPS":
       case "DELAYS":
-      case "SCROLLS":
       case "FAKES":
         return event.value == 0
-
       case "LABELS":
       case "ATTACKS":
         return event.value == ""
       case "SPEEDS":
+      case "SCROLLS":
         return false
       case "FGCHANGES":
       case "BGCHANGES":
@@ -415,15 +436,22 @@ export class TimingData {
     this.reloadCache()
   }
 
-  findConflicts() {
+  findConflicts(exclude: TimingEvent[] = []) {
     const conflicts = []
     for (const type of TIMING_EVENT_NAMES) {
       const events = this.getTimingData(type)
       if (events.length < 2) continue
       let lastEvent = events[0]
       for (let i = 1; i < events.length; i++) {
-        if (this.isSimilar(lastEvent, events[i])) {
-          conflicts.push(events[i])
+        if (
+          lastEvent.beat == events[i].beat ||
+          this.isSimilar(lastEvent, events[i])
+        ) {
+          if (exclude.includes(events[i])) {
+            conflicts.push(lastEvent)
+          } else {
+            conflicts.push(events[i])
+          }
         } else {
           lastEvent = events[i]
         }
@@ -680,7 +708,7 @@ export class TimingData {
       event.beat == flooredBeat
         ? event.secondClamp
         : Math.max(event.secondAfter, event.secondClamp)
-    if (event.secondOf < event.secondAfter) {
+    if (event.secondOf < event.secondAfter && event.beat == flooredBeat) {
       this._cache.warpedBeats.set(flooredBeat, false)
       return false
     }

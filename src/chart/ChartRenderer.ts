@@ -688,7 +688,7 @@ export class ChartRenderer extends Container<
             !scrolls[scrollIndex + 1] ||
             scrolls[scrollIndex + 1].beat >
               this.getVisualBeat() + Options.chart.maxDrawBeatsBack ||
-            scrolls[scrollIndex - 1].value == 0)
+            scrolls[scrollIndex + 1].value == 0)
         )
           break
         if (
@@ -698,7 +698,7 @@ export class ChartRenderer extends Container<
             !scrolls[scrollIndex + 1] ||
             scrolls[scrollIndex + 1].beat >
               this.getVisualBeat() + Options.chart.maxDrawBeatsBack ||
-            scrolls[scrollIndex - 1].value == 0)
+            scrolls[scrollIndex + 1].value == 0)
         )
           break
 

@@ -10,16 +10,19 @@ import { BaseFileHandler } from "./FileHandler"
 import { SafariFileWriter } from "./SafariFileWriter"
 
 export class WebFileHandler implements BaseFileHandler {
-  private root!: FileSystemDirectoryHandle
+  private _root!: FileSystemDirectoryHandle
 
-  constructor() {
-    if (support.adapter.native) {
-      getOriginPrivateDirectory().then(root => (this.root = root))
-    } else {
-      getOriginPrivateDirectory(
-        import("file-system-access/lib/adapters/memory.js")
-      ).then(root => (this.root = root))
+  private async getRoot() {
+    if (!this._root) {
+      if (support.adapter.native) {
+        await getOriginPrivateDirectory().then(root => (this._root = root))
+      } else {
+        await getOriginPrivateDirectory(
+          import("file-system-access/lib/adapters/memory.js")
+        ).then(root => (this._root = root))
+      }
     }
+    return this._root
   }
 
   async uploadHandle(
@@ -32,7 +35,7 @@ export class WebFileHandler implements BaseFileHandler {
       if (!basedir) return
       baseHandle = basedir
     } else {
-      baseHandle = base ?? this.root
+      baseHandle = base ?? (await this.getRoot())
     }
     if (handle.kind == "file") {
       const fileHandle = await baseHandle.getFileHandle(handle.name, {
@@ -61,7 +64,7 @@ export class WebFileHandler implements BaseFileHandler {
       if (!basedir) return
       dirHandle = basedir
     } else {
-      dirHandle = base ?? this.root
+      dirHandle = base ?? (await this.getRoot())
     }
     if (item.isFile) {
       const file = item as FileSystemFileEntry
@@ -132,7 +135,7 @@ export class WebFileHandler implements BaseFileHandler {
       if (!basedir) return
       baseHandle = basedir
     } else {
-      baseHandle = base ?? this.root
+      baseHandle = base ?? (await this.getRoot())
     }
     const dirHandle = await baseHandle.getDirectoryHandle(dir.name, {
       create: true,
@@ -155,7 +158,7 @@ export class WebFileHandler implements BaseFileHandler {
     options?: FileSystemGetFileOptions,
     dir?: FileSystemDirectoryHandle
   ): Promise<FileSystemDirectoryHandle | undefined> {
-    dir ||= this.root
+    dir ||= await this.getRoot()
     if (path == "" || path == ".") return dir
     const pathParts = this.resolvePath(path).split("/")
     const dirname = pathParts.shift()!
@@ -436,7 +439,7 @@ export class WebFileHandler implements BaseFileHandler {
       await writable.write(data)
       await writable.close()
     } else {
-      const path = await this.root.resolve(handle)
+      const path = await (await this.getRoot()).resolve(handle)
       if (!path) return
       await SafariFileWriter.writeHandle(path.join("/"), data)
     }

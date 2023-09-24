@@ -1,5 +1,5 @@
 import { App } from "../App"
-import { EditMode } from "../chart/ChartManager"
+import { EditMode, EditTimingMode } from "../chart/ChartManager"
 import { isHoldNote } from "../chart/sm/NoteTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
@@ -850,9 +850,15 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ key: "A", mods: [DEF_MOD] }],
     disabled: app => !app.chartManager.loadedChart,
     callback: app => {
-      app.chartManager.selection.notes = [
-        ...app.chartManager.loadedChart!.getNotedata(),
-      ]
+      if (app.chartManager.editTimingMode == EditTimingMode.Off) {
+        app.chartManager.selection.notes = [
+          ...app.chartManager.loadedChart!.getNotedata(),
+        ]
+      } else {
+        app.chartManager.eventSelection.timingEvents = [
+          ...app.chartManager.loadedChart!.timingData.getTimingData(),
+        ]
+      }
     },
   },
   expand2to1: {

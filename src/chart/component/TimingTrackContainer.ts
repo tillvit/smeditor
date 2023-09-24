@@ -406,18 +406,14 @@ export class TimingTrackContainer
       !Options.play.hideBarlines
 
     // Create all missing boxes
-    const fromSecond =
-      this.renderer.chart.timingData.getSecondsFromBeat(fromBeat)
-    const toSecond = this.renderer.chart.timingData.getSecondsFromBeat(toBeat)
-
     for (const event of this.renderer.chart.timingData.getTimingData()) {
-      if (toBeat < event.beat! || toSecond < event.second!) break
+      if (toBeat < event.beat!) break
       if (
         !Options.chart.timingEventOrder.left.includes(event.type) &&
         !Options.chart.timingEventOrder.right.includes(event.type)
       )
         continue
-      if (fromBeat > event.beat! || fromSecond > event.second!) continue
+      if (fromBeat > event.beat!) continue
 
       if (!this.timingBoxMap.has(event)) {
         const box = this.boxPool.createChild()

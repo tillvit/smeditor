@@ -26,9 +26,7 @@ export class TimingEventPopup {
   private clickOutside
   private moveInterval
   private modifyBox
-  onConfirm: (event: TimingEvent) => void = () => {
-    return
-  }
+  onConfirm: (event: TimingEvent) => void = () => {}
   persistent = false
   constructor(timingBox: TimingBox, timingData: TimingData, modifyBox = false) {
     timingBox.popup = this
