@@ -1,3 +1,4 @@
+import { App } from "../App"
 import { TimingWindowCollection } from "../chart/play/TimingWindowCollection"
 
 export type UserOption = UserOptionGroup | UserOptionSubgroup | UserOptionItem
@@ -85,7 +86,11 @@ interface UserOptionSliderInput {
 
 interface UserOptionCheckboxInput {
   type: "checkbox"
-  onChange?: (value: boolean) => void
+  onChange?: (app: App, value: boolean) => void
+}
+
+interface UserOptionColorInput {
+  type: "color"
 }
 
 type UserOptionInput<T> =
@@ -94,6 +99,7 @@ type UserOptionInput<T> =
   | UserOptionNumberInput
   | UserOptionCheckboxInput
   | UserOptionSliderInput
+  | UserOptionColorInput
 
 export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
   {
@@ -110,46 +116,35 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             id: "general.smoothAnimations",
             input: {
               type: "checkbox",
-              onChange: (value: boolean) => {
+              onChange: (_, value: boolean) => {
                 if (value) document.body.classList.add("animated")
                 else document.body.classList.remove("animated")
               },
             },
           },
-        ],
-      },
-      {
-        type: "subgroup",
-        label: "Scrolling",
-        children: [
           {
             type: "item",
-            label: "Scroll sensitivity",
-            id: "general.scrollSensitivity",
-            input: {
-              type: "slider",
-              min: 0,
-              step: 1,
-              max: 200,
-              hardMax: 2 ** 31 - 1,
-              transformers: {
-                serialize: value => value * 100,
-                deserialize: value => value / 100,
-              },
-            },
-            tooltip:
-              "Adjust the scroll sensitivity when scrolling through the chart.",
-          },
-
-          {
-            type: "item",
-            label: "Snap every scroll",
-            id: "general.scrollSnapEveryScroll",
+            label: "Warn before exit",
+            id: "general.warnBeforeExit",
             input: {
               type: "checkbox",
             },
             tooltip:
-              "Whether each scroll movement corresponds to moving one snap unit when scrolling. Turning this on will have the same behavior as ArrowVortex.",
+              "Warn before exiting the editor if you have unsaved changes.",
+          },
+          {
+            type: "item",
+            label: "Spinner step",
+            id: "general.spinnerStep",
+            input: {
+              type: "slider",
+              min: 0,
+              step: 0.1,
+              max: 5,
+              hardMin: 0,
+              hardMax: 2 ** 31 - 1,
+            },
+            tooltip: "The default increment for all number spinners.",
           },
         ],
       },
@@ -164,6 +159,19 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
         type: "subgroup",
         label: "Playfield",
         children: [
+          {
+            type: "subgroup",
+            children: [
+              {
+                type: "item",
+                label: "Enable mouse placement",
+                id: "chart.mousePlacement",
+                input: {
+                  type: "checkbox",
+                },
+              },
+            ],
+          },
           {
             type: "subgroup",
             children: [
@@ -219,7 +227,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                   hardMax: 2 ** 31 - 1,
                 },
                 tooltip:
-                  "Maximum number of beats to draw notes. Increasing this works well for songs with high bpm but can affect performance.",
+                  "Maximum number of beats to draw notes. Increasing this works well for songs with high bpm but can affect performance. Only applies to XMod.",
               },
               {
                 type: "item",
@@ -232,7 +240,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                   hardMax: 2 ** 31 - 1,
                 },
                 tooltip:
-                  "Maximum number of beats to draw notes past the receptors. Increasing this can affect performance.",
+                  "Maximum number of beats to draw notes past the receptors. Increasing this can affect performance. Only applies to XMod.",
               },
             ],
           },
@@ -254,6 +262,57 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
       },
       {
         type: "subgroup",
+        label: "Scrolling",
+        children: [
+          {
+            type: "item",
+            label: "Scroll sensitivity",
+            id: "chart.scroll.scrollSensitivity",
+            input: {
+              type: "slider",
+              min: 0,
+              step: 1,
+              max: 200,
+              hardMax: 2 ** 31 - 1,
+              transformers: {
+                serialize: value => value * 100,
+                deserialize: value => value / 100,
+              },
+            },
+            tooltip:
+              "Adjust the scroll sensitivity when scrolling through the chart.",
+          },
+          {
+            type: "item",
+            label: "Snap every scroll",
+            id: "chart.scroll.scrollSnapEveryScroll",
+            input: {
+              type: "checkbox",
+            },
+            tooltip:
+              "Whether each scroll movement corresponds to moving one snap unit when scrolling. Turning this on will have the same behavior as ArrowVortex.",
+          },
+          {
+            type: "item",
+            label: "Invert zoom in/out",
+            id: "chart.scroll.invertZoomScroll",
+            input: {
+              type: "checkbox",
+            },
+            tooltip: "Inverts the zoom in/out control when scrolling.",
+          },
+          {
+            type: "item",
+            label: "Invert scroll direction when in reverse",
+            id: "chart.scroll.invertReverseScroll",
+            input: {
+              type: "checkbox",
+            },
+          },
+        ],
+      },
+      {
+        type: "subgroup",
         label: "Waveform",
         children: [
           {
@@ -265,15 +324,60 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             },
           },
           {
-            type: "item",
-            label: "Opacity",
-            id: "chart.waveform.opacity",
-            input: {
-              type: "slider",
-              min: 0,
-              max: 1,
-              step: 0.01,
-            },
+            type: "subgroup",
+            children: [
+              {
+                type: "item",
+                label: "Color",
+                id: "chart.waveform.color",
+                input: {
+                  type: "color",
+                },
+              },
+              {
+                type: "item",
+                label: "Opacity",
+                id: "chart.waveform.opacity",
+                input: {
+                  type: "slider",
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                },
+              },
+            ],
+          },
+          {
+            type: "subgroup",
+            children: [
+              {
+                type: "item",
+                label: "Draw filtered waveform",
+                id: "chart.waveform.allowFilter",
+                input: {
+                  type: "checkbox",
+                },
+              },
+              {
+                type: "item",
+                label: "Filtered color",
+                id: "chart.waveform.filteredColor",
+                input: {
+                  type: "color",
+                },
+              },
+              {
+                type: "item",
+                label: "Filtered opacity",
+                id: "chart.waveform.filteredOpacity",
+                input: {
+                  type: "slider",
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                },
+              },
+            ],
           },
           {
             type: "item",
@@ -391,6 +495,30 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           },
         ],
       },
+      {
+        type: "subgroup",
+        children: [
+          {
+            type: "item",
+            label: "Allow filters to affect audio",
+            id: "audio.allowFilter",
+            input: {
+              type: "checkbox",
+              onChange: app => {
+                app.chartManager.chartAudio.reload()
+              },
+            },
+          },
+          {
+            type: "item",
+            label: "Enable metronome",
+            id: "audio.metronome",
+            input: {
+              type: "checkbox",
+            },
+          },
+        ],
+      },
     ],
   },
   {
@@ -454,7 +582,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           {
             type: "item",
             label: "Judgment tilt",
-            id: "audio.judgmentTilt",
+            id: "play.judgmentTilt",
             input: {
               type: "checkbox",
             },
@@ -464,7 +592,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           {
             type: "item",
             label: "Hide barlines during play",
-            id: "audio.hideBarlines",
+            id: "play.hideBarlines",
             input: {
               type: "checkbox",
             },
@@ -555,8 +683,8 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
       {
         type: "item",
 
-        label: "Show rendering stats",
-        id: "debug.renderingStats",
+        label: "Show FPS",
+        id: "debug.showFPS",
         input: {
           type: "checkbox",
         },
@@ -570,19 +698,6 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           type: "checkbox",
         },
       },
-      {
-        type: "item",
-
-        label: "Show rendering stats",
-        id: "debug.renderingStats",
-        input: {
-          type: "checkbox",
-        },
-      },
     ],
   },
 ]
-
-// "chart.renderTimingEvent": {
-//   label: "Show timing event boxes",
-// },

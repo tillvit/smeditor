@@ -15,7 +15,7 @@ export const TIMING_EVENT_NAMES = [
   "FGCHANGES",
 ] as const
 
-export type TimingEventProperty = typeof TIMING_EVENT_NAMES[number]
+export type TimingEventProperty = (typeof TIMING_EVENT_NAMES)[number]
 export type TimingProperty = "OFFSET" | TimingEventProperty
 
 export const BEAT_TIMING_EVENT_NAMES = [
@@ -26,7 +26,7 @@ export const BEAT_TIMING_EVENT_NAMES = [
   "WARP_DEST",
 ] as const
 
-export type BeatTimingEventProperty = typeof BEAT_TIMING_EVENT_NAMES[number]
+export type BeatTimingEventProperty = (typeof BEAT_TIMING_EVENT_NAMES)[number]
 
 export interface TimingEventBase {
   type: TimingEventProperty

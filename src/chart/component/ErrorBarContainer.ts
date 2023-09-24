@@ -1,8 +1,9 @@
 import { BitmapText, Container, Graphics, Sprite, Texture } from "pixi.js"
+import { clamp, lerp, median } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { clamp, destroyChildIf, lerp, median } from "../../util/Util"
+import { destroyChildIf } from "../../util/Util"
 import { EditMode } from "../ChartManager"
-import { ChartRenderer } from "../ChartRenderer"
+import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
 import { TimingWindow } from "../play/TimingWindow"
 import {
   TimingWindowCollection,
@@ -10,14 +11,14 @@ import {
   isStandardTimingWindow,
 } from "../play/TimingWindowCollection"
 
-interface TimingBarlineObject extends Sprite {
+interface ErrorBar extends Sprite {
   createTime: number
   ms: number
   miss: boolean
 }
 
-interface TimingBarlineContainer extends Container {
-  children: TimingBarlineObject[]
+interface ErrorBarlineContainer extends Container {
+  children: ErrorBar[]
 }
 
 const BAR_WIDTH = 1
@@ -28,9 +29,12 @@ const errorStyle = {
   fontSize: 12,
 }
 
-export class TimingBarContainer extends Container {
-  private barlines: TimingBarlineContainer =
-    new Container() as TimingBarlineContainer
+export class ErrorBarContainer
+  extends Container
+  implements ChartRendererComponent
+{
+  private barlines: ErrorBarlineContainer =
+    new Container() as ErrorBarlineContainer
   private barline: Sprite
   private currentMedian: Graphics
   private errorText: BitmapText = new BitmapText("", errorStyle)
@@ -98,14 +102,13 @@ export class TimingBarContainer extends Container {
         (this.currentMedian.x - this.target) * 0.8 + this.target
     else this.currentMedian.x = this.target
     this.errorText.scale.y = Options.chart.reverse ? -1 : 1
-    this.errorText.y = Options.chart.reverse ? 25 : -25
     this.currentMedian.scale.y = Options.chart.reverse ? -1 : 1
   }
 
   addBar(error: number, judge: TimingWindow) {
     if (!isStandardMissTimingWindow(judge) && !isStandardTimingWindow(judge))
       return
-    const bar = new Sprite(Texture.WHITE) as TimingBarlineObject
+    const bar = new Sprite(Texture.WHITE) as ErrorBar
     bar.width = BAR_WIDTH
     bar.height = BAR_HEIGHT
     bar.anchor.set(0.5)

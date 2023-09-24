@@ -5,7 +5,7 @@ import { Icons } from "../gui/Icons"
 import { NumberSpinner } from "../gui/element/NumberSpinner"
 import { DirectoryWindow } from "../gui/window/DirectoryWindow"
 import { ActionHistory } from "../util/ActionHistory"
-import { FileHandler } from "../util/FileHandler"
+import { FileHandler } from "../util/file-handler/FileHandler"
 import { AUDIO_EXT, IMG_EXT } from "./FileData"
 
 type SMPropertyGroupData = {
@@ -24,6 +24,7 @@ type SMPropertyFileInput = {
   type: "file"
   typeName: string
   accept: string[]
+  onChange?: (app: App) => void
 }
 type SMPropertyNumberInput = {
   type: "number"
@@ -99,7 +100,12 @@ export const SM_PROPERTIES_DATA: SMPropertyGroupData[] = [
       {
         title: "Audio Track",
         propName: "MUSIC",
-        input: { type: "file", typeName: "audio", accept: AUDIO_EXT },
+        input: {
+          type: "file",
+          typeName: "audio",
+          accept: AUDIO_EXT,
+          onChange: app => app.chartManager.loadAudio(),
+        },
       },
       {
         title: "Background Image",
@@ -321,6 +327,7 @@ export function createInputElement(
     }
     case "file": {
       const inputData = data.input
+      const callback = data.input.onChange
       const container = document.createElement("div")
       container.classList.add("flex-row", "flex-column-gap")
       const input = document.createElement("input")
@@ -355,6 +362,7 @@ export function createInputElement(
                 input.value = lastValue
               },
             })
+            callback?.(app)
           }
           fileSelector.click()
         } else {
@@ -387,6 +395,7 @@ export function createInputElement(
                       input.value = lastValue
                     },
                   })
+                  callback?.(app)
                 },
               },
               (sm ?? app.chartManager.loadedSM!).properties[data.propName]
@@ -404,7 +413,9 @@ export function createInputElement(
       const deleteButton = document.createElement("button")
       deleteButton.style.height = "100%"
       deleteButton.classList.add("delete")
-      deleteButton.disabled = true
+      deleteButton.disabled = !(sm ?? app.chartManager.loadedSM!).properties[
+        data.propName
+      ]
       deleteButton.onclick = () => {
         input.value = ""
         deleteButton.disabled = true

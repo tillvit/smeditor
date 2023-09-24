@@ -1,8 +1,10 @@
-import { getDivision, lcm, lcm2, roundDigit } from "../../../util/Util"
+import { lcm, lcm2, roundDigit } from "../../../util/Math"
+import { getDivision } from "../../../util/Util"
 import {
   isHoldNote,
   Notedata,
   NotedataStats,
+  NoteType,
   PartialHoldNotedataEntry,
   PartialNotedata,
   PartialNotedataEntry,
@@ -11,7 +13,7 @@ import { TimingData } from "../../sm/TimingData"
 import { NotedataParser } from "../base/NotedataParser"
 import { GameType } from "../GameTypeRegistry"
 
-const NOTE_TYPE_LOOKUP: Record<string, string> = {
+const NOTE_TYPE_LOOKUP: Record<string, NoteType> = {
   "1": "Tap",
   "2": "Hold",
   "4": "Roll",
@@ -20,7 +22,7 @@ const NOTE_TYPE_LOOKUP: Record<string, string> = {
   L: "Lift",
 }
 
-const NOTE_TYPE_LOOKUP_REV: Record<string, string> = {
+const NOTE_TYPE_LOOKUP_REV: Record<NoteType, string> = {
   Tap: "1",
   Hold: "2",
   Roll: "4",

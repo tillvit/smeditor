@@ -32,13 +32,12 @@ export class InitialWindow extends Window {
 
   initView(): void {
     this.viewElement.replaceChildren()
-    this.viewElement.classList.add("options")
     const padding = document.createElement("div")
     padding.classList.add("padding")
 
-    const initContainer = document.createElement("div")
-    initContainer.classList.add("initial-container")
-    padding.appendChild(initContainer)
+    const openContainer = document.createElement("div")
+    openContainer.classList.add("open-container")
+    padding.appendChild(openContainer)
 
     const topContainer = document.createElement("div")
     topContainer.classList.add("top-container")
@@ -47,9 +46,9 @@ export class InitialWindow extends Window {
     seperator.style.margin = "10px"
     const bottomContainer = document.createElement("div")
     bottomContainer.classList.add("bottom-container")
-    initContainer.appendChild(topContainer)
-    initContainer.appendChild(seperator)
-    initContainer.appendChild(bottomContainer)
+    openContainer.appendChild(topContainer)
+    openContainer.appendChild(seperator)
+    openContainer.appendChild(bottomContainer)
 
     const openButton = document.createElement("button")
     openButton.style.display = "flex"
@@ -125,32 +124,34 @@ export class InitialWindow extends Window {
     const recentScroll = document.createElement("div")
     recentScroll.classList.add("recent-selector")
     bottomContainer.appendChild(recentScroll)
-    RecentFileHandler.getRecents().forEach(entry => {
-      const row = document.createElement("div")
-      row.classList.add("recent-item")
-      const name = document.createElement("div")
-      name.classList.add("recent-name")
-      name.innerText = entry.name
-      const path = document.createElement("div")
-      path.classList.add("recent-path")
-      path.innerText = entry.path
-      row.appendChild(name)
-      row.appendChild(path)
+    RecentFileHandler.getRecents().then(recents =>
+      recents.forEach(entry => {
+        const row = document.createElement("div")
+        row.classList.add("recent-item")
+        const name = document.createElement("div")
+        name.classList.add("recent-name")
+        name.innerText = entry.name
+        const path = document.createElement("div")
+        path.classList.add("recent-path")
+        path.innerText = entry.path
+        row.appendChild(name)
+        row.appendChild(path)
 
-      row.onclick = () => {
-        recentScroll
-          .querySelectorAll(".selected")
-          .forEach(el => el.classList.remove("selected"))
-        row.classList.add("selected")
-      }
+        row.onclick = () => {
+          recentScroll
+            .querySelectorAll(".selected")
+            .forEach(el => el.classList.remove("selected"))
+          row.classList.add("selected")
+        }
 
-      row.ondblclick = () => {
-        this.app.chartManager.loadSM(entry.path)
-        this.closeWindow()
-      }
+        row.ondblclick = () => {
+          this.app.chartManager.loadSM(entry.path)
+          this.closeWindow()
+        }
 
-      recentScroll.appendChild(row)
-    })
+        recentScroll.appendChild(row)
+      })
+    )
 
     this.viewElement.appendChild(padding)
   }

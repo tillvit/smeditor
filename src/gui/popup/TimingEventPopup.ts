@@ -3,8 +3,9 @@ import { TimingBox } from "../../chart/component/TimingTrackContainer"
 import { TimingData } from "../../chart/sm/TimingData"
 import { TimingEvent } from "../../chart/sm/TimingTypes"
 import { POPUP_ROWS, PopupRow } from "../../data/TimingEventPopupData"
+import { blendColors } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
-import { blendColors, clamp } from "../../util/Util"
+import { clamp } from "../../util/Math"
 import { Dropdown } from "../element/Dropdown"
 import { NumberSpinner } from "../element/NumberSpinner"
 
@@ -25,9 +26,7 @@ export class TimingEventPopup {
   private clickOutside
   private moveInterval
   private modifyBox
-  onConfirm: (event: TimingEvent) => void = () => {
-    return
-  }
+  onConfirm: (event: TimingEvent) => void = () => {}
   persistent = false
   constructor(timingBox: TimingBox, timingData: TimingData, modifyBox = false) {
     timingBox.popup = this

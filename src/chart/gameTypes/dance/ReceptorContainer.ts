@@ -1,7 +1,7 @@
 import { Container, Sprite, Texture } from "pixi.js"
 import { ColHeldTracker } from "../../../util/ColHeldTracker"
+import { rgbtoHex } from "../../../util/Color"
 import { Options } from "../../../util/Options"
-import { rgbtoHex } from "../../../util/Util"
 import { DanceNotefield } from "./DanceNotefield"
 
 const receptor_tex = Texture.from("assets/noteskin/dance/receptor.png")
@@ -36,7 +36,7 @@ export class ReceptorContainer extends Container {
     this.addChild(this.receptors)
   }
 
-  renderThis(beat: number) {
+  update() {
     this.y = Options.chart.receptorYPos / Options.chart.zoom
     this.scale.y = Options.chart.reverse ? -1 : 1
 
@@ -46,7 +46,7 @@ export class ReceptorContainer extends Container {
         Math.min(
           1,
           Math.max(
-            1 - ((beat + 100000) % 1),
+            1 - ((this.notefield.getBeat() + 100000) % 1),
             0.5 + (receptor.pressed ? 0.1 : 0)
           )
         ) * 255

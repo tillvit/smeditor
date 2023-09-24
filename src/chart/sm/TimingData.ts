@@ -1,6 +1,7 @@
 import { ActionHistory } from "../../util/ActionHistory"
 import { EventHandler } from "../../util/EventHandler"
-import { bsearch, clamp, roundDigit } from "../../util/Util"
+import { clamp, roundDigit } from "../../util/Math"
+import { bsearch } from "../../util/Util"
 import { Chart } from "./Chart"
 import {
   AttackTimingEvent,
@@ -31,14 +32,16 @@ type TimingCache = {
   measureTiming?: MeasureTimingCache[]
   speeds?: SpeedTimingEvent[]
   sortedEvents?: TimingEvent[]
-  warpedBeats: Record<number, boolean>
+  warpedBeats: Map<number, boolean>
+  beatsToSeconds: Map<string, number>
 }
 
 export class TimingData {
   private _fallback?: TimingData
   private _cache: TimingCache = {
     events: {},
-    warpedBeats: {},
+    warpedBeats: new Map(),
+    beatsToSeconds: new Map(),
   }
   private _chart?: Chart
   events: TimingPropertyCollection = {}
@@ -55,9 +58,17 @@ export class TimingData {
       return
     }
 
+    // detect seperator
+    let entries = data
+      .split("\n")
+      .map(line => line.trim())
+      .filter(line => line !== "")
+    if (!entries.slice(0, -1).some(line => !line.endsWith(","))) {
+      // All lines ends with comma, split by comma
+      entries = entries.map(line => line.slice(0, -1))
+    }
     this.events[type] ||= []
 
-    let entries = data.replaceAll(/[\n\r\t]/g, "").split(",")
     if (type == "ATTACKS") entries = [data.replaceAll(/[\n\r\t]/g, "")]
     for (const str of entries) {
       if (type == "ATTACKS") {
@@ -181,8 +192,15 @@ export class TimingData {
 
   private _delete(event: TimingEvent, doCache?: boolean) {
     if (!this.events[event.type]) return
-    const i = this.bindex(event.type, event)
-    if (i > -1) {
+    const events = this.events[event.type]!
+    let i = this.bindex(event.type, event)
+    if (i == -1) return
+    // rewind to start of events that share the same beat
+    while (events[i - 1]?.beat == event.beat) i--
+
+    // search for the event
+    while (events[i].beat == event.beat && !this.isEqual(events[i], event)) i++
+    if (events[i].beat == event.beat) {
       this.events[event.type]!.splice(i, 1)
       if (doCache ?? true) this.reloadCache(event.type)
     }
@@ -227,6 +245,13 @@ export class TimingData {
       default:
         return false
     }
+  }
+
+  private isEqual<Event extends TimingEvent>(a: Event, b: Event): boolean {
+    for (const key of Object.keys(a)) {
+      if (b[key as keyof Event] != a[key as keyof Event]) return false
+    }
+    return true
   }
 
   private isSimilar<Event extends TimingEvent>(
@@ -274,14 +299,13 @@ export class TimingData {
       case "STOPS":
       case "WARPS":
       case "DELAYS":
-      case "SCROLLS":
       case "FAKES":
         return event.value == 0
-
       case "LABELS":
       case "ATTACKS":
         return event.value == ""
       case "SPEEDS":
+      case "SCROLLS":
         return false
       case "FGCHANGES":
       case "BGCHANGES":
@@ -412,15 +436,22 @@ export class TimingData {
     this.reloadCache()
   }
 
-  findConflicts() {
+  findConflicts(exclude: TimingEvent[] = []) {
     const conflicts = []
     for (const type of TIMING_EVENT_NAMES) {
       const events = this.getTimingData(type)
       if (events.length < 2) continue
       let lastEvent = events[0]
       for (let i = 1; i < events.length; i++) {
-        if (this.isSimilar(lastEvent, events[i])) {
-          conflicts.push(events[i])
+        if (
+          lastEvent.beat == events[i].beat ||
+          this.isSimilar(lastEvent, events[i])
+        ) {
+          if (exclude.includes(events[i])) {
+            conflicts.push(lastEvent)
+          } else {
+            conflicts.push(events[i])
+          }
         } else {
           lastEvent = events[i]
         }
@@ -506,11 +537,12 @@ export class TimingData {
     )
 
     this._cache.beatTiming = cache
-    this._cache.warpedBeats = {}
+    this._cache.warpedBeats.clear()
+    this._cache.beatsToSeconds.clear()
   }
 
   private buildEffectiveBeatTimingDataCache() {
-    const cache: ScrollCacheTimingEvent[] = this.getTimingData("SCROLLS")
+    const cache: ScrollCacheTimingEvent[] = [...this.getTimingData("SCROLLS")]
     let effBeat = 0
     if (cache.length == 0) {
       this._cache.effectiveBeatTiming = []
@@ -629,26 +661,45 @@ export class TimingData {
       const curbpm = this._cache.beatTiming![0].bpm
       return -this.getTimingData("OFFSET") + (beat * 60) / curbpm
     }
+    const cacheId = `${beat}-${option}`
+    if (this._cache.beatsToSeconds.has(cacheId))
+      return this._cache.beatsToSeconds.get(cacheId)!
     const cache = this._cache.beatTiming!
     const i = this.searchCache(cache, "beat", flooredBeat)
     const event = cache[i]
     if (event.beat == flooredBeat) {
-      if (option == "noclamp" || option == "") return event.secondOf
-      if (option == "before") return event.secondBefore
-      if (option == "after") return event.secondAfter
+      if (option == "noclamp" || option == "") {
+        this._cache.beatsToSeconds.set(cacheId, event.secondOf)
+        return event.secondOf
+      }
+      if (option == "before") {
+        this._cache.beatsToSeconds.set(cacheId, event.secondBefore)
+        return event.secondBefore
+      }
+      if (option == "after") {
+        this._cache.beatsToSeconds.set(cacheId, event.secondAfter)
+        return event.secondAfter
+      }
     }
     const beatsElapsed = beat - event.beat
     let timeElapsed = (beatsElapsed * 60) / event.bpm
     if (event.warped) timeElapsed = 0
-    if (option == "noclamp") return event.secondAfter + timeElapsed
+    if (option == "noclamp") {
+      this._cache.beatsToSeconds.set(cacheId, event.secondAfter + timeElapsed)
+      return event.secondAfter + timeElapsed
+    }
+    this._cache.beatsToSeconds.set(
+      cacheId,
+      Math.max(event.secondClamp, event.secondAfter + timeElapsed)
+    )
     return Math.max(event.secondClamp, event.secondAfter + timeElapsed)
   }
 
   isBeatWarped(beat: number): boolean {
     if (!isFinite(beat)) return false
     const flooredBeat = Math.floor(beat * 1000) / 1000
-    if (this._cache.warpedBeats[flooredBeat])
-      return this._cache.warpedBeats[flooredBeat]
+    if (this._cache.warpedBeats.has(flooredBeat))
+      return this._cache.warpedBeats.get(flooredBeat)!
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
     const cache = this._cache.beatTiming!
     const i = this.searchCache(cache, "beat", flooredBeat)
@@ -657,18 +708,18 @@ export class TimingData {
       event.beat == flooredBeat
         ? event.secondClamp
         : Math.max(event.secondAfter, event.secondClamp)
-    if (event.secondOf < event.secondAfter) {
-      this._cache.warpedBeats[flooredBeat] = false
+    if (event.secondOf < event.secondAfter && event.beat == flooredBeat) {
+      this._cache.warpedBeats.set(flooredBeat, false)
       return false
     }
     if (
       event.warped ||
       this.getSecondsFromBeat(beat, "noclamp") < secondLimit
     ) {
-      this._cache.warpedBeats[flooredBeat] = true
+      this._cache.warpedBeats.set(flooredBeat, true)
       return true
     }
-    this._cache.warpedBeats[flooredBeat] = false
+    this._cache.warpedBeats.set(flooredBeat, false)
     return false
   }
 

@@ -1,5 +1,5 @@
 import { App } from "../App"
-import { EditMode } from "../chart/ChartManager"
+import { EditMode, EditTimingMode } from "../chart/ChartManager"
 import { isHoldNote } from "../chart/sm/NoteTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
@@ -14,9 +14,10 @@ import { SMPropertiesWindow } from "../gui/window/SMPropertiesWindow"
 import { TimingDataWindow } from "../gui/window/TimingDataWindow"
 import { UserOptionsWindow } from "../gui/window/UserOptionsWindow"
 import { ActionHistory } from "../util/ActionHistory"
-import { FileHandler } from "../util/FileHandler"
+import { FileHandler } from "../util/file-handler/FileHandler"
+import { WebFileHandler } from "../util/file-handler/WebFileHandler"
+import { roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
-import { roundDigit } from "../util/Util"
 
 export interface Keybind {
   label: string
@@ -255,7 +256,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     disabled: app => !!window.nw || !app.chartManager.loadedSM,
     callback: app => {
       app.chartManager.save()
-      FileHandler.saveDirectory(app.chartManager.smPath)
+      ;(FileHandler as WebFileHandler).saveDirectory(app.chartManager.smPath)
     },
   },
   exportNotedata: {
@@ -289,7 +290,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   volumeUp: {
     label: "Increase master volume",
-    combos: [{ key: "Up", mods: [Modifier.SHIFT] }],
+    combos: [{ key: "Up", mods: [Modifier.ALT] }],
     disabled: false,
     callback: () => {
       Options.audio.masterVolume = Math.min(
@@ -303,7 +304,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   volumeDown: {
     label: "Decrease master volume",
-    combos: [{ key: "Down", mods: [Modifier.SHIFT] }],
+    combos: [{ key: "Down", mods: [Modifier.ALT] }],
     disabled: false,
     callback: () => {
       Options.audio.masterVolume = Math.max(
@@ -317,7 +318,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   songVolumeUp: {
     label: "Increase song volume",
-    combos: [],
+    combos: [{ key: "Up", mods: [Modifier.SHIFT, Modifier.ALT] }],
     disabled: false,
     callback: () => {
       Options.audio.songVolume = Math.min(Options.audio.songVolume + 0.05, 1)
@@ -328,7 +329,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   songVolumeDown: {
     label: "Decrease song volume",
-    combos: [],
+    combos: [{ key: "Down", mods: [Modifier.SHIFT, Modifier.ALT] }],
     disabled: false,
     callback: () => {
       Options.audio.songVolume = Math.max(Options.audio.songVolume - 0.05, 0)
@@ -339,7 +340,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   effectvolumeUp: {
     label: "Increase tick/metronome volume",
-    combos: [],
+    combos: [{ key: "Up", mods: [Modifier.SHIFT, DEF_MOD, Modifier.ALT] }],
     disabled: false,
     callback: () => {
       Options.audio.soundEffectVolume = Math.min(
@@ -355,7 +356,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   effectvolumeDown: {
     label: "Decrease tick/metronome volume",
-    combos: [],
+    combos: [{ key: "Down", mods: [Modifier.SHIFT, DEF_MOD, Modifier.ALT] }],
     disabled: false,
     callback: () => {
       Options.audio.soundEffectVolume = Math.max(
@@ -627,10 +628,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ key: "M", mods: [Modifier.SHIFT] }],
     disabled: false,
     callback: () => {
-      Options.general.mousePlacement = !Options.general.mousePlacement
+      Options.chart.mousePlacement = !Options.chart.mousePlacement
       WaterfallManager.create(
-        "Mouse Note Placement: " +
-          (Options.general.mousePlacement ? "on" : "off")
+        "Mouse Note Placement: " + (Options.chart.mousePlacement ? "on" : "off")
       )
     },
   },
@@ -710,6 +710,34 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       })
     },
   },
+  convertRollsHolds: {
+    label: "Rolls to holds",
+    bindLabel: "Convert rolls to holds",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        if (note.type == "Roll") note.type = "Hold"
+        return note
+      })
+    },
+  },
+  swapHoldsRolls: {
+    label: "Swap holds and rolls",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        if (note.type == "Hold") note.type = "Roll"
+        else if (note.type == "Roll") note.type = "Hold"
+        return note
+      })
+    },
+  },
   convertHoldsTaps: {
     label: "Holds/rolls to taps",
     bindLabel: "Convert holds/rolls to taps",
@@ -724,16 +752,30 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       })
     },
   },
-  convertNotesMines: {
-    label: "Notes to mines",
-    bindLabel: "Convert notes to mines",
+  convertTapsMines: {
+    label: "Taps to mines",
+    bindLabel: "Convert ntapsotes to mines",
     combos: [],
     disabled: app =>
       app.chartManager.selection.notes.length == 0 ||
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.modifySelection(note => {
-        note.type = "Mine"
+        if (note.type == "Tap") note.type = "Mine"
+        return note
+      })
+    },
+  },
+  convertTapsLifts: {
+    label: "Taps to lifts",
+    bindLabel: "Convert taps to lifts",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        if (note.type == "Tap") note.type = "Lift"
         return note
       })
     },
@@ -808,9 +850,15 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ key: "A", mods: [DEF_MOD] }],
     disabled: app => !app.chartManager.loadedChart,
     callback: app => {
-      app.chartManager.selection.notes = [
-        ...app.chartManager.loadedChart!.getNotedata(),
-      ]
+      if (app.chartManager.editTimingMode == EditTimingMode.Off) {
+        app.chartManager.selection.notes = [
+          ...app.chartManager.loadedChart!.getNotedata(),
+        ]
+      } else {
+        app.chartManager.eventSelection.timingEvents = [
+          ...app.chartManager.loadedChart!.timingData.getTimingData(),
+        ]
+      }
     },
   },
   expand2to1: {
@@ -1051,6 +1099,126 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
           app.chartManager.loadedSM!.properties.SAMPLELENGTH = lastLength
         },
       })
+    },
+  },
+  showDebugTimers: {
+    label: "Toggle Debug Timers",
+    combos: [{ key: "F3", mods: [Modifier.SHIFT] }],
+    disabled: false,
+    callback: () => {
+      Options.debug.showTimers = !Options.debug.showTimers
+    },
+  },
+  showFPSCounter: {
+    label: "Toggle FPS Counter",
+    combos: [{ key: "F3", mods: [] }],
+    disabled: false,
+    callback: () => {
+      Options.debug.showFPS = !Options.debug.showFPS
+    },
+  },
+  noteTypeTap: {
+    label: "Switch to Taps",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: app => {
+      app.chartManager.setEditingNoteType("Tap")
+    },
+  },
+  noteTypeLift: {
+    label: "Switch to Lifts",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: app => {
+      app.chartManager.setEditingNoteType("Lift")
+    },
+  },
+  noteTypeMine: {
+    label: "Switch to Mines",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: app => {
+      app.chartManager.setEditingNoteType("Mine")
+    },
+  },
+  noteTypeFake: {
+    label: "Switch to Fakes",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: app => {
+      app.chartManager.setEditingNoteType("Fake")
+    },
+  },
+  quant4: {
+    label: "Switch to 4ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1
+    },
+  },
+  quant8: {
+    label: "Switch to 8ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 2
+    },
+  },
+  quant12: {
+    label: "Switch to 12ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 3
+    },
+  },
+  quant16: {
+    label: "Switch to 16ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 4
+    },
+  },
+  quant24: {
+    label: "Switch to 24ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 6
+    },
+  },
+  quant32: {
+    label: "Switch to 32ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 8
+    },
+  },
+  quant48: {
+    label: "Switch to 48ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 12
+    },
+  },
+  quant96: {
+    label: "Switch to 96ths",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 24
+    },
+  },
+  quant192: {
+    label: "Switch to 192nds",
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = 1 / 48
     },
   },
 }

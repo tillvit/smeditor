@@ -1,5 +1,4 @@
 import { WaterfallManager } from "../../gui/element/WaterfallManager"
-import { getErrorMessage } from "../../util/Util"
 import { Chart } from "./Chart"
 import { CHART_DIFFICULTIES } from "./ChartTypes"
 import { SIMFILE_PROPERTIES, SimfileProperty } from "./SimfileTypes"
@@ -70,7 +69,11 @@ export class Simfile {
             chart = new Chart(this, data)
           } catch (error) {
             this.unloadedCharts.push(data)
-            WaterfallManager.createFormatted(getErrorMessage(error), "warn")
+
+            WaterfallManager.createFormatted(
+              error instanceof Error ? error.message : String(error),
+              "warn"
+            )
             continue
           }
           this.addChart(chart)

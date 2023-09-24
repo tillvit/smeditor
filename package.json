@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "app-dev": "node nwrun.js",
+    "app-dev": "cross-env EXECUTION_MODE='DEBUG' node nwrun.js",
     "app-build": "node nwbuild.js",
     "preview": "vite preview",
     "prepare": "husky install"
@@ -34,8 +34,10 @@
   "dependencies": {
     "@pixi/filter-adjustment": "^5.0.0",
     "base85": "^3.1.0",
+    "bezier-easing": "^2.1.0",
     "buffer": "^6.0.3",
     "expr-eval": "^2.0.2",
+    "external-svg-loader": "^1.6.10",
     "file-saver": "^2.0.5",
     "file-system-access": "^1.0.4",
     "howler": "^2.2.3",
@@ -75,9 +77,13 @@
     ],
     "ignorePatterns": [
       "vite.config.js",
-      "nwbuild.js"
+      "nwbuild.js",
+      "nwrun.js"
     ],
     "rules": {
+      "require-await": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/require-await": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-duplicate-enum-values": "warn",

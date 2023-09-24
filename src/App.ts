@@ -1,3 +1,4 @@
+import "external-svg-loader"
 import {
   BitmapFont,
   Container,
@@ -13,17 +14,18 @@ import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
 import { ContextMenuPopup } from "./gui/element/ContextMenu"
 import { MenubarManager } from "./gui/element/MenubarManager"
+import { DebugWidget } from "./gui/widget/DebugWidget"
 import { DirectoryWindow } from "./gui/window/DirectoryWindow"
 import { InitialWindow } from "./gui/window/InitialWindow"
 import { WindowManager } from "./gui/window/WindowManager"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
 import { EventHandler } from "./util/EventHandler"
-import { FileHandler } from "./util/FileHandler"
 import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
-import { TimerStats } from "./util/TimerStats"
-import { extname, fpsUpdate, getBrowser } from "./util/Util"
+import { extname } from "./util/Path"
+import { fpsUpdate } from "./util/Performance"
+import { FileHandler } from "./util/file-handler/FileHandler"
 declare global {
   interface Window {
     app: App
@@ -53,7 +55,6 @@ export class App {
 
     if (window.nw) {
       const activeWin = nw.Window.get()
-      activeWin.enterFullscreen()
       window.addEventListener("keydown", e => {
         if ((e.key == "r" && (e.metaKey || e.ctrlKey)) || e.key == "F5") {
           e.preventDefault()
@@ -99,10 +100,13 @@ export class App {
     this.ticker = new Ticker()
     this.ticker.maxFPS = 120
     this.ticker.add(() => {
-      TimerStats.time("Render Time")
+      const startTime = performance.now()
       this.renderer.render(this.stage)
-      TimerStats.endTime("Render Time")
-      TimerStats.endFrame()
+      DebugWidget.instance?.addFrameTimeValue(performance.now() - startTime)
+      if (performance.memory?.usedJSHeapSize)
+        DebugWidget.instance?.addMemoryTimeValue(
+          performance.memory.usedJSHeapSize
+        )
       fpsUpdate()
     }, UPDATE_PRIORITY.LOW)
     this.ticker.start()
@@ -123,10 +127,6 @@ export class App {
     this.registerListeners()
 
     this.onResize()
-
-    console.log(
-      `smeditor is currently a work in progress. check the github repo for more info!`
-    )
 
     this.windowManager.openWindow(new InitialWindow(this))
 
@@ -316,36 +316,6 @@ function init() {
       <div>Please visit your browser settings and enable WebGL.</div>
       </div>
     </div>`
-  } else if (getBrowser().includes("Safari")) {
-    document.querySelector(
-      "body"
-    )!.innerHTML = `<div class='browser-unsupported'>
-      <div class='browser-unsupported-item'>
-      <h1>Safari is currently not supported</h1>
-      <div>Please use Chrome/Firefox instead.</div>
-      <div class='browser-unsupported-detail'>Check the console for more info.</div>
-      </div>
-    </div>`
-    console.log(
-      `SMEditor is not supported for Safari due to various issues involving rendering and sound.
-      PIXI.js, the library used in SMEditor, takes an extremely long time to load and does not perform well on Safari.
-      Additionally, many audio files cannot be played in Safari.
-      If you still want to try loading SMEditor, run the command runSafari()`
-    )
-    window.runSafari = () => {
-      document.querySelector("body")!.innerHTML = `<div id="view-wrapper"> 
-            <div id="menubar"></div>
-            <div id="waterfall"></div>
-            <canvas id="pixi"></canvas>
-          </div> 
-          <div id="popups"></div>
-          <div id="context-menu"></div>
-          <div id="blocker" style="display: none"></div>
-          <div id="windows"></div>
-        `
-      window.app = new App()
-      window.runSafari = undefined
-    }
   } else {
     window.app = new App()
   }

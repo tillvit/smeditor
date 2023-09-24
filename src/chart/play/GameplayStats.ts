@@ -1,5 +1,6 @@
+import { median } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { median } from "../../util/Util"
+
 import { ChartManager } from "../ChartManager"
 import {
   HoldNotedataEntry,
@@ -66,7 +67,6 @@ export class GameplayStats {
       }
     })
     this.recalculate()
-    console.log(this.getMedian())
   }
 
   /**

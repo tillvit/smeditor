@@ -11,16 +11,14 @@ export const VIEW_BLACKLIST: string[] = []
 
 export class DefaultOptions {
   static general = {
-    scrollSensitivity: 1,
-    scrollSnapEveryScroll: false,
     spinnerStep: 1,
-    mousePlacement: false,
     smoothAnimations: true,
     warnBeforeExit: true,
   }
   static chart = {
     CMod: false,
     reverse: false,
+    mousePlacement: false,
     zoom: 1,
     speed: 250,
     snap: 1,
@@ -30,11 +28,20 @@ export class DefaultOptions {
     receptorYPos: -200,
     maxDrawBeats: 20,
     maxDrawBeatsBack: 10,
+    scroll: {
+      scrollSensitivity: 1,
+      scrollSnapEveryScroll: false,
+      invertZoomScroll: false,
+      invertReverseScroll: true,
+    },
     waveform: {
       enabled: true,
       antialiasing: true,
       color: 0x606172,
       opacity: 0.5,
+      allowFilter: true,
+      filteredColor: 0x1e523e,
+      filteredOpacity: 0.5,
       lineHeight: 1,
       speedChanges: true,
     },
@@ -82,6 +89,7 @@ export class DefaultOptions {
     masterVolume: 1,
     songVolume: 0.2,
     soundEffectVolume: 0.5,
+    allowFilter: true,
   }
   static play = {
     offset: 0,
@@ -105,7 +113,7 @@ export class DefaultOptions {
     resolution: window.devicePixelRatio,
   }
   static debug = {
-    renderingStats: false,
+    showFPS: false,
     showTimers: false,
   }
   static experimental = {}

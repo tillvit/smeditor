@@ -1,9 +1,8 @@
 import { Container } from "pixi.js"
+import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
-import { destroyChildIf } from "../../../util/Util"
 import { EditMode, EditTimingMode } from "../../ChartManager"
-import { ChartRenderer } from "../../ChartRenderer"
 import { TimingWindowCollection } from "../../play/TimingWindowCollection"
 import { NotedataEntry, isHoldNote } from "../../sm/NoteTypes"
 import { DanceNoteRenderer, NoteObject } from "./DanceNoteRenderer"
@@ -21,50 +20,101 @@ export class NoteContainer extends Container {
   children: ExtendedNoteObject[] = []
 
   private notefield: DanceNotefield
-  private renderer: ChartRenderer
-  private noteMap: Map<NotedataEntry, ExtendedNoteObject> = new Map()
+  private arrowMap: Map<NotedataEntry, NoteObject> = new Map()
+  private arrowPool = new DisplayObjectPool({
+    create: () => DanceNoteRenderer.createArrow(),
+  })
+  private notesDirty = false
 
-  constructor(notefield: DanceNotefield, renderer: ChartRenderer) {
+  constructor(notefield: DanceNotefield) {
     super()
-    this.renderer = renderer
     this.notefield = notefield
-    this.sortableChildren = true
+    this.arrowPool.sortableChildren = true
+    this.addChild(this.arrowPool)
     const timeSig = () => {
-      this.children.forEach(child =>
+      for (const [note, arrow] of this.arrowMap.entries()) {
         DanceNoteRenderer.setData(
           this.notefield,
-          child,
-          child.note,
-          this.renderer.chart.timingData
+          arrow,
+          note,
+          this.notefield.getTimingData()
         )
-      )
+      }
     }
+    const purgeNotes = () => (this.notesDirty = true)
+
     EventHandler.on("timeSigChanged", timeSig)
-    this.on("destroyed", () => [EventHandler.off("timeSigChanged", timeSig)])
+    EventHandler.on("chartModified", purgeNotes)
+    this.on("destroyed", () => {
+      EventHandler.off("timeSigChanged", timeSig)
+      EventHandler.on("chartModified", purgeNotes)
+    })
   }
 
-  renderThis(beat: number, fromBeat: number, toBeat: number) {
-    //Reset mark of old objects
-    this.children.forEach(child => (child.marked = false))
-    const time = this.renderer.chartManager.getTime()
-    for (const note of this.renderer.chart.getNotedata()) {
-      if (note.gameplay?.hideNote) continue
-      if (Options.chart.CMod && Options.chart.hideWarpedArrows && note.warped)
-        continue
-      if (note.beat + (isHoldNote(note) ? note.hold : 0) < fromBeat) continue
+  update(fromBeat: number, toBeat: number) {
+    if (this.notesDirty) {
+      const notedata = this.notefield.getNotedata()
+      for (const [note, arrow] of this.arrowMap.entries()) {
+        if (!notedata.includes(note)) {
+          this.arrowPool.destroyChild(arrow)
+          this.arrowMap.delete(note)
+        }
+      }
+    }
+
+    DanceNoteTexture.setArrowTexTime(
+      this.notefield.getBeat(),
+      this.notefield.getTime()
+    )
+
+    for (const note of this.notefield.getNotedata()) {
       if (note.beat > toBeat) break
+      if (!this.shouldDisplayNote(note, fromBeat, toBeat)) continue
+      if (!this.arrowMap.has(note)) {
+        const arrow = this.arrowPool.createChild()
+        if (!arrow) continue
+        arrow.x = this.notefield.getColX(note.col)
+        arrow.zIndex = note.beat
+        Object.assign(arrow, {
+          zIndex: note.beat,
+        })
+        DanceNoteRenderer.setData(
+          this.notefield,
+          arrow,
+          note,
+          this.notefield.getTimingData()
+        )
+        this.notefield.getRenderer().registerDragNote(arrow, note)
+        this.arrowMap.set(note, arrow)
+      }
+    }
 
-      const [outOfBounds, endSearch, yPos, holdLength] = this.checkBounds(
-        note,
-        beat
+    for (const [note, arrow] of this.arrowMap.entries()) {
+      if (!this.shouldDisplayNote(note, fromBeat, toBeat)) {
+        this.arrowPool.destroyChild(arrow)
+        this.arrowMap.delete(note)
+        continue
+      }
+
+      arrow.y = Options.chart.receptorYPos / Options.chart.zoom
+      if (
+        !isHoldNote(note) ||
+        !note.gameplay?.lastHoldActivation ||
+        this.notefield.getBeat() < note.beat
       )
-      if (endSearch) break
-      if (outOfBounds) continue
+        arrow.y = this.notefield.getRenderer().getYPosFromBeat(note.beat)
+      if (isHoldNote(note) && note.gameplay?.droppedHoldBeat)
+        arrow.y = this.notefield
+          .getRenderer()
+          .getYPosFromBeat(note.gameplay.droppedHoldBeat)
 
-      const arrow = this.getNote(note)
-      arrow.y = yPos
       arrow.item.scale.y = Options.chart.reverse ? -1 : 1
       if (isHoldNote(note)) {
+        const holdLength =
+          this.notefield
+            .getRenderer()
+            .getYPosFromBeat(note.beat + (isHoldNote(note) ? note.hold : 0)) -
+          arrow.y
         DanceNoteRenderer.setHoldLength(arrow, holdLength)
         if (note.gameplay?.lastHoldActivation) {
           let t =
@@ -81,114 +131,53 @@ export class NoteContainer extends Container {
       if (note.type == "Fake") {
         DanceNoteRenderer.hideFakeIcon(
           arrow,
-          this.renderer.chartManager.getMode() == EditMode.Play
+          this.notefield.getRenderer().chartManager.getMode() == EditMode.Play
         )
       }
-      if (this.renderer.chartManager.editTimingMode == EditTimingMode.Off) {
+      if (
+        this.notefield.getRenderer().chartManager.editTimingMode ==
+        EditTimingMode.Off
+      ) {
         const inSelection =
-          this.renderer.chartManager.getMode() != EditMode.Play &&
-          (this.renderer.chartManager.selection.notes.includes(note) ||
-            this.renderer.chartManager.selection.inProgressNotes.includes(note))
+          this.notefield.getRenderer().chartManager.getMode() !=
+            EditMode.Play &&
+          (this.notefield
+            .getRenderer()
+            .chartManager.selection.notes.includes(note) ||
+            this.notefield
+              .getRenderer()
+              .chartManager.selection.inProgressNotes.includes(note))
         arrow.selection.alpha = inSelection
           ? Math.sin(Date.now() / 320) * 0.1 + 0.3
           : 0
         arrow.visible =
-          !inSelection || !this.renderer.chartManager.selection.shift
-        const inSelectionBounds = this.renderer.selectionTest(arrow)
+          !inSelection ||
+          !this.notefield.getRenderer().chartManager.selection.shift
+        const inSelectionBounds = this.notefield
+          .getRenderer()
+          .selectionTest(arrow)
         if (!inSelection && inSelectionBounds) {
-          this.renderer.chartManager.addNoteToDragSelection(note)
+          this.notefield.getRenderer().chartManager.addNoteToDragSelection(note)
         }
         if (inSelection && !inSelectionBounds) {
-          this.renderer.chartManager.removeNoteFromDragSelection(note)
+          this.notefield
+            .getRenderer()
+            .chartManager.removeNoteFromDragSelection(note)
         }
       }
     }
-
-    DanceNoteTexture.setArrowTexTime(beat, time)
-
-    //Remove old elements
-
-    this.children
-      .filter(child => !child.deactivated && !child.marked)
-      .forEach(child => {
-        child.deactivated = true
-        child.visible = false
-        this.noteMap.delete(child.note)
-      })
-
-    destroyChildIf(this.children, child => Date.now() - child.dirtyTime > 5000)
   }
 
-  private checkBounds(
+  private shouldDisplayNote(
     note: NotedataEntry,
-    beat: number
-  ): [boolean, boolean, number, number] {
-    let y = Options.chart.receptorYPos / Options.chart.zoom
-    if (
-      !isHoldNote(note) ||
-      !note.gameplay?.lastHoldActivation ||
-      beat < note.beat
-    )
-      y = this.renderer.getYPosFromBeat(note.beat)
-    if (isHoldNote(note) && note.gameplay?.droppedHoldBeat)
-      y = this.renderer.getYPosFromBeat(note.gameplay.droppedHoldBeat)
-    const y_hold = this.renderer.getYPosFromBeat(
-      note.beat + (isHoldNote(note) ? note.hold : 0)
-    )
-    if (
-      isHoldNote(note) &&
-      !note.gameplay?.droppedHoldBeat &&
-      note.gameplay?.lastHoldActivation &&
-      note.beat + note.hold < beat
-    )
-      return [true, false, y, y_hold - y]
-    if (y_hold < this.renderer.getUpperBound())
-      return [true, false, y, y_hold - y]
-    if (y > this.renderer.getLowerBound()) {
-      if (note.beat < beat || this.renderer.isNegScroll(note.beat))
-        return [true, false, y, y_hold - y]
-      else return [true, true, y, y_hold - y]
-    }
-    return [false, false, y, y_hold - y]
-  }
-
-  private getNote(note: NotedataEntry): ExtendedNoteObject {
-    if (this.noteMap.get(note)) {
-      const cached = this.noteMap.get(note)!
-      return Object.assign(cached, {
-        deactivated: false,
-        marked: true,
-        dirtyTime: Date.now(),
-      })
-    }
-    let newChild: (Partial<ExtendedNoteObject> & NoteObject) | undefined
-    for (const child of this.children) {
-      if (child.deactivated) {
-        newChild = child
-        break
-      }
-    }
-    if (!newChild) {
-      newChild = DanceNoteRenderer.createArrow() as ExtendedNoteObject
-      this.addChild(newChild as ExtendedNoteObject)
-    }
-    Object.assign(newChild, {
-      note,
-      zIndex: note.beat,
-      visible: true,
-      deactivated: false,
-      marked: true,
-      dirtyTime: Date.now(),
-    })
-    DanceNoteRenderer.setData(
-      this.notefield,
-      newChild as ExtendedNoteObject,
-      note,
-      this.renderer.chart.timingData
-    )
-    newChild.x = this.notefield.getColX(note.col)
-    this.renderer.registerDragNote(newChild as ExtendedNoteObject)
-    this.noteMap.set(note, newChild as ExtendedNoteObject)
-    return newChild as ExtendedNoteObject
+    fromBeat: number,
+    toBeat: number
+  ) {
+    if (note.gameplay?.hideNote) return false
+    if (Options.chart.CMod && Options.chart.hideWarpedArrows && note.warped)
+      return false
+    if (note.beat + (isHoldNote(note) ? note.hold : 0) < fromBeat) return false
+    if (note.beat > toBeat) return false
+    return true
   }
 }

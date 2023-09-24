@@ -199,6 +199,8 @@ export class Chart {
     if (i == -1) return
     const noteToModify = Object.assign({}, this.notedata[i])
     this.notedata.splice(i, 1)
+    if (!isHoldNote(properties as PartialNotedataEntry))
+      (properties as Record<string, any>).hold = undefined
     Object.assign(noteToModify, properties)
     this.addNote(noteToModify)
     EventHandler.emit("chartModified")

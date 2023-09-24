@@ -1,10 +1,13 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
+import { clamp } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { clamp } from "../../util/Util"
 import { EditMode } from "../ChartManager"
-import { ChartRenderer } from "../ChartRenderer"
+import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
 
-export class PreviewAreaContainer extends Container {
+export class PreviewAreaContainer
+  extends Container
+  implements ChartRendererComponent
+{
   private previewArea = new Sprite(Texture.WHITE)
   private previewText = new BitmapText("SONG PREVIEW", {
     fontName: "Main",
@@ -28,11 +31,11 @@ export class PreviewAreaContainer extends Container {
   }
 
   update() {
-    const sampleStart = this.renderer.chart.sm.properties.SAMPLESTART
-    const sampleLength = this.renderer.chart.sm.properties.SAMPLELENGTH
+    const sampleStart = Number(this.renderer.chart.sm.properties.SAMPLESTART)
+    const sampleLength = Number(this.renderer.chart.sm.properties.SAMPLELENGTH)
     if (
-      sampleStart === undefined ||
-      sampleLength === undefined ||
+      Number.isNaN(sampleStart) ||
+      Number.isNaN(sampleLength) ||
       (this.renderer.chartManager.getMode() == EditMode.Play &&
         Options.play.hideBarlines)
     ) {
@@ -40,18 +43,20 @@ export class PreviewAreaContainer extends Container {
       return
     }
     this.visible = true
-    this.previewArea.y = this.renderer.getYPosFromSecond(
-      parseFloat(sampleStart)
-    )
 
-    this.previewArea.height =
-      this.renderer.getYPosFromSecond(
-        parseFloat(sampleStart) + parseFloat(sampleLength)
-      ) - this.previewArea.y
+    let yStart = this.renderer.getYPosFromSecond(sampleStart)
+    let yEnd = this.renderer.getYPosFromSecond(sampleStart + sampleLength)
+    if (yEnd < yStart) [yEnd, yStart] = [yStart, yEnd]
+
+    this.previewArea.y = yStart
+
+    this.previewArea.height = yEnd - yStart
+
     this.previewText.y = clamp(
       this.renderer.getUpperBound() + 35,
       this.previewArea.y + 5,
       this.previewArea.y + this.previewArea.height - 15
     )
+    this.previewText.scale.y = Options.chart.reverse ? -1 : 1
   }
 }

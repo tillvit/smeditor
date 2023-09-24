@@ -1,6 +1,7 @@
 import { Container } from "pixi.js"
 import { App } from "../../App"
 import { ChartManager } from "../../chart/ChartManager"
+import { DebugWidget } from "./DebugWidget"
 import { NoteLayoutWidget } from "./NoteLayoutWidget"
 import { PlayInfoWidget } from "./PlayInfoWidget"
 import { StatusWidget } from "./StatusWidget"
@@ -18,6 +19,7 @@ export class WidgetManager extends Container {
     this.addChild(new NoteLayoutWidget(this))
     this.addChild(new PlayInfoWidget(this))
     this.addChild(new StatusWidget(this))
+    this.addChild(new DebugWidget(this))
     this.zIndex = 2
   }
 

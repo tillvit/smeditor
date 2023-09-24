@@ -1,3 +1,4 @@
+import bezier from "bezier-easing"
 import {
   BitmapText,
   Container,
@@ -8,32 +9,35 @@ import {
 } from "pixi.js"
 import { TimingEventPopup } from "../../gui/popup/TimingEventPopup"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
+import { BezierAnimator } from "../../util/BezierEasing"
+import { lighten } from "../../util/Color"
+import { DisplayObjectPool } from "../../util/DisplayObjectPool"
+import { EventHandler } from "../../util/EventHandler"
+import { roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { destroyChildIf, lighten, roundDigit } from "../../util/Util"
+import { isRightClick } from "../../util/Util"
 import { EditMode, EditTimingMode } from "../ChartManager"
-import { ChartRenderer } from "../ChartRenderer"
+import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
 import { TimingEvent, TimingEventProperty } from "../sm/TimingTypes"
 import { TIMING_EVENT_COLORS } from "./TimingAreaContainer"
 
 export interface TimingBox extends Container {
   event: TimingEvent
   songTiming: boolean
-  deactivated: boolean
-  marked: boolean
-  dirtyTime: number
   backgroundObj: BetterRoundedRect
   selection: BetterRoundedRect
   textObj: BitmapText
   guideLine?: Sprite
-  targetX?: number
-  targetAnchor?: number
+  lastX?: number
+  lastAnchor?: number
+  animationId?: string
   popup?: TimingEventPopup
-  widthCache: number
 }
 
 interface TimingTrack extends Sprite {
-  targetX: number
+  lastX: number
   targetAlpha: number
+  type: string
 }
 
 interface TimingRow {
@@ -65,70 +69,19 @@ export const TIMING_TRACK_WIDTHS: { [key: string]: number } = {
   ATTACKS: 55,
 }
 
-export class TimingTrackContainer extends Container {
+export class TimingTrackContainer
+  extends Container
+  implements ChartRendererComponent
+{
   private tracks = new Container<TimingTrack>()
-  private boxes = new Container<TimingBox>()
 
   private renderer: ChartRenderer
   private timingBoxMap: Map<TimingEvent, TimingBox> = new Map()
+  private wasEditingTiming = false
 
-  private ghostBox?: TimingBox
-
-  constructor(renderer: ChartRenderer) {
-    super()
-    this.renderer = renderer
-    this.boxes.sortableChildren = true
-    this.sortableChildren = true
-    this.addChild(this.tracks, this.boxes)
-  }
-
-  update(beat: number, fromBeat: number, toBeat: number) {
-    if (this.renderer.chartManager.editTimingMode != EditTimingMode.Add) {
-      this.ghostBox?.removeFromParent()
-      this.ghostBox?.destroy()
-      this.ghostBox = undefined
-    }
-
-    this.updateTracks()
-    this.updateBoxes(beat, fromBeat, toBeat)
-  }
-
-  private checkBounds(
-    event: TimingEvent,
-    currentBeat: number
-  ): [boolean, boolean, number] {
-    const y =
-      Options.chart.CMod && event.type == "ATTACKS"
-        ? this.renderer.getYPosFromSecond(event.second)
-        : this.renderer.getYPosFromBeat(event.beat!)
-    if (y < this.renderer.getUpperBound()) return [true, false, y]
-    if (y > this.renderer.getLowerBound()) {
-      if (event.beat! < currentBeat || this.renderer.isNegScroll(event.beat!))
-        return [true, false, y]
-      else return [true, true, y]
-    }
-    return [false, false, y]
-  }
-
-  private getTimingBox(event: TimingEvent): TimingBox {
-    if (this.timingBoxMap.get(event)) {
-      const cached = this.timingBoxMap.get(event)!
-      return Object.assign(cached, {
-        deactivated: false,
-        marked: true,
-        dirtyTime: Date.now(),
-      })
-    }
-    let newChild: (Partial<TimingBox> & Container) | undefined
-    for (const child of this.boxes.children) {
-      if (child.deactivated) {
-        child.deactivated = false
-        newChild = child
-        break
-      }
-    }
-    if (!newChild) {
-      newChild = new Container() as TimingBox
+  private boxPool = new DisplayObjectPool({
+    create: () => {
+      const newChild = new Container() as TimingBox
       newChild.textObj = new BitmapText("", timingNumbers)
       newChild.backgroundObj = new BetterRoundedRect()
       newChild.selection = new BetterRoundedRect("onlyBorder")
@@ -138,62 +91,105 @@ export class TimingTrackContainer extends Container {
         newChild.textObj,
         newChild.selection
       )
-      this.boxes.addChild(newChild as TimingBox)
+      return newChild
+    },
+  })
+
+  private ghostBox?: TimingBox
+
+  private timingDirty = false
+
+  constructor(renderer: ChartRenderer) {
+    super()
+    this.renderer = renderer
+    this.boxPool.sortableChildren = true
+    this.sortableChildren = true
+    this.addChild(this.tracks, this.boxPool)
+
+    const timingEventListener = () => (this.timingDirty = true)
+
+    EventHandler.on("timingModified", timingEventListener)
+    this.on("destroyed", () =>
+      EventHandler.off("timingModified", timingEventListener)
+    )
+  }
+
+  update(fromBeat: number, toBeat: number) {
+    if (this.renderer.chartManager.editTimingMode != EditTimingMode.Add) {
+      this.ghostBox?.removeFromParent()
+      this.ghostBox?.destroy()
+      this.ghostBox = undefined
     }
-    Object.assign(newChild, {
+
+    this.updateTracks()
+    this.updateBoxes(fromBeat, toBeat)
+  }
+
+  private createTrack(type: string, x: number) {
+    const track: TimingTrack = Object.assign(new Sprite(Texture.WHITE), {
+      alpha: 0,
+      width: TIMING_TRACK_WIDTHS[type],
+      name: type,
+      height: 5000,
+      x,
+      type,
+      lastX: 0,
+      tint: 0x263252,
+      targetAlpha: 0,
+    })
+    track.anchor.y = 0.5
+    this.tracks.addChild(track)
+    return track
+  }
+
+  private initializeBox(box: TimingBox, event: TimingEvent) {
+    Object.assign(box, {
       event,
       songTiming: this.renderer.chart.timingData.isTypeChartSpecific(
         event.type
       ),
-      targetX: 0,
-      targetAnchor: 0,
+      lastX: undefined,
+      lastAnchor: undefined,
+      animationId: undefined,
       zIndex: event.beat!,
       eventMode: "static",
-      visible: true,
-      marked: true,
-      deactivated: false,
-      dirtyTime: Date.now(),
     })
+    box.textObj.text = this.getLabelFromEvent(event)
+    box.textObj.anchor.set(0.5, 0.55)
+    box.backgroundObj.width = box.textObj.width + 10
+    box.backgroundObj.height = 25
+    box.backgroundObj.position.x = -box.backgroundObj.width / 2
+    box.backgroundObj.position.y = -25 / 2
 
-    newChild.textObj!.text = this.getLabelFromEvent(event)
-    newChild.textObj!.anchor.x = 0.5
-    newChild.textObj!.anchor.y = 0.55 //???
-    newChild.backgroundObj!.width = newChild.textObj!.width + 10
-    newChild.widthCache = newChild.backgroundObj!.width
-    newChild.backgroundObj!.height = 25
-    newChild.selection!.width = newChild.textObj!.width + 10
-    newChild.selection!.height = 25
+    box.selection.width = box.textObj.width + 10
+    box.selection.height = 25
+    box.selection.position = box.backgroundObj.position
 
-    if (newChild?.popup?.persistent !== true) newChild.popup?.close()
-    newChild.popup = undefined
-    newChild.removeAllListeners()
-    newChild.on("mouseenter", () => {
-      if (newChild?.popup?.persistent === true) return
+    if (box?.popup?.persistent !== true) box.popup?.close()
+    box.popup = undefined
+  }
+
+  private addDragListeners(box: TimingBox, event: TimingEvent) {
+    box.on("mouseenter", () => {
+      if (box?.popup?.persistent === true) return
       if (this.renderer.chartManager.eventSelection.timingEvents.length > 0)
         return
       if (this.renderer.isDragSelecting()) return
 
-      newChild!.popup?.close()
+      box.popup?.close()
       if (this.renderer.chartManager.getMode() == EditMode.Edit) {
-        new TimingEventPopup(
-          newChild as TimingBox,
-          this.renderer.chart.timingData
-        )
-        if (newChild!.popup)
-          newChild!.popup.onConfirm = () => {
-            this.renderer.chartManager.removeEventFromSelection(
-              newChild!.event!
-            )
+        new TimingEventPopup(box, this.renderer.chart.timingData)
+        if (box.popup)
+          box.popup.onConfirm = () => {
+            this.renderer.chartManager.removeEventFromSelection(event)
           }
       }
     })
-    newChild.on("mouseleave", () => {
-      if (newChild?.popup?.persistent === true) return
-      newChild!.popup?.close()
+    box.on("mouseleave", () => {
+      if (box?.popup?.persistent === true) return
+      box.popup?.close()
     })
-    newChild.on("destroyed", () => {
-      newChild!.removeAllListeners()
-    })
+
     let initalPosY = 0
     let movedEvent: TimingEvent | undefined
 
@@ -208,7 +204,7 @@ export class TimingTrackContainer extends Container {
         }
         return
       }
-      newChild?.popup?.close()
+      box.popup?.close()
       const newBeat = this.renderer.getBeatFromYPos(position.y)
       const snap = Options.chart.snap == 0 ? 1 / 1000 : Options.chart.snap
       let snapBeat = Math.round(newBeat / snap) * snap
@@ -229,57 +225,56 @@ export class TimingTrackContainer extends Container {
         snapBeat - timingEvent.beat!
       )
     }
-    newChild.on("mousedown", event => {
-      event.stopImmediatePropagation()
+    box.on("pointerdown", e => {
+      if (isRightClick(e)) {
+        this.renderer.chartManager.clearSelections()
+        this.renderer.chartManager.addEventToSelection(event)
+        TimingEventPopup.activePopup?.close()
+        return
+      }
+      e.stopImmediatePropagation()
       if (
-        this.renderer.chartManager.eventSelection.timingEvents.includes(
-          newChild!.event!
-        )
+        this.renderer.chartManager.eventSelection.timingEvents.includes(event)
       ) {
-        if (event.getModifierState("Control") || event.getModifierState("Meta"))
-          this.renderer.chartManager.removeEventFromSelection(newChild!.event!)
+        if (e.getModifierState("Control") || e.getModifierState("Meta"))
+          this.renderer.chartManager.removeEventFromSelection(event)
       } else {
         if (
-          !event.getModifierState("Control") &&
-          !event.getModifierState("Meta") &&
-          !event.getModifierState("Shift")
+          !e.getModifierState("Control") &&
+          !e.getModifierState("Meta") &&
+          !e.getModifierState("Shift")
         )
           this.renderer.chartManager.clearSelections()
-        this.renderer.chartManager.addEventToSelection(newChild!.event!)
+        this.renderer.chartManager.addEventToSelection(event)
       }
       if (
         this.renderer.chartManager.getMode() == EditMode.Edit &&
         this.renderer.chartManager.eventSelection.timingEvents.length == 1
       ) {
-        if (!newChild?.popup) {
+        if (!box?.popup) {
           TimingEventPopup.activePopup?.close()
-          new TimingEventPopup(
-            newChild as TimingBox,
-            this.renderer.chart.timingData
-          )
-          newChild!.popup!.onConfirm = () => {
-            this.renderer.chartManager.removeEventFromSelection(
-              newChild!.event!
-            )
+          new TimingEventPopup(box, this.renderer.chart.timingData)
+          box.popup!.onConfirm = () => {
+            this.renderer.chartManager.removeEventFromSelection(event)
           }
         }
       }
       if (
-        newChild!.popup &&
-        !event.getModifierState("Control") &&
-        !event.getModifierState("Meta") &&
-        !event.getModifierState("Shift")
+        box.popup &&
+        !e.getModifierState("Control") &&
+        !e.getModifierState("Meta") &&
+        !e.getModifierState("Shift")
       )
-        newChild!.popup.select()
-      else newChild!.popup?.close()
-      initalPosY = newChild!.y!
-      movedEvent = newChild!.event!
+        box.popup.select()
+      else box.popup?.close()
+      initalPosY = box.y!
+      movedEvent = event
       if (this.renderer.chartManager.editTimingMode == EditTimingMode.Add)
         return
-      this.renderer.on("mousemove", moveHandler)
+      this.renderer.on("pointermove", moveHandler)
       const mouseUp = () => {
-        this.renderer.off("mousemove", moveHandler)
-        this.renderer.off("mouseup", mouseUp)
+        this.renderer.off("pointermove", moveHandler)
+        this.renderer.off("pointerup", mouseUp)
         if (
           (this.renderer.chartManager.eventSelection.shift?.beatShift ?? 0) != 0
         )
@@ -296,43 +291,49 @@ export class TimingTrackContainer extends Container {
           })
         this.renderer.chartManager.eventSelection.shift = undefined
       }
-      this.renderer.on("mouseup", mouseUp)
+      this.renderer.on("pointerup", mouseUp)
     })
-    this.timingBoxMap.set(event, newChild as TimingBox)
-    return newChild as TimingBox
-  }
-
-  private makeTrack(type: string, x: number) {
-    const track: TimingTrack = Object.assign(new Sprite(Texture.WHITE), {
-      alpha: 0,
-      width: TIMING_TRACK_WIDTHS[type],
-      name: type,
-      height: 5000,
-      x,
-      targetX: x,
-      targetAlpha: 0,
-    })
-    track.anchor.y = 0.5
-    this.tracks.addChild(track)
-    return track
   }
 
   private updateTracks() {
     const leftTypes = Options.chart.timingEventOrder.left
     const rightTypes = Options.chart.timingEventOrder.right
+    const editingTiming =
+      this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
+      this.renderer.chartManager.getMode() == EditMode.Edit
 
-    for (const track of this.tracks.children) {
-      track.targetAlpha = 0
-    }
     let x = -this.renderer.chart.gameType.notefieldWidth * 0.5 - 128
     for (let i = leftTypes.length - 1; i >= 0; i--) {
       const type = leftTypes[i]
       const track =
-        this.tracks.getChildByName<TimingTrack>(type) ?? this.makeTrack(type, x)
-      track.targetX = x
-      track.targetAlpha = i % 2 == 0 ? 0.1 : 0
-      track.anchor.x = 1
-      track.tint = 0x263252
+        this.tracks.getChildByName<TimingTrack>(type) ??
+        this.createTrack(type, x)
+      if (track.lastX != x) {
+        track.lastX = x
+        track.targetAlpha = i % 2 == 0 ? 0.1 : 0
+        BezierAnimator.animate(
+          track,
+          {
+            0: { x: "inherit", "anchor.x": "inherit" },
+            1: { x, "anchor.x": 1 },
+          },
+          0.3,
+          bezier(0, 0, 0.16, 1.01),
+          () => {},
+          `track-${type}-x`
+        )
+        BezierAnimator.animate(
+          track,
+          {
+            0: { alpha: "inherit" },
+            1: { alpha: editingTiming ? track.targetAlpha : 0 },
+          },
+          0.3,
+          bezier(0, 0, 0.16, 1.01),
+          () => {},
+          `track-${type}-alpha`
+        )
+      }
       x -= TIMING_TRACK_WIDTHS[type]
     }
 
@@ -340,35 +341,90 @@ export class TimingTrackContainer extends Container {
     for (let i = 0; i < rightTypes.length; i++) {
       const type = rightTypes[i]
       const track =
-        this.tracks.getChildByName<TimingTrack>(type) ?? this.makeTrack(type, x)
-      track.targetX = x
-      track.targetAlpha = i % 2 == 0 ? 0.1 : 0
-      track.anchor.x = 0
-      track.tint = 0x263252
+        this.tracks.getChildByName<TimingTrack>(type) ??
+        this.createTrack(type, x)
+      if (track.lastX != x) {
+        track.lastX = x
+        track.targetAlpha = i % 2 == 0 ? 0.1 : 0
+        BezierAnimator.animate(
+          track,
+          {
+            0: { x: "inherit", "anchor.x": "inherit" },
+            1: { x, "anchor.x": 0 },
+          },
+          0.3,
+          bezier(0, 0, 0.16, 1.01),
+          () => {},
+          `track-${type}-x`
+        )
+        BezierAnimator.animate(
+          track,
+          {
+            0: { alpha: "inherit" },
+            1: { alpha: editingTiming ? track.targetAlpha : 0 },
+          },
+          0.3,
+          bezier(0, 0, 0.16, 1.01),
+          () => {},
+          `track-${type}-alpha`
+        )
+      }
       x += TIMING_TRACK_WIDTHS[type]
     }
-    const editingTiming =
-      this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
-      this.renderer.chartManager.getMode() == EditMode.Edit
-    for (const track of this.tracks.children) {
-      if (!editingTiming) track.targetAlpha = 0
-      track.alpha = (track.alpha - track.targetAlpha) * 0.2 + track.targetAlpha
-      track.position.x =
-        (track.position.x - track.targetX) * 0.2 + track.targetX
+    if (this.wasEditingTiming != editingTiming) {
+      this.wasEditingTiming = editingTiming
+      for (const track of this.tracks.children) {
+        BezierAnimator.animate(
+          track,
+          {
+            0: { alpha: "inherit" },
+            1: { alpha: editingTiming ? track.targetAlpha : 0 },
+          },
+          0.3,
+          bezier(0, 0, 0.16, 1.01),
+          () => {},
+          `track-${track.type}-alpha`
+        )
+      }
     }
   }
 
-  private updateBoxes(beat: number, fromBeat: number, toBeat: number) {
+  private updateBoxes(fromBeat: number, toBeat: number) {
+    if (this.timingDirty) {
+      this.timingBoxMap.clear()
+      this.boxPool.destroyAll()
+      this.timingDirty = false
+      TimingEventPopup.activePopup?.close()
+    }
+
     const editingTiming =
       this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
       this.renderer.chartManager.getMode() == EditMode.Edit
 
-    this.boxes.visible =
+    this.boxPool.visible =
       this.renderer.chartManager.getMode() != EditMode.Play ||
       !Options.play.hideBarlines
 
-    //Reset mark of old objects
-    this.boxes.children.forEach(child => (child.marked = false))
+    // Create all missing boxes
+    for (const event of this.renderer.chart.timingData.getTimingData()) {
+      if (toBeat < event.beat!) break
+      if (
+        !Options.chart.timingEventOrder.left.includes(event.type) &&
+        !Options.chart.timingEventOrder.right.includes(event.type)
+      )
+        continue
+      if (fromBeat > event.beat!) continue
+
+      if (!this.timingBoxMap.has(event)) {
+        const box = this.boxPool.createChild()
+        if (!box) break
+        this.initializeBox(box, event)
+        this.addDragListeners(box, event)
+        this.timingBoxMap.set(event, box)
+      }
+    }
+
+    // Update boxes
 
     const currentRow: TimingRow | undefined = {
       beat: -Number.MAX_SAFE_INTEGER,
@@ -376,193 +432,158 @@ export class TimingTrackContainer extends Container {
       leftOffset: 0,
       rightOffset: 0,
     }
-    const fromSecond =
-      this.renderer.chart.timingData.getSecondsFromBeat(fromBeat)
-    const toSecond = this.renderer.chart.timingData.getSecondsFromBeat(toBeat)
 
-    for (const event of this.renderer.chart.timingData.getTimingData()) {
-      if (toBeat < event.beat! || toSecond < event.second!) break
-      if (
-        !Options.chart.timingEventOrder.left.includes(event.type) &&
-        !Options.chart.timingEventOrder.right.includes(event.type)
-      )
+    for (const [event, box] of this.timingBoxMap.entries()) {
+      if (event.beat! < fromBeat || event.beat! > toBeat) {
+        this.timingBoxMap.delete(event)
+        this.boxPool.destroyChild(box)
         continue
-      if (fromBeat > event.beat! || fromSecond > event.second!) continue
+      }
 
-      const [outOfBounds, endSearch, yPos] = this.checkBounds(event, beat)
-      if (endSearch) break
-      if (outOfBounds) continue
-
-      const timingBox = this.getTimingBox(event)
-      const timingWidth = timingBox.widthCache
-
+      let targetX = 0
+      let targetAnchor = 0
+      const boxWidth = box.backgroundObj.width
       const side = Options.chart.timingEventOrder.right.includes(event.type)
         ? "right"
         : "left"
       if (editingTiming) {
-        let targetX =
-          this.tracks.getChildByName<TimingTrack>(event.type)?.x ?? timingBox.x
+        targetX =
+          this.tracks.getChildByName<TimingTrack>(event.type)?.x ?? box.x
         targetX +=
           (TIMING_TRACK_WIDTHS[event.type] / 2) * (targetX > 0 ? 1 : -1)
-        if (!timingBox.targetX) timingBox.position.x = targetX
-        timingBox.targetX = targetX
-        if (!timingBox.targetAnchor) timingBox.pivot.x = 0
-        timingBox.targetAnchor = 0.5
+        targetAnchor = 0.5
       } else {
-        let x =
+        targetX =
           (side == "right" ? 1 : -1) *
           (this.renderer.chart.gameType.notefieldWidth * 0.5 + 80)
-        if (side == "left") x -= 30
+        if (side == "left") targetX -= 30
         if (
           currentRow.beat != event.beat ||
           (event.second && currentRow.second != event.second)
         ) {
           currentRow.leftOffset = 0
           currentRow.rightOffset = 0
+          currentRow.beat = event.beat!
+          currentRow.second = event.second!
         }
         if (side == "left") {
-          x -= currentRow.leftOffset
-          currentRow.leftOffset += timingWidth + 5
+          targetX -= currentRow.leftOffset
+          currentRow.leftOffset += boxWidth + 5
         } else {
-          x += currentRow.rightOffset
-          currentRow.rightOffset += timingWidth + 5
+          targetX += currentRow.rightOffset
+          currentRow.rightOffset += boxWidth + 5
         }
-        if (!timingBox.targetX) timingBox.position.x = x
-        timingBox.targetX = x
-        currentRow.beat = event.beat!
-        currentRow.second = event.second!
-        if (!timingBox.targetAnchor)
-          timingBox.pivot.x =
-            side == "right" ? -timingWidth / 2 : timingWidth / 2
-        timingBox.targetAnchor = side == "right" ? 0 : 1
+        targetAnchor = side == "right" ? 0 : 1
       }
 
-      timingBox.position.x =
-        (timingBox.targetX - timingBox.position.x) * 0.2 + timingBox.position.x
-      timingBox.pivot.x =
-        ((timingBox.targetAnchor - 0.5) * timingWidth - timingBox.pivot.x) *
-          0.2 +
-        timingBox.pivot.x
-      timingBox.backgroundObj.position.x = -timingWidth / 2
-      timingBox.backgroundObj.position.y = -25 / 2
-      timingBox.y = yPos
+      if (box.lastX === undefined || box.lastAnchor === undefined) {
+        box.position.x = targetX
+        box.pivot.x = (targetAnchor - 0.5) * boxWidth
+      } else if (box.lastX != targetX || box.lastAnchor != targetAnchor) {
+        box.animationId = BezierAnimator.animate(
+          box,
+          {
+            0: { x: "inherit", "pivot.x": "inherit" },
+            1: { x: targetX, "pivot.x": (targetAnchor - 0.5) * boxWidth },
+          },
+          0.3,
+          bezier(0, 0, 0.16, 1.01),
+          () => {},
+          box.animationId
+        )
+      }
+      box.lastX = targetX
+      box.lastAnchor = targetAnchor
+      box.y =
+        Options.chart.CMod && event.type == "ATTACKS"
+          ? this.renderer.getYPosFromSecond(event.second)
+          : this.renderer.getYPosFromBeat(event.beat!)
 
-      timingBox.selection.position = timingBox.backgroundObj.position
-      timingBox.textObj.scale.y = Options.chart.reverse ? -1 : 1
+      box.textObj.scale.y = Options.chart.reverse ? -1 : 1
 
       const inSelection =
         this.renderer.chartManager.getMode() != EditMode.Play &&
         (this.renderer.chartManager.eventSelection.timingEvents.includes(
-          timingBox.event
+          event
         ) ||
           this.renderer.chartManager.eventSelection.inProgressTimingEvents.includes(
-            timingBox.event
+            event
           ))
-      timingBox.backgroundObj.tint = inSelection
+      box.backgroundObj.tint = inSelection
         ? lighten(
             TIMING_EVENT_COLORS[event.type] ?? 0x000000,
             Math.sin(Date.now() / 320) * 0.4 + 1.5
           )
         : TIMING_EVENT_COLORS[event.type] ?? 0x000000
-      timingBox.selection.alpha = inSelection ? 1 : 0
-      timingBox.visible =
+      box.selection.alpha = inSelection ? 1 : 0
+      box.visible =
         !inSelection || !this.renderer.chartManager.eventSelection.shift
       if (this.renderer.chartManager.editTimingMode != EditTimingMode.Off) {
-        const inSelectionBounds = this.renderer.selectionTest(timingBox)
+        const inSelectionBounds = this.renderer.selectionTest(box)
         if (!inSelection && inSelectionBounds) {
-          this.renderer.chartManager.addEventToDragSelection(timingBox.event)
+          this.renderer.chartManager.addEventToDragSelection(event)
         }
         if (inSelection && !inSelectionBounds) {
-          this.renderer.chartManager.removeEventFromDragSelection(
-            timingBox.event
-          )
+          this.renderer.chartManager.removeEventFromDragSelection(event)
         }
       }
     }
-
-    //Remove old elements
-    this.boxes.children
-      .filter(child => !child.deactivated && !child.marked)
-      .forEach(child => {
-        child.deactivated = true
-        child.visible = false
-        if (child.popup?.persistent) child.popup.detach()
-        else child.popup?.close()
-        child.popup = undefined
-        this.timingBoxMap.delete(child.event)
-      })
-
-    destroyChildIf(
-      this.boxes.children,
-      child => Date.now() - child.dirtyTime > 5000
-    )
   }
 
-  setGhostEvent(pos: Point) {
+  updateGhostEvent(pos: Point) {
     const snap = Options.chart.snap == 0 ? 1 / 1000 : Options.chart.snap
     const snapBeat =
       Math.round(this.renderer.getBeatFromYPos(pos.y) / snap) * snap
-    const type = this.ghostBox?.popup
+    const eventType = this.ghostBox?.popup
       ? this.ghostBox.event.type
       : this.getClosestTrack(pos.x)?.name
-    if (!type) {
+    if (!eventType) {
       this.ghostBox?.removeFromParent()
       this.ghostBox?.destroy()
       this.ghostBox = undefined
       return
     }
     if (!this.ghostBox) {
-      const newChild: Partial<TimingBox> | undefined =
-        new Container() as TimingBox
-      newChild.zIndex = -1
-      newChild.guideLine = new Sprite(Texture.WHITE)
-      newChild.textObj = new BitmapText("", timingNumbers)
-      newChild.backgroundObj = new BetterRoundedRect()
-      newChild.selection = new BetterRoundedRect("onlyBorder")
-      newChild.selection.tint = 0x0f3d4b
-      newChild.selection.alpha = 0
-      newChild.addChild!(newChild.guideLine)
-      newChild.addChild!(newChild.backgroundObj)
-      newChild.addChild!(newChild.textObj)
-      newChild.addChild!(newChild.selection)
-      this.addChild(newChild as TimingBox)
-      newChild.deactivated = false
-      newChild.marked = true
-      newChild.visible = true
-      newChild.targetX = undefined
-      newChild.targetAnchor = undefined
-      newChild.textObj.anchor.x = 0.5
-      newChild.textObj.anchor.y = 0.55
-      newChild.backgroundObj.height = 25
-      newChild.selection.height = 25
-      newChild.guideLine.height = 1
-      newChild.guideLine.anchor.y = 0.5
-      newChild.eventMode = "static"
-      newChild.popup = undefined
-
-      newChild.on!("destroyed", () => {
-        newChild.removeAllListeners!()
-      })
-      this.ghostBox = newChild as TimingBox
+      const ghostBox = new Container() as TimingBox
+      ghostBox.textObj = new BitmapText("", timingNumbers)
+      ghostBox.backgroundObj = new BetterRoundedRect()
+      ghostBox.selection = new BetterRoundedRect("onlyBorder")
+      ghostBox.guideLine = new Sprite(Texture.WHITE)
+      ghostBox.selection.tint = 0x3a9bf0
+      ghostBox.selection.alpha = 0
+      ghostBox.addChild(
+        ghostBox.guideLine,
+        ghostBox.backgroundObj,
+        ghostBox.textObj,
+        ghostBox.selection
+      )
+      this.addChild(ghostBox)
+      ghostBox.visible = true
+      ghostBox.textObj.anchor.set(0.5, 0.55)
+      ghostBox.backgroundObj.height = 25
+      ghostBox.selection.height = 25
+      ghostBox.guideLine.height = 1
+      ghostBox.guideLine.anchor.y = 0.5
+      this.ghostBox = ghostBox
     }
     if (
       !this.ghostBox?.popup &&
       (this.ghostBox.event?.beat != snapBeat ||
-        this.ghostBox.event?.type != type)
+        this.ghostBox.event?.type != eventType)
     ) {
       this.ghostBox.event =
         structuredClone(
           this.renderer.chart.timingData.getTimingEventAtBeat(
-            type as TimingEventProperty,
+            eventType as TimingEventProperty,
             snapBeat
           )
         ) ??
         this.renderer.chart.timingData.getDefaultEvent(
-          type as TimingEventProperty,
+          eventType as TimingEventProperty,
           snapBeat
         )
       this.ghostBox.event.beat = snapBeat
-      if (type == "ATTACKS") {
+      if (eventType == "ATTACKS") {
         this.ghostBox.event.second =
           this.renderer.chart.getSecondsFromBeat(snapBeat)
       }
@@ -573,16 +594,17 @@ export class TimingTrackContainer extends Container {
     this.ghostBox.alpha = this.ghostBox?.popup ? 1 : 0.4
     this.ghostBox.selection.alpha = this.ghostBox?.popup ? 1 : 0
 
-    this.ghostBox.name = type
+    this.ghostBox.name = eventType
 
     const yPos = this.renderer.getYPosFromBeat(
       this.ghostBox?.popup ? this.ghostBox.event.beat! : snapBeat
     )
 
-    let targetX = this.tracks.getChildByName<TimingTrack>(type)!.x
-    targetX += (TIMING_TRACK_WIDTHS[type] / 2) * (targetX > 0 ? 1 : -1)
+    let targetX = this.tracks.getChildByName<TimingTrack>(eventType)!.x
+    targetX += (TIMING_TRACK_WIDTHS[eventType] / 2) * (targetX > 0 ? 1 : -1)
     this.ghostBox.position.x = targetX
-    this.ghostBox.backgroundObj.tint = TIMING_EVENT_COLORS[type] ?? 0x000000
+    this.ghostBox.backgroundObj.tint =
+      TIMING_EVENT_COLORS[eventType] ?? 0x000000
     this.ghostBox.backgroundObj.position.x =
       -this.ghostBox.backgroundObj.width / 2
     this.ghostBox.backgroundObj.position.y = -25 / 2

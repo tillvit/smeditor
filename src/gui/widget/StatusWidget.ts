@@ -3,8 +3,8 @@ import { Container, Sprite, Texture } from "pixi.js"
 import { EditMode, EditTimingMode } from "../../chart/ChartManager"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
+import { roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { isNumericKeyPress, roundDigit } from "../../util/Util"
 import { Icons } from "../Icons"
 import { Dropdown } from "../element/Dropdown"
 import { TimingTrackOrderPopup } from "../popup/TimingTrackOrderPopup"
@@ -139,8 +139,8 @@ export class StatusWidget extends Widget {
     min.innerText = "-"
     min.spellcheck = false
     min.contentEditable = "true"
+    min.style.maxWidth = "27px"
     min.onkeydown = ev => {
-      if (!isNumericKeyPress(ev)) ev.preventDefault()
       if (ev.key == "Enter") min.blur()
       if (ev.key == "Tab") sec.focus()
       if (ev.key == "Escape") {
@@ -160,8 +160,8 @@ export class StatusWidget extends Widget {
     sec.innerText = "-"
     sec.spellcheck = false
     sec.contentEditable = "true"
+    sec.style.maxWidth = "18px"
     sec.onkeydown = ev => {
-      if (!isNumericKeyPress(ev)) ev.preventDefault()
       if (ev.key == "Enter") sec.blur()
       if (ev.key == "Tab") millis.focus()
       if (ev.key == "Escape") {
@@ -181,8 +181,8 @@ export class StatusWidget extends Widget {
     millis.innerText = "-"
     millis.spellcheck = false
     millis.contentEditable = "true"
+    millis.style.maxWidth = "27px"
     millis.onkeydown = ev => {
-      if (!isNumericKeyPress(ev)) ev.preventDefault()
       if (ev.key == "Enter") millis.blur()
       if (ev.key == "Tab") min.focus()
       if (ev.key == "Escape") {
@@ -224,7 +224,6 @@ export class StatusWidget extends Widget {
     beat.spellcheck = false
     beat.contentEditable = "true"
     beat.onkeydown = ev => {
-      if (!isNumericKeyPress(ev)) ev.preventDefault()
       if (ev.key == "Enter") beat.blur()
       if (ev.key == "Escape") {
         if (this.beatDropdown.value == "Measure") {
@@ -372,8 +371,9 @@ export class StatusWidget extends Widget {
       if (!this.manager.chartManager.loadedChart) return
       for (const type of this.manager.chartManager.loadedChart.gameType
         .editNoteTypes) {
-        const sprite =
-          this.manager.chartManager.chartView!.notefield.getNoteSprite({
+        const sprite = this.manager.chartManager
+          .chartView!.getNotefield()
+          .getNoteSprite({
             type,
             beat: 0,
             col: 0,
@@ -676,10 +676,14 @@ export class StatusWidget extends Widget {
 
   private updateTime() {
     this.millis.innerText = this.millis.innerText.padEnd(3, "0").slice(0, 3)
-    let time =
-      this.safeParse(this.min) * 60 +
-      this.safeParse(this.sec) +
-      this.safeParse(this.millis) / 1000
+    const min = this.parseString(this.min)
+    const sec = this.parseString(this.sec)
+    const millis = this.parseString(this.millis)
+    if (min === null || sec === null || millis === null) {
+      this.lastTime = -999
+      return
+    }
+    let time = min * 60 + sec + millis / 1000
     if (time > 9999999) time = 9999999
     this.manager.chartManager.setTime(time)
     //force update
@@ -687,7 +691,11 @@ export class StatusWidget extends Widget {
   }
 
   private updateBeat() {
-    let beat = this.safeParse(this.beat)
+    let beat = this.parseString(this.beat)
+    if (beat === null) {
+      this.lastBeat = -999
+      return
+    }
     if (this.beatDropdown.value == "Measure") {
       const timingData = this.manager.chartManager.loadedChart?.timingData
       beat = timingData?.getBeatFromMeasure(beat) ?? beat * 4
@@ -698,14 +706,14 @@ export class StatusWidget extends Widget {
     this.lastBeat = -999
   }
 
-  private safeParse(el: HTMLDivElement) {
+  private parseString(el: HTMLDivElement) {
     try {
       const val = Parser.evaluate(el.innerText)
       if (!isFinite(val)) return 0
       if (val < 0) return 0
       return val
     } catch {
-      return 0
+      return null
     }
   }
 }

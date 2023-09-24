@@ -2,7 +2,7 @@ import { App } from "../App"
 import { TimingData } from "../chart/sm/TimingData"
 import { Dropdown } from "../gui/element/Dropdown"
 import { NumberSpinner } from "../gui/element/NumberSpinner"
-import { roundDigit } from "../util/Util"
+import { roundDigit } from "../util/Math"
 
 type TimingDataWindowElement<T extends HTMLElement> = {
   create: (app: App, isSongTiming: () => boolean) => T

@@ -7,8 +7,9 @@ import {
   createInputElement,
 } from "../../data/SMPropertiesData"
 import { ActionHistory } from "../../util/ActionHistory"
-import { FileHandler } from "../../util/FileHandler"
+import { FileHandler } from "../../util/file-handler/FileHandler"
 import { Icons } from "../Icons"
+import { WaterfallManager } from "../element/WaterfallManager"
 import { ConfirmationWindow } from "./ConfirmationWindow"
 import { Window } from "./Window"
 
@@ -138,18 +139,30 @@ export class NewSongWindow extends Window {
 
   async createSong() {
     let folder = this.sm.properties.TITLE!
-    if (await FileHandler.getDirectoryHandle(folder)) {
-      let i = 2
-      while (await FileHandler.getDirectoryHandle(folder)) {
-        folder = `${this.sm.properties.TITLE!} ${i++}`
+    if (window.nw) {
+      const fileSelector = document.createElement("input")
+      fileSelector.type = "file"
+      // fileSelector.nwdirectory = true
+      // fileSelector.nwdirectorydesc = "hi"
+      fileSelector.onchange = () => {
+        WaterfallManager.create(fileSelector.value)
+        console.log(fileSelector.value)
+      }
+      fileSelector.click()
+    } else {
+      if (await FileHandler.getDirectoryHandle(folder)) {
+        let i = 2
+        while (await FileHandler.getDirectoryHandle(folder)) {
+          folder = `${this.sm.properties.TITLE!} ${i++}`
+        }
       }
     }
     await FileHandler.writeFile(folder + "/song.sm", this.sm.serialize("sm"))
     // Add the rest of the files
     await Promise.all(
-      Object.entries(this.fileTable).map(entry => {
-        return FileHandler.writeFile(folder + `/${entry[0]}`, entry[1])
-      })
+      Object.entries(this.fileTable).map(entry =>
+        FileHandler.writeFile(folder + `/${entry[0]}`, entry[1])
+      )
     )
     await this.app.chartManager.loadSM(folder + "/song.sm")
     this.app.windowManager?.getWindowById("select_sm_initial")?.closeWindow()

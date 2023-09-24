@@ -8,7 +8,8 @@ import { CHART_DIFFICULTIES } from "../../chart/sm/ChartTypes"
 import { CHART_PROPERTIES_DATA } from "../../data/ChartListWindowData"
 import { ActionHistory } from "../../util/ActionHistory"
 import { EventHandler } from "../../util/EventHandler"
-import { clamp, isNumericKeyPress, safeParse } from "../../util/Util"
+import { clamp } from "../../util/Math"
+import { parseString } from "../../util/Util"
 import { Dropdown } from "../element/Dropdown"
 import { ConfirmationWindow } from "./ConfirmationWindow"
 import { Window } from "./Window"
@@ -274,17 +275,20 @@ export class ChartListWindow extends Window {
     meter.contentEditable = "true"
     meter.classList.add("inlineEdit", "chart-meter")
     meter.onkeydown = ev => {
-      if (!isNumericKeyPress(ev)) ev.preventDefault()
       if (ev.key == "Enter") meter.blur()
     }
 
     meter.onblur = () => {
-      let value = Math.round(safeParse(meter.innerText))
-      value = clamp(1, value, 2 ** 31 - 1)
+      let value = parseString(meter.innerText)
+      if (value === null) {
+        meter.innerText = chart?.meter + ""
+        return
+      }
+      value = Math.round(clamp(1, value, 2 ** 31 - 1))
       const lastVal = chart!.meter
       ActionHistory.instance.run({
         action: () => {
-          chart!.meter = value
+          chart!.meter = value!
           sortDifficulties()
           this.loadCharts()
         },

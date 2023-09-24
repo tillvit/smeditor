@@ -94,7 +94,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       {
         type: "checkbox",
         id: "mousePlacement",
-        checked: () => Options.general.mousePlacement,
+        checked: () => Options.chart.mousePlacement,
       },
     ],
   },
@@ -312,11 +312,26 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
           },
           {
             type: "selection",
+            id: "convertRollsHolds",
+          },
+          {
+            type: "selection",
+            id: "swapHoldsRolls",
+          },
+          {
+            type: "seperator",
+          },
+          {
+            type: "selection",
             id: "convertHoldsTaps",
           },
           {
             type: "selection",
-            id: "convertNotesMines",
+            id: "convertTapsMines",
+          },
+          {
+            type: "selection",
+            id: "convertTapsLifts",
           },
           {
             type: "selection",

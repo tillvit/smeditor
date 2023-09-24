@@ -2,15 +2,51 @@ import { App } from "../../App"
 import { KEYBIND_DATA, Modifier } from "../../data/KeybindData"
 import { MENUBAR_DATA, MenuOption } from "../../data/MenubarData"
 import { Keybinds } from "../../util/Keybinds"
+import { capitalize } from "../../util/Util"
 import { Icons } from "../Icons"
 import { Dropdown } from "../element/Dropdown"
 import { KeyComboWindow } from "./KeyComboWindow"
 import { Window } from "./Window"
 
+interface KeybindInserts {
+  ids: string[]
+  after?: string
+}
+
 const KEYBIND_BLACKLIST = ["cut", "copy", "paste", "undo", "redo", "delete"]
-const KEYBIND_INSERTS: Record<string, string[]> = {
-  edit: ["previousNoteType", "nextNoteType"],
-  view: ["playback", "selectRegion"],
+const KEYBIND_INSERTS: Record<string, KeybindInserts[]> = {
+  edit: [
+    {
+      ids: [
+        "previousNoteType",
+        "nextNoteType",
+        "noteTypeTap",
+        "noteTypeMine",
+        "noteTypeFake",
+        "noteTypeLift",
+        "quant4",
+        "quant8",
+        "quant12",
+        "quant16",
+        "quant24",
+        "quant32",
+        "quant48",
+        "quant96",
+        "quant192",
+      ],
+      after: "mousePlacement",
+    },
+  ],
+  view: [
+    {
+      ids: ["playback", "selectRegion"],
+    },
+  ],
+  debug: [
+    {
+      ids: ["showFPSCounter", "showDebugTimers"],
+    },
+  ],
 }
 
 export class KeybindWindow extends Window {
@@ -109,7 +145,9 @@ export class KeybindWindow extends Window {
       .filter(groupID =>
         KeybindWindow.GROUPS[groupID].some(id => this.filterID(filter, id))
       )
-      .map(id => this.createEmptySection(MENUBAR_DATA[id].title, id))
+      .map(id =>
+        this.createEmptySection(MENUBAR_DATA[id]?.title ?? capitalize(id), id)
+      )
   }
 
   private createOptions(filter = "") {
@@ -127,7 +165,7 @@ export class KeybindWindow extends Window {
 
         const label = document.createElement("div")
         label.classList.add("pref-group-label")
-        label.innerText = MENUBAR_DATA[groupID].title
+        label.innerText = MENUBAR_DATA[groupID]?.title ?? capitalize(groupID)
 
         groupElement.replaceChildren(label, ...options)
         this.observer!.observe(groupElement)
@@ -150,10 +188,15 @@ export class KeybindWindow extends Window {
     })
     Object.keys(KEYBIND_INSERTS).forEach(id => {
       if (GROUPS[id] === undefined) GROUPS[id] = []
-      GROUPS[id].unshift(...KEYBIND_INSERTS[id])
-      KEYBIND_INSERTS[id].forEach(option => {
-        const idx = missingKeybindTest.indexOf(option)
-        if (idx != -1) missingKeybindTest.splice(idx, 1)
+      KEYBIND_INSERTS[id].forEach(insert => {
+        const insertIndex = !insert.after
+          ? 0
+          : GROUPS[id].findIndex(id => insert.after == id) + 1 ?? 0
+        GROUPS[id].splice(insertIndex, 0, ...insert.ids)
+        insert.ids.forEach(option => {
+          const idx = missingKeybindTest.indexOf(option)
+          if (idx != -1) missingKeybindTest.splice(idx, 1)
+        })
       })
     })
     KEYBIND_BLACKLIST.forEach(option => {

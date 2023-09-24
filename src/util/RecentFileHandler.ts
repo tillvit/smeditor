@@ -1,5 +1,5 @@
 import { Simfile } from "../chart/sm/Simfile"
-import { FileHandler } from "./FileHandler"
+import { FileHandler } from "./file-handler/FileHandler"
 
 interface RecentFileEntry {
   name: string
@@ -8,11 +8,11 @@ interface RecentFileEntry {
 
 export class RecentFileHandler {
   private static _model?: RecentFileEntry[]
-  private static get model() {
-    if (!this._model) this._load()
+  private static async getModel() {
+    if (!this._model) await this._load()
     return this._model!
   }
-  private static _load() {
+  private static async _load() {
     this._model = []
     const data = localStorage.getItem("recentFiles")
     if (!data) return
@@ -35,36 +35,33 @@ export class RecentFileHandler {
       console.log("failed to load entries")
       return
     }
-    this.saveEntries()
+    await this.saveEntries()
   }
 
-  public static getRecents() {
-    return this.model
+  public static async getRecents() {
+    return await this.getModel()
   }
 
-  public static addSM(path: string, sm: Simfile) {
-    const model = this.model
+  public static async addSM(path: string, sm: Simfile) {
+    const model = await this.getModel()
     // Remove the old entry
     const idx = model.findIndex(entry => entry.path == path)
     if (idx != -1) model.splice(idx, 1)
-    this.model.unshift({
+    model.unshift({
       name: sm.properties.TITLE ?? "Untitled Song",
       path,
     })
     this.saveEntries()
   }
 
-  private static limitEntries() {
-    this.model.splice(15)
+  private static async limitEntries() {
+    ;(await this.getModel()).splice(15)
   }
 
   private static async saveEntries() {
     this.limitEntries()
     const results = await Promise.all(
-      this._model!.map(async entry => {
-        const fh = await FileHandler.getFileHandle(entry.path)
-        return fh !== undefined
-      })
+      this._model!.map(async entry => await FileHandler.hasFile(entry.path))
     )
     this._model = this._model!.filter((_v, index) => results[index])
     localStorage.setItem("recentFiles", JSON.stringify(this._model))
