@@ -337,11 +337,14 @@ export class ChartAudio {
    * @return {*}  {number[]}
    * @memberof ChartAudio
    */
-  getRawData(): number[][] {
+  getRawData(): Float32Array[] {
     if (this._destroyed) return []
     const ret = []
-    for (let i = 0; i < this._buffer.numberOfChannels; i++)
-      ret.push([...this._buffer.getChannelData(i)])
+    for (let i = 0; i < this._buffer.numberOfChannels; i++) {
+      const buf = new Float32Array(this._buffer.length)
+      this._buffer.copyFromChannel(buf, i)
+      ret.push(buf)
+    }
     return ret
   }
 
@@ -351,11 +354,14 @@ export class ChartAudio {
    * @return {*}  {number[]}
    * @memberof ChartAudio
    */
-  getFilteredRawData(): number[][] {
+  getFilteredRawData(): Float32Array[] {
     if (this._destroyed) return []
     const ret = []
-    for (let i = 0; i < this._filteredBuffer.numberOfChannels; i++)
-      ret.push([...this._filteredBuffer.getChannelData(i)])
+    for (let i = 0; i < this._filteredBuffer.numberOfChannels; i++) {
+      const buf = new Float32Array(this._buffer.length)
+      this._buffer.copyFromChannel(buf, i)
+      ret.push(buf)
+    }
     return ret
   }
 
