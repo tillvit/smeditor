@@ -63,18 +63,11 @@ export class TimingData {
       .split("\n")
       .map(line => line.trim())
       .filter(line => line !== "")
-    if (
-      entries.length > 1 &&
-      !entries.slice(0, -1).some(line => !line.endsWith(","))
-    ) {
-      // All lines ends with comma, split by comma
-      entries = entries.map(line => line.slice(0, -1))
-    }
     entries = entries.map(line => {
       if (line.endsWith(",")) line = line.slice(0, -1)
+      if (line.startsWith(",")) line = line.slice(1)
       return line
     })
-    console.log(entries, data)
     this.events[type] ||= []
 
     if (type == "ATTACKS") entries = [data.replaceAll(/[\n\r\t]/g, "")]
@@ -111,12 +104,20 @@ export class TimingData {
             beat: parseFloat(temp[0]),
             value: parseFloat(temp[1]),
           }
+          if (isNaN(parseFloat(temp[0])) || isNaN(parseFloat(temp[1]))) {
+            console.warn(`Couldn't load ${type} event ` + str)
+            continue
+          }
           break
         case "LABELS":
           event = {
             type: type,
             beat: parseFloat(temp[0]),
             value: temp[1],
+          }
+          if (isNaN(parseFloat(temp[0]))) {
+            console.warn(`Couldn't load ${type} event ` + str)
+            continue
           }
           break
         case "SPEEDS":
@@ -127,6 +128,14 @@ export class TimingData {
             delay: parseFloat(temp[2]),
             unit: temp[3] == "0" ? "B" : "T",
           }
+          if (
+            isNaN(parseFloat(temp[0])) ||
+            isNaN(parseFloat(temp[1])) ||
+            isNaN(parseFloat(temp[2]))
+          ) {
+            console.warn(`Couldn't load ${type} event ` + str)
+            continue
+          }
           break
         case "TIMESIGNATURES":
           event = {
@@ -135,6 +144,14 @@ export class TimingData {
             upper: parseInt(temp[1]),
             lower: parseInt(temp[2]),
           }
+          if (
+            isNaN(parseFloat(temp[0])) ||
+            isNaN(parseInt(temp[1])) ||
+            isNaN(parseInt(temp[2]))
+          ) {
+            console.warn(`Couldn't load ${type} event ` + str)
+            continue
+          }
           break
         case "COMBOS":
           event = {
@@ -142,6 +159,14 @@ export class TimingData {
             beat: parseFloat(temp[0]),
             hitMult: parseInt(temp[1]),
             missMult: parseInt(temp[2] ?? temp[1]),
+          }
+          if (
+            isNaN(parseFloat(temp[0])) ||
+            isNaN(parseInt(temp[1])) ||
+            isNaN(parseInt(temp[2] ?? temp[1]))
+          ) {
+            console.warn(`Couldn't load ${type} event ` + str)
+            continue
           }
           break
         case "BGCHANGES":
@@ -159,6 +184,10 @@ export class TimingData {
             transition: temp[8] ?? "",
             color1: temp[9] ?? "",
             color2: temp[10] ?? "",
+          }
+          if (isNaN(parseFloat(temp[0])) || isNaN(parseFloat(temp[2]))) {
+            console.warn(`Couldn't load ${type} event ` + str)
+            continue
           }
       }
       this._insert(type, event!, false)
