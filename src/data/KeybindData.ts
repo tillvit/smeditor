@@ -572,6 +572,17 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       )
     },
   },
+  hideFakedArrows: {
+    label: "Hide faked arrows (CMod only)",
+    combos: [{ key: "F", mods: [Modifier.SHIFT] }],
+    disabled: false,
+    callback: () => {
+      Options.chart.hideFakedArrows = !Options.chart.hideFakedArrows
+      WaterfallManager.create(
+        "Hide Faked Arrows: " + (Options.chart.hideFakedArrows ? "on" : "off")
+      )
+    },
+  },
   doSpeedChanges: {
     label: "Do speed changes (XMod only)",
     combos: [{ key: "S", mods: [Modifier.SHIFT] }],

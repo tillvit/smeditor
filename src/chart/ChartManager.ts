@@ -1338,10 +1338,6 @@ export class ChartManager {
    */
   async save() {
     if (!this.loadedSM) return
-    if (!ActionHistory.instance.isDirty()) {
-      WaterfallManager.create("Saved")
-      return
-    }
     const path_arr = this.smPath.split("/")
     const name = path_arr.pop()!.split(".").slice(0, -1).join(".")
     const path = path_arr.join("/")

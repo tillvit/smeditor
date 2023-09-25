@@ -269,6 +269,11 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "checkbox",
+        id: "hideFakedArrows",
+        checked: () => Options.chart.hideFakedArrows,
+      },
+      {
+        type: "checkbox",
         id: "doSpeedChanges",
         checked: () => Options.chart.doSpeedChanges,
       },
