@@ -174,6 +174,8 @@ export class NoteContainer extends Container {
     toBeat: number
   ) {
     if (note.gameplay?.hideNote) return false
+    if (Options.chart.CMod && note.fake && Options.chart.hideFakedArrows)
+      return false
     if (Options.chart.CMod && Options.chart.hideWarpedArrows && note.warped)
       return false
     if (note.beat + (isHoldNote(note) ? note.hold : 0) < fromBeat) return false

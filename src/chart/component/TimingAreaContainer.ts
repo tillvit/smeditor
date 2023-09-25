@@ -50,8 +50,14 @@ export class TimingAreaContainer
     StopTimingEvent | WarpTimingEvent | DelayTimingEvent | FakeTimingEvent,
     Sprite
   > = new Map()
+  private timingEvents: (
+    | StopTimingEvent
+    | WarpTimingEvent
+    | DelayTimingEvent
+    | FakeTimingEvent
+  )[] = []
 
-  private timingDirty = false
+  private timingDirty = true
 
   constructor(renderer: ChartRenderer) {
     super()
@@ -71,18 +77,19 @@ export class TimingAreaContainer
       this.timingAreaMap.clear()
       this.areaPool.destroyAll()
       this.timingDirty = false
+      this.timingEvents = this.renderer.chart.timingData.getTimingData(
+        "STOPS",
+        "WARPS",
+        "DELAYS",
+        "FAKES"
+      )
     }
 
     this.visible =
       this.renderer.chartManager.getMode() != EditMode.Play ||
       !Options.play.hideBarlines
 
-    for (const event of this.renderer.chart.timingData.getTimingData(
-      "STOPS",
-      "WARPS",
-      "DELAYS",
-      "FAKES"
-    )) {
+    for (const event of this.timingEvents) {
       //Check beat requirements
       if (event.beat > toBeat) break
       if (!this.shouldDrawEvent(event, fromBeat, toBeat)) continue

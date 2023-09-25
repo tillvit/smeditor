@@ -321,8 +321,21 @@ export class TimingData {
   ) {
     const target = songTiming ? this : this._fallback!
     if (type == "OFFSET") {
-      target.offset = properties as number
-      this.reloadCache("OFFSET")
+      const oldOffset = target.offset
+      ActionHistory.instance.run({
+        action: () => {
+          target.offset = properties as number
+          EventHandler.emit("timingModified")
+          EventHandler.emit("chartModified")
+          this.reloadCache("OFFSET")
+        },
+        undo: () => {
+          target.offset = oldOffset
+          EventHandler.emit("timingModified")
+          EventHandler.emit("chartModified")
+          this.reloadCache("OFFSET")
+        },
+      })
       return
     }
     if (Object.keys(properties).length == 0) return

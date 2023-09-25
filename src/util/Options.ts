@@ -23,6 +23,7 @@ export class DefaultOptions {
     speed: 250,
     snap: 1,
     hideWarpedArrows: false,
+    hideFakedArrows: false,
     doSpeedChanges: true,
     drawNoteFlash: true,
     receptorYPos: -200,
