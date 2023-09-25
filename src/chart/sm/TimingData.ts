@@ -63,10 +63,18 @@ export class TimingData {
       .split("\n")
       .map(line => line.trim())
       .filter(line => line !== "")
-    if (!entries.slice(0, -1).some(line => !line.endsWith(","))) {
+    if (
+      entries.length > 1 &&
+      !entries.slice(0, -1).some(line => !line.endsWith(","))
+    ) {
       // All lines ends with comma, split by comma
       entries = entries.map(line => line.slice(0, -1))
     }
+    entries = entries.map(line => {
+      if (line.endsWith(",")) line = line.slice(0, -1)
+      return line
+    })
+    console.log(entries, data)
     this.events[type] ||= []
 
     if (type == "ATTACKS") entries = [data.replaceAll(/[\n\r\t]/g, "")]
