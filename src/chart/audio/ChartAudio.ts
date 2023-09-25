@@ -334,28 +334,28 @@ export class ChartAudio {
   /**
    * Returns the raw audio data. Each channel has its own Float32Array.
    *
-   * @return {*}  {Float32Array[]}
+   * @return {*}  {number[]}
    * @memberof ChartAudio
    */
-  getRawData(): Float32Array[] {
+  getRawData(): number[][] {
     if (this._destroyed) return []
     const ret = []
     for (let i = 0; i < this._buffer.numberOfChannels; i++)
-      ret.push(this._buffer.getChannelData(i))
+      ret.push([...this._buffer.getChannelData(i)])
     return ret
   }
 
   /**
    * Returns the filtered raw audio data. Each channel has its own Float32Array.
    *
-   * @return {*}  {Float32Array[]}
+   * @return {*}  {number[]}
    * @memberof ChartAudio
    */
-  getFilteredRawData(): Float32Array[] {
+  getFilteredRawData(): number[][] {
     if (this._destroyed) return []
     const ret = []
     for (let i = 0; i < this._filteredBuffer.numberOfChannels; i++)
-      ret.push(this._filteredBuffer.getChannelData(i))
+      ret.push([...this._filteredBuffer.getChannelData(i)])
     return ret
   }
 

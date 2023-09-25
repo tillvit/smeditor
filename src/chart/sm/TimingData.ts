@@ -412,7 +412,7 @@ export class TimingData {
       const songTiming = this.events[event.type]
       const target = songTiming ? this : this._fallback!
       event.beat = roundDigit(event.beat!, 3)
-      target._delete(event)
+      target._delete(event, false)
     }
     this.reloadCache()
   }
@@ -431,7 +431,7 @@ export class TimingData {
         }
       }
       event.beat = roundDigit(event.beat!, 3)
-      target._insert(event.type, event)
+      target._insert(event.type, event, false)
     }
     this.reloadCache()
   }

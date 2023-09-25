@@ -29,8 +29,8 @@ export class Waveform extends Sprite implements ChartRendererComponent {
 
   private renderer: ChartRenderer
 
-  private rawData: Float32Array[] = []
-  private filteredRawData: Float32Array[] = []
+  private rawData: number[][] = []
+  private filteredRawData: number[][] = []
 
   private speed
   private lastSpeed
@@ -181,7 +181,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     return hasChanged
   }
 
-  private getSample(data: Float32Array, second: number, cacheId: string) {
+  private getSample(data: number[], second: number, cacheId: string) {
     if (second < 0) return 0
     const blockSize = this.sampleRate / (this.lastSpeed * 4)
     const blockNum = Math.floor(second * this.lastSpeed * 4)
