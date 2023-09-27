@@ -17,6 +17,8 @@ export interface PartialTapNotedataEntry {
   beat: number
   col: number
   type: NoteType
+  notemods?: string
+  keysounds?: string
 }
 
 export interface PartialHoldNotedataEntry extends PartialTapNotedataEntry {

@@ -11,7 +11,7 @@ export abstract class NotedataParser {
    * @return {*}  {PartialNotedata}
    * @memberof NotedataParser
    */
-  abstract fromString(data: string): PartialNotedata
+  abstract fromString(data: string, gameType: GameType): PartialNotedata
 
   /**
    * Converts Notedata into SM form.

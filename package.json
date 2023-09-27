@@ -24,7 +24,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
     "husky": "^8.0.3",
-    "lint-staged": "^13.1.0",
+    "lint-staged": "^14.0.1",
     "nw-builder": "^4.3.5",
     "prettier": "^3.0.1",
     "prettier-plugin-glsl": "^0.1.2",

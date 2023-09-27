@@ -67,7 +67,7 @@ export class Chart {
       this.radarValues = dict["RADARVALUES"] ?? ""
       this.notedata =
         gameType.parser
-          .fromString(dict["NOTES"])
+          .fromString(dict["NOTES"], gameType)
           .map(note => this.computeNote(note)) ?? []
       this.credit = dict["CREDIT"] ?? ""
       this.chartName = dict["CHARTNAME"] ?? ""
@@ -112,7 +112,7 @@ export class Chart {
         this.radarValues = match[5] ?? ""
         this.notedata =
           gameType.parser
-            .fromString(match[6])
+            .fromString(match[6], gameType)
             .map(note => this.computeNote(note)) ?? []
       } else {
         throw Error("Failed to load sm chart!")

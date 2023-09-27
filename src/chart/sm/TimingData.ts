@@ -932,6 +932,7 @@ export class TimingData {
       this.buildMeasureTimingCache()
     if (prop == undefined || prop == "SPEEDS") this.buildSpeedsTimingDataCache()
     this._chart?.recalculateNotes()
+    this._fallback?.reloadCache()
   }
 
   private binsert<Type extends TimingEventProperty>(
@@ -1017,6 +1018,7 @@ export class TimingData {
   }
 
   serialize(type: "sm" | "ssc"): string {
+    this.reloadCache()
     let str = ""
     if (this.offset) str += "#OFFSET:" + this.offset + ";\n"
     let props = [

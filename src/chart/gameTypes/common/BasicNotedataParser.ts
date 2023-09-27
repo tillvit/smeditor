@@ -66,6 +66,8 @@ export class BasicNotedataParser extends NotedataParser {
         ) {
           const note = measureNotes.shift()!
           row[note.col] = NOTE_TYPE_LOOKUP_REV[note.type]
+          if (note.notemods) row[note.col] += `{${note.notemods}}`
+          if (note.keysounds) row[note.col] += `{${note.keysounds}}`
         }
         while (
           roundDigit(
@@ -83,7 +85,7 @@ export class BasicNotedataParser extends NotedataParser {
     return measures.join(",  ")
   }
 
-  fromString(data: string): PartialNotedata {
+  fromString(data: string, gameType: GameType): PartialNotedata {
     const measures = data.split(",")
     const notedata: PartialNotedata = []
     const holds: (PartialNotedataEntry | undefined)[] = []
@@ -93,11 +95,29 @@ export class BasicNotedataParser extends NotedataParser {
         const row = rows[row_index].trim()
         let col = 0
         for (let c = 0; c < row.length; c++) {
+          if (col >= gameType.numCols) break
           const beat = measure_num * 4 + (row_index / rows.length) * 4
           let type = row[c]
+          if (type == "{" || type == "[") {
+            let data = ""
+            c++
+            while (c < row.length && row[c] != "}" && row[c] != "]") {
+              data += row[c]
+              c++
+            }
+            const lastNote = notedata.at(-1)
+            if (lastNote && (row[c] == "}" || row[c] == "]")) {
+              if (row[c] == "}") {
+                lastNote.notemods = data
+              } else {
+                lastNote.keysounds = data
+              }
+            }
+            continue
+          }
           if (type == "D" && (row[c + 1] == "L" || row[c + 1] == "M")) {
             // lift holds / mineholds
-            if (row[c + 1] == "L") type = "3"
+            if (row[c + 1] == "L") type = "L"
             else type = "M"
             c++
           }
