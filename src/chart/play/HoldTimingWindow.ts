@@ -13,5 +13,3 @@ export class HoldTimingWindow extends TimingWindow {
     this.noteType = noteType
   }
 }
-
-export const TIMING_WINDOW_HELD = new HoldTimingWindow("Hold", 0, 0, 0)

@@ -37,7 +37,7 @@ type TimingCache = {
 }
 
 export class TimingData {
-  private _fallback?: TimingData
+  private readonly _fallback?: TimingData
   private _cache: TimingCache = {
     events: {},
     warpedBeats: new Map(),
@@ -58,7 +58,7 @@ export class TimingData {
       return
     }
 
-    // detect seperator
+    // detect separator
     let entries = data
       .split("\n")
       .map(line => line.trim())
@@ -639,7 +639,7 @@ export class TimingData {
   }
 
   private buildSpeedsTimingDataCache() {
-    const cache: SpeedTimingEvent[] = this.getTimingData("SPEEDS").map(e => ({
+    this._cache.speeds = this.getTimingData("SPEEDS").map(e => ({
       type: e.type,
       beat: e.beat,
       value: e.value,
@@ -647,7 +647,6 @@ export class TimingData {
       unit: e.unit,
       second: this.getSecondsFromBeat(e.beat),
     }))
-    this._cache.speeds = cache
   }
 
   private buildTimingDataCache() {
@@ -984,10 +983,7 @@ export class TimingData {
       return this._cache.events[props[0] as TimingEventProperty]
 
     if (this._cache.sortedEvents == undefined) this.buildTimingDataCache()
-    const events = this._cache.sortedEvents!.filter(event =>
-      props.includes(event.type)
-    )
-    return events
+    return this._cache.sortedEvents!.filter(event => props.includes(event.type))
   }
 
   isEmpty(): boolean {

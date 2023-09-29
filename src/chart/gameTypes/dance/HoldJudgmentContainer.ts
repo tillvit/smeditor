@@ -27,13 +27,11 @@ export class HoldJudgmentContainer extends Container {
   }
 
   async loadTex() {
-    let tHeight = 0
-    let tWidth = 0
     const judge_tex = await Assets.load(
       "assets/noteskin/dance/hold_judgment.png"
     )
-    tHeight = judge_tex.height
-    tWidth = judge_tex.width
+    const tHeight = judge_tex.height
+    const tWidth = judge_tex.width
     HoldJudgmentContainer.held_tex = new Texture(
       judge_tex,
       new Rectangle(0, 0, tWidth, tHeight / 2)

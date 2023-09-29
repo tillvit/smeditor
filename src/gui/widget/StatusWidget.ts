@@ -23,33 +23,33 @@ interface NoteArrow {
 export class StatusWidget extends Widget {
   private view: HTMLDivElement
 
-  private playbackBar: HTMLDivElement
-  private skipStart: HTMLButtonElement
-  private skipEnd: HTMLButtonElement
-  private play: HTMLButtonElement
-  private playIcon: HTMLImageElement
-  private record: HTMLButtonElement
-  private playtest: HTMLButtonElement
-  private timeCounter: HTMLDivElement
-  private beatCounter: HTMLDivElement
-  private min: HTMLDivElement
-  private sec: HTMLDivElement
-  private millis: HTMLDivElement
-  private beat: HTMLDivElement
-  private beatDropdown: Dropdown<string>
+  private readonly playbackBar: HTMLDivElement
+  private readonly skipStart: HTMLButtonElement
+  private readonly skipEnd: HTMLButtonElement
+  private readonly play: HTMLButtonElement
+  private readonly playIcon: HTMLImageElement
+  private readonly record: HTMLButtonElement
+  private readonly playtest: HTMLButtonElement
+  private readonly timeCounter: HTMLDivElement
+  private readonly beatCounter: HTMLDivElement
+  private readonly min: HTMLDivElement
+  private readonly sec: HTMLDivElement
+  private readonly millis: HTMLDivElement
+  private readonly beat: HTMLDivElement
+  private readonly beatDropdown: Dropdown<string>
 
-  private editBar: HTMLDivElement
-  private editSteps: HTMLButtonElement
-  private editTiming: HTMLButtonElement
-  private stepsContainer: HTMLDivElement
-  private timingContainer: HTMLDivElement
-  private editChoiceContainer: HTMLDivElement
+  private readonly editBar: HTMLDivElement
+  private readonly editSteps: HTMLButtonElement
+  private readonly editTiming: HTMLButtonElement
+  private readonly stepsContainer: HTMLDivElement
+  private readonly timingContainer: HTMLDivElement
+  private readonly editChoiceContainer: HTMLDivElement
 
-  private addTimingEvent: HTMLButtonElement
-  private arrangeTimingTracks: HTMLButtonElement
+  private readonly addTimingEvent: HTMLButtonElement
+  private readonly arrangeTimingTracks: HTMLButtonElement
 
   private noteArrows: NoteArrow[] = []
-  private noteArrowMask: Sprite
+  private readonly noteArrowMask: Sprite
 
   private lastTime = -1
   private lastBeat = -1
@@ -127,7 +127,7 @@ export class StatusWidget extends Widget {
     }
 
     const line = document.createElement("div")
-    line.classList.add("playback-seperator")
+    line.classList.add("playback-separator")
 
     this.timeCounter = document.createElement("div")
     this.timeCounter.classList.add("playback-counter")
@@ -214,7 +214,7 @@ export class StatusWidget extends Widget {
     this.timeCounter.appendChild(timeLabel)
 
     const line2 = document.createElement("div")
-    line2.classList.add("playback-seperator")
+    line2.classList.add("playback-separator")
 
     this.beatCounter = document.createElement("div")
     this.beatCounter.classList.add("playback-counter")
@@ -300,7 +300,7 @@ export class StatusWidget extends Widget {
     }
 
     const line4 = document.createElement("div")
-    line4.classList.add("playback-seperator")
+    line4.classList.add("playback-separator")
 
     const leftContainer = document.createElement("div")
     leftContainer.classList.add("edit-bar-left")

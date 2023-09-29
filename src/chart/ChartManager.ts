@@ -143,8 +143,8 @@ export class ChartManager {
   private mode: EditMode = EditMode.Edit
   private lastMode: EditMode = EditMode.Edit
 
-  private noChartTextA: BitmapText
-  private noChartTextB: BitmapText
+  private readonly noChartTextA: BitmapText
+  private readonly noChartTextB: BitmapText
 
   private virtualClipboard = ""
 
@@ -307,10 +307,14 @@ export class ChartManager {
     })
     this.noChartTextA.visible = false
     this.noChartTextB.visible = false
-    this.noChartTextA.x = this.app.renderer.screen.width / 2
-    this.noChartTextA.y = this.app.renderer.screen.height / 2 - 20
-    this.noChartTextB.x = this.app.renderer.screen.width / 2
-    this.noChartTextB.y = this.app.renderer.screen.height / 2 + 10
+
+    const moveNoChartText = () => {
+      this.noChartTextA.x = this.app.renderer.screen.width / 2
+      this.noChartTextA.y = this.app.renderer.screen.height / 2 - 20
+      this.noChartTextB.x = this.app.renderer.screen.width / 2
+      this.noChartTextB.y = this.app.renderer.screen.height / 2 + 10
+    }
+    moveNoChartText()
     this.app.stage.addChild(this.noChartTextB)
 
     // Update ChartRenderer every frame
@@ -436,10 +440,7 @@ export class ChartManager {
         this.chartView.x = this.app.renderer.screen.width / 2
         this.chartView.y = this.app.renderer.screen.height / 2
       }
-      this.noChartTextA.x = this.app.renderer.screen.width / 2
-      this.noChartTextA.y = this.app.renderer.screen.height / 2 - 20
-      this.noChartTextB.x = this.app.renderer.screen.width / 2
-      this.noChartTextB.y = this.app.renderer.screen.height / 2 + 10
+      moveNoChartText()
     })
 
     EventHandler.on("chartModified", () => {
@@ -793,10 +794,12 @@ export class ChartManager {
    *
    * @private
    * @param {string} musicPath
-   * @return {*}
+   * @return {Promise<FileSystemFileHandle>}
    * @memberof ChartManager
    */
-  private async getAudioHandle(musicPath: string) {
+  private async getAudioHandle(
+    musicPath: string
+  ): Promise<FileSystemFileHandle> {
     let audioHandle: FileSystemFileHandle | undefined =
       await FileHandler.getFileHandleRelativeTo(this.smPath, musicPath)
     if (audioHandle) return audioHandle
@@ -934,32 +937,37 @@ export class ChartManager {
     return ret
   }
 
+  private getRows() {
+    if (
+      this.loadedSM == undefined ||
+      this.loadedChart == undefined ||
+      this.chartView == undefined
+    )
+      return []
+    if (this.loadedChart.getNotedata().length == 0) return []
+    const holdTails = this.loadedChart
+      .getNotedata()
+      .filter(isHoldNote)
+      .map(note => note.beat + note.hold)
+    const beats = this.loadedChart
+      .getNotedata()
+      .map(note => note.beat)
+      .concat(holdTails)
+      .sort((a, b) => a - b)
+    return this.removeDuplicateBeats(beats)
+  }
+
   /**
    * Seeks to the previous note.
    *
    * @memberof ChartManager
    */
   previousNote() {
-    if (
-      this.loadedSM == undefined ||
-      this.loadedChart == undefined ||
-      this.chartView == undefined
-    )
-      return
-    if (this.loadedChart.getNotedata().length == 0) return
-    const holdTails = this.loadedChart
-      .getNotedata()
-      .filter(isHoldNote)
-      .map(note => note.beat + note.hold)
-    let beats = this.loadedChart
-      .getNotedata()
-      .map(note => note.beat)
-      .concat(holdTails)
-      .sort((a, b) => a - b)
-    beats = this.removeDuplicateBeats(beats)
-    let index = bsearch(beats, this.beat)
-    if (this.beat == beats[index]) index--
-    this.setBeat(beats[Math.max(0, index)])
+    const rows = this.getRows()
+    if (rows.length == 0) return
+    let index = bsearch(rows, this.beat)
+    if (this.beat == rows[index]) index--
+    this.setBeat(rows[Math.max(0, index)])
   }
 
   /**
@@ -968,26 +976,11 @@ export class ChartManager {
    * @memberof ChartManager
    */
   nextNote() {
-    if (
-      this.loadedSM == undefined ||
-      this.loadedChart == undefined ||
-      this.chartView == undefined
-    )
-      return
-    if (this.loadedChart.getNotedata().length == 0) return
-    const holdTails = this.loadedChart
-      .getNotedata()
-      .filter(isHoldNote)
-      .map(note => note.beat + note.hold)
-    let beats = this.loadedChart
-      .getNotedata()
-      .map(note => note.beat)
-      .concat(holdTails)
-      .sort((a, b) => a - b)
-    beats = this.removeDuplicateBeats(beats)
-    let index = bsearch(beats, this.beat)
-    if (this.beat >= beats[index]) index++
-    this.setBeat(beats[Math.min(beats.length - 1, index)])
+    const rows = this.getRows()
+    if (rows.length == 0) return
+    let index = bsearch(rows, this.beat)
+    if (this.beat >= rows[index]) index++
+    this.setBeat(rows[Math.min(rows.length - 1, index)])
   }
 
   /**
@@ -1470,21 +1463,18 @@ export class ChartManager {
       this.startRegion = this.beat
       return
     }
-    if (this.endRegion === undefined) {
-      this.endRegion = this.beat
-      if (this.endRegion < this.startRegion) {
-        this.endRegion = this.startRegion
-        this.startRegion = this.beat
-      }
-      this.loadedChart
-        .getNotedata()
-        .filter(
-          note => note.beat >= this.startRegion! && note.beat <= this.endRegion!
-        )
-        .filter(note => !this.selection.notes.includes(note))
-        .forEach(note => this.addNoteToSelection(note))
-      return
+    this.endRegion = this.beat
+    if (this.endRegion < this.startRegion) {
+      this.endRegion = this.startRegion
+      this.startRegion = this.beat
     }
+    this.loadedChart
+      .getNotedata()
+      .filter(
+        note => note.beat >= this.startRegion! && note.beat <= this.endRegion!
+      )
+      .filter(note => !this.selection.notes.includes(note))
+      .forEach(note => this.addNoteToSelection(note))
   }
 
   modifySelection(modify: (note: NotedataEntry) => PartialNotedataEntry) {

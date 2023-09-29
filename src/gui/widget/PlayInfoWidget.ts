@@ -34,10 +34,10 @@ export class PlayInfoWidget extends Widget {
   private background = new Container()
   private backgroundLines = new Container<Sprite>()
   private statText = new Container()
-  private meanText: BitmapText
-  private medianText: BitmapText
-  private modeText: BitmapText
-  private stddevText: BitmapText
+  private readonly meanText: BitmapText
+  private readonly medianText: BitmapText
+  private readonly modeText: BitmapText
+  private readonly stddevText: BitmapText
   private errorMS: number[] = []
 
   private texts = new Container<BitmapText>()

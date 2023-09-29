@@ -24,8 +24,8 @@ export interface MenuDropdown {
   options: MenuOption[]
 }
 
-export interface MenuSeperator {
-  type: "seperator"
+export interface MenuSeparator {
+  type: "separator"
 }
 
 export type MenuOption =
@@ -33,7 +33,7 @@ export type MenuOption =
   | MenuCheckbox
   | MenuMain
   | MenuDropdown
-  | MenuSeperator
+  | MenuSeparator
 
 export const MENUBAR_DATA: { [key: string]: MenuMain } = {
   file: {
@@ -49,7 +49,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         id: "openSong",
       },
       {
-        type: "seperator",
+        type: "separator",
       },
       {
         type: "selection",
@@ -78,7 +78,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         id: "paste",
       },
       {
-        type: "seperator",
+        type: "separator",
       },
       {
         type: "selection",
@@ -89,7 +89,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         id: "redo",
       },
       {
-        type: "seperator",
+        type: "separator",
       },
       {
         type: "checkbox",
@@ -115,7 +115,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
             id: "cursorDown",
           },
           {
-            type: "seperator",
+            type: "separator",
           },
           {
             type: "selection",
@@ -126,7 +126,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
             id: "nextNote",
           },
           {
-            type: "seperator",
+            type: "separator",
           },
           {
             type: "selection",
@@ -137,7 +137,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
             id: "nextMeasure",
           },
           {
-            type: "seperator",
+            type: "separator",
           },
           {
             type: "selection",
@@ -148,7 +148,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
             id: "jumpChartEnd",
           },
           {
-            type: "seperator",
+            type: "separator",
           },
           {
             type: "selection",
@@ -189,7 +189,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
             checked: () => Options.chart.CMod,
           },
           {
-            type: "seperator",
+            type: "separator",
           },
           {
             type: "selection",
@@ -214,7 +214,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
             id: "zoomOut",
           },
           {
-            type: "seperator",
+            type: "separator",
           },
           {
             type: "selection",
@@ -238,7 +238,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         ],
       },
       {
-        type: "seperator",
+        type: "separator",
       },
       {
         type: "selection",
@@ -249,7 +249,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         id: "playModeStart",
       },
       {
-        type: "seperator",
+        type: "separator",
       },
       {
         type: "selection",
@@ -260,7 +260,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         id: "recordModeStart",
       },
       {
-        type: "seperator",
+        type: "separator",
       },
       {
         type: "checkbox",
@@ -288,14 +288,14 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         id: "openChart",
       },
       {
-        type: "seperator",
+        type: "separator",
       },
       {
         type: "selection",
         id: "songProperties",
       },
       {
-        type: "seperator",
+        type: "separator",
       },
       {
         type: "selection",
@@ -324,7 +324,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
             id: "swapHoldsRolls",
           },
           {
-            type: "seperator",
+            type: "separator",
           },
           {
             type: "selection",
@@ -379,7 +379,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
             id: "expand4to3",
           },
           {
-            type: "seperator",
+            type: "separator",
           },
           {
             type: "selection",
@@ -396,21 +396,21 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         ],
       },
       {
-        type: "seperator",
+        type: "separator",
       },
       {
         type: "selection",
         id: "setSongPreview",
       },
       {
-        type: "seperator",
+        type: "separator",
       },
       {
         type: "selection",
         id: "exportNotedata",
       },
       {
-        type: "seperator",
+        type: "separator",
       },
       {
         type: "selection",
@@ -437,7 +437,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         checked: () => Options.audio.metronome,
       },
       {
-        type: "seperator",
+        type: "separator",
       },
       {
         type: "dropdown",
@@ -502,7 +502,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
             id: "rateDown",
           },
           {
-            type: "seperator",
+            type: "separator",
           },
           {
             type: "selection",
@@ -511,7 +511,7 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         ],
       },
       {
-        type: "seperator",
+        type: "separator",
       },
       {
         type: "selection",

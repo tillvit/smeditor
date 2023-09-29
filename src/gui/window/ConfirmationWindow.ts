@@ -11,7 +11,7 @@ export class ConfirmationWindow extends Window {
   app: App
 
   private buttonOptions: ConfirmationOption[]
-  private message: string
+  private readonly message: string
   private resolve?: (value: string) => void
   resolved: Promise<string> = new Promise(resolve => (this.resolve = resolve))
 

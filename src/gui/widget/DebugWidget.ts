@@ -159,27 +159,27 @@ interface DebugGraphOptions {
 }
 
 class DebugGraph extends Container {
-  private graphWidth
-  private graphHeight
-  private color
-  private unit
-  private precision
-  private formatter
-  private sublabel
+  private readonly graphWidth
+  private readonly graphHeight
+  private readonly color
+  private readonly unit
+  private readonly precision
+  private readonly formatter
+  private readonly sublabel
 
   private maxEase = 1
   private targetMax = 1
   private minEase = 1
   private targetMin = 1
-  private constrainedMin: number | null = null
-  private constrainedMax: number | null = null
-  private dataPoints: number[] = []
-  private linePool: DebugLine[] = []
-  private lineContainer
-  private labelText
-  private sublabelText
-  private topText
-  private bottomText
+  private readonly constrainedMin: number | null = null
+  private readonly constrainedMax: number | null = null
+  private readonly dataPoints: number[] = []
+  private readonly linePool: DebugLine[] = []
+  private readonly lineContainer
+  private readonly labelText
+  private readonly sublabelText
+  private readonly topText
+  private readonly bottomText
   constructor(options: DebugGraphOptions) {
     super()
     const {

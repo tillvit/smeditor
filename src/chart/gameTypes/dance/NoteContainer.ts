@@ -19,7 +19,7 @@ interface ExtendedNoteObject extends NoteObject {
 export class NoteContainer extends Container {
   children: ExtendedNoteObject[] = []
 
-  private notefield: DanceNotefield
+  private readonly notefield: DanceNotefield
   private arrowMap: Map<NotedataEntry, NoteObject> = new Map()
   private arrowPool = new DisplayObjectPool({
     create: () => DanceNoteRenderer.createArrow(),
@@ -179,7 +179,6 @@ export class NoteContainer extends Container {
     if (Options.chart.CMod && Options.chart.hideWarpedArrows && note.warped)
       return false
     if (note.beat + (isHoldNote(note) ? note.hold : 0) < fromBeat) return false
-    if (note.beat > toBeat) return false
-    return true
+    return note.beat <= toBeat
   }
 }

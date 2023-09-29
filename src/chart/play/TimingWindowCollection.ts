@@ -243,10 +243,10 @@ export class TimingWindowCollection {
 
   private windows: StandardTimingWindow[] = []
   private holdWindows: Record<string, HoldTimingWindow> = {}
-  private missWindow: StandardMissTimingWindow
-  private droppedWindow: HoldDroppedTimingWindow
-  private mineWindow: MineTimingWindow
-  private hideLimitMS: number
+  private readonly missWindow: StandardMissTimingWindow
+  private readonly droppedWindow: HoldDroppedTimingWindow
+  private readonly mineWindow: MineTimingWindow
+  private readonly hideLimitMS: number
 
   constructor(windows: TimingWindow[], minHideMS: number) {
     this.missWindow = new StandardMissTimingWindow(
@@ -310,7 +310,6 @@ export class TimingWindowCollection {
   /**
    * Gets the dropped judgment in this collection.
    *
-   * @param {}
    * @return {*}  {HoldDroppedTimingWindow}
    * @memberof TimingWindowCollection
    */
@@ -321,7 +320,6 @@ export class TimingWindowCollection {
   /**
    * Gets the mine judgment in this collection.
    *
-   * @param {}
    * @return {*}  {MineTimingWindow}
    * @memberof TimingWindowCollection
    */
@@ -415,7 +413,7 @@ export class TimingWindowCollection {
    * @return {*}
    * @memberof TimingWindowCollection
    */
-  static getCollections() {
+  static getCollections(): any {
     return TimingWindowCollection.COLLECTIONS
   }
 }

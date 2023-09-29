@@ -18,7 +18,7 @@ function _85encode(
   foldnuls = false,
   foldspaces = false
 ) {
-  let bytes = []
+  let bytes: any[]
   if (typeof data == "string")
     bytes = data.split("").map(char => char.charCodeAt(0))
   else bytes = [...new Uint8Array(data)]
@@ -75,7 +75,7 @@ export function a85decode(
   adobe = false,
   ignorechars = " \t\n\r\v"
 ) {
-  let bytes = []
+  let bytes: any[]
   if (typeof data == "string")
     bytes = data.split("").map(char => char.charCodeAt(0))
   else bytes = [...new Uint8Array(data)]
@@ -114,9 +114,7 @@ export function a85decode(
       decoded.push(0x20)
       decoded.push(0x20)
       decoded.push(0x20)
-    } else if (ignorechars.includes(String.fromCharCode(byte))) {
-      continue
-    } else {
+    } else if (!ignorechars.includes(String.fromCharCode(byte))) {
       return false
     }
   }
@@ -323,8 +321,7 @@ export function encodeTempo(events: TimingEvent[]): string {
         (event.hitMult > 2 ** 32 - 1 || event.missMult > 2 ** 32 - 1)
       )
         return true
-      if (event.type == "TICKCOUNTS" && event.value > 2 ** 32 - 1) return true
-      return false
+      return event.type == "TICKCOUNTS" && event.value > 2 ** 32 - 1
     })
   )
     return encodeSMETempo(events)

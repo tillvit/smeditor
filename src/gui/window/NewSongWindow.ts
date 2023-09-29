@@ -16,8 +16,8 @@ import { Window } from "./Window"
 export class NewSongWindow extends Window {
   app: App
 
-  private sm: Simfile
-  private actionHistory: ActionHistory
+  private readonly sm: Simfile
+  private readonly actionHistory: ActionHistory
   private fileTable: { [key: string]: File } = {}
 
   constructor(app: App) {
@@ -166,15 +166,6 @@ export class NewSongWindow extends Window {
     )
     await this.app.chartManager.loadSM(folder + "/song.sm")
     this.app.windowManager?.getWindowById("select_sm_initial")?.closeWindow()
-  }
-
-  isValid() {
-    return (
-      this.sm.properties.TITLE !== undefined &&
-      this.sm.properties.TITLE !== "" &&
-      this.sm.properties.MUSIC !== undefined &&
-      this.sm.properties.MUSIC !== ""
-    )
   }
 
   createFileElement(propName: SimfileProperty, typeName: string) {

@@ -71,9 +71,9 @@ export class ContextMenuPopup {
       app.chartManager.getMode() == EditMode.Edit &&
       app.chartManager.hasSelection()
     ) {
-      const seperator = document.createElement("div")
-      seperator.classList.add("seperator")
-      menu.appendChild(seperator)
+      const separator = document.createElement("div")
+      separator.classList.add("separator")
+      menu.appendChild(separator)
       MENUBAR_DATA["selection"].options.slice(0, -2).forEach(option => {
         menu.appendChild(this.createElement(app, option))
       })
@@ -84,10 +84,10 @@ export class ContextMenuPopup {
   }
 
   private static createElement(app: App, data: MenuOption): HTMLDivElement {
-    if (data.type == "seperator") {
-      const seperator = document.createElement("div")
-      seperator.classList.add("seperator")
-      return seperator
+    if (data.type == "separator") {
+      const separator = document.createElement("div")
+      separator.classList.add("separator")
+      return separator
     }
     if (
       data.type == "selection" ||

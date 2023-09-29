@@ -10,7 +10,7 @@ import { Window } from "./Window"
 export class InitialWindow extends Window {
   app: App
 
-  private keyHandler
+  private readonly keyHandler
 
   constructor(app: App) {
     super({
@@ -41,13 +41,13 @@ export class InitialWindow extends Window {
 
     const topContainer = document.createElement("div")
     topContainer.classList.add("top-container")
-    const seperator = document.createElement("div")
-    seperator.classList.add("seperator")
-    seperator.style.margin = "10px"
+    const separator = document.createElement("div")
+    separator.classList.add("separator")
+    separator.style.margin = "10px"
     const bottomContainer = document.createElement("div")
     bottomContainer.classList.add("bottom-container")
     openContainer.appendChild(topContainer)
-    openContainer.appendChild(seperator)
+    openContainer.appendChild(separator)
     openContainer.appendChild(bottomContainer)
 
     const openButton = document.createElement("button")

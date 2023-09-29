@@ -201,45 +201,45 @@ export class DanceNoteTexture {
   }
 
   private static async loadGeometry(url: string): Promise<Geometry> {
-    try {
-      const text = await fetch(url).then(response => response.text())
-      const lines = text.split("\n")
-      const numVertices = parseInt(lines[0])
-      const numTriangles = parseInt(lines[numVertices + 1])
-      const vPos = []
-      const vUvs = []
-      const vIndex = []
-      for (let i = 0; i < numVertices; i++) {
-        const match =
-          /(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)/.exec(
-            lines[i + 1]
-          )
-        if (match) {
-          vPos.push(parseFloat(match[1]))
-          vPos.push(parseFloat(match[2]))
-          vUvs.push(parseFloat(match[3]))
-          vUvs.push(parseFloat(match[4]))
-        } else throw Error("Failed to load vertex " + lines[i + 1])
-      }
-      for (let i = 0; i < numTriangles; i++) {
-        const match = /(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)/.exec(
-          lines[i + 2 + numVertices]
+    const text = await fetch(url).then(response => response.text())
+    const lines = text.split("\n")
+    const numVertices = parseInt(lines[0])
+    const numTriangles = parseInt(lines[numVertices + 1])
+    const vPos = []
+    const vUvs = []
+    const vIndex = []
+    for (let i = 0; i < numVertices; i++) {
+      const match =
+        /(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)/.exec(
+          lines[i + 1]
         )
-        if (match) {
-          vIndex.push(parseFloat(match[1]))
-          vIndex.push(parseFloat(match[2]))
-          vIndex.push(parseFloat(match[3]))
-        } else
-          throw Error("Failed to load triangle " + lines[i + 2 + numVertices])
+      if (match) {
+        vPos.push(parseFloat(match[1]))
+        vPos.push(parseFloat(match[2]))
+        vUvs.push(parseFloat(match[3]))
+        vUvs.push(parseFloat(match[4]))
+      } else {
+        console.error("Failed to load vertex " + lines[i + 1])
+        return new Geometry()
       }
-      return new Geometry()
-        .addAttribute("aVertexPosition", vPos, 2)
-        .addAttribute("aUvs", vUvs, 2)
-        .addIndex(vIndex)
-    } catch (err) {
-      console.error(err)
-      return new Geometry()
     }
+    for (let i = 0; i < numTriangles; i++) {
+      const match = /(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)/.exec(
+        lines[i + 2 + numVertices]
+      )
+      if (match) {
+        vIndex.push(parseFloat(match[1]))
+        vIndex.push(parseFloat(match[2]))
+        vIndex.push(parseFloat(match[3]))
+      } else {
+        console.error("Failed to load triangle " + lines[i + 2 + numVertices])
+        return new Geometry()
+      }
+    }
+    return new Geometry()
+      .addAttribute("aVertexPosition", vPos, 2)
+      .addAttribute("aUvs", vUvs, 2)
+      .addIndex(vIndex)
   }
 
   static setArrowTexTime(beat: number, second: number) {

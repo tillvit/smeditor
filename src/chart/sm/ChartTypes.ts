@@ -13,9 +13,3 @@ export type ChartDifficulty =
   | "Hard"
   | "Challenge"
   | "Edit"
-
-export function isChartDifficulty(
-  difficulty: string
-): difficulty is ChartDifficulty {
-  return CHART_DIFFICULTIES.includes(difficulty as ChartDifficulty)
-}

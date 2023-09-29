@@ -6,7 +6,7 @@ import { DanceNotefield } from "./DanceNotefield"
 import { DanceNoteRenderer, NoteObject } from "./DanceNoteRenderer"
 
 export class SelectionNoteContainer extends Container {
-  private notefield: DanceNotefield
+  private readonly notefield: DanceNotefield
   private arrowMap: Map<NotedataEntry, NoteObject> = new Map()
   private arrowPool = new DisplayObjectPool({
     create: () => DanceNoteRenderer.createArrow(),
@@ -26,7 +26,6 @@ export class SelectionNoteContainer extends Container {
     if (!this.notefield.getRenderer().chartManager.selection.shift) {
       this.arrowPool.destroyAll()
       this.arrowMap.clear()
-      this.lastBeatShift
       return
     }
     const beatShift =

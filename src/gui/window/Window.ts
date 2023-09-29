@@ -18,7 +18,7 @@ export abstract class Window {
   windowElement: HTMLDivElement
   viewElement: HTMLDivElement
 
-  constructor(options: WindowOptions) {
+  protected constructor(options: WindowOptions) {
     this.options = options
 
     const windowElement = document.createElement("div")

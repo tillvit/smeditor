@@ -95,7 +95,7 @@ export class Chart {
       }
     } else {
       const match =
-        /([\w\d-]+):[\s ]*([^:]*):[\s ]*([\w\d]+):[\s ]*([\d]+):[\s ]*([\d.,]*):[\s ]*([\w\d\s, ]*)/g.exec(
+        /([\w-]+):[\s ]*([^:]*):[\s ]*(\w+):[\s ]*(\d+):[\s ]*([\d.,]*):[\s ]*([\w\s, ]*)/g.exec(
           (<string>data).trim()
         )
       if (match != null) {
@@ -161,27 +161,24 @@ export class Chart {
     return -1
   }
 
-  addNote(note: PartialNotedataEntry): NotedataEntry {
+  private insertNote(note: PartialNotedataEntry) {
     note.beat = Math.round(note.beat * 48) / 48
     if (isHoldNote(note)) note.hold = Math.round(note.hold * 48) / 48
     const computedNote = this.computeNote(note)
     let index = bsearch(this.notedata, note.beat, a => a.beat) + 1
     if (index >= 1 && this.notedata[index - 1].beat > note.beat) index--
     this.notedata.splice(index, 0, computedNote)
+    return computedNote
+  }
+
+  addNote(note: PartialNotedataEntry): NotedataEntry {
+    const computedNote = this.insertNote(note)
     EventHandler.emit("chartModified")
     return computedNote
   }
 
   addNotes(notes: PartialNotedataEntry[]): NotedataEntry[] {
-    const computedNotes = notes.map(note => {
-      note.beat = Math.round(note.beat * 48) / 48
-      if (isHoldNote(note)) note.hold = Math.round(note.hold * 48) / 48
-      const computedNote = this.computeNote(note)
-      let index = bsearch(this.notedata, note.beat, a => a.beat) + 1
-      if (index >= 1 && this.notedata[index - 1].beat > note.beat) index--
-      this.notedata.splice(index, 0, computedNote)
-      return computedNote
-    })
+    const computedNotes = notes.map(note => this.insertNote(note))
     EventHandler.emit("chartModified")
     return computedNotes
   }

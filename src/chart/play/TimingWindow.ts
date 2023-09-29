@@ -5,7 +5,11 @@ export abstract class TimingWindow {
   dancePoints: number
   lifeChange: number
 
-  constructor(timingWindowMS: number, dancePoints: number, lifeChange: number) {
+  protected constructor(
+    timingWindowMS: number,
+    dancePoints: number,
+    lifeChange: number
+  ) {
     this.timingWindowMS = timingWindowMS
     this.dancePoints = dancePoints
     this.lifeChange = lifeChange
@@ -18,7 +22,7 @@ export abstract class TimingWindow {
    * @return {*}
    * @memberof TimingWindow
    */
-  getTimingWindowMS() {
+  getTimingWindowMS(): number {
     return (
       this.timingWindowMS * Options.play.timingWindowScale +
       Options.play.timingWindowAdd

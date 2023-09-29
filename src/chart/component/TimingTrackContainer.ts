@@ -190,13 +190,13 @@ export class TimingTrackContainer
       box.popup?.close()
     })
 
-    let initalPosY = 0
+    let initialPosY = 0
     let movedEvent: TimingEvent | undefined
 
     const moveHandler = (event: FederatedMouseEvent) => {
       const timingEvent = movedEvent!
       const position = this.toLocal(event.global)
-      if (Math.abs(position.y - initalPosY) < 32) {
+      if (Math.abs(position.y - initialPosY) < 32) {
         if (this.renderer.chartManager.eventSelection.shift) {
           this.renderer.chartManager.eventSelection.shift = {
             beatShift: 0,
@@ -267,7 +267,7 @@ export class TimingTrackContainer
       )
         box.popup.select()
       else box.popup?.close()
-      initalPosY = box.y!
+      initialPosY = box.y!
       movedEvent = event
       if (this.renderer.chartManager.editTimingMode == EditTimingMode.Add)
         return

@@ -174,7 +174,6 @@ export class TimingAreaContainer
         return false
     }
     if (event.type == "WARPS" && Options.chart.CMod) return false
-    if (event.beat > toBeat) return false
-    return true
+    return event.beat <= toBeat
   }
 }

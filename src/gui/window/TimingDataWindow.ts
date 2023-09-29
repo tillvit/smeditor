@@ -9,7 +9,7 @@ export class TimingDataWindow extends Window {
 
   private lastBeat: number
   private songTiming = false
-  private interval
+  private readonly interval
   private changeHandler = () => this.setData()
 
   constructor(app: App) {

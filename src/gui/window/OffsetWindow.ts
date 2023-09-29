@@ -46,7 +46,7 @@ export class OffsetWindow extends Window {
 
     this.startTime = performance.now()
     let lastBeat = this.startTime + 500
-    this.tickLines.push({ time: lastBeat + 500 * 1, beat: 0 })
+    this.tickLines.push({ time: lastBeat + 500, beat: 0 })
     this.tickLines.push({ time: lastBeat + 500 * 2, beat: 1 })
     this.tickLines.push({ time: lastBeat + 500 * 3, beat: 2 })
     this.tickLines.push({ time: lastBeat + 500 * 4, beat: 3 })

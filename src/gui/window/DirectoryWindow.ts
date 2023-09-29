@@ -28,10 +28,10 @@ export class DirectoryWindow extends Window {
   private draggedElement?: DraggableDiv
   private draggedCopy?: HTMLDivElement
 
-  private keyHandler
-  private dropHandler
-  private mouseHandler
-  private dragHandler
+  private readonly keyHandler
+  private readonly dropHandler
+  private readonly mouseHandler
+  private readonly dragHandler
 
   constructor(
     app: App,

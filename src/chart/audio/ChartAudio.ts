@@ -19,22 +19,24 @@ class SafeAudioBufferSourceNode extends AudioBufferSourceNode {
   }
 }
 
-class TogglableBiquadFilterNode extends BiquadFilterNode {
+class ToggleableBiquadFilterNode extends BiquadFilterNode {
   enabled = false
   static create(filter: BiquadFilterNode) {
-    const toggle = filter as TogglableBiquadFilterNode
+    const toggle = filter as ToggleableBiquadFilterNode
     toggle.enabled = false
     return toggle
   }
 }
 
 export class ChartAudio {
+  private readonly _audioAnalyzer: AnalyserNode
+  private readonly _filteredAudioAnalyzer: AnalyserNode
+  private readonly _freqData: Uint8Array
+  private readonly _filteredFreqData: Uint8Array
+  private readonly _gainNode: GainNode
+  private readonly type
+
   private _audioContext: AudioContext = new AudioContext()
-  private _audioAnalyzer: AnalyserNode
-  private _filteredAudioAnalyzer: AnalyserNode
-  private _freqData: Uint8Array
-  private _filteredFreqData: Uint8Array
-  private _gainNode: GainNode
   private _source?: SafeAudioBufferSourceNode
   private _playbackTime = 0
   private _startTimestamp = 0
@@ -48,7 +50,7 @@ export class ChartAudio {
   private _volume = 1
   private _destroyed = false
   private _renderTimeout?: NodeJS.Timeout
-  private _filters: TogglableBiquadFilterNode[] = [
+  private _filters: ToggleableBiquadFilterNode[] = [
     this.createFilter({ type: "highpass", frequency: 20, Q: 0.71 }),
     this.createFilter({ type: "lowshelf", frequency: 75, gain: 0 }),
     this.createFilter({ type: "peaking", frequency: 100, gain: 0, Q: 0.6 }),
@@ -59,7 +61,6 @@ export class ChartAudio {
     this.createFilter({ type: "lowpass", frequency: 20000, Q: 0.71 }),
   ]
   private _filtersEnabled = false
-  private type
 
   loaded: Promise<void>
 
@@ -196,8 +197,8 @@ export class ChartAudio {
     Q?: number
     gain?: number
     frequency?: number
-  }): TogglableBiquadFilterNode {
-    const node = TogglableBiquadFilterNode.create(
+  }): ToggleableBiquadFilterNode {
+    const node = ToggleableBiquadFilterNode.create(
       this._audioContext.createBiquadFilter()
     )
     node.type = options.type
@@ -544,7 +545,6 @@ export class ChartAudio {
 
   /**
    * Seeks the audio to the specified location. If no time is provided, returns the current playback time.
-   * @param {number} [playbackTime]
    * @return {*}  {number}
    * @memberof ChartAudio
    */

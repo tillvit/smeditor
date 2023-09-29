@@ -16,16 +16,16 @@ interface FinalRow {
 
 export class TimingEventPopup {
   static activePopup?: TimingEventPopup
-  private timingBox
-  private popup: HTMLDivElement
+  private readonly timingBox
+  private readonly popup: HTMLDivElement
   private zoomer?: HTMLDivElement
   private editText?: HTMLDivElement
   private timingData
   private rows: FinalRow[] = []
-  private onTimingChange
-  private clickOutside
-  private moveInterval
-  private modifyBox
+  private readonly onTimingChange
+  private readonly clickOutside
+  private readonly moveInterval
+  private readonly modifyBox
   onConfirm: (event: TimingEvent) => void = () => {}
   persistent = false
   constructor(timingBox: TimingBox, timingData: TimingData, modifyBox = false) {

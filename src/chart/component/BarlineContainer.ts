@@ -10,7 +10,6 @@ const measureNumbers = {
   fontSize: 20,
   fill: ["#ffffff"],
 }
-
 export class BarlineContainer
   extends Container
   implements ChartRendererComponent
@@ -97,7 +96,7 @@ export class BarlineContainer
   private *getBarlineBeats(
     fromBeat: number,
     toBeat: number
-  ): Generator<[number, boolean], void, unknown> {
+  ): Generator<[number, boolean], void> {
     fromBeat = Math.max(0, fromBeat)
     const td = this.renderer.chart.timingData
     const timeSigs = td.getTimingData("TIMESIGNATURES")

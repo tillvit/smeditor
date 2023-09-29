@@ -22,4 +22,4 @@ export const SIMFILE_PROPERTIES = [
   "SELECTABLE",
 ] as const
 
-export type SimfileProperty = typeof SIMFILE_PROPERTIES[number]
+export type SimfileProperty = (typeof SIMFILE_PROPERTIES)[number]

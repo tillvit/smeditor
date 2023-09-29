@@ -18,10 +18,10 @@ export class MenubarManager {
   }
 
   createElement(data: MenuOption): HTMLDivElement {
-    if (data.type == "seperator") {
-      const seperator = document.createElement("div")
-      seperator.classList.add("seperator")
-      return seperator
+    if (data.type == "separator") {
+      const separator = document.createElement("div")
+      separator.classList.add("separator")
+      return separator
     }
     if (
       data.type == "selection" ||

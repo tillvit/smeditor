@@ -49,19 +49,19 @@ export class ChartRenderer extends Container<
   private lastNoteType: NoteType | null = null
   private editingCol = -1
 
-  private waveform: Waveform
-  private barlines: BarlineContainer
-  private timingAreas: TimingAreaContainer
-  private timingTracks: TimingTrackContainer
-  private selectedEvents: SelectionTimingEventContainer
-  private timingBar: ErrorBarContainer
-  private notefield: Notefield
-  private snapDisplay: SnapContainer
-  private judgment: JudgmentSprite
-  private combo: ComboNumber
-  private selectionBoundary: SelectionBoundary
-  private selectionArea: SelectionAreaContainer
-  private previewArea: PreviewAreaContainer
+  private readonly waveform: Waveform
+  private readonly barlines: BarlineContainer
+  private readonly timingAreas: TimingAreaContainer
+  private readonly timingTracks: TimingTrackContainer
+  private readonly selectedEvents: SelectionTimingEventContainer
+  private readonly timingBar: ErrorBarContainer
+  private readonly notefield: Notefield
+  private readonly snapDisplay: SnapContainer
+  private readonly judgment: JudgmentSprite
+  private readonly combo: ComboNumber
+  private readonly selectionBoundary: SelectionBoundary
+  private readonly selectionArea: SelectionAreaContainer
+  private readonly previewArea: PreviewAreaContainer
 
   private selectionBounds?: SelectionBounds
 
@@ -516,10 +516,10 @@ export class ChartRenderer extends Container<
    * Returns true if the chart is current at a negative scroll.
    *
    * @param {number} beat
-   * @return {*}
+   * @return {boolean}
    * @memberof ChartRenderer
    */
-  isNegScroll(beat: number) {
+  isNegScroll(beat: number): boolean {
     return (
       Options.chart.doSpeedChanges &&
       (this.speedMult < 0 ||
@@ -772,8 +772,8 @@ export class ChartRenderer extends Container<
     object.eventMode = "static"
     object.removeAllListeners()
     let lastTriedColumnShift = 0
-    let initalPosX = 0
-    let initalPosY = 0
+    let initialPosX = 0
+    let initialPosY = 0
     let dragYOffset = 0
     let movedNote: NotedataEntry | undefined
 
@@ -781,8 +781,8 @@ export class ChartRenderer extends Container<
       const note = movedNote!
       const position = this.toLocal(event.global)
       if (
-        Math.abs(position.y - dragYOffset - initalPosY) ** 2 +
-          Math.abs(position.x - initalPosX) ** 2 <
+        Math.abs(position.y - dragYOffset - initialPosY) ** 2 +
+          Math.abs(position.x - initialPosX) ** 2 <
         32 * 32
       ) {
         if (this.chartManager.selection.shift) {
@@ -855,8 +855,8 @@ export class ChartRenderer extends Container<
         }
         this.chartManager.addNoteToSelection(notedata)
       }
-      initalPosX = object.x!
-      initalPosY = object.y!
+      initialPosX = object.x!
+      initialPosY = object.y!
       dragYOffset = this.toLocal(event.global).y - object.y
       movedNote = notedata
       this.on("pointermove", moveHandler)

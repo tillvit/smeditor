@@ -433,12 +433,12 @@ const fills = [
 ]
 
 class EQPoint {
-  private filterIndex
+  private readonly filterIndex
   private window
   private dragging = false
   private x = 0
   private y = 0
-  private type
+  private readonly type
   private response = new Float32Array(freqPool.length)
   private _empty = new Float32Array(freqPool.length)
   private highlighted = false

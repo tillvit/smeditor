@@ -287,7 +287,7 @@ export class KeybindWindow extends Window {
       case "selection":
       case "checkbox":
         return [option.id]
-      case "seperator":
+      case "separator":
         return []
     }
   }

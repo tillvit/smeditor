@@ -11,7 +11,7 @@ export class ActionHistory {
   private items: UndoableAction[] = []
   private itemIndex = 0
   private limit = 0
-  private app: App
+  private readonly app: App
   static instance: ActionHistory
 
   constructor(app: App) {

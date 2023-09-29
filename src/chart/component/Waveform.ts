@@ -11,6 +11,7 @@ import { Options } from "../../util/Options"
 import { bsearch, destroyChildIf } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
+import { BeatTimingCache } from "../sm/TimingTypes"
 
 const MAX_ZOOM = 3500
 
@@ -25,7 +26,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     16384,
     true
   )
-  private waveformTex: RenderTexture
+  private readonly waveformTex: RenderTexture
 
   private renderer: ChartRenderer
 
@@ -301,54 +302,13 @@ export class Waveform extends Sprite implements ChartRendererComponent {
           currentYPos +=
             (scroll.value > 0 ? 1 : -1) * Options.chart.waveform.lineHeight
 
-          // Calculate current second
-          const flooredBeat = Math.floor(currentBeat * 1000) / 1000
-          if (currentBeat <= 0) curSec = -offset + (currentBeat * 60) / startBPM
-          else if (flooredBeat >= timingChanges[1]?.beat) {
-            // Use getSeconds for every timing event
-            while (flooredBeat >= timingChanges[1]?.beat) timingChanges.shift()
-            curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
-          } else {
-            // Use normal bpm to beats calculation to not use getSeconds
-            const beatsElapsed = currentBeat - timingChanges[0].beat
-            let timeElapsed = (beatsElapsed * 60) / timingChanges[0].bpm
-            if (timingChanges[0].warped) timeElapsed = 0
-            curSec = Math.max(
-              timingChanges[0].secondClamp,
-              timingChanges[0].secondAfter + timeElapsed
-            )
-          }
-          if (curSec < 0) continue
-          // Draw the line
-          for (let channel = 0; channel < this.rawData.length; channel++) {
-            const line = this.getLine()
-            line.scale.x =
-              this.getSample(this.rawData[channel], curSec, "main") *
-              16 *
-              Options.chart.zoom
-            line.y = currentYPos
-            line.tint = Options.chart.waveform.color
-            line.alpha = Options.chart.waveform.opacity
-            line.x =
-              this.waveformTex.width / 2 +
-              288 *
-                (channel + 0.5 - this.rawData.length / 2) *
-                Options.chart.zoom
-            if (!hasFilters) continue
-            const filteredLine = this.getLine()
-            filteredLine.scale.x =
-              this.getSample(this.filteredRawData[channel], curSec, "filter") *
-              16 *
-              Options.chart.zoom
-            filteredLine.tint = Options.chart.waveform.filteredColor
-            filteredLine.alpha = Options.chart.waveform.filteredOpacity
-            filteredLine.y = currentYPos
-            filteredLine.x =
-              this.waveformTex.width / 2 +
-              288 *
-                (channel + 0.5 - this.filteredRawData.length / 2) *
-                Options.chart.zoom
-          }
+          curSec = this.calculateSecond(
+            currentBeat,
+            timingChanges,
+            offset,
+            startBPM
+          )
+          this.drawLine(curSec, currentYPos, hasFilters)
         }
         scrollIndex++
         currentBeat = scrollEndBeat
@@ -377,51 +337,13 @@ export class Waveform extends Sprite implements ChartRendererComponent {
         y += Options.chart.waveform.lineHeight
       ) {
         currentBeat += pixelsToBeatsRatio * Options.chart.waveform.lineHeight
-
-        const flooredBeat = Math.floor(currentBeat * 1000) / 1000
-        if (currentBeat <= 0) curSec = -offset + (currentBeat * 60) / startBPM
-        else if (flooredBeat >= timingChanges[1]?.beat) {
-          // Use getSeconds for every timing event
-          while (flooredBeat >= timingChanges[1]?.beat) timingChanges.shift()
-          curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
-        } else {
-          // Use normal bpm to beats calculation to not use getSeconds
-          const beatsElapsed = currentBeat - timingChanges[0].beat
-          let timeElapsed = (beatsElapsed * 60) / timingChanges[0].bpm
-          if (timingChanges[0].warped) timeElapsed = 0
-          curSec = Math.max(
-            timingChanges[0].secondClamp,
-            timingChanges[0].secondAfter + timeElapsed
-          )
-        }
-
-        for (let channel = 0; channel < this.rawData.length; channel++) {
-          const line = this.getLine()
-          line.scale.x =
-            this.getSample(this.rawData[channel], curSec, "main") *
-            16 *
-            Options.chart.zoom
-          line.y = y
-          line.x =
-            this.waveformTex.width / 2 +
-            288 * (channel + 0.5 - this.rawData.length / 2) * Options.chart.zoom
-          line.tint = Options.chart.waveform.color
-          line.alpha = Options.chart.waveform.opacity
-          if (!hasFilters) continue
-          const filteredLine = this.getLine()
-          filteredLine.scale.x =
-            this.getSample(this.filteredRawData[channel], curSec, "filter") *
-            16 *
-            Options.chart.zoom
-          filteredLine.tint = Options.chart.waveform.filteredColor
-          filteredLine.alpha = Options.chart.waveform.filteredOpacity
-          filteredLine.y = y
-          filteredLine.x =
-            this.waveformTex.width / 2 +
-            288 *
-              (channel + 0.5 - this.filteredRawData.length / 2) *
-              Options.chart.zoom
-        }
+        curSec = this.calculateSecond(
+          currentBeat,
+          timingChanges,
+          offset,
+          startBPM
+        )
+        this.drawLine(curSec, y, hasFilters)
       }
     } else {
       // CMod
@@ -440,38 +362,66 @@ export class Waveform extends Sprite implements ChartRendererComponent {
         y += Options.chart.waveform.lineHeight
       ) {
         calcTime += pixelsToSecondsRatio * Options.chart.waveform.lineHeight
-
-        for (let channel = 0; channel < this.rawData.length; channel++) {
-          const line = this.getLine()
-          line.scale.x =
-            this.getSample(this.rawData[channel], calcTime, "main") *
-            16 *
-            Options.chart.zoom
-          line.y = y
-          line.x =
-            this.waveformTex.width / 2 +
-            288 * (channel + 0.5 - this.rawData.length / 2) * Options.chart.zoom
-          line.tint = Options.chart.waveform.color
-          line.alpha = Options.chart.waveform.opacity
-          if (!hasFilters) continue
-          const filteredLine = this.getLine()
-          filteredLine.scale.x =
-            this.getSample(this.filteredRawData[channel], calcTime, "filter") *
-            16 *
-            Options.chart.zoom
-          filteredLine.tint = Options.chart.waveform.filteredColor
-          filteredLine.alpha = Options.chart.waveform.filteredOpacity
-          filteredLine.y = y
-          filteredLine.x =
-            this.waveformTex.width / 2 +
-            288 *
-              (channel + 0.5 - this.filteredRawData.length / 2) *
-              Options.chart.zoom
-        }
+        this.drawLine(calcTime, y, hasFilters)
       }
     }
 
     this.purgePool()
+  }
+
+  private calculateSecond(
+    beat: number,
+    timingChanges: BeatTimingCache[],
+    offset: number,
+    startBPM: number
+  ) {
+    const flooredBeat = Math.floor(beat * 1000) / 1000
+    if (beat <= 0) return -offset + (beat * 60) / startBPM
+    else if (flooredBeat >= timingChanges[1]?.beat) {
+      // Use getSeconds for every timing event
+      while (flooredBeat >= timingChanges[1]?.beat) timingChanges.shift()
+      return this.renderer.chart.getSecondsFromBeat(beat)
+    } else {
+      // Use normal bpm to beats calculation to not use getSeconds
+      const beatsElapsed = beat - timingChanges[0].beat
+      let timeElapsed = (beatsElapsed * 60) / timingChanges[0].bpm
+      if (timingChanges[0].warped) timeElapsed = 0
+      return Math.max(
+        timingChanges[0].secondClamp,
+        timingChanges[0].secondAfter + timeElapsed
+      )
+    }
+  }
+
+  private drawLine(second: number, y: number, hasFilters: boolean) {
+    if (second < 0) return
+    for (let channel = 0; channel < this.rawData.length; channel++) {
+      const line = this.getLine()
+      line.scale.x =
+        this.getSample(this.rawData[channel], second, "main") *
+        16 *
+        Options.chart.zoom
+      line.y = y
+      line.tint = Options.chart.waveform.color
+      line.alpha = Options.chart.waveform.opacity
+      line.x =
+        this.waveformTex.width / 2 +
+        288 * (channel + 0.5 - this.rawData.length / 2) * Options.chart.zoom
+      if (!hasFilters) continue
+      const filteredLine = this.getLine()
+      filteredLine.scale.x =
+        this.getSample(this.filteredRawData[channel], second, "filter") *
+        16 *
+        Options.chart.zoom
+      filteredLine.tint = Options.chart.waveform.filteredColor
+      filteredLine.alpha = Options.chart.waveform.filteredOpacity
+      filteredLine.y = y
+      filteredLine.x =
+        this.waveformTex.width / 2 +
+        288 *
+          (channel + 0.5 - this.filteredRawData.length / 2) *
+          Options.chart.zoom
+    }
   }
 
   private resetPool() {
@@ -493,7 +443,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
   }
 
   private getLine(): WaveformLine {
-    while (this.lineContainer.children[this.poolSearch]) {
+    if (this.lineContainer.children[this.poolSearch]) {
       const w_line = this.lineContainer.children[
         this.poolSearch
       ] as WaveformLine

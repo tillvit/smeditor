@@ -24,6 +24,7 @@ export abstract class GameLogic {
    * Called when a column is pressed down.
    *
    * @abstract
+   * @param chartManager
    * @param {number} col
    * @memberof GameLogic
    */
@@ -33,6 +34,7 @@ export abstract class GameLogic {
    * Called when a column is released.
    *
    * @abstract
+   * @param chartManager
    * @param {number} col
    * @memberof GameLogic
    */

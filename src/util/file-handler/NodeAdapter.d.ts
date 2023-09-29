@@ -35,11 +35,7 @@ export declare class FolderHandle implements FileSystemFolderHandleAdapter {
   writable: boolean
   constructor(path?: string, name?: string)
   isSameEntry(other: FolderHandle): Promise<boolean>
-  entries(): AsyncGenerator<
-    [string, FileHandle] | [string, FolderHandle],
-    void,
-    unknown
-  >
+  entries(): AsyncGenerator<[string, FileHandle] | [string, FolderHandle], void>
   getDirectoryHandle(
     name: string,
     opts?: FileSystemGetDirectoryOptions

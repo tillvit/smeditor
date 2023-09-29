@@ -1,6 +1,5 @@
 import tippy from "tippy.js"
 import { App } from "../../App"
-import { MenuOption } from "../../data/MenubarData"
 import {
   USER_OPTIONS_WINDOW_DATA,
   UserOption,
@@ -375,22 +374,6 @@ export class UserOptionsWindow extends Window {
     })
     return filteredOptions
   }
-
-  private static expandMenubarOptions(option: MenuOption): string[] {
-    switch (option.type) {
-      case "menu":
-      case "dropdown":
-        return option.options
-          .map(item => this.expandMenubarOptions(item))
-          .flat()
-      case "selection":
-      case "checkbox":
-        return [option.id]
-      case "seperator":
-        return []
-    }
-  }
-
   private createEmptyGroup(optionGroup: UserOptionGroup) {
     const sectionElement = document.createElement("div")
     sectionElement.classList.add("pref-section")

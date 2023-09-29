@@ -1,13 +1,3 @@
-export interface DropdownItem<T> {
-  label: string
-  value: T
-}
-
-export interface DropdownGroup<T> {
-  label: string
-  options: DropdownItem<T>[]
-}
-
 export class Dropdown<T> {
   view: HTMLDivElement
 

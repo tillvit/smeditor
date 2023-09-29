@@ -7,8 +7,6 @@ const SAVE_BLACKLIST = [
   "play.timingCollection",
 ]
 
-export const VIEW_BLACKLIST: string[] = []
-
 export class DefaultOptions {
   static general = {
     spinnerStep: 1,

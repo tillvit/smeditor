@@ -7,7 +7,7 @@ import { TimingData } from "../../sm/TimingData"
 export abstract class Notefield extends Container {
   protected renderer: ChartRenderer
 
-  constructor(renderer: ChartRenderer) {
+  protected constructor(renderer: ChartRenderer) {
     super()
     this.renderer = renderer
   }

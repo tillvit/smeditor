@@ -36,7 +36,7 @@ export class GameplayStats {
   private maxCumulativeDancePoints = 0
   private maxDancePoints = 0
   private chartManager: ChartManager
-  private notedata: Notedata
+  private readonly notedata: Notedata
   private dataPoints: JudgmentDataPoint[] = []
   private handlers: ((error: number, judge: TimingWindow) => void)[] = []
   private combo = 0
@@ -70,7 +70,7 @@ export class GameplayStats {
   }
 
   /**
-   * Adds a new judgement.
+   * Adds a new judgment.
    *
    * @param {NotedataEntry[]} notes - The notes in this row.
    * @param {TimingWindow} judge - The judgment received

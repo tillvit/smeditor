@@ -61,8 +61,4 @@ export class DisplayObjectPool<T extends DisplayObject> extends Container<T> {
       this.pool.shift()!.destroy()
     }
   }
-
-  getPoolSize() {
-    return this.pool.length + this.children.length
-  }
 }

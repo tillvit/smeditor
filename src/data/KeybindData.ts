@@ -218,9 +218,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
         const fileSelector = document.createElement("input")
         fileSelector.type = "file"
         fileSelector.accept = ".sm,.ssc"
-        fileSelector.onchange = () => {
+        fileSelector.onchange = () =>
           app.chartManager.loadSM(fileSelector.value)
-        }
         fileSelector.click()
       } else {
         app.windowManager.openWindow(
@@ -228,9 +227,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
             title: "Select an sm/ssc file...",
             accepted_file_types: [".sm", ".ssc"],
             disableClose: true,
-            callback: (path: string) => {
-              app.chartManager.loadSM(path)
-            },
+            callback: (path: string) => app.chartManager.loadSM(path),
           })
         )
       }
@@ -1068,6 +1065,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       const lastLength =
         app.chartManager.loadedSM!.properties.SAMPLELENGTH ?? "10"
 
+      let newStart = ""
+      let newLength = ""
+
       //Try using the region
       if (
         app.chartManager.startRegion !== undefined &&
@@ -1075,31 +1075,20 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       ) {
         const startSec = chart.getSecondsFromBeat(app.chartManager.startRegion)
         const endSec = chart.getSecondsFromBeat(app.chartManager.endRegion)
-        const newStart = roundDigit(startSec, 3).toString()
-        const newLength = roundDigit(endSec - startSec, 3).toString()
-        ActionHistory.instance.run({
-          action: app => {
-            app.chartManager.loadedSM!.properties.SAMPLESTART = newStart
-            app.chartManager.loadedSM!.properties.SAMPLELENGTH = newLength
-          },
-          undo: () => {
-            app.chartManager.loadedSM!.properties.SAMPLESTART = lastStart
-            app.chartManager.loadedSM!.properties.SAMPLELENGTH = lastLength
-          },
-        })
-        return
+        newStart = roundDigit(startSec, 3).toString()
+        newLength = roundDigit(endSec - startSec, 3).toString()
+      } else {
+        //Use notes/events
+        const selected =
+          app.chartManager.selection.notes.length > 0
+            ? app.chartManager.selection.notes
+            : app.chartManager.eventSelection.timingEvents
+        const beats = selected.map(item => item.beat!)
+        const startSec = chart.getSecondsFromBeat(Math.min(...beats))
+        const endSec = chart.getSecondsFromBeat(Math.max(...beats))
+        newStart = roundDigit(startSec, 3).toString()
+        newLength = roundDigit(endSec - startSec, 3).toString()
       }
-
-      //Use notes/events
-      const selected =
-        app.chartManager.selection.notes.length > 0
-          ? app.chartManager.selection.notes
-          : app.chartManager.eventSelection.timingEvents
-      const beats = selected.map(item => item.beat!)
-      const startSec = chart.getSecondsFromBeat(Math.min(...beats))
-      const endSec = chart.getSecondsFromBeat(Math.max(...beats))
-      const newStart = roundDigit(startSec, 3).toString()
-      const newLength = roundDigit(endSec - startSec, 3).toString()
       ActionHistory.instance.run({
         action: app => {
           app.chartManager.loadedSM!.properties.SAMPLESTART = newStart

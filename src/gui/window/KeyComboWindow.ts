@@ -6,10 +6,10 @@ import { Window } from "./Window"
 export class KeyComboWindow extends Window {
   app: App
 
-  private allowMods: boolean
-  private callback: (combo: KeyCombo) => void
+  private readonly allowMods: boolean
+  private readonly callback: (combo: KeyCombo) => void
   private combo: KeyCombo = { mods: [], key: "" }
-  private conflictCheck: (combo: KeyCombo) => string[] | "self"
+  private readonly conflictCheck: (combo: KeyCombo) => string[] | "self"
   private listener?: (event: KeyboardEvent) => void
 
   constructor(

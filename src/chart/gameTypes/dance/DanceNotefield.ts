@@ -17,12 +17,12 @@ export class DanceNotefield
   extends Notefield
   implements ChartRendererComponent
 {
-  private receptors: ReceptorContainer
-  private notes: NoteContainer
-  private selectionNotes: SelectionNoteContainer
-  private flashes: NoteFlashContainer
-  private holdJudges: HoldJudgmentContainer
-  private ghostNote: NoteObject
+  private readonly receptors: ReceptorContainer
+  private readonly notes: NoteContainer
+  private readonly selectionNotes: SelectionNoteContainer
+  private readonly flashes: NoteFlashContainer
+  private readonly holdJudges: HoldJudgmentContainer
+  private readonly ghostNote: NoteObject
   private ghostNoteEntry?: PartialNotedataEntry
 
   constructor(renderer: ChartRenderer) {

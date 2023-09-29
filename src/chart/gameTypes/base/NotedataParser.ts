@@ -8,6 +8,7 @@ export abstract class NotedataParser {
    *
    * @abstract
    * @param {string} data
+   * @param gameType
    * @return {*}  {PartialNotedata}
    * @memberof NotedataParser
    */
