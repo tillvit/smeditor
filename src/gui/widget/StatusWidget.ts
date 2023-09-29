@@ -152,7 +152,7 @@ export class StatusWidget extends Widget {
         min.blur()
       }
     }
-    min.onfocus = () => this.selectText(min)
+    min.onfocus = () => setTimeout(() => this.selectText(min), 25)
     min.onblur = () => this.updateTime()
     min.ondragstart = ev => ev.preventDefault()
     const sec = document.createElement("div")
@@ -173,7 +173,7 @@ export class StatusWidget extends Widget {
         sec.blur()
       }
     }
-    sec.onfocus = () => this.selectText(sec)
+    sec.onfocus = () => setTimeout(() => this.selectText(sec), 25)
     sec.onblur = () => this.updateTime()
     sec.ondragstart = ev => ev.preventDefault()
     const millis = document.createElement("div")
@@ -195,7 +195,7 @@ export class StatusWidget extends Widget {
         millis.blur()
       }
     }
-    millis.onfocus = () => this.selectText(millis)
+    millis.onfocus = () => setTimeout(() => this.selectText(millis), 25)
     millis.onblur = () => this.updateTime()
     millis.ondragstart = ev => ev.preventDefault()
     this.min = min
@@ -242,7 +242,7 @@ export class StatusWidget extends Widget {
       }
     }
     beat.onfocus = () => {
-      this.selectText(beat)
+      setTimeout(() => this.selectText(beat), 25)
     }
     beat.onblur = () => this.updateBeat()
     beat.ondragstart = ev => ev.preventDefault()

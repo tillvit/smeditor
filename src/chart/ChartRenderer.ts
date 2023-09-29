@@ -340,7 +340,7 @@ export class ChartRenderer extends Container<
       this.chartManager.getMode() == EditMode.Play ||
       this.chartManager.getMode() == EditMode.Record
     ) {
-      time += Options.play.offset
+      time += Options.play.offset * Options.audio.rate
     }
     return time
   }
@@ -374,7 +374,8 @@ export class ChartRenderer extends Container<
       this.chartManager.getMode() == EditMode.Play ||
       this.chartManager.getMode() == EditMode.Record
     ) {
-      time += Options.play.offset + Options.play.visualOffset
+      time +=
+        (Options.play.offset + Options.play.visualOffset) * Options.audio.rate
     }
     return time
   }
