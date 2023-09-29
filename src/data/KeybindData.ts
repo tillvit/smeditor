@@ -260,7 +260,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Export to notedata...",
     bindLabel: "Export to notedata",
     combos: [{ key: "E", mods: [DEF_MOD, Modifier.SHIFT] }],
-    disabled: app => !!window.nw || !app.chartManager.loadedSM,
+    disabled: app => !app.chartManager.loadedSM,
     callback: app =>
       app.windowManager.openWindow(
         new ExportNotedataWindow(app, app.chartManager.selection.notes)
