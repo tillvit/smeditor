@@ -10,7 +10,8 @@ const baseOptions = {
 }
 
 const mac = Object.assign(structuredClone(baseOptions), {
-  outDir: "build/SMEditor-Mac",
+  outDir: "build/mac/SMEditor",
+  version: "0.76.1",
   platform: "osx",
   app: {
     name: "SMEditor",
@@ -23,7 +24,7 @@ const mac = Object.assign(structuredClone(baseOptions), {
 
 
 const win = Object.assign(structuredClone(baseOptions), {
-  outDir: "build/SMEditor-Windows",
+  outDir: "build/win/SMEditor",
   platform: "win",
   app: {
     name: "SMEditor",
@@ -37,7 +38,7 @@ const win = Object.assign(structuredClone(baseOptions), {
 
 
 const linux = Object.assign(structuredClone(baseOptions), {
-  outDir: "build/SMEditor-Linux",
+  outDir: "build/linux/SMEditor",
   platform: "linux",
   arch: "x64",
   app: {
