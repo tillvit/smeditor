@@ -12,12 +12,12 @@ const baseOptions = {
 const mac = Object.assign(structuredClone(baseOptions), {
   outDir: "build/SMEditor-Mac",
   platform: "osx",
-  version: "0.76.1",
   app: {
     name: "SMEditor",
     genericName: "SMEditor",
     icon: "./public/assets/icon/mac.icns",
-    comment: "Open source tool to view and edit StepMania charts"
+    comment: "Open source tool to view and edit StepMania charts",
+    CFBundleIdentifier: "io.github.tillvit.smeditor"
   }
 })
 

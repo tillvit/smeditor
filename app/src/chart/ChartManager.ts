@@ -8,6 +8,7 @@ import { App } from "../App"
 import { AUDIO_EXT } from "../data/FileData"
 import { IS_OSX, KEYBIND_DATA } from "../data/KeybindData"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
+import { UpdatePopup } from "../gui/popup/UpdatePopup"
 import { DebugWidget } from "../gui/widget/DebugWidget"
 import { WidgetManager } from "../gui/widget/WidgetManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
@@ -45,7 +46,6 @@ import {
 } from "./sm/NoteTypes"
 import { Simfile } from "./sm/Simfile"
 import { TimingEvent } from "./sm/TimingTypes"
-import { UpdatePopup } from "../gui/popup/UpdatePopup"
 
 const SNAPS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 48, -1]
 
@@ -654,7 +654,8 @@ export class ChartManager {
 
     // Load the SM file
     const smHandle = await FileHandler.getFileHandle(this.smPath)
-    const smFile = await smHandle!.getFile()
+    if (!smHandle) return
+    const smFile = await smHandle.getFile()
     this.loadedSM = new Simfile(smFile)
 
     await this.loadedSM.loaded

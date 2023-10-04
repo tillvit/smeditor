@@ -3,8 +3,8 @@
   "version": "0.1.0-beta",
   "main": "index.html",
   "node-remote": [
-    "http://127.0.0.1:5173/*",
-    "https://tillvit.github.io/smeditor/*"
+    "http://127.0.0.1:5173/app",
+    "https://tillvit.github.io/smeditor/app"
   ],
   "chromium-args": "--enable-webgl2-compute-context --force-discrete-gpu --enable-high-resolution-time --enable-zero-copy --autoplay-policy no-user-gesture-required"
 }
