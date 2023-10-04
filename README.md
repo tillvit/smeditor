@@ -1,6 +1,6 @@
 # SMEditor
 
-Online web tool to view and edit StepMania chart (.sm/.ssc files).  
+Open source tool to view and edit StepMania charts..  
 You can view the tool at https://tillvit.github.io/smeditor  
 Inspired by [ArrowVortex](https://arrowvortex.ddrnl.com/index.html)
 
