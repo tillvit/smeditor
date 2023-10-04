@@ -1,6 +1,6 @@
 {
-  "name": "smeditor",
-  "version": "1.0.0",
+  "name": "SMEditor",
+  "version": "0.1.0-beta",
   "type": "module",
   "main": "./index.html",
   "node-remote": [

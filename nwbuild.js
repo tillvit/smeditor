@@ -6,7 +6,7 @@ const baseOptions = {
   mode: "build",
   version: "latest",
   flavor: "normal",
-  glob: false,
+  glob: false
 }
 
 const mac = Object.assign(structuredClone(baseOptions), {
@@ -16,7 +16,7 @@ const mac = Object.assign(structuredClone(baseOptions), {
     name: "SMEditor",
     genericName: "SMEditor",
     icon: "./public/assets/icon/mac.icns",
-    comment: "Tool to view and edit StepMania chart (.sm/.ssc files)."
+    comment: "Open source tool to view and edit StepMania charts"
   }
 })
 
@@ -30,7 +30,7 @@ const win = Object.assign(structuredClone(baseOptions), {
     internalName: "SMEditor",
     company: "tillvit",
     icon: "./public/assets/icon/favicon.ico",
-    comment: "Tool to view and edit StepMania chart (.sm/.ssc files)."
+    comment: "Open source tool to view and edit StepMania charts"
   }
 })
 
@@ -43,7 +43,7 @@ const linux = Object.assign(structuredClone(baseOptions), {
     name: "SMEditor",
     genericName: "SMEditor",
     icon: "./public/assets/icon/favicon.ico",
-    comment: "Tool to view and edit StepMania chart (.sm/.ssc files)."
+    comment: "Open source tool to view and edit StepMania charts"
   }
 })
 
