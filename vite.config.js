@@ -8,7 +8,7 @@ export default defineConfig({
     host: "127.0.0.1",
   },
   build: {
-    target: "esnext",
+    target: "modules",
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
@@ -18,7 +18,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     esbuildOptions: {
-      target: "esnext",
+      target: "modules",
     },
   },
 })

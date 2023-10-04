@@ -2,27 +2,28 @@ import nwbuild from "nw-builder";
 
 
 const baseOptions = {
-  srcDir: "./nw/",
+  srcDir: "./nw",
   mode: "build",
   version: "latest",
-  flavor: "normal",
-  glob: false
+  glob: false,
+  logLevel: "debug",
 }
 
 const mac = Object.assign(structuredClone(baseOptions), {
-  outDir: "build/mac",
+  outDir: "build/SMEditor-Mac",
   platform: "osx",
   app: {
     name: "SMEditor",
     genericName: "SMEditor",
     icon: "./public/assets/icon/mac.icns",
-    comment: "Open source tool to view and edit StepMania charts"
+    comment: "Open source tool to view and edit StepMania charts",
+    CFBundleIdentifier: "io.github.tillvit.smeditor"
   }
 })
 
 
 const win = Object.assign(structuredClone(baseOptions), {
-  outDir: "build/win",
+  outDir: "build/SMEditor-Windows",
   platform: "win",
   app: {
     name: "SMEditor",
@@ -36,7 +37,7 @@ const win = Object.assign(structuredClone(baseOptions), {
 
 
 const linux = Object.assign(structuredClone(baseOptions), {
-  outDir: "build/linux",
+  outDir: "build/SMEditor-Linux",
   platform: "linux",
   arch: "x64",
   app: {

@@ -1,3 +1,4 @@
+import { NodeFileHandler } from "./NodeFileHandler"
 import { WebFileHandler } from "./WebFileHandler"
 
 export interface BaseFileHandler {
@@ -40,5 +41,5 @@ export interface BaseFileHandler {
 }
 
 export const FileHandler = window.nw
-  ? new (await import("./NodeFileHandler")).NodeFileHandler()
+  ? new NodeFileHandler()
   : new WebFileHandler()

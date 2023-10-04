@@ -11,7 +11,6 @@ import semver from "semver"
 import tippy from "tippy.js"
 import "tippy.js/animations/scale-subtle.css"
 import "tippy.js/dist/tippy.css"
-import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
 import { ContextMenuPopup } from "./gui/element/ContextMenu"
 import { MenubarManager } from "./gui/element/MenubarManager"
@@ -340,18 +339,18 @@ document.querySelector("body")!.innerHTML = `<div id="popups"></div>
           <div id="windows"></div>
         `
 
-// Check WebGL
-
-WebFont.load({
-  google: {
-    families: ["Assistant:200,300,400,500,600,700,800&display=swap"],
-  },
-  active: init,
-  inactive: init,
-  classes: false,
-})
+// WebFont.load({
+//   google: {
+//     families: ["Assistant:200,300,400,500,600,700,800&display=swap"],
+//   },
+//   active: init,
+//   inactive: init,
+//   classes: false,
+// })
+init()
 
 function init() {
+  // Check WebGL
   const canvas = document.createElement("canvas")
   const gl = (canvas.getContext("webgl") ||
     canvas.getContext("experimental-webgl")) as WebGLRenderingContext
