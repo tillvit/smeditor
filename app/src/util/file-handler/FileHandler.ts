@@ -1,4 +1,3 @@
-import { NodeFileHandler } from "./NodeFileHandler"
 import { WebFileHandler } from "./WebFileHandler"
 
 export interface BaseFileHandler {
@@ -40,6 +39,10 @@ export interface BaseFileHandler {
   getRelativePath(from: string, to: string): string
 }
 
-export const FileHandler = window.nw
-  ? new NodeFileHandler()
-  : new WebFileHandler()
+export let FileHandler: BaseFileHandler = null as unknown as BaseFileHandler
+
+export async function initFileSystem() {
+  FileHandler = window.nw
+    ? new (await import("./NodeFileHandler")).NodeFileHandler()
+    : new WebFileHandler()
+}
