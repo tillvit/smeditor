@@ -2,16 +2,17 @@ import nwbuild from "nw-builder";
 
 
 const baseOptions = {
-  srcDir: "./nw/",
+  srcDir: "./nw",
   mode: "build",
   version: "latest",
-  flavor: "normal",
-  glob: false
+  glob: false,
+  logLevel: "debug",
 }
 
 const mac = Object.assign(structuredClone(baseOptions), {
-  outDir: "build/mac",
+  outDir: "build/SMEditor-Mac",
   platform: "osx",
+  version: "0.76.1",
   app: {
     name: "SMEditor",
     genericName: "SMEditor",
@@ -22,7 +23,7 @@ const mac = Object.assign(structuredClone(baseOptions), {
 
 
 const win = Object.assign(structuredClone(baseOptions), {
-  outDir: "build/win",
+  outDir: "build/SMEditor-Windows",
   platform: "win",
   app: {
     name: "SMEditor",
@@ -36,7 +37,7 @@ const win = Object.assign(structuredClone(baseOptions), {
 
 
 const linux = Object.assign(structuredClone(baseOptions), {
-  outDir: "build/linux",
+  outDir: "build/SMEditor-Linux",
   platform: "linux",
   arch: "x64",
   app: {
