@@ -307,7 +307,7 @@ export class App {
     }
     let os = "win"
     if (navigator.userAgent.includes("Mac")) os = "mac"
-    else if (navigator.userAgent.indexOf("Linux")) os = "linux"
+    else if (navigator.userAgent.includes("Linux")) os = "linux"
     fetch("/assets/app/versions.json")
       .then(data => data.json())
       .then((versions: Version[]) => {
