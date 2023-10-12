@@ -29,7 +29,7 @@ export class DefaultOptions {
     maxDrawBeatsBack: 10,
     scroll: {
       scrollSensitivity: 1,
-      scrollSnapEveryScroll: false,
+      scrollSnapEveryScroll: !navigator.userAgent.includes("Mac"),
       invertZoomScroll: false,
       invertReverseScroll: true,
     },
