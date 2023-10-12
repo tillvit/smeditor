@@ -30,14 +30,18 @@ export class PreviewAreaContainer
     this.addChild(this.previewArea, this.previewText)
   }
 
-  update() {
+  update(fromBeat: number, toBeat: number) {
     const sampleStart = Number(this.renderer.chart.sm.properties.SAMPLESTART)
     const sampleLength = Number(this.renderer.chart.sm.properties.SAMPLELENGTH)
     if (
       Number.isNaN(sampleStart) ||
       Number.isNaN(sampleLength) ||
       (this.renderer.chartManager.getMode() == EditMode.Play &&
-        Options.play.hideBarlines)
+        Options.play.hideBarlines) ||
+      this.renderer.chart.timingData.getBeatFromSeconds(
+        sampleStart + sampleLength
+      ) < fromBeat ||
+      this.renderer.chart.timingData.getBeatFromSeconds(sampleStart) > toBeat
     ) {
       this.visible = false
       return

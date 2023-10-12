@@ -23,6 +23,10 @@ export class NumberSpinner {
     this.view = view
     this.view.classList.add("spinner")
 
+    this.view.onfocus = () => {
+      input.focus()
+    }
+
     const input = document.createElement("input")
     input.classList.add("spinner-input")
     input.type = "text"

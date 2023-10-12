@@ -1,5 +1,5 @@
 import { NoteType, PartialNotedata, isHoldNote } from "../chart/sm/NoteTypes"
-import { TimingEvent, TimingEventProperty } from "../chart/sm/TimingTypes"
+import { Cached, TimingEvent, TimingEventType } from "../chart/sm/TimingTypes"
 import { roundDigit } from "./Math"
 
 const _a85chars = Array(85)
@@ -227,7 +227,7 @@ export function encodeNotes(notes: PartialNotedata): string {
   )
 }
 
-const eventTypeNumbers: TimingEventProperty[] = [
+const eventTypeNumbers: TimingEventType[] = [
   "BPMS",
   "STOPS",
   "DELAYS",
@@ -294,7 +294,7 @@ function unpackVString(bytes: number[]): string {
   return ret
 }
 
-export function encodeTempo(events: TimingEvent[]): string {
+export function encodeTempo(events: Cached<TimingEvent>[]): string {
   if (
     events.some(event => {
       if (
@@ -330,9 +330,9 @@ export function encodeTempo(events: TimingEvent[]): string {
 
 // Seperate functions
 // ArrowVortex only supports events on 1/192 intervals and cannot encode attacks/bgchanges/fgchanges
-export function encodeAVTempo(events: TimingEvent[]): string {
+export function encodeAVTempo(events: Cached<TimingEvent>[]): string {
   const bytes: number[] = []
-  const eventMap = new Map<TimingEventProperty, TimingEvent[]>()
+  const eventMap = new Map<TimingEventType, Cached<TimingEvent>[]>()
   events.forEach(event => {
     if (!eventMap.has(event.type)) eventMap.set(event.type, [])
     eventMap.get(event.type)?.push(event)
@@ -343,7 +343,7 @@ export function encodeAVTempo(events: TimingEvent[]): string {
     bytes.push(events.length)
     bytes.push(eventTypeNumbers.indexOf(type))
     for (const event of events) {
-      bytes.push(...packUint32(Math.round(event.beat! * 48)))
+      bytes.push(...packUint32(Math.round(event.beat * 48)))
       switch (event.type) {
         case "BPMS":
         case "STOPS":
@@ -388,7 +388,7 @@ export function encodeAVTempo(events: TimingEvent[]): string {
 export function encodeSMETempo(events: TimingEvent[]): string {
   const bytes = []
   // split into different types
-  const eventMap = new Map<TimingEventProperty, TimingEvent[]>()
+  const eventMap = new Map<TimingEventType, TimingEvent[]>()
   events.forEach(event => {
     if (!eventMap.has(event.type)) eventMap.set(event.type, [])
     eventMap.get(event.type)?.push(event)

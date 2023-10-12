@@ -1,20 +1,16 @@
 import { WaterfallManager } from "../../gui/element/WaterfallManager"
 import { Chart } from "./Chart"
 import { CHART_DIFFICULTIES } from "./ChartTypes"
+import { SimfileTimingData } from "./SimfileTimingData"
 import { SIMFILE_PROPERTIES, SimfileProperty } from "./SimfileTypes"
-import { TimingData } from "./TimingData"
-import {
-  TIMING_EVENT_NAMES,
-  TimingEventProperty,
-  TimingProperty,
-} from "./TimingTypes"
+import { TIMING_EVENT_NAMES, TimingEventType, TimingType } from "./TimingTypes"
 
 export class Simfile {
   charts: Record<string, Chart[]> = {}
   _type?: "sm" | "ssc"
   other_properties: { [key: string]: string } = {}
   properties: { [key in SimfileProperty]?: string } = {}
-  timingData: TimingData = new TimingData()
+  timingData: SimfileTimingData = new SimfileTimingData()
 
   unloadedCharts: (string | { [key: string]: string })[] = []
 
@@ -50,16 +46,14 @@ export class Simfile {
               this.properties[prop[1] as SimfileProperty] = prop[2]
             } else if (
               prop[1] == "OFFSET" ||
-              TIMING_EVENT_NAMES.includes(prop[1] as TimingEventProperty)
+              TIMING_EVENT_NAMES.includes(prop[1] as TimingEventType)
             ) {
-              this.timingData.parse(prop[1] as TimingProperty, prop[2])
+              this.timingData.parse(prop[1] as TimingType, prop[2])
             } else {
               this.other_properties[prop[1]] = prop[2]
             }
           }
         }
-
-        this.timingData.reloadCache()
 
         this.charts = {}
 
@@ -78,6 +72,7 @@ export class Simfile {
           }
           this.addChart(chart)
         }
+        this.timingData.reloadCache()
         resolve()
       })
     })
@@ -216,10 +211,10 @@ export class Simfile {
     return str
   }
 
-  usesSplitTiming(): boolean {
+  usesChartTiming(): boolean {
     for (const type in this.charts) {
       for (const chart of this.charts[type]) {
-        if (!chart.timingData.isEmpty()) return true
+        if (chart.timingData.usesChartTiming()) return true
       }
     }
     return false
@@ -227,7 +222,7 @@ export class Simfile {
 
   requiresSSC(): boolean {
     if (this.timingData.requiresSSC()) return true
-    if (this.usesSplitTiming()) return true
+    if (this.usesChartTiming()) return true
     for (const type in this.charts) {
       for (const chart of this.charts[type]) {
         if (chart.requiresSSC()) return true

@@ -1,4 +1,4 @@
-import { TimingEventProperty } from "../chart/sm/TimingTypes"
+import { TimingEventType } from "../chart/sm/TimingTypes"
 
 interface Popup {
   rows: PopupRow[]
@@ -39,7 +39,7 @@ interface PopupInputDropdown {
 interface PopupInputCheckbox {
   type: "checkbox"
 }
-export const POPUP_ROWS: { [key in TimingEventProperty]: Popup } = {
+export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
   BPMS: {
     title: "BPM Event",
     rows: [

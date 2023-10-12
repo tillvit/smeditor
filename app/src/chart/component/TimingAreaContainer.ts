@@ -5,6 +5,7 @@ import { Options } from "../../util/Options"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
 import {
+  Cached,
   DelayTimingEvent,
   FakeTimingEvent,
   StopTimingEvent,
@@ -47,15 +48,14 @@ export class TimingAreaContainer
     },
   })
   private timingAreaMap: Map<
-    StopTimingEvent | WarpTimingEvent | DelayTimingEvent | FakeTimingEvent,
+    Cached<
+      StopTimingEvent | WarpTimingEvent | DelayTimingEvent | FakeTimingEvent
+    >,
     Sprite
   > = new Map()
-  private timingEvents: (
-    | StopTimingEvent
-    | WarpTimingEvent
-    | DelayTimingEvent
-    | FakeTimingEvent
-  )[] = []
+  private timingEvents: Cached<
+    StopTimingEvent | WarpTimingEvent | DelayTimingEvent | FakeTimingEvent
+  >[] = []
 
   private timingDirty = true
 
@@ -109,17 +109,17 @@ export class TimingAreaContainer
         continue
       }
       let yStart = Options.chart.CMod
-        ? this.renderer.getYPosFromSecond(event.second!)
+        ? this.renderer.getYPosFromSecond(event.second)
         : this.renderer.getYPosFromBeat(event.beat)
       let yEnd = yStart
       switch (event.type) {
         case "STOPS":
         case "DELAYS": {
           if (Options.chart.CMod && event.value > 0) {
-            yEnd = this.renderer.getYPosFromSecond(event.second! + event.value)
+            yEnd = this.renderer.getYPosFromSecond(event.second + event.value)
           } else if (event.value < 0) {
             yEnd = this.renderer.getYPosFromBeat(
-              this.renderer.chart.getBeatFromSeconds(event.second! + 0.0001)
+              this.renderer.chart.getBeatFromSeconds(event.second + 0.0001)
             )
           }
           break
@@ -145,17 +145,15 @@ export class TimingAreaContainer
   }
 
   private shouldDrawEvent(
-    event:
-      | StopTimingEvent
-      | WarpTimingEvent
-      | DelayTimingEvent
-      | FakeTimingEvent,
+    event: Cached<
+      StopTimingEvent | WarpTimingEvent | DelayTimingEvent | FakeTimingEvent
+    >,
     fromBeat: number,
     toBeat: number
   ) {
     if (
       (event.type == "STOPS" || event.type == "DELAYS") &&
-      event.second! + Math.abs(event.value) <=
+      event.second + Math.abs(event.value) <=
         this.renderer.chart.timingData.getSecondsFromBeat(fromBeat)
     )
       return false

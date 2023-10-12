@@ -255,7 +255,7 @@ export class UserOptionsWindow extends Window {
             option.input.max ?? option.input.hardMax ?? Number.MAX_VALUE
           numberInput.onblur = () => {
             let value = parseString(numberInput.value)
-            if (!value) {
+            if (value === null) {
               numberInput.value = (
                 Math.round(serializer(optionValue as number) * 1000) / 1000
               ).toString()
