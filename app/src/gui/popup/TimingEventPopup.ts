@@ -16,7 +16,7 @@ interface FinalRow {
 
 export class TimingEventPopup {
   static activePopup?: TimingEventPopup
-  private readonly timingBox
+  private timingBox
   private readonly popup: HTMLDivElement
   private zoomer!: HTMLDivElement
   private editText!: HTMLDivElement
@@ -24,7 +24,7 @@ export class TimingEventPopup {
   private rows: FinalRow[] = []
   private readonly onTimingChange
   private readonly clickOutside
-  private readonly moveInterval
+  private moveInterval
   private readonly modifyBox
   onConfirm: (event: TimingEvent) => void = () => {}
   persistent = false
@@ -243,7 +243,8 @@ export class TimingEventPopup {
   private updateValues() {
     const event = this.timingData.getEventAtBeat(
       this.timingBox.event.type,
-      this.timingBox.event.beat
+      this.timingBox.event.beat,
+      false
     ) as { [key: string]: any }
     if (!this.timingBox || !event || event.beat != this.timingBox.event.beat) {
       this.close()
@@ -298,5 +299,15 @@ export class TimingEventPopup {
 
   detach() {
     clearInterval(this.moveInterval)
+  }
+
+  getEvent() {
+    return this.timingBox.event
+  }
+
+  attach(timingBox: TimingBox) {
+    clearInterval(this.moveInterval)
+    this.moveInterval = setInterval(() => this.movePosition(), 150)
+    this.timingBox = timingBox
   }
 }

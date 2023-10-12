@@ -164,8 +164,28 @@ export class TimingTrackContainer
     box.selection.height = 25
     box.selection.position = box.backgroundObj.position
 
-    if (box?.popup?.persistent !== true) box.popup?.close()
     box.popup = undefined
+
+    if (TimingEventPopup.activePopup) {
+      const currentEvent = TimingEventPopup.activePopup.getEvent()
+      if (
+        currentEvent.type == "ATTACKS" &&
+        event.type == "ATTACKS" &&
+        currentEvent.second == event.second
+      ) {
+        TimingEventPopup.activePopup.attach(box)
+        box.popup = TimingEventPopup.activePopup
+      }
+      if (
+        currentEvent.type != "ATTACKS" &&
+        event.type != "ATTACKS" &&
+        currentEvent.type == event.type &&
+        currentEvent.beat == event.beat
+      ) {
+        TimingEventPopup.activePopup.attach(box)
+        box.popup = TimingEventPopup.activePopup
+      }
+    }
   }
 
   private addDragListeners(box: TimingBox, event: Cached<TimingEvent>) {
@@ -397,7 +417,6 @@ export class TimingTrackContainer
       this.timingBoxMap.clear()
       this.boxPool.destroyAll()
       this.timingDirty = false
-      TimingEventPopup.activePopup?.close()
     }
 
     const editingTiming =

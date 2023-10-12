@@ -32,7 +32,7 @@ export class RecentFileHandler {
         })
       }
     } catch {
-      console.log("failed to load entries")
+      console.log("Failed to load recent file entries")
       return
     }
     await this.saveEntries()

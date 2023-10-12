@@ -13,8 +13,6 @@ export class SafariFileWriter {
   static {
     this.worker.onmessage = event => {
       const data = event.data
-      console.log("finished job " + data.id)
-      console.log(data)
       if (data.success) {
         this.map.get(data.id)![0]()
       } else {
@@ -26,7 +24,6 @@ export class SafariFileWriter {
 
   static async writeHandle(path: string, data: Blob | string) {
     const id = this.workID++
-    console.log("Starting work write " + path + ", id: " + id)
     const promise = new Promise<void>((resolve, reject) =>
       this.map.set(id, [resolve, reject])
     )
