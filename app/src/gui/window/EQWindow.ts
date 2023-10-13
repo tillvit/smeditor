@@ -97,17 +97,39 @@ export class EQWindow extends Window {
     const iconContainer = document.createElement("div")
     iconContainer.classList.add("icon-container")
     this.app.chartManager.chartAudio.getFilters().forEach((filter, index) => {
-      const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg")
-      icon.dataset.src = new URL(
-        `../../../assets/svg/${filter.type}.svg`,
-        import.meta.url
-      ).href
-      icon.classList.add("eq-icon")
-      icon.setAttribute("fill", fills[index])
-      icon.style.backgroundColor = `${fills[index]}40`
-      icon.setAttribute("width", "36px")
-      icon.setAttribute("height", "24px")
-      icon.onclick = () => {
+      const iconPlaceholder = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "svg"
+      )
+      fetch(
+        new URL(`../../../assets/svg/${filter.type}.svg`, import.meta.url).href
+      )
+        .then(response => response.text())
+        .then(text => {
+          const parser = new DOMParser()
+          const doc = parser.parseFromString(text, "image/svg+xml")
+          const icon = doc.getElementsByTagName("svg")[0]
+          icon.classList.add("eq-icon")
+          icon.setAttribute("fill", fills[index])
+          icon.style.backgroundColor = `${fills[index]}40`
+          icon.setAttribute("width", "36px")
+          icon.setAttribute("height", "24px")
+          icon.onclick = () => {
+            const enabled =
+              this.app.chartManager.chartAudio.getFilter(index).enabled
+            if (enabled) this.app.chartManager.chartAudio.disableFilter(index)
+            else this.app.chartManager.chartAudio.enableFilter(index)
+            this.endTrack()
+            this.updateIcons()
+          }
+          icon.onmouseenter = () => this.points[index].highlight()
+          icon.onmouseleave = () => this.points[index].unhighlight()
+          iconPlaceholder.replaceWith(icon)
+        })
+      iconPlaceholder.classList.add("eq-icon")
+      iconPlaceholder.setAttribute("width", "36px")
+      iconPlaceholder.setAttribute("height", "24px")
+      iconPlaceholder.onclick = () => {
         const enabled =
           this.app.chartManager.chartAudio.getFilter(index).enabled
         if (enabled) this.app.chartManager.chartAudio.disableFilter(index)
@@ -115,9 +137,9 @@ export class EQWindow extends Window {
         this.endTrack()
         this.updateIcons()
       }
-      icon.onmouseenter = () => this.points[index].highlight()
-      icon.onmouseleave = () => this.points[index].unhighlight()
-      iconContainer.appendChild(icon)
+      iconPlaceholder.onmouseenter = () => this.points[index].highlight()
+      iconPlaceholder.onmouseleave = () => this.points[index].unhighlight()
+      iconContainer.appendChild(iconPlaceholder)
     })
     this.icons = iconContainer
     this.updateIcons()
@@ -197,8 +219,6 @@ export class EQWindow extends Window {
     const range = document.createRange()
     if (!sel || !range) return
     range.selectNodeContents(element)
-    sel.removeAllRanges()
-    sel.addRange(range)
   }
 
   private setupInput(
