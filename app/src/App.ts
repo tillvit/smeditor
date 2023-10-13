@@ -343,8 +343,9 @@ document.querySelector("body")!.innerHTML = `<div id="popups"></div>
         `
 
 WebFont.load({
-  google: {
-    families: ["Assistant:200,300,400,500,600,700,800&display=swap"],
+  custom: {
+    families: ["Assistant"],
+    urls: ["index.css"],
   },
   active: init,
   inactive: init,
