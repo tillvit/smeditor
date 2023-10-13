@@ -25,6 +25,9 @@ export default defineConfig({
             purpose: "maskable"
           }
         ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html}', 'assets/*'],
       }
       
     })
