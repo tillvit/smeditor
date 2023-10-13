@@ -359,11 +359,15 @@ export class ChartAudio {
     if (this._destroyed) return []
     const ret = []
     for (let i = 0; i < this._filteredBuffer.numberOfChannels; i++) {
-      const buf = new Float32Array(this._buffer.length)
-      this._buffer.copyFromChannel(buf, i)
+      const buf = new Float32Array(this._filteredBuffer.length)
+      this._filteredBuffer.copyFromChannel(buf, i)
       ret.push(buf)
     }
     return ret
+  }
+
+  getBuffer(): AudioBuffer {
+    return this._loadedBuffer
   }
 
   /**
@@ -524,7 +528,7 @@ export class ChartAudio {
     if (!this._source) return
     if (this._isPlaying) return
     this.initSource()
-    if (this._playbackTime <= this._filteredBuffer.duration) {
+    if (this._playbackTime <= this._buffer.duration) {
       if (this._playbackTime < 0) {
         // Stall until the playback time is positive
         clearTimeout(this._delay)

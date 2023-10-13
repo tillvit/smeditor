@@ -2019,10 +2019,6 @@ input[type="range"] {
   background-color: rgba(0, 0, 0, 0) !important;
 }
 
-.eq-icon::after {
-  content: "hello";
-}
-
 .eq-info-container {
   border-top: 1px solid;
   border-image-slice: 1;
