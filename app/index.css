@@ -1,3 +1,8 @@
+@font-face {
+  font-family: "Assistant";
+  src: url("assets/font/Assistant.ttf") format("ttf");
+}
+
 * {
   box-sizing: border-box;
   font-family: Assistant, Helvetica, sans-serif;
