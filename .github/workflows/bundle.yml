@@ -3,7 +3,7 @@ name: Bundle js
 on:
   workflow_dispatch:
   push:
-    branches: ["master", "development"]
+    branches: ["master"]
 
 jobs:
   build:
@@ -15,32 +15,16 @@ jobs:
         with:
           ref: master
 
-      - name: Checkout dev branch
-        uses: actions/checkout@v3
-        with:
-          ref: development
-          path: development
-
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: "18.x"
 
-      - name: Build development
-        run: |
-          cd development
-          npm install
-          npm run build
-
-      - name: Build master
+      - name: Build
         run: |
           npm install
           npm run build
-
-      - name: Move development
-        run: |
-          mv development/dist dist/beta
-
+          
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:
