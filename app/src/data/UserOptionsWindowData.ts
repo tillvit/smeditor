@@ -290,7 +290,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               type: "checkbox",
             },
             tooltip:
-              "Whether each scroll movement corresponds to moving one snap unit when scrolling. Turning this on will have the same behavior as ArrowVortex.",
+              "Whether each scroll movement corresponds to moving one snap unit when scrolling. Turning this on will have the same behavior as ArrowVortex. Recommended on for those using a mouse, off for those using trackpad.",
           },
           {
             type: "item",

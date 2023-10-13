@@ -8,7 +8,7 @@ export class TimingDataWindow extends Window {
   app: App
 
   private lastBeat: number
-  private songTiming = false
+  private chartTiming = false
   private readonly interval
   private changeHandler = () => this.setData()
 
@@ -23,7 +23,8 @@ export class TimingDataWindow extends Window {
     })
     this.app = app
     this.lastBeat = Math.round(this.app.chartManager.getBeat() * 1000) / 1000
-    this.songTiming = !this.app.chartManager.loadedChart!.timingData.isEmpty()
+    this.chartTiming =
+      this.app.chartManager.loadedChart!.timingData.usesChartTiming()
     this.initView()
     this.interval = setInterval(() => {
       if (
@@ -55,10 +56,10 @@ export class TimingDataWindow extends Window {
 
     const item = Dropdown.create(
       ["All charts", "This chart"],
-      this.songTiming ? "This chart" : "All charts"
+      this.chartTiming ? "This chart" : "All charts"
     )
     item.onChange(value => {
-      this.songTiming = value == "This chart"
+      this.chartTiming = value == "This chart"
     })
     padding.appendChild(songLabel)
     padding.appendChild(item.view)
@@ -67,7 +68,11 @@ export class TimingDataWindow extends Window {
       label.classList.add("label")
       label.innerText = entry.title
 
-      const item = entry.element.create(this.app, () => this.songTiming)
+      const item = entry.element.create(this.app, () =>
+        this.chartTiming
+          ? this.app.chartManager.loadedChart!.timingData
+          : this.app.chartManager.loadedSM!.timingData
+      )
 
       padding.appendChild(label)
       padding.appendChild(item)

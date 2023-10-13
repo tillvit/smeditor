@@ -15,8 +15,8 @@ export const TIMING_EVENT_NAMES = [
   "FGCHANGES",
 ] as const
 
-export type TimingEventProperty = (typeof TIMING_EVENT_NAMES)[number]
-export type TimingProperty = "OFFSET" | TimingEventProperty
+export type TimingEventType = (typeof TIMING_EVENT_NAMES)[number]
+export type TimingType = "OFFSET" | TimingEventType
 
 export const BEAT_TIMING_EVENT_NAMES = [
   "BPMS",
@@ -26,13 +26,8 @@ export const BEAT_TIMING_EVENT_NAMES = [
   "WARP_DEST",
 ] as const
 
-export type BeatTimingEventProperty = (typeof BEAT_TIMING_EVENT_NAMES)[number]
+export type BeatTimingEventType = (typeof BEAT_TIMING_EVENT_NAMES)[number]
 
-export interface TimingEventBase {
-  type: TimingEventProperty
-  beat?: number
-  second?: number
-}
 export interface BeatTimingCache {
   beat: number
   secondBefore: number
@@ -54,17 +49,17 @@ export interface MeasureTimingCache {
 export interface ScrollCacheTimingEvent extends ScrollTimingEvent {
   effectiveBeat?: number
 }
-export interface BPMTimingEvent extends TimingEventBase {
+export interface BPMTimingEvent {
   type: "BPMS"
   beat: number
   value: number
 }
-export interface StopTimingEvent extends TimingEventBase {
+export interface StopTimingEvent {
   type: "STOPS"
   beat: number
   value: number
 }
-export interface WarpTimingEvent extends TimingEventBase {
+export interface WarpTimingEvent {
   type: "WARPS"
   beat: number
   value: number
@@ -74,58 +69,58 @@ export interface WarpDestTimingEvent {
   beat: number
   value: number
 }
-export interface DelayTimingEvent extends TimingEventBase {
+export interface DelayTimingEvent {
   type: "DELAYS"
   beat: number
   value: number
 }
-export interface ScrollTimingEvent extends TimingEventBase {
+export interface ScrollTimingEvent {
   type: "SCROLLS"
   beat: number
   value: number
 }
-export interface TickCountTimingEvent extends TimingEventBase {
+export interface TickCountTimingEvent {
   type: "TICKCOUNTS"
   beat: number
   value: number
 }
-export interface FakeTimingEvent extends TimingEventBase {
+export interface FakeTimingEvent {
   type: "FAKES"
   beat: number
   value: number
 }
-export interface LabelTimingEvent extends TimingEventBase {
+export interface LabelTimingEvent {
   type: "LABELS"
   beat: number
   value: string
 }
-export interface SpeedTimingEvent extends TimingEventBase {
+export interface SpeedTimingEvent {
   type: "SPEEDS"
   beat: number
   value: number
   delay: number
   unit: "B" | "T"
 }
-export interface TimeSignatureTimingEvent extends TimingEventBase {
+export interface TimeSignatureTimingEvent {
   type: "TIMESIGNATURES"
   beat: number
   upper: number
   lower: number
 }
-export interface ComboTimingEvent extends TimingEventBase {
+export interface ComboTimingEvent {
   type: "COMBOS"
   beat: number
   hitMult: number
   missMult: number
 }
-export interface AttackTimingEvent extends TimingEventBase {
+export interface AttackTimingEvent {
   type: "ATTACKS"
   second: number
   endType: "LEN" | "END"
   value: number
   mods: string
 }
-export interface BGChangeTimingEvent extends TimingEventBase {
+export interface BGChangeTimingEvent {
   type: "BGCHANGES"
   beat: number
   file: string
@@ -139,7 +134,7 @@ export interface BGChangeTimingEvent extends TimingEventBase {
   color1: string
   color2: string
 }
-export interface FGChangeTimingEvent extends TimingEventBase {
+export interface FGChangeTimingEvent {
   type: "FGCHANGES"
   beat: number
   file: string
@@ -170,9 +165,34 @@ export type TimingEvent =
   | BGChangeTimingEvent
   | FGChangeTimingEvent
 
+export type Cached<T extends TimingEvent> = T & {
+  beat: number
+  second: number
+  isChartTiming: boolean
+}
+
 export type BeatTimingEvent =
   | BPMTimingEvent
   | StopTimingEvent
   | WarpTimingEvent
   | WarpDestTimingEvent
   | DelayTimingEvent
+
+export type TimingCache = {
+  beatTiming?: BeatTimingCache[]
+  effectiveBeatTiming?: ScrollCacheTimingEvent[]
+  measureTiming?: MeasureTimingCache[]
+  sortedEvents?: Cached<TimingEvent>[]
+  warpedBeats: Map<number, boolean>
+  beatsToSeconds: Map<string, number>
+}
+
+export type DeletableEvent = Partial<Cached<TimingEvent>> &
+  Pick<TimingEvent, "type">
+
+export type ColumnType = "continuing" | "instant"
+
+export interface TimingColumn<Event extends TimingEvent> {
+  type: TimingEventType
+  events: Cached<Event>[]
+}

@@ -18,12 +18,11 @@ import { Options } from "../../util/Options"
 import { isRightClick } from "../../util/Util"
 import { EditMode, EditTimingMode } from "../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
-import { TimingEvent, TimingEventProperty } from "../sm/TimingTypes"
+import { Cached, TimingEvent, TimingEventType } from "../sm/TimingTypes"
 import { TIMING_EVENT_COLORS } from "./TimingAreaContainer"
 
 export interface TimingBox extends Container {
-  event: TimingEvent
-  songTiming: boolean
+  event: Cached<TimingEvent>
   backgroundObj: BetterRoundedRect
   selection: BetterRoundedRect
   textObj: BitmapText
@@ -76,7 +75,7 @@ export class TimingTrackContainer
   private tracks = new Container<TimingTrack>()
 
   private renderer: ChartRenderer
-  private timingBoxMap: Map<TimingEvent, TimingBox> = new Map()
+  private timingBoxMap: Map<Cached<TimingEvent>, TimingBox> = new Map()
   private wasEditingTiming = false
 
   private boxPool = new DisplayObjectPool({
@@ -142,16 +141,16 @@ export class TimingTrackContainer
     return track
   }
 
-  private initializeBox(box: TimingBox, event: TimingEvent) {
+  private initializeBox(box: TimingBox, event: Cached<TimingEvent>) {
     Object.assign(box, {
       event,
-      songTiming: this.renderer.chart.timingData.isTypeChartSpecific(
+      isChartTiming: this.renderer.chart.timingData.isPropertyChartSpecific(
         event.type
       ),
       lastX: undefined,
       lastAnchor: undefined,
       animationId: undefined,
-      zIndex: event.beat!,
+      zIndex: event.beat,
       eventMode: "static",
     })
     box.textObj.text = this.getLabelFromEvent(event)
@@ -165,11 +164,31 @@ export class TimingTrackContainer
     box.selection.height = 25
     box.selection.position = box.backgroundObj.position
 
-    if (box?.popup?.persistent !== true) box.popup?.close()
     box.popup = undefined
+
+    if (TimingEventPopup.activePopup) {
+      const currentEvent = TimingEventPopup.activePopup.getEvent()
+      if (
+        currentEvent.type == "ATTACKS" &&
+        event.type == "ATTACKS" &&
+        currentEvent.second == event.second
+      ) {
+        TimingEventPopup.activePopup.attach(box)
+        box.popup = TimingEventPopup.activePopup
+      }
+      if (
+        currentEvent.type != "ATTACKS" &&
+        event.type != "ATTACKS" &&
+        currentEvent.type == event.type &&
+        currentEvent.beat == event.beat
+      ) {
+        TimingEventPopup.activePopup.attach(box)
+        box.popup = TimingEventPopup.activePopup
+      }
+    }
   }
 
-  private addDragListeners(box: TimingBox, event: TimingEvent) {
+  private addDragListeners(box: TimingBox, event: Cached<TimingEvent>) {
     box.on("mouseenter", () => {
       if (box?.popup?.persistent === true) return
       if (this.renderer.chartManager.eventSelection.timingEvents.length > 0)
@@ -178,7 +197,10 @@ export class TimingTrackContainer
 
       box.popup?.close()
       if (this.renderer.chartManager.getMode() == EditMode.Edit) {
-        new TimingEventPopup(box, this.renderer.chart.timingData)
+        new TimingEventPopup(
+          box,
+          this.getTargetTimingData(box.event.isChartTiming)
+        )
         if (box.popup)
           box.popup.onConfirm = () => {
             this.renderer.chartManager.removeEventFromSelection(event)
@@ -191,7 +213,7 @@ export class TimingTrackContainer
     })
 
     let initialPosY = 0
-    let movedEvent: TimingEvent | undefined
+    let movedEvent: Cached<TimingEvent> | undefined
 
     const moveHandler = (event: FederatedMouseEvent) => {
       const timingEvent = movedEvent!
@@ -208,9 +230,7 @@ export class TimingTrackContainer
       const newBeat = this.renderer.getBeatFromYPos(position.y)
       const snap = Options.chart.snap == 0 ? 1 / 1000 : Options.chart.snap
       let snapBeat = Math.round(newBeat / snap) * snap
-      if (
-        Math.abs(snapBeat - newBeat) > Math.abs(newBeat - timingEvent.beat!)
-      ) {
+      if (Math.abs(snapBeat - newBeat) > Math.abs(newBeat - timingEvent.beat)) {
         snapBeat = timingEvent.beat!
       }
       this.renderer.chartManager.eventSelection.shift ||= {
@@ -219,10 +239,10 @@ export class TimingTrackContainer
       this.renderer.chartManager.eventSelection.shift.beatShift = Math.max(
         -Math.min(
           ...this.renderer.chartManager.eventSelection.timingEvents.map(
-            event => event.beat!
+            event => event.beat
           )
         ),
-        snapBeat - timingEvent.beat!
+        snapBeat - timingEvent.beat
       )
     }
     box.on("pointerdown", e => {
@@ -253,7 +273,10 @@ export class TimingTrackContainer
       ) {
         if (!box?.popup) {
           TimingEventPopup.activePopup?.close()
-          new TimingEventPopup(box, this.renderer.chart.timingData)
+          new TimingEventPopup(
+            box,
+            this.getTargetTimingData(box.event.isChartTiming)
+          )
           box.popup!.onConfirm = () => {
             this.renderer.chartManager.removeEventFromSelection(event)
           }
@@ -281,11 +304,11 @@ export class TimingTrackContainer
           this.renderer.chartManager.modifyEventSelection(event => {
             if (event.type == "ATTACKS") {
               event.second = this.renderer.chart.timingData.getSecondsFromBeat(
-                event.beat! +
+                event.beat +
                   this.renderer.chartManager.eventSelection.shift!.beatShift
               )
             }
-            event.beat! +=
+            event.beat +=
               this.renderer.chartManager.eventSelection.shift!.beatShift
             return event
           })
@@ -394,7 +417,6 @@ export class TimingTrackContainer
       this.timingBoxMap.clear()
       this.boxPool.destroyAll()
       this.timingDirty = false
-      TimingEventPopup.activePopup?.close()
     }
 
     const editingTiming =
@@ -407,13 +429,13 @@ export class TimingTrackContainer
 
     // Create all missing boxes
     for (const event of this.renderer.chart.timingData.getTimingData()) {
-      if (toBeat < event.beat!) break
+      if (toBeat < event.beat) break
       if (
         !Options.chart.timingEventOrder.left.includes(event.type) &&
         !Options.chart.timingEventOrder.right.includes(event.type)
       )
         continue
-      if (fromBeat > event.beat!) continue
+      if (fromBeat > event.beat) continue
 
       if (!this.timingBoxMap.has(event)) {
         const box = this.boxPool.createChild()
@@ -434,7 +456,7 @@ export class TimingTrackContainer
     }
 
     for (const [event, box] of this.timingBoxMap.entries()) {
-      if (event.beat! < fromBeat || event.beat! > toBeat) {
+      if (event.beat < fromBeat || event.beat > toBeat) {
         this.timingBoxMap.delete(event)
         if (box.popup?.persistent) box.popup?.detach()
         else box.popup?.close()
@@ -499,7 +521,7 @@ export class TimingTrackContainer
       box.y =
         Options.chart.CMod && event.type == "ATTACKS"
           ? this.renderer.getYPosFromSecond(event.second)
-          : this.renderer.getYPosFromBeat(event.beat!)
+          : this.renderer.getYPosFromBeat(event.beat)
 
       box.textObj.scale.y = Options.chart.reverse ? -1 : 1
 
@@ -575,13 +597,13 @@ export class TimingTrackContainer
     ) {
       this.ghostBox.event =
         structuredClone(
-          this.renderer.chart.timingData.getTimingEventAtBeat(
-            eventType as TimingEventProperty,
+          this.renderer.chart.timingData.getEventAtBeat(
+            eventType as TimingEventType,
             snapBeat
           )
         ) ??
         this.renderer.chart.timingData.getDefaultEvent(
-          eventType as TimingEventProperty,
+          eventType as TimingEventType,
           snapBeat
         )
       this.ghostBox.event.beat = snapBeat
@@ -599,7 +621,7 @@ export class TimingTrackContainer
     this.ghostBox.name = eventType
 
     const yPos = this.renderer.getYPosFromBeat(
-      this.ghostBox?.popup ? this.ghostBox.event.beat! : snapBeat
+      this.ghostBox?.popup ? this.ghostBox.event.beat : snapBeat
     )
 
     let targetX = this.tracks.getChildByName<TimingTrack>(eventType)!.x
@@ -626,9 +648,10 @@ export class TimingTrackContainer
   placeGhostEvent() {
     if (!this.ghostBox) return
     //Check if there is already an event there
-    const possibleEvent = this.renderer.chart.timingData.getTimingEventAtBeat(
+    const possibleEvent = this.renderer.chart.timingData.getEventAtBeat(
       this.ghostBox.event.type,
-      this.ghostBox.event.beat!
+      this.ghostBox.event.beat,
+      false
     )
     if (
       (this.ghostBox.event.type == "ATTACKS" &&
@@ -639,19 +662,20 @@ export class TimingTrackContainer
       return
     }
     this.renderer.chartManager.clearSelections()
-    this.ghostBox.songTiming =
-      this.renderer.chart.timingData.isTypeChartSpecific(
+    this.ghostBox.event.isChartTiming =
+      this.renderer.chart.timingData.isPropertyChartSpecific(
         this.ghostBox.event.type
       )
-    new TimingEventPopup(this.ghostBox, this.renderer.chart.timingData, true)
+    new TimingEventPopup(
+      this.ghostBox,
+      this.getTargetTimingData(this.ghostBox.event.isChartTiming),
+      true
+    )
     this.ghostBox.popup?.select()
     this.ghostBox.popup!.onConfirm = event => {
-      this.renderer.chart.timingData.insert(
-        this.ghostBox!.songTiming,
-        event.type,
+      this.getTargetTimingData(this.ghostBox!.event.isChartTiming).insert([
         event,
-        event.beat
-      )
+      ])
     }
   }
 
@@ -706,5 +730,11 @@ export class TimingTrackContainer
         label = `${event.mods}`
     }
     return label
+  }
+
+  private getTargetTimingData(isChartTiming: boolean) {
+    return isChartTiming
+      ? this.renderer.chart.timingData
+      : this.renderer.chart.timingData.simfileTimingData
   }
 }

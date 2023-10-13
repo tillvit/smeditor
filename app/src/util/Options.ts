@@ -1,4 +1,4 @@
-import { TimingEventProperty } from "../chart/sm/TimingTypes"
+import { TimingEventType } from "../chart/sm/TimingTypes"
 
 const SAVE_BLACKLIST = [
   "audio.rate",
@@ -29,7 +29,7 @@ export class DefaultOptions {
     maxDrawBeatsBack: 10,
     scroll: {
       scrollSensitivity: 1,
-      scrollSnapEveryScroll: false,
+      scrollSnapEveryScroll: !navigator.userAgent.includes("Mac"),
       invertZoomScroll: false,
       invertReverseScroll: true,
     },
@@ -79,7 +79,7 @@ export class DefaultOptions {
       BGCHANGES: true,
       FGCHANGES: true,
       ATTACKS: true,
-    } as { [key in TimingEventProperty]: boolean },
+    } as { [key in TimingEventType]: boolean },
   }
   static audio = {
     assistTick: false,

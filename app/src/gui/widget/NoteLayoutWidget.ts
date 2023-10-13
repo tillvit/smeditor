@@ -96,7 +96,7 @@ export class NoteLayoutWidget extends Widget {
     const lastSecond = this.getChart().getSecondsFromBeat(lastBeat)
     if (Options.chart.CMod) {
       this.manager.chartManager.setTime(
-        lerp(-this.getChart().timingData.getTimingData("OFFSET"), lastSecond, t)
+        lerp(-this.getChart().timingData.getOffset(), lastSecond, t)
       )
     } else {
       this.manager.chartManager.setBeat(lastBeat * t)
@@ -141,19 +141,12 @@ export class NoteLayoutWidget extends Widget {
     let t_startY = unlerp(0, lastBeat, start)
     let t_endY = unlerp(0, lastBeat, end)
     if (Options.chart.CMod) {
-      t_startY = unlerp(
-        -chart.timingData.getTimingData("OFFSET"),
-        lastSecond,
-        start
-      )
-      t_endY = unlerp(
-        -chart.timingData.getTimingData("OFFSET"),
-        lastSecond,
-        end
-      )
+      t_startY = unlerp(-chart.timingData.getOffset(), lastSecond, start)
+      t_endY = unlerp(-chart.timingData.getOffset(), lastSecond, end)
     }
     t_startY = clamp(t_startY, 0, 1)
     t_endY = clamp(t_endY, 0, 1)
+    if (t_startY > t_endY) [t_startY, t_endY] = [t_endY, t_startY]
     const startY = (t_startY - 0.5) * (this.backing.height - 10)
     const endY = (t_endY - 0.5) * (this.backing.height - 10)
     this.overlay.y = startY
@@ -204,7 +197,7 @@ export class NoteLayoutWidget extends Widget {
     const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
     const lastSecond = chart.getSecondsFromBeat(lastBeat)
 
-    const songOffset = chart.timingData.getTimingData("OFFSET")
+    const songOffset = chart.timingData.getOffset()
 
     chart.getNotedata().forEach(note => {
       let obj = this.barContainer.children[childIndex]

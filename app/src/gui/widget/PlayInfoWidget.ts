@@ -606,23 +606,15 @@ export class PlayInfoWidget extends Widget {
     const oldOffset =
       type == "global"
         ? Options.play.offset
-        : this.manager.app.chartManager.loadedChart!.timingData.getTimingData(
-            "OFFSET"
-          )
+        : this.manager.app.chartManager.loadedChart!.timingData.getOffset()
     if (type == "global") {
       Options.play.offset = roundDigit(Options.play.offset - offset, 3)
     } else if (type == "song") {
-      this.manager.app.chartManager.loadedChart?.timingData.insert(
-        this.manager.app.chartManager.loadedChart?.timingData.offset !==
-          undefined,
-        "OFFSET",
-        roundDigit(
-          this.manager.app.chartManager.loadedChart.timingData.getTimingData(
-            "OFFSET"
-          ) - offset,
-          3
-        )
-      )
+      const target =
+        this.manager.app.chartManager.loadedChart!.timingData.hasChartOffset()
+          ? this.manager.app.chartManager.loadedChart!.timingData
+          : this.manager.app.chartManager.loadedSM!.timingData
+      target.setOffset(roundDigit(target.getOffset() - offset, 3))
     }
     WaterfallManager.create(
       `Adjusted ${type} offset from ${roundDigit(oldOffset, 3).toFixed(

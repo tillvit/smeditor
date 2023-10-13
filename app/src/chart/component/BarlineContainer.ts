@@ -100,7 +100,7 @@ export class BarlineContainer
     fromBeat = Math.max(0, fromBeat)
     const td = this.renderer.chart.timingData
     const timeSigs = td.getTimingData("TIMESIGNATURES")
-    let currentTimeSig = td.getTimingEventAtBeat("TIMESIGNATURES", fromBeat)
+    let currentTimeSig = td.getEventAtBeat("TIMESIGNATURES", fromBeat)
     let timeSigIndex = currentTimeSig
       ? timeSigs.findIndex(t => t.beat == currentTimeSig!.beat)
       : -1

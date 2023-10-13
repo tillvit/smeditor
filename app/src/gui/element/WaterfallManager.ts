@@ -4,6 +4,7 @@ interface WaterfallMessage {
   type: "log" | "warn" | "error" | ""
   container: HTMLDivElement
   timeoutID: NodeJS.Timeout
+  clearTimeoutID: NodeJS.Timeout
   count: number
 }
 
@@ -34,11 +35,11 @@ export class WaterfallManager {
       container,
       timeoutID: setTimeout(() => {
         container.classList.add("waterfall-exiting")
-        setTimeout(() => {
-          delete this.messages[message]
-          this.view.removeChild(container)
-        }, 500)
       }, 5000),
+      clearTimeoutID: setTimeout(() => {
+        delete this.messages[message]
+        this.view.removeChild(container)
+      }, 5500),
       count,
     }
     this.view.appendChild(container)
@@ -49,6 +50,7 @@ export class WaterfallManager {
     if (this.messages[message] && this.messages[message].type == type) {
       const existingMessage = this.messages[message]
       clearTimeout(existingMessage.timeoutID)
+      clearTimeout(existingMessage.clearTimeoutID)
       count = ++existingMessage.count
       this.view.removeChild(existingMessage.container)
     }
@@ -63,11 +65,11 @@ export class WaterfallManager {
       container,
       timeoutID: setTimeout(() => {
         container.classList.add("waterfall-exiting")
-        setTimeout(() => {
-          delete this.messages[message]
-          this.view.removeChild(container)
-        }, 500)
       }, 5000),
+      clearTimeoutID: setTimeout(() => {
+        delete this.messages[message]
+        this.view.removeChild(container)
+      }, 5500),
       count,
     }
     this.view.appendChild(container)

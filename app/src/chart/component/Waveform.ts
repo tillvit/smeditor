@@ -11,7 +11,7 @@ import { Options } from "../../util/Options"
 import { bsearch, destroyChildIf } from "../../util/Util"
 import { EditMode } from "../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
-import { BeatTimingCache } from "../sm/TimingTypes"
+import { BeatTimingCache, ScrollTimingEvent } from "../sm/TimingTypes"
 
 const MAX_ZOOM = 3500
 
@@ -216,18 +216,21 @@ export class Waveform extends Sprite implements ChartRendererComponent {
         this.renderer.getVisualBeat(),
         this.renderer.getVisualTime()
       )
+      const speedSign = speedMult >= 0 ? 1 : -1
 
       const maxDrawBeats =
         this.renderer.getVisualBeat() + Options.chart.maxDrawBeats
-      const scrolls = [
+      const scrolls: ScrollTimingEvent[] = [
         ...this.renderer.chart.timingData.getTimingData("SCROLLS"),
       ]
-      scrolls.unshift({ type: "SCROLLS", beat: 0, value: 1 })
-      const offset = this.renderer.chart.timingData.getTimingData("OFFSET")
-      const startBPM = this.renderer.chart.timingData.getBPM(0)
+      if (scrolls[0]?.beat != 0)
+        scrolls.unshift({ type: "SCROLLS", beat: 0, value: 1 })
+      const offset = this.renderer.chart.timingData.getOffset()
+      const startBPM =
+        this.renderer.chart.timingData.getEventAtBeat("BPMS", 0)?.value ?? 120
       const timingChanges = this.renderer.chart.timingData.getBeatTiming()
       const pixelsToEffectiveBeats =
-        100 / chartSpeed / speedMult / 64 / Options.chart.zoom
+        100 / chartSpeed / Math.abs(speedMult) / 64 / Options.chart.zoom
       const screenHeight = this.renderer.chartManager.app.renderer.screen.height
 
       let finishedDrawing = false
@@ -261,8 +264,8 @@ export class Waveform extends Sprite implements ChartRendererComponent {
         if (
           scrolls[scrollIndex + 1] &&
           (scroll.value == 0 ||
-            (scroll.value < 0 && scrollEndYPos > screenHeight) ||
-            (scroll.value > 0 && scrollEndYPos < 0))
+            (scroll.value * speedSign < 0 && scrollEndYPos > screenHeight) ||
+            (scroll.value * speedSign > 0 && scrollEndYPos < 0))
         ) {
           scrollIndex++
           currentBeat = scrolls[scrollIndex]!.beat
@@ -276,7 +279,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
           // Stop if the scroll is off the screen
           if (currentYPos < 0) {
             // Skip the scroll if we step off the stop of the screen
-            if (scroll.value < 0) {
+            if (scroll.value * speedSign < 0) {
               currentBeat = scrollEndBeat
               break
             }
@@ -287,7 +290,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
 
           if (currentYPos > screenHeight) {
             // Stop, waveform finished rendering
-            if (scroll.value > 0) {
+            if (scroll.value * speedSign > 0) {
               finishedDrawing = true
               break
             }
@@ -300,7 +303,8 @@ export class Waveform extends Sprite implements ChartRendererComponent {
           // Step by 1 or -1 pixels and get the current beat
           currentBeat += pixelsToBeats * Options.chart.waveform.lineHeight
           currentYPos +=
-            (scroll.value > 0 ? 1 : -1) * Options.chart.waveform.lineHeight
+            (scroll.value * speedSign > 0 ? 1 : -1) *
+            Options.chart.waveform.lineHeight
 
           curSec = this.calculateSecond(
             currentBeat,
@@ -320,8 +324,9 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       let currentBeat = this.renderer.getBeatFromYPos(
         -this.parent.y / Options.chart.zoom
       )
-      const offset = this.renderer.chart.timingData.getTimingData("OFFSET")
-      const startBPM = this.renderer.chart.timingData.getBPM(0)
+      const offset = this.renderer.chart.timingData.getOffset()
+      const startBPM =
+        this.renderer.chart.timingData.getEventAtBeat("BPMS", 0)?.value ?? 120
       const timingChanges = this.renderer.chart.timingData.getBeatTiming()
 
       // Snap current time to the nearest pixel to avoid flickering

@@ -1284,6 +1284,10 @@ input[type="range"] {
   pointer-events: none;
 }
 
+.animated .popup {
+  transition: 0.2s cubic-bezier(0.47, 0.02, 0, 0.95);
+}
+
 .animated .popup-zoomer {
   animation: 0.1s popup-enter cubic-bezier(0.47, 0.02, 0, 0.95) forwards;
   transition: 0.2s cubic-bezier(0.47, 0.02, 0, 0.95);

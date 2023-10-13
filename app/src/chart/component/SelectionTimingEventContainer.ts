@@ -5,14 +5,14 @@ import { roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { EditTimingMode } from "../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
-import { TimingEvent, TimingEventProperty } from "../sm/TimingTypes"
+import { Cached, TimingEvent, TimingEventType } from "../sm/TimingTypes"
 import { TIMING_EVENT_COLORS } from "./TimingAreaContainer"
 import { TIMING_TRACK_WIDTHS, timingNumbers } from "./TimingTrackContainer"
 
 interface TimingBox extends Container {
   event: TimingEvent
   guideLine: Sprite
-  songTiming: boolean
+  isChartTiming: boolean
   deactivated: boolean
   marked: boolean
   dirtyTime: number
@@ -27,7 +27,7 @@ export class SelectionTimingEventContainer
   children: TimingBox[] = []
 
   private renderer: ChartRenderer
-  private timingBoxMap: Map<TimingEvent, TimingBox> = new Map()
+  private timingBoxMap: Map<Cached<TimingEvent>, TimingBox> = new Map()
   private trackPosCache: Map<string, number> = new Map()
   private timingBoxPool = new DisplayObjectPool({
     create: () => {
@@ -58,8 +58,8 @@ export class SelectionTimingEventContainer
 
     for (const event of this.renderer.chartManager.eventSelection
       .timingEvents) {
-      if (toBeat < event.beat! + beatShift) continue
-      if (fromBeat > event.beat! + beatShift) continue
+      if (toBeat < event.beat + beatShift) continue
+      if (fromBeat > event.beat + beatShift) continue
 
       if (!this.timingBoxMap.has(event)) {
         const box = this.timingBoxPool.createChild()
@@ -112,10 +112,10 @@ export class SelectionTimingEventContainer
 
         Object.assign(box, {
           alpha: 0.4,
-          songTiming: this.renderer.chart.timingData.isTypeChartSpecific(
+          isChartTiming: this.renderer.chart.timingData.isPropertyChartSpecific(
             event.type
           ),
-          zIndex: event.beat!,
+          zIndex: event.beat,
         })
         box.textObj.text = label
         box.textObj.anchor.set(0.5, 0.55)
@@ -154,8 +154,8 @@ export class SelectionTimingEventContainer
 
     for (const [event, box] of this.timingBoxMap.entries()) {
       if (
-        toBeat < event.beat! + beatShift ||
-        fromBeat > event.beat! + beatShift
+        toBeat < event.beat + beatShift ||
+        fromBeat > event.beat + beatShift
       ) {
         this.timingBoxPool.destroyChild(box)
         this.timingBoxMap.delete(event)
@@ -165,11 +165,11 @@ export class SelectionTimingEventContainer
       box.y =
         Options.chart.CMod && event.second
           ? this.renderer.getYPosFromSecond(event.second)
-          : this.renderer.getYPosFromBeat(event.beat! + beatShift)
+          : this.renderer.getYPosFromBeat(event.beat + beatShift)
     }
   }
 
-  getTrackPos(type: TimingEventProperty) {
+  getTrackPos(type: TimingEventType) {
     if (this.trackPosCache.has(type)) return this.trackPosCache.get(type)!
     const leftTypes = Options.chart.timingEventOrder.left
     const rightTypes = Options.chart.timingEventOrder.right

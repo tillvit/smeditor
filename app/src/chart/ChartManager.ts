@@ -45,7 +45,7 @@ import {
   isHoldNote,
 } from "./sm/NoteTypes"
 import { Simfile } from "./sm/Simfile"
-import { TimingEvent } from "./sm/TimingTypes"
+import { Cached, TimingEvent } from "./sm/TimingTypes"
 
 const SNAPS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 48, -1]
 
@@ -75,8 +75,8 @@ interface EventSelection {
   shift?: {
     beatShift: number
   }
-  timingEvents: TimingEvent[]
-  inProgressTimingEvents: TimingEvent[]
+  timingEvents: Cached<TimingEvent>[]
+  inProgressTimingEvents: Cached<TimingEvent>[]
 }
 
 export enum EditMode {
@@ -372,7 +372,8 @@ export class ChartManager {
             // Minimum hold length of 0.3 seconds
             if (
               (holdLength * 60) /
-                this.loadedChart.timingData.getBPM(this.beat) >
+                (this.loadedChart.timingData.getEventAtBeat("BPMS", this.beat)
+                  ?.value ?? 120) >
               0.3
             )
               this.editHoldBeat(col, snapBeat, false)
@@ -1342,7 +1343,7 @@ export class ChartManager {
     const name = path_arr.pop()!.split(".").slice(0, -1).join(".")
     const path = path_arr.join("/")
     if (
-      !this.loadedSM.usesSplitTiming() &&
+      !this.loadedSM.usesChartTiming() &&
       (await FileHandler.getFileHandle(path + "/" + name + ".sm"))
     ) {
       FileHandler.writeFile(
@@ -1358,7 +1359,7 @@ export class ChartManager {
         path + "/" + name + ".ssc",
         this.loadedSM.serialize("ssc")
       )
-    if (this.loadedSM.usesSplitTiming()) {
+    if (this.loadedSM.usesChartTiming()) {
       WaterfallManager.create("Saved. No SM file since split timing was used.")
     } else {
       WaterfallManager.create("Saved")
@@ -1429,11 +1430,11 @@ export class ChartManager {
     this.selection.inProgressNotes.splice(index, 1)
   }
 
-  addEventToDragSelection(event: TimingEvent) {
+  addEventToDragSelection(event: Cached<TimingEvent>) {
     this.eventSelection.inProgressTimingEvents.push(event)
   }
 
-  removeEventFromDragSelection(event: TimingEvent) {
+  removeEventFromDragSelection(event: Cached<TimingEvent>) {
     const index = this.eventSelection.inProgressTimingEvents.indexOf(event)
     if (index == -1) return
     this.eventSelection.inProgressTimingEvents.splice(index, 1)
@@ -1449,11 +1450,11 @@ export class ChartManager {
     this.selection.notes.splice(index, 1)
   }
 
-  addEventToSelection(event: TimingEvent) {
+  addEventToSelection(event: Cached<TimingEvent>) {
     this.eventSelection.timingEvents.push(event)
   }
 
-  removeEventFromSelection(event: TimingEvent) {
+  removeEventFromSelection(event: Cached<TimingEvent>) {
     const index = this.eventSelection.timingEvents.indexOf(event)
     if (index == -1) return
     this.eventSelection.timingEvents.splice(index, 1)
@@ -1573,55 +1574,15 @@ export class ChartManager {
     return { removedNotes, truncatedHolds }
   }
 
-  modifyEventSelection(modify: (note: TimingEvent) => TimingEvent) {
-    if (!this.loadedChart) return
-    const timingData = this.loadedChart.timingData
-    const removedEvents = this.eventSelection.timingEvents
-    const newEvents = structuredClone(this.eventSelection.timingEvents).map(
-      modify
-    )
-    if (newEvents.length == 0) return
+  modifyEventSelection(modify: (note: Cached<TimingEvent>) => TimingEvent) {
+    if (!this.loadedChart || !this.loadedSM) return
 
-    let conflicts: TimingEvent[] = []
-    this.app.actionHistory.run({
-      action: () => {
-        timingData.rawDeleteMultiple(removedEvents)
-        timingData.rawInsertMultiple(newEvents)
-        conflicts = timingData.findConflicts(newEvents)
-        timingData.rawDeleteMultiple(conflicts)
-        this.clearSelections()
-        this.eventSelection.timingEvents = newEvents
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (newEvents.find(event => event.type == "TIMESIGNATURES")) {
-          EventHandler.emit("timeSigChanged")
-        }
-      },
-      undo: () => {
-        timingData.rawInsertMultiple(conflicts)
-        timingData.rawDeleteMultiple(newEvents)
-        timingData.rawInsertMultiple(removedEvents)
-        this.clearSelections()
-        this.eventSelection.timingEvents = removedEvents
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (newEvents.find(event => event.type == "TIMESIGNATURES")) {
-          EventHandler.emit("timeSigChanged")
-        }
-      },
-      redo: () => {
-        timingData.rawDeleteMultiple(removedEvents)
-        timingData.rawInsertMultiple(newEvents)
-        timingData.rawDeleteMultiple(conflicts)
-        this.clearSelections()
-        this.eventSelection.timingEvents = newEvents
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (newEvents.find(event => event.type == "TIMESIGNATURES")) {
-          EventHandler.emit("timeSigChanged")
-        }
-      },
-    })
+    this.loadedChart.timingData.modify(
+      this.eventSelection.timingEvents.map(event => [
+        event,
+        modify(structuredClone(event)),
+      ])
+    )
   }
 
   deleteSelection() {
@@ -1640,42 +1601,8 @@ export class ChartManager {
 
   deleteEventSelection() {
     if (this.eventSelection.timingEvents.length == 0) return
-    const removedEvents = this.eventSelection.timingEvents
-    const timingData = this.loadedChart!.timingData
-    let conflicts: TimingEvent[] = []
-    this.app.actionHistory.run({
-      action: () => {
-        timingData.rawDeleteMultiple(removedEvents)
-        conflicts = timingData.findConflicts()
-        timingData.rawDeleteMultiple(conflicts)
-        this.clearSelections()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (removedEvents.find(event => event.type == "TIMESIGNATURES")) {
-          EventHandler.emit("timeSigChanged")
-        }
-      },
-      undo: () => {
-        timingData.rawInsertMultiple(conflicts)
-        timingData.rawInsertMultiple(removedEvents)
-        this.eventSelection.timingEvents = removedEvents
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (removedEvents.find(event => event.type == "TIMESIGNATURES")) {
-          EventHandler.emit("timeSigChanged")
-        }
-      },
-      redo: () => {
-        timingData.rawDeleteMultiple(removedEvents)
-        timingData.rawDeleteMultiple(conflicts)
-        this.clearSelections()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (removedEvents.find(event => event.type == "TIMESIGNATURES")) {
-          EventHandler.emit("timeSigChanged")
-        }
-      },
-    })
+    if (!this.loadedChart || !this.loadedSM) return
+    this.loadedChart.timingData.delete(this.eventSelection.timingEvents)
   }
 
   paste(data: string) {
@@ -1731,52 +1658,23 @@ export class ChartManager {
   }
 
   pasteTempo(data: string) {
-    if (!this.loadedChart) return true
+    if (!this.loadedChart || !this.loadedSM) return true
     const events = decodeTempo(data)
     if (!events) return false
     if (events.length == 0) return false
 
-    const timingData = this.loadedChart.timingData
-    let conflicts: TimingEvent[] = []
+    const chartTiming = this.loadedChart.timingData
     events.forEach(event => {
       if (event.type == "ATTACKS") event.second += this.time
       else event.beat += this.beat
     })
-    this.app.actionHistory.run({
-      action: () => {
-        timingData.rawInsertMultiple(events)
-        conflicts = timingData.findConflicts(events)
-        timingData.rawDeleteMultiple(conflicts)
-        this.clearSelections()
-        this.eventSelection.timingEvents = events
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (events.find(event => event.type == "TIMESIGNATURES")) {
-          EventHandler.emit("timeSigChanged")
-        }
-      },
-      undo: () => {
-        timingData.rawInsertMultiple(conflicts)
-        timingData.rawDeleteMultiple(events)
-        this.clearSelections()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (events.find(event => event.type == "TIMESIGNATURES")) {
-          EventHandler.emit("timeSigChanged")
-        }
-      },
-      redo: () => {
-        timingData.rawInsertMultiple(events)
-        timingData.rawDeleteMultiple(conflicts)
-        this.clearSelections()
-        this.eventSelection.timingEvents = events
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (events.find(event => event.type == "TIMESIGNATURES")) {
-          EventHandler.emit("timeSigChanged")
-        }
-      },
-    })
+    events.forEach(
+      event =>
+        ((event as Cached<TimingEvent>).isChartTiming =
+          chartTiming.isPropertyChartSpecific(event.type))
+    )
+
+    chartTiming.insert(events)
     return true
   }
 
@@ -1797,7 +1695,7 @@ export class ChartManager {
       return encoded
     } else if (this.eventSelection.timingEvents.length != 0) {
       const firstBeat = Math.min(
-        ...this.eventSelection.timingEvents.map(note => note.beat!)
+        ...this.eventSelection.timingEvents.map(note => note.beat)
       )
       const firstSec =
         this.loadedChart!.timingData.getSecondsFromBeat(firstBeat)
@@ -1812,8 +1710,8 @@ export class ChartManager {
         })
         .sort((a, b) => {
           if (a.type != b.type) return a.type.localeCompare(b.type)
-          if (a.type == "ATTACKS") return a.second - b.second!
-          return a.beat - b.beat!
+          if (a.type == "ATTACKS") return a.second - b.second
+          return a.beat - b.beat
         })
       const encoded = encodeTempo(events)
       this.virtualClipboard = encoded

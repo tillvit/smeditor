@@ -5,7 +5,7 @@ import { NumberSpinner } from "../gui/element/NumberSpinner"
 import { roundDigit } from "../util/Math"
 
 type TimingDataWindowElement<T extends HTMLElement> = {
-  create: (app: App, isSongTiming: () => boolean) => T
+  create: (app: App, getTarget: () => TimingData) => T
   update: (element: T, timingData: TimingData, beat: number) => void
 }
 
@@ -22,15 +22,11 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   offset: {
     title: "Offset",
     element: createElement({
-      create: (app, isSongTiming) => {
+      create: (app, getTarget) => {
         const input = NumberSpinner.create(0, 0.001, 3)
         input.onChange = value => {
           if (value == undefined) return
-          app.chartManager.loadedChart?.timingData.insert(
-            isSongTiming(),
-            "OFFSET",
-            value
-          )
+          getTarget().setOffset(value)
           app.chartManager.setBeat(app.chartManager.getBeat())
         }
         return input.view
@@ -38,7 +34,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
       update: (element, timingData) => {
         const input: HTMLInputElement = element.querySelector(".spinner-input")!
         if (document.activeElement == input) return
-        const value = timingData.getTimingData("OFFSET")
+        const value = timingData.getOffset()
         if (input.value != roundDigit(value, 3).toFixed(3)) {
           input.value = roundDigit(value, 3).toFixed(3)
         }
@@ -48,32 +44,24 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   bpm: {
     title: "BPM",
     element: createElement({
-      create: (app, isSongTiming) => {
+      create: (app, getTarget) => {
         const input = NumberSpinner.create(120, undefined, 3)
         input.onChange = value => {
           if (value == undefined) {
             const beat = app.chartManager.getBeat()
-            app.chartManager.loadedChart?.timingData.delete(
-              isSongTiming(),
-              "BPMS",
-              beat
-            )
+            getTarget().delete([{ type: "BPMS", beat }])
             return
           }
-          app.chartManager.loadedChart?.timingData.insert(
-            isSongTiming(),
-            "BPMS",
-            { value: value },
-            app.chartManager.getBeat()
-          )
+          getTarget().insert([
+            { type: "BPMS", beat: app.chartManager.getBeat(), value },
+          ])
         }
         return input.view
       },
       update: (element, timingData, beat) => {
         const input: HTMLInputElement = element.querySelector(".spinner-input")!
         if (document.activeElement == input) return
-        const value =
-          timingData.getTimingEventAtBeat("BPMS", beat)?.value ?? 120
+        const value = timingData.getEventAtBeat("BPMS", beat)?.value ?? 120
         if (input.value != roundDigit(value, 3).toFixed(3)) {
           input.value = roundDigit(value, 3).toFixed(3)
         }
@@ -83,31 +71,24 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   stop: {
     title: "Stop",
     element: createElement({
-      create: (app, isSongTiming) => {
+      create: (app, getTarget) => {
         const input = NumberSpinner.create(0, undefined, 3)
         input.onChange = value => {
           if (value == undefined || value == 0) {
             const beat = app.chartManager.getBeat()
-            app.chartManager.loadedChart?.timingData.delete(
-              isSongTiming(),
-              "STOPS",
-              beat
-            )
+            getTarget().delete([{ type: "STOPS", beat }])
             return
           }
-          app.chartManager.loadedChart?.timingData.insert(
-            isSongTiming(),
-            "STOPS",
-            { value: value },
-            app.chartManager.getBeat()
-          )
+          getTarget().insert([
+            { type: "STOPS", beat: app.chartManager.getBeat(), value },
+          ])
         }
         return input.view
       },
       update: (element, timingData, beat) => {
         const input: HTMLInputElement = element.querySelector(".spinner-input")!
         if (document.activeElement == input) return
-        const event = timingData.getTimingEventAtBeat("STOPS", beat)
+        const event = timingData.getEventAtBeat("STOPS", beat)
         let value = event?.value ?? 0
         if (beat != event?.beat) value = 0
         if (input.value != roundDigit(value, 3).toFixed(3)) {
@@ -119,31 +100,24 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   delay: {
     title: "Delay",
     element: createElement({
-      create: (app, isSongTiming) => {
+      create: (app, getTarget) => {
         const input = NumberSpinner.create(0, undefined, 3)
         input.onChange = value => {
           if (value == undefined || value == 0) {
             const beat = app.chartManager.getBeat()
-            app.chartManager.loadedChart?.timingData.delete(
-              isSongTiming(),
-              "DELAYS",
-              beat
-            )
+            getTarget().delete([{ type: "DELAYS", beat }])
             return
           }
-          app.chartManager.loadedChart?.timingData.insert(
-            isSongTiming(),
-            "DELAYS",
-            { value: value },
-            app.chartManager.getBeat()
-          )
+          getTarget().insert([
+            { type: "DELAYS", beat: app.chartManager.getBeat(), value },
+          ])
         }
         return input.view
       },
       update: (element, timingData, beat) => {
         const input: HTMLInputElement = element.querySelector(".spinner-input")!
         if (document.activeElement == input) return
-        const event = timingData.getTimingEventAtBeat("DELAYS", beat)
+        const event = timingData.getEventAtBeat("DELAYS", beat)
         let value = event?.value ?? 0
         if (beat != event?.beat) value = 0
         if (input.value != roundDigit(value, 3).toFixed(3)) {
@@ -155,32 +129,25 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   warp: {
     title: "Warp",
     element: createElement({
-      create: (app, isSongTiming) => {
+      create: (app, getTarget) => {
         const input = NumberSpinner.create(0, undefined, 3, 0)
         input.onChange = value => {
           if (value == undefined || value == 0) {
             const beat = app.chartManager.getBeat()
-            app.chartManager.loadedChart?.timingData.delete(
-              isSongTiming(),
-              "WARPS",
-              beat
-            )
+            getTarget().delete([{ type: "WARPS", beat }])
             return
           }
           if (value < 0) return
-          app.chartManager.loadedChart?.timingData.insert(
-            isSongTiming(),
-            "WARPS",
-            { value: value },
-            app.chartManager.getBeat()
-          )
+          getTarget().insert([
+            { type: "WARPS", beat: app.chartManager.getBeat(), value },
+          ])
         }
         return input.view
       },
       update: (element, timingData, beat) => {
         const input: HTMLInputElement = element.querySelector(".spinner-input")!
         if (document.activeElement == input) return
-        const event = timingData.getTimingEventAtBeat("WARPS", beat)
+        const event = timingData.getEventAtBeat("WARPS", beat)
         let value = event?.value ?? 0
         if (beat != event?.beat) value = 0
         if (input.value != roundDigit(value, 3).toFixed(3)) {
@@ -193,46 +160,42 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   timeSig: {
     title: "Time Sig.",
     element: createElement({
-      create: (app, isSongTiming) => {
+      create: (app, getTarget) => {
         const container = document.createElement("div")
         container.classList.add("flex-column-gap")
         const upperInput = NumberSpinner.create(4, 1, 0, 1)
         upperInput.onChange = value => {
           if (value == undefined) {
             const beat = app.chartManager.getBeat()
-            app.chartManager.loadedChart?.timingData.delete(
-              isSongTiming(),
-              "TIMESIGNATURES",
-              beat
-            )
+            getTarget().delete([{ type: "TIMESIGNATURES", beat }])
             return
           }
           if (value < 1) return
-          app.chartManager.loadedChart?.timingData.insert(
-            isSongTiming(),
-            "TIMESIGNATURES",
-            { upper: value, lower: lowerInput.value },
-            app.chartManager.getBeat()
-          )
+          getTarget().insert([
+            {
+              type: "TIMESIGNATURES",
+              beat: app.chartManager.getBeat(),
+              upper: value,
+              lower: lowerInput.value,
+            },
+          ])
         }
         const lowerInput = NumberSpinner.create(4, 1, 0, 1)
         lowerInput.onChange = value => {
           if (value == undefined) {
             const beat = app.chartManager.getBeat()
-            app.chartManager.loadedChart?.timingData.delete(
-              isSongTiming(),
-              "TIMESIGNATURES",
-              beat
-            )
+            getTarget().delete([{ type: "TIMESIGNATURES", beat }])
             return
           }
           if (value < 1) return
-          app.chartManager.loadedChart?.timingData.insert(
-            isSongTiming(),
-            "TIMESIGNATURES",
-            { upper: upperInput.value, lower: value },
-            app.chartManager.getBeat()
-          )
+          getTarget().insert([
+            {
+              type: "TIMESIGNATURES",
+              beat: app.chartManager.getBeat(),
+              upper: upperInput.value,
+              lower: value,
+            },
+          ])
         }
 
         container.appendChild(upperInput.view)
@@ -244,7 +207,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           element.firstElementChild!.querySelector(".spinner-input")!
         const lowerInput: HTMLInputElement =
           element.lastElementChild!.querySelector(".spinner-input")!
-        const event = timingData.getTimingEventAtBeat("TIMESIGNATURES", beat)
+        const event = timingData.getEventAtBeat("TIMESIGNATURES", beat)
         const upper = event?.upper ?? 4
         const lower = event?.lower ?? 4
         if (
@@ -265,33 +228,25 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   tick: {
     title: "Tickcount",
     element: createElement({
-      create: (app, isSongTiming) => {
+      create: (app, getTarget) => {
         const input = NumberSpinner.create(4, 1, 0, 0)
         input.onChange = value => {
           if (value == undefined) {
             const beat = app.chartManager.getBeat()
-            app.chartManager.loadedChart?.timingData.delete(
-              isSongTiming(),
-              "TICKCOUNTS",
-              beat
-            )
+            getTarget().delete([{ type: "TICKCOUNTS", beat }])
             return
           }
           if (value < 0) return
-          app.chartManager.loadedChart?.timingData.insert(
-            isSongTiming(),
-            "TICKCOUNTS",
-            { value: value },
-            app.chartManager.getBeat()
-          )
+          getTarget().insert([
+            { type: "TICKCOUNTS", beat: app.chartManager.getBeat(), value },
+          ])
         }
         return input.view
       },
       update: (element, timingData, beat) => {
         const input: HTMLInputElement = element.querySelector(".spinner-input")!
         if (document.activeElement == input) return
-        const value =
-          timingData.getTimingEventAtBeat("TICKCOUNTS", beat)?.value ?? 4
+        const value = timingData.getEventAtBeat("TICKCOUNTS", beat)?.value ?? 4
         if (input.value != Math.round(value).toString()) {
           input.value = Math.round(value).toString()
         }
@@ -301,34 +256,32 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   combo: {
     title: "Combo",
     element: createElement({
-      create: (app, isSongTiming) => {
+      create: (app, getTarget) => {
         const container = document.createElement("div")
         container.classList.add("flex-column-gap")
         const upperInput = NumberSpinner.create(1, 1, 0, 0)
         upperInput.onChange = value => {
           if (value == undefined) {
             const beat = app.chartManager.getBeat()
-            app.chartManager.loadedChart?.timingData.delete(
-              isSongTiming(),
-              "COMBOS",
-              beat
-            )
+            getTarget().delete([{ type: "COMBOS", beat }])
             return
           }
           if (value < 0) return
-          app.chartManager.loadedChart?.timingData.insert(
-            isSongTiming(),
-            "COMBOS",
-            { hitMult: value, missMult: lowerInput.value },
-            app.chartManager.getBeat()
-          )
+          getTarget().insert([
+            {
+              type: "COMBOS",
+              beat: app.chartManager.getBeat(),
+              hitMult: value,
+              missMult: lowerInput.value,
+            },
+          ])
         }
         const lowerInput = NumberSpinner.create(1, 1, 0, 0)
         lowerInput.onChange = value => {
           if (value == undefined) {
             const beat = app.chartManager.getBeat()
             lowerInput.setValue(
-              app.chartManager.loadedChart?.timingData.getTimingEventAtBeat(
+              app.chartManager.loadedChart?.timingData.getEventAtBeat(
                 "COMBOS",
                 beat
               )?.missMult ?? 1
@@ -336,12 +289,14 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             return
           }
           if (value < 0) return
-          app.chartManager.loadedChart?.timingData.insert(
-            isSongTiming(),
-            "COMBOS",
-            { hitMult: value, missMult: lowerInput.value },
-            app.chartManager.getBeat()
-          )
+          getTarget().insert([
+            {
+              type: "COMBOS",
+              beat: app.chartManager.getBeat(),
+              hitMult: upperInput.value,
+              missMult: value,
+            },
+          ])
         }
 
         container.appendChild(upperInput.view)
@@ -353,7 +308,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           element.firstElementChild!.querySelector(".spinner-input")!
         const lowerInput: HTMLInputElement =
           element.lastElementChild!.querySelector(".spinner-input")!
-        const event = timingData.getTimingEventAtBeat("COMBOS", beat)
+        const event = timingData.getEventAtBeat("COMBOS", beat)
         const hitMult = event?.hitMult ?? 1
         const missMult = event?.missMult ?? 1
         if (
@@ -374,32 +329,27 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   speed: {
     title: "Speed",
     element: createElement({
-      create: (app, isSongTiming) => {
+      create: (app, getTarget) => {
         const container = document.createElement("div")
         container.classList.add("flex-column-gap")
 
         const update = () => {
-          app.chartManager.loadedChart?.timingData.insert(
-            isSongTiming(),
-            "SPEEDS",
+          getTarget().insert([
             {
+              type: "SPEEDS",
+              beat: app.chartManager.getBeat(),
               value: valueInput.value,
               delay: delayInput.value,
               unit: unitDropdown.value == "Beats" ? "B" : "T",
             },
-            app.chartManager.getBeat()
-          )
+          ])
         }
 
         const valueInput = NumberSpinner.create(1, 0.1, 0)
         valueInput.onChange = value => {
           if (value == undefined) {
             const beat = app.chartManager.getBeat()
-            app.chartManager.loadedChart?.timingData.delete(
-              isSongTiming(),
-              "SPEEDS",
-              beat
-            )
+            getTarget().delete([{ type: "SPEEDS", beat }])
             return
           }
           update()
@@ -425,7 +375,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const delayInput: HTMLInputElement =
           element.children[1].querySelector(".spinner-input")!
 
-        const event = timingData.getTimingEventAtBeat("SPEEDS", beat)
+        const event = timingData.getEventAtBeat("SPEEDS", beat)
         const value = event?.value ?? 1
         const delay = event?.delay ?? 0
         const unit = event?.unit == "B" ? "Beat" : "Time"
@@ -457,32 +407,24 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   scroll: {
     title: "Scroll",
     element: createElement({
-      create: (app, isSongTiming) => {
+      create: (app, getTarget) => {
         const input = NumberSpinner.create(1, undefined, 3)
         input.onChange = value => {
           if (value == undefined) {
             const beat = app.chartManager.getBeat()
-            app.chartManager.loadedChart?.timingData.delete(
-              isSongTiming(),
-              "SCROLLS",
-              beat
-            )
+            getTarget().delete([{ type: "SCROLLS", beat }])
             return
           }
-          app.chartManager.loadedChart?.timingData.insert(
-            isSongTiming(),
-            "SCROLLS",
-            { value: value },
-            app.chartManager.getBeat()
-          )
+          getTarget().insert([
+            { type: "SCROLLS", beat: app.chartManager.getBeat(), value },
+          ])
         }
         return input.view
       },
       update: (element, timingData, beat) => {
         const input: HTMLInputElement = element.querySelector(".spinner-input")!
         if (document.activeElement == input) return
-        const value =
-          timingData.getTimingEventAtBeat("SCROLLS", beat)?.value ?? 1
+        const value = timingData.getEventAtBeat("SCROLLS", beat)?.value ?? 1
         if (input.value != roundDigit(value, 3).toFixed(3)) {
           input.value = roundDigit(value, 3).toFixed(3)
         }
@@ -492,32 +434,25 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   fake: {
     title: "Fake",
     element: createElement({
-      create: (app, isSongTiming) => {
+      create: (app, getTarget) => {
         const input = NumberSpinner.create(1, undefined, 3, 0)
         input.onChange = value => {
           if (value == undefined) {
             const beat = app.chartManager.getBeat()
-            app.chartManager.loadedChart?.timingData.delete(
-              isSongTiming(),
-              "FAKES",
-              beat
-            )
+            getTarget().delete([{ type: "FAKES", beat }])
             return
           }
           if (value < 0) return
-          app.chartManager.loadedChart?.timingData.insert(
-            isSongTiming(),
-            "FAKES",
-            { value: value },
-            app.chartManager.getBeat()
-          )
+          getTarget().insert([
+            { type: "FAKES", beat: app.chartManager.getBeat(), value },
+          ])
         }
         return input.view
       },
       update: (element, timingData, beat) => {
         const input: HTMLInputElement = element.querySelector(".spinner-input")!
         if (document.activeElement == input) return
-        const event = timingData.getTimingEventAtBeat("FAKES", beat)
+        const event = timingData.getEventAtBeat("FAKES", beat)
         let value = event?.value ?? 1
         if (beat != event?.beat) value = 0
         if (input.value != roundDigit(value, 3).toFixed(3)) {
@@ -529,7 +464,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   label: {
     title: "Label",
     element: createElement({
-      create: (app, isSongTiming) => {
+      create: (app, getTarget) => {
         const input = document.createElement("input")
         input.type = "text"
         input.autocomplete = "off"
@@ -540,26 +475,23 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         input.onblur = () => {
           if (input.value == "") {
             const beat = app.chartManager.getBeat()
-            app.chartManager.loadedChart?.timingData.delete(
-              isSongTiming(),
-              "LABELS",
-              beat
-            )
+            getTarget().delete([{ type: "LABELS", beat }])
             return
           }
-          app.chartManager.loadedChart?.timingData.insert(
-            isSongTiming(),
-            "LABELS",
-            { value: input.value },
-            app.chartManager.getBeat()
-          )
+          getTarget().insert([
+            {
+              type: "LABELS",
+              beat: app.chartManager.getBeat(),
+              value: input.value,
+            },
+          ])
         }
         return input
       },
       update: (element, timingData, beat) => {
         const input: HTMLInputElement = element
         if (document.activeElement == input) return
-        const event = timingData.getTimingEventAtBeat("LABELS", beat)
+        const event = timingData.getEventAtBeat("LABELS", beat)
         const value = event?.value ?? ""
         if (input.value != value) {
           input.value = value

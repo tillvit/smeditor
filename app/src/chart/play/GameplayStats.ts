@@ -82,11 +82,10 @@ export class GameplayStats {
     this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
     this.dancePoints += judge.dancePoints
 
-    const comboMult =
-      this.chartManager.loadedChart!.timingData.getTimingEventAtBeat(
-        "COMBOS",
-        notes[0].beat
-      )
+    const comboMult = this.chartManager.loadedChart!.timingData.getEventAtBeat(
+      "COMBOS",
+      notes[0].beat
+    )
     const hitMult = comboMult?.hitMult ?? 1
     const missMult = comboMult?.missMult ?? 1
 

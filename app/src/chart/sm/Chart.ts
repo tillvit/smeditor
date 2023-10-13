@@ -1,6 +1,7 @@
 import { EventHandler } from "../../util/EventHandler"
 import { bsearch } from "../../util/Util"
 import { GameType, GameTypeRegistry } from "../gameTypes/GameTypeRegistry"
+import { ChartTimingData } from "./ChartTimingData"
 import { CHART_DIFFICULTIES, ChartDifficulty } from "./ChartTypes"
 import {
   Notedata,
@@ -10,12 +11,7 @@ import {
   isHoldNote,
 } from "./NoteTypes"
 import { Simfile } from "./Simfile"
-import { TimingData } from "./TimingData"
-import {
-  TIMING_EVENT_NAMES,
-  TimingEventProperty,
-  TimingProperty,
-} from "./TimingTypes"
+import { TIMING_EVENT_NAMES, TimingEventType, TimingType } from "./TimingTypes"
 
 export class Chart {
   gameType: GameType = GameTypeRegistry.getPriority()[0]
@@ -28,7 +24,7 @@ export class Chart {
   chartStyle = ""
   credit = ""
   music?: string
-  timingData: TimingData
+  timingData: ChartTimingData
   sm: Simfile
   other_properties: { [key: string]: string } = {}
 
@@ -37,7 +33,8 @@ export class Chart {
   private _notedataStats?: NotedataStats
 
   constructor(sm: Simfile, data?: string | { [key: string]: string }) {
-    this.timingData = new TimingData(sm.timingData, this)
+    this.timingData = sm.timingData.createChartTimingData(this)
+    this.timingData.reloadCache()
     this.sm = sm
     if (!data) {
       this.recalculateStats()
@@ -48,9 +45,9 @@ export class Chart {
       for (const property in dict) {
         if (
           property == "OFFSET" ||
-          TIMING_EVENT_NAMES.includes(property as TimingEventProperty)
+          TIMING_EVENT_NAMES.includes(property as TimingEventType)
         )
-          this.timingData.parse(property as TimingProperty, dict[property])
+          this.timingData.parse(property as TimingType, dict[property])
       }
       this.timingData.reloadCache()
       const gameType = GameTypeRegistry.getGameType(dict["STEPSTYPE"])
@@ -281,7 +278,8 @@ export class Chart {
       for (const key in this.other_properties) {
         str += `#${key}:${this.other_properties[key]};\n`
       }
-      if (!this.timingData.isEmpty()) str += this.timingData.serialize("ssc")
+      if (!this.timingData.usesChartTiming())
+        str += this.timingData.serialize("ssc")
       str += `#NOTES:\n`
     }
     str += this.gameType.parser.serialize(this.notedata, this.gameType) + ";\n"

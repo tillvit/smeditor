@@ -523,9 +523,9 @@ export class ChartRenderer extends Container<
     return (
       Options.chart.doSpeedChanges &&
       (this.speedMult < 0 ||
-        (this.chart.timingData.getTimingEventAtBeat("SCROLLS", beat)?.value ??
-          1) < 0 ||
-        this.chart.timingData.getBPM(beat) < 0)
+        (this.chart.timingData.getEventAtBeat("SCROLLS", beat)?.value ?? 1) <
+          0 ||
+        (this.chart.timingData.getEventAtBeat("BPMS", beat)?.value ?? 120) < 0)
     )
   }
 
@@ -562,9 +562,10 @@ export class ChartRenderer extends Container<
         this.getVisualBeat(),
         this.getVisualTime()
       )
+      const sign = speedMult >= 0 ? 1 : -1
       const scrolls = this.chart.timingData.getTimingData("SCROLLS")
       const pixelsToEffectiveBeats =
-        100 / chartSpeed / speedMult / 64 / Options.chart.zoom
+        100 / chartSpeed / Math.abs(speedMult) / 64 / Options.chart.zoom
       const upperBound = this.getUpperBound()
       const lowerBound = this.getLowerBound()
 
@@ -589,7 +590,7 @@ export class ChartRenderer extends Container<
         const scrollEndYPos = this.getYPosFromBeat(scrollEndBeat)
 
         if (
-          scroll.value > 0 &&
+          scroll.value * sign > 0 &&
           scrollEndYPos > upperBound &&
           (scrollStartYPos < upperBound ||
             !scrolls[scrollIndex - 1] ||
@@ -599,7 +600,7 @@ export class ChartRenderer extends Container<
         )
           break
         if (
-          scroll.value < 0 &&
+          scroll.value * sign < 0 &&
           scrollEndYPos < lowerBound &&
           (scrollStartYPos > lowerBound ||
             !scrolls[scrollIndex - 1] ||
@@ -618,12 +619,22 @@ export class ChartRenderer extends Container<
       const pixelsToBeats =
         (pixelsToEffectiveBeats / Math.abs(scrollValue)) * Options.chart.zoom
 
-      if (scrollValue > 0) {
+      if (scrollValue * sign > 0) {
+        if (
+          scrolls[scrollIndex - 1]?.value == 0 &&
+          this.getYPosFromBeat(scrolls[scrollIndex - 1].beat) > upperBound
+        )
+          return this.getVisualBeat() - Options.chart.maxDrawBeatsBack
         return Math.max(
           this.getVisualBeat() - Options.chart.maxDrawBeatsBack,
           scrollBeat + pixelsToBeats * (upperBound - scrollStartY)
         )
       }
+      if (
+        scrolls[scrollIndex - 1]?.value == 0 &&
+        this.getYPosFromBeat(scrolls[scrollIndex - 1].beat) < lowerBound
+      )
+        return this.getVisualBeat() - Options.chart.maxDrawBeatsBack
       return Math.max(
         this.getVisualBeat() - Options.chart.maxDrawBeatsBack,
         scrollBeat + pixelsToBeats * (scrollStartY - lowerBound)
@@ -656,9 +667,10 @@ export class ChartRenderer extends Container<
         this.getVisualBeat(),
         this.getVisualTime()
       )
+      const sign = speedMult >= 0 ? 1 : -1
       const scrolls = this.chart.timingData.getTimingData("SCROLLS")
       const pixelsToEffectiveBeats =
-        100 / chartSpeed / speedMult / 64 / Options.chart.zoom
+        100 / chartSpeed / Math.abs(speedMult) / 64 / Options.chart.zoom
       const upperBound = this.getUpperBound()
       const lowerBound = this.getLowerBound()
 
@@ -683,7 +695,7 @@ export class ChartRenderer extends Container<
         const scrollEndYPos = this.getYPosFromBeat(scrollEndBeat)
 
         if (
-          scroll.value > 0 &&
+          scroll.value * sign > 0 &&
           scrollStartYPos < lowerBound &&
           (scrollEndYPos > lowerBound ||
             !scrolls[scrollIndex + 1] ||
@@ -693,7 +705,7 @@ export class ChartRenderer extends Container<
         )
           break
         if (
-          scroll.value < 0 &&
+          scroll.value * sign < 0 &&
           scrollStartYPos > upperBound &&
           (scrollEndYPos < upperBound ||
             !scrolls[scrollIndex + 1] ||
@@ -712,12 +724,22 @@ export class ChartRenderer extends Container<
       const pixelsToBeats =
         (pixelsToEffectiveBeats / Math.abs(scrollValue)) * Options.chart.zoom
 
-      if (scrollValue > 0) {
+      if (scrollValue * sign > 0) {
+        if (
+          scrolls[scrollIndex + 1]?.value == 0 &&
+          this.getYPosFromBeat(scrolls[scrollIndex + 1].beat) < lowerBound
+        )
+          return this.getVisualBeat() + Options.chart.maxDrawBeats
         return Math.min(
           this.getVisualBeat() + Options.chart.maxDrawBeats,
           scrollBeat + pixelsToBeats * (lowerBound - scrollStartY)
         )
       }
+      if (
+        scrolls[scrollIndex + 1]?.value == 0 &&
+        this.getYPosFromBeat(scrolls[scrollIndex + 1].beat) > upperBound
+      )
+        return this.getVisualBeat() + Options.chart.maxDrawBeats
       return Math.min(
         this.getVisualBeat() + Options.chart.maxDrawBeats,
         scrollBeat + pixelsToBeats * (scrollStartY - upperBound)

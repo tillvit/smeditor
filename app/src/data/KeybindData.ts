@@ -1083,7 +1083,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
           app.chartManager.selection.notes.length > 0
             ? app.chartManager.selection.notes
             : app.chartManager.eventSelection.timingEvents
-        const beats = selected.map(item => item.beat!)
+        const beats = selected.map(item => item.beat)
         const startSec = chart.getSecondsFromBeat(Math.min(...beats))
         const endSec = chart.getSecondsFromBeat(Math.max(...beats))
         newStart = roundDigit(startSec, 3).toString()
