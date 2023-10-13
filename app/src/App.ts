@@ -345,7 +345,6 @@ document.querySelector("body")!.innerHTML = `<div id="popups"></div>
 WebFont.load({
   custom: {
     families: ["Assistant"],
-    urls: ["index.css"],
   },
   active: init,
   inactive: init,
