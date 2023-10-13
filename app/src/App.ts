@@ -1,4 +1,3 @@
-import "external-svg-loader"
 import {
   BitmapFont,
   Container,
