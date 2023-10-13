@@ -1714,7 +1714,7 @@ ${this.lastFrameTime.toFixed(2)} ms
           <div id="context-menu"></div>
           <div id="blocker" style="display: none"></div>
           <div id="windows"></div>
-        `;uC.load({custom:{families:["Assistant"],urls:["index.css"]},active:Vf,inactive:Vf,classes:!1});function Vf(){const r=document.createElement("canvas");r.getContext("webgl")||r.getContext("experimental-webgl")?window.app=new H2:document.querySelector("body").innerHTML=`<div class='browser-unsupported'>
+        `;uC.load({custom:{families:["Assistant"]},active:Vf,inactive:Vf,classes:!1});function Vf(){const r=document.createElement("canvas");r.getContext("webgl")||r.getContext("experimental-webgl")?window.app=new H2:document.querySelector("body").innerHTML=`<div class='browser-unsupported'>
       <div class='browser-unsupported-item'>
       <h1>WebGL is not enabled</h1>
       <div>Please visit your browser settings and enable WebGL.</div>
