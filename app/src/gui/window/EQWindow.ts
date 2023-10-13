@@ -108,25 +108,17 @@ export class EQWindow extends Window {
         .then(text => {
           const parser = new DOMParser()
           const doc = parser.parseFromString(text, "image/svg+xml")
-          const icon = doc.getElementsByTagName("svg")[0]
-          icon.classList.add("eq-icon")
-          icon.setAttribute("fill", fills[index])
-          icon.style.backgroundColor = `${fills[index]}40`
-          icon.setAttribute("width", "36px")
-          icon.setAttribute("height", "24px")
-          icon.onclick = () => {
-            const enabled =
-              this.app.chartManager.chartAudio.getFilter(index).enabled
-            if (enabled) this.app.chartManager.chartAudio.disableFilter(index)
-            else this.app.chartManager.chartAudio.enableFilter(index)
-            this.endTrack()
-            this.updateIcons()
+          const svg = doc.getElementsByTagName("svg")[0]
+          for (const { name, value } of svg.attributes) {
+            if (!iconPlaceholder.getAttribute(name)) {
+              iconPlaceholder.setAttribute(name, value)
+            }
           }
-          icon.onmouseenter = () => this.points[index].highlight()
-          icon.onmouseleave = () => this.points[index].unhighlight()
-          iconPlaceholder.replaceWith(icon)
+          iconPlaceholder.replaceChildren(...svg.children)
         })
+      iconPlaceholder.setAttribute("fill", fills[index])
       iconPlaceholder.classList.add("eq-icon")
+      iconPlaceholder.style.backgroundColor = `${fills[index]}40`
       iconPlaceholder.setAttribute("width", "36px")
       iconPlaceholder.setAttribute("height", "24px")
       iconPlaceholder.onclick = () => {
