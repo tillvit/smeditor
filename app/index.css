@@ -1,6 +1,6 @@
 @font-face {
   font-family: "Assistant";
-  src: url("assets/font/Assistant.ttf") format("ttf");
+  src: url("/smeditor/assets/font/Assistant.ttf") format("ttf");
 }
 
 * {
