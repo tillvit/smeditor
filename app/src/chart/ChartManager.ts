@@ -1408,6 +1408,7 @@ export class ChartManager {
     this.selection.notes = this.selection.notes.concat(
       this.selection.inProgressNotes
     )
+    this.selection.inProgressNotes = []
   }
 
   startDragEventSelection() {
@@ -1418,6 +1419,7 @@ export class ChartManager {
     this.eventSelection.timingEvents = this.eventSelection.timingEvents.concat(
       this.eventSelection.inProgressTimingEvents
     )
+    this.eventSelection.inProgressTimingEvents = []
   }
 
   addNoteToDragSelection(note: NotedataEntry) {
