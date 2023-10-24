@@ -135,9 +135,11 @@ export class ChartRenderer extends Container<
       this.chartManager.setBeat(
         Math.max(0, this.chartManager.getBeat() + selectionSpeed)
       )
-      if (this.selectionBounds)
+      if (this.selectionBounds) {
         this.selectionBounds.start.y +=
           Options.chart.receptorYPos / Options.chart.zoom - pos
+        this.selectionBoundary.update()
+      }
     }
 
     this.chartManager.app.ticker.add(tickHandler)
@@ -190,6 +192,7 @@ export class ChartRenderer extends Container<
           start: this.toLocal(event.global),
           end: this.toLocal(event.global),
         }
+        this.selectionBoundary.update()
       }
     })
 
@@ -208,6 +211,7 @@ export class ChartRenderer extends Container<
       }
       if (this.selectionBounds) {
         this.selectionBounds.end = this.toLocal(event.global)
+        this.selectionBoundary.update()
       }
       selectionSpeed =
         Math.max(0, this.lastMousePos.y - this.getLowerBound() + 100) / 600
@@ -229,6 +233,7 @@ export class ChartRenderer extends Container<
           : "endDragEventSelection"
       ]()
       this.selectionBounds = undefined
+      this.selectionBoundary.update()
       selectionSpeed = 0
     })
   }
@@ -885,7 +890,7 @@ export class ChartRenderer extends Container<
       const mouseUp = () => {
         this.off("pointermove", moveHandler)
         this.off("pointerup", mouseUp)
-        object.visible = true
+        // object.visible = true
         if (
           (this.chartManager.selection.shift?.beatShift ?? 0) != 0 ||
           (this.chartManager.selection.shift?.columnShift ?? 0) != 0

@@ -240,7 +240,7 @@ export class App {
     })
 
     window.addEventListener("drop", event => {
-      if (nw) {
+      if (window.nw) {
         event.stopPropagation()
         event.preventDefault()
 
@@ -296,7 +296,7 @@ export class App {
   }
 
   checkAppVersion() {
-    if (!nw) return
+    if (!window.nw) return
     const gui = nw.require("nw.gui")
 
     const BUILD_TYPES: Record<string, number> = {

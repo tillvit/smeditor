@@ -1502,19 +1502,22 @@ export class ChartManager {
 
     this.app.actionHistory.run({
       action: () => {
-        this.loadedChart!.removeNotes(selectionNotes.concat(removedNotes))
+        this.loadedChart!.removeNotes(
+          selectionNotes.concat(removedNotes),
+          false
+        )
         truncatedHolds.forEach(data =>
-          this.loadedChart!.modifyNote(data.oldNote, data.newNote)
+          this.loadedChart!.modifyNote(data.oldNote, data.newNote, false)
         )
         this.clearSelections()
         this.selection.notes = this.loadedChart!.addNotes(newNotes)
       },
       undo: () => {
-        this.loadedChart!.removeNotes(newNotes)
+        this.loadedChart!.removeNotes(newNotes, false)
         truncatedHolds.forEach(data =>
-          this.loadedChart!.modifyNote(data.newNote, data.oldNote)
+          this.loadedChart!.modifyNote(data.newNote, data.oldNote, false)
         )
-        this.loadedChart!.addNotes(removedNotes)
+        this.loadedChart!.addNotes(removedNotes, false)
         this.clearSelections()
         this.selection.notes = this.loadedChart!.addNotes(selectionNotes)
       },
@@ -1638,17 +1641,17 @@ export class ChartManager {
 
     this.app.actionHistory.run({
       action: () => {
-        this.loadedChart!.removeNotes(removedNotes)
+        this.loadedChart!.removeNotes(removedNotes, false)
         truncatedHolds.forEach(data => {
-          this.loadedChart!.modifyNote(data.oldNote, data.newNote)
+          this.loadedChart!.modifyNote(data.oldNote, data.newNote, false)
         })
         this.clearSelections()
         this.selection.notes = this.loadedChart!.addNotes(notes)
       },
       undo: () => {
-        this.loadedChart!.removeNotes(notes)
+        this.loadedChart!.removeNotes(notes, false)
         truncatedHolds.forEach(data => {
-          this.loadedChart!.modifyNote(data.newNote, data.oldNote)
+          this.loadedChart!.modifyNote(data.newNote, data.oldNote, false)
         })
         this.loadedChart!.addNotes(removedNotes)
         this.clearSelections()

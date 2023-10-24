@@ -60,6 +60,7 @@ export class NoteContainer extends Container {
           this.arrowMap.delete(note)
         }
       }
+      this.notesDirty = false
     }
 
     DanceNoteTexture.setArrowTexTime(

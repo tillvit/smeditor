@@ -168,15 +168,18 @@ export class Chart {
     return computedNote
   }
 
-  addNote(note: PartialNotedataEntry): NotedataEntry {
+  addNote(note: PartialNotedataEntry, callListeners = true): NotedataEntry {
     const computedNote = this.insertNote(note)
-    EventHandler.emit("chartModified")
+    if (callListeners) EventHandler.emit("chartModified")
     return computedNote
   }
 
-  addNotes(notes: PartialNotedataEntry[]): NotedataEntry[] {
+  addNotes(
+    notes: PartialNotedataEntry[],
+    callListeners = true
+  ): NotedataEntry[] {
     const computedNotes = notes.map(note => this.insertNote(note))
-    EventHandler.emit("chartModified")
+    if (callListeners) EventHandler.emit("chartModified")
     return computedNotes
   }
 
@@ -188,7 +191,11 @@ export class Chart {
     })
   }
 
-  modifyNote(note: PartialNotedataEntry, properties: Partial<NotedataEntry>) {
+  modifyNote(
+    note: PartialNotedataEntry,
+    properties: Partial<NotedataEntry>,
+    callListeners = true
+  ) {
     const i = this.getNoteIndex(note)
     if (i == -1) return
     const noteToModify = Object.assign({}, this.notedata[i])
@@ -197,18 +204,24 @@ export class Chart {
       (properties as Record<string, any>).hold = undefined
     Object.assign(noteToModify, properties)
     this.addNote(noteToModify)
-    EventHandler.emit("chartModified")
+    if (callListeners) EventHandler.emit("chartModified")
   }
 
-  removeNote(note: PartialNotedataEntry): NotedataEntry | undefined {
+  removeNote(
+    note: PartialNotedataEntry,
+    callListeners = true
+  ): NotedataEntry | undefined {
     const i = this.getNoteIndex(note)
     if (i == -1) return
     const removedNote = this.notedata.splice(i, 1)
-    EventHandler.emit("chartModified")
+    if (callListeners) EventHandler.emit("chartModified")
     return removedNote[0]
   }
 
-  removeNotes(notes: PartialNotedataEntry[]): NotedataEntry[] {
+  removeNotes(
+    notes: PartialNotedataEntry[],
+    callListeners = true
+  ): NotedataEntry[] {
     const computedNotes = notes
       .map(note => {
         const i = this.getNoteIndex(note)
@@ -217,7 +230,7 @@ export class Chart {
         return removedNote[0]
       })
       .filter(note => note != undefined)
-    EventHandler.emit("chartModified")
+    if (callListeners) EventHandler.emit("chartModified")
     return computedNotes as NotedataEntry[]
   }
 
