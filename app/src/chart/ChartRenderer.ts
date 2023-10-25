@@ -852,7 +852,7 @@ export class ChartRenderer extends Container<
     }
     object.on("pointerdown", event => {
       if (isRightClick(event)) {
-        if (!this.chartManager.selection.notes.includes(notedata)) {
+        if (!this.chartManager.isNoteInSelection(notedata)) {
           this.chartManager.clearSelections()
           this.chartManager.addNoteToSelection(notedata)
         }
@@ -865,11 +865,11 @@ export class ChartRenderer extends Container<
         !event.getModifierState("Meta") &&
         !event.getModifierState("Control") &&
         !event.getModifierState("Shift") &&
-        !this.chartManager.selection.notes.includes(notedata)
+        !this.chartManager.isNoteInSelection(notedata)
       )
         return
       event.stopImmediatePropagation()
-      if (this.chartManager.selection.notes.includes(notedata)) {
+      if (this.chartManager.isNoteInSelection(notedata)) {
         if (event.getModifierState("Control") || event.getModifierState("Meta"))
           this.chartManager.removeNoteFromSelection(notedata)
       } else {

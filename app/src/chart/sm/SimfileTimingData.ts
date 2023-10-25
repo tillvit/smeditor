@@ -48,9 +48,7 @@ export class SimfileTimingData extends TimingData {
         this._delete(results.errors)
         this.reloadCache()
         app.chartManager.clearSelections()
-        app.chartManager.eventSelection.timingEvents = this.findEvents(
-          results.events
-        )
+        app.chartManager.setEventSelection(this.findEvents(results.events))
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
@@ -77,9 +75,7 @@ export class SimfileTimingData extends TimingData {
         this._delete(results.errors)
         this.reloadCache()
         app.chartManager.clearSelections()
-        app.chartManager.eventSelection.timingEvents = this.findEvents(
-          results.newEvents
-        )
+        app.chartManager.setEventSelection(this.findEvents(results.newEvents))
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
@@ -91,9 +87,7 @@ export class SimfileTimingData extends TimingData {
         this._insert(results.oldEvents)
         this.reloadCache()
         app.chartManager.clearSelections()
-        app.chartManager.eventSelection.timingEvents = this.findEvents(
-          results.oldEvents
-        )
+        app.chartManager.setEventSelection(this.findEvents(results.oldEvents))
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
@@ -119,8 +113,8 @@ export class SimfileTimingData extends TimingData {
         this._insert(results.removedEvents)
         this.reloadCache()
         app.chartManager.clearSelections()
-        app.chartManager.eventSelection.timingEvents = this.findEvents(
-          results.removedEvents
+        app.chartManager.setEventSelection(
+          this.findEvents(results.removedEvents)
         )
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")

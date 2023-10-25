@@ -859,13 +859,13 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     disabled: app => !app.chartManager.loadedChart,
     callback: app => {
       if (app.chartManager.editTimingMode == EditTimingMode.Off) {
-        app.chartManager.selection.notes = [
-          ...app.chartManager.loadedChart!.getNotedata(),
-        ]
+        app.chartManager.setNoteSelection(
+          app.chartManager.loadedChart!.getNotedata()
+        )
       } else {
-        app.chartManager.eventSelection.timingEvents = [
-          ...app.chartManager.loadedChart!.timingData.getTimingData(),
-        ]
+        app.chartManager.setEventSelection(
+          app.chartManager.loadedChart!.timingData.getTimingData()
+        )
       }
     },
   },

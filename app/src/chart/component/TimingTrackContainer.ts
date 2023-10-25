@@ -253,9 +253,7 @@ export class TimingTrackContainer
         return
       }
       e.stopImmediatePropagation()
-      if (
-        this.renderer.chartManager.eventSelection.timingEvents.includes(event)
-      ) {
+      if (this.renderer.chartManager.isEventInSelection(event)) {
         if (e.getModifierState("Control") || e.getModifierState("Meta"))
           this.renderer.chartManager.removeEventFromSelection(event)
       } else {
@@ -527,12 +525,7 @@ export class TimingTrackContainer
 
       const inSelection =
         this.renderer.chartManager.getMode() != EditMode.Play &&
-        (this.renderer.chartManager.eventSelection.timingEvents.includes(
-          event
-        ) ||
-          this.renderer.chartManager.eventSelection.inProgressTimingEvents.includes(
-            event
-          ))
+        this.renderer.chartManager.isEventInSelection(event)
       box.backgroundObj.tint = inSelection
         ? lighten(
             TIMING_EVENT_COLORS[event.type] ?? 0x000000,
