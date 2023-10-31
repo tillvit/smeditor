@@ -3,7 +3,6 @@ import { getDivision } from "../../../util/Util"
 import {
   isHoldNote,
   Notedata,
-  NotedataStats,
   NoteType,
   PartialHoldNotedataEntry,
   PartialNotedata,
@@ -162,19 +161,16 @@ export class BasicNotedataParser extends NotedataParser {
     return notedata
   }
 
-  getStats(notedata: Notedata, timingData: TimingData): NotedataStats {
-    const stats: NotedataStats = {
-      npsGraph: this.getNPSPerMeasure(notedata, timingData),
-      counts: {
-        Taps: 0,
-        Jumps: 0,
-        Hands: 0,
-        Holds: 0,
-        Rolls: 0,
-        Mines: 0,
-        Fakes: 0,
-        Lifts: 0,
-      },
+  getStats(notedata: Notedata): Record<string, number> {
+    const stats: Record<string, number> = {
+      Taps: 0,
+      Jumps: 0,
+      Hands: 0,
+      Holds: 0,
+      Rolls: 0,
+      Mines: 0,
+      Fakes: 0,
+      Lifts: 0,
     }
     let row = -1
     let cols = 0
@@ -188,31 +184,31 @@ export class BasicNotedataParser extends NotedataParser {
             else if (holdBeats[i]! < note.beat) holdCols++
           }
         }
-        if (cols > 1) stats.counts.Jumps++
-        if (cols + holdCols > 2) stats.counts.Hands++
+        if (cols > 1) stats.Jumps++
+        if (cols + holdCols > 2) stats.Hands++
         cols = 0
         row = note.beat
       }
       if (note.type != "Mine" && !note.fake) cols++
       if (note.fake) {
-        stats.counts.Fakes++
+        stats.Fakes++
         continue
       }
       switch (note.type) {
         case "Tap":
-          stats.counts.Taps++
+          stats.Taps++
           break
         case "Hold":
-          stats.counts.Holds++
+          stats.Holds++
           break
         case "Roll":
-          stats.counts.Rolls++
+          stats.Rolls++
           break
         case "Lift":
-          stats.counts.Lifts++
+          stats.Lifts++
           break
         case "Mine":
-          stats.counts.Mines++
+          stats.Mines++
           break
       }
       if (isHoldNote(note)) {
@@ -224,38 +220,47 @@ export class BasicNotedataParser extends NotedataParser {
       if (holdBeats[i] && holdBeats[i]! < notedata[notedata.length - 1].beat)
         holdCols++
     }
-    if (cols > 1) stats.counts.Jumps++
-    if (cols + holdCols > 2) stats.counts.Hands++
+    if (cols > 1) stats.Jumps++
+    if (cols + holdCols > 2) stats.Hands++
     return stats
   }
 
-  private getNPSPerMeasure(
-    notedata: Notedata,
-    timingData: TimingData
-  ): number[] {
-    const chartEnd = notedata[notedata.length - 1]?.beat ?? 0
+  getNPSGraph(notedata: Notedata, timingData: TimingData): number[] {
+    const lastNote = notedata.at(-1)
+    if (!lastNote) return []
+    let chartEnd = lastNote.beat
+    if (isHoldNote(lastNote)) {
+      chartEnd += lastNote.hold
+    }
     const nps = []
+
     let noteIndex = 0
-    for (let beat = 0; beat < chartEnd; beat += 4) {
+    while (notedata[noteIndex]) {
+      const measure = Math.floor(
+        timingData.getMeasure(notedata[noteIndex].beat)
+      )
+      const measureStartBeat = timingData.getBeatFromMeasure(measure)
+      const measureEndBeat = timingData.getBeatFromMeasure(measure + 1)
       const deltaTime =
-        timingData.getSecondsFromBeat(beat + 4) -
-        timingData.getSecondsFromBeat(beat)
+        timingData.getSecondsFromBeat(measureEndBeat) -
+        timingData.getSecondsFromBeat(measureStartBeat)
       if (deltaTime <= 0.05) {
-        nps.push(0)
+        while (notedata[noteIndex]?.beat < measureEndBeat) noteIndex++
+        nps[measure] = 0
         continue
       }
       let noteCount = 0
-      while (notedata[noteIndex + 1] && notedata[noteIndex].beat < beat + 4) {
+      while (notedata[noteIndex]?.beat < measureEndBeat) {
         const type = notedata[noteIndex].type
-        noteIndex++
         if (
           !notedata[noteIndex].fake &&
           !notedata[noteIndex].warped &&
           (type == "Hold" || type == "Roll" || type == "Tap" || type == "Lift")
         )
           noteCount++
+        noteIndex++
       }
-      nps.push(noteCount / deltaTime)
+      nps[measure] = noteCount
     }
     return nps
   }

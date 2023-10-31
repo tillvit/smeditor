@@ -6,7 +6,6 @@ import { CHART_DIFFICULTIES, ChartDifficulty } from "./ChartTypes"
 import {
   Notedata,
   NotedataEntry,
-  NotedataStats,
   PartialNotedataEntry,
   isHoldNote,
 } from "./NoteTypes"
@@ -30,7 +29,8 @@ export class Chart {
 
   private notedata: Notedata = []
 
-  private _notedataStats?: NotedataStats
+  private _notedataStats!: Record<string, number>
+  private _npsGraph!: number[]
 
   constructor(sm: Simfile, data?: string | { [key: string]: string }) {
     this.timingData = sm.timingData.createChartTimingData(this)
@@ -119,7 +119,19 @@ export class Chart {
   }
 
   getNotedataStats() {
-    return this._notedataStats!
+    return this._notedataStats
+  }
+
+  getNPSGraph() {
+    return this._npsGraph
+  }
+
+  getMaxNPS() {
+    let max = 0
+    for (const measure of this._npsGraph) {
+      if (measure > max) max = measure
+    }
+    return max
   }
 
   getSecondsFromBeat(
@@ -248,7 +260,8 @@ export class Chart {
   }
 
   recalculateStats() {
-    this._notedataStats = this.gameType.parser.getStats(
+    this._notedataStats = this.gameType.parser.getStats(this.notedata)
+    this._npsGraph = this.gameType.parser.getNPSGraph(
       this.notedata,
       this.timingData
     )
