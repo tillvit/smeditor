@@ -308,7 +308,7 @@ export class App {
     let os = "win"
     if (navigator.userAgent.includes("Mac")) os = "mac"
     else if (navigator.userAgent.includes("Linux")) os = "linux"
-    fetch("/assets/app/versions.json")
+    fetch("/smeditor/assets/app/versions.json")
       .then(data => data.json())
       .then((versions: Version[]) => {
         versions = versions.sort((a, b) => {
