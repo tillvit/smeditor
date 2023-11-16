@@ -640,6 +640,8 @@ export class ChartManager {
       if (option == "Yes") this.save()
     }
 
+    ActionHistory.instance.setLimit()
+
     // Destroy everything if no path specified
     if (!path) {
       this.smPath = ""
@@ -1343,26 +1345,35 @@ export class ChartManager {
    */
   async save() {
     if (!this.loadedSM) return
-    const path_arr = this.smPath.split("/")
-    const name = path_arr.pop()!.split(".").slice(0, -1).join(".")
-    const path = path_arr.join("/")
+
+    let smPath
+    let sscPath
+    if (window.nw) {
+      const path = window.nw.require("path")
+      const pathData = path.parse(this.smPath)
+      smPath = path.resolve(pathData.dir, pathData.name + ".sm")
+      sscPath = path.resolve(pathData.dir, pathData.name + ".ssc")
+    } else {
+      const dir = dirname(this.smPath)
+      const baseName = basename(this.smPath)
+      const fileName = baseName.includes(".")
+        ? baseName.split(".").slice(0, -1).join(".")
+        : baseName
+      smPath = dir + "/" + fileName + ".sm"
+      sscPath = dir + "/" + fileName + ".ssc"
+    }
+
     if (
       !this.loadedSM.usesChartTiming() &&
-      (await FileHandler.getFileHandle(path + "/" + name + ".sm"))
+      (await FileHandler.getFileHandle(smPath))
     ) {
-      FileHandler.writeFile(
-        path + "/" + name + ".sm",
-        this.loadedSM.serialize("sm")
-      )
+      FileHandler.writeFile(smPath, this.loadedSM.serialize("sm"))
     }
     if (
       this.loadedSM.requiresSSC() ||
-      (await FileHandler.getFileHandle(path + "/" + name + ".ssc"))
+      (await FileHandler.getFileHandle(sscPath))
     )
-      FileHandler.writeFile(
-        path + "/" + name + ".ssc",
-        this.loadedSM.serialize("ssc")
-      )
+      FileHandler.writeFile(sscPath, this.loadedSM.serialize("ssc"))
     if (this.loadedSM.usesChartTiming()) {
       WaterfallManager.create("Saved. No SM file since split timing was used.")
     } else {

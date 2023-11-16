@@ -9,7 +9,6 @@ import {
 import { ActionHistory } from "../../util/ActionHistory"
 import { FileHandler } from "../../util/file-handler/FileHandler"
 import { Icons } from "../Icons"
-import { WaterfallManager } from "../element/WaterfallManager"
 import { ConfirmationWindow } from "./ConfirmationWindow"
 import { Window } from "./Window"
 
@@ -151,7 +150,6 @@ export class NewSongWindow extends Window {
         )
         folder = path.dirname(fileSelector.value)
         const smPath = path.join(folder, fileName + ".sm")
-        WaterfallManager.create(folder + " : " + smPath)
         await FileHandler.writeFile(smPath, this.sm.serialize("sm"))
         // Add the rest of the files
         await Promise.all(
