@@ -1,11 +1,13 @@
 ---
 name: Bug report
-about: Bug report template
+about: Report a bug that you found.
 title: "[BUG]"
 labels: bug
 assignees: ''
 
 ---
+
+***Before posting, please check for other ideas that may be similar to yours!***
 
 **Version/OS**
 Please specify the operation system and the browser type you are using or app version (if applicable)
