@@ -60,8 +60,3 @@ export function isHoldNote<T extends PartialNotedataEntry>(
 ): note is Extract<T, { hold: number }> {
   return note.type == "Hold" || note.type == "Roll"
 }
-
-export interface NotedataStats {
-  npsGraph: number[]
-  counts: Record<string, number>
-}

@@ -331,15 +331,14 @@ export class ChartListWindow extends Window {
     label.innerText = "Peak NPS"
     label.classList.add("title", "chart-info-grid-label")
     const count = document.createElement("div")
-    count.innerText =
-      Math.max(Math.max(...notedataStats.npsGraph), 0).toFixed(2) + ""
+    count.innerText = chart.getMaxNPS().toFixed(2) + ""
     count.classList.add("title", "chart-info-grid-count")
     nps.appendChild(label)
     nps.appendChild(count)
 
     const grid = document.createElement("div")
     grid.classList.add("chart-info-grid")
-    Object.entries(notedataStats.counts).forEach(entry => {
+    Object.entries(notedataStats).forEach(entry => {
       const item = document.createElement("div")
       item.classList.add("chart-info-grid-item")
       const label = document.createElement("div")

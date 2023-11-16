@@ -7,11 +7,11 @@ const baseOptions = {
   version: "latest",
   glob: false,
   logLevel: "debug",
+  arch: "x64",
 }
 
 const mac = Object.assign(structuredClone(baseOptions), {
   outDir: "build/mac/SMEditor",
-  version: "0.76.1",
   platform: "osx",
   app: {
     name: "SMEditor",
@@ -40,7 +40,6 @@ const win = Object.assign(structuredClone(baseOptions), {
 const linux = Object.assign(structuredClone(baseOptions), {
   outDir: "build/linux/SMEditor",
   platform: "linux",
-  arch: "x64",
   app: {
     name: "SMEditor",
     genericName: "SMEditor",

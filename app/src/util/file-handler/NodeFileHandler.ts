@@ -17,6 +17,7 @@ const {
 const fs = window.nw.require("fs").promises
 
 import { errors } from "file-system-access/lib/util.js"
+import { WaterfallManager } from "../../gui/element/WaterfallManager"
 const { GONE, MISMATCH } = errors
 
 export class NodeFileHandler implements BaseFileHandler {
@@ -152,7 +153,13 @@ export class NodeFileHandler implements BaseFileHandler {
     let fileHandle
     if (typeof path == "string") {
       fileHandle = await this.getFileHandle(path, { create: true })
-      if (!fileHandle) return
+      if (!fileHandle) {
+        WaterfallManager.createFormatted(
+          "Failed to write to " + path + "!",
+          "error"
+        )
+        return
+      }
     } else {
       fileHandle = path
     }

@@ -27,7 +27,7 @@ import { Options } from "../util/Options"
 import { basename, dirname, extname } from "../util/Path"
 import { tpsUpdate } from "../util/Performance"
 import { RecentFileHandler } from "../util/RecentFileHandler"
-import { bsearch } from "../util/Util"
+import { bsearch, bsearchEarliest, compareObjects } from "../util/Util"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { ChartRenderer } from "./ChartRenderer"
 import { ChartAudio } from "./audio/ChartAudio"
@@ -508,7 +508,9 @@ export class ChartManager {
           ]
           for (const keybind of keybinds) {
             if (
-              KEYBIND_DATA[keybind].combos.map(x => x.key).includes(keyName)
+              Keybinds.getCombosForKeybind(keybind)
+                .map(x => x.key)
+                .includes(keyName)
             ) {
               event.preventDefault()
               event.stopImmediatePropagation()
@@ -527,7 +529,9 @@ export class ChartManager {
           // Stop editing when undo/redo pressed
           for (const keybind of ["undo", "redo"]) {
             if (
-              KEYBIND_DATA[keybind].combos.map(x => x.key).includes(keyName)
+              Keybinds.getCombosForKeybind(keybind)
+                .map(x => x.key)
+                .includes(keyName)
             ) {
               this.holdEditing = []
               return
@@ -635,6 +639,8 @@ export class ChartManager {
       if (option == "Cancel") return
       if (option == "Yes") this.save()
     }
+
+    ActionHistory.instance.setLimit()
 
     // Destroy everything if no path specified
     if (!path) {
@@ -1339,26 +1345,35 @@ export class ChartManager {
    */
   async save() {
     if (!this.loadedSM) return
-    const path_arr = this.smPath.split("/")
-    const name = path_arr.pop()!.split(".").slice(0, -1).join(".")
-    const path = path_arr.join("/")
+
+    let smPath
+    let sscPath
+    if (window.nw) {
+      const path = window.nw.require("path")
+      const pathData = path.parse(this.smPath)
+      smPath = path.resolve(pathData.dir, pathData.name + ".sm")
+      sscPath = path.resolve(pathData.dir, pathData.name + ".ssc")
+    } else {
+      const dir = dirname(this.smPath)
+      const baseName = basename(this.smPath)
+      const fileName = baseName.includes(".")
+        ? baseName.split(".").slice(0, -1).join(".")
+        : baseName
+      smPath = dir + "/" + fileName + ".sm"
+      sscPath = dir + "/" + fileName + ".ssc"
+    }
+
     if (
       !this.loadedSM.usesChartTiming() &&
-      (await FileHandler.getFileHandle(path + "/" + name + ".sm"))
+      (await FileHandler.getFileHandle(smPath))
     ) {
-      FileHandler.writeFile(
-        path + "/" + name + ".sm",
-        this.loadedSM.serialize("sm")
-      )
+      FileHandler.writeFile(smPath, this.loadedSM.serialize("sm"))
     }
     if (
       this.loadedSM.requiresSSC() ||
-      (await FileHandler.getFileHandle(path + "/" + name + ".ssc"))
+      (await FileHandler.getFileHandle(sscPath))
     )
-      FileHandler.writeFile(
-        path + "/" + name + ".ssc",
-        this.loadedSM.serialize("ssc")
-      )
+      FileHandler.writeFile(sscPath, this.loadedSM.serialize("ssc"))
     if (this.loadedSM.usesChartTiming()) {
       WaterfallManager.create("Saved. No SM file since split timing was used.")
     } else {
@@ -1405,9 +1420,40 @@ export class ChartManager {
   }
 
   endDragSelection() {
-    this.selection.notes = this.selection.notes.concat(
-      this.selection.inProgressNotes
-    )
+    let i1 = 0
+    let i2 = 0
+    const result: NotedataEntry[] = []
+    const column1 = this.selection.inProgressNotes
+    const column2 = this.selection.notes
+    const compare = (a: NotedataEntry, b: NotedataEntry) => {
+      if (a.beat == b.beat) return a.col - b.col
+      return a.beat - b.beat
+    }
+
+    if (column1.length == 0 || column2.length == 0) {
+      this.selection.notes = column1.concat(column2)
+      this.selection.inProgressNotes = []
+      return
+    }
+
+    while (true) {
+      if (compare(column1[i1], column2[i2]) < 0) {
+        result.push(column1[i1])
+        i1++
+        if (i1 >= column1.length) {
+          this.selection.notes = result.concat(column2.slice(i2))
+          break
+        }
+      } else {
+        result.push(column2[i2])
+        i2++
+        if (i2 >= column2.length) {
+          this.selection.notes = result.concat(column1.slice(i1))
+          break
+        }
+      }
+    }
+    this.selection.inProgressNotes = []
   }
 
   startDragEventSelection() {
@@ -1415,49 +1461,158 @@ export class ChartManager {
   }
 
   endDragEventSelection() {
-    this.eventSelection.timingEvents = this.eventSelection.timingEvents.concat(
-      this.eventSelection.inProgressTimingEvents
-    )
+    let i1 = 0
+    let i2 = 0
+    const result: Cached<TimingEvent>[] = []
+    const column1 = this.eventSelection.inProgressTimingEvents
+    const column2 = this.eventSelection.timingEvents
+    const compare = (a: Cached<TimingEvent>, b: Cached<TimingEvent>) => {
+      return a.beat - b.beat
+    }
+
+    if (column1.length == 0 || column2.length == 0) {
+      this.eventSelection.timingEvents = column1.concat(column2)
+      this.eventSelection.inProgressTimingEvents = []
+      return
+    }
+
+    while (true) {
+      if (compare(column1[i1], column2[i2]) < 0) {
+        result.push(column1[i1])
+        i1++
+        if (i1 >= column1.length) {
+          this.eventSelection.timingEvents = result.concat(column2.slice(i2))
+          break
+        }
+      } else {
+        result.push(column2[i2])
+        i2++
+        if (i2 >= column2.length) {
+          this.eventSelection.timingEvents = result.concat(column1.slice(i1))
+          break
+        }
+      }
+    }
+    this.eventSelection.inProgressTimingEvents = []
   }
 
   addNoteToDragSelection(note: NotedataEntry) {
-    this.selection.inProgressNotes.push(note)
+    this.addNoteSelection(this.selection.inProgressNotes, note)
   }
 
   removeNoteFromDragSelection(note: NotedataEntry) {
-    const index = this.selection.inProgressNotes.indexOf(note)
-    if (index == -1) return
-    this.selection.inProgressNotes.splice(index, 1)
+    this.removeNoteSelection(this.selection.inProgressNotes, note)
   }
 
   addEventToDragSelection(event: Cached<TimingEvent>) {
-    this.eventSelection.inProgressTimingEvents.push(event)
+    this.addEventSelection(this.eventSelection.inProgressTimingEvents, event)
   }
 
   removeEventFromDragSelection(event: Cached<TimingEvent>) {
-    const index = this.eventSelection.inProgressTimingEvents.indexOf(event)
-    if (index == -1) return
-    this.eventSelection.inProgressTimingEvents.splice(index, 1)
+    this.removeEventSelection(this.eventSelection.inProgressTimingEvents, event)
   }
 
   addNoteToSelection(note: NotedataEntry) {
-    this.selection.notes.push(note)
+    this.addNoteSelection(this.selection.notes, note)
   }
 
   removeNoteFromSelection(note: NotedataEntry) {
-    const index = this.selection.notes.indexOf(note)
-    if (index == -1) return
-    this.selection.notes.splice(index, 1)
+    this.removeNoteSelection(this.selection.notes, note)
+  }
+
+  setNoteSelection(notes: NotedataEntry[]) {
+    this.selection.inProgressNotes = []
+    this.selection.notes = notes.sort((a, b) => {
+      if (a.beat == b.beat) return a.col - b.col
+      return a.beat - b.beat
+    })
   }
 
   addEventToSelection(event: Cached<TimingEvent>) {
-    this.eventSelection.timingEvents.push(event)
+    this.addEventSelection(this.eventSelection.timingEvents, event)
   }
 
   removeEventFromSelection(event: Cached<TimingEvent>) {
-    const index = this.eventSelection.timingEvents.indexOf(event)
+    this.removeEventSelection(this.eventSelection.timingEvents, event)
+  }
+
+  setEventSelection(notes: Cached<TimingEvent>[]) {
+    this.eventSelection.inProgressTimingEvents = []
+    this.eventSelection.timingEvents = notes.sort((a, b) => a.beat - b.beat)
+  }
+
+  isNoteInSelection(note: NotedataEntry) {
+    return (
+      this.getNoteSelectionIndex(this.selection.notes, note) != -1 ||
+      this.getNoteSelectionIndex(this.selection.inProgressNotes, note) != -1
+    )
+  }
+
+  isEventInSelection(event: Cached<TimingEvent>) {
+    return (
+      this.getEventSelectionIndex(this.eventSelection.timingEvents, event) !=
+        -1 ||
+      this.getEventSelectionIndex(
+        this.eventSelection.inProgressTimingEvents,
+        event
+      ) != -1
+    )
+  }
+
+  private addNoteSelection(list: NotedataEntry[], note: NotedataEntry) {
+    let i = bsearchEarliest(list, note.beat, note => note.beat)
+    while (
+      list[i] &&
+      (list[i].beat < note.beat ||
+        (list[i].beat == note.beat && list[i].col < note.col))
+    )
+      i++
+    list.splice(i, 0, note)
+  }
+
+  private removeNoteSelection(list: NotedataEntry[], note: NotedataEntry) {
+    const index = this.getNoteSelectionIndex(list, note)
     if (index == -1) return
-    this.eventSelection.timingEvents.splice(index, 1)
+    list.splice(index, 1)
+  }
+
+  private getNoteSelectionIndex(list: NotedataEntry[], note: NotedataEntry) {
+    let i = bsearchEarliest(list, note.beat, note => note.beat)
+    while (list[i] && list[i].beat == note.beat) {
+      if (compareObjects(list[i], note)) return i
+      i++
+    }
+    return -1
+  }
+
+  private addEventSelection(
+    list: Cached<TimingEvent>[],
+    note: Cached<TimingEvent>
+  ) {
+    let i = bsearchEarliest(list, note.beat, note => note.beat)
+    while (list[i] && list[i].beat <= note.beat) i++
+    list.splice(i, 0, note)
+  }
+
+  private removeEventSelection(
+    list: Cached<TimingEvent>[],
+    note: Cached<TimingEvent>
+  ) {
+    const index = this.getEventSelectionIndex(list, note)
+    if (index == -1) return
+    list.splice(index, 1)
+  }
+
+  private getEventSelectionIndex(
+    list: Cached<TimingEvent>[],
+    note: Cached<TimingEvent>
+  ) {
+    let i = bsearchEarliest(list, note.beat, note => note.beat)
+    while (list[i] && list[i].beat == note.beat) {
+      if (compareObjects(list[i], note)) return i
+      i++
+    }
+    return -1
   }
 
   selectRegion() {
@@ -1502,21 +1657,24 @@ export class ChartManager {
 
     this.app.actionHistory.run({
       action: () => {
-        this.loadedChart!.removeNotes(selectionNotes.concat(removedNotes))
+        this.loadedChart!.removeNotes(
+          selectionNotes.concat(removedNotes),
+          false
+        )
         truncatedHolds.forEach(data =>
-          this.loadedChart!.modifyNote(data.oldNote, data.newNote)
+          this.loadedChart!.modifyNote(data.oldNote, data.newNote, false)
         )
         this.clearSelections()
-        this.selection.notes = this.loadedChart!.addNotes(newNotes)
+        this.setNoteSelection(this.loadedChart!.addNotes(newNotes))
       },
       undo: () => {
-        this.loadedChart!.removeNotes(newNotes)
+        this.loadedChart!.removeNotes(newNotes, false)
         truncatedHolds.forEach(data =>
-          this.loadedChart!.modifyNote(data.newNote, data.oldNote)
+          this.loadedChart!.modifyNote(data.newNote, data.oldNote, false)
         )
-        this.loadedChart!.addNotes(removedNotes)
+        this.loadedChart!.addNotes(removedNotes, false)
         this.clearSelections()
-        this.selection.notes = this.loadedChart!.addNotes(selectionNotes)
+        this.setNoteSelection(this.loadedChart!.addNotes(selectionNotes))
       },
     })
   }
@@ -1638,19 +1796,19 @@ export class ChartManager {
 
     this.app.actionHistory.run({
       action: () => {
-        this.loadedChart!.removeNotes(removedNotes)
+        this.loadedChart!.removeNotes(removedNotes, false)
         truncatedHolds.forEach(data => {
-          this.loadedChart!.modifyNote(data.oldNote, data.newNote)
+          this.loadedChart!.modifyNote(data.oldNote, data.newNote, false)
         })
         this.clearSelections()
-        this.selection.notes = this.loadedChart!.addNotes(notes)
+        this.setNoteSelection(this.loadedChart!.addNotes(notes))
       },
       undo: () => {
-        this.loadedChart!.removeNotes(notes)
+        this.loadedChart!.removeNotes(notes, false)
         truncatedHolds.forEach(data => {
-          this.loadedChart!.modifyNote(data.newNote, data.oldNote)
+          this.loadedChart!.modifyNote(data.newNote, data.oldNote, false)
         })
-        this.loadedChart!.addNotes(removedNotes)
+        this.setNoteSelection(this.loadedChart!.addNotes(removedNotes))
         this.clearSelections()
       },
     })

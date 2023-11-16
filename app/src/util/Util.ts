@@ -53,6 +53,26 @@ export function bsearch<T>(
   return Math.max(0, high)
 }
 
+export function bsearchEarliest<T>(
+  arr: T[],
+  value: number,
+  property?: (a: T) => number
+) {
+  property = property ?? (a => a as number)
+  if (arr.length == 0) return -1
+  let idx = bsearch(arr, value, property)
+  while (arr[idx - 1] && property(arr[idx - 1]) == value) {
+    idx--
+  }
+  return idx
+}
+
+export function compareObjects(a: any, b: any) {
+  if (Object.keys(a).some(key => a[key] != b[key])) return false
+  if (Object.keys(b).some(key => a[key] != b[key])) return false
+  return true
+}
+
 export function parseString(expr: string) {
   try {
     return Parser.evaluate(expr)

@@ -13,9 +13,13 @@ interface KeybindInserts {
   after?: string
 }
 
-const KEYBIND_BLACKLIST = ["cut", "copy", "paste", "undo", "redo", "delete"]
+const KEYBIND_BLACKLIST = ["cut", "copy", "paste"]
 const KEYBIND_INSERTS: Record<string, KeybindInserts[]> = {
   edit: [
+    {
+      ids: ["delete"],
+      after: "redo",
+    },
     {
       ids: [
         "previousNoteType",

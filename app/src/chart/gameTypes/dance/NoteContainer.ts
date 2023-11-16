@@ -60,6 +60,7 @@ export class NoteContainer extends Container {
           this.arrowMap.delete(note)
         }
       }
+      this.notesDirty = false
     }
 
     DanceNoteTexture.setArrowTexTime(
@@ -141,12 +142,7 @@ export class NoteContainer extends Container {
         const inSelection =
           this.notefield.getRenderer().chartManager.getMode() !=
             EditMode.Play &&
-          (this.notefield
-            .getRenderer()
-            .chartManager.selection.notes.includes(note) ||
-            this.notefield
-              .getRenderer()
-              .chartManager.selection.inProgressNotes.includes(note))
+          this.notefield.getRenderer().chartManager.isNoteInSelection(note)
         arrow.selection.alpha = inSelection
           ? Math.sin(Date.now() / 320) * 0.1 + 0.3
           : 0

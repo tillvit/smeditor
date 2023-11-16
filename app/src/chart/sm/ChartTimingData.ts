@@ -57,9 +57,11 @@ export class ChartTimingData extends TimingData {
         this._delete(chartResults.errors)
         this.simfileTimingData.reloadCache()
         app.chartManager.clearSelections()
-        app.chartManager.eventSelection.timingEvents = this.findEvents(
-          chartResults.events
-        ).concat(this.simfileTimingData.findEvents(smResults.events))
+        app.chartManager.setEventSelection(
+          this.findEvents(chartResults.events).concat(
+            this.simfileTimingData.findEvents(smResults.events)
+          )
+        )
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
@@ -93,9 +95,11 @@ export class ChartTimingData extends TimingData {
         this._delete(chartResults.errors)
         this.simfileTimingData.reloadCache()
         app.chartManager.clearSelections()
-        app.chartManager.eventSelection.timingEvents = this.findEvents(
-          chartResults.newEvents
-        ).concat(this.simfileTimingData.findEvents(smResults.newEvents))
+        app.chartManager.setEventSelection(
+          this.findEvents(chartResults.newEvents).concat(
+            this.simfileTimingData.findEvents(smResults.newEvents)
+          )
+        )
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
@@ -113,9 +117,11 @@ export class ChartTimingData extends TimingData {
 
         this.simfileTimingData.reloadCache()
         app.chartManager.clearSelections()
-        app.chartManager.eventSelection.timingEvents = this.findEvents(
-          chartResults.oldEvents
-        ).concat(this.simfileTimingData.findEvents(smResults.oldEvents))
+        app.chartManager.setEventSelection(
+          this.findEvents(chartResults.oldEvents).concat(
+            this.simfileTimingData.findEvents(smResults.oldEvents)
+          )
+        )
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
@@ -147,9 +153,11 @@ export class ChartTimingData extends TimingData {
         this._insert(chartResults.removedEvents)
         this.simfileTimingData.reloadCache()
         app.chartManager.clearSelections()
-        app.chartManager.eventSelection.timingEvents = this.findEvents(
-          chartResults.removedEvents
-        ).concat(this.simfileTimingData.findEvents(smResults.removedEvents))
+        app.chartManager.setEventSelection(
+          this.findEvents(chartResults.removedEvents).concat(
+            this.simfileTimingData.findEvents(smResults.removedEvents)
+          )
+        )
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
         if (hasTimeSig) EventHandler.emit("timeSigChanged")

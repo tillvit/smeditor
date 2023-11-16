@@ -261,7 +261,13 @@ export class WebFileHandler implements BaseFileHandler {
     let fileHandle
     if (typeof path == "string") {
       fileHandle = await this.getFileHandle(path, { create: true })
-      if (!fileHandle) return
+      if (!fileHandle) {
+        WaterfallManager.createFormatted(
+          "Failed to write to " + path + "!",
+          "error"
+        )
+        return
+      }
     } else {
       fileHandle = path
     }

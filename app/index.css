@@ -2243,6 +2243,22 @@ input[type="range"] {
   font-size: 12px;
 }
 
+.eq-reset {
+  margin-left: auto;
+  margin-right: 15px;
+  color: rgba(255, 58, 58, 0.8);
+  padding: 0px 5px;
+  border-radius: 3px;
+}
+
+.animated .eq-reset {
+  transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.875);
+}
+
+.eq-reset:hover {
+  background: rgba(255, 58, 58, 0.2);
+}
+
 .eq-info {
   display: flex;
   flex-direction: row;

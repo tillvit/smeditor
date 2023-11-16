@@ -6,7 +6,6 @@ import { CHART_DIFFICULTIES, ChartDifficulty } from "./ChartTypes"
 import {
   Notedata,
   NotedataEntry,
-  NotedataStats,
   PartialNotedataEntry,
   isHoldNote,
 } from "./NoteTypes"
@@ -30,7 +29,8 @@ export class Chart {
 
   private notedata: Notedata = []
 
-  private _notedataStats?: NotedataStats
+  private _notedataStats!: Record<string, number>
+  private _npsGraph!: number[]
 
   constructor(sm: Simfile, data?: string | { [key: string]: string }) {
     this.timingData = sm.timingData.createChartTimingData(this)
@@ -119,7 +119,19 @@ export class Chart {
   }
 
   getNotedataStats() {
-    return this._notedataStats!
+    return this._notedataStats
+  }
+
+  getNPSGraph() {
+    return this._npsGraph
+  }
+
+  getMaxNPS() {
+    let max = 0
+    for (const measure of this._npsGraph) {
+      if (measure > max) max = measure
+    }
+    return max
   }
 
   getSecondsFromBeat(
@@ -168,15 +180,18 @@ export class Chart {
     return computedNote
   }
 
-  addNote(note: PartialNotedataEntry): NotedataEntry {
+  addNote(note: PartialNotedataEntry, callListeners = true): NotedataEntry {
     const computedNote = this.insertNote(note)
-    EventHandler.emit("chartModified")
+    if (callListeners) EventHandler.emit("chartModified")
     return computedNote
   }
 
-  addNotes(notes: PartialNotedataEntry[]): NotedataEntry[] {
+  addNotes(
+    notes: PartialNotedataEntry[],
+    callListeners = true
+  ): NotedataEntry[] {
     const computedNotes = notes.map(note => this.insertNote(note))
-    EventHandler.emit("chartModified")
+    if (callListeners) EventHandler.emit("chartModified")
     return computedNotes
   }
 
@@ -188,7 +203,11 @@ export class Chart {
     })
   }
 
-  modifyNote(note: PartialNotedataEntry, properties: Partial<NotedataEntry>) {
+  modifyNote(
+    note: PartialNotedataEntry,
+    properties: Partial<NotedataEntry>,
+    callListeners = true
+  ) {
     const i = this.getNoteIndex(note)
     if (i == -1) return
     const noteToModify = Object.assign({}, this.notedata[i])
@@ -197,18 +216,24 @@ export class Chart {
       (properties as Record<string, any>).hold = undefined
     Object.assign(noteToModify, properties)
     this.addNote(noteToModify)
-    EventHandler.emit("chartModified")
+    if (callListeners) EventHandler.emit("chartModified")
   }
 
-  removeNote(note: PartialNotedataEntry): NotedataEntry | undefined {
+  removeNote(
+    note: PartialNotedataEntry,
+    callListeners = true
+  ): NotedataEntry | undefined {
     const i = this.getNoteIndex(note)
     if (i == -1) return
     const removedNote = this.notedata.splice(i, 1)
-    EventHandler.emit("chartModified")
+    if (callListeners) EventHandler.emit("chartModified")
     return removedNote[0]
   }
 
-  removeNotes(notes: PartialNotedataEntry[]): NotedataEntry[] {
+  removeNotes(
+    notes: PartialNotedataEntry[],
+    callListeners = true
+  ): NotedataEntry[] {
     const computedNotes = notes
       .map(note => {
         const i = this.getNoteIndex(note)
@@ -217,7 +242,7 @@ export class Chart {
         return removedNote[0]
       })
       .filter(note => note != undefined)
-    EventHandler.emit("chartModified")
+    if (callListeners) EventHandler.emit("chartModified")
     return computedNotes as NotedataEntry[]
   }
 
@@ -235,7 +260,8 @@ export class Chart {
   }
 
   recalculateStats() {
-    this._notedataStats = this.gameType.parser.getStats(
+    this._notedataStats = this.gameType.parser.getStats(this.notedata)
+    this._npsGraph = this.gameType.parser.getNPSGraph(
       this.notedata,
       this.timingData
     )
