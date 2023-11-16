@@ -508,7 +508,9 @@ export class ChartManager {
           ]
           for (const keybind of keybinds) {
             if (
-              KEYBIND_DATA[keybind].combos.map(x => x.key).includes(keyName)
+              Keybinds.getCombosForKeybind(keybind)
+                .map(x => x.key)
+                .includes(keyName)
             ) {
               event.preventDefault()
               event.stopImmediatePropagation()
@@ -527,7 +529,9 @@ export class ChartManager {
           // Stop editing when undo/redo pressed
           for (const keybind of ["undo", "redo"]) {
             if (
-              KEYBIND_DATA[keybind].combos.map(x => x.key).includes(keyName)
+              Keybinds.getCombosForKeybind(keybind)
+                .map(x => x.key)
+                .includes(keyName)
             ) {
               this.holdEditing = []
               return
