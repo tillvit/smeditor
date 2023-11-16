@@ -6,6 +6,17 @@ import { clamp, roundDigit } from "../../util/Math"
 import { parseString as numericParse } from "../../util/Util"
 import { Window } from "./Window"
 
+const FILTER_DEFAULTS: { frequency: number; Q?: number; gain?: number }[] = [
+  { frequency: 20, Q: 0.71 },
+  { frequency: 75, gain: 0 },
+  { frequency: 100, gain: 0, Q: 0.6 },
+  { frequency: 250, gain: 0, Q: 0.3 },
+  { frequency: 1040, gain: 0, Q: 0.41 },
+  { frequency: 2500, gain: 0, Q: 0.2 },
+  { frequency: 7500, gain: 0 },
+  { frequency: 20000, Q: 0.71 },
+]
+
 const FREQUENCY_LINES = [
   { freq: 20, label: "20" },
   { freq: 30, label: "30" },
@@ -192,11 +203,35 @@ export class EQWindow extends Window {
     qContainer.replaceChildren(qText, qValue)
     this.setupInput(qValue, "Q", 0.0001, 1000, "", 4)
 
+    const resetButton = document.createElement("div")
+    resetButton.classList.add("eq-reset", "disabled")
+    resetButton.innerText = "Reset"
+    resetButton.onclick = () => {
+      if (this.trackedFilter == null) {
+        for (let i = 0; i < FILTER_DEFAULTS.length; i++) {
+          this.app.chartManager.chartAudio.updateFilter(i, FILTER_DEFAULTS[i])
+          this.app.chartManager.chartAudio.disableFilter(i)
+          this.updateIcons()
+          this.points[i].refreshPoint()
+        }
+      } else {
+        this.app.chartManager.chartAudio.updateFilter(
+          this.trackedFilter,
+          FILTER_DEFAULTS[this.trackedFilter]
+        )
+        this.app.chartManager.chartAudio.disableFilter(this.trackedFilter)
+        this.updateIcons()
+        this.points[this.trackedFilter].refreshPoint()
+        this.trackFilter(this.trackedFilter)
+      }
+    }
+
     infoContainer.replaceChildren(
       typeContainer,
       freqContainer,
       gainContainer,
-      qContainer
+      qContainer,
+      resetButton
     )
     this.info = infoContainer
 
