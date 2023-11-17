@@ -91,6 +91,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     this.trackVariable(() => Options.chart.waveform.filteredColor)
     this.trackVariable(() => Options.chart.waveform.color)
     this.trackVariable(() => Options.chart.waveform.speedChanges)
+    this.trackVariable(() => Options.chart.receptorYPos)
     this.trackVariable(
       () => Options.chart.waveform.lineHeight,
       () => {

@@ -20,6 +20,10 @@ If applicable, provide steps as to how to reliably reproduce this bug.
 
 **Screenshots/Media**
 If applicable, add screenshots to help explain your problem. Logs of the developer console are great, but videos demonstrating the bug are even better!
+If you are using the app, logs are located at 
+- Windows: ``%LOCALAPPDATA%/smeditor/chrome_debug.log``
+- Linux: ``~/.config/smeditor/chrome_debug.log``
+- OS X: ``~/Library/Application Support/smeditor/chrome_debug.log``
 
 **Additional context**
 Add any other context about the problem here.
