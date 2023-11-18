@@ -68,11 +68,11 @@ export class ChartAudio {
     this.type = type ?? ""
     this._filters[0].gain.value = -25
     this._audioAnalyzer = this._audioContext.createAnalyser()
-    this._audioAnalyzer.fftSize = 8192
+    this._audioAnalyzer.fftSize = 4096
     this._audioAnalyzer.maxDecibels = 0
     this._freqData = new Uint8Array(this._audioAnalyzer.frequencyBinCount)
     this._filteredAudioAnalyzer = this._audioContext.createAnalyser()
-    this._filteredAudioAnalyzer.fftSize = 8192
+    this._filteredAudioAnalyzer.fftSize = 4096
     this._filteredAudioAnalyzer.maxDecibels = 0
     this._filteredFreqData = new Uint8Array(
       this._filteredAudioAnalyzer.frequencyBinCount

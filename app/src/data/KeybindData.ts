@@ -11,6 +11,7 @@ import { KeybindWindow } from "../gui/window/KeybindWindow"
 import { NewSongWindow } from "../gui/window/NewSongWindow"
 import { OffsetWindow } from "../gui/window/OffsetWindow"
 import { SMPropertiesWindow } from "../gui/window/SMPropertiesWindow"
+import { SyncWindow } from "../gui/window/SyncWindow"
 import { TimingDataWindow } from "../gui/window/TimingDataWindow"
 import { UserOptionsWindow } from "../gui/window/UserOptionsWindow"
 import { ActionHistory } from "../util/ActionHistory"
@@ -596,6 +597,12 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ key: "E", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartAudio,
     callback: app => app.windowManager.openWindow(new EQWindow(app)),
+  },
+  syncAudio: {
+    label: "Sync Audio",
+    combos: [{ key: "L", mods: [Modifier.SHIFT] }],
+    disabled: app => !app.chartManager.chartAudio,
+    callback: app => app.windowManager.openWindow(new SyncWindow(app)),
   },
   previousNoteType: {
     label: "Previous note type",
