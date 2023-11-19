@@ -1522,7 +1522,7 @@ export class ChartManager {
 
   setNoteSelection(notes: NotedataEntry[]) {
     this.selection.inProgressNotes = []
-    this.selection.notes = notes.sort((a, b) => {
+    this.selection.notes = [...notes].sort((a, b) => {
       if (a.beat == b.beat) return a.col - b.col
       return a.beat - b.beat
     })
