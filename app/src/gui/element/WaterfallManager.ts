@@ -23,6 +23,7 @@ export class WaterfallManager {
     if (this.messages[message] && this.messages[message].type == "") {
       const existingMessage = this.messages[message]
       clearTimeout(existingMessage.timeoutID)
+      clearTimeout(existingMessage.clearTimeoutID)
       count = ++existingMessage.count
       this.view.removeChild(existingMessage.container)
     }

@@ -70,6 +70,8 @@ export class SyncWindow extends Window {
   }
 
   async reset() {
+    this.app.chartManager.chartAudio.onUpdate(() => this.reset())
+
     await this.getMonoAudioData()
     this.sampleRate = this.app.chartManager.chartAudio.getSampleRate()
     this.spectroHeights = new Array(FFT_SIZE).fill(0).map((_, index) => {
