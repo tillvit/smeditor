@@ -231,7 +231,7 @@ export class ChartManager {
         const snap = Options.chart.snap
         const speed =
           Options.chart.speed *
-          (Options.chart.reverse && Options.chart.scroll.invertZoomScroll
+          (Options.chart.reverse && Options.chart.scroll.invertReverseScroll
             ? -1
             : 1)
         const delta =
