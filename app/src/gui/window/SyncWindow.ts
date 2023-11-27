@@ -79,7 +79,7 @@ export class SyncWindow extends Window {
   private spectrogramDifference: Float64Array[] = []
   private noveltyCurve: number[] = []
   private noveltyCurveIsolated: number[] = []
-  private spectrogramCanvas?: HTMLCanvasElement
+  private spectrogramCanvas?: OffscreenCanvas
   private lowestFinishedBlock = 0
   private renderedBlocks = 0
   private peaks: boolean[] = []
@@ -181,12 +181,15 @@ export class SyncWindow extends Window {
       )
     })
     this.spectrogram = []
-    this.spectrogramCanvas = document.createElement("canvas")
-    this.spectrogramCanvas.width = Math.ceil(
-      this.monoAudioData!.length / WINDOW_STEP
+    this.spectrogramCanvas = new OffscreenCanvas(
+      this.monoAudioData!.length / WINDOW_STEP,
+      graphHeight * 2
     )
+    // this.spectrogramCanvas.width = Math.ceil(
+    //   this.monoAudioData!.length / WINDOW_STEP
+    // )
     const ctx = this.spectrogramCanvas.getContext("2d")!
-    this.spectrogramCanvas.height = graphHeight * 2
+    // this.spectrogramCanvas.height = graphHeight * 2
     ctx.fillStyle = `rgba(0, 0, 0, 0.6)`
     ctx.fillRect(0, 0, this.spectrogramCanvas.width, graphHeight)
     ctx.fillRect(
@@ -345,6 +348,7 @@ export class SyncWindow extends Window {
       )
 
       ctx.textAlign = "right"
+      ctx.fillStyle = "rgba(0, 150, 255, 1)"
       ctx.textBaseline = "middle"
       if (this.tempogramGroups[blockNum]) {
         for (const data of this.tempogramGroups[blockNum]) {
@@ -373,10 +377,10 @@ export class SyncWindow extends Window {
           bpmTotal /= totalBlocksAvailable
 
           ctx.font = `${18 + weightsTotal * 300}px Assistant`
-          ctx.fillStyle = `rgba(0, 150, 255, ${Math.min(
-            255,
-            (data.groups[0].value - TEMPOGRAM_THRESHOLD) * 300
-          )})`
+          ctx.globalAlpha = Math.min(
+            1,
+            (data.groups[0].value - TEMPOGRAM_THRESHOLD) * 100
+          )
           ctx.fillText(
             roundDigit(bpmTotal, 0) + "",
             200,
@@ -389,8 +393,10 @@ export class SyncWindow extends Window {
         }
       }
 
+      ctx.globalAlpha = 1
+
       ctx.font = "22px Assistant"
-      ctx.fillStyle = "rgba(0, 150, 255, 1)"
+
       ctx.textAlign = "left"
       ctx.textBaseline = "top"
       ctx.fillText("Spectogram", 10, 10)
@@ -440,7 +446,7 @@ export class SyncWindow extends Window {
     this.spectrogram[blockNum] = response
     const ctx = this.spectrogramCanvas!.getContext("2d")!
 
-    ctx.fillStyle = `rgba(0, 166, 255, 0.6)`
+    ctx.fillStyle = `rgba(0, 166, 255, 1)`
     response.forEach((value, index) => {
       const loc = this.spectroHeights[index]
       const col = clamp(value * 2000, 0, 255)
@@ -709,7 +715,7 @@ export class SyncWindow extends Window {
     })
     const ctx = this.spectrogramCanvas!.getContext("2d")!
 
-    ctx.fillStyle = `rgba(0, 166, 255, 0.6)`
+    ctx.fillStyle = `rgba(0, 166, 255, 1)`
     this.tempogram[blockNum].forEach(data => {
       const col = clamp(data.value * 8000, 0, 255)
       ctx.globalAlpha = col / 255
