@@ -21,6 +21,12 @@ const AVERAGE_WINDOW_RADIUS = 3
 const MIN_BPM = 125
 const MAX_BPM = 250
 
+const TEMPOGRAM_SMOOTHING = 3
+const TEMPOGRAM_THRESHOLD = 0.015
+const TEMPOGRAM_GROUPING_WINDOW = 6
+
+const MAX_MS_PER_FRAME = 15
+
 const WEIGHT_DATA = [
   { frequency: 20, weight: 0.4006009013520281 },
   { frequency: 25, weight: 0.4258037044922291 },
@@ -214,7 +220,7 @@ export class SyncWindow extends Window {
       // render new blocks
       if (this.monoAudioData) {
         const startTime = performance.now()
-        while (performance.now() - startTime < 8) {
+        while (performance.now() - startTime < MAX_MS_PER_FRAME) {
           if (
             this.lowestFinishedBlock >=
             Math.ceil(this.monoAudioData.length / WINDOW_STEP)
@@ -342,20 +348,21 @@ export class SyncWindow extends Window {
       ctx.textBaseline = "middle"
       if (this.tempogramGroups[blockNum]) {
         for (const data of this.tempogramGroups[blockNum]) {
-          if (data.groups[0].value < 0.015) break
+          if (data.groups[0].value < TEMPOGRAM_THRESHOLD) break
           let weightsTotal = 0
           let bpmTotal = 0
           let totalBlocksAvailable = 0
           // take the local average
           for (
-            let j = blockNum - AVERAGE_WINDOW_RADIUS;
-            j <= blockNum + AVERAGE_WINDOW_RADIUS;
+            let j = blockNum - TEMPOGRAM_SMOOTHING;
+            j <= blockNum + TEMPOGRAM_SMOOTHING;
             j++
           ) {
             if (this.tempogramGroups[j] === undefined) continue
             const closestGroup = this.tempogramGroups[j].find(
               group =>
-                group.center < data.center + 6 && group.center > data.center - 6
+                group.center < data.center + TEMPOGRAM_GROUPING_WINDOW &&
+                group.center > data.center - TEMPOGRAM_GROUPING_WINDOW
             )
             if (closestGroup === undefined) continue
             weightsTotal += closestGroup.groups[0].value
@@ -368,21 +375,8 @@ export class SyncWindow extends Window {
           ctx.font = `${18 + weightsTotal * 300}px Assistant`
           ctx.fillStyle = `rgba(0, 150, 255, ${Math.min(
             255,
-            (data.groups[0].value - 0.015) * 300
+            (data.groups[0].value - TEMPOGRAM_THRESHOLD) * 300
           )})`
-          ctx.ellipse(
-            200 - 3,
-            lerp(
-              graphHeight * 2,
-              graphHeight * 1.5,
-              unlerp(MIN_BPM, MAX_BPM, bpmTotal)
-            ) - 3,
-            7,
-            7,
-            0,
-            0,
-            3.14159
-          )
           ctx.fillText(
             roundDigit(bpmTotal, 0) + "",
             200,
@@ -631,11 +625,10 @@ export class SyncWindow extends Window {
       scaled[i] = this.noveltyCurveIsolated[i] / max
     }
 
-    for (
-      let blockNum = 0;
-      blockNum < Math.ceil(scaled.length / TEMPO_STEP);
-      blockNum++
-    ) {
+    const MAX_BLOCKS = Math.ceil(scaled.length / TEMPO_STEP)
+
+    let frameTime = performance.now()
+    const processBlock = (blockNum: number) => {
       const slice = new Float32Array(TEMPO_FFT_SIZE)
       slice.set(
         scaled.subarray(
@@ -654,7 +647,17 @@ export class SyncWindow extends Window {
         response[i] = Math.log(1 + 1 * response[i])
       }
       this.storeTempogram(blockNum, response)
+
+      if (blockNum < MAX_BLOCKS) {
+        if (performance.now() - frameTime < MAX_MS_PER_FRAME) {
+          processBlock(++blockNum)
+        } else {
+          frameTime = performance.now()
+          setTimeout(() => processBlock(++blockNum), 1)
+        }
+      }
     }
+    processBlock(0)
   }
 
   storeTempogram(blockNum: number, response: Float64Array) {
@@ -686,7 +689,9 @@ export class SyncWindow extends Window {
     for (let i = 0; i < Math.min(this.tempogram[blockNum].length, 10); i++) {
       const tempo = this.tempogram[blockNum][i]
       const closestGroup = groups.find(
-        group => group.center < tempo.bpm + 6 && group.center > tempo.bpm - 6
+        group =>
+          group.center < tempo.bpm + TEMPOGRAM_GROUPING_WINDOW &&
+          group.center > tempo.bpm - TEMPOGRAM_GROUPING_WINDOW
       )
       if (closestGroup === undefined) {
         groups.push({ center: tempo.bpm, groups: [tempo] })
