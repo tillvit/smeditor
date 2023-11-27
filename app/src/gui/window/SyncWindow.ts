@@ -69,19 +69,25 @@ export class SyncWindow extends Window {
 
   private monoAudioData?: Float32Array
   private sampleRate = 44100
+
   private tempogram: { bpm: number; value: number }[][] = []
   private tempogramGroups: {
     center: number
     groups: { bpm: number; value: number }[]
     avg: number
   }[][] = []
+
   private spectrogram: Float64Array[] = []
   private spectrogramDifference: Float64Array[] = []
+
   private noveltyCurve: number[] = []
   private noveltyCurveIsolated: number[] = []
+
   private spectrogramCanvas?: OffscreenCanvas
+
   private lowestFinishedBlock = 0
-  private renderedBlocks = 0
+  private numRenderedBlocks = 0
+
   private peaks: boolean[] = []
   private _threshold = 0.3
 
@@ -101,19 +107,6 @@ export class SyncWindow extends Window {
     this.reset()
 
     EventHandler.on("audioLoaded", this.onAudioLoad)
-    window.pnt = this.placeNoteTest.bind(this)
-    window.ft = ft
-    window.gbpm = () => {
-      if (this.tempogram) {
-        const blockNum = Math.round(
-          (this.app.chartManager.getTime() * this.sampleRate) /
-            WINDOW_STEP /
-            TEMPO_STEP
-        )
-        console.log(this.tempogram[blockNum])
-        console.log(this.tempogramGroups[blockNum])
-      }
-    }
   }
 
   destroy() {
@@ -141,6 +134,8 @@ export class SyncWindow extends Window {
 
     await this.getMonoAudioData()
     this.sampleRate = this.app.chartManager.chartAudio.getSampleRate()
+
+    // Precalculate heights of spectogram pixels
     this.spectroHeights = new Array(FFT_SIZE).fill(0).map((_, index) => {
       const freq = ((index / (FFT_SIZE / 2)) * this.sampleRate) / 2
       const freqNext = (((index + 1) / (FFT_SIZE / 2)) * this.sampleRate) / 2
@@ -164,6 +159,8 @@ export class SyncWindow extends Window {
         height: y - yNext,
       }
     })
+
+    // https://www.iso.org/obp/ui/en/#!iso:std:83117:en
     this.spectroWeights = new Array(FFT_SIZE).fill(0).map((_, index) => {
       const freq = ((index / (FFT_SIZE / 2)) * this.sampleRate) / 2
       const weightIndex = WEIGHT_DATA.findIndex(point => point.frequency > freq)
@@ -180,16 +177,12 @@ export class SyncWindow extends Window {
         )
       )
     })
-    this.spectrogram = []
+
     this.spectrogramCanvas = new OffscreenCanvas(
       this.monoAudioData!.length / WINDOW_STEP,
       graphHeight * 2
     )
-    // this.spectrogramCanvas.width = Math.ceil(
-    //   this.monoAudioData!.length / WINDOW_STEP
-    // )
     const ctx = this.spectrogramCanvas.getContext("2d")!
-    // this.spectrogramCanvas.height = graphHeight * 2
     ctx.fillStyle = `rgba(0, 0, 0, 0.6)`
     ctx.fillRect(0, 0, this.spectrogramCanvas.width, graphHeight)
     ctx.fillRect(
@@ -198,8 +191,10 @@ export class SyncWindow extends Window {
       this.spectrogramCanvas.width,
       graphHeight * 0.5
     )
+
+    this.spectrogram = []
     this.lowestFinishedBlock = 0
-    this.renderedBlocks = 0
+    this.numRenderedBlocks = 0
     this.spectrogramDifference = []
     this.noveltyCurve = []
     this.noveltyCurveIsolated = []
@@ -213,14 +208,14 @@ export class SyncWindow extends Window {
     ctx.canvas.width = 1200
     ctx.canvas.height = 800
     ctx.imageSmoothingEnabled = false
-    const call = () => {
+    const update = () => {
       if (!this.app.chartManager.chartAudio) return
 
       const MAX_BLOCKS = Math.ceil(
         (this.monoAudioData?.length ?? 0) / WINDOW_STEP
       )
 
-      // render new blocks
+      // Render new blocks
       if (this.monoAudioData) {
         const startTime = performance.now()
         while (performance.now() - startTime < MAX_MS_PER_FRAME) {
@@ -237,14 +232,13 @@ export class SyncWindow extends Window {
             this.renderBlock(this.lowestFinishedBlock)
             this.calcDifference(this.lowestFinishedBlock)
             this.calcIsolatedNovelty(this.lowestFinishedBlock)
-            this.renderedBlocks++
+            this.numRenderedBlocks++
           }
           this.lowestFinishedBlock++
         }
       }
 
-      // draw
-
+      // Draw
       ctx.fillStyle = "rgb(11, 14, 26)"
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
@@ -252,7 +246,6 @@ export class SyncWindow extends Window {
       if (this.spectrogramCanvas) {
         ctx.drawImage(
           this.spectrogramCanvas,
-
           (this.app.chartManager.getTime() * this.sampleRate) / WINDOW_STEP -
             200 / zoom,
           0,
@@ -267,37 +260,40 @@ export class SyncWindow extends Window {
 
       // draw current measure lines
 
-      const LEFT_BLOCK =
+      const leftBoundBlockNum =
         (this.app.chartManager.getTime() * this.sampleRate) / WINDOW_STEP -
         200 / zoom
 
-      const RIGHT_BLOCK =
+      const rightBoundBlockNum =
         (this.app.chartManager.getTime() * this.sampleRate) / WINDOW_STEP +
         1000 / zoom
 
-      const LEFT_SECOND = (LEFT_BLOCK * WINDOW_STEP) / this.sampleRate
-      const RIGHT_SECOND = (RIGHT_BLOCK * WINDOW_STEP) / this.sampleRate
+      const leftBoundSecond =
+        (leftBoundBlockNum * WINDOW_STEP) / this.sampleRate
+      const rightBoundSecond =
+        (rightBoundBlockNum * WINDOW_STEP) / this.sampleRate
 
       if (this.app.chartManager.loadedChart) {
-        const LEFT_BEAT =
-          this.app.chartManager.loadedChart.getBeatFromSeconds(LEFT_SECOND)
-        const RIGHT_BEAT = this.app.chartManager.loadedChart.getBeatFromSeconds(
-          Math.min(
-            RIGHT_SECOND,
-            this.app.chartManager.chartAudio.getSongLength()
+        const leftBoundBeat =
+          this.app.chartManager.loadedChart.getBeatFromSeconds(leftBoundSecond)
+        const rightBoundBeat =
+          this.app.chartManager.loadedChart.getBeatFromSeconds(
+            Math.min(
+              rightBoundSecond,
+              this.app.chartManager.chartAudio.getSongLength()
+            )
           )
-        )
 
         ctx.fillStyle = "rgba(255, 255, 255, 0.2)"
 
         for (const [barBeat, isMeasure] of this.getBarlineBeats(
-          LEFT_BEAT,
-          RIGHT_BEAT
+          leftBoundBeat,
+          rightBoundBeat
         )) {
           const barSecond =
             this.app.chartManager.loadedChart.getSecondsFromBeat(barBeat)
           ctx.fillRect(
-            unlerp(LEFT_SECOND, RIGHT_SECOND, barSecond) * graphWidth -
+            unlerp(leftBoundSecond, rightBoundSecond, barSecond) * graphWidth -
               (isMeasure ? 2 : 1),
             0,
             isMeasure ? 5 : 3,
@@ -306,14 +302,18 @@ export class SyncWindow extends Window {
         }
       }
 
-      // draw onset red lines
+      // Draw onset red lines
 
       ctx.fillStyle = "rgba(255, 0, 0, 0.3)"
 
-      for (let i = Math.floor(LEFT_BLOCK); i <= Math.ceil(RIGHT_BLOCK); i++) {
+      for (
+        let i = Math.floor(leftBoundBlockNum);
+        i <= Math.ceil(rightBoundBlockNum);
+        i++
+      ) {
         if (this.peaks[i]) {
           ctx.fillRect(
-            unlerp(LEFT_BLOCK, RIGHT_BLOCK, i) * graphWidth - 0.5,
+            unlerp(leftBoundBlockNum, rightBoundBlockNum, i) * graphWidth - 0.5,
             0,
             2,
             graphHeight * 1.5
@@ -323,12 +323,7 @@ export class SyncWindow extends Window {
 
       ctx.fillRect(199, 0, 3, graphHeight * 2)
 
-      const blockNum = Math.round(
-        (this.app.chartManager.getTime() * this.sampleRate) /
-          WINDOW_STEP /
-          TEMPO_STEP
-      )
-
+      // Draw threshold line
       ctx.fillStyle = "rgba(255, 0, 255, 0.5)"
       ctx.fillRect(
         0,
@@ -337,12 +332,18 @@ export class SyncWindow extends Window {
         1
       )
 
+      const currentTempoBlock = Math.round(
+        (this.app.chartManager.getTime() * this.sampleRate) /
+          WINDOW_STEP /
+          TEMPO_STEP
+      )
+
       ctx.fillStyle = "rgba(0, 150, 255, 1)"
       ctx.textAlign = "right"
       ctx.textBaseline = "top"
       ctx.font = "22px Assistant"
       ctx.fillText(
-        `${this.renderedBlocks}/${MAX_BLOCKS} blocks rendered`,
+        `${this.numRenderedBlocks}/${MAX_BLOCKS} blocks rendered`,
         graphWidth - 10,
         10
       )
@@ -350,16 +351,16 @@ export class SyncWindow extends Window {
       ctx.textAlign = "right"
       ctx.fillStyle = "rgba(0, 150, 255, 1)"
       ctx.textBaseline = "middle"
-      if (this.tempogramGroups[blockNum]) {
-        for (const data of this.tempogramGroups[blockNum]) {
+      if (this.tempogramGroups[currentTempoBlock]) {
+        for (const data of this.tempogramGroups[currentTempoBlock]) {
           if (data.groups[0].value < TEMPOGRAM_THRESHOLD) break
+          // Take the local average
           let weightsTotal = 0
           let bpmTotal = 0
           let totalBlocksAvailable = 0
-          // take the local average
           for (
-            let j = blockNum - TEMPOGRAM_SMOOTHING;
-            j <= blockNum + TEMPOGRAM_SMOOTHING;
+            let j = currentTempoBlock - TEMPOGRAM_SMOOTHING;
+            j <= currentTempoBlock + TEMPOGRAM_SMOOTHING;
             j++
           ) {
             if (this.tempogramGroups[j] === undefined) continue
@@ -393,19 +394,18 @@ export class SyncWindow extends Window {
         }
       }
 
+      // Draw labels
       ctx.globalAlpha = 1
-
       ctx.font = "22px Assistant"
-
       ctx.textAlign = "left"
       ctx.textBaseline = "top"
       ctx.fillText("Spectogram", 10, 10)
       ctx.fillText("Onsets", 10, graphHeight + 10)
       ctx.fillText("Tempogram", 10, graphHeight * 1.5 + 10)
 
-      if (canvas.closest("#windows")) requestAnimationFrame(call)
+      if (canvas.closest("#windows")) requestAnimationFrame(update)
     }
-    return call
+    return update
   }
 
   renderBlock(blockNum: number) {
@@ -491,7 +491,7 @@ export class SyncWindow extends Window {
       Math.log(1 + sum) > this._threshold &&
       Math.log(1 + sum) > (this.noveltyCurveIsolated[blockNum - 1] ?? 0)
     ) {
-      // only mark this is a peak if its difference is larger than the last one (perceived onset)
+      // Only mark this is a peak if its difference is larger than the last one (perceived onset)
       if (this.peaks[blockNum - 1]) {
         this.peaks[blockNum - 1] = false
       }
@@ -554,7 +554,6 @@ export class SyncWindow extends Window {
   placeNoteTest(quantize: number) {
     this.app.chartManager.loadedChart?.addNotes(
       this.peaks
-
         .map((value, index) => {
           if (!value) return null
           let b = this.app.chartManager.loadedChart!.getBeatFromSeconds(
