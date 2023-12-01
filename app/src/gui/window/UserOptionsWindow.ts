@@ -275,9 +275,6 @@ export class UserOptionsWindow extends Window {
                 : "block"
             callback?.(deserializer(value))
           }
-          numberInput.oninput = () => {
-            numberInput.value = numberInput.value.replaceAll(/[^.0-9+-/*]/g, "")
-          }
           slider.oninput = () => {
             const value = parseFloat(slider.value)
             numberInput.value = roundDigit(value, 3).toString()

@@ -2352,3 +2352,19 @@ input[type="color"] {
   scale: 1.03;
   background-color: rgba(66, 66, 66, 0.5);
 }
+
+.sync-spinner-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.sync-top-container,
+.sync-bottom-container {
+  display: flex;
+  flex-direction: row;
+  padding: 10px 5px;
+  justify-content: space-around;
+  align-items: center;
+}

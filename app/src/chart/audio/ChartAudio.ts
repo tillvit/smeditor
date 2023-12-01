@@ -281,11 +281,31 @@ export class ChartAudio {
   }
 
   /**
+   * Removes a listener that fires when the audio buffer is loaded.
+   * @memberof ChartAudio
+   */
+  offLoad(callback: () => void) {
+    this._loadListeners = this._loadListeners.filter(
+      listener => listener != callback
+    )
+  }
+
+  /**
    * Add a listener that fires when the filters are updated or the audio buffer is loaded.
    * @memberof ChartAudio
    */
   onUpdate(callback: () => void) {
     this._updateListeners.push(callback)
+  }
+
+  /**
+   * Removes a listener that fires when the filters are updated or the audio buffer is loaded.
+   * @memberof ChartAudio
+   */
+  offUpdate(callback: () => void) {
+    this._updateListeners = this._updateListeners.filter(
+      listener => listener != callback
+    )
   }
 
   /**

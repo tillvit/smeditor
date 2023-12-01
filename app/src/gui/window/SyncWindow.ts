@@ -4,11 +4,13 @@ import { PartialTapNotedataEntry } from "../../chart/sm/NoteTypes"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, lerp, roundDigit, unlerp } from "../../util/Math"
 import { Options } from "../../util/Options"
+import { parseString } from "../../util/Util"
+import { NumberSpinner } from "../element/NumberSpinner"
 import { WaterfallManager } from "../element/WaterfallManager"
 import { Window } from "./Window"
 
-const graphWidth = 1200
-const graphHeight = 400
+const graphWidth = 1000
+const graphHeight = 300
 
 const FFT_SIZE = 1024
 const WINDOW_STEP = 512
@@ -94,10 +96,19 @@ export class SyncWindow extends Window {
   private spectroHeights: { y: number; height: number }[] = []
   private spectroWeights: number[] = []
 
+  private lastBeat = -1
+  private updateInterval
+  private bpm!: NumberSpinner
+  private offset!: NumberSpinner
+  private toggleButton!: HTMLButtonElement
+  private changeHandler = this.updateSpinners.bind(this)
+
+  private doAnalysis = false
+
   constructor(app: App) {
     super({
       title: "Sync Audio",
-      width: 600,
+      width: 500,
       height: 400,
       win_id: "sync-audio",
     })
@@ -106,31 +117,178 @@ export class SyncWindow extends Window {
 
     this.reset()
 
+    this.updateInterval = setInterval(() => {
+      if (
+        Math.round(this.app.chartManager.getBeat() * 1000) / 1000 !=
+        this.lastBeat
+      ) {
+        this.lastBeat =
+          Math.round(this.app.chartManager.getBeat() * 1000) / 1000
+        this.updateSpinners()
+      }
+    }, 17)
+    EventHandler.on("timingModified", this.changeHandler)
+    EventHandler.on("chartLoaded", this.changeHandler)
     EventHandler.on("audioLoaded", this.onAudioLoad)
   }
 
-  destroy() {
+  onClose() {
+    EventHandler.off("timingModified", this.changeHandler)
+    EventHandler.off("chartLoaded", this.changeHandler)
     EventHandler.off("audioLoaded", this.onAudioLoad)
+    this.app.chartManager.chartAudio.offLoad(this.onAudioLoad)
+    clearInterval(this.updateInterval)
+  }
+
+  updateSpinners() {
+    this.offset.setValue(
+      this.app.chartManager.loadedChart?.timingData.getOffset() ?? 0
+    )
+    this.bpm.setValue(
+      this.app.chartManager.loadedChart?.timingData.getEventAtBeat(
+        "BPMS",
+        this.app.chartManager.getBeat()
+      )?.value ?? 120
+    )
   }
 
   initView() {
     this.viewElement.replaceChildren()
 
+    this.lastBeat = Math.round(this.app.chartManager.getBeat() * 1000) / 1000
+
+    const offsetContainer = document.createElement("div")
+    offsetContainer.classList.add("sync-spinner-container")
+    const offsetLabel = document.createElement("div")
+    offsetLabel.innerText = "Offset"
+
+    this.offset = NumberSpinner.create(
+      this.app.chartManager.loadedChart?.timingData.getOffset() ?? 0,
+      0.001,
+      3
+    )
+    this.offset.onChange = value => {
+      if (value == undefined) return
+      if (!this.app.chartManager.loadedChart || !this.app.chartManager.loadedSM)
+        return
+      ;(this.app.chartManager.loadedChart.timingData.hasChartOffset()
+        ? this.app.chartManager.loadedChart.timingData
+        : this.app.chartManager.loadedSM.timingData
+      ).setOffset(value)
+      this.app.chartManager.setBeat(this.app.chartManager.getBeat())
+    }
+
+    offsetContainer.replaceChildren(offsetLabel, this.offset.view)
+
+    const bpmContainer = document.createElement("div")
+    bpmContainer.classList.add("sync-spinner-container")
+    const bpmLabel = document.createElement("div")
+    bpmLabel.innerText = "BPM"
+
+    this.bpm = NumberSpinner.create(
+      this.app.chartManager.loadedChart?.timingData.getEventAtBeat(
+        "BPMS",
+        this.app.chartManager.getBeat()
+      )?.value ?? 120,
+      0.001,
+      3
+    )
+    this.bpm.onChange = value => {
+      if (value == undefined) return
+      if (!this.app.chartManager.loadedChart || !this.app.chartManager.loadedSM)
+        return
+      ;(this.app.chartManager.loadedChart.timingData.isPropertyChartSpecific(
+        "BPMS"
+      )
+        ? this.app.chartManager.loadedChart.timingData
+        : this.app.chartManager.loadedSM.timingData
+      ).insert([{ type: "BPMS", beat: this.app.chartManager.getBeat(), value }])
+      this.app.chartManager.setBeat(this.app.chartManager.getBeat())
+    }
+
+    bpmContainer.replaceChildren(bpmLabel, this.bpm.view)
+
     const container = document.createElement("div")
-    container.classList.add("eq-container")
+    container.classList.add("sync-container")
+
+    const topContainer = document.createElement("div")
+    topContainer.classList.add("sync-top-container")
+    topContainer.replaceChildren(offsetContainer, bpmContainer)
+
+    const bottomContainer = document.createElement("div")
+    bottomContainer.classList.add("sync-bottom-container")
+
+    this.toggleButton = document.createElement("button")
+    this.toggleButton.innerText = "Start analyzing"
+    this.toggleButton.style.width = "120px"
+    this.toggleButton.onclick = () => {
+      this.doAnalysis = !this.doAnalysis
+      this.toggleButton.innerText = this.doAnalysis
+        ? "Stop analyzing"
+        : "Start analyzing"
+    }
+
+    const thresholdContainer = document.createElement("div")
+    thresholdContainer.style.display = "flex"
+    thresholdContainer.style.alignItems = "center"
+    const thresholdLabel = document.createElement("div")
+    thresholdLabel.innerText = "Onset Threshold"
+    const slider = document.createElement("input")
+    slider.type = "range"
+    slider.min = "0"
+    slider.max = "1"
+    slider.step = "0.01"
+    slider.value = `${this._threshold}`
+    const numberInput = document.createElement("input")
+    numberInput.type = "text"
+    numberInput.value = `${this._threshold}`
+    numberInput.onblur = () => {
+      let value = parseString(numberInput.value)
+      if (value === null) {
+        numberInput.value = `${this._threshold}`
+        return
+      }
+      value = clamp(value, 0, 1)
+      numberInput.value = roundDigit(value, 2).toString()
+      numberInput.blur()
+      this.threshold = value
+      slider.value = value.toString()
+    }
+    slider.oninput = () => {
+      const value = parseFloat(slider.value)
+      numberInput.value = roundDigit(value, 3).toString()
+      this.threshold = value
+    }
+    numberInput.style.width = "50px"
+    numberInput.onkeydown = ev => {
+      if (ev.key == "Enter") numberInput.blur()
+    }
+    thresholdContainer.appendChild(slider)
+    thresholdContainer.appendChild(numberInput)
+
+    bottomContainer.replaceChildren(
+      thresholdLabel,
+      thresholdContainer,
+      this.toggleButton
+    )
 
     const canvas = document.createElement("canvas")
-    canvas.style.width = "600px"
-    canvas.style.height = "400px"
+    canvas.style.width = `${graphWidth / 2}px`
+    canvas.style.height = `${graphHeight}px`
 
-    container.replaceChildren(canvas)
+    container.replaceChildren(topContainer, canvas, bottomContainer)
     this.viewElement.appendChild(container)
     const loop = this.windowLoop(canvas)
     requestAnimationFrame(loop)
   }
 
   async reset() {
-    this.app.chartManager.chartAudio.onLoad(() => this.reset())
+    this._threshold = 0.3
+    this.doAnalysis = false
+    this.toggleButton.disabled = false
+    this.toggleButton.style.background = ""
+    this.toggleButton.innerText = "Start analyzing"
+    this.app.chartManager.chartAudio.onLoad(this.onAudioLoad)
 
     await this.getMonoAudioData()
     this.sampleRate = this.app.chartManager.chartAudio.getSampleRate()
@@ -179,7 +337,7 @@ export class SyncWindow extends Window {
     })
 
     this.spectrogramCanvas = new OffscreenCanvas(
-      this.monoAudioData!.length / WINDOW_STEP,
+      Math.max(1, Math.ceil(this.monoAudioData!.length / WINDOW_STEP)),
       graphHeight * 2
     )
     const ctx = this.spectrogramCanvas.getContext("2d")!
@@ -205,8 +363,8 @@ export class SyncWindow extends Window {
 
   windowLoop(canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext("2d")!
-    ctx.canvas.width = 1200
-    ctx.canvas.height = 800
+    ctx.canvas.width = graphWidth
+    ctx.canvas.height = graphHeight * 2
     ctx.imageSmoothingEnabled = false
     const update = () => {
       if (!this.app.chartManager.chartAudio) return
@@ -216,7 +374,7 @@ export class SyncWindow extends Window {
       )
 
       // Render new blocks
-      if (this.monoAudioData) {
+      if (this.monoAudioData && this.doAnalysis) {
         const startTime = performance.now()
         while (performance.now() - startTime < MAX_MS_PER_FRAME) {
           if (
@@ -224,6 +382,8 @@ export class SyncWindow extends Window {
             Math.ceil(this.monoAudioData.length / WINDOW_STEP)
           ) {
             if (this.tempogram.length == 0) {
+              this.toggleButton.disabled = true
+              this.toggleButton.innerText = "Finding tempo"
               this.calcTempogram()
             }
             break
@@ -235,6 +395,16 @@ export class SyncWindow extends Window {
             this.numRenderedBlocks++
           }
           this.lowestFinishedBlock++
+        }
+        if (
+          this.lowestFinishedBlock <
+          Math.ceil(this.monoAudioData.length / WINDOW_STEP)
+        ) {
+          this.toggleButton.style.background = `linear-gradient(90deg, #265296 0 ${
+            (this.lowestFinishedBlock / MAX_BLOCKS) * 100
+          }%, rgb(83, 82, 82) ${
+            (this.lowestFinishedBlock / MAX_BLOCKS) * 100
+          }% 100%)`
         }
       }
 
@@ -266,7 +436,7 @@ export class SyncWindow extends Window {
 
       const rightBoundBlockNum =
         (this.app.chartManager.getTime() * this.sampleRate) / WINDOW_STEP +
-        1000 / zoom
+        800 / zoom
 
       const leftBoundSecond =
         (leftBoundBlockNum * WINDOW_STEP) / this.sampleRate
@@ -658,8 +828,16 @@ export class SyncWindow extends Window {
           processBlock(++blockNum)
         } else {
           frameTime = performance.now()
+          this.toggleButton.style.background = `linear-gradient(90deg, #265296 0 ${
+            (blockNum / MAX_BLOCKS) * 100
+          }%, rgb(83, 82, 82) ${(blockNum / MAX_BLOCKS) * 100}% 100%)`
           setTimeout(() => processBlock(++blockNum), 1)
         }
+      } else {
+        this.spectrogram = []
+        this.noveltyCurveIsolated = []
+        this.tempogramGroups = []
+        this.toggleButton.innerText = "Finished analyzing"
       }
     }
     processBlock(0)
