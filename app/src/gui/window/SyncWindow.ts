@@ -70,6 +70,7 @@ export class SyncWindow extends Window {
   private onAudioLoad = this.reset.bind(this)
 
   private monoAudioData?: Float32Array
+  private audioLength = 0
   private sampleRate = 44100
 
   private tempogram: { bpm: number; value: number }[][] = []
@@ -337,7 +338,7 @@ export class SyncWindow extends Window {
     })
 
     this.spectrogramCanvas = new OffscreenCanvas(
-      Math.max(1, Math.ceil(this.monoAudioData!.length / WINDOW_STEP)),
+      Math.max(1, Math.ceil(this.audioLength / WINDOW_STEP)),
       graphHeight * 2
     )
     const ctx = this.spectrogramCanvas.getContext("2d")!
@@ -369,9 +370,7 @@ export class SyncWindow extends Window {
     const update = () => {
       if (!this.app.chartManager.chartAudio) return
 
-      const MAX_BLOCKS = Math.ceil(
-        (this.monoAudioData?.length ?? 0) / WINDOW_STEP
-      )
+      const MAX_BLOCKS = Math.ceil(this.audioLength / WINDOW_STEP)
 
       // Render new blocks
       if (this.monoAudioData && this.doAnalysis) {
@@ -698,7 +697,7 @@ export class SyncWindow extends Window {
       .startRendering()
       .then(renderedBuffer => {
         this.monoAudioData = renderedBuffer.getChannelData(0)
-        // console.log(this.monoAudioData)
+        this.audioLength = this.monoAudioData.length
       })
       .catch(() => {
         WaterfallManager.createFormatted(
@@ -835,8 +834,9 @@ export class SyncWindow extends Window {
         }
       } else {
         this.spectrogram = []
-        this.noveltyCurveIsolated = []
-        this.tempogramGroups = []
+        this.noveltyCurve = []
+        this.tempogram = []
+        this.monoAudioData = undefined
         this.toggleButton.innerText = "Finished analyzing"
       }
     }
