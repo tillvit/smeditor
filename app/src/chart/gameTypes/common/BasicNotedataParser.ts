@@ -260,7 +260,7 @@ export class BasicNotedataParser extends NotedataParser {
           noteCount++
         noteIndex++
       }
-      nps[measure] = noteCount
+      nps[measure] = noteCount / deltaTime
     }
     return nps
   }
