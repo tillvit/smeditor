@@ -41,6 +41,7 @@ import {
   Notedata,
   NotedataEntry,
   PartialHoldNotedataEntry,
+  PartialNotedata,
   PartialNotedataEntry,
   isHoldNote,
 } from "./sm/NoteTypes"
@@ -1694,7 +1695,13 @@ export class ChartManager {
       newNote: PartialNotedataEntry
     }[] = []
     const modifiedNotes: NotedataEntry[] = []
+    let lastNote = null
     for (const newNote of notes) {
+      if (lastNote == null) {
+        lastNote = newNote
+      } else if (newNote.beat == lastNote.beat && newNote.col == lastNote.col) {
+        continue
+      }
       while (notedata[notedataIndex]) {
         const note = notedata[notedataIndex]
         const newNoteEndBeat = isHoldNote(newNote)
@@ -1782,6 +1789,11 @@ export class ChartManager {
     const notes = decodeNotes(data)
     if (!notes) return false
     if (notes.length == 0) return false
+    this.insertNotes(notes)
+    return true
+  }
+
+  insertNotes(notes: PartialNotedata) {
     notes
       .map(note => {
         note.beat += this.beat
@@ -1812,7 +1824,6 @@ export class ChartManager {
         this.clearSelections()
       },
     })
-    return true
   }
 
   pasteTempo(data: string) {

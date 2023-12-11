@@ -632,7 +632,10 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   redo: {
     label: "Redo",
-    combos: [{ key: "Y", mods: [DEF_MOD] }],
+    combos: [
+      { key: "Y", mods: [DEF_MOD] },
+      { key: "Z", mods: [DEF_MOD, Modifier.SHIFT] },
+    ],
     disabled: app =>
       !app.actionHistory.canRedo() ||
       app.chartManager.getMode() != EditMode.Edit,

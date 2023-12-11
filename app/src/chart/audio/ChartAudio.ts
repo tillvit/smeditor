@@ -79,7 +79,6 @@ export class ChartAudio {
       this._filteredAudioAnalyzer.frequencyBinCount
     )
     this._gainNode = this._audioContext.createGain()
-
     this._buffer = this._audioContext.createBuffer(2, 1, 44100)
     this._filteredBuffer = this._audioContext.createBuffer(2, 1, 44100)
     this._loadedBuffer = this._audioContext.createBuffer(2, 1, 44100)

@@ -15,7 +15,7 @@ const graphHeight = 300
 const FFT_SIZE = 1024
 const WINDOW_STEP = 512
 
-const TEMPO_FFT_SIZE = 2048
+const TEMPO_FFT_SIZE = 4096
 const TEMPO_STEP = 2
 
 const AVERAGE_WINDOW_RADIUS = 3
@@ -24,8 +24,11 @@ const MIN_BPM = 125
 const MAX_BPM = 250
 
 const TEMPOGRAM_SMOOTHING = 3
-const TEMPOGRAM_THRESHOLD = 0.015
+const TEMPOGRAM_THRESHOLD = 0.01
+const TEMPOGRAM_OFFSET_THRESHOLD = 0.02
 const TEMPOGRAM_GROUPING_WINDOW = 6
+
+const OFFSET_LOOKAHEAD = 800
 
 const MAX_MS_PER_FRAME = 15
 
@@ -101,6 +104,7 @@ export class SyncWindow extends Window {
   private updateInterval
   private bpm!: NumberSpinner
   private offset!: NumberSpinner
+  private placeNotesButton!: HTMLButtonElement
   private toggleButton!: HTMLButtonElement
   private changeHandler = this.updateSpinners.bind(this)
 
@@ -211,6 +215,9 @@ export class SyncWindow extends Window {
 
     const container = document.createElement("div")
     container.classList.add("sync-container")
+    container.style.display = "flex"
+    container.style.flexDirection = "column"
+    container.style.alignItems = "center"
 
     const topContainer = document.createElement("div")
     topContainer.classList.add("sync-top-container")
@@ -229,9 +236,22 @@ export class SyncWindow extends Window {
         : "Start analyzing"
     }
 
+    this.placeNotesButton = document.createElement("button")
+    this.placeNotesButton.innerText =
+      this.app.chartManager.startRegion !== undefined &&
+      this.app.chartManager.endRegion !== undefined
+        ? "Place onsets as notes in region"
+        : "Place onsets as notes"
+    this.placeNotesButton.style.width = "185px"
+    this.placeNotesButton.onclick = () => this.placeOnsets()
+
     const thresholdContainer = document.createElement("div")
     thresholdContainer.style.display = "flex"
     thresholdContainer.style.alignItems = "center"
+    thresholdContainer.style.flexDirection = "column"
+    const thresholdInputContainer = document.createElement("div")
+    thresholdInputContainer.style.display = "flex"
+    thresholdInputContainer.style.alignItems = "center"
     const thresholdLabel = document.createElement("div")
     thresholdLabel.innerText = "Onset Threshold"
     const slider = document.createElement("input")
@@ -240,6 +260,7 @@ export class SyncWindow extends Window {
     slider.max = "1"
     slider.step = "0.01"
     slider.value = `${this._threshold}`
+    slider.style.width = "75px"
     const numberInput = document.createElement("input")
     numberInput.type = "text"
     numberInput.value = `${this._threshold}`
@@ -264,12 +285,12 @@ export class SyncWindow extends Window {
     numberInput.onkeydown = ev => {
       if (ev.key == "Enter") numberInput.blur()
     }
-    thresholdContainer.appendChild(slider)
-    thresholdContainer.appendChild(numberInput)
+    thresholdInputContainer.replaceChildren(slider, numberInput)
+    thresholdContainer.replaceChildren(thresholdLabel, thresholdInputContainer)
 
     bottomContainer.replaceChildren(
-      thresholdLabel,
       thresholdContainer,
+      this.placeNotesButton,
       this.toggleButton
     )
 
@@ -368,6 +389,12 @@ export class SyncWindow extends Window {
     ctx.canvas.height = graphHeight * 2
     ctx.imageSmoothingEnabled = false
     const update = () => {
+      this.placeNotesButton.innerText =
+        this.app.chartManager.startRegion !== undefined &&
+        this.app.chartManager.endRegion !== undefined
+          ? "Place onsets as notes in region"
+          : "Place onsets as notes"
+
       if (!this.app.chartManager.chartAudio) return
 
       const MAX_BLOCKS = Math.ceil(this.audioLength / WINDOW_STEP)
@@ -720,25 +747,120 @@ export class SyncWindow extends Window {
     )
   }
 
-  placeNoteTest(quantize: number) {
-    this.app.chartManager.loadedChart?.addNotes(
-      this.peaks
-        .map((value, index) => {
-          if (!value) return null
-          let b = this.app.chartManager.loadedChart!.getBeatFromSeconds(
-            (index * WINDOW_STEP) / this.sampleRate
+  calculateOffset() {
+    const topBPM = new Map<number, number>()
+    let highestCount = 0
+    let peakScanStart = 0
+    let firstBPM = 0
+    // find the top bpm
+    for (let i = 0; i < this.tempogramGroups.length; i++) {
+      const groups = this.tempogramGroups[i]
+      const candidates = groups.filter(
+        group => group.groups[0].value >= TEMPOGRAM_OFFSET_THRESHOLD
+      )
+      if (candidates.length == 0) continue
+      peakScanStart = i
+      candidates.forEach(group => {
+        let totalBlocksAvailable = 0
+        let bpmTotal = 0
+        for (
+          let j = i - TEMPOGRAM_SMOOTHING;
+          j <= i + TEMPOGRAM_SMOOTHING;
+          j++
+        ) {
+          if (this.tempogramGroups[j] === undefined) continue
+          const closestGroup = this.tempogramGroups[j].find(
+            ogroup =>
+              ogroup.center < group.center + TEMPOGRAM_GROUPING_WINDOW &&
+              ogroup.center > group.center - TEMPOGRAM_GROUPING_WINDOW
           )
-          if (quantize != 0) {
-            b = Math.round(b / (4 / quantize)) * (4 / quantize)
-          }
-          return {
-            type: "Tap",
-            beat: b,
-            col: 5,
-          } as PartialTapNotedataEntry
+          if (closestGroup === undefined) continue
+          bpmTotal += closestGroup.avg
+          totalBlocksAvailable++
+        }
+        const bpm = Math.round(bpmTotal / totalBlocksAvailable)
+        if (!topBPM.has(bpm)) {
+          topBPM.set(bpm, 0)
+        }
+        topBPM.set(bpm, topBPM.get(bpm)! + 1)
+        if (topBPM.get(bpm)! > highestCount) {
+          highestCount = topBPM.get(bpm)!
+          firstBPM = bpm
+        }
+      })
+      if (highestCount > 50) break
+    }
+    if (firstBPM == 0) return
+    const beatLengthBlocks = (60 / firstBPM) * (this.sampleRate / WINDOW_STEP)
+    const analyzeWave = new Array(OFFSET_LOOKAHEAD).fill(0).map((_, i) => {
+      const beatBlock = (i % beatLengthBlocks) / beatLengthBlocks
+      let t = 0
+      let n = 0
+      for (let j = 1; j <= 4; j++) {
+        n +=
+          (Math.max(
+            1 - Math.abs(Math.round(beatBlock * j) / j - beatBlock) * 12,
+            0
+          ) *
+            1) /
+          j
+        t += 1 / j
+      }
+      return n / t
+    })
+
+    let bestResponse = 0
+    let bestBlock = 0
+    const options = []
+    for (let i = peakScanStart; i < peakScanStart + beatLengthBlocks; i++) {
+      const response = this.noveltyCurveIsolated
+        .slice(i, i + OFFSET_LOOKAHEAD)
+        .map((v, i) => {
+          return analyzeWave[i] * v
         })
-        .filter(v => v !== null) as PartialTapNotedataEntry[]
+        .reduce((a, b) => a + b, 0)
+
+      if (response > bestResponse) {
+        bestResponse = response
+        bestBlock = i
+      }
+      options.push({
+        block: i,
+        offset: -((i * WINDOW_STEP) / this.sampleRate) % (60 / firstBPM),
+        response: response,
+        curve: this.noveltyCurveIsolated
+          .slice(i, i + OFFSET_LOOKAHEAD)
+          .map((v, i) => {
+            return analyzeWave[i] * v
+          }),
+      })
+    }
+
+    options.sort((a, b) => b.response - a.response)
+    const bestOffset = -(
+      ((bestBlock * WINDOW_STEP) / this.sampleRate) %
+      (60 / firstBPM)
     )
+    console.log(firstBPM, topBPM, peakScanStart, bestOffset, options)
+  }
+
+  placeOnsets() {
+    const notes = this.peaks
+      .map((value, index) => {
+        if (!value) return null
+        let beat = this.app.chartManager.loadedChart!.getBeatFromSeconds(
+          (index * WINDOW_STEP) / this.sampleRate
+        )
+        beat = Math.round(beat * 48) / 48
+        if (beat < 0) return null
+        return {
+          type: "Tap",
+          beat,
+          col: 0,
+        } as PartialTapNotedataEntry
+      })
+      .filter(v => v !== null) as PartialTapNotedataEntry[]
+    this.app.chartManager.insertNotes(notes)
   }
 
   private *getBarlineBeats(
@@ -833,11 +955,13 @@ export class SyncWindow extends Window {
           setTimeout(() => processBlock(++blockNum), 1)
         }
       } else {
+        this.calculateOffset()
         this.spectrogram = []
         this.noveltyCurve = []
         this.tempogram = []
         this.monoAudioData = undefined
         this.toggleButton.innerText = "Finished analyzing"
+        this.toggleButton.style.background = `#265296`
       }
     }
     processBlock(0)

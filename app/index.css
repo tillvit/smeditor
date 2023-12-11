@@ -2365,6 +2365,7 @@ input[type="color"] {
   display: flex;
   flex-direction: row;
   padding: 10px 5px;
+  gap: 10px;
   justify-content: space-around;
   align-items: center;
 }
