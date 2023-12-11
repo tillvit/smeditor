@@ -121,13 +121,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
-      const snap = Math.max(0.001, Options.chart.snap)
-      const closestTick = Math.round(app.chartManager.getBeat() / snap) * snap
-      const change =
-        Math.abs(closestTick - app.chartManager.getBeat()) < 0.0005
-          ? snap
-          : snap / 2
-      app.chartManager.setAndSnapBeat(app.chartManager.getBeat() - change)
+      app.chartManager.snapToPreviousTick()
     },
   },
   cursorDown: {
@@ -138,13 +132,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
-      const snap = Math.max(0.001, Options.chart.snap)
-      const closestTick = Math.round(app.chartManager.getBeat() / snap) * snap
-      const change =
-        Math.abs(closestTick - app.chartManager.getBeat()) < 0.0005
-          ? snap
-          : snap / 2
-      app.chartManager.setAndSnapBeat(app.chartManager.getBeat() + change)
+      app.chartManager.snapToNextTick()
     },
   },
   increaseScrollSpeed: {
@@ -419,7 +407,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       const beat = app.chartManager.getBeat()
       const measureLength =
         app.chartManager.loadedChart!.timingData.getMeasureLength(beat - 0.001)
-      app.chartManager.setAndSnapBeat(Math.max(0, beat - measureLength))
+      app.chartManager.snapToNearestTick(Math.max(0, beat - measureLength))
     },
   },
   nextMeasure: {
@@ -436,7 +424,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       const beat = app.chartManager.getBeat()
       const measureLength =
         app.chartManager.loadedChart!.timingData.getMeasureLength(beat)
-      app.chartManager.setAndSnapBeat(Math.max(0, beat + measureLength))
+      app.chartManager.snapToNearestTick(Math.max(0, beat + measureLength))
     },
   },
   previousNote: {

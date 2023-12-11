@@ -905,7 +905,7 @@ export class ChartManager {
     else this.chartAudio.play()
   }
 
-  setAndSnapBeat(beat: number) {
+  snapToNearestTick(beat: number) {
     if (!this.loadedChart) return
     const snap = Math.max(0.001, Options.chart.snap)
     const beatOfMeasure = this.loadedChart.timingData.getBeatOfMeasure(beat)
@@ -913,6 +913,67 @@ export class ChartManager {
     const newBeatOfMeasure = Math.round(beatOfMeasure / snap) * snap
     let newBeat = measureBeat + newBeatOfMeasure
     newBeat = Math.max(0, newBeat)
+    this.setBeat(newBeat)
+  }
+
+  snapToPreviousTick() {
+    if (!this.loadedChart) return
+    const snap = Math.max(0.001, Options.chart.snap)
+    const currentMeasure = Math.floor(
+      this.loadedChart.timingData.getMeasure(this.beat)
+    )
+    const currentMeasureBeat =
+      this.loadedChart.timingData.getBeatFromMeasure(currentMeasure)
+
+    const closestTick =
+      Math.round((this.beat - currentMeasureBeat) / snap) * snap
+    const nextTick =
+      Math.abs(closestTick - (this.beat - currentMeasureBeat)) < 0.0005
+        ? closestTick - snap
+        : closestTick
+    const newBeat = nextTick + currentMeasureBeat
+
+    // Check if we cross over the previous measure
+    if (nextTick < 0) {
+      const previousMeasureBeat =
+        this.loadedChart.timingData.getBeatFromMeasure(currentMeasure - 1)
+      const closestMeasureTick =
+        Math.round((newBeat - previousMeasureBeat) / snap) * snap
+      this.setBeat(previousMeasureBeat + closestMeasureTick)
+      return
+    }
+
+    this.setBeat(newBeat)
+  }
+
+  snapToNextTick() {
+    if (!this.loadedChart) return
+    const snap = Math.max(0.001, Options.chart.snap)
+    const currentMeasure = Math.floor(
+      this.loadedChart.timingData.getMeasure(this.beat)
+    )
+    const currentMeasureBeat =
+      this.loadedChart.timingData.getBeatFromMeasure(currentMeasure)
+
+    const closestTick =
+      Math.round((this.beat - currentMeasureBeat) / snap) * snap
+    const nextTick =
+      Math.abs(closestTick - (this.beat - currentMeasureBeat)) < 0.0005
+        ? closestTick + snap
+        : closestTick
+    const newBeat = nextTick + currentMeasureBeat
+
+    // Check if we cross over the next measure
+
+    const nextMeasureBeat = this.loadedChart.timingData.getBeatFromMeasure(
+      currentMeasure + 1
+    )
+
+    if (newBeat > nextMeasureBeat) {
+      this.setBeat(nextMeasureBeat)
+      return
+    }
+
     this.setBeat(newBeat)
   }
 
