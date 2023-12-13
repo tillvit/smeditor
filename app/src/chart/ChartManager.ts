@@ -905,15 +905,17 @@ export class ChartManager {
     else this.chartAudio.play()
   }
 
-  snapToNearestTick(beat: number) {
-    if (!this.loadedChart) return
-    const snap = Math.max(0.001, Options.chart.snap)
+  getClosestTick(beat: number, quant: number) {
+    if (!this.loadedChart) return 0
+    const snap = Math.max(0.001, 4 / quant)
     const beatOfMeasure = this.loadedChart.timingData.getBeatOfMeasure(beat)
     const measureBeat = beat - beatOfMeasure
     const newBeatOfMeasure = Math.round(beatOfMeasure / snap) * snap
-    let newBeat = measureBeat + newBeatOfMeasure
-    newBeat = Math.max(0, newBeat)
-    this.setBeat(newBeat)
+    return Math.max(0, measureBeat + newBeatOfMeasure)
+  }
+
+  snapToNearestTick(beat: number) {
+    this.setBeat(this.getClosestTick(beat, 4 / Options.chart.snap))
   }
 
   snapToPreviousTick() {
@@ -926,7 +928,7 @@ export class ChartManager {
       this.loadedChart.timingData.getBeatFromMeasure(currentMeasure)
 
     const closestTick =
-      Math.round((this.beat - currentMeasureBeat) / snap) * snap
+      Math.floor((this.beat - currentMeasureBeat) / snap) * snap
     const nextTick =
       Math.abs(closestTick - (this.beat - currentMeasureBeat)) < 0.0005
         ? closestTick - snap
@@ -956,11 +958,8 @@ export class ChartManager {
       this.loadedChart.timingData.getBeatFromMeasure(currentMeasure)
 
     const closestTick =
-      Math.round((this.beat - currentMeasureBeat) / snap) * snap
-    const nextTick =
-      Math.abs(closestTick - (this.beat - currentMeasureBeat)) < 0.0005
-        ? closestTick + snap
-        : closestTick
+      Math.floor((this.beat - currentMeasureBeat) / snap) * snap
+    const nextTick = closestTick + snap
     const newBeat = nextTick + currentMeasureBeat
 
     // Check if we cross over the next measure
@@ -1446,11 +1445,18 @@ export class ChartManager {
   }
 
   hasSelection() {
+    return this.hasNoteSelection() || this.hasEventSelection()
+  }
+
+  hasNoteSelection() {
     return (
       this.selection.notes.length > 0 ||
-      this.eventSelection.timingEvents.length > 0 ||
       (this.startRegion !== undefined && this.endRegion !== undefined)
     )
+  }
+
+  hasEventSelection() {
+    return this.eventSelection.timingEvents.length > 0
   }
 
   hasRange() {

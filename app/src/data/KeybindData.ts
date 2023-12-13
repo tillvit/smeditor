@@ -993,6 +993,126 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       })
     },
   },
+  quantize4th: {
+    label: "4ths",
+    bindLabel: "Quantize to 4ths",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 4)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
+  quantize8th: {
+    label: "8ths",
+    bindLabel: "Quantize to 8ths",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 8)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
+  quantize12th: {
+    label: "12ths",
+    bindLabel: "Quantize to 12ths",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 12)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
+  quantize16th: {
+    label: "16ths",
+    bindLabel: "Quantize to 16ths",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 16)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
+  quantize24th: {
+    label: "24ths",
+    bindLabel: "Quantize to 24ths",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 24)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
+  quantize32nd: {
+    label: "32nds",
+    bindLabel: "Quantize to 32nds",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 32)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
+  quantize48th: {
+    label: "48ths",
+    bindLabel: "Quantize to 48ths",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 48)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
+  quantize96th: {
+    label: "96ths",
+    bindLabel: "Quantize to 96ths",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 96)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
   delete: {
     label: "Delete",
     combos: [

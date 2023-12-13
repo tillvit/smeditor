@@ -396,6 +396,44 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         ],
       },
       {
+        type: "dropdown",
+        title: "Quantize",
+        options: [
+          {
+            type: "selection",
+            id: "quantize4th",
+          },
+          {
+            type: "selection",
+            id: "quantize8th",
+          },
+          {
+            type: "selection",
+            id: "quantize12th",
+          },
+          {
+            type: "selection",
+            id: "quantize16th",
+          },
+          {
+            type: "selection",
+            id: "quantize24th",
+          },
+          {
+            type: "selection",
+            id: "quantize32nd",
+          },
+          {
+            type: "selection",
+            id: "quantize48th",
+          },
+          {
+            type: "selection",
+            id: "quantize96th",
+          },
+        ],
+      },
+      {
         type: "separator",
       },
       {
