@@ -26,7 +26,7 @@ import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
 import { extname } from "./util/Path"
 import { fpsUpdate } from "./util/Performance"
-import { FileHandler, initFileSystem } from "./util/file-handler/FileHandler"
+import { FileHandler } from "./util/file-handler/FileHandler"
 
 declare global {
   interface Window {
@@ -144,7 +144,7 @@ export class App {
 
     this.onResize()
 
-    initFileSystem().then(() =>
+    FileHandler.initFileSystem().then(() =>
       this.windowManager.openWindow(new InitialWindow(this))
     )
 
