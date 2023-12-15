@@ -146,15 +146,19 @@ export class SyncWindow extends Window {
   }
 
   updateSpinners() {
-    this.offset.setValue(
-      this.app.chartManager.loadedChart?.timingData.getOffset() ?? 0
-    )
-    this.bpm.setValue(
-      this.app.chartManager.loadedChart?.timingData.getEventAtBeat(
-        "BPMS",
-        this.app.chartManager.getBeat()
-      )?.value ?? 120
-    )
+    if (document.activeElement != this.offset.input) {
+      this.offset.setValue(
+        this.app.chartManager.loadedChart?.timingData.getOffset() ?? 0
+      )
+    }
+    if (document.activeElement != this.bpm.input) {
+      this.bpm.setValue(
+        this.app.chartManager.loadedChart?.timingData.getEventAtBeat(
+          "BPMS",
+          this.app.chartManager.getBeat()
+        )?.value ?? 120
+      )
+    }
   }
 
   initView() {
