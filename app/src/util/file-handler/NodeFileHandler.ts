@@ -26,6 +26,7 @@ export class NodeFileHandler implements BaseFileHandler {
     event.preventDefault()
 
     const items = event.dataTransfer!.items
+    // TODO: make dropping files load sm
     console.log(items)
     return ""
   }

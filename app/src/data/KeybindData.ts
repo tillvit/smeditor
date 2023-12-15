@@ -242,7 +242,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     disabled: app => !!window.nw || !app.chartManager.loadedSM,
     callback: app => {
       app.chartManager.save()
-      ;(FileHandler as WebFileHandler).saveDirectory(app.chartManager.smPath)
+      ;(FileHandler.getStandardHandler() as WebFileHandler).saveDirectory(
+        app.chartManager.smPath
+      )
     },
   },
   exportNotedata: {

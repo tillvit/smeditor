@@ -1,3 +1,4 @@
+import { errors } from "file-system-access/lib/util"
 import { Howl } from "howler/dist/howler.core.min.js"
 import { BitmapText } from "pixi.js"
 import assistTick from "../../assets/sound/assist_tick.ogg"
@@ -809,47 +810,51 @@ export class ChartManager {
    *
    * @private
    * @param {string} musicPath
-   * @return {Promise<FileSystemFileHandle>}
+   * @return {Promise<FileSystemFileHandle | undefined>}
    * @memberof ChartManager
    */
   private async getAudioHandle(
     musicPath: string
-  ): Promise<FileSystemFileHandle> {
+  ): Promise<FileSystemFileHandle | undefined> {
     let audioHandle: FileSystemFileHandle | undefined =
       await FileHandler.getFileHandleRelativeTo(this.smPath, musicPath)
     if (audioHandle) return audioHandle
 
     //Capitalization error
-    const dirFiles = await FileHandler.getDirectoryFiles(dirname(this.smPath))
-    audioHandle = dirFiles.filter(
-      fileHandle =>
-        fileHandle.name.toLowerCase() == basename(musicPath).toLowerCase()
-    )[0]
-    if (audioHandle) {
-      WaterfallManager.createFormatted(
-        "Failed to locate audio file " +
-          musicPath +
-          ", using file " +
-          audioHandle.name +
-          " instead",
-        "warn"
-      )
-      return audioHandle
-    }
+    try {
+      const dirFiles = await FileHandler.getDirectoryFiles(dirname(this.smPath))
+      audioHandle = dirFiles.filter(
+        fileHandle =>
+          fileHandle.name.toLowerCase() == basename(musicPath).toLowerCase()
+      )[0]
+      if (audioHandle) {
+        WaterfallManager.createFormatted(
+          "Failed to locate audio file " +
+            musicPath +
+            ", using file " +
+            audioHandle.name +
+            " instead",
+          "warn"
+        )
+        return audioHandle
+      }
 
-    //Any audio file in dir
-    audioHandle = dirFiles.filter(fileHandle =>
-      AUDIO_EXT.includes(extname(fileHandle.name))
-    )[0]
-    if (audioHandle) {
-      WaterfallManager.createFormatted(
-        "Failed to locate audio file " +
-          musicPath +
-          ", using file " +
-          audioHandle.name +
-          " instead",
-        "warn"
-      )
+      //Any audio file in dir
+      audioHandle = dirFiles.filter(fileHandle =>
+        AUDIO_EXT.includes(extname(fileHandle.name))
+      )[0]
+      if (audioHandle) {
+        WaterfallManager.createFormatted(
+          "Failed to locate audio file " +
+            musicPath +
+            ", using file " +
+            audioHandle.name +
+            " instead",
+          "warn"
+        )
+      }
+    } catch {
+      return undefined
     }
     return audioHandle
   }
@@ -958,7 +963,7 @@ export class ChartManager {
       this.loadedChart.timingData.getBeatFromMeasure(currentMeasure)
 
     const closestTick =
-      Math.floor((this.beat - currentMeasureBeat) / snap) * snap
+      Math.floor((this.beat - currentMeasureBeat + 0.0005) / snap) * snap
     const nextTick = closestTick + snap
     const newBeat = nextTick + currentMeasureBeat
 
@@ -1424,21 +1429,43 @@ export class ChartManager {
       sscPath = dir + "/" + fileName + ".ssc"
     }
 
+    let error: string | null = null
     if (
       !this.loadedSM.usesChartTiming() &&
       (await FileHandler.getFileHandle(smPath))
     ) {
-      FileHandler.writeFile(smPath, this.loadedSM.serialize("sm"))
+      await FileHandler.writeFile(smPath, this.loadedSM.serialize("sm")).catch(
+        err => {
+          const message = err.message
+          if (!message.includes(errors.GONE[0])) {
+            error = message
+          }
+        }
+      )
     }
     if (
       this.loadedSM.requiresSSC() ||
       (await FileHandler.getFileHandle(sscPath))
-    )
-      FileHandler.writeFile(sscPath, this.loadedSM.serialize("ssc"))
-    if (this.loadedSM.usesChartTiming()) {
-      WaterfallManager.create("Saved. No SM file since split timing was used.")
+    ) {
+      await FileHandler.writeFile(smPath, this.loadedSM.serialize("ssc")).catch(
+        err => {
+          const message = err.message
+          if (!message.includes(errors.GONE[0])) {
+            error = message
+          }
+        }
+      )
+    }
+    if (error == null) {
+      if (this.loadedSM.usesChartTiming()) {
+        WaterfallManager.create(
+          "Saved. No SM file since split timing was used."
+        )
+      } else {
+        WaterfallManager.create("Saved")
+      }
     } else {
-      WaterfallManager.create("Saved")
+      WaterfallManager.createFormatted("Failed to save file: " + error, "error")
     }
     ActionHistory.instance.setLimit()
     return
