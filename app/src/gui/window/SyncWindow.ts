@@ -32,6 +32,8 @@ const OFFSET_LOOKAHEAD = 800
 
 const MAX_MS_PER_FRAME = 15
 
+const MAX_CANVAS_LENGTH = 32768
+
 const WEIGHT_DATA = [
   { frequency: 20, weight: 0.4006009013520281 },
   { frequency: 25, weight: 0.4258037044922291 },
@@ -89,7 +91,7 @@ export class SyncWindow extends Window {
   private noveltyCurve: number[] = []
   private noveltyCurveIsolated: number[] = []
 
-  private spectrogramCanvas?: OffscreenCanvas
+  private spectrogramCanvases: OffscreenCanvas[] = []
 
   private lowestFinishedBlock = 0
   private numRenderedBlocks = 0
@@ -362,19 +364,19 @@ export class SyncWindow extends Window {
       )
     })
 
-    this.spectrogramCanvas = new OffscreenCanvas(
-      Math.max(1, Math.ceil(this.audioLength / WINDOW_STEP)),
-      graphHeight * 2
-    )
-    const ctx = this.spectrogramCanvas.getContext("2d")!
-    ctx.fillStyle = `rgba(0, 0, 0, 0.6)`
-    ctx.fillRect(0, 0, this.spectrogramCanvas.width, graphHeight)
-    ctx.fillRect(
-      0,
-      graphHeight * 1.5,
-      this.spectrogramCanvas.width,
-      graphHeight * 0.5
-    )
+    const canvasLength = Math.max(1, Math.ceil(this.audioLength / WINDOW_STEP))
+    this.spectrogramCanvases = []
+    for (let i = 0; i < Math.ceil(canvasLength / MAX_CANVAS_LENGTH); i++) {
+      const canvas = new OffscreenCanvas(
+        Math.min(MAX_CANVAS_LENGTH, canvasLength - i * MAX_CANVAS_LENGTH),
+        graphHeight * 2
+      )
+      const ctx = canvas.getContext("2d")!
+      ctx.fillStyle = `rgba(0, 0, 0, 0.6)`
+      ctx.fillRect(0, 0, canvas.width, graphHeight)
+      ctx.fillRect(0, graphHeight * 1.5, canvas.width, graphHeight * 0.5)
+      this.spectrogramCanvases.push(canvas)
+    }
 
     this.spectrogram = []
     this.lowestFinishedBlock = 0
@@ -443,11 +445,27 @@ export class SyncWindow extends Window {
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
       const zoom = Options.chart.speed / 100
-      if (this.spectrogramCanvas) {
+
+      const leftBoundBlockNum =
+        (this.app.chartManager.getTime() * this.sampleRate) / WINDOW_STEP -
+        200 / zoom
+
+      const rightBoundBlockNum =
+        (this.app.chartManager.getTime() * this.sampleRate) / WINDOW_STEP +
+        800 / zoom
+
+      for (
+        let i = Math.floor(leftBoundBlockNum / MAX_CANVAS_LENGTH);
+        i <= Math.floor(rightBoundBlockNum / MAX_CANVAS_LENGTH);
+        i++
+      ) {
+        const canvas = this.spectrogramCanvases[i]
+        if (!canvas) continue
         ctx.drawImage(
-          this.spectrogramCanvas,
+          canvas,
           (this.app.chartManager.getTime() * this.sampleRate) / WINDOW_STEP -
-            200 / zoom,
+            200 / zoom -
+            MAX_CANVAS_LENGTH * i,
           0,
           graphWidth / zoom,
           graphHeight * 2,
@@ -459,14 +477,6 @@ export class SyncWindow extends Window {
       }
 
       // draw current measure lines
-
-      const leftBoundBlockNum =
-        (this.app.chartManager.getTime() * this.sampleRate) / WINDOW_STEP -
-        200 / zoom
-
-      const rightBoundBlockNum =
-        (this.app.chartManager.getTime() * this.sampleRate) / WINDOW_STEP +
-        800 / zoom
 
       const leftBoundSecond =
         (leftBoundBlockNum * WINDOW_STEP) / this.sampleRate
@@ -644,14 +654,17 @@ export class SyncWindow extends Window {
 
   storeResponse(blockNum: number, response: Float64Array) {
     this.spectrogram[blockNum] = response
-    const ctx = this.spectrogramCanvas!.getContext("2d")!
+    const ctx =
+      this.spectrogramCanvases[
+        Math.floor(blockNum / MAX_CANVAS_LENGTH)
+      ].getContext("2d")!
 
     ctx.fillStyle = `rgba(0, 166, 255, 1)`
     response.forEach((value, index) => {
       const loc = this.spectroHeights[index]
       const col = clamp(value * 2000, 0, 255)
       ctx.globalAlpha = col / 255
-      ctx.fillRect(blockNum, loc.y, 1, loc.height)
+      ctx.fillRect(blockNum % MAX_CANVAS_LENGTH, loc.y, 1, loc.height)
     })
     ctx.globalAlpha = 1
   }
@@ -700,12 +713,25 @@ export class SyncWindow extends Window {
       this.peaks[blockNum] = false
     }
 
-    const ctx = this.spectrogramCanvas!.getContext("2d")!
+    const ctx =
+      this.spectrogramCanvases[
+        Math.floor(blockNum / MAX_CANVAS_LENGTH)
+      ].getContext("2d")!
     const height = Math.min(1, Math.log(1 + sum)) * graphHeight * 0.5
     ctx.fillStyle = "rgb(11, 14, 26)"
-    ctx.fillRect(blockNum, graphHeight, 1, graphHeight * 0.5)
+    ctx.fillRect(
+      blockNum % MAX_CANVAS_LENGTH,
+      graphHeight,
+      1,
+      graphHeight * 0.5
+    )
     ctx.fillStyle = `rgba(0, 100, 150, 0.5)`
-    ctx.fillRect(blockNum, graphHeight * 1.5 - height, 1, height)
+    ctx.fillRect(
+      blockNum % MAX_CANVAS_LENGTH,
+      graphHeight * 1.5 - height,
+      1,
+      height
+    )
   }
 
   async getMonoAudioData() {
@@ -845,7 +871,7 @@ export class SyncWindow extends Window {
       ((bestBlock * WINDOW_STEP) / this.sampleRate) %
       (60 / firstBPM)
     )
-    console.log(firstBPM, topBPM, peakScanStart, bestOffset, options)
+    // console.log(firstBPM, topBPM, peakScanStart, bestOffset, options)
   }
 
   placeOnsets() {
@@ -1018,14 +1044,17 @@ export class SyncWindow extends Window {
           data.groups.reduce((p, c) => p + c.value, 0),
       }
     })
-    const ctx = this.spectrogramCanvas!.getContext("2d")!
+    const ctx =
+      this.spectrogramCanvases[
+        Math.floor((blockNum * TEMPO_STEP) / MAX_CANVAS_LENGTH)
+      ].getContext("2d")!
 
     ctx.fillStyle = `rgba(0, 166, 255, 1)`
     this.tempogram[blockNum].forEach(data => {
       const col = clamp(data.value * 8000, 0, 255)
       ctx.globalAlpha = col / 255
       ctx.fillRect(
-        blockNum * TEMPO_STEP,
+        (blockNum * TEMPO_STEP) % MAX_CANVAS_LENGTH,
         lerp(
           graphHeight * 2,
           graphHeight * 1.5,
