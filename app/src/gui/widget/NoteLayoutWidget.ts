@@ -13,6 +13,7 @@ import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, lerp, unlerp } from "../../util/Math"
 import { Options } from "../../util/Options"
+import { Flags } from "../../util/Switches"
 import { destroyChildIf, getDivision } from "../../util/Util"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
@@ -112,7 +113,7 @@ export class NoteLayoutWidget extends Widget {
     this.x = this.manager.app.renderer.screen.width / 2 - 20
     const chart = this.getChart()
     const chartView = this.manager.chartManager.chartView!
-    if (!chart || !chartView) {
+    if (!chart || !chartView || !Flags.layout) {
       this.visible = false
       return
     }
@@ -173,8 +174,6 @@ export class NoteLayoutWidget extends Widget {
       })
       return
     }
-
-    this.visible = true
     let childIndex = 0
     const numCols = chart.gameType.numCols
     const lastNote = chart.getNotedata().at(-1)

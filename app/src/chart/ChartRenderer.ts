@@ -7,6 +7,7 @@ import {
 } from "pixi.js"
 import { ContextMenuPopup } from "../gui/element/ContextMenu"
 import { Options } from "../util/Options"
+import { Flags } from "../util/Switches"
 import { bsearch, isRightClick } from "../util/Util"
 import { ChartManager, EditMode, EditTimingMode } from "./ChartManager"
 import { BarlineContainer } from "./component/BarlineContainer"
@@ -153,7 +154,11 @@ export class ChartRenderer extends Container<
 
     this.on("pointerdown", event => {
       if (isRightClick(event)) return
-      if (this.chartManager.getMode() == EditMode.Play) return
+      if (
+        this.chartManager.getMode() == EditMode.Play ||
+        this.chartManager.getMode() == EditMode.View
+      )
+        return
       if (
         this.chartManager.editTimingMode == EditTimingMode.Add &&
         this.lastMousePos
@@ -851,6 +856,7 @@ export class ChartRenderer extends Container<
       )
     }
     object.on("pointerdown", event => {
+      if (this.chartManager.getMode() == EditMode.View) return
       if (isRightClick(event)) {
         if (!this.chartManager.isNoteInSelection(notedata)) {
           this.chartManager.clearSelections()
@@ -915,5 +921,13 @@ export class ChartRenderer extends Container<
 
   getSelectionBounds() {
     return this.selectionBounds
+  }
+
+  shouldDisplayBarlines() {
+    return (
+      (this.chartManager.getMode() != EditMode.Play ||
+        !Options.play.hideBarlines) &&
+      Flags.barlines
+    )
   }
 }

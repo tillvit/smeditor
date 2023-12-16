@@ -19,6 +19,7 @@ import { FileHandler } from "../util/file-handler/FileHandler"
 import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 import { roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
+import { Flags } from "../util/Switches"
 
 export interface Keybind {
   label: string
@@ -192,7 +193,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "New song...",
     bindLabel: "New song",
     combos: [{ key: "N", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.loadedSM,
+    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
     callback: app => {
       app.windowManager.openWindow(new NewSongWindow(app))
     },
@@ -201,7 +202,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Open song...",
     bindLabel: "Open song",
     combos: [{ key: "O", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.loadedSM,
+    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
     callback: app => {
       if (window.nw) {
         const fileSelector = document.createElement("input")
@@ -226,20 +227,27 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Song properties...",
     bindLabel: "Open song properties",
     combos: [{ key: "O", mods: [Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.loadedSM,
+    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new SMPropertiesWindow(app)),
   },
   save: {
     label: "Save...",
     bindLabel: "Save",
     combos: [{ key: "S", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.loadedSM,
+    disabled: app =>
+      !app.chartManager.loadedSM ||
+      app.chartManager.smPath.startsWith("https://") ||
+      app.chartManager.smPath.startsWith("http://"),
     callback: app => app.chartManager.save(),
   },
   export: {
     label: "Save and export current song",
     combos: [{ key: "E", mods: [DEF_MOD] }],
-    disabled: app => !!window.nw || !app.chartManager.loadedSM,
+    disabled: app =>
+      !!window.nw ||
+      !app.chartManager.loadedSM ||
+      app.chartManager.smPath.startsWith("https://") ||
+      app.chartManager.smPath.startsWith("http://"),
     callback: app => {
       app.chartManager.save()
       ;(FileHandler.getStandardHandler() as WebFileHandler).saveDirectory(
@@ -251,7 +259,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Export to notedata...",
     bindLabel: "Export to notedata",
     combos: [{ key: "E", mods: [DEF_MOD, Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.loadedSM,
+    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
     callback: app =>
       app.windowManager.openWindow(
         new ExportNotedataWindow(app, app.chartManager.selection.notes)
@@ -261,19 +269,21 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Chart list",
     bindLabel: "Open chart list",
     combos: [{ key: "O", mods: [DEF_MOD, Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.loadedSM,
+    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new ChartListWindow(app)),
   },
   timingDataRow: {
     label: "Edit timing data at row",
     combos: [{ key: "T", mods: [Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app => !app.chartManager.chartView || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new TimingDataWindow(app)),
   },
   selectRegion: {
     label: "Select region",
     combos: [{ key: "Tab", mods: [] }],
-    disabled: app => !app.chartManager.loadedChart,
+    disabled: app =>
+      !app.chartManager.loadedChart &&
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => app.chartManager.selectRegion(),
   },
   volumeUp: {
@@ -494,7 +504,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   assistTick: {
     label: "Assist tick",
     combos: [{ key: "F7", mods: [] }],
-    disabled: false,
+    disabled: () => !Flags.assist,
     callback: () => {
       Options.audio.assistTick = !Options.audio.assistTick
       WaterfallManager.create(
@@ -505,7 +515,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   metronome: {
     label: "Metronome",
     combos: [{ key: "F7", mods: [Modifier.ALT] }],
-    disabled: false,
+    disabled: () => !Flags.assist,
     callback: () => {
       Options.audio.metronome = !Options.audio.metronome
       WaterfallManager.create(
@@ -585,13 +595,13 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   showEq: {
     label: "Equalizer",
     combos: [{ key: "E", mods: [Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.chartAudio,
+    disabled: app => !app.chartManager.chartAudio || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new EQWindow(app)),
   },
   syncAudio: {
     label: "Sync Audio",
     combos: [{ key: "L", mods: [Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.chartAudio,
+    disabled: app => !app.chartManager.chartAudio || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new SyncWindow(app)),
   },
   previousNoteType: {
@@ -647,7 +657,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ key: "P", mods: [] }],
     disabled: app =>
       !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Record,
+      app.chartManager.getMode() == EditMode.Record ||
+      !Flags.playMode,
     callback: app => app.chartManager.setMode(EditMode.Play),
   },
   recordMode: {
@@ -655,7 +666,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ key: "R", mods: [] }],
     disabled: app =>
       !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play,
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.View ||
+      !Flags.recordMode,
     callback: app => app.chartManager.setMode(EditMode.Record),
   },
   playModeStart: {
@@ -663,7 +676,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ key: "P", mods: [Modifier.SHIFT] }],
     disabled: app =>
       !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Record,
+      app.chartManager.getMode() == EditMode.Record ||
+      !Flags.playMode,
     callback: app => {
       app.chartManager.setBeat(0)
       app.chartManager.setMode(EditMode.Play)
@@ -674,14 +688,16 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ key: "R", mods: [Modifier.SHIFT] }],
     disabled: app =>
       !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play,
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.View ||
+      !Flags.recordMode,
     callback: app => app.chartManager.setMode(EditMode.Record),
   },
   options: {
     label: "Options...",
     bindLabel: "Edit options",
     combos: [{ key: ",", mods: [DEF_MOD] }],
-    disabled: false,
+    disabled: () => !Flags.openWindows || !Flags.openWindows,
     callback: app => {
       app.windowManager.openWindow(new UserOptionsWindow(app))
     },
@@ -690,7 +706,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Keybinds...",
     bindLabel: "Edit keybinds",
     combos: [],
-    disabled: false,
+    disabled: () => !Flags.openWindows || !Flags.openWindows,
     callback: app => {
       app.windowManager.openWindow(new KeybindWindow(app))
     },
@@ -699,7 +715,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Gameplay keybinds...",
     bindLabel: "Edit gameplay keybinds",
     combos: [],
-    disabled: false,
+    disabled: () => !Flags.openWindows || !Flags.openWindows,
     callback: app => {
       app.windowManager.openWindow(new GameplayKeybindWindow(app))
     },
@@ -1169,7 +1185,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   adjustOffset: {
     label: "Adjust offset",
     combos: [],
-    disabled: false,
+    disabled: () => !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new OffsetWindow(app)),
   },
   setSongPreview: {

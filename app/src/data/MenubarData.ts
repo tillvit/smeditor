@@ -1,5 +1,6 @@
 import { App } from "../App"
 import { Options } from "../util/Options"
+import { Flags } from "../util/Switches"
 
 export interface MenuSelection {
   type: "selection"
@@ -467,12 +468,12 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       {
         type: "checkbox",
         id: "assistTick",
-        checked: () => Options.audio.assistTick,
+        checked: () => Options.audio.assistTick && Flags.assist,
       },
       {
         type: "checkbox",
         id: "metronome",
-        checked: () => Options.audio.metronome,
+        checked: () => Options.audio.metronome && Flags.assist,
       },
       {
         type: "separator",

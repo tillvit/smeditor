@@ -2,6 +2,7 @@ import { App } from "../../App"
 import { KEYBIND_DATA } from "../../data/KeybindData"
 import { MENUBAR_DATA, MenuOption } from "../../data/MenubarData"
 import { Keybinds } from "../../util/Keybinds"
+import { Flags } from "../../util/Switches"
 import { Icons } from "../Icons"
 
 export class MenubarManager {
@@ -11,6 +12,7 @@ export class MenubarManager {
   constructor(app: App, view: HTMLDivElement) {
     this.app = app
     this.view = view
+    if (!Flags.menuBar) return
     const elements: HTMLDivElement[] = Object.values(MENUBAR_DATA).map(value =>
       this.createElement(value)
     )

@@ -9,7 +9,6 @@ import { EventHandler } from "../../util/EventHandler"
 import { clamp } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { bsearch, destroyChildIf } from "../../util/Util"
-import { EditMode } from "../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
 import { BeatTimingCache, ScrollTimingEvent } from "../sm/TimingTypes"
 
@@ -152,9 +151,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
 
   update() {
     this.visible =
-      Options.chart.waveform.enabled &&
-      (this.renderer.chartManager.getMode() != EditMode.Play ||
-        !Options.play.hideBarlines)
+      Options.chart.waveform.enabled && this.renderer.shouldDisplayBarlines()
 
     if (!Options.chart.waveform.enabled) return
     if (this.drawDirty || this.variableChanged()) {

@@ -5,6 +5,7 @@ import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
 import { roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
+import { Flags } from "../../util/Switches"
 import { Icons } from "../Icons"
 import { Dropdown } from "../element/Dropdown"
 import { TimingTrackOrderPopup } from "../popup/TimingTrackOrderPopup"
@@ -65,9 +66,12 @@ export class StatusWidget extends Widget {
 
   constructor(manager: WidgetManager) {
     super(manager)
+
     const view = document.createElement("div")
     view.id = "status-widget"
     document.getElementById("view-wrapper")?.appendChild(view)
+
+    if (Flags.viewMode) view.classList.add("collapsed")
 
     this.playbackBar = document.createElement("div")
     this.playbackBar.classList.add("playback-bar")
@@ -117,6 +121,8 @@ export class StatusWidget extends Widget {
       this.manager.chartManager.setMode(EditMode.Record)
     }
 
+    if (Flags.viewMode || !Flags.recordMode) this.record.style.display = "none"
+
     this.playtest = document.createElement("button")
     const playtestIcon = document.createElement("img")
     playtestIcon.style.height = "30px"
@@ -125,6 +131,8 @@ export class StatusWidget extends Widget {
     this.playtest.onclick = () => {
       this.manager.chartManager.setMode(EditMode.Play)
     }
+
+    if (!Flags.playMode) this.playtest.style.display = "none"
 
     const line = document.createElement("div")
     line.classList.add("playback-separator")
@@ -458,7 +466,8 @@ export class StatusWidget extends Widget {
   }
 
   update(): void {
-    this.view.style.display = this.manager.chartManager.loadedSM ? "" : "none"
+    this.view.style.display =
+      this.manager.chartManager.loadedSM && Flags.status ? "" : "none"
     const time = this.manager.chartManager.getTime()
     if (this.lastTime != time) {
       if (document.activeElement != this.min)
@@ -499,7 +508,6 @@ export class StatusWidget extends Widget {
     if (this.lastMode != mode) {
       switch (mode) {
         case EditMode.Edit:
-        case EditMode.View:
           this.skipStart.disabled = false
           this.skipEnd.disabled = false
           this.record.disabled = false
@@ -544,6 +552,23 @@ export class StatusWidget extends Widget {
           this.sec.contentEditable = "false"
           this.millis.contentEditable = "false"
           this.beat.contentEditable = "false"
+          if (timingMode != EditTimingMode.Off) {
+            this.visible = false
+          }
+          this.view.classList.add("collapsed")
+          this.beatDropdown.closeDropdown()
+          this.beatDropdown.disabled = true
+          break
+        case EditMode.View:
+          this.lastHover = Date.now()
+          this.skipStart.disabled = false
+          this.skipEnd.disabled = false
+          this.record.disabled = true
+          this.playtest.disabled = false
+          this.min.contentEditable = "true"
+          this.sec.contentEditable = "true"
+          this.millis.contentEditable = "true"
+          this.beat.contentEditable = "true"
           if (timingMode != EditTimingMode.Off) {
             this.visible = false
           }

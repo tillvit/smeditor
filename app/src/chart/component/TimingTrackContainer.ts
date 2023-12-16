@@ -421,9 +421,7 @@ export class TimingTrackContainer
       this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
       this.renderer.chartManager.getMode() == EditMode.Edit
 
-    this.boxPool.visible =
-      this.renderer.chartManager.getMode() != EditMode.Play ||
-      !Options.play.hideBarlines
+    this.boxPool.visible = this.renderer.shouldDisplayBarlines()
 
     // Create all missing boxes
     for (const event of this.renderer.chart.timingData.getTimingData()) {

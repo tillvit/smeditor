@@ -28,6 +28,7 @@ import { Options } from "../util/Options"
 import { basename, dirname, extname } from "../util/Path"
 import { tpsUpdate } from "../util/Performance"
 import { RecentFileHandler } from "../util/RecentFileHandler"
+import { Flags } from "../util/Switches"
 import { bsearch, bsearchEarliest, compareObjects } from "../util/Util"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { ChartRenderer } from "./ChartRenderer"
@@ -403,7 +404,11 @@ export class ChartManager {
               0,
               TIMING_WINDOW_AUTOPLAY
             )
-          if (!hasPlayedAssistTick && Options.audio.assistTick) {
+          if (
+            !hasPlayedAssistTick &&
+            Options.audio.assistTick &&
+            Flags.assist
+          ) {
             this.assistTick.play()
             hasPlayedAssistTick = true
           }
@@ -429,7 +434,11 @@ export class ChartManager {
       ) {
         this.lastMetronomeDivision = offsetDivision
         this.lastMetronomeMeasure = offsetMeasure
-        if (this.chartAudio.isPlaying() && Options.audio.metronome) {
+        if (
+          this.chartAudio.isPlaying() &&
+          Options.audio.metronome &&
+          Flags.assist
+        ) {
           if (offsetDivision == 0) this.me_high.play()
           else this.me_low.play()
         }
@@ -742,7 +751,7 @@ export class ChartManager {
     this.chartView.y = this.app.renderer.screen.height / 2
     if (this.mode == EditMode.Play || this.mode == EditMode.Record)
       this.setMode(this.lastMode)
-
+    if (Flags.viewMode) this.setMode(EditMode.View)
     if (this.loadedChart.getMusicPath() != this.lastSong) {
       this.lastSong = this.loadedChart.getMusicPath()
       const audioPlaying = this.chartAudio.isPlaying()

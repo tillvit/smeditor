@@ -26,6 +26,7 @@ import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
 import { extname } from "./util/Path"
 import { fpsUpdate } from "./util/Performance"
+import { Flags, loadFlags } from "./util/Switches"
 import { FileHandler } from "./util/file-handler/FileHandler"
 
 declare global {
@@ -80,6 +81,7 @@ export class App {
     }
 
     Options.loadOptions()
+    loadFlags()
     Keybinds.load(this)
 
     setInterval(() => Options.saveOptions(), 10000)
@@ -144,9 +146,54 @@ export class App {
 
     this.onResize()
 
-    FileHandler.initFileSystem().then(() =>
+    FileHandler.initFileSystem().then(() => {
+      if (Flags.url) {
+        this.chartManager.loadSM(Flags.url).then(() => {
+          const sm = this.chartManager.loadedSM
+          if (!sm) return
+          let gameTypeCharts: Chart[] | undefined
+          if (Flags.chartType != null) {
+            gameTypeCharts = sm.charts[Flags.chartType]
+            if (gameTypeCharts === undefined) {
+              WaterfallManager.createFormatted(
+                `Couldn't find chart with type ${Flags.chartType}`,
+                "warn"
+              )
+              return
+            }
+          }
+          if (gameTypeCharts === undefined) {
+            const gameTypes = Object.keys(sm.charts)
+            if (gameTypes.length == 0) {
+              // no charts available
+              return
+            }
+            gameTypeCharts = sm.charts[gameTypes[0]]
+            if (gameTypeCharts.length == 0) {
+              return
+            }
+          }
+          let chart: Chart | undefined
+          if (Flags.chartIndex != null) {
+            chart = gameTypeCharts.at(Flags.chartIndex)
+            if (chart === undefined) {
+              WaterfallManager.createFormatted(
+                `Couldn't find chart with index ${Flags.chartIndex}`,
+                "warn"
+              )
+              return
+            }
+          }
+          if (chart === undefined) {
+            chart = gameTypeCharts.at(-1)
+            if (!chart) return
+          }
+          this.chartManager.loadChart(chart)
+        })
+        return
+      }
       this.windowManager.openWindow(new InitialWindow(this))
-    )
+    })
 
     window.onbeforeunload = event => {
       if (ActionHistory.instance.isDirty() && Options.general.warnBeforeExit) {

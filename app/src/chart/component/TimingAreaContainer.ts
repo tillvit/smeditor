@@ -2,7 +2,6 @@ import { Container, Sprite, Texture } from "pixi.js"
 import { DisplayObjectPool } from "../../util/DisplayObjectPool"
 import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
-import { EditMode } from "../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
 import {
   Cached,
@@ -85,9 +84,7 @@ export class TimingAreaContainer
       )
     }
 
-    this.visible =
-      this.renderer.chartManager.getMode() != EditMode.Play ||
-      !Options.play.hideBarlines
+    this.visible = this.renderer.shouldDisplayBarlines()
 
     for (const event of this.timingEvents) {
       //Check beat requirements

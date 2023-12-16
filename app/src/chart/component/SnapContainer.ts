@@ -60,9 +60,7 @@ export class SnapContainer extends Container implements ChartRendererComponent {
   update() {
     this.y = Options.chart.receptorYPos / Options.chart.zoom
 
-    this.visible =
-      this.renderer.chartManager.getMode() == EditMode.Edit ||
-      this.renderer.chartManager.getMode() == EditMode.Record
+    this.visible = this.renderer.chartManager.getMode() != EditMode.Play
     for (let i = 0; i < 2; i++) {
       const container = this.children[i]
       const square = container.children[0] as Graphics

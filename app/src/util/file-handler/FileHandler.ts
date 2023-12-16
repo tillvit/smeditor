@@ -1,4 +1,4 @@
-import { URLFileHandler } from "./UrlFileHandler"
+import { URLFileHandler } from "./URLFileHandler"
 import { WebFileHandler } from "./WebFileHandler"
 
 export interface BaseFileHandler {

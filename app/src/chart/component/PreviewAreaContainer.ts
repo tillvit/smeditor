@@ -1,7 +1,6 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
 import { clamp } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { EditMode } from "../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
 
 export class PreviewAreaContainer
@@ -36,8 +35,7 @@ export class PreviewAreaContainer
     if (
       Number.isNaN(sampleStart) ||
       Number.isNaN(sampleLength) ||
-      (this.renderer.chartManager.getMode() == EditMode.Play &&
-        Options.play.hideBarlines) ||
+      this.renderer.shouldDisplayBarlines() ||
       this.renderer.chart.timingData.getBeatFromSeconds(
         sampleStart + sampleLength
       ) < fromBeat ||

@@ -10,6 +10,7 @@ export class ContextMenuPopup {
   private static menuElement: HTMLDivElement
   private static closeTimeout: NodeJS.Timeout
   static open(app: App, event: MouseEvent | FederatedMouseEvent) {
+    if (app.chartManager.getMode() == EditMode.View) return
     this.buildMenu(app)
     this.menuElement.style.display = "none"
     setTimeout(() => this.fitContextMenu(event))
