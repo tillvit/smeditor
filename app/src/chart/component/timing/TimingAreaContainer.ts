@@ -87,7 +87,7 @@ export class TimingAreaContainer
     this.visible = this.renderer.shouldDisplayBarlines()
 
     for (const event of this.timingEvents) {
-      //Check beat requirements
+      // Check beat requirements
       if (event.beat > toBeat) break
       if (!this.shouldDrawEvent(event, fromBeat, toBeat)) continue
 

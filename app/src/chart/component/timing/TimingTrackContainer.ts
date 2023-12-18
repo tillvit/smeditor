@@ -635,7 +635,7 @@ export class TimingTrackContainer
 
   placeGhostEvent() {
     if (!this.ghostBox) return
-    //Check if there is already an event there
+    // Check if there is already an event there
     const possibleEvent = this.renderer.chart.timingData.getEventAtBeat(
       this.ghostBox.event.type,
       this.ghostBox.event.beat,

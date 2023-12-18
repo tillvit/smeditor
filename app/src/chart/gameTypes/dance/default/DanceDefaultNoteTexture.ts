@@ -156,7 +156,7 @@ export class DanceDefaultNoteTexture {
       mine_frame.width = 64
       mine_frame.height = 64
       mine_frame.anchor.set(0.5)
-      mine_frame.pivot.y = 3 //epic recenter
+      mine_frame.pivot.y = 3 // epic recenter
       DanceDefaultNoteTexture.mineConainer.position.set(32)
       DanceDefaultNoteTexture.mineConainer.addChild(mine_body)
       DanceDefaultNoteTexture.mineConainer.addChild(mine_frame)

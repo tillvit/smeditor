@@ -715,7 +715,7 @@ export class StatusWidget extends Widget {
     let time = min * 60 + sec + millis / 1000
     if (time > 9999999) time = 9999999
     this.manager.chartManager.setTime(time)
-    //force update
+    // force update
     this.lastTime = -999
   }
 
@@ -731,7 +731,7 @@ export class StatusWidget extends Widget {
     }
     if (beat > 9999999) beat = 9999999
     this.manager.chartManager.setBeat(beat)
-    //force update
+    // force update
     this.lastBeat = -999
   }
 

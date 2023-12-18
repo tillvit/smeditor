@@ -67,10 +67,8 @@ export class DanceDefaultNoteObject extends Container implements NoteObject {
     const type = note.type
 
     DanceDefaultNoteTexture.setNoteTex(this.note.note, note)
-    // if (type == "Mine") arrow.item.note.rotation = 0
-    // else arrow.item.note.rotation = notefield.getRotFromCol(col)
 
-    //Create hold
+    // Create hold
     if (type == "Hold" || type == "Roll") {
       this.hold = new DanceDefaultNoteHold(
         type == "Hold" ? holdBodyTex : rollBodyTex,
@@ -81,7 +79,7 @@ export class DanceDefaultNoteObject extends Container implements NoteObject {
       this.addChild(this.hold)
     }
 
-    //Create Icon
+    // Create icon
     if (ICONS[type]) {
       const icon = new Sprite(ICONS[type])
       icon.width = 32

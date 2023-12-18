@@ -27,14 +27,6 @@ export class NoteContainer extends Container {
     const timeSig = () => {
       this.arrowMap.clear()
       this.removeChildren()
-      // for (const [note, arrow] of this.arrowMap.entries()) {
-      //   DanceNoteRenderer.setData(
-      //     this.notefield,
-      //     arrow,
-      //     note,
-      //     this.notefield.getTimingData()
-      //   )
-      // }
     }
     const purgeNotes = () => (this.notesDirty = true)
 

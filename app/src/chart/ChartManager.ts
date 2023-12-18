@@ -487,7 +487,7 @@ export class ChartManager {
         if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
         if (event.target instanceof HTMLTextAreaElement) return
         if (event.target instanceof HTMLInputElement) return
-        //Start editing note
+        // Start editing note
         if (
           event.code.startsWith("Digit") &&
           !event.repeat &&

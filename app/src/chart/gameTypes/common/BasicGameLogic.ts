@@ -55,7 +55,7 @@ export class BasicGameLogic extends GameLogic {
       this.missNoteIndex++
     }
 
-    //Do Holds/Rolls
+    // Do Holds/Rolls
     for (const hold of this.holdProgress) {
       if (!hold.hold || !hold.gameplay!.lastHoldActivation) continue
       if (this.heldCols.isPressed(hold.col) && hold.type == "Hold")
@@ -93,7 +93,7 @@ export class BasicGameLogic extends GameLogic {
       }
     }
 
-    //Do Mines
+    // Do Mines
     for (const col of this.heldCols.getHeldCols()) {
       const mine = this.getClosestNote(
         chartManager.loadedChart.getNotedata(),
