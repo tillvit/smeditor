@@ -1,8 +1,8 @@
 import { BitmapText, Container, Graphics } from "pixi.js"
-import { SnapPopup } from "../../gui/popup/SnapPopup"
-import { Options } from "../../util/Options"
-import { EditMode } from "../ChartManager"
-import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
+import { SnapPopup } from "../../../gui/popup/SnapPopup"
+import { Options } from "../../../util/Options"
+import { EditMode } from "../../ChartManager"
+import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 
 const snapNumbers = {
   fontName: "Main",
@@ -58,7 +58,7 @@ export class SnapContainer extends Container implements ChartRendererComponent {
   }
 
   update() {
-    this.y = Options.chart.receptorYPos / Options.chart.zoom
+    this.y = this.renderer.getActualReceptorYPos()
 
     this.visible = this.renderer.chartManager.getMode() != EditMode.Play
     for (let i = 0; i < 2; i++) {
@@ -71,7 +71,6 @@ export class SnapContainer extends Container implements ChartRendererComponent {
         (Options.chart.snap == 0 || (4 / Options.chart.snap) % 1 != 0
           ? ""
           : 4 / Options.chart.snap)
-      text.scale.y = Options.chart.reverse ? -1 : 1
     }
   }
 }

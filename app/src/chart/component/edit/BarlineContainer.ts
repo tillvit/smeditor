@@ -1,8 +1,8 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
-import { DisplayObjectPool } from "../../util/DisplayObjectPool"
-import { EventHandler } from "../../util/EventHandler"
-import { Options } from "../../util/Options"
-import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
+import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
+import { EventHandler } from "../../../util/EventHandler"
+import { Options } from "../../../util/Options"
+import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 
 const measureNumbers = {
   fontName: "Main",
@@ -86,7 +86,6 @@ export class BarlineContainer
         continue
       }
       child.y = this.renderer.getYPosFromBeat(beat)
-      child.scale.y = Options.chart.reverse ? -1 : 1
     }
   }
 

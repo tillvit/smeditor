@@ -1,15 +1,15 @@
 import { Container, Sprite, Texture } from "pixi.js"
-import { DisplayObjectPool } from "../../util/DisplayObjectPool"
-import { EventHandler } from "../../util/EventHandler"
-import { Options } from "../../util/Options"
-import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
+import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
+import { EventHandler } from "../../../util/EventHandler"
+import { Options } from "../../../util/Options"
+import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import {
   Cached,
   DelayTimingEvent,
   FakeTimingEvent,
   StopTimingEvent,
   WarpTimingEvent,
-} from "../sm/TimingTypes"
+} from "../../sm/TimingTypes"
 
 export const TIMING_EVENT_COLORS: {
   [key: string]: number

@@ -385,6 +385,10 @@ export class StatusWidget extends Widget {
             type,
             beat: 0,
             col: 0,
+            quant: 4,
+            second: 0,
+            warped: false,
+            fake: false,
           })
         sprite.width = 32
         sprite.height = 32

@@ -1,5 +1,5 @@
 import { Sprite, Texture } from "pixi.js"
-import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
+import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 
 export class SelectionBoundary
   extends Sprite

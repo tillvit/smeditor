@@ -5,12 +5,12 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
-import { EventHandler } from "../../util/EventHandler"
-import { clamp } from "../../util/Math"
-import { Options } from "../../util/Options"
-import { bsearch, destroyChildIf } from "../../util/Util"
-import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
-import { BeatTimingCache, ScrollTimingEvent } from "../sm/TimingTypes"
+import { EventHandler } from "../../../util/EventHandler"
+import { clamp } from "../../../util/Math"
+import { Options } from "../../../util/Options"
+import { bsearch, destroyChildIf } from "../../../util/Util"
+import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
+import { BeatTimingCache, ScrollTimingEvent } from "../../sm/TimingTypes"
 
 const MAX_ZOOM = 3500
 
@@ -75,6 +75,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     this.trackVariable(() => Options.chart.CMod)
     this.trackVariable(() => Options.chart.doSpeedChanges)
     this.trackVariable(() => Options.chart.waveform.allowFilter)
+    this.trackVariable(() => Options.chart.reverse)
     this.trackVariable(
       () => Options.chart.waveform.antialiasing,
       value => {
@@ -214,7 +215,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
         this.renderer.getVisualBeat(),
         this.renderer.getVisualTime()
       )
-      const speedSign = speedMult >= 0 ? 1 : -1
+      const speedSign = speedMult >= 0 != Options.chart.reverse ? 1 : -1
 
       const maxDrawBeats =
         this.renderer.getVisualBeat() + Options.chart.maxDrawBeats
@@ -320,7 +321,11 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       // XMod no speed changes
 
       let currentBeat = this.renderer.getBeatFromYPos(
-        -this.parent.y / Options.chart.zoom
+        (-this.parent.y +
+          (Options.chart.reverse
+            ? this.renderer.chartManager.app.renderer.screen.height
+            : 0)) /
+          Options.chart.zoom
       )
       const offset = this.renderer.chart.timingData.getOffset()
       const startBPM =
@@ -334,11 +339,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
         Math.floor(currentBeat / pixelsToBeatsRatio) * pixelsToBeatsRatio
 
       let curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
-      for (
-        let y = 0;
-        y < this.renderer.chartManager.app.renderer.screen.height;
-        y += Options.chart.waveform.lineHeight
-      ) {
+      const drawLine = (y: number) => {
         currentBeat += pixelsToBeatsRatio * Options.chart.waveform.lineHeight
         curSec = this.calculateSecond(
           currentBeat,
@@ -348,24 +349,54 @@ export class Waveform extends Sprite implements ChartRendererComponent {
         )
         this.drawLine(curSec, y, hasFilters)
       }
+      if (Options.chart.reverse) {
+        for (
+          let y = this.renderer.chartManager.app.renderer.screen.height;
+          y >= 0;
+          y -= Options.chart.waveform.lineHeight
+        )
+          drawLine(y)
+      } else {
+        for (
+          let y = 0;
+          y <= this.renderer.chartManager.app.renderer.screen.height;
+          y += Options.chart.waveform.lineHeight
+        )
+          drawLine(y)
+      }
     } else {
       // CMod
 
       let calcTime = this.renderer.getSecondFromYPos(
-        -this.parent.y / Options.chart.zoom
+        (-this.parent.y +
+          (Options.chart.reverse
+            ? this.renderer.chartManager.app.renderer.screen.height
+            : 0)) /
+          Options.chart.zoom
       )
       // Snap current time to the nearest pixel to avoid flickering
       const pixelsToSecondsRatio =
         this.renderer.getPixelsToSecondsRatio() / Options.chart.zoom
       calcTime =
         Math.floor(calcTime / pixelsToSecondsRatio) * pixelsToSecondsRatio
-      for (
-        let y = 0;
-        y < this.renderer.chartManager.app.renderer.screen.height;
-        y += Options.chart.waveform.lineHeight
-      ) {
+      const drawLine = (y: number) => {
         calcTime += pixelsToSecondsRatio * Options.chart.waveform.lineHeight
         this.drawLine(calcTime, y, hasFilters)
+      }
+      if (Options.chart.reverse) {
+        for (
+          let y = this.renderer.chartManager.app.renderer.screen.height;
+          y >= 0;
+          y -= Options.chart.waveform.lineHeight
+        )
+          drawLine(y)
+      } else {
+        for (
+          let y = 0;
+          y <= this.renderer.chartManager.app.renderer.screen.height;
+          y += Options.chart.waveform.lineHeight
+        )
+          drawLine(y)
       }
     }
 

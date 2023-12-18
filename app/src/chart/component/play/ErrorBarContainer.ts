@@ -1,15 +1,15 @@
 import { BitmapText, Container, Graphics, Sprite, Texture } from "pixi.js"
-import { clamp, lerp, median } from "../../util/Math"
-import { Options } from "../../util/Options"
-import { destroyChildIf } from "../../util/Util"
-import { EditMode } from "../ChartManager"
-import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
-import { TimingWindow } from "../play/TimingWindow"
+import { clamp, lerp, median } from "../../../util/Math"
+import { Options } from "../../../util/Options"
+import { destroyChildIf } from "../../../util/Util"
+import { EditMode } from "../../ChartManager"
+import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
+import { TimingWindow } from "../../play/TimingWindow"
 import {
   TimingWindowCollection,
   isStandardMissTimingWindow,
   isStandardTimingWindow,
-} from "../play/TimingWindowCollection"
+} from "../../play/TimingWindowCollection"
 
 interface ErrorBar extends Sprite {
   createTime: number
@@ -44,7 +44,6 @@ export class ErrorBarContainer
 
   constructor(renderer: ChartRenderer) {
     super()
-    this.y = 10
     this.renderer = renderer
     this.barline = new Sprite(Texture.WHITE)
     this.barline.anchor.set(0.5)
@@ -72,6 +71,9 @@ export class ErrorBarContainer
   }
 
   update() {
+    this.y = Options.chart.reverse ? -10 : 10
+    this.errorText.y = Options.chart.reverse ? 25 : -25
+    this.errorText.anchor.y = Options.chart.reverse ? 1 : -1
     this.visible = this.renderer.chartManager.getMode() == EditMode.Play
     for (const barline of this.barlines.children) {
       const t = (Date.now() - barline.createTime) / 5000
@@ -100,8 +102,6 @@ export class ErrorBarContainer
       this.currentMedian.x =
         (this.currentMedian.x - this.target) * 0.8 + this.target
     else this.currentMedian.x = this.target
-    this.errorText.scale.y = Options.chart.reverse ? -1 : 1
-    this.currentMedian.scale.y = Options.chart.reverse ? -1 : 1
   }
 
   addBar(error: number, judge: TimingWindow) {

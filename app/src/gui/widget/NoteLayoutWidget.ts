@@ -6,7 +6,7 @@ import {
   Texture,
 } from "pixi.js"
 import { EditMode } from "../../chart/ChartManager"
-import { QUANT_COLORS } from "../../chart/component/SnapContainer"
+import { QUANT_COLORS } from "../../chart/component/edit/SnapContainer"
 import { Chart } from "../../chart/sm/Chart"
 import { isHoldNote } from "../../chart/sm/NoteTypes"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
@@ -105,6 +105,7 @@ export class NoteLayoutWidget extends Widget {
   }
 
   update() {
+    this.scale.y = Options.chart.reverse ? -1 : 1
     const height = this.manager.app.renderer.screen.height - 40
     this.backing.height = height + 10
     this.backing.position.y = -this.backing.height / 2
@@ -161,7 +162,6 @@ export class NoteLayoutWidget extends Widget {
       this.lastHeight = this.manager.app.renderer.screen.height
       this.populate()
     }
-    this.scale.y = Options.chart.reverse ? -1 : 1
   }
 
   populate() {

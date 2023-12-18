@@ -33,6 +33,7 @@ interface ExtraNotedata {
   warped: boolean
   fake: boolean
   second: number
+  quant: number
   gameplay?: {
     hideNote: boolean
     hasHit: boolean

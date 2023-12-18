@@ -867,11 +867,11 @@ export class SyncWindow extends Window {
     }
 
     options.sort((a, b) => b.response - a.response)
-    // const bestOffset = -(
-    //   ((bestBlock * WINDOW_STEP) / this.sampleRate) %
-    //   (60 / firstBPM)
-    // )
-    // console.log(firstBPM, topBPM, peakScanStart, bestOffset, options)
+    const bestOffset = -(
+      ((bestBlock * WINDOW_STEP) / this.sampleRate) %
+      (60 / firstBPM)
+    )
+    console.log(firstBPM, topBPM, peakScanStart, bestOffset, options)
   }
 
   placeOnsets() {

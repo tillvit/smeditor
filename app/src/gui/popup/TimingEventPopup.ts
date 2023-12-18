@@ -1,5 +1,5 @@
-import { TIMING_EVENT_COLORS } from "../../chart/component/TimingAreaContainer"
-import { TimingBox } from "../../chart/component/TimingTrackContainer"
+import { TIMING_EVENT_COLORS } from "../../chart/component/timing/TimingAreaContainer"
+import { TimingBox } from "../../chart/component/timing/TimingTrackContainer"
 import { TimingData } from "../../chart/sm/TimingData"
 import { TimingEvent } from "../../chart/sm/TimingTypes"
 import { POPUP_ROWS, PopupRow } from "../../data/TimingEventPopupData"

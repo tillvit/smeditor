@@ -1,4 +1,4 @@
-import { TIMING_EVENT_COLORS } from "../../chart/component/TimingAreaContainer"
+import { TIMING_EVENT_COLORS } from "../../chart/component/timing/TimingAreaContainer"
 import { TIMING_EVENT_NAMES } from "../../chart/sm/TimingTypes"
 import { blendColors } from "../../util/Color"
 import { clamp } from "../../util/Math"
