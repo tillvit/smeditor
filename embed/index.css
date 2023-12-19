@@ -249,6 +249,7 @@ a {
   font-size: 2rem;
   margin-top: 1.6rem;
   font-weight: 600;
+  text-align: center;
 }
 
 #embed h3 {
@@ -307,6 +308,7 @@ a {
   user-select: none;
   cursor: pointer;
   transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.875);
+  min-width: 0;
 }
 input:focus-visible {
   box-shadow: 0px 0px 3px 1px rgba(14, 160, 222, 0.9) !important;
