@@ -3,7 +3,7 @@ export class Dropdown<T> {
 
   private items: readonly T[] = []
   private selectedItem: T
-  private onChangeHandlers: ((value: T) => void)[] = []
+  private onChangeHandlers: ((value: T, index: number) => void)[] = []
 
   static create<T>(items?: readonly T[], selectedItem?: T) {
     return new Dropdown(document.createElement("div"), items, selectedItem)
@@ -51,13 +51,17 @@ export class Dropdown<T> {
     this.setSelected()
   }
 
-  onChange(handler: (value: T) => void) {
+  onChange(handler: (value: T, index: number) => void) {
     this.onChangeHandlers.push(handler)
   }
 
-  removeHandler(handler: (value: T) => void) {
+  removeHandler(handler: (value: T, index: number) => void) {
     if (!this.onChangeHandlers.includes(handler)) return
     this.onChangeHandlers.splice(this.onChangeHandlers.indexOf(handler), 1)
+  }
+
+  getItems() {
+    return this.items
   }
 
   setItems(items: readonly T[]) {
@@ -102,7 +106,7 @@ export class Dropdown<T> {
 
   private createDropdown() {
     const itemList: HTMLElement = this.view.querySelector(".dropdown-items")!
-    const children: HTMLDivElement[] = this.items.map(item => {
+    const children: HTMLDivElement[] = this.items.map((item, index) => {
       const itemEl = document.createElement("div")
       itemEl.classList.add("dropdown-item")
       itemEl.innerText = item + ""
@@ -110,7 +114,7 @@ export class Dropdown<T> {
         itemList.style.height = ""
         if (this.selectedItem != item) {
           this.setSelected(item)
-          this.onChangeHandlers.forEach(handler => handler(item))
+          this.onChangeHandlers.forEach(handler => handler(item, index))
         }
       }
       return itemEl

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="An open source tool to view and edit StepMania charts."
+    />
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-9ZL269JG6H"
+    ></script>
+    <link rel="icon" type="image/mp4" href="/assets/icon/favicon.ico" />
+    <link rel="stylesheet" href="./index.css" />
+    <script type="module" src="src/Embed.ts"></script>
+    <title>SMEditor</title>
+  </head>
+  <body>
+    <div id="embed">
+      <h1>Embed SMEditor</h1>
+      <input id="output-url" unselectable readonly />
+      <div id="option-container">
+        <h3>Options</h3>
+        <div id="option-bar">
+          <div class="option">
+            SM URL
+            <input
+              id="sm-url"
+              placeholder="https://example.com/song.sm"
+              type="url"
+              pattern="https?://.*.(sm|ssc)"
+              spellcheck="false"
+              autocomplete="off"
+            />
+            <div id="loading-output"></div>
+          </div>
+          <div id="chart-container" class="option">Chart</div>
+        </div>
+        <div id="option-grid-toggles">
+          <button id="enable-all">Enable All</button>
+          <button id="disable-all">Disable All</button>
+        </div>
+        <div id="option-grid"></div>
+      </div>
+      <iframe id="output-iframe"></iframe>
+    </div>
+  </body>
+</html>

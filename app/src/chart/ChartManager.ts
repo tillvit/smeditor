@@ -775,6 +775,10 @@ export class ChartManager {
     EventHandler.emit("chartLoaded")
     EventHandler.emit("audioLoaded")
     EventHandler.emit("chartModified")
+
+    if (Flags.autoPlay) {
+      this.playPause()
+    }
   }
 
   /**

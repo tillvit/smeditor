@@ -24,6 +24,7 @@ export class WaterfallManager {
   }
 
   static create(message: string) {
+    if (this.view == null) return
     let count = 1
     if (this.messages[message] && this.messages[message].type == "") {
       const existingMessage = this.messages[message]
@@ -52,6 +53,7 @@ export class WaterfallManager {
   }
 
   static createFormatted(message: string, type: "log" | "warn" | "error") {
+    if (this.view == null) return
     let count = 1
     if (this.messages[message] && this.messages[message].type == type) {
       const existingMessage = this.messages[message]

@@ -64,6 +64,58 @@ const switchMap: Record<string, BooleanFlags> = {
   S: "status",
   a: "autoPlay",
   O: "openWindows",
+  H: "hidePoweredByText",
+}
+
+export const FLAG_MAP: Record<BooleanFlags, { char: string; name: string }> = {
+  viewMode: {
+    char: "V",
+    name: "Force view mode (disables record mode)",
+  },
+  menuBar: {
+    char: "M",
+    name: "Hide menu bar",
+  },
+  chartList: {
+    char: "C",
+    name: "Hide chart list (in development)",
+  },
+  barlines: {
+    char: "B",
+    name: "Hide barlines, waveform, and timing boxes",
+  },
+  assist: {
+    char: "A",
+    name: "Disable assist sounds",
+  },
+  recordMode: {
+    char: "R",
+    name: "Disable record mode",
+  },
+  playMode: {
+    char: "P",
+    name: "Disable play mode",
+  },
+  layout: {
+    char: "L",
+    name: "Hide note layout",
+  },
+  status: {
+    char: "S",
+    name: "Hide status bar",
+  },
+  autoPlay: {
+    char: "a",
+    name: "Play automatically",
+  },
+  openWindows: {
+    char: "O",
+    name: "Disable opening windows",
+  },
+  hidePoweredByText: {
+    char: "H",
+    name: `Hide "Powered by SMEditor" text`,
+  },
 }
 
 interface URLFlags {
@@ -78,6 +130,7 @@ interface URLFlags {
   status: boolean
   autoPlay: boolean
   openWindows: boolean
+  hidePoweredByText: boolean
   url: string | null
   chartIndex: number | null
   chartType: string | null
@@ -94,6 +147,7 @@ export const Flags: URLFlags = {
   layout: true,
   status: true,
   autoPlay: false,
+  hidePoweredByText: false,
   openWindows: true,
   url: null,
   chartIndex: null,

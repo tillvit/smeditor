@@ -1,0 +1,562 @@
+/* hebrew */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-Hebrew.woff2") format("woff2");
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+/* latin-ext */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-LatinExt.woff2") format("woff2");
+  unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF,
+    U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-Latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* hebrew */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-Hebrew.woff2") format("woff2");
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+/* latin-ext */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-LatinExt.woff2") format("woff2");
+  unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF,
+    U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-Latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* hebrew */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-Hebrew.woff2") format("woff2");
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+/* latin-ext */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-LatinExt.woff2") format("woff2");
+  unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF,
+    U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-Latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* hebrew */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-Hebrew.woff2") format("woff2");
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+/* latin-ext */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-LatinExt.woff2") format("woff2");
+  unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF,
+    U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-Latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* hebrew */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-Hebrew.woff2") format("woff2");
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+/* latin-ext */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-LatinExt.woff2") format("woff2");
+  unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF,
+    U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-Latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* hebrew */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-Hebrew.woff2") format("woff2");
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+/* latin-ext */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-LatinExt.woff2") format("woff2");
+  unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF,
+    U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-Latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* hebrew */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-Hebrew.woff2") format("woff2");
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+/* latin-ext */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-LatinExt.woff2") format("woff2");
+  unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF,
+    U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: "Assistant";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/smeditor/assets/font/Assistant-Latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: Assistant, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  line-height: 1.15em;
+  color: white;
+  user-select: none;
+  font-size: 16px;
+}
+
+body {
+  background-color: rgb(25, 28, 32);
+  height: 100%;
+  width: 100%;
+}
+html {
+  height: 100%;
+  width: 100%;
+}
+
+a {
+  text-decoration: none;
+}
+
+#embed {
+  width: 100%;
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: center;
+  color: white;
+  padding: 1rem 0;
+  box-shadow: 0 0.5rem 1rem 0 rgba(16, 18, 20, 0.444);
+}
+
+#embed h1 {
+  font-size: 2rem;
+  margin-top: 1.6rem;
+  font-weight: 600;
+}
+
+#embed h3 {
+  font-size: 1.8rem;
+  margin-top: 1.6rem;
+  font-weight: 400;
+}
+
+#option-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, max-content));
+  justify-content: center;
+  position: relative;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem;
+}
+
+#option-grid .option {
+  cursor: pointer;
+}
+
+#option-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 15px;
+  padding: 0.5rem 3.5rem;
+}
+
+#option-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+#option-bar .option {
+  font-size: 1.25rem;
+  gap: 15px;
+}
+
+#option-bar input {
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.4rem;
+  border: 1px solid black;
+  flex: 1;
+  max-width: 700px;
+  color: black;
+  font-size: 1.1rem;
+  background-color: white;
+  user-select: none;
+  cursor: pointer;
+  transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.875);
+}
+input:focus-visible {
+  box-shadow: 0px 0px 3px 1px rgba(14, 160, 222, 0.9) !important;
+  outline: none !important;
+}
+
+input:invalid,
+input.invalid {
+  background-color: rgba(255, 218, 218, 0.9) !important;
+  outline: none !important;
+}
+
+input.invalid:focus-visible,
+input:invalid:focus-visible {
+  box-shadow: 0px 0px 3px 1px rgba(222, 14, 14, 0.9) !important;
+}
+
+input.ok {
+  background-color: rgba(218, 241, 255, 0.9) !important;
+  outline: none !important;
+}
+
+input.ok:focus-visible {
+  box-shadow: 0px 0px 3px 1px rgba(14, 167, 222, 0.9) !important;
+}
+
+#loading-output {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 5px;
+  font-size: 0.8rem;
+  font-style: italic;
+  animation: loading-enter 0.8s cubic-bezier(0.08, 0.7, 0.01, 0.95) forwards;
+}
+
+@keyframes loading-enter {
+  0% {
+    left: -5px;
+    opacity: 0;
+  }
+  100% {
+    left: 0px;
+    opacity: 0.5;
+  }
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  position: relative;
+}
+
+#output-url {
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.4rem;
+  border: 1px solid black;
+  width: 70%;
+  max-width: 700px;
+  color: black;
+  font-size: 1.3rem;
+  margin-top: 1rem;
+  background-color: white;
+  user-select: none;
+  overflow: hidden;
+  transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.875);
+  cursor: pointer;
+  caret-color: transparent;
+}
+
+#output-url:hover {
+  box-shadow: 0px 0px 3px 2px rgba(14, 160, 222, 0.9);
+  scale: 1.006;
+}
+
+#output-url:active {
+  box-shadow: 0px 0px 4px 3px rgba(14, 160, 222, 0.9);
+  scale: 0.995;
+}
+
+#option-grid-toggles {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  justify-content: left;
+  width: 100%;
+}
+
+#enable-all {
+  background-color: rgb(36, 109, 161);
+}
+
+#disable-all {
+  background-color: rgb(172, 54, 54);
+}
+
+button {
+  background: rgb(83, 82, 82);
+  border: 0.5px solid rgb(35, 34, 34);
+  border-radius: 5px;
+  padding: 0.35rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-0.5px);
+  box-shadow:
+    0 0.5px rgba(0, 0, 0, 0.9),
+    0 3px 5px -3px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  column-gap: 5px;
+  transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.875);
+}
+
+button:hover:enabled {
+  transform: translateY(-1.5px);
+  box-shadow:
+    0 1.5px rgba(0, 0, 0, 0.9),
+    0 3px 5px -2px rgba(0, 0, 0, 0.6);
+}
+
+button:active:enabled {
+  transform: translateY(0.2px);
+  box-shadow: none;
+}
+
+button:hover:enabled {
+  filter: brightness(1.3);
+}
+
+button:active:enabled {
+  filter: brightness(0.8);
+}
+
+.dropdown {
+  height: 100%;
+  position: relative;
+}
+
+.dropdown.no-border .dropdown-selected {
+  border: none;
+  padding: 1px;
+}
+
+.dropdown.no-border .dropdown-selected:not(.hovered)::after {
+  opacity: 0;
+}
+
+.dropdown-selected {
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  width: 100%;
+  height: 100%;
+  padding: 1px 7px;
+  margin-right: 3px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  cursor: pointer;
+  background: rgb(40, 45, 51);
+  font-size: 1.1rem;
+  min-height: 25px;
+  min-width: 30px;
+}
+
+.dropdown-selected {
+  transition: 0.1s cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.dropdown.white .dropdown-selected::after {
+  filter: invert();
+}
+
+.dropdown-selected::after {
+  content: "";
+  background: right center no-repeat
+    url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAAbklEQVRIie2PMQqAMAxFXwfP6qJVPIjYzcOKdUkhQ0BaCoLkLS3k818CjuN8ztApYzIDl7xvmalFsAIZuIFozKPMMrC0CAJwKIkuGVX5KdkmLEm3ci1JSlLKU49yLSmXVG1es0EANvnvInKcP/AA784fpjlWwNQAAAAASUVORK5CYII=");
+  background-size: contain;
+  width: 12px;
+  height: 12px;
+  flex: 1;
+  filter: invert();
+}
+
+.dropdown-selected:hover:not(.disabled):not(:active) {
+  background: rgb(55, 61, 68);
+}
+.dropdown-selected:active {
+  background: rgb(255, 255, 255, 0.2);
+}
+
+.dropdown-items {
+  position: absolute;
+  background: #555;
+  max-height: 200px;
+  overflow: auto;
+  z-index: 5;
+  border-radius: 5px;
+  height: 0;
+  box-shadow: 0 3px 15px 0 rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  top: 100%;
+}
+
+.dropdown-right > .dropdown-items {
+  right: 0;
+}
+
+.dropdown-items {
+  transition: height 0.07s cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.dropdown-item {
+  padding: 3px 7px;
+  white-space: nowrap;
+}
+
+.dropdown-item {
+  opacity: 0;
+  transform: translateY(-10px);
+  animation: 0.2s dropdown-enter cubic-bezier(0.175, 0.885, 0.32, 1.575)
+    forwards;
+  transition:
+    height 0.07s cubic-bezier(0.215, 0.61, 0.355, 1),
+    background-color 0.07s cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.dropdown-item:hover {
+  background: #666;
+}
+
+.dropdown-item:active {
+  background: #5c5c5c;
+}
+
+@keyframes dropdown-enter {
+  0% {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+iframe {
+  width: 80%;
+  aspect-ratio: 16 / 10;
+  border: 1px solid rgb(38, 38, 38);
+  border-radius: 4px;
+}

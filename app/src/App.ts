@@ -148,6 +148,30 @@ export class App {
 
     this.onResize()
 
+    if (!Flags.hidePoweredByText && window.top != window.self) {
+      const embed = document.getElementById("embed") as HTMLDivElement
+      embed.appendChild(document.createTextNode("Powered by "))
+      const smLink = document.createElement("a")
+      smLink.href = "https://tillvit.github.io/smeditor/"
+      smLink.innerText = "SMEditor"
+      smLink.target = "_blank"
+      embed.appendChild(smLink)
+      if (Flags.url != null) {
+        embed.appendChild(document.createTextNode(" | Open this chart in a "))
+        const newLink = document.createElement("a")
+        const url = new URL(location.origin + "/smeditor/app/")
+        newLink.innerText = "new tab"
+        newLink.target = "_blank"
+        url.searchParams.append("url", Flags.url)
+        if (Flags.chartType !== null)
+          url.searchParams.append("chartType", Flags.chartType)
+        if (Flags.chartIndex !== null)
+          url.searchParams.append("chartIndex", Flags.chartIndex + "")
+        newLink.href = url.toString()
+        embed.appendChild(newLink)
+      }
+    }
+
     FileHandler.initFileSystem().then(() => {
       if (Flags.url) {
         this.chartManager.loadSM(Flags.url).then(() => {
@@ -388,6 +412,7 @@ document.querySelector("body")!.innerHTML = `<div id="popups"></div>
           <div id="context-menu"></div>
           <div id="blocker" style="display: none"></div>
           <div id="windows"></div>
+          <div id="embed"></div>
         `
 
 WebFont.load({
