@@ -14,6 +14,7 @@ import { DebugWidget } from "../gui/widget/DebugWidget"
 import { WidgetManager } from "../gui/widget/WidgetManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
 import { ConfirmationWindow } from "../gui/window/ConfirmationWindow"
+import { InitialWindow } from "../gui/window/InitialWindow"
 import { ActionHistory } from "../util/ActionHistory"
 import {
   decodeNotes,
@@ -672,7 +673,14 @@ export class ChartManager {
 
     // Load the SM file
     const smHandle = await FileHandler.getFileHandle(this.smPath)
-    if (!smHandle) return
+    if (!smHandle) {
+      WaterfallManager.createFormatted(
+        "Couldn't load the file at " + this.smPath,
+        "error"
+      )
+      this.app.windowManager.openWindow(new InitialWindow(this.app))
+      return
+    }
     const smFile = await smHandle.getFile()
     this.loadedSM = new Simfile(smFile)
 

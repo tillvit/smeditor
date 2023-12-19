@@ -108,10 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
           setLoadingStatus("Loading charts...")
           const sm = new Simfile(file)
           await sm.loaded
-          if (
-            sm.properties.TITLE === undefined ||
-            sm.properties.MUSIC === undefined
-          ) {
+          if (sm.properties.TITLE === undefined) {
             setLoadingStatus("Invalid file provided!", "error")
           }
           loadedSM = sm
