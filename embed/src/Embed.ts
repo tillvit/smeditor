@@ -54,10 +54,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   updateEmbedUrl()
 
-  document.onclick = () => {
-    window.getSelection()?.removeAllRanges()
-  }
-
   outputUrl.onclick = event => {
     event.preventDefault()
     outputUrl.blur()
