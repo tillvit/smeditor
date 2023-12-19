@@ -301,7 +301,18 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
       const snapBeat =
         Math.round(this.getBeatFromYPos(this.lastMousePos.y) / snap) * snap
-      const col = Math.round((this.lastMousePos.x + 96) / 64)
+      let col = -1
+      for (let i = 0; i < this.chart.gameType.numCols; i++) {
+        const colWidth = this.chart.gameType.columnWidths[i]
+        const colX = this.notefield.getColumnX(i)
+        if (
+          this.lastMousePos.x < colX + colWidth / 2 &&
+          this.lastMousePos.x > colX - colWidth / 2
+        ) {
+          col = i
+          break
+        }
+      }
       if (
         snapBeat != this.lastMouseBeat ||
         col != this.lastMouseCol ||
@@ -313,7 +324,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
         if (this.editingCol != -1) {
           this.chartManager.editHoldBeat(this.editingCol, snapBeat, false)
         }
-        if (col > 3 || col < 0) {
+        if (col === -1) {
           this.lastMouseBeat = -1
           this.lastMouseCol = -1
           this.notefield.setGhostNote()
