@@ -1896,21 +1896,21 @@ export class ChartManager {
     const notes = decodeNotes(data)
     if (!notes) return false
     if (notes.length == 0) return false
-    this.insertNotes(notes)
-    return true
-  }
-
-  insertNotes(notes: PartialNotedata) {
-    notes
-      .map(note => {
+    this.insertNotes(
+      notes.map(note => {
         note.beat += this.beat
         note.beat = Math.round(note.beat * 48) / 48
         return note
       })
-      .sort((a, b) => {
-        if (a.beat == b.beat) return a.col - b.col
-        return a.beat - b.beat
-      })
+    )
+    return true
+  }
+
+  insertNotes(notes: PartialNotedata) {
+    notes.sort((a, b) => {
+      if (a.beat == b.beat) return a.col - b.col
+      return a.beat - b.beat
+    })
     const { removedNotes, truncatedHolds } = this.checkConflicts(notes)
 
     this.app.actionHistory.run({
