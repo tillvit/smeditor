@@ -1766,8 +1766,22 @@ export class ChartManager {
         return a.beat - b.beat
       })
     if (newNotes.length == 0) return
+    const uniqueNotes: PartialNotedataEntry[] = []
+    for (const note of newNotes) {
+      const lastNote = uniqueNotes.at(-1)
+      if (
+        lastNote !== undefined &&
+        lastNote.beat == note.beat &&
+        lastNote.col == note.col
+      ) {
+        continue
+      }
+      uniqueNotes.push(note)
+    }
+    if (uniqueNotes.length == 0) return
+
     const { removedNotes, truncatedHolds } = this.checkConflicts(
-      newNotes,
+      uniqueNotes,
       selectionNotes
     )
 
@@ -1781,10 +1795,10 @@ export class ChartManager {
           this.loadedChart!.modifyNote(data.oldNote, data.newNote, false)
         )
         this.clearSelections()
-        this.setNoteSelection(this.loadedChart!.addNotes(newNotes))
+        this.setNoteSelection(this.loadedChart!.addNotes(uniqueNotes))
       },
       undo: () => {
-        this.loadedChart!.removeNotes(newNotes, false)
+        this.loadedChart!.removeNotes(uniqueNotes, false)
         truncatedHolds.forEach(data =>
           this.loadedChart!.modifyNote(data.newNote, data.oldNote, false)
         )
@@ -1799,6 +1813,7 @@ export class ChartManager {
     notes: PartialNotedataEntry[],
     exclude: PartialNotedataEntry[] = []
   ) {
+    if (notes.length == 0) return { removedNotes: [], truncatedHolds: [] }
     const notedata = this.loadedChart!.getNotedata()
     let notedataIndex = notedata.findIndex(
       note =>
