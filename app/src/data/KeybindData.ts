@@ -15,11 +15,11 @@ import { SyncWindow } from "../gui/window/SyncWindow"
 import { TimingDataWindow } from "../gui/window/TimingDataWindow"
 import { UserOptionsWindow } from "../gui/window/UserOptionsWindow"
 import { ActionHistory } from "../util/ActionHistory"
-import { FileHandler } from "../util/file-handler/FileHandler"
-import { WebFileHandler } from "../util/file-handler/WebFileHandler"
+import { Flags } from "../util/Flags"
 import { roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
-import { Flags } from "../util/Switches"
+import { FileHandler } from "../util/file-handler/FileHandler"
+import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 
 export interface Keybind {
   label: string

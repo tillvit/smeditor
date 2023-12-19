@@ -6,8 +6,8 @@ import {
   Rectangle,
 } from "pixi.js"
 import { ContextMenuPopup } from "../gui/element/ContextMenu"
+import { Flags } from "../util/Flags"
 import { Options } from "../util/Options"
-import { Flags } from "../util/Switches"
 import { bsearch, isRightClick } from "../util/Util"
 import { ChartManager, EditMode, EditTimingMode } from "./ChartManager"
 import { BarlineContainer } from "./component/edit/BarlineContainer"

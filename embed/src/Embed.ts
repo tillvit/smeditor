@@ -4,7 +4,7 @@ import "tippy.js/dist/tippy.css"
 import { GameTypeRegistry } from "../../app/src/chart/gameTypes/GameTypeRegistry"
 import { Simfile } from "../../app/src/chart/sm/Simfile"
 import { Dropdown } from "../../app/src/gui/element/Dropdown"
-import { FLAG_MAP } from "../../app/src/util/Switches"
+import { FLAG_MAP } from "../../app/src/util/Flags"
 
 const flags = new Set<string>()
 

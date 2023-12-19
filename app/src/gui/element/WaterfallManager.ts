@@ -1,4 +1,4 @@
-import { Flags } from "../../util/Switches"
+import { Flags } from "../../util/Flags"
 import { capitalize } from "../../util/Util"
 
 interface WaterfallMessage {

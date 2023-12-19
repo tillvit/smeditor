@@ -1,8 +1,8 @@
 import { App } from "../../App"
 import { KEYBIND_DATA } from "../../data/KeybindData"
 import { MENUBAR_DATA, MenuOption } from "../../data/MenubarData"
+import { Flags } from "../../util/Flags"
 import { Keybinds } from "../../util/Keybinds"
-import { Flags } from "../../util/Switches"
 import { Icons } from "../Icons"
 
 export class MenubarManager {

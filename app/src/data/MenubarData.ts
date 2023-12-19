@@ -1,6 +1,6 @@
 import { App } from "../App"
+import { Flags } from "../util/Flags"
 import { Options } from "../util/Options"
-import { Flags } from "../util/Switches"
 
 export interface MenuSelection {
   type: "selection"

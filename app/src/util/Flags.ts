@@ -12,7 +12,7 @@ export function loadFlags() {
     const setFlags = new Set(
       flags
         .split("")
-        .map(flag => switchMap[flag])
+        .map(flag => CHAR_MAP[flag])
         .filter(flag => flag)
     )
     for (const flag of setFlags.values()) {
@@ -49,22 +49,6 @@ export function loadFlags() {
       Flags.chartType = chartType
     }
   }
-  console.log(Flags)
-}
-
-const switchMap: Record<string, BooleanFlags> = {
-  V: "viewMode",
-  M: "menuBar",
-  C: "chartList",
-  B: "barlines",
-  A: "assist",
-  R: "recordMode",
-  P: "playMode",
-  L: "layout",
-  S: "status",
-  a: "autoPlay",
-  O: "openWindows",
-  H: "hidePoweredByText",
 }
 
 export const FLAG_MAP: Record<BooleanFlags, { char: string; name: string }> = {
@@ -117,6 +101,10 @@ export const FLAG_MAP: Record<BooleanFlags, { char: string; name: string }> = {
     name: `Hide "Powered by SMEditor" text`,
   },
 }
+
+const CHAR_MAP = Object.fromEntries(
+  Object.entries(FLAG_MAP).map(([k, v]) => [v.char, k as BooleanFlags])
+)
 
 interface URLFlags {
   viewMode: boolean
