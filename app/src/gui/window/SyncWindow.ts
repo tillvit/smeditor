@@ -889,7 +889,19 @@ export class SyncWindow extends Window {
           col: 0,
         } as PartialTapNotedataEntry
       })
-      .filter(v => v !== null) as PartialTapNotedataEntry[]
+      .filter(note => note !== null)
+      .filter(note => {
+        if (
+          this.app.chartManager.startRegion === undefined ||
+          this.app.chartManager.endRegion === undefined
+        )
+          return true
+        return (
+          note!.beat > this.app.chartManager.startRegion &&
+          note!.beat < this.app.chartManager.endRegion
+        )
+      }) as PartialTapNotedataEntry[]
+
     this.app.chartManager.insertNotes(notes)
   }
 
