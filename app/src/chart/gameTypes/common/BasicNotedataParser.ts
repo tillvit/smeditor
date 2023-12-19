@@ -52,7 +52,6 @@ export class BasicNotedataParser extends NotedataParser {
         measureNotes.push(notedata[nIndex++])
       }
       const measureHoldNotes = []
-      console.log(JSON.stringify(holdEnds))
       while (holdEnds[0]?.beat < measure * 4 + 4) {
         measureHoldNotes.push(holdEnds.shift()!)
       }
