@@ -73,7 +73,6 @@ export class ErrorBarContainer
   update() {
     this.y = Options.chart.reverse ? -10 : 10
     this.errorText.y = Options.chart.reverse ? 25 : -25
-    this.errorText.anchor.y = Options.chart.reverse ? 1 : -1
     this.visible = this.renderer.chartManager.getMode() == EditMode.Play
     for (const barline of this.barlines.children) {
       const t = (Date.now() - barline.createTime) / 5000
