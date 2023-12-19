@@ -35,7 +35,12 @@ export class BasicNotedataParser extends NotedataParser {
     if (notedata.length == 0) return ""
     const measures = []
     let nIndex = 0
-    const holdEnds: PartialHoldNotedataEntry[] = notedata.filter(isHoldNote)
+    const holdEnds: { col: number; beat: number }[] = notedata
+      .filter(isHoldNote)
+      .map(hold => {
+        return { col: hold.col, beat: hold.beat + hold.hold }
+      })
+      .sort((a, b) => a.beat - b.beat)
     const lastNote = notedata.at(-1)!
     const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
     let numMeasures = Math.ceil(lastBeat / 4)
@@ -47,14 +52,15 @@ export class BasicNotedataParser extends NotedataParser {
         measureNotes.push(notedata[nIndex++])
       }
       const measureHoldNotes = []
-      while (holdEnds[0]?.beat + holdEnds[0]?.hold < measure * 4 + 4) {
+      console.log(JSON.stringify(holdEnds))
+      while (holdEnds[0]?.beat < measure * 4 + 4) {
         measureHoldNotes.push(holdEnds.shift()!)
       }
       const division = Math.max(
         4,
         lcm2(
           lcm(measureNotes.map(note => getDivision(note.beat))),
-          lcm(measureHoldNotes.map(note => getDivision(note.beat + note.hold)))
+          lcm(measureHoldNotes.map(note => getDivision(note.beat)))
         )
       )
       for (let div = 0; div < division; div++) {
@@ -69,10 +75,7 @@ export class BasicNotedataParser extends NotedataParser {
           if (note.keysounds) row[note.col] += `{${note.keysounds}}`
         }
         while (
-          roundDigit(
-            measureHoldNotes[0]?.beat + measureHoldNotes[0]?.hold ?? -1,
-            3
-          ) == roundDigit(beat, 3)
+          roundDigit(measureHoldNotes[0]?.beat ?? -1, 3) == roundDigit(beat, 3)
         ) {
           const note = measureHoldNotes.shift()!
           row[note.col] = "3"
