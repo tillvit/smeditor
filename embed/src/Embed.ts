@@ -116,6 +116,8 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           loadedSM = sm
           smURL = urlToCheck
+          chartIndex = undefined
+          chartType = undefined
           setLoadingStatus("")
           updateEmbedUrl()
           loadCharts()
