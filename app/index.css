@@ -2369,3 +2369,24 @@ input[type="color"] {
   justify-content: space-around;
   align-items: center;
 }
+
+#embed {
+  position: fixed;
+  bottom: 0;
+  margin: 10px 10px;
+  font-size: 13px;
+  font-weight: 200;
+  color: rgba(215, 215, 215, 0.487);
+  cursor: default;
+  pointer-events: none;
+}
+
+#embed a {
+  transition: 0.2s ease-in-out;
+  color: rgba(215, 215, 215, 0.793);
+  pointer-events: all;
+}
+
+#embed a:hover {
+  color: rgba(215, 215, 215, 0.939);
+}
