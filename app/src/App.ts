@@ -28,7 +28,7 @@ import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
 import { extname } from "./util/Path"
 import { fpsUpdate } from "./util/Performance"
-import { Flags, loadFlags } from "./util/Switches"
+import { isIFrame } from "./util/Util"
 import { FileHandler } from "./util/file-handler/FileHandler"
 
 declare global {
@@ -146,9 +146,7 @@ export class App {
 
     this.registerListeners()
 
-    this.onResize()
-
-    if (!Flags.hidePoweredByText && window.top != window.self) {
+    if (!Flags.hidePoweredByText && isIFrame()) {
       const embed = document.getElementById("embed") as HTMLDivElement
       embed.appendChild(document.createTextNode("Powered by "))
       const smLink = document.createElement("a")
