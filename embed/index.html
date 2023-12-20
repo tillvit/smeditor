@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="An open source tool to view and edit StepMania charts."
+    />
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-9ZL269JG6H"
+    ></script>
+    <link rel="icon" type="image/mp4" href="/smeditor/assets/icon/favicon.ico" />
+    
+    
+    <title>SMEditor</title>
+    <script type="module" crossorigin src="/smeditor/embed.js"></script>
+    <link rel="modulepreload" crossorigin href="/smeditor/ChartManager-5a16a8de.js">
+    <link rel="stylesheet" href="/smeditor/assets/ChartManager-00dfcf8b.css">
+    <link rel="stylesheet" href="/smeditor/assets/index-8c6c3f75.css">
+  <link rel="manifest" href="/smeditor/manifest.json"><script id="vite-plugin-pwa:register-sw" src="/smeditor/registerSW.js"></script></head>
+  <body>
+    <div id="embed">
+      <h1>Embed SMEditor</h1>
+      <input id="output-url" unselectable readonly />
+      <div id="option-container">
+        <h3>Options</h3>
+        <div id="option-bar">
+          <div class="option">
+            SM URL
+            <input
+              id="sm-url"
+              placeholder="https://example.com/song.sm"
+              type="url"
+              pattern="https?://.*.(sm|ssc)"
+              spellcheck="false"
+              autocomplete="off"
+            />
+            <div id="loading-output"></div>
+          </div>
+          <div id="chart-container" class="option">Chart</div>
+        </div>
+        <div id="option-grid-toggles">
+          <button id="enable-all">Enable All</button>
+          <button id="disable-all">Disable All</button>
+        </div>
+        <div id="option-grid"></div>
+      </div>
+      <iframe id="output-iframe"></iframe>
+    </div>
+  </body>
+</html>
