@@ -41,6 +41,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         app: resolve(__dirname, 'app/index.html'),
+        merge: resolve(__dirname, 'merge/index.html'),
       },
       output: {
         assetFileNames: 'assets/[name]-[hash][extname]',
