@@ -12,8 +12,10 @@ import "tippy.js/animations/scale-subtle.css"
 import "tippy.js/dist/tippy.css"
 import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
+import { Chart } from "./chart/sm/Chart"
 import { ContextMenuPopup } from "./gui/element/ContextMenu"
 import { MenubarManager } from "./gui/element/MenubarManager"
+import { WaterfallManager } from "./gui/element/WaterfallManager"
 import { UpdatePopup } from "./gui/popup/UpdatePopup"
 import { DebugWidget } from "./gui/widget/DebugWidget"
 import { DirectoryWindow } from "./gui/window/DirectoryWindow"
@@ -22,11 +24,13 @@ import { WindowManager } from "./gui/window/WindowManager"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
 import { EventHandler } from "./util/EventHandler"
+import { Flags, loadFlags } from "./util/Flags"
 import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
 import { extname } from "./util/Path"
 import { fpsUpdate } from "./util/Performance"
-import { FileHandler, initFileSystem } from "./util/file-handler/FileHandler"
+import { isIFrame } from "./util/Util"
+import { FileHandler } from "./util/file-handler/FileHandler"
 
 declare global {
   interface Window {
@@ -80,6 +84,7 @@ export class App {
     }
 
     Options.loadOptions()
+    loadFlags()
     Keybinds.load(this)
 
     setInterval(() => Options.saveOptions(), 10000)
@@ -142,11 +147,78 @@ export class App {
 
     this.registerListeners()
 
-    this.onResize()
+    if (!Flags.hidePoweredByText && isIFrame()) {
+      const embed = document.getElementById("embed") as HTMLDivElement
+      embed.appendChild(document.createTextNode("Powered by "))
+      const smLink = document.createElement("a")
+      smLink.href = "https://tillvit.github.io/smeditor/"
+      smLink.innerText = "SMEditor"
+      smLink.target = "_blank"
+      embed.appendChild(smLink)
+      if (Flags.url != null) {
+        embed.appendChild(document.createTextNode(" | Open this chart in a "))
+        const newLink = document.createElement("a")
+        const url = new URL(location.origin + "/smeditor/app/")
+        newLink.innerText = "new tab"
+        newLink.target = "_blank"
+        url.searchParams.append("url", Flags.url)
+        if (Flags.chartType !== null)
+          url.searchParams.append("chartType", Flags.chartType)
+        if (Flags.chartIndex !== null)
+          url.searchParams.append("chartIndex", Flags.chartIndex + "")
+        newLink.href = url.toString()
+        embed.appendChild(newLink)
+      }
+    }
 
-    initFileSystem().then(() =>
+    FileHandler.initFileSystem().then(() => {
+      if (Flags.url) {
+        this.chartManager.loadSM(Flags.url).then(() => {
+          const sm = this.chartManager.loadedSM
+          if (!sm) return
+          let gameTypeCharts: Chart[] | undefined
+          if (Flags.chartType != null) {
+            gameTypeCharts = sm.charts[Flags.chartType]
+            if (gameTypeCharts === undefined) {
+              WaterfallManager.createFormatted(
+                `Couldn't find chart with type ${Flags.chartType}`,
+                "warn"
+              )
+              return
+            }
+          }
+          if (gameTypeCharts === undefined) {
+            const gameTypes = Object.keys(sm.charts)
+            if (gameTypes.length == 0) {
+              // no charts available
+              return
+            }
+            gameTypeCharts = sm.charts[gameTypes[0]]
+            if (gameTypeCharts.length == 0) {
+              return
+            }
+          }
+          let chart: Chart | undefined
+          if (Flags.chartIndex != null) {
+            chart = gameTypeCharts.at(Flags.chartIndex)
+            if (chart === undefined) {
+              WaterfallManager.createFormatted(
+                `Couldn't find chart with index ${Flags.chartIndex}`,
+                "warn"
+              )
+              return
+            }
+          }
+          if (chart === undefined) {
+            chart = gameTypeCharts.at(-1)
+            if (!chart) return
+          }
+          this.chartManager.loadChart(chart)
+        })
+        return
+      }
       this.windowManager.openWindow(new InitialWindow(this))
-    )
+    })
 
     window.onbeforeunload = event => {
       if (ActionHistory.instance.isDirty() && Options.general.warnBeforeExit) {
@@ -339,6 +411,7 @@ document.querySelector("body")!.innerHTML = `<div id="popups"></div>
           <div id="context-menu"></div>
           <div id="blocker" style="display: none"></div>
           <div id="windows"></div>
+          <div id="embed"></div>
         `
 
 WebFont.load({

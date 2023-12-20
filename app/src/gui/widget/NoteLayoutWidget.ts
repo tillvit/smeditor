@@ -6,11 +6,12 @@ import {
   Texture,
 } from "pixi.js"
 import { EditMode } from "../../chart/ChartManager"
-import { QUANT_COLORS } from "../../chart/component/SnapContainer"
+import { QUANT_COLORS } from "../../chart/component/edit/SnapContainer"
 import { Chart } from "../../chart/sm/Chart"
 import { isHoldNote } from "../../chart/sm/NoteTypes"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
+import { Flags } from "../../util/Flags"
 import { clamp, lerp, unlerp } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { destroyChildIf, getDivision } from "../../util/Util"
@@ -104,6 +105,7 @@ export class NoteLayoutWidget extends Widget {
   }
 
   update() {
+    this.scale.y = Options.chart.reverse ? -1 : 1
     const height = this.manager.app.renderer.screen.height - 40
     this.backing.height = height + 10
     this.backing.position.y = -this.backing.height / 2
@@ -112,7 +114,7 @@ export class NoteLayoutWidget extends Widget {
     this.x = this.manager.app.renderer.screen.width / 2 - 20
     const chart = this.getChart()
     const chartView = this.manager.chartManager.chartView!
-    if (!chart || !chartView) {
+    if (!chart || !chartView || !Flags.layout) {
       this.visible = false
       return
     }
@@ -160,7 +162,6 @@ export class NoteLayoutWidget extends Widget {
       this.lastHeight = this.manager.app.renderer.screen.height
       this.populate()
     }
-    this.scale.y = Options.chart.reverse ? -1 : 1
   }
 
   populate() {
@@ -173,8 +174,6 @@ export class NoteLayoutWidget extends Widget {
       })
       return
     }
-
-    this.visible = true
     let childIndex = 0
     const numCols = chart.gameType.numCols
     const lastNote = chart.getNotedata().at(-1)

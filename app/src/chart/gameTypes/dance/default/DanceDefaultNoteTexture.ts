@@ -10,32 +10,30 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
-import { App } from "../../../App"
-import { Options } from "../../../util/Options"
-import { getQuantIndex } from "../../../util/Util"
-import { PartialNotedataEntry } from "../../sm/NoteTypes"
-import { TimingData } from "../../sm/TimingData"
+import { App } from "../../../../App"
+import { Options } from "../../../../util/Options"
+import { NotedataEntry } from "../../../sm/NoteTypes"
 
-import liftPartsUrl from "../../../../assets/noteskin/dance/lift/parts.png"
-import mineFrameUrl from "../../../../assets/noteskin/dance/mine/frame.png"
-import minePartsUrl from "../../../../assets/noteskin/dance/mine/parts.png"
-import tapPartsUrl from "../../../../assets/noteskin/dance/tap/parts.png"
+import liftPartsUrl from "../../../../../assets/noteskin/dance/default/lift/parts.png"
+import mineFrameUrl from "../../../../../assets/noteskin/dance/default/mine/frame.png"
+import minePartsUrl from "../../../../../assets/noteskin/dance/default/mine/parts.png"
+import tapPartsUrl from "../../../../../assets/noteskin/dance/default/tap/parts.png"
 
-import arrowGradientFrag from "../../../../assets/noteskin/dance/shader/arrow_gradient.frag?raw"
-import liftGradientFrag from "../../../../assets/noteskin/dance/shader/lift_gradient.frag?raw"
-import mineGradientFrag from "../../../../assets/noteskin/dance/shader/mine_gradient.frag?raw"
-import noopFrag from "../../../../assets/noteskin/dance/shader/noop.frag?raw"
-import noopVert from "../../../../assets/noteskin/dance/shader/noop.vert?raw"
+import arrowGradientFrag from "../../../../../assets/noteskin/dance/default/shader/arrow_gradient.frag?raw"
+import liftGradientFrag from "../../../../../assets/noteskin/dance/default/shader/lift_gradient.frag?raw"
+import mineGradientFrag from "../../../../../assets/noteskin/dance/default/shader/mine_gradient.frag?raw"
+import noopFrag from "../../../../../assets/noteskin/dance/default/shader/noop.frag?raw"
+import noopVert from "../../../../../assets/noteskin/dance/default/shader/noop.vert?raw"
 
-import arrowBodyGeomText from "../../../../assets/noteskin/dance/tap/body.txt?raw"
-import arrowFrameGeomText from "../../../../assets/noteskin/dance/tap/frame.txt?raw"
+import arrowBodyGeomText from "../../../../../assets/noteskin/dance/default/tap/body.txt?raw"
+import arrowFrameGeomText from "../../../../../assets/noteskin/dance/default/tap/frame.txt?raw"
 
-import liftBodyGeomText from "../../../../assets/noteskin/dance/lift/body.txt?raw"
-import mineBodyGeomText from "../../../../assets/noteskin/dance/mine/body.txt?raw"
+import liftBodyGeomText from "../../../../../assets/noteskin/dance/default/lift/body.txt?raw"
+import mineBodyGeomText from "../../../../../assets/noteskin/dance/default/mine/body.txt?raw"
 
 const mine_frame_texture = Texture.from(mineFrameUrl)
 
-export class DanceNoteTexture {
+export class DanceDefaultNoteTexture {
   static arrowPartsTex = BaseTexture.from(tapPartsUrl, {
     mipmap: MIPMAP_MODES.OFF,
   })
@@ -66,22 +64,22 @@ export class DanceNoteTexture {
     if (this.loaded) return
 
     // Initialize rendertextures in here so we can read options
-    DanceNoteTexture.arrowFrameTex = RenderTexture.create({
+    DanceDefaultNoteTexture.arrowFrameTex = RenderTexture.create({
       width: 64,
       height: 64,
       resolution: Options.performance.resolution,
     })
-    DanceNoteTexture.arrowTex = RenderTexture.create({
+    DanceDefaultNoteTexture.arrowTex = RenderTexture.create({
       width: 256,
       height: 320,
       resolution: Options.performance.resolution,
     })
-    DanceNoteTexture.liftTex = RenderTexture.create({
+    DanceDefaultNoteTexture.liftTex = RenderTexture.create({
       width: 256,
       height: 320,
       resolution: Options.performance.resolution,
     })
-    DanceNoteTexture.mineTex = RenderTexture.create({
+    DanceDefaultNoteTexture.mineTex = RenderTexture.create({
       width: 64,
       height: 64,
       resolution: Options.performance.resolution,
@@ -97,7 +95,7 @@ export class DanceNoteTexture {
         sampler0: this.arrowPartsTex,
       })
       const arrow_frame = new Mesh(
-        DanceNoteTexture.arrowFrameGeom,
+        DanceDefaultNoteTexture.arrowFrameGeom,
         shader_frame
       )
       arrow_frame.x = 32
@@ -112,16 +110,19 @@ export class DanceNoteTexture {
           time: 0,
           quant: i,
         })
-        const arrow_frame = new Sprite(DanceNoteTexture.arrowFrameTex)
+        const arrow_frame = new Sprite(DanceDefaultNoteTexture.arrowFrameTex)
         arrow_frame.x = (i % 3) * 64
         arrow_frame.y = Math.floor(i / 3) * 64
-        const arrow_body = new Mesh(DanceNoteTexture.arrowBodyGeom, shader_body)
+        const arrow_body = new Mesh(
+          DanceDefaultNoteTexture.arrowBodyGeom,
+          shader_body
+        )
         arrow_body.x = (i % 3) * 64 + 32
         arrow_body.y = Math.floor(i / 3) * 64 + 32
         arrow_body.rotation = -Math.PI / 2
         arrow_body.name = "body" + i
-        DanceNoteTexture.arrowContainer.addChild(arrow_frame)
-        DanceNoteTexture.arrowContainer.addChild(arrow_body)
+        DanceDefaultNoteTexture.arrowContainer.addChild(arrow_frame)
+        DanceDefaultNoteTexture.arrowContainer.addChild(arrow_body)
       }
     }
     {
@@ -131,12 +132,15 @@ export class DanceNoteTexture {
           time: 0,
           quant: i,
         })
-        const arrow_body = new Mesh(DanceNoteTexture.liftBodyGeom, shader_body)
+        const arrow_body = new Mesh(
+          DanceDefaultNoteTexture.liftBodyGeom,
+          shader_body
+        )
         arrow_body.x = (i % 3) * 64 + 32
         arrow_body.y = Math.floor(i / 3) * 64 + 32
         arrow_body.rotation = -Math.PI / 2
         arrow_body.name = "body" + i
-        DanceNoteTexture.liftContainer.addChild(arrow_body)
+        DanceDefaultNoteTexture.liftContainer.addChild(arrow_body)
       }
     }
     {
@@ -144,29 +148,32 @@ export class DanceNoteTexture {
         sampler0: this.minePartsTex,
         time: 0,
       })
-      const mine_body = new Mesh(DanceNoteTexture.mineBodyGeom, shader_body)
+      const mine_body = new Mesh(
+        DanceDefaultNoteTexture.mineBodyGeom,
+        shader_body
+      )
       const mine_frame = new Sprite(mine_frame_texture)
       mine_frame.width = 64
       mine_frame.height = 64
       mine_frame.anchor.set(0.5)
-      mine_frame.pivot.y = 3 //epic recenter
-      DanceNoteTexture.mineConainer.position.set(32)
-      DanceNoteTexture.mineConainer.addChild(mine_body)
-      DanceNoteTexture.mineConainer.addChild(mine_frame)
+      mine_frame.pivot.y = 3 // epic recenter
+      DanceDefaultNoteTexture.mineConainer.position.set(32)
+      DanceDefaultNoteTexture.mineConainer.addChild(mine_body)
+      DanceDefaultNoteTexture.mineConainer.addChild(mine_frame)
     }
 
     app.ticker.add(() => {
-      app.renderer.render(DanceNoteTexture.arrowFrame, {
-        renderTexture: DanceNoteTexture.arrowFrameTex,
+      app.renderer.render(DanceDefaultNoteTexture.arrowFrame, {
+        renderTexture: DanceDefaultNoteTexture.arrowFrameTex,
       })
-      app.renderer.render(DanceNoteTexture.arrowContainer, {
-        renderTexture: DanceNoteTexture.arrowTex,
+      app.renderer.render(DanceDefaultNoteTexture.arrowContainer, {
+        renderTexture: DanceDefaultNoteTexture.arrowTex,
       })
-      app.renderer.render(DanceNoteTexture.mineConainer, {
-        renderTexture: DanceNoteTexture.mineTex,
+      app.renderer.render(DanceDefaultNoteTexture.mineConainer, {
+        renderTexture: DanceDefaultNoteTexture.mineTex,
       })
-      app.renderer.render(DanceNoteTexture.liftContainer, {
-        renderTexture: DanceNoteTexture.liftTex,
+      app.renderer.render(DanceDefaultNoteTexture.liftContainer, {
+        renderTexture: DanceDefaultNoteTexture.liftTex,
       })
     })
 
@@ -218,30 +225,27 @@ export class DanceNoteTexture {
     if (!this.loaded) return
     for (let i = 0; i < 10; i++) {
       const tapShader: Mesh<Shader> =
-        DanceNoteTexture.arrowContainer.getChildByName("body" + i)!
+        DanceDefaultNoteTexture.arrowContainer.getChildByName("body" + i)!
       tapShader.shader.uniforms.time = beat
       const liftShader: Mesh<Shader> =
-        DanceNoteTexture.liftContainer.getChildByName("body" + i)!
+        DanceDefaultNoteTexture.liftContainer.getChildByName("body" + i)!
       liftShader.shader.uniforms.time = beat
     }
-    ;(<Mesh>DanceNoteTexture.mineConainer.children[0]).shader.uniforms.time =
-      second
-    DanceNoteTexture.mineConainer.rotation = (second % 1) * Math.PI * 2
+    ;(<Mesh>(
+      DanceDefaultNoteTexture.mineConainer.children[0]
+    )).shader.uniforms.time = second
+    DanceDefaultNoteTexture.mineConainer.rotation = (second % 1) * Math.PI * 2
   }
 
-  static setNoteTex(
-    arrow: Sprite,
-    note: PartialNotedataEntry,
-    timingData: TimingData
-  ) {
+  static setNoteTex(arrow: Sprite, note: NotedataEntry) {
     if (note.type == "Mine") {
-      arrow.texture = DanceNoteTexture.mineTex
+      arrow.texture = DanceDefaultNoteTexture.mineTex
     } else {
-      const i = getQuantIndex(timingData.getBeatOfMeasure(note.beat))
+      const i = [4, 8, 12, 16, 24, 32, 48, 64, 96, 192].indexOf(note.quant)
       arrow.texture = new Texture(
         note.type == "Lift"
-          ? DanceNoteTexture.liftTex.baseTexture
-          : DanceNoteTexture.arrowTex.baseTexture,
+          ? DanceDefaultNoteTexture.liftTex.baseTexture
+          : DanceDefaultNoteTexture.arrowTex.baseTexture,
         new Rectangle((i % 3) * 64, Math.floor(i / 3) * 64, 64, 64)
       )
     }

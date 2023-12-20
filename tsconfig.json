@@ -17,5 +17,5 @@
     "noImplicitAny": true,
     "types": ["vite/client", "@types/nw.js"]
   },
-  "include": ["app/src"],
+  "include": ["app/src", "embed/src"],
 }

@@ -1,13 +1,14 @@
 import { Assets, Container, Rectangle, Sprite, Texture } from "pixi.js"
-import holdJudgmentUrl from "../../../../assets/noteskin/dance/hold_judgment.png"
-import { Options } from "../../../util/Options"
+import holdJudgmentUrl from "../../../../assets/noteskin/dance/default/hold_judgment.png"
 import { destroyChildIf } from "../../../util/Util"
 import { TimingWindow } from "../../play/TimingWindow"
 import {
   isHoldDroppedTimingWindow,
   isHoldTimingWindow,
 } from "../../play/TimingWindowCollection"
-import { DanceNotefield } from "./DanceNotefield"
+
+import { Options } from "../../../util/Options"
+import { Notefield } from "./Notefield"
 
 interface HoldJudgmentObject extends Sprite {
   createTime: number
@@ -19,9 +20,9 @@ export class HoldJudgmentContainer extends Container {
   private static held_tex?: Texture
   private static dropped_tex?: Texture
 
-  private notefield: DanceNotefield
+  private readonly notefield: Notefield
 
-  constructor(notefield: DanceNotefield) {
+  constructor(notefield: Notefield) {
     super()
     if (!HoldJudgmentContainer.held_tex) this.loadTex()
     this.notefield = notefield
@@ -42,8 +43,9 @@ export class HoldJudgmentContainer extends Container {
   }
 
   update() {
-    this.y = Options.chart.receptorYPos / Options.chart.zoom + 48
-    this.scale.y = Options.chart.reverse ? -1 : 1
+    this.y =
+      this.notefield.renderer.getActualReceptorYPos() +
+      (Options.chart.reverse ? -48 : 48)
 
     for (const child of this.children) {
       const time = (Date.now() - child.createTime) / 1000
@@ -67,7 +69,7 @@ export class HoldJudgmentContainer extends Container {
         : HoldJudgmentContainer.held_tex
     ) as HoldJudgmentObject
     judge.anchor.set(0.5)
-    judge.x = this.notefield.getColX(col)
+    judge.x = this.notefield.getColumnX(col)
     judge.createTime = Date.now()
     judge.scale.set(0)
     this.addChild(judge)

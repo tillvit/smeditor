@@ -1,8 +1,7 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
-import { clamp } from "../../util/Math"
-import { Options } from "../../util/Options"
-import { EditMode } from "../ChartManager"
-import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
+import { clamp } from "../../../util/Math"
+import { Options } from "../../../util/Options"
+import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 
 export class PreviewAreaContainer
   extends Container
@@ -36,8 +35,7 @@ export class PreviewAreaContainer
     if (
       Number.isNaN(sampleStart) ||
       Number.isNaN(sampleLength) ||
-      (this.renderer.chartManager.getMode() == EditMode.Play &&
-        Options.play.hideBarlines) ||
+      !this.renderer.shouldDisplayBarlines() ||
       this.renderer.chart.timingData.getBeatFromSeconds(
         sampleStart + sampleLength
       ) < fromBeat ||
@@ -56,11 +54,19 @@ export class PreviewAreaContainer
 
     this.previewArea.height = yEnd - yStart
 
-    this.previewText.y = clamp(
-      this.renderer.getUpperBound() + 35,
-      this.previewArea.y + 5,
-      this.previewArea.y + this.previewArea.height - 15
-    )
-    this.previewText.scale.y = Options.chart.reverse ? -1 : 1
+    this.previewText.anchor.y = Options.chart.reverse ? 1 : 0
+    if (Options.chart.reverse) {
+      this.previewText.y = clamp(
+        this.renderer.getLowerBound() - 35,
+        this.previewArea.y + 15,
+        this.previewArea.y + this.previewArea.height - 5
+      )
+    } else {
+      this.previewText.y = clamp(
+        this.renderer.getUpperBound() + 35,
+        this.previewArea.y + 5,
+        this.previewArea.y + this.previewArea.height - 15
+      )
+    }
   }
 }

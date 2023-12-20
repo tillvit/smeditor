@@ -1,11 +1,11 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
-import { BetterRoundedRect } from "../../util/BetterRoundedRect"
-import { DisplayObjectPool } from "../../util/DisplayObjectPool"
-import { roundDigit } from "../../util/Math"
-import { Options } from "../../util/Options"
-import { EditTimingMode } from "../ChartManager"
-import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
-import { Cached, TimingEvent, TimingEventType } from "../sm/TimingTypes"
+import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
+import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
+import { roundDigit } from "../../../util/Math"
+import { Options } from "../../../util/Options"
+import { EditTimingMode } from "../../ChartManager"
+import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
+import { Cached, TimingEvent, TimingEventType } from "../../sm/TimingTypes"
 import { TIMING_EVENT_COLORS } from "./TimingAreaContainer"
 import { TIMING_TRACK_WIDTHS, timingNumbers } from "./TimingTrackContainer"
 
@@ -161,7 +161,6 @@ export class SelectionTimingEventContainer
         this.timingBoxMap.delete(event)
         continue
       }
-      box.textObj.scale.y = Options.chart.reverse ? -1 : 1
       box.y =
         Options.chart.CMod && event.second
           ? this.renderer.getYPosFromSecond(event.second)

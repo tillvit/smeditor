@@ -102,3 +102,11 @@ export function capitalize(str: string): string {
 export function isRightClick(event: FederatedMouseEvent) {
   return event.button == 2 || (event.getModifierState("Control") && IS_OSX)
 }
+
+export function isIFrame() {
+  try {
+    return window.self !== window.top
+  } catch (e) {
+    return true
+  }
+}

@@ -80,6 +80,14 @@ export class DefaultOptions {
       FGCHANGES: true,
       ATTACKS: true,
     } as { [key in TimingEventType]: boolean },
+    noteskin: {
+      "dance-single": "default",
+      "dance-double": "default",
+      "dance-couple": "default",
+      "dance-solo": "default",
+      "dance-solodouble": "default",
+      "dance-3panel": "default",
+    } as Record<string, string>,
   }
   static audio = {
     assistTick: false,

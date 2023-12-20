@@ -1,15 +1,12 @@
 import tippy from "tippy.js"
 import { App } from "../../App"
 import { Notedata, isHoldNote } from "../../chart/sm/NoteTypes"
-import { getQuantIndex } from "../../util/Util"
 import { Window } from "./Window"
 
 interface ExportNotedataOptions {
   include: Record<string, boolean>
   options: Record<string, boolean>
 }
-
-const QUANT_NAMES = [4, 8, 12, 16, 24, 32, 48, 64, 96, 192]
 
 const OPTION_NAMES: Record<string, string> = {
   columnOneBased: "1-indexed column numbers",
@@ -165,8 +162,7 @@ export class ExportNotedataWindow extends Window {
             else str += note.col + ","
           }
           if (this.exportOptions.include.Type) str += '"' + note.type + '",'
-          if (this.exportOptions.include.Quantization)
-            str += QUANT_NAMES[getQuantIndex(note.beat)] + ","
+          if (this.exportOptions.include.Quantization) str += note.quant + ","
           if (this.exportOptions.include.Length && isHoldNote(note)) {
             if (this.exportOptions.options.lengthAsNumberIndex)
               str += this.padNum(note.hold) + ","

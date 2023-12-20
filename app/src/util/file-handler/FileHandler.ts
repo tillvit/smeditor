@@ -1,3 +1,4 @@
+import { URLFileHandler } from "./URLFileHandler"
 import { WebFileHandler } from "./WebFileHandler"
 
 export interface BaseFileHandler {
@@ -39,10 +40,90 @@ export interface BaseFileHandler {
   getRelativePath(from: string, to: string): string
 }
 
-export let FileHandler: BaseFileHandler = null as unknown as BaseFileHandler
+export class FileHandler {
+  private static standardHandler?: BaseFileHandler
+  private static urlHandler?: URLFileHandler
 
-export async function initFileSystem() {
-  FileHandler = window.nw
-    ? new (await import("./NodeFileHandler")).NodeFileHandler()
-    : new WebFileHandler()
+  static async initFileSystem() {
+    this.urlHandler = new URLFileHandler()
+    this.standardHandler = window.nw
+      ? new (await import("./NodeFileHandler")).NodeFileHandler()
+      : new WebFileHandler()
+  }
+
+  static getStandardHandler() {
+    return this.standardHandler
+  }
+
+  private static getHandler(url?: string): BaseFileHandler {
+    if (
+      (url !== undefined && url.startsWith("https://")) ||
+      url?.startsWith("http://")
+    ) {
+      return this.urlHandler!
+    }
+
+    return this.standardHandler!
+  }
+
+  static handleDropEvent(event: DragEvent, prefix?: string) {
+    return this.getHandler().handleDropEvent(event, prefix)
+  }
+
+  static getDirectoryHandle(
+    path: string,
+    options?: FileSystemGetFileOptions
+  ): Promise<FileSystemDirectoryHandle | undefined> {
+    return FileHandler.getHandler(path).getDirectoryHandle(path, options)
+  }
+
+  static hasFile(path: string): Promise<boolean> {
+    return FileHandler.getHandler(path).hasFile(path)
+  }
+
+  static getFileHandle(
+    path: string,
+    options?: FileSystemGetFileOptions
+  ): Promise<FileSystemFileHandle | undefined> {
+    return FileHandler.getHandler(path).getFileHandle(path, options)
+  }
+
+  static getFileHandleRelativeTo(
+    songPath: string,
+    fileName: string
+  ): Promise<FileSystemFileHandle | undefined> {
+    return FileHandler.getHandler(songPath).getFileHandleRelativeTo(
+      songPath,
+      fileName
+    )
+  }
+
+  static getDirectoryFiles(
+    path: FileSystemDirectoryHandle | string
+  ): Promise<FileSystemFileHandle[]> {
+    return FileHandler.getHandler(
+      typeof path == "string" ? path : undefined
+    ).getDirectoryFiles(path)
+  }
+
+  static getDirectoryFolders(
+    path: FileSystemDirectoryHandle | string
+  ): Promise<FileSystemDirectoryHandle[]> {
+    return FileHandler.getHandler(
+      typeof path == "string" ? path : undefined
+    ).getDirectoryFolders(path)
+  }
+
+  static writeFile(
+    path: FileSystemFileHandle | string,
+    data: File | string
+  ): Promise<void> {
+    return FileHandler.getHandler(
+      typeof path == "string" ? path : undefined
+    ).writeFile(path, data)
+  }
+
+  static getRelativePath(from: string, to: string): string {
+    return FileHandler.getHandler().getRelativePath(from, to)
+  }
 }

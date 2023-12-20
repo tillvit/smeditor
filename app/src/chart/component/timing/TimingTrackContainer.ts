@@ -7,18 +7,18 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
-import { TimingEventPopup } from "../../gui/popup/TimingEventPopup"
-import { BetterRoundedRect } from "../../util/BetterRoundedRect"
-import { BezierAnimator } from "../../util/BezierEasing"
-import { lighten } from "../../util/Color"
-import { DisplayObjectPool } from "../../util/DisplayObjectPool"
-import { EventHandler } from "../../util/EventHandler"
-import { roundDigit } from "../../util/Math"
-import { Options } from "../../util/Options"
-import { isRightClick } from "../../util/Util"
-import { EditMode, EditTimingMode } from "../ChartManager"
-import { ChartRenderer, ChartRendererComponent } from "../ChartRenderer"
-import { Cached, TimingEvent, TimingEventType } from "../sm/TimingTypes"
+import { TimingEventPopup } from "../../../gui/popup/TimingEventPopup"
+import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
+import { BezierAnimator } from "../../../util/BezierEasing"
+import { lighten } from "../../../util/Color"
+import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
+import { EventHandler } from "../../../util/EventHandler"
+import { roundDigit } from "../../../util/Math"
+import { Options } from "../../../util/Options"
+import { isRightClick } from "../../../util/Util"
+import { EditMode, EditTimingMode } from "../../ChartManager"
+import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
+import { Cached, TimingEvent, TimingEventType } from "../../sm/TimingTypes"
 import { TIMING_EVENT_COLORS } from "./TimingAreaContainer"
 
 export interface TimingBox extends Container {
@@ -421,9 +421,7 @@ export class TimingTrackContainer
       this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
       this.renderer.chartManager.getMode() == EditMode.Edit
 
-    this.boxPool.visible =
-      this.renderer.chartManager.getMode() != EditMode.Play ||
-      !Options.play.hideBarlines
+    this.boxPool.visible = this.renderer.shouldDisplayBarlines()
 
     // Create all missing boxes
     for (const event of this.renderer.chart.timingData.getTimingData()) {
@@ -520,8 +518,6 @@ export class TimingTrackContainer
         Options.chart.CMod && event.type == "ATTACKS"
           ? this.renderer.getYPosFromSecond(event.second)
           : this.renderer.getYPosFromBeat(event.beat)
-
-      box.textObj.scale.y = Options.chart.reverse ? -1 : 1
 
       const inSelection =
         this.renderer.chartManager.getMode() != EditMode.Play &&
@@ -635,12 +631,11 @@ export class TimingTrackContainer
     this.ghostBox.y = yPos
 
     this.ghostBox.selection.position = this.ghostBox.backgroundObj.position
-    this.ghostBox.textObj.scale.y = Options.chart.reverse ? -1 : 1
   }
 
   placeGhostEvent() {
     if (!this.ghostBox) return
-    //Check if there is already an event there
+    // Check if there is already an event there
     const possibleEvent = this.renderer.chart.timingData.getEventAtBeat(
       this.ghostBox.event.type,
       this.ghostBox.event.beat,

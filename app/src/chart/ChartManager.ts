@@ -1,3 +1,4 @@
+import { errors } from "file-system-access/lib/util"
 import { Howl } from "howler/dist/howler.core.min.js"
 import { BitmapText } from "pixi.js"
 import assistTick from "../../assets/sound/assist_tick.ogg"
@@ -13,6 +14,7 @@ import { DebugWidget } from "../gui/widget/DebugWidget"
 import { WidgetManager } from "../gui/widget/WidgetManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
 import { ConfirmationWindow } from "../gui/window/ConfirmationWindow"
+import { InitialWindow } from "../gui/window/InitialWindow"
 import { ActionHistory } from "../util/ActionHistory"
 import {
   decodeNotes,
@@ -21,6 +23,7 @@ import {
   encodeTempo,
 } from "../util/Ascii85"
 import { EventHandler } from "../util/EventHandler"
+import { Flags } from "../util/Flags"
 import { Keybinds } from "../util/Keybinds"
 import { clamp } from "../util/Math"
 import { Options } from "../util/Options"
@@ -41,6 +44,7 @@ import {
   Notedata,
   NotedataEntry,
   PartialHoldNotedataEntry,
+  PartialNotedata,
   PartialNotedataEntry,
   isHoldNote,
 } from "./sm/NoteTypes"
@@ -231,7 +235,7 @@ export class ChartManager {
         const snap = Options.chart.snap
         const speed =
           Options.chart.speed *
-          (Options.chart.reverse && Options.chart.scroll.invertZoomScroll
+          (Options.chart.reverse && Options.chart.scroll.invertReverseScroll
             ? -1
             : 1)
         const delta =
@@ -401,7 +405,11 @@ export class ChartManager {
               0,
               TIMING_WINDOW_AUTOPLAY
             )
-          if (!hasPlayedAssistTick && Options.audio.assistTick) {
+          if (
+            !hasPlayedAssistTick &&
+            Options.audio.assistTick &&
+            Flags.assist
+          ) {
             this.assistTick.play()
             hasPlayedAssistTick = true
           }
@@ -427,7 +435,11 @@ export class ChartManager {
       ) {
         this.lastMetronomeDivision = offsetDivision
         this.lastMetronomeMeasure = offsetMeasure
-        if (this.chartAudio.isPlaying() && Options.audio.metronome) {
+        if (
+          this.chartAudio.isPlaying() &&
+          Options.audio.metronome &&
+          Flags.assist
+        ) {
           if (offsetDivision == 0) this.me_high.play()
           else this.me_low.play()
         }
@@ -476,7 +488,7 @@ export class ChartManager {
         if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
         if (event.target instanceof HTMLTextAreaElement) return
         if (event.target instanceof HTMLInputElement) return
-        //Start editing note
+        // Start editing note
         if (
           event.code.startsWith("Digit") &&
           !event.repeat &&
@@ -661,7 +673,14 @@ export class ChartManager {
 
     // Load the SM file
     const smHandle = await FileHandler.getFileHandle(this.smPath)
-    if (!smHandle) return
+    if (!smHandle) {
+      WaterfallManager.createFormatted(
+        "Couldn't load the file at " + this.smPath,
+        "error"
+      )
+      this.app.windowManager.openWindow(new InitialWindow(this.app))
+      return
+    }
     const smFile = await smHandle.getFile()
     this.loadedSM = new Simfile(smFile)
 
@@ -740,7 +759,7 @@ export class ChartManager {
     this.chartView.y = this.app.renderer.screen.height / 2
     if (this.mode == EditMode.Play || this.mode == EditMode.Record)
       this.setMode(this.lastMode)
-
+    if (Flags.viewMode) this.setMode(EditMode.View)
     if (this.loadedChart.getMusicPath() != this.lastSong) {
       this.lastSong = this.loadedChart.getMusicPath()
       const audioPlaying = this.chartAudio.isPlaying()
@@ -764,6 +783,10 @@ export class ChartManager {
     EventHandler.emit("chartLoaded")
     EventHandler.emit("audioLoaded")
     EventHandler.emit("chartModified")
+
+    if (Flags.autoPlay) {
+      this.playPause()
+    }
   }
 
   /**
@@ -808,47 +831,51 @@ export class ChartManager {
    *
    * @private
    * @param {string} musicPath
-   * @return {Promise<FileSystemFileHandle>}
+   * @return {Promise<FileSystemFileHandle | undefined>}
    * @memberof ChartManager
    */
   private async getAudioHandle(
     musicPath: string
-  ): Promise<FileSystemFileHandle> {
+  ): Promise<FileSystemFileHandle | undefined> {
     let audioHandle: FileSystemFileHandle | undefined =
       await FileHandler.getFileHandleRelativeTo(this.smPath, musicPath)
     if (audioHandle) return audioHandle
 
     //Capitalization error
-    const dirFiles = await FileHandler.getDirectoryFiles(dirname(this.smPath))
-    audioHandle = dirFiles.filter(
-      fileHandle =>
-        fileHandle.name.toLowerCase() == basename(musicPath).toLowerCase()
-    )[0]
-    if (audioHandle) {
-      WaterfallManager.createFormatted(
-        "Failed to locate audio file " +
-          musicPath +
-          ", using file " +
-          audioHandle.name +
-          " instead",
-        "warn"
-      )
-      return audioHandle
-    }
+    try {
+      const dirFiles = await FileHandler.getDirectoryFiles(dirname(this.smPath))
+      audioHandle = dirFiles.filter(
+        fileHandle =>
+          fileHandle.name.toLowerCase() == basename(musicPath).toLowerCase()
+      )[0]
+      if (audioHandle) {
+        WaterfallManager.createFormatted(
+          "Failed to locate audio file " +
+            musicPath +
+            ", using file " +
+            audioHandle.name +
+            " instead",
+          "warn"
+        )
+        return audioHandle
+      }
 
-    //Any audio file in dir
-    audioHandle = dirFiles.filter(fileHandle =>
-      AUDIO_EXT.includes(extname(fileHandle.name))
-    )[0]
-    if (audioHandle) {
-      WaterfallManager.createFormatted(
-        "Failed to locate audio file " +
-          musicPath +
-          ", using file " +
-          audioHandle.name +
-          " instead",
-        "warn"
-      )
+      //Any audio file in dir
+      audioHandle = dirFiles.filter(fileHandle =>
+        AUDIO_EXT.includes(extname(fileHandle.name))
+      )[0]
+      if (audioHandle) {
+        WaterfallManager.createFormatted(
+          "Failed to locate audio file " +
+            musicPath +
+            ", using file " +
+            audioHandle.name +
+            " instead",
+          "warn"
+        )
+      }
+    } catch {
+      return undefined
     }
     return audioHandle
   }
@@ -904,14 +931,74 @@ export class ChartManager {
     else this.chartAudio.play()
   }
 
-  setAndSnapBeat(beat: number) {
-    if (!this.loadedChart) return
-    const snap = Math.max(0.001, Options.chart.snap)
+  getClosestTick(beat: number, quant: number) {
+    if (!this.loadedChart) return 0
+    const snap = Math.max(0.001, 4 / quant)
     const beatOfMeasure = this.loadedChart.timingData.getBeatOfMeasure(beat)
     const measureBeat = beat - beatOfMeasure
     const newBeatOfMeasure = Math.round(beatOfMeasure / snap) * snap
-    let newBeat = measureBeat + newBeatOfMeasure
-    newBeat = Math.max(0, newBeat)
+    return Math.max(0, measureBeat + newBeatOfMeasure)
+  }
+
+  snapToNearestTick(beat: number) {
+    this.setBeat(Math.max(0, this.getClosestTick(beat, 4 / Options.chart.snap)))
+  }
+
+  snapToPreviousTick() {
+    if (!this.loadedChart) return
+    const snap = Math.max(0.001, Options.chart.snap)
+    const currentMeasure = Math.floor(
+      this.loadedChart.timingData.getMeasure(this.beat)
+    )
+    const currentMeasureBeat =
+      this.loadedChart.timingData.getBeatFromMeasure(currentMeasure)
+
+    const closestTick =
+      Math.floor((this.beat - currentMeasureBeat) / snap) * snap
+    const nextTick =
+      Math.abs(closestTick - (this.beat - currentMeasureBeat)) < 0.0005
+        ? closestTick - snap
+        : closestTick
+    const newBeat = nextTick + currentMeasureBeat
+
+    // Check if we cross over the previous measure
+    if (nextTick < 0) {
+      const previousMeasureBeat =
+        this.loadedChart.timingData.getBeatFromMeasure(currentMeasure - 1)
+      const closestMeasureTick =
+        Math.round((newBeat - previousMeasureBeat) / snap) * snap
+      this.setBeat(Math.max(0, previousMeasureBeat + closestMeasureTick))
+      return
+    }
+
+    this.setBeat(Math.max(0, newBeat))
+  }
+
+  snapToNextTick() {
+    if (!this.loadedChart) return
+    const snap = Math.max(0.001, Options.chart.snap)
+    const currentMeasure = Math.floor(
+      this.loadedChart.timingData.getMeasure(this.beat)
+    )
+    const currentMeasureBeat =
+      this.loadedChart.timingData.getBeatFromMeasure(currentMeasure)
+
+    const closestTick =
+      Math.floor((this.beat - currentMeasureBeat + 0.0005) / snap) * snap
+    const nextTick = closestTick + snap
+    const newBeat = nextTick + currentMeasureBeat
+
+    // Check if we cross over the next measure
+
+    const nextMeasureBeat = this.loadedChart.timingData.getBeatFromMeasure(
+      currentMeasure + 1
+    )
+
+    if (newBeat > nextMeasureBeat) {
+      this.setBeat(nextMeasureBeat)
+      return
+    }
+
     this.setBeat(newBeat)
   }
 
@@ -1363,32 +1450,61 @@ export class ChartManager {
       sscPath = dir + "/" + fileName + ".ssc"
     }
 
+    let error: string | null = null
     if (
       !this.loadedSM.usesChartTiming() &&
       (await FileHandler.getFileHandle(smPath))
     ) {
-      FileHandler.writeFile(smPath, this.loadedSM.serialize("sm"))
+      await FileHandler.writeFile(smPath, this.loadedSM.serialize("sm")).catch(
+        err => {
+          const message = err.message
+          if (!message.includes(errors.GONE[0])) {
+            error = message
+          }
+        }
+      )
     }
     if (
       this.loadedSM.requiresSSC() ||
       (await FileHandler.getFileHandle(sscPath))
-    )
-      FileHandler.writeFile(sscPath, this.loadedSM.serialize("ssc"))
-    if (this.loadedSM.usesChartTiming()) {
-      WaterfallManager.create("Saved. No SM file since split timing was used.")
+    ) {
+      await FileHandler.writeFile(smPath, this.loadedSM.serialize("ssc")).catch(
+        err => {
+          const message = err.message
+          if (!message.includes(errors.GONE[0])) {
+            error = message
+          }
+        }
+      )
+    }
+    if (error == null) {
+      if (this.loadedSM.usesChartTiming()) {
+        WaterfallManager.create(
+          "Saved. No SM file since split timing was used."
+        )
+      } else {
+        WaterfallManager.create("Saved")
+      }
     } else {
-      WaterfallManager.create("Saved")
+      WaterfallManager.createFormatted("Failed to save file: " + error, "error")
     }
     ActionHistory.instance.setLimit()
     return
   }
 
   hasSelection() {
+    return this.hasNoteSelection() || this.hasEventSelection()
+  }
+
+  hasNoteSelection() {
     return (
       this.selection.notes.length > 0 ||
-      this.eventSelection.timingEvents.length > 0 ||
       (this.startRegion !== undefined && this.endRegion !== undefined)
     )
+  }
+
+  hasEventSelection() {
+    return this.eventSelection.timingEvents.length > 0
   }
 
   hasRange() {
@@ -1522,7 +1638,7 @@ export class ChartManager {
 
   setNoteSelection(notes: NotedataEntry[]) {
     this.selection.inProgressNotes = []
-    this.selection.notes = notes.sort((a, b) => {
+    this.selection.notes = [...notes].sort((a, b) => {
       if (a.beat == b.beat) return a.col - b.col
       return a.beat - b.beat
     })
@@ -1650,8 +1766,22 @@ export class ChartManager {
         return a.beat - b.beat
       })
     if (newNotes.length == 0) return
+    const uniqueNotes: PartialNotedataEntry[] = []
+    for (const note of newNotes) {
+      const lastNote = uniqueNotes.at(-1)
+      if (
+        lastNote !== undefined &&
+        lastNote.beat == note.beat &&
+        lastNote.col == note.col
+      ) {
+        continue
+      }
+      uniqueNotes.push(note)
+    }
+    if (uniqueNotes.length == 0) return
+
     const { removedNotes, truncatedHolds } = this.checkConflicts(
-      newNotes,
+      uniqueNotes,
       selectionNotes
     )
 
@@ -1665,10 +1795,10 @@ export class ChartManager {
           this.loadedChart!.modifyNote(data.oldNote, data.newNote, false)
         )
         this.clearSelections()
-        this.setNoteSelection(this.loadedChart!.addNotes(newNotes))
+        this.setNoteSelection(this.loadedChart!.addNotes(uniqueNotes))
       },
       undo: () => {
-        this.loadedChart!.removeNotes(newNotes, false)
+        this.loadedChart!.removeNotes(uniqueNotes, false)
         truncatedHolds.forEach(data =>
           this.loadedChart!.modifyNote(data.newNote, data.oldNote, false)
         )
@@ -1683,6 +1813,7 @@ export class ChartManager {
     notes: PartialNotedataEntry[],
     exclude: PartialNotedataEntry[] = []
   ) {
+    if (notes.length == 0) return { removedNotes: [], truncatedHolds: [] }
     const notedata = this.loadedChart!.getNotedata()
     let notedataIndex = notedata.findIndex(
       note =>
@@ -1694,7 +1825,13 @@ export class ChartManager {
       newNote: PartialNotedataEntry
     }[] = []
     const modifiedNotes: NotedataEntry[] = []
+    let lastNote = null
     for (const newNote of notes) {
+      if (lastNote == null) {
+        lastNote = newNote
+      } else if (newNote.beat == lastNote.beat && newNote.col == lastNote.col) {
+        continue
+      }
       while (notedata[notedataIndex]) {
         const note = notedata[notedataIndex]
         const newNoteEndBeat = isHoldNote(newNote)
@@ -1782,16 +1919,21 @@ export class ChartManager {
     const notes = decodeNotes(data)
     if (!notes) return false
     if (notes.length == 0) return false
-    notes
-      .map(note => {
+    this.insertNotes(
+      notes.map(note => {
         note.beat += this.beat
         note.beat = Math.round(note.beat * 48) / 48
         return note
       })
-      .sort((a, b) => {
-        if (a.beat == b.beat) return a.col - b.col
-        return a.beat - b.beat
-      })
+    )
+    return true
+  }
+
+  insertNotes(notes: PartialNotedata) {
+    notes.sort((a, b) => {
+      if (a.beat == b.beat) return a.col - b.col
+      return a.beat - b.beat
+    })
     const { removedNotes, truncatedHolds } = this.checkConflicts(notes)
 
     this.app.actionHistory.run({
@@ -1812,7 +1954,6 @@ export class ChartManager {
         this.clearSelections()
       },
     })
-    return true
   }
 
   pasteTempo(data: string) {

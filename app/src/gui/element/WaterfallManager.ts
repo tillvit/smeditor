@@ -1,3 +1,4 @@
+import { Flags } from "../../util/Flags"
 import { capitalize } from "../../util/Util"
 
 interface WaterfallMessage {
@@ -13,16 +14,22 @@ export class WaterfallManager {
   private static messages: Record<string, WaterfallMessage> = {}
 
   private static get view(): HTMLDivElement {
-    if (!this._view)
+    if (!this._view) {
       this._view = document.getElementById("waterfall") as HTMLDivElement
+      if (!Flags.menuBar) {
+        this._view.style.top = "10px"
+      }
+    }
     return this._view
   }
 
   static create(message: string) {
+    if (this.view == null) return
     let count = 1
     if (this.messages[message] && this.messages[message].type == "") {
       const existingMessage = this.messages[message]
       clearTimeout(existingMessage.timeoutID)
+      clearTimeout(existingMessage.clearTimeoutID)
       count = ++existingMessage.count
       this.view.removeChild(existingMessage.container)
     }
@@ -46,6 +53,7 @@ export class WaterfallManager {
   }
 
   static createFormatted(message: string, type: "log" | "warn" | "error") {
+    if (this.view == null) return
     let count = 1
     if (this.messages[message] && this.messages[message].type == type) {
       const existingMessage = this.messages[message]

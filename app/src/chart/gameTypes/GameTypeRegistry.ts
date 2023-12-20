@@ -1,19 +1,18 @@
-import { ChartRenderer } from "../ChartRenderer"
 import { NoteType } from "../sm/NoteTypes"
 import { GameLogic } from "./base/GameLogic"
 import { NotedataParser } from "./base/NotedataParser"
-import { Notefield } from "./base/Notefield"
+
 import { BasicGameLogic } from "./common/BasicGameLogic"
 import { BasicNotedataParser } from "./common/BasicNotedataParser"
-import { DanceNotefield } from "./dance/DanceNotefield"
 
 export interface GameType {
   id: string
   numCols: number
+  columnWidths: number[]
   notefieldWidth: number
+  columnRotations: number[]
   gameLogic: GameLogic
   parser: NotedataParser
-  notefield: new (renderer: ChartRenderer) => Notefield
   editNoteTypes: NoteType[]
   flipColumns: {
     horizontal: number[]
@@ -25,9 +24,13 @@ export class GameTypeRegistry {
   private static gameTypes: Record<string, GameType> = {}
   private static priority: GameType[] = []
 
-  static register(gameType: GameType) {
-    GameTypeRegistry.gameTypes[gameType.id] = gameType
-    this.priority.push(gameType)
+  static register(gameType: Omit<GameType, "notefieldWidth">) {
+    ;(gameType as GameType).notefieldWidth = gameType.columnWidths.reduce(
+      (a, b) => a + b,
+      0
+    )
+    GameTypeRegistry.gameTypes[gameType.id] = gameType as GameType
+    this.priority.push(gameType as GameType)
   }
 
   static getPriority(): GameType[] {
@@ -46,10 +49,10 @@ export class GameTypeRegistry {
 GameTypeRegistry.register({
   id: "dance-single",
   numCols: 4,
-  notefieldWidth: 4 * 64,
+  columnWidths: [64, 64, 64, 64],
+  columnRotations: [0, -90, 90, 180],
   gameLogic: new BasicGameLogic(),
   parser: new BasicNotedataParser(),
-  notefield: DanceNotefield,
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
   flipColumns: {
     horizontal: [3, 1, 2, 0],
@@ -60,10 +63,10 @@ GameTypeRegistry.register({
 GameTypeRegistry.register({
   id: "dance-double",
   numCols: 8,
-  notefieldWidth: 8 * 64,
+  columnWidths: [64, 64, 64, 64, 64, 64, 64, 64],
+  columnRotations: [0, -90, 90, 180, 0, -90, 90, 180],
   gameLogic: new BasicGameLogic(),
   parser: new BasicNotedataParser(),
-  notefield: DanceNotefield,
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
   flipColumns: {
     horizontal: [3, 1, 2, 0, 7, 5, 6, 4],
@@ -74,10 +77,10 @@ GameTypeRegistry.register({
 GameTypeRegistry.register({
   id: "dance-couple",
   numCols: 8,
-  notefieldWidth: 8 * 64,
+  columnWidths: [64, 64, 64, 64, 64, 64, 64, 64],
+  columnRotations: [0, -90, 90, 180, 0, -90, 90, 180],
   gameLogic: new BasicGameLogic(),
   parser: new BasicNotedataParser(),
-  notefield: DanceNotefield,
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
   flipColumns: {
     horizontal: [3, 1, 2, 0, 7, 5, 6, 4],
@@ -88,10 +91,10 @@ GameTypeRegistry.register({
 GameTypeRegistry.register({
   id: "dance-solo",
   numCols: 6,
-  notefieldWidth: 6 * 64,
+  columnWidths: [64, 64, 64, 64, 64, 64],
+  columnRotations: [0, 45, -90, 90, 135, 180],
   gameLogic: new BasicGameLogic(),
   parser: new BasicNotedataParser(),
-  notefield: DanceNotefield,
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
   flipColumns: {
     horizontal: [5, 4, 2, 3, 1, 0],
@@ -102,10 +105,10 @@ GameTypeRegistry.register({
 GameTypeRegistry.register({
   id: "dance-solodouble",
   numCols: 12,
-  notefieldWidth: 12 * 64,
+  columnWidths: [64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64],
+  columnRotations: [0, 45, -90, 90, 135, 180, 0, 45, -90, 90, 135, 180],
   gameLogic: new BasicGameLogic(),
   parser: new BasicNotedataParser(),
-  notefield: DanceNotefield,
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
   flipColumns: {
     horizontal: [5, 4, 2, 3, 1, 0, 11, 10, 8, 9, 7, 6],
@@ -116,10 +119,10 @@ GameTypeRegistry.register({
 GameTypeRegistry.register({
   id: "dance-3panel",
   numCols: 3,
-  notefieldWidth: 3 * 64,
+  columnWidths: [64, 64, 64],
+  columnRotations: [45, -90, 135],
   gameLogic: new BasicGameLogic(),
   parser: new BasicNotedataParser(),
-  notefield: DanceNotefield,
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
   flipColumns: {
     horizontal: [2, 1, 0],

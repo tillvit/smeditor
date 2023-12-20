@@ -13,7 +13,6 @@ export class SnapPopup {
   private static onSnapChange = this.updateValues.bind(this)
   private static moveInterval: NodeJS.Timeout
   private static updateInterval: NodeJS.Timeout
-  private static exitTimeout?: NodeJS.Timeout
   private static editText: HTMLDivElement
   private static zoomer: HTMLDivElement
   private static divInput: NumberSpinner
@@ -37,7 +36,6 @@ export class SnapPopup {
     // don't show until the position has been set
     this.popup.style.display = `none`
     setTimeout(() => this.movePosition(snapSprite))
-    clearTimeout(this.exitTimeout)
     this.moveInterval = setInterval(() => this.movePosition(snapSprite), 150)
     this.active = true
   }
@@ -164,7 +162,8 @@ export class SnapPopup {
     if (!this.popup || !this.active || this.persistent) return
     window.removeEventListener("click", this.clickOutside!, true)
     this.popup.classList.add("exiting")
-    this.exitTimeout = setTimeout(() => this.popup!.remove(), 200)
+    const popup = this.popup
+    setTimeout(() => popup.remove(), 200)
     this.active = false
     this.persistent = false
     clearInterval(this.moveInterval)

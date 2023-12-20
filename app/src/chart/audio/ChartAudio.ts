@@ -46,7 +46,8 @@ export class ChartAudio {
   private _filteredBuffer: AudioBuffer
   private _loadedBuffer: AudioBuffer
   private _delay?: NodeJS.Timeout
-  private _listeners: (() => void)[] = []
+  private _loadListeners: (() => void)[] = []
+  private _updateListeners: (() => void)[] = []
   private _volume = 1
   private _destroyed = false
   private _renderTimeout?: NodeJS.Timeout
@@ -68,17 +69,16 @@ export class ChartAudio {
     this.type = type ?? ""
     this._filters[0].gain.value = -25
     this._audioAnalyzer = this._audioContext.createAnalyser()
-    this._audioAnalyzer.fftSize = 8192
+    this._audioAnalyzer.fftSize = 4096
     this._audioAnalyzer.maxDecibels = 0
     this._freqData = new Uint8Array(this._audioAnalyzer.frequencyBinCount)
     this._filteredAudioAnalyzer = this._audioContext.createAnalyser()
-    this._filteredAudioAnalyzer.fftSize = 8192
+    this._filteredAudioAnalyzer.fftSize = 4096
     this._filteredAudioAnalyzer.maxDecibels = 0
     this._filteredFreqData = new Uint8Array(
       this._filteredAudioAnalyzer.frequencyBinCount
     )
     this._gainNode = this._audioContext.createGain()
-
     this._buffer = this._audioContext.createBuffer(2, 1, 44100)
     this._filteredBuffer = this._audioContext.createBuffer(2, 1, 44100)
     this._loadedBuffer = this._audioContext.createBuffer(2, 1, 44100)
@@ -109,7 +109,8 @@ export class ChartAudio {
         })
         .finally(() => {
           this.initSource()
-          this.callListeners()
+          this.callLoadListeners()
+          this.callUpdateListeners()
           resolve()
         })
     })
@@ -232,7 +233,7 @@ export class ChartAudio {
     this._renderTimeout = setTimeout(
       () =>
         this.renderFilteredBuffer(this._loadedBuffer).then(() =>
-          this.callListeners()
+          this.callUpdateListeners()
         ),
       500
     )
@@ -245,7 +246,7 @@ export class ChartAudio {
     this._renderTimeout = setTimeout(
       () =>
         this.renderFilteredBuffer(this._loadedBuffer).then(() =>
-          this.callListeners()
+          this.callUpdateListeners()
         ),
       500
     )
@@ -259,7 +260,7 @@ export class ChartAudio {
     this._renderTimeout = setTimeout(
       () =>
         this.renderFilteredBuffer(this._loadedBuffer).then(() =>
-          this.callListeners()
+          this.callUpdateListeners()
         ),
       500
     )
@@ -271,11 +272,39 @@ export class ChartAudio {
   }
 
   /**
-   * Add a listener that fires when the audio buffer changes.
+   * Add a listener that fires when the audio buffer is loaded.
+   * @memberof ChartAudio
+   */
+  onLoad(callback: () => void) {
+    this._loadListeners.push(callback)
+  }
+
+  /**
+   * Removes a listener that fires when the audio buffer is loaded.
+   * @memberof ChartAudio
+   */
+  offLoad(callback: () => void) {
+    this._loadListeners = this._loadListeners.filter(
+      listener => listener != callback
+    )
+  }
+
+  /**
+   * Add a listener that fires when the filters are updated or the audio buffer is loaded.
    * @memberof ChartAudio
    */
   onUpdate(callback: () => void) {
-    this._listeners.push(callback)
+    this._updateListeners.push(callback)
+  }
+
+  /**
+   * Removes a listener that fires when the filters are updated or the audio buffer is loaded.
+   * @memberof ChartAudio
+   */
+  offUpdate(callback: () => void) {
+    this._updateListeners = this._updateListeners.filter(
+      listener => listener != callback
+    )
   }
 
   /**
@@ -394,7 +423,7 @@ export class ChartAudio {
     if (this._destroyed) return
     this.stop()
     this._buffer = this._audioContext.createBuffer(2, 1, 44100)
-    this._listeners = []
+    this._updateListeners = []
     clearTimeout(this._delay)
     this._destroyed = true
   }
@@ -420,8 +449,12 @@ export class ChartAudio {
       )
   }
 
-  private callListeners() {
-    this._listeners.forEach(listener => listener())
+  private callLoadListeners() {
+    this._loadListeners.forEach(listener => listener())
+  }
+
+  private callUpdateListeners() {
+    this._updateListeners.forEach(listener => listener())
   }
 
   private async decodeData(data?: ArrayBuffer): Promise<AudioBuffer | void> {

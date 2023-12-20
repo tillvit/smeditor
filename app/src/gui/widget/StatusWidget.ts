@@ -1,8 +1,11 @@
 import { Parser } from "expr-eval"
 import { Container, Sprite, Texture } from "pixi.js"
+import tippy from "tippy.js"
 import { EditMode, EditTimingMode } from "../../chart/ChartManager"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
+import { Flags } from "../../util/Flags"
+import { Keybinds } from "../../util/Keybinds"
 import { roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { Icons } from "../Icons"
@@ -65,9 +68,12 @@ export class StatusWidget extends Widget {
 
   constructor(manager: WidgetManager) {
     super(manager)
+
     const view = document.createElement("div")
     view.id = "status-widget"
     document.getElementById("view-wrapper")?.appendChild(view)
+
+    if (Flags.viewMode) view.classList.add("collapsed")
 
     this.playbackBar = document.createElement("div")
     this.playbackBar.classList.add("playback-bar")
@@ -82,16 +88,26 @@ export class StatusWidget extends Widget {
     this.skipStart.onclick = () => {
       this.manager.chartManager.setBeat(0)
     }
+    tippy(this.skipStart, {
+      content: "Skip to start" + this.keybind("jumpSongStart"),
+    })
 
     this.skipEnd = document.createElement("button")
     const skipEndIcon = document.createElement("img")
     skipEndIcon.style.height = "36px"
     skipEndIcon.src = Icons.SKIP_END
     this.skipEnd.appendChild(skipEndIcon)
-    this.skipStart.appendChild(skipStartIcon)
     this.skipEnd.onclick = () => {
-      this.manager.chartManager.lastNote()
+      this.manager.chartManager.setBeat(
+        this.manager.chartManager.loadedChart!.getBeatFromSeconds(
+          this.manager.chartManager.chartAudio.getSongLength()
+        )
+      )
     }
+
+    tippy(this.skipEnd, {
+      content: "Skip to end" + this.keybind("jumpSongEnd"),
+    })
 
     this.play = document.createElement("button")
     const playIcon = document.createElement("img")
@@ -108,6 +124,10 @@ export class StatusWidget extends Widget {
       this.manager.chartManager.playPause()
     }
 
+    tippy(this.play, {
+      content: "Play/Pause" + this.keybind("playback"),
+    })
+
     this.record = document.createElement("button")
     const recordIcon = document.createElement("img")
     recordIcon.style.height = "36px"
@@ -117,6 +137,12 @@ export class StatusWidget extends Widget {
       this.manager.chartManager.setMode(EditMode.Record)
     }
 
+    tippy(this.record, {
+      content: "Record" + this.keybind("recordMode"),
+    })
+
+    if (Flags.viewMode || !Flags.recordMode) this.record.style.display = "none"
+
     this.playtest = document.createElement("button")
     const playtestIcon = document.createElement("img")
     playtestIcon.style.height = "30px"
@@ -125,6 +151,12 @@ export class StatusWidget extends Widget {
     this.playtest.onclick = () => {
       this.manager.chartManager.setMode(EditMode.Play)
     }
+
+    tippy(this.playtest, {
+      content: "Playtest" + this.keybind("playMode"),
+    })
+
+    if (!Flags.playMode) this.playtest.style.display = "none"
 
     const line = document.createElement("div")
     line.classList.add("playback-separator")
@@ -333,6 +365,10 @@ export class StatusWidget extends Widget {
     }
     this.timingContainer.appendChild(this.addTimingEvent)
 
+    tippy(this.addTimingEvent, {
+      content: "Add timing events",
+    })
+
     this.arrangeTimingTracks = document.createElement("button")
     const arrangeTimingTracksIcon = document.createElement("img")
     arrangeTimingTracksIcon.style.height = "32px"
@@ -345,6 +381,10 @@ export class StatusWidget extends Widget {
     }
     this.arrangeTimingTracks.id = "arrange-tracks"
     this.timingContainer.appendChild(this.arrangeTimingTracks)
+
+    tippy(this.arrangeTimingTracks, {
+      content: "Arrange timing tracks",
+    })
 
     this.editBar.appendChild(this.editChoiceContainer)
 
@@ -377,6 +417,10 @@ export class StatusWidget extends Widget {
             type,
             beat: 0,
             col: 0,
+            quant: 4,
+            second: 0,
+            warped: false,
+            fake: false,
           })
         sprite.width = 32
         sprite.height = 32
@@ -399,6 +443,7 @@ export class StatusWidget extends Widget {
         element.onclick = () => {
           this.manager.chartManager.setEditingNoteType(type)
         }
+        tippy(element, { content: type + this.keybind("noteType" + type) })
         const noteArrow = {
           element,
           sprite,
@@ -458,7 +503,8 @@ export class StatusWidget extends Widget {
   }
 
   update(): void {
-    this.view.style.display = this.manager.chartManager.loadedSM ? "" : "none"
+    this.view.style.display =
+      this.manager.chartManager.loadedSM && Flags.status ? "" : "none"
     const time = this.manager.chartManager.getTime()
     if (this.lastTime != time) {
       if (document.activeElement != this.min)
@@ -499,7 +545,6 @@ export class StatusWidget extends Widget {
     if (this.lastMode != mode) {
       switch (mode) {
         case EditMode.Edit:
-        case EditMode.View:
           this.skipStart.disabled = false
           this.skipEnd.disabled = false
           this.record.disabled = false
@@ -544,6 +589,23 @@ export class StatusWidget extends Widget {
           this.sec.contentEditable = "false"
           this.millis.contentEditable = "false"
           this.beat.contentEditable = "false"
+          if (timingMode != EditTimingMode.Off) {
+            this.visible = false
+          }
+          this.view.classList.add("collapsed")
+          this.beatDropdown.closeDropdown()
+          this.beatDropdown.disabled = true
+          break
+        case EditMode.View:
+          this.lastHover = Date.now()
+          this.skipStart.disabled = false
+          this.skipEnd.disabled = false
+          this.record.disabled = true
+          this.playtest.disabled = false
+          this.min.contentEditable = "true"
+          this.sec.contentEditable = "true"
+          this.millis.contentEditable = "true"
+          this.beat.contentEditable = "true"
           if (timingMode != EditTimingMode.Off) {
             this.visible = false
           }
@@ -686,7 +748,7 @@ export class StatusWidget extends Widget {
     let time = min * 60 + sec + millis / 1000
     if (time > 9999999) time = 9999999
     this.manager.chartManager.setTime(time)
-    //force update
+    // force update
     this.lastTime = -999
   }
 
@@ -702,7 +764,7 @@ export class StatusWidget extends Widget {
     }
     if (beat > 9999999) beat = 9999999
     this.manager.chartManager.setBeat(beat)
-    //force update
+    // force update
     this.lastBeat = -999
   }
 
@@ -715,5 +777,11 @@ export class StatusWidget extends Widget {
     } catch {
       return null
     }
+  }
+
+  private keybind(id: string) {
+    const kbd = Keybinds.getKeybindString(id)
+    if (kbd == "") return ""
+    return " (" + kbd + ")"
   }
 }

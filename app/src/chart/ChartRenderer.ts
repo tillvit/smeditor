@@ -6,22 +6,23 @@ import {
   Rectangle,
 } from "pixi.js"
 import { ContextMenuPopup } from "../gui/element/ContextMenu"
+import { Flags } from "../util/Flags"
 import { Options } from "../util/Options"
 import { bsearch, isRightClick } from "../util/Util"
 import { ChartManager, EditMode, EditTimingMode } from "./ChartManager"
-import { BarlineContainer } from "./component/BarlineContainer"
-import { ComboNumber } from "./component/ComboNumber"
-import { ErrorBarContainer } from "./component/ErrorBarContainer"
-import { JudgmentSprite } from "./component/JudgmentSprite"
-import { PreviewAreaContainer } from "./component/PreviewAreaContainer"
-import { SelectionAreaContainer } from "./component/SelectionAreaContainer"
-import { SelectionBoundary } from "./component/SelectionSprite"
-import { SelectionTimingEventContainer } from "./component/SelectionTimingEventContainer"
-import { SnapContainer } from "./component/SnapContainer"
-import { TimingAreaContainer } from "./component/TimingAreaContainer"
-import { TimingTrackContainer } from "./component/TimingTrackContainer"
-import { Waveform } from "./component/Waveform"
-import { Notefield } from "./gameTypes/base/Notefield"
+import { BarlineContainer } from "./component/edit/BarlineContainer"
+import { PreviewAreaContainer } from "./component/edit/PreviewAreaContainer"
+import { SelectionAreaContainer } from "./component/edit/SelectionAreaContainer"
+import { SelectionBoundary } from "./component/edit/SelectionSprite"
+import { SnapContainer } from "./component/edit/SnapContainer"
+import { Waveform } from "./component/edit/Waveform"
+import { Notefield } from "./component/notefield/Notefield"
+import { ComboNumber } from "./component/play/ComboNumber"
+import { ErrorBarContainer } from "./component/play/ErrorBarContainer"
+import { JudgmentSprite } from "./component/play/JudgmentSprite"
+import { SelectionTimingEventContainer } from "./component/timing/SelectionTimingEventContainer"
+import { TimingAreaContainer } from "./component/timing/TimingAreaContainer"
+import { TimingTrackContainer } from "./component/timing/TimingTrackContainer"
 import { TimingWindow } from "./play/TimingWindow"
 import { Chart } from "./sm/Chart"
 import { NoteType, NotedataEntry } from "./sm/NoteTypes"
@@ -31,13 +32,11 @@ interface SelectionBounds {
   end: Point
 }
 
-export interface ChartRendererComponent {
+export interface ChartRendererComponent extends DisplayObject {
   update: (fromBeat: number, toBeat: number) => void
 }
 
-export class ChartRenderer extends Container<
-  DisplayObject & ChartRendererComponent
-> {
+export class ChartRenderer extends Container<ChartRendererComponent> {
   chartManager: ChartManager
   chart: Chart
 
@@ -76,7 +75,7 @@ export class ChartRenderer extends Container<
     this.timingTracks = new TimingTrackContainer(this)
     this.selectedEvents = new SelectionTimingEventContainer(this)
     this.timingBar = new ErrorBarContainer(this)
-    this.notefield = new this.chart.gameType.notefield(this)
+    this.notefield = new Notefield(this)
     this.snapDisplay = new SnapContainer(this)
     this.previewArea = new PreviewAreaContainer(this)
     this.selectionArea = new SelectionAreaContainer(this)
@@ -153,7 +152,11 @@ export class ChartRenderer extends Container<
 
     this.on("pointerdown", event => {
       if (isRightClick(event)) return
-      if (this.chartManager.getMode() == EditMode.Play) return
+      if (
+        this.chartManager.getMode() == EditMode.Play ||
+        this.chartManager.getMode() == EditMode.View
+      )
+        return
       if (
         this.chartManager.editTimingMode == EditTimingMode.Add &&
         this.lastMousePos
@@ -247,7 +250,7 @@ export class ChartRenderer extends Container<
       this.judgment.doJudge(error, judgment)
       this.timingBar.addBar(error, judgment)
     }
-    this.notefield.doJudge(note.col, judgment)
+    this.notefield.onJudgment(note.col, judgment)
   }
 
   activateHold(col: number) {
@@ -280,7 +283,7 @@ export class ChartRenderer extends Container<
     const toBeat = this.getLowerBoundBeat()
 
     this.scale.x = Options.chart.zoom
-    this.scale.y = (Options.chart.reverse ? -1 : 1) * Options.chart.zoom
+    this.scale.y = Options.chart.zoom
 
     this.children.forEach(child => child.update(fromBeat, toBeat))
     this.notefield.alpha =
@@ -298,7 +301,18 @@ export class ChartRenderer extends Container<
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
       const snapBeat =
         Math.round(this.getBeatFromYPos(this.lastMousePos.y) / snap) * snap
-      const col = Math.round((this.lastMousePos.x + 96) / 64)
+      let col = -1
+      for (let i = 0; i < this.chart.gameType.numCols; i++) {
+        const colWidth = this.chart.gameType.columnWidths[i]
+        const colX = this.notefield.getColumnX(i)
+        if (
+          this.lastMousePos.x < colX + colWidth / 2 &&
+          this.lastMousePos.x > colX - colWidth / 2
+        ) {
+          col = i
+          break
+        }
+      }
       if (
         snapBeat != this.lastMouseBeat ||
         col != this.lastMouseCol ||
@@ -310,16 +324,18 @@ export class ChartRenderer extends Container<
         if (this.editingCol != -1) {
           this.chartManager.editHoldBeat(this.editingCol, snapBeat, false)
         }
-        if (col > 3 || col < 0) {
+        if (col === -1) {
           this.lastMouseBeat = -1
           this.lastMouseCol = -1
           this.notefield.setGhostNote()
         } else {
-          this.notefield.setGhostNote({
-            beat: snapBeat,
-            col: this.lastMouseCol,
-            type: this.chartManager.getEditingNoteType()!,
-          })
+          this.notefield.setGhostNote(
+            this.chart.computeNote({
+              beat: snapBeat,
+              col: this.lastMouseCol,
+              type: this.chartManager.getEditingNoteType()!,
+            })
+          )
         }
       }
     }
@@ -412,10 +428,11 @@ export class ChartRenderer extends Container<
   getYPosFromBeat(beat: number): number {
     const currentTime = this.getVisualTime()
     const currentBeat = this.getVisualBeat()
+    const reverseMultiplier = Options.chart.reverse ? -1 : 1
     if (Options.chart.CMod) {
       const deltaTime = this.chart.getSecondsFromBeat(beat) - currentTime
       const deltaY = deltaTime * this.getSecondsToPixelsRatio()
-      return deltaY + this.getActualReceptorYPos()
+      return deltaY * reverseMultiplier + this.getActualReceptorYPos()
     }
     if (currentBeat == beat) return this.getActualReceptorYPos()
     const deltaBeat = Options.chart.doSpeedChanges
@@ -423,7 +440,7 @@ export class ChartRenderer extends Container<
         this.chart.timingData.getEffectiveBeat(currentBeat)
       : beat - currentBeat
     const deltaY = deltaBeat * this.getEffectiveBeatsToPixelsRatio()
-    return deltaY + this.getActualReceptorYPos()
+    return deltaY * reverseMultiplier + this.getActualReceptorYPos()
   }
 
   /**
@@ -436,10 +453,11 @@ export class ChartRenderer extends Container<
    */
   getYPosFromSecond(time: number): number {
     const currentTime = this.getVisualTime()
+    const reverseMultiplier = Options.chart.reverse ? -1 : 1
     if (Options.chart.CMod) {
       const deltaTime = time - currentTime
       const deltaY = deltaTime * this.getSecondsToPixelsRatio()
-      return deltaY + this.getActualReceptorYPos()
+      return deltaY * reverseMultiplier + this.getActualReceptorYPos()
     } else {
       return this.getYPosFromBeat(
         this.chart.timingData.getBeatFromSeconds(time)
@@ -456,12 +474,13 @@ export class ChartRenderer extends Container<
    * @memberof ChartRenderer
    */
   getSecondFromYPos(yp: number): number {
+    const reverseMultiplier = Options.chart.reverse ? -1 : 1
     if (Options.chart.CMod) {
       const pixelsToSeconds = this.getPixelsToSecondsRatio()
       const currentTime = this.getVisualTime()
 
-      const deltaY = yp - Options.chart.receptorYPos / Options.chart.zoom
-      const deltaTime = deltaY * pixelsToSeconds
+      const deltaY = yp - this.getActualReceptorYPos()
+      const deltaTime = deltaY * pixelsToSeconds * reverseMultiplier
       return currentTime + deltaTime
     }
     return this.chart.getSecondsFromBeat(this.getBeatFromYPos(yp))
@@ -478,11 +497,13 @@ export class ChartRenderer extends Container<
    */
   getBeatFromYPos(yp: number, ignoreScrolls?: boolean): number {
     const currentBeat = this.getVisualBeat()
+    const reverseMultiplier = Options.chart.reverse ? -1 : 1
     if (Options.chart.CMod) {
       return this.chart.getBeatFromSeconds(this.getSecondFromYPos(yp))
     }
     const deltaY = yp - this.getActualReceptorYPos()
-    const deltaBeat = deltaY * this.getPixelsToEffectiveBeatsRatio()
+    const deltaBeat =
+      deltaY * this.getPixelsToEffectiveBeatsRatio() * reverseMultiplier
     if (Options.chart.doSpeedChanges && !ignoreScrolls) {
       const effBeat =
         this.chart.timingData.getEffectiveBeat(currentBeat) + deltaBeat
@@ -498,7 +519,10 @@ export class ChartRenderer extends Container<
    * @memberof ChartRenderer
    */
   getActualReceptorYPos(): number {
-    return Options.chart.receptorYPos / Options.chart.zoom
+    return (
+      (Options.chart.receptorYPos / Options.chart.zoom) *
+      (Options.chart.reverse ? -1 : 1)
+    )
   }
 
   getEffectiveBeatsToPixelsRatio(): number {
@@ -535,12 +559,32 @@ export class ChartRenderer extends Container<
   }
 
   /**
+   * Returns the minimum y position to render
+   *
+   * @return {*}  {number}
+   * @memberof ChartRenderer
+   */
+  getUpperBound(): number {
+    if (Options.chart.reverse) {
+      return (
+        (this.chartManager.app.renderer.screen.height - this.y) /
+          Options.chart.zoom +
+        32
+      )
+    }
+    return -this.y / Options.chart.zoom - 32
+  }
+
+  /**
    * Returns the maximum y position to render.
    *
    * @return {*}  {number}
    * @memberof ChartRenderer
    */
   getLowerBound(): number {
+    if (Options.chart.reverse) {
+      return -this.y / Options.chart.zoom - 32
+    }
     return (
       (this.chartManager.app.renderer.screen.height - this.y) /
         Options.chart.zoom +
@@ -567,7 +611,7 @@ export class ChartRenderer extends Container<
         this.getVisualBeat(),
         this.getVisualTime()
       )
-      const sign = speedMult >= 0 ? 1 : -1
+      const sign = speedMult >= 0 != Options.chart.reverse ? 1 : -1
       const scrolls = this.chart.timingData.getTimingData("SCROLLS")
       const pixelsToEffectiveBeats =
         100 / chartSpeed / Math.abs(speedMult) / 64 / Options.chart.zoom
@@ -623,26 +667,27 @@ export class ChartRenderer extends Container<
       const scrollValue = scrolls[scrollIndex]?.value ?? 1
       const pixelsToBeats =
         (pixelsToEffectiveBeats / Math.abs(scrollValue)) * Options.chart.zoom
-
+      const start = Options.chart.reverse ? upperBound : lowerBound
+      const end = Options.chart.reverse ? lowerBound : upperBound
       if (scrollValue * sign > 0) {
         if (
           scrolls[scrollIndex - 1]?.value == 0 &&
-          this.getYPosFromBeat(scrolls[scrollIndex - 1].beat) > upperBound
+          this.getYPosFromBeat(scrolls[scrollIndex - 1].beat) > end
         )
           return this.getVisualBeat() - Options.chart.maxDrawBeatsBack
         return Math.max(
           this.getVisualBeat() - Options.chart.maxDrawBeatsBack,
-          scrollBeat + pixelsToBeats * (upperBound - scrollStartY)
+          scrollBeat + pixelsToBeats * (end - scrollStartY)
         )
       }
       if (
         scrolls[scrollIndex - 1]?.value == 0 &&
-        this.getYPosFromBeat(scrolls[scrollIndex - 1].beat) < lowerBound
+        this.getYPosFromBeat(scrolls[scrollIndex - 1].beat) < start
       )
         return this.getVisualBeat() - Options.chart.maxDrawBeatsBack
       return Math.max(
         this.getVisualBeat() - Options.chart.maxDrawBeatsBack,
-        scrollBeat + pixelsToBeats * (scrollStartY - lowerBound)
+        scrollBeat + pixelsToBeats * (scrollStartY - start)
       )
     }
     if (!Options.chart.CMod)
@@ -672,7 +717,7 @@ export class ChartRenderer extends Container<
         this.getVisualBeat(),
         this.getVisualTime()
       )
-      const sign = speedMult >= 0 ? 1 : -1
+      const sign = speedMult >= 0 != Options.chart.reverse ? 1 : -1
       const scrolls = this.chart.timingData.getTimingData("SCROLLS")
       const pixelsToEffectiveBeats =
         100 / chartSpeed / Math.abs(speedMult) / 64 / Options.chart.zoom
@@ -728,26 +773,28 @@ export class ChartRenderer extends Container<
       const scrollValue = scrolls[scrollIndex]?.value ?? 1
       const pixelsToBeats =
         (pixelsToEffectiveBeats / Math.abs(scrollValue)) * Options.chart.zoom
+      const start = Options.chart.reverse ? lowerBound : upperBound
+      const end = Options.chart.reverse ? upperBound : lowerBound
 
       if (scrollValue * sign > 0) {
         if (
           scrolls[scrollIndex + 1]?.value == 0 &&
-          this.getYPosFromBeat(scrolls[scrollIndex + 1].beat) < lowerBound
+          this.getYPosFromBeat(scrolls[scrollIndex + 1].beat) < end
         )
           return this.getVisualBeat() + Options.chart.maxDrawBeats
         return Math.min(
           this.getVisualBeat() + Options.chart.maxDrawBeats,
-          scrollBeat + pixelsToBeats * (lowerBound - scrollStartY)
+          scrollBeat + pixelsToBeats * (end - scrollStartY)
         )
       }
       if (
         scrolls[scrollIndex + 1]?.value == 0 &&
-        this.getYPosFromBeat(scrolls[scrollIndex + 1].beat) > upperBound
+        this.getYPosFromBeat(scrolls[scrollIndex + 1].beat) > start
       )
         return this.getVisualBeat() + Options.chart.maxDrawBeats
       return Math.min(
         this.getVisualBeat() + Options.chart.maxDrawBeats,
-        scrollBeat + pixelsToBeats * (scrollStartY - upperBound)
+        scrollBeat + pixelsToBeats * (scrollStartY - start)
       )
     }
     if (!Options.chart.CMod)
@@ -756,16 +803,6 @@ export class ChartRenderer extends Container<
         this.getBeatFromYPos(this.getLowerBound())
       )
     return this.getBeatFromYPos(this.getLowerBound())
-  }
-
-  /**
-   * Returns the minimum y position to render
-   *
-   * @return {*}  {number}
-   * @memberof ChartRenderer
-   */
-  getUpperBound(): number {
-    return -32 - this.y / Options.chart.zoom
   }
 
   /**
@@ -851,6 +888,7 @@ export class ChartRenderer extends Container<
       )
     }
     object.on("pointerdown", event => {
+      if (this.chartManager.getMode() == EditMode.View) return
       if (isRightClick(event)) {
         if (!this.chartManager.isNoteInSelection(notedata)) {
           this.chartManager.clearSelections()
@@ -868,6 +906,7 @@ export class ChartRenderer extends Container<
         !this.chartManager.isNoteInSelection(notedata)
       )
         return
+
       event.stopImmediatePropagation()
       if (this.chartManager.isNoteInSelection(notedata)) {
         if (event.getModifierState("Control") || event.getModifierState("Meta"))
@@ -915,5 +954,13 @@ export class ChartRenderer extends Container<
 
   getSelectionBounds() {
     return this.selectionBounds
+  }
+
+  shouldDisplayBarlines() {
+    return (
+      (this.chartManager.getMode() != EditMode.Play ||
+        !Options.play.hideBarlines) &&
+      Flags.barlines
+    )
   }
 }

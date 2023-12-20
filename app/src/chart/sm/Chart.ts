@@ -1,5 +1,5 @@
 import { EventHandler } from "../../util/EventHandler"
-import { bsearch } from "../../util/Util"
+import { bsearch, getDivision } from "../../util/Util"
 import { GameType, GameTypeRegistry } from "../gameTypes/GameTypeRegistry"
 import { ChartTimingData } from "./ChartTimingData"
 import { CHART_DIFFICULTIES, ChartDifficulty } from "./ChartTypes"
@@ -200,6 +200,9 @@ export class Chart {
       warped: this.timingData.isBeatWarped(note.beat),
       fake: note.type == "Fake" || this.timingData.isBeatFaked(note.beat),
       second: this.timingData.getSecondsFromBeat(note.beat),
+      quant: Math.round(
+        getDivision(this.timingData.getBeatOfMeasure(note.beat))
+      ),
     })
   }
 

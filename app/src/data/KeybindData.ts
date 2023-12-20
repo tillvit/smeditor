@@ -11,13 +11,15 @@ import { KeybindWindow } from "../gui/window/KeybindWindow"
 import { NewSongWindow } from "../gui/window/NewSongWindow"
 import { OffsetWindow } from "../gui/window/OffsetWindow"
 import { SMPropertiesWindow } from "../gui/window/SMPropertiesWindow"
+import { SyncWindow } from "../gui/window/SyncWindow"
 import { TimingDataWindow } from "../gui/window/TimingDataWindow"
 import { UserOptionsWindow } from "../gui/window/UserOptionsWindow"
 import { ActionHistory } from "../util/ActionHistory"
-import { FileHandler } from "../util/file-handler/FileHandler"
-import { WebFileHandler } from "../util/file-handler/WebFileHandler"
+import { Flags } from "../util/Flags"
 import { roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
+import { FileHandler } from "../util/file-handler/FileHandler"
+import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 
 export interface Keybind {
   label: string
@@ -120,13 +122,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
-      const snap = Math.max(0.001, Options.chart.snap)
-      const closestTick = Math.round(app.chartManager.getBeat() / snap) * snap
-      const change =
-        Math.abs(closestTick - app.chartManager.getBeat()) < 0.0005
-          ? snap
-          : snap / 2
-      app.chartManager.setAndSnapBeat(app.chartManager.getBeat() - change)
+      app.chartManager.snapToPreviousTick()
     },
   },
   cursorDown: {
@@ -137,13 +133,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
-      const snap = Math.max(0.001, Options.chart.snap)
-      const closestTick = Math.round(app.chartManager.getBeat() / snap) * snap
-      const change =
-        Math.abs(closestTick - app.chartManager.getBeat()) < 0.0005
-          ? snap
-          : snap / 2
-      app.chartManager.setAndSnapBeat(app.chartManager.getBeat() + change)
+      app.chartManager.snapToNextTick()
     },
   },
   increaseScrollSpeed: {
@@ -203,7 +193,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "New song...",
     bindLabel: "New song",
     combos: [{ key: "N", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.loadedSM,
+    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
     callback: app => {
       app.windowManager.openWindow(new NewSongWindow(app))
     },
@@ -212,7 +202,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Open song...",
     bindLabel: "Open song",
     combos: [{ key: "O", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.loadedSM,
+    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
     callback: app => {
       if (window.nw) {
         const fileSelector = document.createElement("input")
@@ -237,30 +227,39 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Song properties...",
     bindLabel: "Open song properties",
     combos: [{ key: "O", mods: [Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.loadedSM,
+    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new SMPropertiesWindow(app)),
   },
   save: {
     label: "Save...",
     bindLabel: "Save",
     combos: [{ key: "S", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.loadedSM,
+    disabled: app =>
+      !app.chartManager.loadedSM ||
+      app.chartManager.smPath.startsWith("https://") ||
+      app.chartManager.smPath.startsWith("http://"),
     callback: app => app.chartManager.save(),
   },
   export: {
     label: "Save and export current song",
     combos: [{ key: "E", mods: [DEF_MOD] }],
-    disabled: app => !!window.nw || !app.chartManager.loadedSM,
+    disabled: app =>
+      !!window.nw ||
+      !app.chartManager.loadedSM ||
+      app.chartManager.smPath.startsWith("https://") ||
+      app.chartManager.smPath.startsWith("http://"),
     callback: app => {
       app.chartManager.save()
-      ;(FileHandler as WebFileHandler).saveDirectory(app.chartManager.smPath)
+      ;(FileHandler.getStandardHandler() as WebFileHandler).saveDirectory(
+        app.chartManager.smPath
+      )
     },
   },
   exportNotedata: {
     label: "Export to notedata...",
     bindLabel: "Export to notedata",
     combos: [{ key: "E", mods: [DEF_MOD, Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.loadedSM,
+    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
     callback: app =>
       app.windowManager.openWindow(
         new ExportNotedataWindow(app, app.chartManager.selection.notes)
@@ -270,19 +269,21 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Chart list",
     bindLabel: "Open chart list",
     combos: [{ key: "O", mods: [DEF_MOD, Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.loadedSM,
+    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new ChartListWindow(app)),
   },
   timingDataRow: {
     label: "Edit timing data at row",
     combos: [{ key: "T", mods: [Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app => !app.chartManager.chartView || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new TimingDataWindow(app)),
   },
   selectRegion: {
     label: "Select region",
     combos: [{ key: "Tab", mods: [] }],
-    disabled: app => !app.chartManager.loadedChart,
+    disabled: app =>
+      !app.chartManager.loadedChart &&
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => app.chartManager.selectRegion(),
   },
   volumeUp: {
@@ -418,7 +419,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       const beat = app.chartManager.getBeat()
       const measureLength =
         app.chartManager.loadedChart!.timingData.getMeasureLength(beat - 0.001)
-      app.chartManager.setAndSnapBeat(Math.max(0, beat - measureLength))
+      app.chartManager.snapToNearestTick(Math.max(0, beat - measureLength))
     },
   },
   nextMeasure: {
@@ -435,7 +436,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       const beat = app.chartManager.getBeat()
       const measureLength =
         app.chartManager.loadedChart!.timingData.getMeasureLength(beat)
-      app.chartManager.setAndSnapBeat(Math.max(0, beat + measureLength))
+      app.chartManager.snapToNearestTick(Math.max(0, beat + measureLength))
     },
   },
   previousNote: {
@@ -503,7 +504,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   assistTick: {
     label: "Assist tick",
     combos: [{ key: "F7", mods: [] }],
-    disabled: false,
+    disabled: () => !Flags.assist,
     callback: () => {
       Options.audio.assistTick = !Options.audio.assistTick
       WaterfallManager.create(
@@ -514,7 +515,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   metronome: {
     label: "Metronome",
     combos: [{ key: "F7", mods: [Modifier.ALT] }],
-    disabled: false,
+    disabled: () => !Flags.assist,
     callback: () => {
       Options.audio.metronome = !Options.audio.metronome
       WaterfallManager.create(
@@ -594,8 +595,14 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   showEq: {
     label: "Equalizer",
     combos: [{ key: "E", mods: [Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.chartAudio,
+    disabled: app => !app.chartManager.chartAudio || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new EQWindow(app)),
+  },
+  syncAudio: {
+    label: "Sync Audio",
+    combos: [{ key: "L", mods: [Modifier.SHIFT] }],
+    disabled: app => !app.chartManager.chartAudio || !Flags.openWindows,
+    callback: app => app.windowManager.openWindow(new SyncWindow(app)),
   },
   previousNoteType: {
     label: "Previous note type",
@@ -625,7 +632,10 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   redo: {
     label: "Redo",
-    combos: [{ key: "Y", mods: [DEF_MOD] }],
+    combos: [
+      { key: "Y", mods: [DEF_MOD] },
+      { key: "Z", mods: [DEF_MOD, Modifier.SHIFT] },
+    ],
     disabled: app =>
       !app.actionHistory.canRedo() ||
       app.chartManager.getMode() != EditMode.Edit,
@@ -647,7 +657,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ key: "P", mods: [] }],
     disabled: app =>
       !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Record,
+      app.chartManager.getMode() == EditMode.Record ||
+      !Flags.playMode,
     callback: app => app.chartManager.setMode(EditMode.Play),
   },
   recordMode: {
@@ -655,7 +666,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ key: "R", mods: [] }],
     disabled: app =>
       !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play,
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.View ||
+      !Flags.recordMode,
     callback: app => app.chartManager.setMode(EditMode.Record),
   },
   playModeStart: {
@@ -663,7 +676,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ key: "P", mods: [Modifier.SHIFT] }],
     disabled: app =>
       !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Record,
+      app.chartManager.getMode() == EditMode.Record ||
+      !Flags.playMode,
     callback: app => {
       app.chartManager.setBeat(0)
       app.chartManager.setMode(EditMode.Play)
@@ -674,14 +688,16 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ key: "R", mods: [Modifier.SHIFT] }],
     disabled: app =>
       !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play,
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.View ||
+      !Flags.recordMode,
     callback: app => app.chartManager.setMode(EditMode.Record),
   },
   options: {
     label: "Options...",
     bindLabel: "Edit options",
     combos: [{ key: ",", mods: [DEF_MOD] }],
-    disabled: false,
+    disabled: () => !Flags.openWindows || !Flags.openWindows,
     callback: app => {
       app.windowManager.openWindow(new UserOptionsWindow(app))
     },
@@ -690,7 +706,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Keybinds...",
     bindLabel: "Edit keybinds",
     combos: [],
-    disabled: false,
+    disabled: () => !Flags.openWindows || !Flags.openWindows,
     callback: app => {
       app.windowManager.openWindow(new KeybindWindow(app))
     },
@@ -699,7 +715,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Gameplay keybinds...",
     bindLabel: "Edit gameplay keybinds",
     combos: [],
-    disabled: false,
+    disabled: () => !Flags.openWindows || !Flags.openWindows,
     callback: app => {
       app.windowManager.openWindow(new GameplayKeybindWindow(app))
     },
@@ -995,6 +1011,126 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       })
     },
   },
+  quantize4th: {
+    label: "4ths",
+    bindLabel: "Quantize to 4ths",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 4)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
+  quantize8th: {
+    label: "8ths",
+    bindLabel: "Quantize to 8ths",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 8)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
+  quantize12th: {
+    label: "12ths",
+    bindLabel: "Quantize to 12ths",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 12)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
+  quantize16th: {
+    label: "16ths",
+    bindLabel: "Quantize to 16ths",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 16)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
+  quantize24th: {
+    label: "24ths",
+    bindLabel: "Quantize to 24ths",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 24)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
+  quantize32nd: {
+    label: "32nds",
+    bindLabel: "Quantize to 32nds",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 32)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
+  quantize48th: {
+    label: "48ths",
+    bindLabel: "Quantize to 48ths",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 48)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
+  quantize96th: {
+    label: "96ths",
+    bindLabel: "Quantize to 96ths",
+    combos: [],
+    disabled: app =>
+      app.chartManager.selection.notes.length == 0 ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: app => {
+      app.chartManager.modifySelection(note => {
+        note.beat = app.chartManager.getClosestTick(note.beat, 96)
+        note.beat = Math.round(note.beat * 48) / 48
+        return note
+      })
+    },
+  },
   delete: {
     label: "Delete",
     combos: [
@@ -1049,7 +1185,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   adjustOffset: {
     label: "Adjust offset",
     combos: [],
-    disabled: false,
+    disabled: () => !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new OffsetWindow(app)),
   },
   setSongPreview: {

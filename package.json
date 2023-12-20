@@ -40,6 +40,7 @@
     "expr-eval": "^2.0.2",
     "file-saver": "^2.0.5",
     "file-system-access": "^1.0.4",
+    "fourier-transform": "^1.1.2",
     "howler": "^2.2.3",
     "jszip": "^3.10.1",
     "pixi.js": "^7.0.4",

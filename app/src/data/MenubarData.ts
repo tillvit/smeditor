@@ -1,4 +1,5 @@
 import { App } from "../App"
+import { Flags } from "../util/Flags"
 import { Options } from "../util/Options"
 
 export interface MenuSelection {
@@ -396,6 +397,44 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         ],
       },
       {
+        type: "dropdown",
+        title: "Quantize",
+        options: [
+          {
+            type: "selection",
+            id: "quantize4th",
+          },
+          {
+            type: "selection",
+            id: "quantize8th",
+          },
+          {
+            type: "selection",
+            id: "quantize12th",
+          },
+          {
+            type: "selection",
+            id: "quantize16th",
+          },
+          {
+            type: "selection",
+            id: "quantize24th",
+          },
+          {
+            type: "selection",
+            id: "quantize32nd",
+          },
+          {
+            type: "selection",
+            id: "quantize48th",
+          },
+          {
+            type: "selection",
+            id: "quantize96th",
+          },
+        ],
+      },
+      {
         type: "separator",
       },
       {
@@ -429,12 +468,12 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       {
         type: "checkbox",
         id: "assistTick",
-        checked: () => Options.audio.assistTick,
+        checked: () => Options.audio.assistTick && Flags.assist,
       },
       {
         type: "checkbox",
         id: "metronome",
-        checked: () => Options.audio.metronome,
+        checked: () => Options.audio.metronome && Flags.assist,
       },
       {
         type: "separator",

@@ -2,11 +2,11 @@ import { showDirectoryPicker, showOpenFilePicker } from "file-system-access"
 import scrollIntoView from "scroll-into-view-if-needed"
 import { App } from "../../App"
 import { AUDIO_EXT, IMG_EXT } from "../../data/FileData"
+import { basename, dirname, extname } from "../../util/Path"
 import { FileHandler } from "../../util/file-handler/FileHandler"
 import { WebFileHandler } from "../../util/file-handler/WebFileHandler"
 import { Icons } from "../Icons"
 import { Window } from "./Window"
-import { extname, dirname, basename } from "../../util/Path"
 
 interface DirectoryWindowOptions {
   title: string
@@ -130,7 +130,10 @@ export class DirectoryWindow extends Window {
       const promises = []
       for (const handle of fileHandlers) {
         promises.push(
-          (FileHandler as WebFileHandler).uploadHandle(handle, path)
+          (FileHandler.getStandardHandler() as WebFileHandler).uploadHandle(
+            handle,
+            path
+          )
         )
       }
 
@@ -158,7 +161,10 @@ export class DirectoryWindow extends Window {
         this.viewElement.querySelector(".info.selected")
       const path = selected?.dataset.path ?? ""
 
-      await (FileHandler as WebFileHandler).uploadHandle(directoryHandle, path)
+      await (FileHandler.getStandardHandler() as WebFileHandler).uploadHandle(
+        directoryHandle,
+        path
+      )
 
       await this.refreshDirectory(dropPath)
       this.getAcceptableFile(
@@ -199,7 +205,7 @@ export class DirectoryWindow extends Window {
       const path = selected?.dataset.path
       if (!path) return
       const isFolder = selected.parentElement!.classList.contains("folder")
-      ;(FileHandler as WebFileHandler)
+      ;(FileHandler.getStandardHandler() as WebFileHandler)
         [isFolder ? "removeDirectory" : "removeFile"](path)
         .then(() => {
           const el = this.getElement(path)
@@ -274,10 +280,12 @@ export class DirectoryWindow extends Window {
   }
 
   private async createDiv(path: string): Promise<HTMLDivElement[]> {
-    const folders = await (FileHandler as WebFileHandler).getDirectoryFolders(
-      path
-    )
-    let files = await (FileHandler as WebFileHandler).getDirectoryFiles(path)
+    const folders = await (
+      FileHandler.getStandardHandler() as WebFileHandler
+    ).getDirectoryFolders(path)
+    let files = await (
+      FileHandler.getStandardHandler() as WebFileHandler
+    ).getDirectoryFiles(path)
     folders.sort((a, b) =>
       a.name.toLowerCase().localeCompare(b.name.toLowerCase())
     )
@@ -420,7 +428,7 @@ export class DirectoryWindow extends Window {
       const newPath = basedir == "" ? title.value : basedir + "/" + title.value
       if (newPath == path) return
       title.parentElement!.dataset.path = newPath
-      await (FileHandler as WebFileHandler)[
+      await (FileHandler.getStandardHandler() as WebFileHandler)[
         isFolder ? "renameDirectory" : "renameFile"
       ](path, newPath)
       this.refreshDirectory(basedir)
@@ -471,7 +479,7 @@ export class DirectoryWindow extends Window {
 
   async getAcceptableFile(path: string): Promise<string | undefined> {
     const baseDirHandle = await (
-      FileHandler as WebFileHandler
+      FileHandler.getStandardHandler() as WebFileHandler
     ).getDirectoryHandle(path)
     if (!baseDirHandle) return
     const queue = [{ path, handle: baseDirHandle }]
@@ -609,7 +617,7 @@ export class DirectoryWindow extends Window {
       const path = selected?.dataset.path
       if (!path) return
       const isFolder = selected.parentElement!.classList.contains("folder")
-      ;(FileHandler as WebFileHandler)
+      ;(FileHandler.getStandardHandler() as WebFileHandler)
         [isFolder ? "removeDirectory" : "removeFile"](path)
         .then(() => {
           const el = this.getElement(path)
@@ -693,7 +701,7 @@ export class DirectoryWindow extends Window {
             "/" +
             basename(this.draggedElement!.dataset.path!)
       if (path != targetPath)
-        await (FileHandler as WebFileHandler)[
+        await (FileHandler.getStandardHandler() as WebFileHandler)[
           isFolder ? "renameDirectory" : "renameFile"
         ](path, targetPath)
 
@@ -715,7 +723,7 @@ export class DirectoryWindow extends Window {
     if (!(<HTMLElement>event.target!).closest(".dir-selector")) {
       return
     }
-    ;(FileHandler as WebFileHandler)
+    ;(FileHandler.getStandardHandler() as WebFileHandler)
       .handleDropEvent(event, this.fileDropPath)
       .then(async folder => {
         await this.refreshDirectory(this.fileDropPath)

@@ -10,6 +10,7 @@ export class ContextMenuPopup {
   private static menuElement: HTMLDivElement
   private static closeTimeout: NodeJS.Timeout
   static open(app: App, event: MouseEvent | FederatedMouseEvent) {
+    if (app.chartManager.getMode() == EditMode.View) return
     this.buildMenu(app)
     this.menuElement.style.display = "none"
     setTimeout(() => this.fitContextMenu(event))
@@ -69,7 +70,7 @@ export class ContextMenuPopup {
     )
     if (
       app.chartManager.getMode() == EditMode.Edit &&
-      app.chartManager.hasSelection()
+      app.chartManager.hasNoteSelection()
     ) {
       const separator = document.createElement("div")
       separator.classList.add("separator")
@@ -103,15 +104,15 @@ export class ContextMenuPopup {
         title_bar_right = document.createElement("div")
         title_bar_right.innerText = Keybinds.getKeybindString(data.id)
         title_bar_right.classList.add("keybind", "unselectable")
-        title.innerText = meta.label
+        title.innerText = meta?.label ?? data.id
 
-        let disabled = meta.disabled
+        let disabled = meta?.disabled ?? true
         if (typeof disabled == "function") disabled = disabled(app)
         if (disabled) item.classList.add("disabled")
 
         item.addEventListener("click", () => {
           if (disabled) return
-          meta.callback(app)
+          meta?.callback(app)
           this.close()
         })
       } else {
