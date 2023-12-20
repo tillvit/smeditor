@@ -118,6 +118,7 @@ export class App {
       powerPreference: "low-power",
     })
 
+    this.onResize()
     this.ticker = new Ticker()
     this.ticker.maxFPS = 120
     this.ticker.add(() => {
