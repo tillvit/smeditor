@@ -5,6 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 // https://vitejs.dev/config/
 export default defineConfig({
   base: "/smeditor",
+  appType: "mpa",
   plugins: [
     VitePWA({
       registerType: "autoUpdate",
@@ -41,7 +42,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         app: resolve(__dirname, 'app/index.html'),
-        merge: resolve(__dirname, 'merge/index.html'),
+        embed: resolve(__dirname, 'embed/index.html'),
       },
       output: {
         assetFileNames: 'assets/[name]-[hash][extname]',
