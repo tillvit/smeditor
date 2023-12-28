@@ -83,6 +83,10 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       }
     )
     this.trackVariable(
+      () => this.renderer.chartManager.app.renderer.screen.width,
+      () => this.resizeWaveform()
+    )
+    this.trackVariable(
       () => this.renderer.chartManager.app.renderer.screen.height,
       () => this.resizeWaveform()
     )

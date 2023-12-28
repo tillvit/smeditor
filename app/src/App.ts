@@ -118,7 +118,6 @@ export class App {
       powerPreference: "low-power",
     })
 
-    setTimeout(() => this.onResize(), 1000)
     this.ticker = new Ticker()
     this.ticker.maxFPS = 120
     this.ticker.add(() => {
@@ -296,13 +295,13 @@ export class App {
     })
 
     setInterval(() => {
-      if (
-        this.lastHeight != window.innerHeight ||
-        this.lastWidth != window.innerWidth
-      ) {
-        this.lastHeight = window.innerHeight
-        this.lastWidth = window.innerWidth
-        this.onResize()
+      const screenWidth = window.innerWidth
+      const screenHeight =
+        window.innerHeight - document.getElementById("menubar")!.clientHeight
+      if (this.lastHeight != screenHeight || this.lastWidth != screenWidth) {
+        this.lastHeight = screenHeight
+        this.lastWidth = screenWidth
+        this.onResize(screenWidth, screenHeight)
         EventHandler.emit("resize")
       }
     }, 100)
@@ -356,10 +355,7 @@ export class App {
     })
   }
 
-  onResize() {
-    const screenWidth = window.innerWidth
-    const screenHeight =
-      window.innerHeight - document.getElementById("menubar")!.clientHeight
+  onResize(screenWidth: number, screenHeight: number) {
     this.renderer.screen.width = screenWidth
     this.renderer.screen.height = screenHeight
     this.view.width = screenWidth * this.renderer.resolution

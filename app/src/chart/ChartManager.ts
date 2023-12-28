@@ -1124,7 +1124,7 @@ export class ChartManager {
     beat: number
   ): PartialNotedataEntry {
     const newHoldEndBeat = clamp(
-      Math.round((beat - Options.chart.snap) * 48) / 48,
+      Math.round((beat - Math.max(1 / 48, Options.chart.snap)) * 48) / 48,
       hold.beat,
       hold.beat + hold.hold - 1 / 48
     )
@@ -1468,14 +1468,15 @@ export class ChartManager {
       this.loadedSM.requiresSSC() ||
       (await FileHandler.getFileHandle(sscPath))
     ) {
-      await FileHandler.writeFile(smPath, this.loadedSM.serialize("ssc")).catch(
-        err => {
-          const message = err.message
-          if (!message.includes(errors.GONE[0])) {
-            error = message
-          }
+      await FileHandler.writeFile(
+        sscPath,
+        this.loadedSM.serialize("ssc")
+      ).catch(err => {
+        const message = err.message
+        if (!message.includes(errors.GONE[0])) {
+          error = message
         }
-      )
+      })
     }
     if (error == null) {
       if (this.loadedSM.usesChartTiming()) {
