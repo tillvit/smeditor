@@ -98,6 +98,7 @@ export class Notefield extends Container implements ChartRendererComponent {
   }
 
   update(fromBeat: number, toBeat: number): void {
+    this.noteskin.update()
     this.receptors.update(this.renderer.getVisualBeat())
     this.flashes.update()
     this.notes.update(fromBeat, toBeat)
