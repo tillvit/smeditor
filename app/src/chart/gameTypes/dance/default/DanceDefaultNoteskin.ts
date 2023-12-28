@@ -46,7 +46,8 @@ export const DanceDefaultNoteskin: NoteSkinOptions = {
     "dance-couple",
     "dance-solo",
     "dance-solodouble",
-    "dance-3panel",
+    "dance-threepanel",
+    "dance-threedouble",
   ],
   rotateColumns: true,
 }

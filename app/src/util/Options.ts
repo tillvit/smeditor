@@ -86,7 +86,8 @@ export class DefaultOptions {
       "dance-couple": "default",
       "dance-solo": "default",
       "dance-solodouble": "default",
-      "dance-3panel": "default",
+      "dance-threepanel": "default",
+      "dance-threedouble": "default",
     } as Record<string, string>,
   }
   static audio = {
@@ -110,7 +111,8 @@ export class DefaultOptions {
     defaultTimingCollection: {
       "dance-single": "ITG",
       "dance-double": "ITG",
-      "dance-3panel": "ITG",
+      "dance-threepanel": "ITG",
+      "dance-threedouble": "ITG",
       "dance-solo": "ITG",
       "dance-solodouble": "ITG",
     } as { [key: string]: string },

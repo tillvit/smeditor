@@ -117,7 +117,7 @@ GameTypeRegistry.register({
 })
 
 GameTypeRegistry.register({
-  id: "dance-3panel",
+  id: "dance-threepanel",
   numCols: 3,
   columnWidths: [64, 64, 64],
   columnRotations: [45, -90, 135],
@@ -127,5 +127,19 @@ GameTypeRegistry.register({
   flipColumns: {
     horizontal: [2, 1, 0],
     vertical: [0, 1, 2],
+  },
+})
+
+GameTypeRegistry.register({
+  id: "dance-threedouble",
+  numCols: 6,
+  columnWidths: [64, 64, 64, 64, 64, 64],
+  columnRotations: [45, -90, 135, 45, -90, 135],
+  gameLogic: new BasicGameLogic(),
+  parser: new BasicNotedataParser(),
+  editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [2, 1, 0, 5, 4, 3],
+    vertical: [0, 1, 2, 3, 4, 5],
   },
 })
