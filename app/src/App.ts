@@ -27,6 +27,7 @@ import { EventHandler } from "./util/EventHandler"
 import { Flags, loadFlags } from "./util/Flags"
 import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
+import { ParityGenerator } from "./util/ParityGenerator"
 import { extname } from "./util/Path"
 import { fpsUpdate } from "./util/Performance"
 import { isIFrame } from "./util/Util"
@@ -35,6 +36,7 @@ import { FileHandler } from "./util/file-handler/FileHandler"
 declare global {
   interface Window {
     app: App
+    Parity?: ParityGenerator
   }
   interface File {
     path?: string

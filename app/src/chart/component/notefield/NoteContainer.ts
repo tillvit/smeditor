@@ -10,7 +10,15 @@ import { Notefield } from "./Notefield"
 
 interface HighlightedNoteObject extends Container {
   selection: Sprite
+  parity: Sprite
   object: NoteObject
+}
+
+const parityColors: Record<string, number> = {
+  L: 0x0390fc,
+  l: 0xabd6f7,
+  R: 0xfcad03,
+  r: 0xfae5b9,
 }
 
 export class NoteContainer extends Container {
@@ -68,19 +76,26 @@ export class NoteContainer extends Container {
         selection.width = objectBounds.width
         selection.height = objectBounds.height
         selection.alpha = 0
+
+        const parity = new Sprite(Texture.WHITE)
+        parity.x = objectBounds.x
+        parity.y = objectBounds.y
+        parity.width = objectBounds.width
+        parity.height = objectBounds.height
+        parity.alpha = 0
         this.notefield.renderer.registerDragNote(container, note)
         container.object = object
         container.selection = selection
+        container.parity = parity
         this.arrowMap.set(note, container)
-        container.addChild(object, selection)
+        container.addChild(object, selection, parity)
         this.addChild(container)
       }
     }
 
     for (const [note, container] of this.arrowMap.entries()) {
       if (!this.shouldDisplayNote(note, fromBeat, toBeat)) {
-        container.object.destroy()
-        container.selection.destroy()
+        container.destroy()
         this.arrowMap.delete(note)
         continue
       }
@@ -146,6 +161,9 @@ export class NoteContainer extends Container {
           this.notefield.renderer.chartManager.removeNoteFromDragSelection(note)
         }
       }
+      container.parity.alpha = note.parity ? 0.4 : 0
+      container.parity.tint =
+        note.parity !== undefined ? parityColors[note.parity] : 0xffffff
     }
   }
 
