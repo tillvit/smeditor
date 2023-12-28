@@ -166,7 +166,7 @@ export const GAMEPLAY_KEYBINDS: { [key: string]: GameplayKeybind[] } = {
       keys: ["L"],
     },
   ],
-  "dance-3panel": [
+  "dance-threepanel": [
     {
       label: "UpLeft",
       keys: ["Left", "Q"],
@@ -178,6 +178,32 @@ export const GAMEPLAY_KEYBINDS: { [key: string]: GameplayKeybind[] } = {
     {
       label: "UpRight",
       keys: ["Right", "E"],
+    },
+  ],
+  "dance-threedouble": [
+    {
+      label: "P1 UpLeft",
+      keys: ["Left"],
+    },
+    {
+      label: "P1 Down",
+      keys: ["Down"],
+    },
+    {
+      label: "P1 UpRight",
+      keys: ["Right"],
+    },
+    {
+      label: "P2 UpLeft",
+      keys: ["Q"],
+    },
+    {
+      label: "P2 Down",
+      keys: ["S"],
+    },
+    {
+      label: "P2 UpRight",
+      keys: ["E"],
     },
   ],
 }
