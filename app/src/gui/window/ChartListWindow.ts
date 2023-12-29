@@ -289,11 +289,13 @@ export class ChartListWindow extends Window {
       ActionHistory.instance.run({
         action: () => {
           chart!.meter = value!
+          chart!.meterF = value!
           sortDifficulties()
           this.loadCharts()
         },
         undo: () => {
           chart!.meter = lastVal
+          chart!.meterF = lastVal!
           sortDifficulties()
           this.loadCharts()
         },
