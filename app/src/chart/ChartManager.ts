@@ -176,7 +176,11 @@ export class ChartManager {
         if (this.mode != EditMode.Edit) return
         const data = this.copy()
         if (data) e.clipboardData?.setData("text/plain", data)
-        this.deleteSelection()
+        if (this.eventSelection.timingEvents.length > 0) {
+          this.deleteEventSelection()
+        } else {
+          this.deleteSelection()
+        }
         e.preventDefault()
       },
       true
