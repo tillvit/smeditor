@@ -95,7 +95,7 @@ export class DanceDefaultNoteObject extends Container implements NoteObject {
   }
   update(renderer: ChartRenderer) {
     if (this.type == "Fake") {
-      this.note.icon!.visible = renderer.chartManager.getMode() == EditMode.Play
+      this.note.icon!.visible = renderer.chartManager.getMode() != EditMode.Play
     }
   }
 }
