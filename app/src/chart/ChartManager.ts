@@ -27,6 +27,7 @@ import { Flags } from "../util/Flags"
 import { Keybinds } from "../util/Keybinds"
 import { clamp } from "../util/Math"
 import { Options } from "../util/Options"
+import { ParityGenerator } from "../util/ParityGenerator"
 import { basename, dirname, extname } from "../util/Path"
 import { tpsUpdate } from "../util/Performance"
 import { RecentFileHandler } from "../util/RecentFileHandler"
@@ -783,6 +784,15 @@ export class ChartManager {
     EventHandler.emit("chartLoaded")
     EventHandler.emit("audioLoaded")
     EventHandler.emit("chartModified")
+
+    if (this.loadedChart.gameType.id == "dance-single") {
+      window.Parity = new ParityGenerator(
+        this.app,
+        this.loadedChart.gameType.id
+      )
+    } else {
+      window.Parity = undefined
+    }
 
     if (Flags.autoPlay) {
       this.playPause()

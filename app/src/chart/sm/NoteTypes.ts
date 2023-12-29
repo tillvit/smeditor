@@ -38,6 +38,7 @@ interface ExtraNotedata {
     hideNote: boolean
     hasHit: boolean
   }
+  parity?: string
 }
 
 export type TapNotedataEntry = PartialTapNotedataEntry & ExtraNotedata
