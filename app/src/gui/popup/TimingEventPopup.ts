@@ -26,17 +26,19 @@ export class TimingEventPopup {
   private readonly clickOutside
   private moveInterval
   private readonly modifyBox
+  private cachedEvent: TimingEvent
   onConfirm: (event: TimingEvent) => void = () => {}
   persistent = false
   constructor(timingBox: TimingBox, timingData: TimingData, modifyBox = false) {
     timingBox.popup = this
     this.timingBox = timingBox
     this.timingData = timingData
+    this.cachedEvent = this.timingBox.event
     this.modifyBox = modifyBox
     this.popup = this.build()
 
-    // don't show until the position has been set
-    this.popup.style.display = `none`
+    // instantly snap to position when first showing
+    this.popup.style.transitionDuration = `0s`
     setTimeout(() => this.movePosition())
 
     this.onTimingChange = this.updateValues.bind(this)
@@ -54,7 +56,6 @@ export class TimingEventPopup {
     }
   }
   private movePosition() {
-    this.popup.style.display = ``
     const point = this.timingBox.backgroundObj.getBounds()
     // will the box stay in bounds?
     const centerx = point.left + point.width / 2
@@ -72,6 +73,9 @@ export class TimingEventPopup {
       this.popup.style.transform = `translate(-50%, -100%)`
       this.popup.style.top = `${point.top - point.height / 2 + 35}px`
     }
+
+    // allow smooth movement after initial one
+    setTimeout(() => (this.popup.style.transitionDuration = ``), 10)
   }
   private build() {
     const data = POPUP_ROWS[this.timingBox.event.type]
@@ -302,12 +306,13 @@ export class TimingEventPopup {
   }
 
   getEvent() {
-    return this.timingBox.event
+    return this.cachedEvent
   }
 
   attach(timingBox: TimingBox) {
     clearInterval(this.moveInterval)
     this.moveInterval = setInterval(() => this.movePosition(), 150)
     this.timingBox = timingBox
+    this.cachedEvent = this.timingBox.event
   }
 }
