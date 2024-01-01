@@ -50,7 +50,7 @@ import {
   isHoldNote,
 } from "./sm/NoteTypes"
 import { Simfile } from "./sm/Simfile"
-import { Cached, TimingEvent } from "./sm/TimingTypes"
+import { Cached, TIMING_EVENT_NAMES, TimingEvent } from "./sm/TimingTypes"
 
 const SNAPS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 48, -1]
 
@@ -176,7 +176,11 @@ export class ChartManager {
         if (this.mode != EditMode.Edit) return
         const data = this.copy()
         if (data) e.clipboardData?.setData("text/plain", data)
-        this.deleteSelection()
+        if (this.eventSelection.timingEvents.length > 0) {
+          this.deleteEventSelection()
+        } else {
+          this.deleteSelection()
+        }
         e.preventDefault()
       },
       true
@@ -1758,13 +1762,25 @@ export class ChartManager {
       this.endRegion = this.startRegion
       this.startRegion = this.beat
     }
-    this.loadedChart
-      .getNotedata()
-      .filter(
-        note => note.beat >= this.startRegion! && note.beat <= this.endRegion!
+    if (this.editTimingMode == EditTimingMode.Off) {
+      this.setNoteSelection(
+        this.loadedChart
+          .getNotedata()
+          .filter(
+            note =>
+              note.beat >= this.startRegion! && note.beat <= this.endRegion!
+          )
+          .filter(note => !this.selection.notes.includes(note))
       )
-      .filter(note => !this.selection.notes.includes(note))
-      .forEach(note => this.addNoteToSelection(note))
+    } else {
+      this.setEventSelection(
+        TIMING_EVENT_NAMES.flatMap(
+          event =>
+            this.loadedChart!.timingData.getColumn(event)
+              .events as Cached<TimingEvent>[]
+        )
+      )
+    }
   }
 
   modifySelection(modify: (note: NotedataEntry) => PartialNotedataEntry) {

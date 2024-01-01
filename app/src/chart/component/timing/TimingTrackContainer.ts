@@ -422,6 +422,9 @@ export class TimingTrackContainer
       this.renderer.chartManager.getMode() == EditMode.Edit
 
     this.boxPool.visible = this.renderer.shouldDisplayBarlines()
+    if (this.ghostBox) {
+      this.ghostBox.visible = this.renderer.shouldDisplayBarlines()
+    }
 
     // Create all missing boxes
     for (const event of this.renderer.chart.timingData.getTimingData()) {
@@ -571,7 +574,7 @@ export class TimingTrackContainer
         ghostBox.selection
       )
       this.addChild(ghostBox)
-      ghostBox.visible = true
+      ghostBox.visible = this.renderer.shouldDisplayBarlines()
       ghostBox.textObj.anchor.set(0.5, 0.55)
       ghostBox.backgroundObj.height = 25
       ghostBox.selection.height = 25
