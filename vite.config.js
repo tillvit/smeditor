@@ -30,6 +30,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html}', 'assets/**/*'],
         ignoreURLParametersMatching: [/^flags/, /^url/, /^chartIndex/, /^chartType/],
+        navigateFallback: null,
       }
       
     })
