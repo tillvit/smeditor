@@ -324,11 +324,11 @@ export class WebFileHandler implements BaseFileHandler {
       const zipFolder = zip.folder(directoryHandle.name)
       if (!zipFolder) {
         console.error(
-          "Failed to zip folder " + path + "/" + directoryHandle.name
+          "Failed to zip folder " + dirName + "/" + directoryHandle.name
         )
         continue
       }
-      await this.zipDirectory(path + "/" + directoryHandle.name, zipFolder)
+      await this.zipDirectory(dirName + "/" + directoryHandle.name, zipFolder)
     }
     return zip
   }
@@ -344,7 +344,21 @@ export class WebFileHandler implements BaseFileHandler {
     })
     const zip = await this.zipDirectory(path)
     if (!zip) return
+
     await zip.generateAsync({ type: "blob" }).then(async blob => {
+      if (!window.showSaveFilePicker) {
+        // showSaveFilePicker bugged on FF
+        console.log(blob)
+        const downloadelem = document.createElement("a")
+        const url = URL.createObjectURL(blob)
+        document.body.appendChild(downloadelem)
+        downloadelem.href = url
+        downloadelem.download = dirName + ".zip"
+        downloadelem.click()
+        downloadelem.remove()
+        window.URL.revokeObjectURL(url)
+        return
+      }
       await this.writeHandle(fileHandle, blob)
     })
   }
