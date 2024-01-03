@@ -1,6 +1,7 @@
-import { BitmapText, Container, Sprite, Texture } from "pixi.js"
+import { Container, Sprite, Texture } from "pixi.js"
 import { clamp } from "../../../util/Math"
 import { Options } from "../../../util/Options"
+import { createText } from "../../../util/Util"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 
 export class PreviewAreaContainer
@@ -8,10 +9,7 @@ export class PreviewAreaContainer
   implements ChartRendererComponent
 {
   private previewArea = new Sprite(Texture.WHITE)
-  private previewText = new BitmapText("SONG PREVIEW", {
-    fontName: "Main",
-    fontSize: 13,
-  })
+  private previewText = createText("SONG PREVIEW", 13)
 
   private renderer: ChartRenderer
 

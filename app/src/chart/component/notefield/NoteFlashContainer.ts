@@ -8,8 +8,8 @@ import {
 import { Notefield } from "./Notefield"
 
 interface ColumnNoteFlashes extends Container {
-  flashes: Container<NoteFlash>
-  holdFlashes: Container<NoteFlash>
+  flashes: Container
+  holdFlashes: Container
 }
 
 export class NoteFlashContainer extends Container {
@@ -25,8 +25,8 @@ export class NoteFlashContainer extends Container {
       container.rotation = this.notefield.getColumnRotation(colNum)
       container.x = this.notefield.getColumnX(colNum)
 
-      const flashes = new Container<NoteFlash>()
-      const holdFlashes = new Container<NoteFlash>()
+      const flashes = new Container()
+      const holdFlashes = new Container()
       container.addChild(flashes, holdFlashes)
       container.flashes = flashes
       container.holdFlashes = holdFlashes
@@ -38,10 +38,10 @@ export class NoteFlashContainer extends Container {
     this.y = this.notefield.renderer.getActualReceptorYPos()
     this.children.forEach(column => {
       column.flashes.children.forEach(flash =>
-        flash.update(this.notefield.renderer)
+        (flash as NoteFlash).update(this.notefield.renderer)
       )
       column.holdFlashes.children.forEach(flash =>
-        flash.update(this.notefield.renderer)
+        (flash as NoteFlash).update(this.notefield.renderer)
       )
     })
   }

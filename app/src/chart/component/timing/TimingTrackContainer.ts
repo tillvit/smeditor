@@ -15,7 +15,7 @@ import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { EventHandler } from "../../../util/EventHandler"
 import { roundDigit } from "../../../util/Math"
 import { Options } from "../../../util/Options"
-import { isRightClick } from "../../../util/Util"
+import { createText, isRightClick } from "../../../util/Util"
 import { EditMode, EditTimingMode } from "../../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import { Cached, TimingEvent, TimingEventType } from "../../sm/TimingTypes"
@@ -46,11 +46,6 @@ interface TimingRow {
   rightOffset: number
 }
 
-export const timingNumbers = {
-  fontName: "Main",
-  fontSize: 15,
-}
-
 export const TIMING_TRACK_WIDTHS: { [key: string]: number } = {
   BPMS: 55,
   STOPS: 55,
@@ -72,7 +67,7 @@ export class TimingTrackContainer
   extends Container
   implements ChartRendererComponent
 {
-  private tracks = new Container<TimingTrack>()
+  private tracks = new Container()
 
   private renderer: ChartRenderer
   private timingBoxMap: Map<Cached<TimingEvent>, TimingBox> = new Map()
@@ -81,7 +76,7 @@ export class TimingTrackContainer
   private boxPool = new DisplayObjectPool({
     create: () => {
       const newChild = new Container() as TimingBox
-      newChild.textObj = new BitmapText("", timingNumbers)
+      newChild.textObj = createText("", 15)
       newChild.backgroundObj = new BetterRoundedRect()
       newChild.selection = new BetterRoundedRect("onlyBorder")
       newChild.selection.tint = 0x3a9bf0
@@ -326,9 +321,8 @@ export class TimingTrackContainer
     let x = -this.renderer.chart.gameType.notefieldWidth * 0.5 - 128
     for (let i = leftTypes.length - 1; i >= 0; i--) {
       const type = leftTypes[i]
-      const track =
-        this.tracks.getChildByName<TimingTrack>(type) ??
-        this.createTrack(type, x)
+      const track = (this.tracks.getChildByName(type) ??
+        this.createTrack(type, x)) as TimingTrack
       if (track.lastX != x) {
         track.lastX = x
         track.targetAlpha = i % 2 == 0 ? 0.1 : 0
@@ -361,9 +355,8 @@ export class TimingTrackContainer
     x = this.renderer.chart.gameType.notefieldWidth * 0.5 + 128
     for (let i = 0; i < rightTypes.length; i++) {
       const type = rightTypes[i]
-      const track =
-        this.tracks.getChildByName<TimingTrack>(type) ??
-        this.createTrack(type, x)
+      const track = (this.tracks.getChildByName(type) ??
+        this.createTrack(type, x)) as TimingTrack
       if (track.lastX != x) {
         track.lastX = x
         track.targetAlpha = i % 2 == 0 ? 0.1 : 0
@@ -399,12 +392,14 @@ export class TimingTrackContainer
           track,
           {
             0: { alpha: "inherit" },
-            1: { alpha: editingTiming ? track.targetAlpha : 0 },
+            1: {
+              alpha: editingTiming ? (track as TimingTrack).targetAlpha : 0,
+            },
           },
           0.3,
           bezier(0, 0, 0.16, 1.01),
           () => {},
-          `track-${track.type}-alpha`
+          `track-${(track as TimingTrack).type}-alpha`
         )
       }
     }
@@ -471,7 +466,7 @@ export class TimingTrackContainer
         : "left"
       if (editingTiming) {
         targetX =
-          this.tracks.getChildByName<TimingTrack>(event.type)?.x ?? box.x
+          (this.tracks.getChildByName(event.type) as TimingTrack)?.x ?? box.x
         targetX +=
           (TIMING_TRACK_WIDTHS[event.type] / 2) * (targetX > 0 ? 1 : -1)
         targetAnchor = 0.5
@@ -561,7 +556,7 @@ export class TimingTrackContainer
     }
     if (!this.ghostBox) {
       const ghostBox = new Container() as TimingBox
-      ghostBox.textObj = new BitmapText("", timingNumbers)
+      ghostBox.textObj = createText("", 15)
       ghostBox.backgroundObj = new BetterRoundedRect()
       ghostBox.selection = new BetterRoundedRect("onlyBorder")
       ghostBox.guideLine = new Sprite(Texture.WHITE)
@@ -616,7 +611,7 @@ export class TimingTrackContainer
       this.ghostBox?.popup ? this.ghostBox.event.beat : snapBeat
     )
 
-    let targetX = this.tracks.getChildByName<TimingTrack>(eventType)!.x
+    let targetX = (this.tracks.getChildByName(eventType) as TimingTrack)!.x
     targetX += (TIMING_TRACK_WIDTHS[eventType] / 2) * (targetX > 0 ? 1 : -1)
     this.ghostBox.position.x = targetX
     this.ghostBox.backgroundObj.tint =
@@ -674,7 +669,9 @@ export class TimingTrackContainer
     let leastDist = Number.MAX_SAFE_INTEGER
     let best = this.tracks.children[0]
     for (const track of this.tracks.children) {
-      const dist = Math.abs(track.x + (0.5 - track.anchor.x) * track.width - x)
+      const dist = Math.abs(
+        track.x + (0.5 - (track as TimingTrack).anchor.x) * track.width - x
+      )
       if (dist < leastDist) {
         best = track
         leastDist = dist

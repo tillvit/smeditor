@@ -1,26 +1,12 @@
 import { Container, Sprite, Texture, TilingSprite } from "pixi.js"
 import { rgbtoHex } from "../../../../util/Color"
 import { NotedataEntry } from "../../../sm/NoteTypes"
-import { DanceDefaultNoteTexture } from "./DanceDefaultNoteTexture"
 
-import holdBodyUrl from "../../../../../assets/noteskin/dance/default/hold/body.png"
-import holdCapUrl from "../../../../../assets/noteskin/dance/default/hold/cap.png"
-import fakeIconUrl from "../../../../../assets/noteskin/dance/default/icon/fake.png"
-import rollBodyUrl from "../../../../../assets/noteskin/dance/default/roll/body.png"
-import rollCapUrl from "../../../../../assets/noteskin/dance/default/roll/cap.png"
 import { EditMode } from "../../../ChartManager"
 import { ChartRenderer } from "../../../ChartRenderer"
 import { NoteObject, NoteObjectHold } from "../../base/Noteskin"
-
-const holdBodyTex = Texture.from(holdBodyUrl)
-const holdCapTex = Texture.from(holdCapUrl)
-
-const rollBodyTex = Texture.from(rollBodyUrl)
-const rollCapTex = Texture.from(rollCapUrl)
-
-const ICONS: Record<string, Texture> = {
-  Fake: Texture.from(fakeIconUrl),
-}
+import { DanceDefaultNoteTexture } from "./DanceDefaultNoteTexture"
+import { DanceDefaultNoteskinObject } from "./DanceDefaultNoteskin"
 
 class NoteItem extends Container {
   note: Sprite
@@ -38,10 +24,14 @@ class DanceDefaultNoteHold extends Container implements NoteObjectHold {
   holdCap: Sprite
   constructor(holdBodyTex: Texture, holdCapTex: Texture) {
     super()
-    const holdBody = new TilingSprite(holdBodyTex, 64, 0)
+    const holdBody = new TilingSprite({
+      texture: holdBodyTex,
+      width: 64,
+      height: 0,
+    })
     holdBody.tileScale.x = 0.5
     holdBody.tileScale.y = 0.5
-    holdBody.uvRespectAnchor = true
+    // holdBody.uvRespectAnchor = true
     holdBody.anchor.y = 1
 
     holdBody.x = -32
@@ -61,7 +51,7 @@ export class DanceDefaultNoteObject extends Container implements NoteObject {
   type = ""
   hold?: DanceDefaultNoteHold
   note = new NoteItem()
-  constructor(note: NotedataEntry) {
+  constructor(noteskin: DanceDefaultNoteskinObject, note: NotedataEntry) {
     super()
     this.eventMode = "static"
     const type = note.type
@@ -71,8 +61,12 @@ export class DanceDefaultNoteObject extends Container implements NoteObject {
     // Create hold
     if (type == "Hold" || type == "Roll") {
       this.hold = new DanceDefaultNoteHold(
-        type == "Hold" ? holdBodyTex : rollBodyTex,
-        type == "Hold" ? holdCapTex : rollCapTex
+        type == "Hold"
+          ? noteskin.textures["HoldBody"]
+          : noteskin.textures["RollBody"],
+        type == "Hold"
+          ? noteskin.textures["HoldCap"]
+          : noteskin.textures["RollCap"]
       )
       this.hold.holdBody.tint = rgbtoHex(0.8 * 255, 0.8 * 255, 0.8 * 255)
       this.hold.holdCap.tint = rgbtoHex(0.8 * 255, 0.8 * 255, 0.8 * 255)
@@ -80,8 +74,8 @@ export class DanceDefaultNoteObject extends Container implements NoteObject {
     }
 
     // Create icon
-    if (ICONS[type]) {
-      const icon = new Sprite(ICONS[type])
+    if (type + "Icon" in noteskin.textures) {
+      const icon = new Sprite(noteskin.textures[type + "Icon"])
       icon.width = 32
       icon.height = 32
       icon.anchor.set(0.5)

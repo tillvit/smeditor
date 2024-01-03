@@ -2,13 +2,9 @@ import { BitmapText, Container, Sprite, Texture } from "pixi.js"
 import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
+import { createText } from "../../../util/Util"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 
-const measureNumbers = {
-  fontName: "Main",
-  fontSize: 20,
-  fill: ["#ffffff"],
-}
 export class BarlineContainer
   extends Container
   implements ChartRendererComponent
@@ -20,7 +16,7 @@ export class BarlineContainer
     create: () => new Sprite(Texture.WHITE),
   })
   private barlineLabelPool = new DisplayObjectPool({
-    create: () => new BitmapText("", measureNumbers),
+    create: () => createText("", 20),
   })
 
   constructor(renderer: ChartRenderer) {

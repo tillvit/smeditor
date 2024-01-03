@@ -1,5 +1,5 @@
 import { Parser } from "expr-eval"
-import { DisplayObject, FederatedMouseEvent } from "pixi.js"
+import { Container, FederatedMouseEvent, Text } from "pixi.js"
 import { IS_OSX } from "../data/KeybindData"
 
 const QUANTS = [
@@ -81,7 +81,7 @@ export function parseString(expr: string) {
   }
 }
 
-export function destroyChildIf<Child extends DisplayObject>(
+export function destroyChildIf<Child extends Container>(
   children: Child[],
   predicate: (child: Child, index: number) => boolean
 ) {
@@ -92,6 +92,22 @@ export function destroyChildIf<Child extends DisplayObject>(
       children[i].destroy()
     }
   }
+}
+
+export function createText(
+  text: string,
+  fontSize: number,
+  fontFamily = "Main"
+) {
+  return new Text({
+    text,
+    renderMode: "bitmap",
+    style: {
+      fontFamily,
+      fontSize,
+      fill: 0xffffff,
+    },
+  })
 }
 
 export function capitalize(str: string): string {

@@ -1,4 +1,4 @@
-import { BLEND_MODES, Sprite, Texture } from "pixi.js"
+import { Sprite, Texture } from "pixi.js"
 import { TimingWindow } from "../../../play/TimingWindow"
 import {
   isHoldTimingWindow,
@@ -6,27 +6,8 @@ import {
   isStandardTimingWindow,
 } from "../../../play/TimingWindowCollection"
 
-import flashW4Url from "../../../../../assets/noteskin/dance/default/flash/decent.png"
-import flashW2Url from "../../../../../assets/noteskin/dance/default/flash/excellent.png"
-import flashW0Url from "../../../../../assets/noteskin/dance/default/flash/fantastic.png"
-import flashW3Url from "../../../../../assets/noteskin/dance/default/flash/great.png"
-import holdFlashUrl from "../../../../../assets/noteskin/dance/default/flash/hold.png"
-import flashMineUrl from "../../../../../assets/noteskin/dance/default/flash/mine.png"
-import flashW5Url from "../../../../../assets/noteskin/dance/default/flash/way_off.png"
-import flashW1Url from "../../../../../assets/noteskin/dance/default/flash/white_fantastic.png"
 import { NoteFlash } from "../../base/Noteskin"
-
-const HOLD_TEX = Texture.from(holdFlashUrl)
-
-const FLASH_TEX_MAP: Record<string, Texture> = {
-  w0: Texture.from(flashW0Url),
-  w1: Texture.from(flashW1Url),
-  w2: Texture.from(flashW2Url),
-  w3: Texture.from(flashW3Url),
-  w4: Texture.from(flashW4Url),
-  w5: Texture.from(flashW5Url),
-  mine: Texture.from(flashMineUrl),
-}
+import { DanceDefaultNoteskinObject } from "./DanceDefaultNoteskin"
 
 export class DanceDefaultNoteFlash extends Sprite implements NoteFlash {
   private createTime = 0
@@ -60,23 +41,26 @@ export class DanceDefaultNoteFlash extends Sprite implements NoteFlash {
     }
   }
 
-  static createJudgment(judgment: TimingWindow) {
+  static createJudgment(
+    noteskin: DanceDefaultNoteskinObject,
+    judgment: TimingWindow
+  ) {
     let tex: Texture | undefined
-    if (isStandardTimingWindow(judgment)) tex = FLASH_TEX_MAP[judgment.id]
-    if (isMineTimingWindow(judgment)) tex = FLASH_TEX_MAP["mine"]
-    if (isHoldTimingWindow(judgment)) tex = FLASH_TEX_MAP["w2"]
+    if (isStandardTimingWindow(judgment)) tex = noteskin.textures[judgment.id]
+    if (isMineTimingWindow(judgment)) tex = noteskin.textures["mine"]
+    if (isHoldTimingWindow(judgment)) tex = noteskin.textures["w2"]
     if (!tex) return
     const flash = new DanceDefaultNoteFlash(tex)
     flash.type = "flash"
     if (isMineTimingWindow(judgment)) {
       flash.type = "mine"
-      flash.blendMode = BLEND_MODES.ADD
+      flash.blendMode = "add"
     }
     return flash
   }
 
-  static createHoldJudgment() {
-    const flash = new DanceDefaultNoteFlash(HOLD_TEX)
+  static createHoldJudgment(noteskin: DanceDefaultNoteskinObject) {
+    const flash = new DanceDefaultNoteFlash(noteskin.textures["hold"])
     flash.type = "hold"
     return flash
   }

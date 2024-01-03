@@ -24,7 +24,7 @@ interface NoteArrow {
 }
 
 export class StatusWidget extends Widget {
-  private view: HTMLDivElement
+  private div: HTMLDivElement
 
   private readonly playbackBar: HTMLDivElement
   private readonly skipStart: HTMLButtonElement
@@ -464,11 +464,11 @@ export class StatusWidget extends Widget {
         const bound = element.getBoundingClientRect()
         sprite.position.y =
           bound.top -
-          this.manager.app.view.clientHeight / 2 -
-          this.manager.app.view.getBoundingClientRect().top +
+          this.manager.app.canvas.clientHeight / 2 -
+          this.manager.app.canvas.getBoundingClientRect().top +
           24
         sprite.position.x =
-          bound.left - this.manager.app.view.clientWidth / 2 + 24
+          bound.left - this.manager.app.canvas.clientWidth / 2 + 24
         bg.position = sprite.position
         this.noteArrows.push(noteArrow)
       }
@@ -491,19 +491,19 @@ export class StatusWidget extends Widget {
     view.onmouseenter = () => {
       this.lastHover = Date.now()
       this.hovering = true
-      this.view.style.opacity = ""
-      this.view.style.transition = ""
+      this.div.style.opacity = ""
+      this.div.style.transition = ""
     }
     view.onmouseleave = () => (this.hovering = false)
 
     view.appendChild(this.playbackBar)
     view.appendChild(this.editBar)
-    this.view = view
+    this.div = view
     view.style.display = "none"
   }
 
   update(): void {
-    this.view.style.display =
+    this.div.style.display =
       this.manager.chartManager.loadedSM && Flags.status ? "" : "none"
     const time = this.manager.chartManager.getTime()
     if (this.lastTime != time) {
@@ -555,9 +555,9 @@ export class StatusWidget extends Widget {
           this.beat.contentEditable = "true"
           this.record.style.background = ""
           this.playtest.style.background = ""
-          this.view.style.opacity = ""
-          this.view.style.transition = ""
-          this.view.classList.remove("collapsed")
+          this.div.style.opacity = ""
+          this.div.style.transition = ""
+          this.div.classList.remove("collapsed")
           this.beatDropdown.disabled = false
           break
         case EditMode.Record:
@@ -574,7 +574,7 @@ export class StatusWidget extends Widget {
           if (timingMode != EditTimingMode.Off) {
             this.visible = false
           }
-          this.view.classList.add("collapsed")
+          this.div.classList.add("collapsed")
           this.beatDropdown.closeDropdown()
           this.beatDropdown.disabled = true
           break
@@ -592,7 +592,7 @@ export class StatusWidget extends Widget {
           if (timingMode != EditTimingMode.Off) {
             this.visible = false
           }
-          this.view.classList.add("collapsed")
+          this.div.classList.add("collapsed")
           this.beatDropdown.closeDropdown()
           this.beatDropdown.disabled = true
           break
@@ -609,7 +609,7 @@ export class StatusWidget extends Widget {
           if (timingMode != EditTimingMode.Off) {
             this.visible = false
           }
-          this.view.classList.add("collapsed")
+          this.div.classList.add("collapsed")
           this.beatDropdown.closeDropdown()
           this.beatDropdown.disabled = true
       }
@@ -663,12 +663,12 @@ export class StatusWidget extends Widget {
 
     if (mode == EditMode.Play || mode == EditMode.Record) {
       if (
-        this.view.style.opacity == "" &&
+        this.div.style.opacity == "" &&
         !this.hovering &&
         Date.now() - this.lastHover > 3000
       ) {
-        this.view.style.opacity = "0.2"
-        this.view.style.transition = "2s cubic-bezier(.11,.72,.51,1.14)"
+        this.div.style.opacity = "0.2"
+        this.div.style.transition = "2s cubic-bezier(.11,.72,.51,1.14)"
       }
     }
 
@@ -679,12 +679,12 @@ export class StatusWidget extends Widget {
         this.noteArrows.forEach((noteArrow, index) => {
           noteArrow.sprite.position.y =
             bounds.top -
-            this.manager.app.view.clientHeight / 2 -
-            this.manager.app.view.getBoundingClientRect().top +
+            this.manager.app.canvas.clientHeight / 2 -
+            this.manager.app.canvas.getBoundingClientRect().top +
             24
           noteArrow.sprite.position.x =
             bounds.left -
-            this.manager.app.view.clientWidth / 2 +
+            this.manager.app.canvas.clientWidth / 2 +
             24 +
             index * 48
           noteArrow.bg.position = noteArrow.sprite.position
@@ -707,11 +707,11 @@ export class StatusWidget extends Widget {
         }
         this.lastBounds = bounds
       }
-      const viewbounds = this.view.getBoundingClientRect()
+      const viewbounds = this.div.getBoundingClientRect()
       this.noteArrowMask.y =
         viewbounds.bottom -
-        this.manager.app.view.clientHeight / 2 -
-        this.manager.app.view.getBoundingClientRect().top
+        this.manager.app.canvas.clientHeight / 2 -
+        this.manager.app.canvas.getBoundingClientRect().top
     }
 
     const noteType = this.manager.chartManager.getEditingNoteType()

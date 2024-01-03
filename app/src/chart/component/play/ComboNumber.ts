@@ -9,8 +9,11 @@ export class ComboNumber extends BitmapText implements ChartRendererComponent {
   private renderer: ChartRenderer
 
   constructor(renderer: ChartRenderer) {
-    super("", {
-      fontName: "Fancy",
+    super({
+      text: "",
+      style: {
+        fontFamily: "Fancy",
+      },
     })
     this.anchor.set(0.5)
     this.renderer = renderer

@@ -3,11 +3,12 @@ import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
 import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { roundDigit } from "../../../util/Math"
 import { Options } from "../../../util/Options"
+import { createText } from "../../../util/Util"
 import { EditTimingMode } from "../../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import { Cached, TimingEvent, TimingEventType } from "../../sm/TimingTypes"
 import { TIMING_EVENT_COLORS } from "./TimingAreaContainer"
-import { TIMING_TRACK_WIDTHS, timingNumbers } from "./TimingTrackContainer"
+import { TIMING_TRACK_WIDTHS } from "./TimingTrackContainer"
 
 interface TimingBox extends Container {
   event: TimingEvent
@@ -33,7 +34,7 @@ export class SelectionTimingEventContainer
     create: () => {
       const box = new Container() as TimingBox
       box.guideLine = new Sprite(Texture.WHITE)
-      box.textObj = new BitmapText("", timingNumbers)
+      box.textObj = createText("", 15)
       box.backgroundObj = new BetterRoundedRect()
       box.addChild(box.guideLine, box.backgroundObj, box.textObj)
       return box

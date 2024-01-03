@@ -51,12 +51,14 @@ export class JudgmentTexture {
       (this.judgeNames.indexOf(judgment.id) * this.texHeight) /
       this.judgeNames.length
     if (error >= 0) tex_coord_x += this.texWidth / 2
-    this.texture!.frame = new Rectangle(
-      tex_coord_x,
-      tex_coord_y,
-      this.texWidth / 2,
-      this.texHeight / this.judgeNames.length
-    )
-    return this.texture
+    return new Texture({
+      source: this.texture!.source,
+      frame: new Rectangle(
+        tex_coord_x,
+        tex_coord_y,
+        this.texWidth / 2,
+        this.texHeight / this.judgeNames.length
+      ),
+    })
   }
 }

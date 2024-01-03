@@ -1,14 +1,9 @@
 import { BitmapText, Container, Graphics } from "pixi.js"
 import { SnapPopup } from "../../../gui/popup/SnapPopup"
 import { Options } from "../../../util/Options"
+import { createText } from "../../../util/Util"
 import { EditMode } from "../../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
-
-const snapNumbers = {
-  fontName: "Main",
-  fontSize: 10,
-  fill: ["#ffffff"],
-}
 
 export const QUANT_COLORS: { [key: number]: number } = {
   4: 0xe74827,
@@ -35,15 +30,19 @@ export class SnapContainer extends Container implements ChartRendererComponent {
     for (let i = 0; i < 2; i++) {
       const container = new Container()
       const graphic = new Graphics()
-      const text = new BitmapText("4", snapNumbers)
+      const text = createText("4", 10)
       container.x =
         (i - 0.5) * (this.renderer.chart.gameType.notefieldWidth + 48)
 
       graphic.rotation = Math.PI / 4
-      graphic.lineStyle(1, 0x000000, 1)
-      graphic.beginFill(0xffffff)
-      graphic.drawRect(-12, -12, 24, 24)
-      graphic.endFill()
+
+      graphic
+        .stroke({
+          width: 1,
+          color: 0,
+        })
+        .rect(-12, -12, 24, 24)
+        .fill(0xffffff)
 
       text.anchor.set(0.5)
 

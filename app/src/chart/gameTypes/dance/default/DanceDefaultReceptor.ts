@@ -1,18 +1,17 @@
-import { Sprite, Texture } from "pixi.js"
+import { Sprite } from "pixi.js"
 
-import receptorUrl from "../../../../../assets/noteskin/dance/default/receptor.png"
 import { rgbtoHex } from "../../../../util/Color"
 import { ChartRenderer } from "../../../ChartRenderer"
 import { Receptor } from "../../base/Noteskin"
 
-const receptorTex = Texture.from(receptorUrl)
+import { DanceDefaultNoteskinObject } from "./DanceDefaultNoteskin"
 
 export class DanceDefaultReceptor extends Sprite implements Receptor {
   private lastPressedTime = -1
   private pressedKeys = 0
 
-  constructor() {
-    super(receptorTex)
+  constructor(noteskin: DanceDefaultNoteskinObject) {
+    super(noteskin.textures["Receptor"])
     this.width = 69
     this.height = 69
     this.anchor.set(0.5)

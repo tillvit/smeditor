@@ -1,6 +1,6 @@
 import {
+  Container,
   FederatedPointerEvent,
-  ParticleContainer,
   RenderTexture,
   Sprite,
   Texture,
@@ -19,15 +19,10 @@ import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
 
 export class NoteLayoutWidget extends Widget {
-  barContainer = new ParticleContainer(
-    1500,
-    { position: true, scale: true, tint: true },
-    16384,
-    true
-  )
+  barContainer = new Container()
   backing: BetterRoundedRect = new BetterRoundedRect()
   bars: Sprite
-  barTexture: RenderTexture
+  barTexture: Texture
   overlay: Sprite = new Sprite(Texture.WHITE)
 
   private lastHeight = 0
@@ -169,8 +164,9 @@ export class NoteLayoutWidget extends Widget {
     if (!chart) {
       destroyChildIf(this.barContainer.children, () => true)
 
-      this.manager.app.renderer.render(this.barContainer, {
-        renderTexture: this.barTexture,
+      this.manager.app.renderer.render({
+        container: this.barContainer,
+        target: this.barTexture,
       })
       return
     }
@@ -184,7 +180,7 @@ export class NoteLayoutWidget extends Widget {
     this.overlay.width = numCols * 6 + 8
     this.pivot.x = this.backing.width / 2
 
-    this.barTexture.resize(numCols * 6, height)
+    this.barTexture.source.resize(numCols * 6, height)
 
     if (!lastNote) {
       destroyChildIf(this.barContainer.children, () => true)
@@ -199,7 +195,7 @@ export class NoteLayoutWidget extends Widget {
     const songOffset = chart.timingData.getOffset()
 
     chart.getNotedata().forEach(note => {
-      let obj = this.barContainer.children[childIndex]
+      let obj = this.barContainer.children[childIndex] as Sprite
       if (!obj) {
         obj = new Sprite(Texture.WHITE)
         obj.width = 4
@@ -215,7 +211,7 @@ export class NoteLayoutWidget extends Widget {
       if (note.type == "Mine") obj.tint = 0x808080
       childIndex++
       if (isHoldNote(note)) {
-        let h_obj = this.barContainer.children[childIndex]
+        let h_obj = this.barContainer.children[childIndex] as Sprite
         if (!h_obj) {
           h_obj = new Sprite(Texture.WHITE)
           h_obj.width = 4

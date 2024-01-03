@@ -31,7 +31,12 @@ import { ParityGenerator } from "../util/ParityGenerator"
 import { basename, dirname, extname } from "../util/Path"
 import { tpsUpdate } from "../util/Performance"
 import { RecentFileHandler } from "../util/RecentFileHandler"
-import { bsearch, bsearchEarliest, compareObjects } from "../util/Util"
+import {
+  bsearch,
+  bsearchEarliest,
+  compareObjects,
+  createText,
+} from "../util/Util"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { ChartRenderer } from "./ChartRenderer"
 import { ChartAudio } from "./audio/ChartAudio"
@@ -215,7 +220,7 @@ export class ChartManager {
     )
 
     // Scrolling
-    app.view.addEventListener?.("wheel", (event: WheelEvent) => {
+    app.canvas.addEventListener?.("wheel", (event: WheelEvent) => {
       if (
         this.loadedSM == undefined ||
         this.loadedChart == undefined ||
@@ -294,17 +299,11 @@ export class ChartManager {
     this.app.stage.addChild(this.widgetManager)
 
     // No chart text
-    this.noChartTextA = new BitmapText("No Chart", {
-      fontName: "Main",
-      fontSize: 30,
-    })
+    this.noChartTextA = createText("No Chart", 30)
     this.noChartTextA.anchor.set(0.5)
     this.noChartTextA.tint = 0x555555
     this.app.stage.addChild(this.noChartTextA)
-    this.noChartTextB = new BitmapText("Create a new chart", {
-      fontName: "Main",
-      fontSize: 15,
-    })
+    this.noChartTextB = createText("Create a new chart", 15)
     this.noChartTextB.anchor.set(0.5)
     this.noChartTextB.tint = 0x556677
     this.noChartTextB.eventMode = "static"

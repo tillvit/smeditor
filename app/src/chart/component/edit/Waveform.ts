@@ -1,10 +1,4 @@
-import {
-  FXAAFilter,
-  ParticleContainer,
-  RenderTexture,
-  Sprite,
-  Texture,
-} from "pixi.js"
+import { Container, RenderTexture, Sprite, Texture } from "pixi.js"
 import { EventHandler } from "../../../util/EventHandler"
 import { clamp } from "../../../util/Math"
 import { Options } from "../../../util/Options"
@@ -19,13 +13,8 @@ interface WaveformLine extends Sprite {
 }
 
 export class Waveform extends Sprite implements ChartRendererComponent {
-  private lineContainer: ParticleContainer = new ParticleContainer(
-    1500,
-    { position: true, scale: true, tint: true, alpha: true },
-    16384,
-    true
-  )
-  private readonly waveformTex: RenderTexture
+  private lineContainer = new Container()
+  private readonly waveformTex: Texture
 
   private renderer: ChartRenderer
 
@@ -79,7 +68,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     this.trackVariable(
       () => Options.chart.waveform.antialiasing,
       value => {
-        this.filters = value ? [new FXAAFilter()] : []
+        // this.filters = value ? [new FXAA()] : []
       }
     )
     this.trackVariable(
@@ -116,7 +105,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     this.getData()
     this.resizeWaveform()
 
-    this.filters = Options.chart.waveform.antialiasing ? [new FXAAFilter()] : []
+    // this.filters = Options.chart.waveform.antialiasing ? [new FXAAFilter()] : []
 
     const timingHandler = () => (this.drawDirty = true)
     const audioChanged = () => {
@@ -144,7 +133,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
   }
 
   private resizeWaveform() {
-    this.waveformTex.resize(
+    this.waveformTex.source.resize(
       clamp(
         (this.rawData?.length ?? 0) * 288 * Options.chart.zoom,
         1,

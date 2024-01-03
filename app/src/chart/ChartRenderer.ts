@@ -1,10 +1,4 @@
-import {
-  Container,
-  DisplayObject,
-  FederatedMouseEvent,
-  Point,
-  Rectangle,
-} from "pixi.js"
+import { Container, FederatedMouseEvent, Point, Rectangle } from "pixi.js"
 import { ContextMenuPopup } from "../gui/element/ContextMenu"
 import { Flags } from "../util/Flags"
 import { Options } from "../util/Options"
@@ -32,11 +26,13 @@ interface SelectionBounds {
   end: Point
 }
 
-export interface ChartRendererComponent extends DisplayObject {
+export interface ChartRendererComponent extends Container {
   update: (fromBeat: number, toBeat: number) => void
 }
 
-export class ChartRenderer extends Container<ChartRendererComponent> {
+export class ChartRenderer extends Container {
+  readonly children: ChartRendererComponent[] = []
+
   chartManager: ChartManager
   chart: Chart
 
@@ -828,11 +824,11 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   /**
    * Adds the selection and drag handlers to this object. Call this function when creating a new note object.
    *
-   * @param {DisplayObject} object
+   * @param {Container} object
    * @param {NotedataEntry} notedata
    * @memberof ChartRenderer
    */
-  registerDragNote(object: DisplayObject, notedata: NotedataEntry) {
+  registerDragNote(object: Container, notedata: NotedataEntry) {
     object.eventMode = "static"
     object.removeAllListeners()
     let lastTriedColumnShift = 0

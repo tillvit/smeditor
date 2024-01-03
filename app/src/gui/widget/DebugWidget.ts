@@ -1,14 +1,9 @@
-import {
-  BitmapText,
-  Container,
-  ParticleContainer,
-  Sprite,
-  Texture,
-} from "pixi.js"
+import { Container, Sprite, Texture } from "pixi.js"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { clamp, roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { getFPS, getTPS } from "../../util/Performance"
+import { createText } from "../../util/Util"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
 
@@ -66,14 +61,11 @@ export class DebugWidget extends Widget {
     label: "CPU",
   })
 
-  private graphs = new Container<DebugGraph>()
+  private graphs = new Container()
   private fpsCounter = new Container()
 
   private fpsBg = new BetterRoundedRect()
-  private fpsText = new BitmapText("", {
-    fontName: "Main",
-    fontSize: 12,
-  })
+  private fpsText = createText("", 12)
   private lastFrameTime = 0
 
   constructor(manager: WidgetManager) {
@@ -107,7 +99,7 @@ export class DebugWidget extends Widget {
     this.x = -this.manager.app.renderer.screen.width / 2 + 20
     this.y = -this.manager.app.renderer.screen.height / 2 + 20
 
-    this.graphs.children.forEach(graph => graph.update())
+    this.graphs.children.forEach(graph => (graph as DebugGraph).update())
 
     this.graphs.visible = Options.debug.showTimers
     this.fpsCounter.visible = Options.debug.showFPS
@@ -207,41 +199,24 @@ class DebugGraph extends Container {
     this.formatter = formatter
     this.sublabel = sublabel
 
-    this.lineContainer = new ParticleContainer(
-      width,
-      { position: true },
-      16384,
-      true
-    )
+    this.lineContainer = new Container()
     const bg = new BetterRoundedRect()
     bg.tint = 0
     bg.alpha = 0.3
     bg.width = this.graphWidth
     bg.height = this.graphHeight
 
-    this.labelText = new BitmapText(label, {
-      fontName: "Main",
-      fontSize: Math.min(height / 5, 16),
-    })
+    this.labelText = createText(label, Math.min(height / 5, 16))
 
     this.labelText.alpha = 0.8
 
-    this.sublabelText = new BitmapText("", {
-      fontName: "Main",
-      fontSize: Math.min(height / 5, 16),
-    })
+    this.sublabelText = createText("", Math.min(height / 5, 16))
 
-    this.topText = new BitmapText("", {
-      fontName: "Main",
-      fontSize: Math.min(height / 7, 12),
-    })
+    this.topText = createText("", Math.min(height / 7, 12))
     this.topText.anchor.x = 1
     this.topText.alpha = 0.5
     this.topText.x = this.graphWidth
-    this.bottomText = new BitmapText("", {
-      fontName: "Main",
-      fontSize: Math.min(height / 7, 12),
-    })
+    this.bottomText = createText("", Math.min(height / 7, 12))
     this.bottomText.anchor.x = 1
     this.bottomText.anchor.y = 1
     this.bottomText.alpha = 0.5

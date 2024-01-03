@@ -1,20 +1,29 @@
-import { Container, DisplayObject, Renderer } from "pixi.js"
+import { Container } from "pixi.js"
 
-type PoolableObject<T extends DisplayObject> = T & { _disabledTime: number }
+type PoolableObject<T extends Container> = T & { _disabledTime: number }
 
-interface DisplayObjectPoolOptions<T> {
+interface ContainerPoolOptions<T> {
   create: () => T
   maxPoolSize?: number
   destroyTimer?: number
 }
 
-export class DisplayObjectPool<T extends DisplayObject> extends Container<T> {
+export class DisplayObjectPool<T extends Container> extends Container {
   private pool: PoolableObject<T>[] = []
   private options
 
-  constructor(options: DisplayObjectPoolOptions<T>) {
+  constructor(options: ContainerPoolOptions<T>) {
     super()
     this.options = options
+    this.onRender = () => {
+      const date = Date.now()
+      while (
+        date - this.pool[0]?._disabledTime >
+        (this.options.destroyTimer ?? 5000)
+      ) {
+        this.pool.shift()!.destroy()
+      }
+    }
   }
 
   createChild() {
@@ -49,16 +58,5 @@ export class DisplayObjectPool<T extends DisplayObject> extends Container<T> {
       child.eventMode = "auto"
     })
     this.removeChildren()
-  }
-
-  _render(renderer: Renderer) {
-    super._render(renderer)
-    const date = Date.now()
-    while (
-      date - this.pool[0]?._disabledTime >
-      (this.options.destroyTimer ?? 5000)
-    ) {
-      this.pool.shift()!.destroy()
-    }
   }
 }

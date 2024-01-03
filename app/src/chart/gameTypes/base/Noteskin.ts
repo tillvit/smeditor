@@ -1,13 +1,28 @@
-import { Container, DisplayObject, Sprite, TilingSprite } from "pixi.js"
+import { Assets, Container, Sprite, Texture, TilingSprite } from "pixi.js"
 import { ChartRenderer } from "../../ChartRenderer"
 import { TimingWindow } from "../../play/TimingWindow"
 import { NotedataEntry } from "../../sm/NoteTypes"
 
 export abstract class NoteSkin {
   protected readonly renderer
+  textures: Record<string, Texture> = {}
+  protected abstract readonly textureBundle: [string, string][]
 
   constructor(renderer: ChartRenderer) {
     this.renderer = renderer
+  }
+
+  async loadAssets() {
+    this.textures = {}
+
+    await Promise.all(
+      this.textureBundle.map(([name, url]) => {
+        console.log(url)
+        return Assets.load({ src: url }).then(texture => {
+          this.textures[name] = texture
+        })
+      })
+    )
   }
 
   /**
@@ -58,13 +73,13 @@ export abstract class NoteSkin {
   abstract createNote(note: NotedataEntry): NoteObject
 }
 
-export interface Receptor extends DisplayObject {
+export interface Receptor extends Container {
   update(renderer: ChartRenderer, beat: number): void
   keyDown(): void
   keyUp(): void
 }
 
-export interface NoteFlash extends DisplayObject {
+export interface NoteFlash extends Container {
   update(renderer: ChartRenderer): void
 }
 

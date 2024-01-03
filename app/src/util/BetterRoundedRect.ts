@@ -1,6 +1,6 @@
-import { Graphics, NineSlicePlane, Renderer, RenderTexture } from "pixi.js"
+import { Graphics, NineSliceSprite, Renderer, RenderTexture } from "pixi.js"
 
-export class BetterRoundedRect extends NineSlicePlane {
+export class BetterRoundedRect extends NineSliceSprite {
   private static graphics = new Graphics()
   static textures = {
     default: RenderTexture.create({ width: 50, height: 50 }),
@@ -23,25 +23,44 @@ export class BetterRoundedRect extends NineSlicePlane {
       height: 50,
       resolution: renderer.resolution,
     })
-    this.graphics.beginFill(0xffffff, 1)
-    this.graphics.lineStyle(1, 0x000000)
-    this.graphics.drawRoundedRect(0, 0, 50, 50, 5)
-    this.graphics.endFill()
-    renderer.render(this.graphics, { renderTexture: this.textures.default })
-    this.graphics.clear()
-    this.graphics.beginFill(0xffffff, 1)
-    this.graphics.lineStyle(1, 0xffffff)
-    this.graphics.drawRoundedRect(0, 0, 50, 50, 5)
-    this.graphics.endFill()
-    renderer.render(this.graphics, { renderTexture: this.textures.noBorder })
-    this.graphics.clear()
-    this.graphics.beginFill(0xffffff, 0)
-    this.graphics.lineStyle(2, 0xffffff)
-    this.graphics.drawRoundedRect(0, 0, 50, 50, 5)
-    this.graphics.endFill()
-    renderer.render(this.graphics, { renderTexture: this.textures.onlyBorder })
+    this.graphics
+      .stroke({ color: 0x000000, width: 1 })
+      .roundRect(0, 0, 50, 50, 5)
+      .fill(0xffffff)
+
+    renderer.render({
+      container: this.graphics,
+      target: this.textures.default,
+    })
+
+    this.graphics
+      .clear()
+      .stroke({ color: 0xffffff, width: 1 })
+      .roundRect(0, 0, 50, 50, 5)
+      .fill(0xffffff)
+
+    renderer.render({
+      container: this.graphics,
+      target: this.textures.noBorder,
+    })
+
+    this.graphics
+      .clear()
+      .stroke({ color: 0xffffff, width: 2 })
+      .roundRect(0, 0, 50, 50, 5)
+
+    renderer.render({
+      container: this.graphics,
+      target: this.textures.onlyBorder,
+    })
   }
   constructor(type?: keyof typeof BetterRoundedRect.textures) {
-    super(BetterRoundedRect.textures[type ?? "default"], 5, 5, 5, 5)
+    super({
+      texture: BetterRoundedRect.textures[type ?? "default"],
+      leftWidth: 5,
+      topHeight: 5,
+      rightWidth: 5,
+      bottomHeight: 5,
+    })
   }
 }

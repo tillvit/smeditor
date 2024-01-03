@@ -1,7 +1,7 @@
 import { BitmapText, Container, Graphics, Sprite, Texture } from "pixi.js"
 import { clamp, lerp, median } from "../../../util/Math"
 import { Options } from "../../../util/Options"
-import { destroyChildIf } from "../../../util/Util"
+import { createText, destroyChildIf } from "../../../util/Util"
 import { EditMode } from "../../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import { TimingWindow } from "../../play/TimingWindow"
@@ -24,11 +24,6 @@ interface ErrorBarlineContainer extends Container {
 const BAR_WIDTH = 1
 const BAR_HEIGHT = 15
 
-const errorStyle = {
-  fontName: "Fancy",
-  fontSize: 12,
-}
-
 export class ErrorBarContainer
   extends Container
   implements ChartRendererComponent
@@ -37,7 +32,7 @@ export class ErrorBarContainer
     new Container() as ErrorBarlineContainer
   private readonly barline: Sprite
   private readonly currentMedian: Graphics
-  private errorText: BitmapText = new BitmapText("", errorStyle)
+  private errorText: BitmapText = createText("", 12, "Fancy")
   private errorTextTime = -1
   private renderer: ChartRenderer
   private target = 0
@@ -54,11 +49,13 @@ export class ErrorBarContainer
     target.height = BAR_HEIGHT
     target.anchor.set(0.5)
     this.currentMedian = new Graphics()
-    this.currentMedian.beginFill(0xffffff)
-    this.currentMedian.moveTo(0, -10)
-    this.currentMedian.lineTo(5, -15)
-    this.currentMedian.lineTo(-5, -15)
-    this.currentMedian.lineTo(0, -10)
+
+    this.currentMedian
+      .moveTo(0, -10)
+      .lineTo(5, -15)
+      .lineTo(-5, -15)
+      .lineTo(0, -10)
+      .fill(0xffffff)
     this.errorText.y = -25
     this.errorText.anchor.set(0.5)
     this.addChild(

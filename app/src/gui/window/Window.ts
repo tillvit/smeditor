@@ -162,7 +162,7 @@ export abstract class Window {
     if (this.windowManager == undefined) return
     const x = parseInt(this.windowElement.style.left.slice(0, -2))
     const y = parseInt(this.windowElement.style.top.slice(0, -2))
-    const bounds = this.windowManager.app.view.getBoundingClientRect()
+    const bounds = this.windowManager.app.canvas.getBoundingClientRect()
     this.windowElement.style.left =
       clamp(
         x,

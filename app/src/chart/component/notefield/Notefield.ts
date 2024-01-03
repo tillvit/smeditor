@@ -22,11 +22,11 @@ export class Notefield extends Container implements ChartRendererComponent {
   readonly noteskin!: NoteSkin
   readonly gameType
   readonly renderer
-  private readonly receptors!: ReceptorContainer
-  private readonly notes!: NoteContainer
-  private readonly selectionNotes!: SelectionNoteContainer
-  private readonly flashes!: NoteFlashContainer
-  private readonly holdJudges!: HoldJudgmentContainer
+  private receptors?: ReceptorContainer
+  private notes?: NoteContainer
+  private selectionNotes?: SelectionNoteContainer
+  private flashes?: NoteFlashContainer
+  private holdJudges?: HoldJudgmentContainer
   private ghostNote?: NoteObject
   private ghostNoteEntry?: NotedataEntry
 
@@ -64,19 +64,21 @@ export class Notefield extends Container implements ChartRendererComponent {
     this.noteskinOptions = noteskinOptions
     this.noteskin = new this.noteskinOptions.object(renderer)
 
-    this.receptors = new ReceptorContainer(this)
-    this.flashes = new NoteFlashContainer(this)
-    this.notes = new NoteContainer(this)
-    this.selectionNotes = new SelectionNoteContainer(this)
+    this.noteskin.loadAssets().then(() => {
+      this.receptors = new ReceptorContainer(this)
+      this.flashes = new NoteFlashContainer(this)
+      this.notes = new NoteContainer(this)
+      this.selectionNotes = new SelectionNoteContainer(this)
 
-    this.holdJudges = new HoldJudgmentContainer(this)
-    this.addChild(
-      this.receptors,
-      this.notes,
-      this.selectionNotes,
-      this.flashes,
-      this.holdJudges
-    )
+      this.holdJudges = new HoldJudgmentContainer(this)
+      this.addChild(
+        this.receptors,
+        this.notes,
+        this.selectionNotes,
+        this.flashes,
+        this.holdJudges
+      )
+    })
   }
 
   setGhostNote(note?: NotedataEntry): void {
@@ -99,11 +101,9 @@ export class Notefield extends Container implements ChartRendererComponent {
 
   update(fromBeat: number, toBeat: number): void {
     this.noteskin.update()
-    this.receptors.update(this.renderer.getVisualBeat())
-    this.flashes.update()
-    this.notes.update(fromBeat, toBeat)
-    this.selectionNotes.update(fromBeat, toBeat)
-    this.holdJudges.update()
+    this.receptors?.update(this.renderer.getVisualBeat())
+    this.flashes?.update()
+    this.holdJudges?.update()
 
     if (this.ghostNote) {
       this.ghostNote.y = this.renderer.getYPosFromBeat(
@@ -120,24 +120,24 @@ export class Notefield extends Container implements ChartRendererComponent {
   }
 
   onJudgment(col: number, judge: TimingWindow): void {
-    this.flashes.createNoteFlash(col, judge)
-    this.holdJudges.addJudge(col, judge)
+    this.flashes?.createNoteFlash(col, judge)
+    this.holdJudges?.addJudge(col, judge)
   }
 
   endPlay(): void {
-    this.flashes.reset()
+    this.flashes?.reset()
   }
 
   keyDown(col: number): void {
-    this.receptors.keyDown(col)
+    this.receptors?.keyDown(col)
   }
 
   keyUp(col: number): void {
-    this.receptors.keyUp(col)
+    this.receptors?.keyUp(col)
   }
 
   activateHold(col: number): void {
-    this.flashes.createHoldNoteFlash(col)
+    this.flashes?.createHoldNoteFlash(col)
   }
 
   getColumnX(col: number) {

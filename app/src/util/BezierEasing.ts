@@ -73,14 +73,14 @@ export class BezierAnimator {
   private static _id = 0
 
   static {
-    Ticker.shared.add(delta => {
+    Ticker.shared.add(ticker => {
       for (const [id, animation] of this.animations.entries()) {
         if (animation.obj._destroyed) {
           this.stop(id)
         } else {
           animation.progress = Math.min(
             1,
-            animation.progress + animation.speed * delta
+            animation.progress + animation.speed * ticker.deltaTime
           )
           this.updateObject(
             animation.obj,

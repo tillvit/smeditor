@@ -1,5 +1,5 @@
 import { Assets, Container, Rectangle, Sprite, Texture } from "pixi.js"
-import holdJudgmentUrl from "../../../../assets/noteskin/dance/default/hold_judgment.png"
+import holdJudgmentUrl from "../../../../assets/judgment/hold_judgment.png"
 import { destroyChildIf } from "../../../util/Util"
 import { TimingWindow } from "../../play/TimingWindow"
 import {
@@ -29,17 +29,17 @@ export class HoldJudgmentContainer extends Container {
   }
 
   async loadTex() {
-    const judgeTex = await Assets.load(holdJudgmentUrl)
+    const judgeTex: Texture = await Assets.load(holdJudgmentUrl)
     const tHeight = judgeTex.height
     const tWidth = judgeTex.width
-    HoldJudgmentContainer.held_tex = new Texture(
-      judgeTex,
-      new Rectangle(0, 0, tWidth, tHeight / 2)
-    )
-    HoldJudgmentContainer.dropped_tex = new Texture(
-      judgeTex,
-      new Rectangle(0, tHeight / 2, tWidth, tHeight / 2)
-    )
+    HoldJudgmentContainer.held_tex = new Texture({
+      source: judgeTex.source,
+      frame: new Rectangle(0, 0, tWidth, tHeight / 2),
+    })
+    HoldJudgmentContainer.dropped_tex = new Texture({
+      source: judgeTex.source,
+      frame: new Rectangle(0, tHeight / 2, tWidth, tHeight / 2),
+    })
   }
 
   update() {

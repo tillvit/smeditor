@@ -1,5 +1,5 @@
 import bezier from "bezier-easing"
-import { BitmapText, Container, Sprite, Texture } from "pixi.js"
+import { BitmapText, Container, Sprite, Text, Texture } from "pixi.js"
 import { EditMode } from "../../chart/ChartManager"
 import {
   TimingWindowCollection,
@@ -13,7 +13,7 @@ import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { BezierAnimator } from "../../util/BezierEasing"
 import { mean, median, roundDigit, stdDev } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { destroyChildIf } from "../../util/Util"
+import { createText, destroyChildIf } from "../../util/Util"
 import { WaterfallManager } from "../element/WaterfallManager"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
@@ -29,10 +29,10 @@ interface HistogramLine extends Sprite {
 
 export class PlayInfoWidget extends Widget {
   private max = 0
-  private barlines = new Container<HistogramLine>()
+  private barlines = new Container()
   private backgroundRect = new BetterRoundedRect()
   private background = new Container()
-  private backgroundLines = new Container<Sprite>()
+  private backgroundLines = new Container()
   private statText = new Container()
   private readonly meanText: BitmapText
   private readonly medianText: BitmapText
@@ -40,7 +40,7 @@ export class PlayInfoWidget extends Widget {
   private readonly stddevText: BitmapText
   private errorMS: number[] = []
 
-  private texts = new Container<BitmapText>()
+  private texts = new Container()
 
   showEase = 0
   private toggled = false
@@ -131,92 +131,62 @@ export class PlayInfoWidget extends Widget {
       }
     })
 
-    const early = new BitmapText("Early", {
-      fontName: "Main",
-      fontSize: 15,
-    })
+    const early = createText("Early", 15)
     early.x = -WIDGET_WIDTH / 2 + 5
     early.y = -HISTOGRAM_HEIGHT - 40
     early.alpha = 0.3
     this.background.addChild(early)
 
-    const late = new BitmapText("Late", {
-      fontName: "Main",
-      fontSize: 15,
-    })
+    const late = createText("Late", 15)
     late.anchor.x = 1
     late.x = WIDGET_WIDTH / 2 - 5
     late.y = -HISTOGRAM_HEIGHT - 40
     late.alpha = 0.3
     this.background.addChild(late)
 
-    this.meanText = new BitmapText("-", {
-      fontName: "Main",
-      fontSize: 15,
-    })
+    this.meanText = createText("-", 15)
     this.meanText.anchor.x = 0.5
     this.meanText.x = (WIDGET_WIDTH / 4) * -1.5
     this.meanText.y = -HISTOGRAM_HEIGHT - 70
     this.statText.addChild(this.meanText)
 
-    this.medianText = new BitmapText("-", {
-      fontName: "Main",
-      fontSize: 15,
-    })
+    this.medianText = createText("-", 15)
     this.medianText.anchor.x = 0.5
     this.medianText.x = (WIDGET_WIDTH / 4) * -0.5
     this.medianText.y = -HISTOGRAM_HEIGHT - 70
     this.statText.addChild(this.medianText)
 
-    this.modeText = new BitmapText("-", {
-      fontName: "Main",
-      fontSize: 15,
-    })
+    this.modeText = createText("-", 15)
     this.modeText.anchor.x = 0.5
     this.modeText.x = (WIDGET_WIDTH / 4) * 0.5
     this.modeText.y = -HISTOGRAM_HEIGHT - 70
     this.statText.addChild(this.modeText)
 
-    this.stddevText = new BitmapText("-", {
-      fontName: "Main",
-      fontSize: 15,
-    })
+    this.stddevText = createText("-", 15)
     this.stddevText.anchor.x = 0.5
     this.stddevText.x = (WIDGET_WIDTH / 4) * 1.5
     this.stddevText.y = -HISTOGRAM_HEIGHT - 70
     this.statText.addChild(this.stddevText)
 
-    const meanLabel = new BitmapText("Mean", {
-      fontName: "Main",
-      fontSize: 10,
-    })
+    const meanLabel = createText("Mean", 10)
     meanLabel.anchor.x = 0.5
     meanLabel.x = (WIDGET_WIDTH / 4) * -1.5
     meanLabel.y = -HISTOGRAM_HEIGHT - 80
     this.statText.addChild(meanLabel)
 
-    const medianLabel = new BitmapText("Median", {
-      fontName: "Main",
-      fontSize: 10,
-    })
+    const medianLabel = createText("Median", 10)
     medianLabel.anchor.x = 0.5
     medianLabel.x = (WIDGET_WIDTH / 4) * -0.5
     medianLabel.y = -HISTOGRAM_HEIGHT - 80
     this.statText.addChild(medianLabel)
 
-    const modeLabel = new BitmapText("Mode", {
-      fontName: "Main",
-      fontSize: 10,
-    })
+    const modeLabel = createText("Mode", 10)
     modeLabel.anchor.x = 0.5
     modeLabel.x = (WIDGET_WIDTH / 4) * 0.5
     modeLabel.y = -HISTOGRAM_HEIGHT - 80
     this.statText.addChild(modeLabel)
 
-    const stddevLabel = new BitmapText("Std Dev.", {
-      fontName: "Main",
-      fontSize: 10,
-    })
+    const stddevLabel = createText("Std Dev.", 10)
     stddevLabel.anchor.x = 0.5
     stddevLabel.x = (WIDGET_WIDTH / 4) * 1.5
     stddevLabel.y = -HISTOGRAM_HEIGHT - 80
@@ -234,10 +204,7 @@ export class PlayInfoWidget extends Widget {
     alignSongBg.pivot.x = (WIDGET_WIDTH / 2 - 10) / 2
     alignSongBg.pivot.y = 15
 
-    const alignSongText = new BitmapText("Adjust song offset", {
-      fontName: "Main",
-      fontSize: 12,
-    })
+    const alignSongText = createText("Adjust song offset", 12)
     alignSongText.anchor.set(0.5)
     alignSongText.x = -WIDGET_WIDTH / 4
     alignSongText.y = -25
@@ -275,10 +242,7 @@ export class PlayInfoWidget extends Widget {
       alignGlobalBg.alpha = 0.3
     })
 
-    const alignGlobalText = new BitmapText("Adjust global offset", {
-      fontName: "Main",
-      fontSize: 12,
-    })
+    const alignGlobalText = createText("Adjust global offset", 12)
     alignGlobalText.anchor.set(0.5)
     alignGlobalText.x = WIDGET_WIDTH / 4
     alignGlobalText.y = -25
@@ -320,8 +284,10 @@ export class PlayInfoWidget extends Widget {
     this.visible = !!this.manager.chartManager.gameStats
     for (const line of this.barlines.children) {
       if (Options.general.smoothAnimations)
-        line.height = (line.targetHeight - line.height) * 0.2 + line.height
-      else line.height = line.targetHeight
+        line.height =
+          ((line as HistogramLine).targetHeight - line.height) * 0.2 +
+          line.height
+      else line.height = (line as HistogramLine).targetHeight
     }
 
     if (this.lastMode != this.manager.chartManager.getMode()) {
@@ -362,7 +328,6 @@ export class PlayInfoWidget extends Widget {
 
   startPlay() {
     const gameStats = this.manager.chartManager.gameStats!
-    this.max = 0
     this.errorMS = []
     this.meanText.text = "-"
     this.medianText.text = "-"
@@ -420,11 +385,8 @@ export class PlayInfoWidget extends Widget {
       ...collection.getStandardWindows(),
       collection.getMissJudgment(),
     ]) {
-      const label = new BitmapText(window.name, {
-        fontName: "Main",
-        fontSize: 15,
-      })
-      const count = new BitmapText("0", { fontName: "Main", fontSize: 15 })
+      const label = createText(window.name, 15)
+      const count = createText("0", 15)
       label.tint = window.color
       count.tint = window.color
       count.name = window.id
@@ -445,14 +407,8 @@ export class PlayInfoWidget extends Widget {
       collection.getMineJudgment(),
     ]) {
       const name = isHoldTimingWindow(window) ? window.noteType : "Mine"
-      const label = new BitmapText(name, {
-        fontName: "Main",
-        fontSize: 15,
-      })
-      const count = new BitmapText("0", {
-        fontName: "Main",
-        fontSize: 15,
-      })
+      const label = createText(name, 15)
+      const count = createText("0", 15)
       if (name != "Mine")
         count.text =
           "0 / " +
@@ -473,14 +429,8 @@ export class PlayInfoWidget extends Widget {
       count.anchor.x = 1
     }
 
-    const label = new BitmapText("Max Combo", {
-      fontName: "Main",
-      fontSize: 15,
-    })
-    const count = new BitmapText("0", {
-      fontName: "Main",
-      fontSize: 15,
-    })
+    const label = createText("Max Combo", 15)
+    const count = createText("0", 15)
     label.tint = 0xdddddd
     count.tint = 0xdddddd
     count.name = "Combo"
@@ -494,10 +444,7 @@ export class PlayInfoWidget extends Widget {
     count.anchor.y = 0.5
     count.anchor.x = 1
 
-    const score = new BitmapText("0.00 / 0.00", {
-      fontName: "Main",
-      fontSize: 20,
-    })
+    const score = createText("0.00 / 0.00", 20)
     score.tint = 0xdddddd
     score.x = -WIDGET_WIDTH / 2 + 225
     score.y = -HISTOGRAM_HEIGHT - 112
@@ -505,20 +452,14 @@ export class PlayInfoWidget extends Widget {
     this.texts.addChild(score)
     score.anchor.set(0.5)
 
-    const scoreLabel = new BitmapText("Score / Current Score", {
-      fontName: "Main",
-      fontSize: 13,
-    })
+    const scoreLabel = createText("Score / Current Score", 13)
     scoreLabel.tint = 0x888888
     scoreLabel.x = -WIDGET_WIDTH / 2 + 225
     scoreLabel.y = -HISTOGRAM_HEIGHT - 135
     this.texts.addChild(scoreLabel)
     scoreLabel.anchor.set(0.5)
 
-    const windowLabel = new BitmapText("Play Statistics", {
-      fontName: "Main",
-      fontSize: 13,
-    })
+    const windowLabel = createText("Play Statistics", 13)
     windowLabel.y = -HISTOGRAM_HEIGHT - 245
     windowLabel.anchor.set(0.5)
     this.texts.addChild(windowLabel)
@@ -529,16 +470,16 @@ export class PlayInfoWidget extends Widget {
         name = judge.id
       if (isHoldTimingWindow(judge)) name = judge.noteType
       if (isMineTimingWindow(judge)) name = "Mine"
-      const text = this.texts.getChildByName<BitmapText>(name)!
+      const text = this.texts.getChildByName(name)! as Text
       if (isHoldTimingWindow(judge)) {
         const max = text.text.split(" / ")[1]
         text.text = gameStats.getCount(judge) + " / " + max
       } else if (!isHoldDroppedTimingWindow(judge)) {
         text.text = gameStats.getCount(judge) + ""
       }
-      this.texts.getChildByName<BitmapText>("Combo")!.text =
+      ;(this.texts.getChildByName("Combo")! as Text).text =
         gameStats.getMaxCombo() + ""
-      this.texts.getChildByName<BitmapText>("Score")!.text =
+      ;(this.texts.getChildByName("Score") as Text)!.text =
         roundDigit(gameStats.getScore() * 100, 2).toFixed(2) +
         " / " +
         roundDigit(gameStats.getCumulativeScore() * 100, 2).toFixed(2)
@@ -546,15 +487,15 @@ export class PlayInfoWidget extends Widget {
       if (!isStandardTimingWindow(judge)) return
       const ms = Math.round(error * 1000)
       for (let i = -3; i <= 3; i++) {
-        if (!this.barlines.children[ms + windowSize + i]) continue
-        this.barlines.children[ms + windowSize + i].smoothCount +=
-          SCALING[i + 3]
-        this.barlines.children[ms + windowSize + i].visible = true
-        if (
-          this.barlines.children[ms + windowSize + i].smoothCount > this.max
-        ) {
+        const barline = this.barlines.children[
+          ms + windowSize + i
+        ] as HistogramLine
+        if (!barline) continue
+        barline.smoothCount += SCALING[i + 3]
+        barline.visible = true
+        if (barline.smoothCount > this.max) {
           this.modeText.text = ms + "ms"
-          this.max = this.barlines.children[ms + windowSize + i].smoothCount
+          barline.smoothCount
         }
       }
       this.errorMS.push(error * 1000)
@@ -567,8 +508,9 @@ export class PlayInfoWidget extends Widget {
 
   private redraw() {
     for (const line of this.barlines.children) {
-      line.targetHeight =
-        (line.smoothCount * (HISTOGRAM_HEIGHT - 20)) / this.max
+      ;(line as HistogramLine).targetHeight =
+        ((line as HistogramLine).smoothCount * (HISTOGRAM_HEIGHT - 20)) /
+        this.max
     }
   }
 
@@ -579,7 +521,7 @@ export class PlayInfoWidget extends Widget {
     if (offset == 0) return
     gameStats.applyOffset(-offset)
     this.barlines.children.forEach(bar => {
-      bar.smoothCount = 0
+      ;(bar as HistogramLine).smoothCount = 0
     })
     const collection = TimingWindowCollection.getCollection(
       Options.play.timingCollection
@@ -590,15 +532,15 @@ export class PlayInfoWidget extends Widget {
       if (!isStandardTimingWindow(point.judgment)) return
       const ms = Math.round(point.error * 1000)
       for (let i = -3; i <= 3; i++) {
-        if (!this.barlines.children[ms + windowSize + i]) continue
-        this.barlines.children[ms + windowSize + i].smoothCount +=
-          SCALING[i + 3]
-        this.barlines.children[ms + windowSize + i].visible = true
-        if (
-          this.barlines.children[ms + windowSize + i].smoothCount > this.max
-        ) {
+        const barline = this.barlines.children[
+          ms + windowSize + i
+        ] as HistogramLine
+        if (!barline) continue
+        barline.smoothCount += SCALING[i + 3]
+        barline.visible = true
+        if (barline.smoothCount > this.max) {
           this.modeText.text = ms + "ms"
-          this.max = this.barlines.children[ms + windowSize + i].smoothCount
+          barline.smoothCount
         }
       }
     })

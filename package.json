@@ -43,7 +43,7 @@
     "fourier-transform": "^1.1.2",
     "howler": "^2.2.3",
     "jszip": "^3.10.1",
-    "pixi.js": "^7.0.4",
+    "pixi.js": "^8.0.0-rc",
     "scroll-into-view-if-needed": "^3.0.3",
     "semver": "^7.5.4",
     "tippy.js": "^6.3.7",

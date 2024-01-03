@@ -1,10 +1,12 @@
 import {
-  BitmapFont,
+  Assets,
+  BitmapFontManager,
   Container,
+  FillGradient,
   Renderer,
-  TEXT_GRADIENT,
   Ticker,
   UPDATE_PRIORITY,
+  autoDetectRenderer,
 } from "pixi.js"
 import semver from "semver"
 import tippy from "tippy.js"
@@ -59,19 +61,23 @@ interface Version {
 }
 
 export class App {
-  renderer: Renderer
-  ticker: Ticker
-  stage: Container
-  view: HTMLCanvasElement
-  chartManager: ChartManager
-  windowManager: WindowManager
-  menubarManager: MenubarManager
-  actionHistory: ActionHistory
+  renderer!: Renderer
+  ticker!: Ticker
+  stage!: Container
+  canvas!: HTMLCanvasElement
+  chartManager!: ChartManager
+  windowManager!: WindowManager
+  menubarManager!: MenubarManager
+  actionHistory!: ActionHistory
 
   private lastWidth = window.innerWidth
   private lastHeight = window.innerHeight
 
   constructor() {
+    this.init()
+  }
+
+  async init() {
     tippy.setDefaultProps({ duration: [200, 100], theme: "sm" })
 
     if (window.nw) {
@@ -94,29 +100,30 @@ export class App {
       document.body.classList.add("animated")
     this.registerFonts()
 
-    this.view = document.getElementById("pixi") as HTMLCanvasElement
+    this.canvas = document.getElementById("pixi") as HTMLCanvasElement
 
     document.oncontextmenu = event => {
       event.preventDefault()
       if (!this.chartManager.loadedChart) return
-      if (event.target != this.view) return
+      if (event.target != this.canvas) return
       ContextMenuPopup.open(this, event)
     }
 
-    this.view.onmousedown = () => {
+    this.canvas.onmousedown = () => {
       ContextMenuPopup.close()
     }
 
     this.stage = new Container()
     this.stage.sortableChildren = true
-    this.renderer = new Renderer({
+
+    this.renderer = await autoDetectRenderer({
       backgroundColor: 0x18191c,
       antialias: Options.performance.antialiasing,
-      width: this.view.clientWidth,
-      height: this.view.clientHeight,
+      width: this.canvas.clientWidth,
+      height: this.canvas.clientHeight,
       resolution: Options.performance.resolution,
       autoDensity: true,
-      view: this.view,
+      canvas: this.canvas,
       powerPreference: "low-power",
     })
 
@@ -234,12 +241,16 @@ export class App {
     }
   }
 
+  loadAssets() {
+    Assets.load(["../../../../../assets/flash/decent.png"])
+  }
+
   registerFonts() {
-    BitmapFont.from(
+    BitmapFontManager.install(
       "Main",
       {
         fontFamily: "Assistant",
-        fontSize: 20,
+        fontSize: 40,
         fill: "white",
       },
       {
@@ -254,16 +265,17 @@ export class App {
       }
     )
 
-    BitmapFont.from(
+    BitmapFontManager.install(
       "Fancy",
       {
         fontFamily: "Assistant",
         fontSize: 40,
         fontWeight: "700",
-        fill: ["#dddddd", "#ffffff"],
-        fillGradientType: TEXT_GRADIENT.LINEAR_VERTICAL,
+        fill: new FillGradient(0, 0, 0, 1)
+          .addColorStop(0, 0xdddddd)
+          .addColorStop(1, 0xffffff),
+        // fill: [0xdddddd, 0xffffff],
         stroke: 0xaaaaaa,
-        strokeThickness: 3,
       },
       {
         chars: [
@@ -358,12 +370,11 @@ export class App {
   }
 
   onResize(screenWidth: number, screenHeight: number) {
-    this.renderer.screen.width = screenWidth
-    this.renderer.screen.height = screenHeight
-    this.view.width = screenWidth * this.renderer.resolution
-    this.view.height = screenHeight * this.renderer.resolution
-    this.view.style.width = `${screenWidth}px`
-    this.view.style.height = `${screenHeight}px`
+    this.renderer.resize(screenWidth, screenHeight)
+    this.canvas.width = screenWidth * this.renderer.resolution
+    this.canvas.height = screenHeight * this.renderer.resolution
+    this.canvas.style.width = `${screenWidth}px`
+    this.canvas.style.height = `${screenHeight}px`
   }
 
   checkAppVersion() {
