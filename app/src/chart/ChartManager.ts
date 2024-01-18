@@ -1962,6 +1962,9 @@ export class ChartManager {
       return a.beat - b.beat
     })
     const { removedNotes, truncatedHolds } = this.checkConflicts(notes)
+    const existingNotes = this.loadedChart!.getNotes()
+
+    this.loadedChart!.removeAllNotes()
 
     this.app.actionHistory.run({
       action: () => {
@@ -1973,6 +1976,10 @@ export class ChartManager {
         this.setNoteSelection(this.loadedChart!.addNotes(notes))
       },
       undo: () => {
+        this.loadedChart?.removeAllNotes()
+
+        this.setNoteSelection(this.loadedChart!.addNotes(existingNotes))
+
         this.loadedChart!.removeNotes(notes, false)
         truncatedHolds.forEach(data => {
           this.loadedChart!.modifyNote(data.newNote, data.oldNote, false)

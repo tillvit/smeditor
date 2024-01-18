@@ -29,6 +29,14 @@ export class Chart {
 
   private notedata: Notedata = []
 
+  getNotes(): Notedata {
+    return [...this.notedata]
+  }
+
+  removeAllNotes(): void {
+    this.notedata = []
+  }
+
   private _notedataStats!: Record<string, number>
   private _npsGraph!: number[]
 
