@@ -80,6 +80,7 @@ export class ParityGenerator {
   private costCache: Map<string, number>[] = []
   private cacheCounter = 0
   private exploreCounter = 0
+  private permuteCache: Map<number, Foot[][]> = new Map()
 
   private stop = false
 
@@ -630,33 +631,44 @@ clear(): clear parity highlights`)
     rowIndex: number
   ): Action[] {
     const row = rows[rowIndex]
-    return this.permuteColumn(row, new Array(4).fill(Foot.NONE), 0).map(
-      columns => {
-        const action = {
-          initialState,
-          resultState: {
-            columns,
-            movedFeet: new Set(
-              columns.filter((foot, idx) => {
-                if (foot === Foot.NONE) return false
-                if (!row.holds[idx]) return true
-                return initialState.columns[idx] != foot
-              })
-            ),
-            holdFeet: new Set(
-              columns.filter((foot, idx) => {
-                if (foot === Foot.NONE) return false
-                return row.holds[idx] !== undefined
-              })
-            ),
-            second: row.second,
-          },
-          cost: 0,
-        }
-        this.getActionCost(action, rows, rowIndex)
-        return action
+
+    let permuteCacheKey = 0
+    for (let i = 0; i < 4; i++) {
+      if (row.notes[i] !== undefined || row.holds[i] !== undefined) {
+        permuteCacheKey += Math.pow(2, i)
       }
-    )
+    }
+    let permuteColumns = this.permuteCache.get(permuteCacheKey)
+    if (permuteColumns == undefined) {
+      permuteColumns = this.permuteColumn(row, new Array(4).fill(Foot.NONE), 0)
+      this.permuteCache.set(permuteCacheKey, permuteColumns)
+    }
+
+    return permuteColumns.map(columns => {
+      const action = {
+        initialState,
+        resultState: {
+          columns,
+          movedFeet: new Set(
+            columns.filter((foot, idx) => {
+              if (foot === Foot.NONE) return false
+              if (!row.holds[idx]) return true
+              return initialState.columns[idx] != foot
+            })
+          ),
+          holdFeet: new Set(
+            columns.filter((foot, idx) => {
+              if (foot === Foot.NONE) return false
+              return row.holds[idx] !== undefined
+            })
+          ),
+          second: row.second,
+        },
+        cost: 0,
+      }
+      this.getActionCost(action, rows, rowIndex)
+      return action
+    })
   }
 
   permuteColumn(row: Row, columns: Foot[], column: number): Foot[][] {
