@@ -72,6 +72,8 @@ interface Row {
   mines: (number | undefined)[]
   fakeMines: (number | undefined)[]
   second: number
+  cost: number
+  selectedAction?: Action
 }
 
 export class ParityGenerator {
@@ -699,7 +701,7 @@ clear(): clear parity highlights`)
       return [columns]
     }
     const permutations = []
-    if (row.notes[column] !== undefined || row.holds[column] !== undefined) {
+    if (row.notes[column] || row.holds[column]) {
       for (const foot of FEET) {
         if (columns.includes(foot)) continue
         const newColumns = [...columns]
@@ -769,6 +771,7 @@ clear(): clear parity highlights`)
             mines: nextMines,
             fakeMines: nextFakeMines,
             second: lastColumnSecond,
+            cost: 0,
           })
         }
         lastColumnSecond = note.second
@@ -817,6 +820,7 @@ clear(): clear parity highlights`)
       mines: nextMines,
       fakeMines: nextFakeMines,
       second: lastColumnSecond!,
+      cost: 0,
     })
     return rows
   }
@@ -828,7 +832,7 @@ clear(): clear parity highlights`)
       searchDepth?: number
       searchBreadth?: number
     } = {}
-  ) {
+  ): Row[] {
     const {
       log = false,
       delay = 0,
@@ -848,7 +852,7 @@ clear(): clear parity highlights`)
     this.cacheCounter = 0
     this.exploreCounter = 0
     const notedata = this.app.chartManager.loadedChart?.getNotedata()
-    if (!notedata) return
+    if (!notedata) return []
     const rows = this.createRows(notedata)
     let i = 0
     this.stop = false
@@ -863,6 +867,11 @@ clear(): clear parity highlights`)
             rows[i].notes[j]!.parity =
               FEET_LABEL[FEET.indexOf(bestAction.resultState.columns[j])]
         }
+        rows[i].cost = bestAction.cost
+        bestAction.head = undefined
+        bestAction.parent = undefined
+        rows[i].selectedAction = bestAction
+
         delete this.costCache[i]
         i++
         state = bestAction.resultState
@@ -876,6 +885,7 @@ clear(): clear parity highlights`)
         )
         console.timeEnd("Analyze")
       }
+      return rows
     } else {
       const run = () => {
         const bestActions = this.getBestMoveLookahead(state, rows, i)
@@ -905,6 +915,7 @@ clear(): clear parity highlights`)
       }
       run()
     }
+    return []
   }
 
   getBestMoveLookahead(state: State, rows: Row[], rowIndex: number) {
@@ -913,22 +924,21 @@ clear(): clear parity highlights`)
     )
     for (let i = 1; i < this.SEARCH_DEPTH; i++) {
       if (rows[i + rowIndex] === undefined) break
-      actions = actions
-        .flatMap(action => {
-          const results = this.getPossibleActions(
-            action.resultState,
-            rows,
-            rowIndex + i
-          )
-          results.forEach(result => {
-            result.cost = result.cost * Math.pow(0.95, i) + action.cost
-            result.head = action.head ?? action
-            result.parent = action
-          })
-          return results
+      actions = actions.flatMap(action => {
+        const results = this.getPossibleActions(
+          action.resultState,
+          rows,
+          rowIndex + i
+        )
+        results.forEach(result => {
+          result.cost = result.cost * Math.pow(0.95, i) + action.cost
+          result.head = action.head ?? action
+          result.parent = action
         })
-        .sort((a, b) => a.cost - b.cost)
-        .slice(0, this.SEARCH_BREADTH)
+        return results
+      })
+      actions = actions.sort((a, b) => a.cost - b.cost)
+      actions = actions.slice(0, this.SEARCH_BREADTH)
     }
     return actions
   }
