@@ -625,13 +625,20 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
         a => a.beat
       )
 
+      if (
+        this.getVisualBeat() - Options.chart.maxDrawBeatsBack <
+        scrolls[0]?.beat
+      ) {
+        scrollIndex = -1
+      }
+
       while (
-        scrolls[scrollIndex]?.beat <
-        this.getVisualBeat() + Options.chart.maxDrawBeats
+        scrolls[scrollIndex]?.beat ??
+        0 < this.getVisualBeat() + Options.chart.maxDrawBeats
       ) {
         const scroll = scrolls[scrollIndex]
 
-        const scrollStartYPos = this.getYPosFromBeat(scroll.beat)
+        const scrollStartYPos = this.getYPosFromBeat(scroll?.beat ?? 0)
 
         const scrollEndBeat =
           scrolls[scrollIndex + 1]?.beat ??
@@ -639,7 +646,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
         const scrollEndYPos = this.getYPosFromBeat(scrollEndBeat)
 
         if (
-          scroll.value * sign > 0 &&
+          (scroll?.value ?? 1) * sign > 0 &&
           scrollEndYPos > upperBound &&
           (scrollStartYPos < upperBound ||
             !scrolls[scrollIndex - 1] ||
@@ -649,7 +656,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
         )
           break
         if (
-          scroll.value * sign < 0 &&
+          (scroll?.value ?? 1) * sign < 0 &&
           scrollEndYPos < lowerBound &&
           (scrollStartYPos > lowerBound ||
             !scrolls[scrollIndex - 1] ||
@@ -669,6 +676,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
         (pixelsToEffectiveBeats / Math.abs(scrollValue)) * Options.chart.zoom
       const start = Options.chart.reverse ? upperBound : lowerBound
       const end = Options.chart.reverse ? lowerBound : upperBound
+
       if (scrollValue * sign > 0) {
         if (
           scrolls[scrollIndex - 1]?.value == 0 &&
@@ -731,13 +739,20 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
         a => a.beat
       )
 
+      if (
+        this.getVisualBeat() - Options.chart.maxDrawBeatsBack <
+        scrolls[0]?.beat
+      ) {
+        scrollIndex = -1
+      }
+
       while (
-        scrolls[scrollIndex]?.beat >
-        this.getVisualBeat() - Options.chart.maxDrawBeatsBack
+        scrolls[scrollIndex]?.beat ??
+        0 > this.getVisualBeat() - Options.chart.maxDrawBeatsBack
       ) {
         const scroll = scrolls[scrollIndex]
 
-        const scrollStartYPos = this.getYPosFromBeat(scroll.beat)
+        const scrollStartYPos = this.getYPosFromBeat(scroll?.beat ?? 0)
 
         const scrollEndBeat =
           scrolls[scrollIndex + 1]?.beat ??
@@ -745,7 +760,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
         const scrollEndYPos = this.getYPosFromBeat(scrollEndBeat)
 
         if (
-          scroll.value * sign > 0 &&
+          (scroll?.value ?? 1) * sign > 0 &&
           scrollStartYPos < lowerBound &&
           (scrollEndYPos > lowerBound ||
             !scrolls[scrollIndex + 1] ||
@@ -755,7 +770,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
         )
           break
         if (
-          scroll.value * sign < 0 &&
+          (scroll?.value ?? 1) * sign < 0 &&
           scrollStartYPos > upperBound &&
           (scrollEndYPos < upperBound ||
             !scrolls[scrollIndex + 1] ||
