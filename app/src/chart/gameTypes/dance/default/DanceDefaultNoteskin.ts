@@ -11,7 +11,7 @@ class DanceDefaultNoteskinObject extends NoteSkin {
   constructor(renderer: ChartRenderer) {
     super(renderer)
 
-    DanceDefaultNoteTexture.initArrowTex(renderer.chartManager.app)
+    DanceDefaultNoteTexture.initArrowTex()
   }
 
   createReceptor(_: number) {
@@ -31,6 +31,7 @@ class DanceDefaultNoteskinObject extends NoteSkin {
 
   update(): void {
     DanceDefaultNoteTexture.setArrowTexTime(
+      this.renderer.chartManager.app,
       this.renderer.getVisualBeat(),
       this.renderer.getVisualTime()
     )

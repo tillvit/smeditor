@@ -10,7 +10,6 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
-import { App } from "../../../../App"
 import { Options } from "../../../../util/Options"
 import { NotedataEntry } from "../../../sm/NoteTypes"
 
@@ -30,6 +29,7 @@ import arrowFrameGeomText from "../../../../../assets/noteskin/dance/default/tap
 
 import liftBodyGeomText from "../../../../../assets/noteskin/dance/default/lift/body.txt?raw"
 import mineBodyGeomText from "../../../../../assets/noteskin/dance/default/mine/body.txt?raw"
+import { App } from "../../../../App"
 
 const mine_frame_texture = Texture.from(mineFrameUrl)
 
@@ -60,7 +60,7 @@ export class DanceDefaultNoteTexture {
 
   private static loaded = false
 
-  static async initArrowTex(app: App) {
+  static async initArrowTex() {
     if (this.loaded) return
 
     // Initialize rendertextures in here so we can read options
@@ -162,21 +162,6 @@ export class DanceDefaultNoteTexture {
       DanceDefaultNoteTexture.mineConainer.addChild(mine_frame)
     }
 
-    app.ticker.add(() => {
-      app.renderer.render(DanceDefaultNoteTexture.arrowFrame, {
-        renderTexture: DanceDefaultNoteTexture.arrowFrameTex,
-      })
-      app.renderer.render(DanceDefaultNoteTexture.arrowContainer, {
-        renderTexture: DanceDefaultNoteTexture.arrowTex,
-      })
-      app.renderer.render(DanceDefaultNoteTexture.mineConainer, {
-        renderTexture: DanceDefaultNoteTexture.mineTex,
-      })
-      app.renderer.render(DanceDefaultNoteTexture.liftContainer, {
-        renderTexture: DanceDefaultNoteTexture.liftTex,
-      })
-    })
-
     this.loaded = true
   }
 
@@ -221,7 +206,7 @@ export class DanceDefaultNoteTexture {
       .addIndex(vIndex)
   }
 
-  static setArrowTexTime(beat: number, second: number) {
+  static setArrowTexTime(app: App, beat: number, second: number) {
     if (!this.loaded) return
     for (let i = 0; i < 10; i++) {
       const tapShader: Mesh<Shader> =
@@ -235,6 +220,19 @@ export class DanceDefaultNoteTexture {
       DanceDefaultNoteTexture.mineConainer.children[0]
     )).shader.uniforms.time = second
     DanceDefaultNoteTexture.mineConainer.rotation = (second % 1) * Math.PI * 2
+
+    app.renderer.render(DanceDefaultNoteTexture.arrowFrame, {
+      renderTexture: DanceDefaultNoteTexture.arrowFrameTex,
+    })
+    app.renderer.render(DanceDefaultNoteTexture.arrowContainer, {
+      renderTexture: DanceDefaultNoteTexture.arrowTex,
+    })
+    app.renderer.render(DanceDefaultNoteTexture.mineConainer, {
+      renderTexture: DanceDefaultNoteTexture.mineTex,
+    })
+    app.renderer.render(DanceDefaultNoteTexture.liftContainer, {
+      renderTexture: DanceDefaultNoteTexture.liftTex,
+    })
   }
 
   static setNoteTex(arrow: Sprite, note: NotedataEntry) {

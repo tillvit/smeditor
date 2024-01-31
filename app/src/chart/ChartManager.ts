@@ -1256,12 +1256,17 @@ export class ChartManager {
     hold.endBeat = Math.max(hold.startBeat, Math.round(beat * 48) / 48)
     hold.roll ||= roll
     if (!hold.originalNote) {
-      this.loadedChart.addNote({
+      const note: PartialNotedataEntry = {
         beat: hold.startBeat,
         col: col,
         type: hold.roll ? "Roll" : "Hold",
         hold: hold.endBeat - hold.startBeat,
-      })
+      }
+      if (hold.endBeat - hold.startBeat == 0) {
+        note.type = "Tap"
+        Object.assign(note, { hold: undefined })
+      }
+      this.loadedChart.addNote(note)
     } else {
       const props: Partial<PartialNotedataEntry> = {
         beat: hold.startBeat,
@@ -1770,7 +1775,6 @@ export class ChartManager {
             note =>
               note.beat >= this.startRegion! && note.beat <= this.endRegion!
           )
-          .filter(note => !this.selection.notes.includes(note))
       )
     } else {
       this.setEventSelection(
@@ -1778,6 +1782,8 @@ export class ChartManager {
           event =>
             this.loadedChart!.timingData.getColumn(event)
               .events as Cached<TimingEvent>[]
+        ).filter(
+          note => note.beat >= this.startRegion! && note.beat <= this.endRegion!
         )
       )
     }
