@@ -29,6 +29,7 @@ import arrowFrameGeomText from "../../../../../assets/noteskin/dance/default/tap
 
 import liftBodyGeomText from "../../../../../assets/noteskin/dance/default/lift/body.txt?raw"
 import mineBodyGeomText from "../../../../../assets/noteskin/dance/default/mine/body.txt?raw"
+import { App } from "../../../../App"
 
 const mine_frame_texture = Texture.from(mineFrameUrl)
 
