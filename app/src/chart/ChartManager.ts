@@ -1775,7 +1775,6 @@ export class ChartManager {
             note =>
               note.beat >= this.startRegion! && note.beat <= this.endRegion!
           )
-          .filter(note => !this.selection.notes.includes(note))
       )
     } else {
       this.setEventSelection(
@@ -1783,6 +1782,8 @@ export class ChartManager {
           event =>
             this.loadedChart!.timingData.getColumn(event)
               .events as Cached<TimingEvent>[]
+        ).filter(
+          note => note.beat >= this.startRegion! && note.beat <= this.endRegion!
         )
       )
     }
