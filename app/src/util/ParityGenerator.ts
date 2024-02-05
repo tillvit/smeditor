@@ -77,9 +77,13 @@ interface Row {
   selectedAction?: Action
 }
 
+// A node within a StepParityGraph.
+// Represents a given state, and its connections to the states in the
+// following row of the step chart.
 class StepParityNode {
-  id: number = 0
-  neighbors: Map<number, number> = new Map()
+  id: number = 0 // The index of this node in its graph.nodes array
+  neighbors: Map<number, number> = new Map() // Connections to, and the cost of moving to, the connected nodes. Keys are the connected node's id, and values are the cost.
+
   state: State
 
   constructor(state: State, id: number) {
@@ -88,6 +92,7 @@ class StepParityNode {
   }
 }
 
+// A graph, representing all of the possible states for a step chart.
 class StepParityGraph {
   nodes: Array<StepParityNode> = []
   states: Array<State> = []
@@ -96,8 +101,8 @@ class StepParityGraph {
   endNode: number = 0
   // A nested map to keep track of states and associated nodes
   // first key is row number,
-  // second key is index of state
-  // resulting value is index of node
+  // second key is index of state in the graph's states array
+  // resulting value is index of node in the graph's nodes array
   stateNodeMap: Map<number, Map<number, number>> = new Map()
 
   addOrGetExistingNode(state: State): StepParityNode {
@@ -126,18 +131,8 @@ class StepParityGraph {
 
 export class ParityGenerator {
   private readonly app
-
-  private costCache: Map<string, number>[] = []
-  private cacheCounter = 0
-  private exploreCounter = 0
   private permuteCache: Map<number, Foot[][]> = new Map()
-
-  private stop = false
-
   private readonly layout
-
-  private SEARCH_DEPTH = 16
-  private SEARCH_BREADTH = 30
 
   constructor(app: App, type: string) {
     this.app = app
