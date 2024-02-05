@@ -73,8 +73,6 @@ interface Row {
   mines: (number | undefined)[]
   fakeMines: (number | undefined)[]
   second: number
-  cost: number
-  selectedAction?: Action
 }
 
 // A node within a StepParityGraph.
@@ -774,7 +772,6 @@ clear(): clear parity highlights`)
             mines: nextMines,
             fakeMines: nextFakeMines,
             second: lastColumnSecond,
-            cost: 0,
           })
         }
         lastColumnSecond = note.second
@@ -823,68 +820,17 @@ clear(): clear parity highlights`)
       mines: nextMines,
       fakeMines: nextFakeMines,
       second: lastColumnSecond!,
-      cost: 0,
     })
     return rows
   }
 
-  manuallySetParity(parityRows: Foot[][]) {
-    const notedata = this.app.chartManager.loadedChart?.getNotedata()
-    if (!notedata) {
-      console.log("Could not load notedata from chartManager")
-      return
-    }
-    const rows = this.createRows(notedata)
-
-    if (rows.length != parityRows.length) {
-      console.log("parityRows.length != rows.length!")
-      return
-    }
-
-    for (let i = 0; i < rows.length; i++) {
-      for (let c = 0; c < rows[i].notes.length; c++) {
-        if (rows[i].notes[c] == undefined) {
-          continue
-        }
-        rows[i].notes[c]!.parity = FEET_LABEL[FEET.indexOf(parityRows[i][c])]
-      }
-    }
-  }
-
-  analyze(
-    options: {
-      log?: boolean
-      delay?: number
-      searchDepth?: number
-      searchBreadth?: number
-    } = {}
-  ): Row[] {
-    const {
-      log = false,
-      delay = 0,
-      searchBreadth = 30,
-      searchDepth = 16,
-    } = options
-    this.SEARCH_BREADTH = searchBreadth
-    this.SEARCH_DEPTH = searchDepth
-    if (log) console.time("Analyze")
-    const state: State = {
-      columns: [0, 0, 0, 0],
-      movedFeet: new Set(),
-      holdFeet: new Set(),
-      second: -1,
-      rowIndex: -1,
-    }
-    this.costCache = []
-    this.cacheCounter = 0
-    this.exploreCounter = 0
+  analyze() {
     const notedata = this.app.chartManager.loadedChart?.getNotedata()
     if (!notedata) return []
     const rows = this.createRows(notedata)
 
     const graph = this.buildStateGraph(rows)
     this.analyzeGraph(rows, graph)
-    return rows
   }
 
   // Analyzes the given graph to find the least costly path from the
