@@ -63,6 +63,7 @@ interface State {
   movedFeet: Set<Foot>
   holdFeet: Set<Foot>
   second: number
+  rowIndex: number
 }
 
 interface Row {
@@ -74,19 +75,62 @@ interface Row {
   second: number
 }
 
+// A node within a StepParityGraph.
+// Represents a given state, and its connections to the states in the
+// following row of the step chart.
+class StepParityNode {
+  id: number = 0 // The index of this node in its graph.nodes array
+  neighbors: Map<number, number> = new Map() // Connections to, and the cost of moving to, the connected nodes. Keys are the connected node's id, and values are the cost.
+
+  state: State
+
+  constructor(state: State, id: number) {
+    this.state = state
+    this.id = id
+  }
+}
+
+// A graph, representing all of the possible states for a step chart.
+class StepParityGraph {
+  nodes: Array<StepParityNode> = []
+  states: Array<State> = []
+
+  startNode: number = 0
+  endNode: number = 0
+  // A nested map to keep track of states and associated nodes
+  // first key is row number,
+  // second key is index of state in the graph's states array
+  // resulting value is index of node in the graph's nodes array
+  stateNodeMap: Map<number, Map<number, number>> = new Map()
+
+  addOrGetExistingNode(state: State): StepParityNode {
+    if (this.stateNodeMap.get(state.rowIndex) == undefined) {
+      this.stateNodeMap.set(state.rowIndex, new Map<number, number>())
+    }
+
+    for (const [stateIdx, nodeIdx] of this.stateNodeMap.get(state.rowIndex)!) {
+      if (compareStates(state, this.states[stateIdx])) {
+        return this.nodes[nodeIdx]
+      }
+    }
+    const stateIdx = this.states.length
+    const nodeIdx = this.nodes.length
+    this.states.push(state)
+    const newNode = new StepParityNode(state, nodeIdx)
+    this.nodes.push(newNode)
+    this.stateNodeMap.get(state.rowIndex)?.set(stateIdx, nodeIdx)
+    return newNode
+  }
+
+  addEdge(from: StepParityNode, to: StepParityNode, cost: number) {
+    from.neighbors.set(to.id, cost)
+  }
+}
+
 export class ParityGenerator {
   private readonly app
-
-  private costCache: Map<string, number>[] = []
-  private cacheCounter = 0
-  private exploreCounter = 0
-
-  private stop = false
-
+  private permuteCache: Map<number, Foot[][]> = new Map()
   private readonly layout
-
-  private SEARCH_DEPTH = 16
-  private SEARCH_BREADTH = 30
 
   constructor(app: App, type: string) {
     this.app = app
@@ -108,65 +152,57 @@ stopAnalyzing(): stop analysis in case something goes wrong
 clear(): clear parity highlights`)
   }
 
-  getActionCost(action: Action, rows: Row[], rowIndex: number) {
+  getActionCost(
+    initialState: State,
+    resultState: State,
+    rows: Row[],
+    rowIndex: number
+  ): number {
     const row = rows[rowIndex]
-    const elapsedTime = action.resultState.second - action.initialState.second
+    const elapsedTime = resultState.second - initialState.second
     let cost = 0
 
-    const combinedColumns: Foot[] = new Array(
-      action.resultState.columns.length
-    ).fill(Foot.NONE)
+    const combinedColumns: Foot[] = new Array(resultState.columns.length).fill(
+      Foot.NONE
+    )
 
     // Merge initial + result position
-    for (let i = 0; i < action.resultState.columns.length; i++) {
+    for (let i = 0; i < resultState.columns.length; i++) {
       // copy in data from b over the top which overrides it, as long as it's not nothing
-      if (action.resultState.columns[i] != Foot.NONE) {
-        combinedColumns[i] = action.resultState.columns[i]
+      if (resultState.columns[i] != Foot.NONE) {
+        combinedColumns[i] = resultState.columns[i]
         continue
       }
 
       // copy in data from a first, if it wasn't moved
       if (
-        action.initialState.columns[i] == Foot.LEFT_HEEL ||
-        action.initialState.columns[i] == Foot.RIGHT_HEEL
+        initialState.columns[i] == Foot.LEFT_HEEL ||
+        initialState.columns[i] == Foot.RIGHT_HEEL
       ) {
-        if (!action.resultState.movedFeet.has(action.initialState.columns[i])) {
-          combinedColumns[i] = action.initialState.columns[i]
+        if (!resultState.movedFeet.has(initialState.columns[i])) {
+          combinedColumns[i] = initialState.columns[i]
         }
-      } else if (action.initialState.columns[i] == Foot.LEFT_TOE) {
+      } else if (initialState.columns[i] == Foot.LEFT_TOE) {
         if (
-          !action.resultState.movedFeet.has(Foot.LEFT_TOE) &&
-          !action.resultState.movedFeet.has(Foot.LEFT_HEEL)
+          !resultState.movedFeet.has(Foot.LEFT_TOE) &&
+          !resultState.movedFeet.has(Foot.LEFT_HEEL)
         ) {
-          combinedColumns[i] = action.initialState.columns[i]
+          combinedColumns[i] = initialState.columns[i]
         }
-      } else if (action.initialState.columns[i] == Foot.RIGHT_TOE) {
+      } else if (initialState.columns[i] == Foot.RIGHT_TOE) {
         if (
-          !action.resultState.movedFeet.has(Foot.RIGHT_TOE) &&
-          !action.resultState.movedFeet.has(Foot.RIGHT_HEEL)
+          !resultState.movedFeet.has(Foot.RIGHT_TOE) &&
+          !resultState.movedFeet.has(Foot.RIGHT_HEEL)
         ) {
-          combinedColumns[i] = action.initialState.columns[i]
+          combinedColumns[i] = initialState.columns[i]
         }
       }
     }
 
-    const cacheKey = action.initialState.columns
-      .concat(action.resultState.columns)
-      .concat([...action.initialState.movedFeet.values()])
-      .join("|")
-    const cachedCost = this.costCache[rowIndex]?.get(cacheKey)
-    if (cachedCost !== undefined) {
-      this.cacheCounter++
-      action.resultState.columns = combinedColumns
-      action.cost = cachedCost
-
-      return
-    }
-
     // Mine weighting
     let [leftHeel, leftToe, rightHeel, rightToe] = new Array(4).fill(-1)
-    for (let i = 0; i < action.resultState.columns.length; i++) {
-      switch (action.resultState.columns[i]) {
+    for (let i = 0; i < resultState.columns.length; i++) {
+      switch (resultState.columns[i]) {
         case Foot.NONE:
           break
         case Foot.LEFT_HEEL:
@@ -193,16 +229,14 @@ clear(): clear parity highlights`)
       if (
         ((combinedColumns[c] == Foot.LEFT_HEEL ||
           combinedColumns[c] == Foot.LEFT_TOE) &&
-          action.initialState.columns[c] != Foot.LEFT_TOE &&
-          action.initialState.columns[c] != Foot.LEFT_HEEL) ||
+          initialState.columns[c] != Foot.LEFT_TOE &&
+          initialState.columns[c] != Foot.LEFT_HEEL) ||
         ((combinedColumns[c] == Foot.RIGHT_HEEL ||
           combinedColumns[c] == Foot.RIGHT_TOE) &&
-          action.initialState.columns[c] != Foot.RIGHT_TOE &&
-          action.initialState.columns[c] != Foot.RIGHT_HEEL)
+          initialState.columns[c] != Foot.RIGHT_TOE &&
+          initialState.columns[c] != Foot.RIGHT_HEEL)
       ) {
-        const previousFoot = action.initialState.columns.indexOf(
-          combinedColumns[c]
-        )
+        const previousFoot = initialState.columns.indexOf(combinedColumns[c])
         cost +=
           WEIGHTS.HOLDSWITCH *
           (previousFoot == -1
@@ -217,8 +251,8 @@ clear(): clear parity highlights`)
     if (leftHeel != -1 && leftToe != -1) {
       let jackPenalty = 1
       if (
-        action.initialState.movedFeet.has(Foot.LEFT_HEEL) ||
-        action.initialState.movedFeet.has(Foot.LEFT_TOE)
+        initialState.movedFeet.has(Foot.LEFT_HEEL) ||
+        initialState.movedFeet.has(Foot.LEFT_TOE)
       )
         jackPenalty = 1 / elapsedTime
       if (
@@ -238,8 +272,8 @@ clear(): clear parity highlights`)
     if (rightHeel != -1 && rightToe != -1) {
       let jackPenalty = 1
       if (
-        action.initialState.movedFeet.has(Foot.RIGHT_TOE) ||
-        action.initialState.movedFeet.has(Foot.RIGHT_HEEL)
+        initialState.movedFeet.has(Foot.RIGHT_TOE) ||
+        initialState.movedFeet.has(Foot.RIGHT_HEEL)
       )
         jackPenalty = 1 / elapsedTime
 
@@ -258,15 +292,15 @@ clear(): clear parity highlights`)
     }
 
     // Weighting for moving a foot while the other isn't on the pad (so marked doublesteps are less bad than this)
-    if (action.initialState.columns.some(x => x != Foot.NONE)) {
-      for (const f of action.resultState.movedFeet) {
+    if (initialState.columns.some(x => x != Foot.NONE)) {
+      for (const f of resultState.movedFeet) {
         switch (f) {
           case Foot.LEFT_HEEL:
           case Foot.LEFT_TOE:
             if (
               !(
-                action.initialState.columns.includes(Foot.RIGHT_HEEL) ||
-                action.initialState.columns.includes(Foot.RIGHT_TOE)
+                initialState.columns.includes(Foot.RIGHT_HEEL) ||
+                initialState.columns.includes(Foot.RIGHT_TOE)
               )
             )
               cost += 500
@@ -275,8 +309,8 @@ clear(): clear parity highlights`)
           case Foot.RIGHT_TOE:
             if (
               !(
-                action.initialState.columns.includes(Foot.LEFT_HEEL) ||
-                action.initialState.columns.includes(Foot.RIGHT_TOE)
+                initialState.columns.includes(Foot.LEFT_HEEL) ||
+                initialState.columns.includes(Foot.RIGHT_TOE)
               )
             )
               cost += 500
@@ -286,21 +320,21 @@ clear(): clear parity highlights`)
     }
 
     const movedLeft =
-      action.resultState.movedFeet.has(Foot.LEFT_HEEL) ||
-      action.resultState.movedFeet.has(Foot.LEFT_TOE)
+      resultState.movedFeet.has(Foot.LEFT_HEEL) ||
+      resultState.movedFeet.has(Foot.LEFT_TOE)
     const movedRight =
-      action.resultState.movedFeet.has(Foot.RIGHT_HEEL) ||
-      action.resultState.movedFeet.has(Foot.RIGHT_TOE)
+      resultState.movedFeet.has(Foot.RIGHT_HEEL) ||
+      resultState.movedFeet.has(Foot.RIGHT_TOE)
 
     const didJump =
-      ((action.initialState.movedFeet.has(Foot.LEFT_HEEL) &&
-        !action.initialState.holdFeet.has(Foot.LEFT_HEEL)) ||
-        (action.initialState.movedFeet.has(Foot.LEFT_TOE) &&
-          !action.initialState.holdFeet.has(Foot.LEFT_TOE))) &&
-      ((action.initialState.movedFeet.has(Foot.RIGHT_HEEL) &&
-        !action.initialState.holdFeet.has(Foot.RIGHT_HEEL)) ||
-        (action.initialState.movedFeet.has(Foot.RIGHT_TOE) &&
-          !action.initialState.holdFeet.has(Foot.RIGHT_TOE)))
+      ((initialState.movedFeet.has(Foot.LEFT_HEEL) &&
+        !initialState.holdFeet.has(Foot.LEFT_HEEL)) ||
+        (initialState.movedFeet.has(Foot.LEFT_TOE) &&
+          !initialState.holdFeet.has(Foot.LEFT_TOE))) &&
+      ((initialState.movedFeet.has(Foot.RIGHT_HEEL) &&
+        !initialState.holdFeet.has(Foot.RIGHT_HEEL)) ||
+        (initialState.movedFeet.has(Foot.RIGHT_TOE) &&
+          !initialState.holdFeet.has(Foot.RIGHT_TOE)))
 
     // jacks don't matter if you did a jump before
 
@@ -310,42 +344,42 @@ clear(): clear parity highlights`)
     if (!didJump) {
       if (leftHeel != -1 && movedLeft) {
         if (
-          action.initialState.columns[leftHeel] == Foot.LEFT_HEEL &&
-          !action.resultState.holdFeet.has(Foot.LEFT_HEEL) &&
-          ((action.initialState.movedFeet.has(Foot.LEFT_HEEL) &&
-            !action.initialState.holdFeet.has(Foot.LEFT_HEEL)) ||
-            (action.initialState.movedFeet.has(Foot.LEFT_TOE) &&
-              !action.initialState.holdFeet.has(Foot.LEFT_TOE)))
+          initialState.columns[leftHeel] == Foot.LEFT_HEEL &&
+          !resultState.holdFeet.has(Foot.LEFT_HEEL) &&
+          ((initialState.movedFeet.has(Foot.LEFT_HEEL) &&
+            !initialState.holdFeet.has(Foot.LEFT_HEEL)) ||
+            (initialState.movedFeet.has(Foot.LEFT_TOE) &&
+              !initialState.holdFeet.has(Foot.LEFT_TOE)))
         )
           jackedLeft = true
         if (
-          action.initialState.columns[leftToe] == Foot.LEFT_TOE &&
-          !action.resultState.holdFeet.has(Foot.LEFT_TOE) &&
-          ((action.initialState.movedFeet.has(Foot.LEFT_HEEL) &&
-            !action.initialState.holdFeet.has(Foot.LEFT_HEEL)) ||
-            (action.initialState.movedFeet.has(Foot.LEFT_TOE) &&
-              !action.initialState.holdFeet.has(Foot.LEFT_TOE)))
+          initialState.columns[leftToe] == Foot.LEFT_TOE &&
+          !resultState.holdFeet.has(Foot.LEFT_TOE) &&
+          ((initialState.movedFeet.has(Foot.LEFT_HEEL) &&
+            !initialState.holdFeet.has(Foot.LEFT_HEEL)) ||
+            (initialState.movedFeet.has(Foot.LEFT_TOE) &&
+              !initialState.holdFeet.has(Foot.LEFT_TOE)))
         )
           jackedLeft = true
       }
 
       if (rightHeel != -1 && movedRight) {
         if (
-          action.initialState.columns[rightHeel] == Foot.RIGHT_HEEL &&
-          !action.resultState.holdFeet.has(Foot.RIGHT_HEEL) &&
-          ((action.initialState.movedFeet.has(Foot.RIGHT_HEEL) &&
-            !action.initialState.holdFeet.has(Foot.RIGHT_HEEL)) ||
-            (action.initialState.movedFeet.has(Foot.RIGHT_TOE) &&
-              !action.initialState.holdFeet.has(Foot.RIGHT_TOE)))
+          initialState.columns[rightHeel] == Foot.RIGHT_HEEL &&
+          !resultState.holdFeet.has(Foot.RIGHT_HEEL) &&
+          ((initialState.movedFeet.has(Foot.RIGHT_HEEL) &&
+            !initialState.holdFeet.has(Foot.RIGHT_HEEL)) ||
+            (initialState.movedFeet.has(Foot.RIGHT_TOE) &&
+              !initialState.holdFeet.has(Foot.RIGHT_TOE)))
         )
           jackedRight = true
         if (
-          action.initialState.columns[rightToe] == Foot.RIGHT_TOE &&
-          !action.resultState.holdFeet.has(Foot.RIGHT_TOE) &&
-          ((action.initialState.movedFeet.has(Foot.RIGHT_HEEL) &&
-            !action.initialState.holdFeet.has(Foot.RIGHT_HEEL)) ||
-            (action.initialState.movedFeet.has(Foot.RIGHT_TOE) &&
-              !action.initialState.holdFeet.has(Foot.RIGHT_TOE)))
+          initialState.columns[rightToe] == Foot.RIGHT_TOE &&
+          !resultState.holdFeet.has(Foot.RIGHT_TOE) &&
+          ((initialState.movedFeet.has(Foot.RIGHT_HEEL) &&
+            !initialState.holdFeet.has(Foot.RIGHT_HEEL)) ||
+            (initialState.movedFeet.has(Foot.RIGHT_TOE) &&
+              !initialState.holdFeet.has(Foot.RIGHT_TOE)))
         )
           jackedRight = true
       }
@@ -356,7 +390,7 @@ clear(): clear parity highlights`)
     if (
       movedLeft != movedRight &&
       (movedLeft || movedRight) &&
-      action.resultState.holdFeet.size == 0 &&
+      resultState.holdFeet.size == 0 &&
       !didJump
     ) {
       let doublestepped = false
@@ -364,20 +398,20 @@ clear(): clear parity highlights`)
       if (
         movedLeft &&
         !jackedLeft &&
-        ((action.initialState.movedFeet.has(Foot.LEFT_HEEL) &&
-          !action.initialState.holdFeet.has(Foot.LEFT_HEEL)) ||
-          (action.initialState.movedFeet.has(Foot.LEFT_TOE) &&
-            !action.initialState.holdFeet.has(Foot.LEFT_TOE)))
+        ((initialState.movedFeet.has(Foot.LEFT_HEEL) &&
+          !initialState.holdFeet.has(Foot.LEFT_HEEL)) ||
+          (initialState.movedFeet.has(Foot.LEFT_TOE) &&
+            !initialState.holdFeet.has(Foot.LEFT_TOE)))
       ) {
         doublestepped = true
       }
       if (
         movedRight &&
         !jackedRight &&
-        ((action.initialState.movedFeet.has(Foot.RIGHT_HEEL) &&
-          !action.initialState.holdFeet.has(Foot.RIGHT_HEEL)) ||
-          (action.initialState.movedFeet.has(Foot.RIGHT_TOE) &&
-            !action.initialState.holdFeet.has(Foot.RIGHT_TOE)))
+        ((initialState.movedFeet.has(Foot.RIGHT_HEEL) &&
+          !initialState.holdFeet.has(Foot.RIGHT_HEEL)) ||
+          (initialState.movedFeet.has(Foot.RIGHT_TOE) &&
+            !initialState.holdFeet.has(Foot.RIGHT_TOE)))
       )
         doublestepped = true
 
@@ -416,16 +450,16 @@ clear(): clear parity highlights`)
 
       if (
         jackedLeft &&
-        action.resultState.movedFeet.has(Foot.LEFT_HEEL) &&
-        action.resultState.movedFeet.has(Foot.LEFT_TOE)
+        resultState.movedFeet.has(Foot.LEFT_HEEL) &&
+        resultState.movedFeet.has(Foot.LEFT_TOE)
       ) {
         cost += WEIGHTS.BRACKETJACK
       }
 
       if (
         jackedRight &&
-        action.resultState.movedFeet.has(Foot.RIGHT_HEEL) &&
-        action.resultState.movedFeet.has(Foot.RIGHT_TOE)
+        resultState.movedFeet.has(Foot.RIGHT_HEEL) &&
+        resultState.movedFeet.has(Foot.RIGHT_TOE)
       ) {
         cost += WEIGHTS.BRACKETJACK
       }
@@ -495,12 +529,12 @@ clear(): clear parity highlights`)
 
     // spin
     const previousLeftPos = this.averagePoint(
-      action.initialState.columns.indexOf(Foot.LEFT_HEEL),
-      action.initialState.columns.indexOf(Foot.LEFT_TOE)
+      initialState.columns.indexOf(Foot.LEFT_HEEL),
+      initialState.columns.indexOf(Foot.LEFT_TOE)
     )
     const previousRightPos = this.averagePoint(
-      action.initialState.columns.indexOf(Foot.RIGHT_HEEL),
-      action.initialState.columns.indexOf(Foot.RIGHT_TOE)
+      initialState.columns.indexOf(Foot.RIGHT_HEEL),
+      initialState.columns.indexOf(Foot.RIGHT_TOE)
     )
     const leftPos = this.averagePoint(endLeftHeel, endLeftToe)
     const rightPos = this.averagePoint(endRightHeel, endRightToe)
@@ -544,14 +578,14 @@ clear(): clear parity highlights`)
 
         for (let i = 0; i < combinedColumns.length; i++) {
           if (
-            action.initialState.columns[i] == Foot.NONE ||
-            action.resultState.columns[i] == Foot.NONE
+            initialState.columns[i] == Foot.NONE ||
+            resultState.columns[i] == Foot.NONE
           )
             continue
 
           if (
-            action.initialState.columns[i] != action.resultState.columns[i] &&
-            !action.resultState.movedFeet.has(action.initialState.columns[i])
+            initialState.columns[i] != resultState.columns[i] &&
+            !resultState.movedFeet.has(initialState.columns[i])
           ) {
             cost += Math.pow(timeScaled / 2.0, 2) * WEIGHTS.FOOTSWITCH
             break
@@ -561,19 +595,19 @@ clear(): clear parity highlights`)
     }
 
     if (
-      action.initialState.columns[0] != action.resultState.columns[0] &&
-      action.resultState.columns[0] != Foot.NONE &&
-      action.initialState.columns[0] != Foot.NONE &&
-      !action.resultState.movedFeet.has(action.initialState.columns[0])
+      initialState.columns[0] != resultState.columns[0] &&
+      resultState.columns[0] != Foot.NONE &&
+      initialState.columns[0] != Foot.NONE &&
+      !resultState.movedFeet.has(initialState.columns[0])
     ) {
       cost += WEIGHTS.SIDESWITCH
     }
 
     if (
-      action.initialState.columns[3] != action.resultState.columns[3] &&
-      action.resultState.columns[3] != Foot.NONE &&
-      action.initialState.columns[3] != Foot.NONE &&
-      !action.resultState.movedFeet.has(action.initialState.columns[3])
+      initialState.columns[3] != resultState.columns[3] &&
+      resultState.columns[3] != Foot.NONE &&
+      initialState.columns[3] != Foot.NONE &&
+      !resultState.movedFeet.has(initialState.columns[3])
     ) {
       cost += WEIGHTS.SIDESWITCH
     }
@@ -601,62 +635,43 @@ clear(): clear parity highlights`)
     }
 
     // To do: weighting for moving a foot a far distance in a fast time
-    for (const foot of action.resultState.movedFeet) {
-      const idxFoot = action.initialState.columns.indexOf(foot)
+    for (const foot of resultState.movedFeet) {
+      const idxFoot = initialState.columns.indexOf(foot)
       if (idxFoot == -1) continue
       cost +=
         (Math.sqrt(
           this.getDistanceSq(
             this.layout[idxFoot],
-            this.layout[action.resultState.columns.indexOf(foot)]
+            this.layout[resultState.columns.indexOf(foot)]
           )
         ) *
           WEIGHTS.DISTANCE) /
         elapsedTime
     }
 
-    action.cost = cost
-    action.resultState.columns = combinedColumns
+    resultState.columns = combinedColumns
 
-    if (this.costCache[rowIndex] === undefined)
-      this.costCache[rowIndex] = new Map()
-    this.exploreCounter++
-    this.costCache[rowIndex].set(cacheKey, cost)
+    return cost
   }
 
-  getPossibleActions(
-    initialState: State,
-    rows: Row[],
-    rowIndex: number
-  ): Action[] {
-    const row = rows[rowIndex]
-    return this.permuteColumn(row, new Array(4).fill(Foot.NONE), 0).map(
-      columns => {
-        const action = {
-          initialState,
-          resultState: {
-            columns,
-            movedFeet: new Set(
-              columns.filter((foot, idx) => {
-                if (foot === Foot.NONE) return false
-                if (!row.holds[idx]) return true
-                return initialState.columns[idx] != foot
-              })
-            ),
-            holdFeet: new Set(
-              columns.filter((foot, idx) => {
-                if (foot === Foot.NONE) return false
-                return row.holds[idx] !== undefined
-              })
-            ),
-            second: row.second,
-          },
-          cost: 0,
-        }
-        this.getActionCost(action, rows, rowIndex)
-        return action
+  calculatePermuteColumnKey(row: Row): number {
+    let permuteCacheKey = 0
+    for (let i = 0; i < 4; i++) {
+      if (row.notes[i] !== undefined || row.holds[i] !== undefined) {
+        permuteCacheKey += Math.pow(2, i)
       }
-    )
+    }
+    return permuteCacheKey
+  }
+
+  getPermuteColumns(row: Row): Foot[][] {
+    const cacheKey = this.calculatePermuteColumnKey(row)
+    let permuteColumns = this.permuteCache.get(cacheKey)
+    if (permuteColumns == undefined) {
+      permuteColumns = this.permuteColumn(row, new Array(4).fill(Foot.NONE), 0)
+      this.permuteCache.set(cacheKey, permuteColumns)
+    }
+    return this.permuteCache.get(cacheKey)!
   }
 
   permuteColumn(row: Row, columns: Foot[], column: number): Foot[][] {
@@ -687,7 +702,7 @@ clear(): clear parity highlights`)
       return [columns]
     }
     const permutations = []
-    if (row.notes[column] !== undefined || row.holds[column] !== undefined) {
+    if (row.notes[column] || row.holds[column]) {
       for (const foot of FEET) {
         if (columns.includes(foot)) continue
         const newColumns = [...columns]
@@ -809,116 +824,159 @@ clear(): clear parity highlights`)
     return rows
   }
 
-  analyze(
-    options: {
-      log?: boolean
-      delay?: number
-      searchDepth?: number
-      searchBreadth?: number
-    } = {}
-  ) {
-    const {
-      log = false,
-      delay = 0,
-      searchBreadth = 30,
-      searchDepth = 16,
-    } = options
-    this.SEARCH_BREADTH = searchBreadth
-    this.SEARCH_DEPTH = searchDepth
-    if (log) console.time("Analyze")
-    let state: State = {
-      columns: [0, 0, 0, 0],
-      movedFeet: new Set(),
-      holdFeet: new Set(),
-      second: -1,
-    }
-    this.costCache = []
-    this.cacheCounter = 0
-    this.exploreCounter = 0
+  analyze() {
     const notedata = this.app.chartManager.loadedChart?.getNotedata()
-    if (!notedata) return
+    if (!notedata) return []
     const rows = this.createRows(notedata)
-    let i = 0
-    this.stop = false
-    if (delay == 0) {
-      while (i != rows.length && !this.stop) {
-        const bestActions = this.getBestMoveLookahead(state, rows, i)
-        const bestAction = bestActions[0].head ?? bestActions[0]
-        if (log) console.log(i, bestActions, rows[i].second)
 
-        for (let j = 0; j < bestAction.resultState.columns.length; j++) {
-          if (rows[i].notes[j] !== undefined)
-            rows[i].notes[j]!.parity =
-              FEET_LABEL[FEET.indexOf(bestAction.resultState.columns[j])]
+    const graph = this.buildStateGraph(rows)
+    this.analyzeGraph(rows, graph)
+  }
+
+  // Analyzes the given graph to find the least costly path from the
+  // beginnning to the end of the stepchart.
+  // Sets the `parity` for the relevant notes of each row in rows.
+  analyzeGraph(rows: Row[], graph: StepParityGraph) {
+    const nodes_for_rows = this.computeCheapestPath(graph)
+    for (let i = 0; i < rows.length; i++) {
+      const node = graph.nodes[nodes_for_rows[i]]
+      for (let j = 0; j < 4; j++) {
+        if (rows[i].notes[j]) {
+          rows[i].notes[j]!.parity =
+            FEET_LABEL[FEET.indexOf(node.state.columns[j])]
         }
-        delete this.costCache[i]
-        i++
-        state = bestAction.resultState
       }
-      if (log) {
-        console.log(
-          "Explored nodes:",
-          this.exploreCounter,
-          "Cached nodes:",
-          this.cacheCounter
-        )
-        console.timeEnd("Analyze")
-      }
-    } else {
-      const run = () => {
-        const bestActions = this.getBestMoveLookahead(state, rows, i)
-        const bestAction = bestActions[0].head ?? bestActions[0]
-        if (log) console.log(i, bestActions, rows[i].second)
-        for (let j = 0; j < bestAction.resultState.columns.length; j++) {
-          if (rows[i].notes[j] !== undefined)
-            rows[i].notes[j]!.parity =
-              FEET_LABEL[FEET.indexOf(bestAction.resultState.columns[j])]
-        }
-        delete this.costCache[i]
-        i++
-        state = bestAction.resultState
-        if (i == rows.length || this.stop) {
-          if (log) {
-            console.log(
-              "Explored nodes:",
-              this.exploreCounter,
-              "Cached nodes:",
-              this.cacheCounter
-            )
-            console.timeEnd("Analyze")
-          }
-          return
-        }
-        setTimeout(run, delay)
-      }
-      run()
     }
   }
 
-  getBestMoveLookahead(state: State, rows: Row[], rowIndex: number) {
-    let actions = this.getPossibleActions(state, rows, rowIndex).sort(
-      (a, b) => a.cost - b.cost
-    )
-    for (let i = 1; i < this.SEARCH_DEPTH; i++) {
-      if (rows[i + rowIndex] === undefined) break
-      actions = actions
-        .flatMap(action => {
-          const results = this.getPossibleActions(
-            action.resultState,
-            rows,
-            rowIndex + i
-          )
-          results.forEach(result => {
-            result.cost = result.cost * Math.pow(0.95, i) + action.cost
-            result.head = action.head ?? action
-            result.parent = action
-          })
-          return results
-        })
-        .sort((a, b) => a.cost - b.cost)
-        .slice(0, this.SEARCH_BREADTH)
+  // Generates a StepParityGraph from the given array of Rows.
+  // The graph inserts two additional nodes: one that represent the beginning of the song, before the first note,
+  // and one that represents the end of the song, after the final note.
+  buildStateGraph(rows: Row[]): StepParityGraph {
+    const graph: StepParityGraph = new StepParityGraph()
+    const beginningState: State = {
+      rowIndex: -1,
+      second: rows[0].second - 1,
+      columns: [],
+      movedFeet: new Set(),
+      holdFeet: new Set(),
     }
-    return actions
+
+    const startNode: StepParityNode = graph.addOrGetExistingNode(beginningState)
+    graph.startNode = startNode.id
+
+    const previousStates: Array<State> = []
+    previousStates.push(beginningState)
+
+    for (let i = 0; i < rows.length; i++) {
+      const uniqueNodeIdxs = new Set<number>()
+      while (previousStates.length > 0) {
+        const state = previousStates.shift()!
+        const initialNode = graph.addOrGetExistingNode(state)
+        const permuteColumns = this.getPermuteColumns(rows[i])
+        for (const columns of permuteColumns) {
+          const resultState: State = this.initResultState(
+            state,
+            rows[i],
+            i,
+            columns
+          )
+          const cost = this.getActionCost(state, resultState, rows, i)
+          const resultNode = graph.addOrGetExistingNode(resultState)
+          graph.addEdge(initialNode, resultNode, cost)
+
+          uniqueNodeIdxs.add(resultNode.id)
+        }
+      }
+
+      for (const nodeIdx of uniqueNodeIdxs) {
+        previousStates.push(graph.nodes[nodeIdx].state)
+      }
+    }
+
+    // at this point, previousStates holds all of the states for the very last row,
+    // which just get connected to the endState
+
+    const endState: State = {
+      rowIndex: rows.length,
+      second: rows[rows.length - 1].second + 1,
+      columns: [],
+      movedFeet: new Set(),
+      holdFeet: new Set(),
+    }
+    const endNode = graph.addOrGetExistingNode(endState)
+    graph.endNode = endNode.id
+    while (previousStates.length > 0) {
+      const state = previousStates.shift()!
+      const node = graph.addOrGetExistingNode(state)
+      graph.addEdge(node, endNode, 0)
+    }
+
+    return graph
+  }
+
+  // Creates a new State, which is the result of moving from the given
+  // initialState to the steps of the given row with the given foot
+  // placements in columns.
+  initResultState(
+    initialState: State,
+    row: Row,
+    rowIndex: number,
+    columns: Foot[]
+  ): State {
+    const resultState: State = {
+      rowIndex: rowIndex,
+      second: row.second,
+      columns: columns,
+      movedFeet: new Set(),
+      holdFeet: new Set(),
+    }
+
+    for (let i = 0; i < 4; i++) {
+      if (columns[i] == undefined) {
+        continue
+      }
+
+      if (row.holds[i] == undefined) {
+        resultState.movedFeet.add(columns[i])
+      } else if (initialState.columns[i] != columns[i]) {
+        resultState.movedFeet.add(columns[i])
+      }
+      if (row.holds[i] != undefined) {
+        resultState.holdFeet.add(columns[i])
+      }
+    }
+
+    return resultState
+  }
+
+  computeCheapestPath(graph: StepParityGraph): number[] {
+    const start = graph.startNode
+    const end = graph.endNode
+    const shortest_path: number[] = []
+    const cost = Array(graph.nodes.length).fill(Number.MAX_VALUE)
+    const predecessor = Array(graph.nodes.length).fill(-1)
+
+    cost[start] = 0
+    for (let i = 0; i <= end; i++) {
+      const node = graph.nodes[i]!
+      for (const [neighborNodeIdx, weight] of node.neighbors) {
+        if (cost[i] + weight < cost[neighborNodeIdx]) {
+          cost[neighborNodeIdx] = cost[i] + weight
+          predecessor[neighborNodeIdx] = i
+        }
+      }
+    }
+
+    let current_node = end
+    while (current_node != start) {
+      if (current_node != end) {
+        shortest_path.push(current_node)
+      }
+      current_node = predecessor[current_node]
+    }
+    shortest_path.reverse()
+    return shortest_path
   }
 
   bracketCheck(column1: number, column2: number) {
@@ -1013,4 +1071,49 @@ clear(): clear parity highlights`)
     if (!notedata) return
     notedata.forEach(note => (note.parity = undefined))
   }
+}
+
+function compareStates(state1: State, state2: State): boolean {
+  if (state1.second !== state2.second) {
+    return false
+  }
+  if (state1.rowIndex !== state2.rowIndex) {
+    return false
+  }
+  if (!arraysAreEqual(state1.columns, state2.columns)) {
+    return false
+  }
+  if (!setsAreEqual(state1.movedFeet, state2.movedFeet)) {
+    return false
+  }
+  if (!setsAreEqual(state1.holdFeet, state2.holdFeet)) {
+    return false
+  }
+  return true
+}
+
+function arraysAreEqual<T>(array1: T[], array2: T[]): boolean {
+  if (array1.length !== array2.length) {
+    return false
+  }
+
+  for (let i = 0; i < array1.length; i++) {
+    if (array1[i] !== array2[i]) {
+      return false
+    }
+  }
+
+  return true
+}
+
+function setsAreEqual<T>(set1: Set<T>, set2: Set<T>): boolean {
+  if (set1.size !== set2.size) {
+    return false
+  }
+  for (const item of set1) {
+    if (!set2.has(item)) {
+      return false
+    }
+  }
+  return true
 }
