@@ -175,7 +175,7 @@ export class SyncWindow extends Window {
 
     this.offset = NumberSpinner.create(
       this.app.chartManager.loadedChart?.timingData.getOffset() ?? 0,
-      0.001,
+      Options.general.spinnerStep / 10,
       3
     )
     this.offset.onChange = value => {
@@ -201,7 +201,7 @@ export class SyncWindow extends Window {
         "BPMS",
         this.app.chartManager.getBeat()
       )?.value ?? 120,
-      0.001,
+      Options.general.spinnerStep,
       3
     )
     this.bpm.onChange = value => {

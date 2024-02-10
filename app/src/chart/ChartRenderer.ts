@@ -633,8 +633,8 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       }
 
       while (
-        scrolls[scrollIndex]?.beat ??
-        0 < this.getVisualBeat() + Options.chart.maxDrawBeats
+        (scrolls[scrollIndex]?.beat ?? 0) <
+        this.getVisualBeat() + Options.chart.maxDrawBeats
       ) {
         const scroll = scrolls[scrollIndex]
 
