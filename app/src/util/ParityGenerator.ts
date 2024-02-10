@@ -50,14 +50,6 @@ enum Foot {
 const FEET = [Foot.LEFT_HEEL, Foot.LEFT_TOE, Foot.RIGHT_HEEL, Foot.RIGHT_TOE]
 const FEET_LABEL = "LlRr"
 
-interface Action {
-  head?: Action
-  parent?: Action
-  initialState: State
-  resultState: State
-  cost: number
-}
-
 interface State {
   columns: Foot[]
   movedFeet: Set<Foot>
@@ -140,15 +132,7 @@ export class ParityGenerator {
   help() {
     console.log(`Currently only compatible with dance-single.
 Available commands: 
-analyze(options): analyze the current chart
-  options: {
-    log = false: do logging with intermediate steps
-    delay = 0: delay in ms between each row (set to 0 for instant)
-    searchDepth = 16: number of lookahead rows
-    searchBreadth = 30: number of candidates kept at each lookahead step
-  }
-  leave options blank for default
-stopAnalyzing(): stop analysis in case something goes wrong
+analyze(): analyze the current chart
 clear(): clear parity highlights`)
   }
 
@@ -1060,10 +1044,6 @@ clear(): clear parity highlights`)
       x: (this.layout[leftIndex].x + this.layout[rightIndex].x) / 2,
       y: (this.layout[leftIndex].y + this.layout[rightIndex].y) / 2,
     }
-  }
-
-  stopAnalyzing() {
-    this.stop = true
   }
 
   clear() {
