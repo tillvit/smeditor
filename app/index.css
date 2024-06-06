@@ -328,7 +328,7 @@ html {
 }
 .window:not(.focused) > .navbar {
   background: rgb(98, 98, 98);
-  border-bottom: none;
+  border-bottom: 1px solid transparent;
 }
 .navbar * {
   margin: 3px;

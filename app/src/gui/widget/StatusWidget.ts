@@ -81,6 +81,7 @@ export class StatusWidget extends Widget {
     this.editBar.classList.add("edit-bar")
 
     this.skipStart = document.createElement("button")
+    this.skipStart.tabIndex = -1
     const skipStartIcon = document.createElement("img")
     skipStartIcon.src = Icons.SKIP_START
     skipStartIcon.style.height = "36px"
@@ -93,6 +94,7 @@ export class StatusWidget extends Widget {
     })
 
     this.skipEnd = document.createElement("button")
+    this.skipEnd.tabIndex = -1
     const skipEndIcon = document.createElement("img")
     skipEndIcon.style.height = "36px"
     skipEndIcon.src = Icons.SKIP_END
@@ -110,6 +112,7 @@ export class StatusWidget extends Widget {
     })
 
     this.play = document.createElement("button")
+    this.play.tabIndex = -1
     const playIcon = document.createElement("img")
     playIcon.src = Icons.PLAY
     this.play.appendChild(playIcon)
@@ -129,6 +132,7 @@ export class StatusWidget extends Widget {
     })
 
     this.record = document.createElement("button")
+    this.record.tabIndex = -1
     const recordIcon = document.createElement("img")
     recordIcon.style.height = "36px"
     recordIcon.src = Icons.RECORD
@@ -144,6 +148,7 @@ export class StatusWidget extends Widget {
     if (Flags.viewMode || !Flags.recordMode) this.record.style.display = "none"
 
     this.playtest = document.createElement("button")
+    this.playtest.tabIndex = -1
     const playtestIcon = document.createElement("img")
     playtestIcon.style.height = "30px"
     playtestIcon.src = Icons.PLAYTEST
@@ -174,7 +179,6 @@ export class StatusWidget extends Widget {
     min.style.maxWidth = "27px"
     min.onkeydown = ev => {
       if (ev.key == "Enter") min.blur()
-      if (ev.key == "Tab") sec.focus()
       if (ev.key == "Escape") {
         min.innerText = Math.floor(
           Math.abs(this.manager.chartManager.getTime()) / 60
@@ -195,7 +199,6 @@ export class StatusWidget extends Widget {
     sec.style.maxWidth = "18px"
     sec.onkeydown = ev => {
       if (ev.key == "Enter") sec.blur()
-      if (ev.key == "Tab") millis.focus()
       if (ev.key == "Escape") {
         sec.innerText = Math.floor(
           Math.abs(this.manager.chartManager.getTime()) % 60
@@ -216,7 +219,6 @@ export class StatusWidget extends Widget {
     millis.style.maxWidth = "27px"
     millis.onkeydown = ev => {
       if (ev.key == "Enter") millis.blur()
-      if (ev.key == "Tab") min.focus()
       if (ev.key == "Escape") {
         millis.innerText = (
           roundDigit(Math.abs(this.manager.chartManager.getTime()) % 1, 3) *
@@ -311,6 +313,7 @@ export class StatusWidget extends Widget {
     this.playbackBar.appendChild(this.beatCounter)
 
     this.editSteps = document.createElement("button")
+    this.editSteps.tabIndex = -1
     this.editSteps.classList.add("edit-fancy-button")
     const editStepsIcon = document.createElement("img")
     editStepsIcon.src = Icons.ADD
@@ -322,6 +325,7 @@ export class StatusWidget extends Widget {
     this.editSteps.style.background = "rgba(255,255,255,0.15)"
 
     this.editTiming = document.createElement("button")
+    this.editTiming.tabIndex = -1
     this.editTiming.classList.add("edit-fancy-button")
     const editTimingIcon = document.createElement("img")
     editTimingIcon.src = Icons.SPEED
@@ -354,6 +358,7 @@ export class StatusWidget extends Widget {
     this.editChoiceContainer.appendChild(this.timingContainer)
 
     this.addTimingEvent = document.createElement("button")
+    this.addTimingEvent.tabIndex = -1
     const addTimingEventIcon = document.createElement("img")
     addTimingEventIcon.style.height = "32px"
     addTimingEventIcon.src = Icons.ADD_EVENT
@@ -370,6 +375,7 @@ export class StatusWidget extends Widget {
     })
 
     this.arrangeTimingTracks = document.createElement("button")
+    this.arrangeTimingTracks.tabIndex = -1
     const arrangeTimingTracksIcon = document.createElement("img")
     arrangeTimingTracksIcon.style.height = "32px"
     arrangeTimingTracksIcon.src = Icons.EYE
@@ -437,6 +443,7 @@ export class StatusWidget extends Widget {
         highlight.pivot.x = 24
         highlight.pivot.y = 24
         const element = document.createElement("button")
+        element.tabIndex = -1
         element.style.height = "48px"
         element.style.width = "48px"
         element.classList.add("note-placeholder")

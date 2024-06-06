@@ -72,6 +72,7 @@ export class NumberSpinner {
 
     const upButton = document.createElement("button")
     upButton.classList.add("spinner-up")
+    upButton.tabIndex = -1
     upButton.onclick = () => {
       if (
         max !== undefined &&
@@ -87,6 +88,7 @@ export class NumberSpinner {
 
     const downButton = document.createElement("button")
     downButton.classList.add("spinner-down")
+    downButton.tabIndex = -1
     downButton.onclick = () => {
       if (
         min !== undefined &&
