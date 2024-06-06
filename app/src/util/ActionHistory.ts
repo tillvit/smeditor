@@ -64,7 +64,6 @@ export class ActionHistory {
   }
 
   isDirty(): boolean {
-    console.log(this.itemIndex, this.limit)
     return this.itemIndex != this.limit
   }
 }

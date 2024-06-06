@@ -142,6 +142,7 @@ export class TimingTrackContainer
   }
 
   private initializeBox(box: TimingBox, event: Cached<TimingEvent>) {
+    BezierAnimator.stop(box.animationId)
     Object.assign(box, {
       event,
       isChartTiming: this.renderer.chart.timingData.isPropertyChartSpecific(
@@ -509,7 +510,7 @@ export class TimingTrackContainer
       }
 
       if (box.lastX === undefined || box.lastAnchor === undefined) {
-        box.position.x = targetX
+        box.x = targetX
         box.pivot.x = (targetAnchor - 0.5) * boxWidth
       } else if (box.lastX != targetX || box.lastAnchor != targetAnchor) {
         box.animationId = BezierAnimator.animate(
