@@ -175,7 +175,7 @@ export class SyncWindow extends Window {
 
     this.offset = NumberSpinner.create(
       this.app.chartManager.loadedChart?.timingData.getOffset() ?? 0,
-      Options.general.spinnerStep / 10,
+      Options.general.spinnerStep / 100,
       3
     )
     this.offset.onChange = value => {
