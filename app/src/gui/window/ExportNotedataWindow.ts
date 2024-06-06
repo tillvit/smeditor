@@ -173,6 +173,11 @@ export class ExportNotedataWindow extends Window {
 
           str += "}"
 
+          if (this.getNumIncludes() == 1) {
+            str = str.replaceAll("{", "")
+            str = str.replaceAll("}", "")
+          }
+
           return str
         })
         .join(",\n") +
@@ -180,6 +185,12 @@ export class ExportNotedataWindow extends Window {
     if (this.exportOptions.options.minify)
       exportText = exportText.replaceAll(/\s/g, "")
     this.outputDiv!.innerText = exportText
+  }
+
+  private getNumIncludes() {
+    return Object.values(this.exportOptions.include)
+      .map(option => +option)
+      .reduce((a, b) => a + b, 0)
   }
 
   private padNum(val: number) {
