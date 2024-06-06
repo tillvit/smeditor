@@ -598,8 +598,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     disabled: app => !app.chartManager.chartAudio || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new EQWindow(app)),
   },
-  syncAudio: {
-    label: "Sync Audio",
+  detectSync: {
+    label: "Detect audio sync",
     combos: [{ key: "L", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartAudio || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new SyncWindow(app)),

@@ -114,10 +114,10 @@ export class SyncWindow extends Window {
 
   constructor(app: App) {
     super({
-      title: "Sync Audio",
+      title: "Detect Audio Sync",
       width: 500,
       height: 400,
-      win_id: "sync-audio",
+      win_id: "detect-sync",
     })
     this.app = app
     this.initView()

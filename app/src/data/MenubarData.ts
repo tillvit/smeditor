@@ -467,7 +467,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
     options: [
       {
         type: "selection",
-        id: "adjustOffset",
+        id: "detectSync",
+      },
+      {
+        type: "separator",
       },
       {
         type: "checkbox",

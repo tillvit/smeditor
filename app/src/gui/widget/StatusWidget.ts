@@ -389,7 +389,7 @@ export class StatusWidget extends Widget {
     this.timingContainer.appendChild(this.arrangeTimingTracks)
 
     tippy(this.arrangeTimingTracks, {
-      content: "Arrange timing tracks",
+      content: "Toggle timing track visibility",
     })
 
     this.editBar.appendChild(this.editChoiceContainer)
