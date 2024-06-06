@@ -31,7 +31,12 @@ import { ParityGenerator } from "../util/ParityGenerator"
 import { basename, dirname, extname } from "../util/Path"
 import { tpsUpdate } from "../util/Performance"
 import { RecentFileHandler } from "../util/RecentFileHandler"
-import { bsearch, bsearchEarliest, compareObjects } from "../util/Util"
+import {
+  bsearch,
+  bsearchEarliest,
+  compareObjects,
+  getNoteEnd,
+} from "../util/Util"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { ChartRenderer } from "./ChartRenderer"
 import { ChartAudio } from "./audio/ChartAudio"
@@ -1145,7 +1150,7 @@ export class ChartManager {
     const notedata = this.loadedChart.getNotedata()
     if (notedata.length == 0) return
     const note = notedata[notedata.length - 1]
-    this.setBeat(note.beat + (isHoldNote(note) ? note.hold : 0))
+    this.setBeat(getNoteEnd(note))
   }
 
   private truncateHold(
@@ -2016,9 +2021,7 @@ export class ChartManager {
 
     if (clear) {
       // Remove all notes in the range that would be replaced
-      const endBeats = notes.map(
-        note => note.beat + (isHoldNote(note) ? note.hold : 0)
-      )
+      const endBeats = notes.map(note => getNoteEnd(note))
       let maxBeat = 0
       for (const endBeat of endBeats) {
         if (endBeat > maxBeat) {

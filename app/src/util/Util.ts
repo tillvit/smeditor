@@ -1,5 +1,6 @@
 import { Parser } from "expr-eval"
 import { DisplayObject, FederatedMouseEvent } from "pixi.js"
+import { PartialNotedataEntry, isHoldNote } from "../chart/sm/NoteTypes"
 import { IS_OSX } from "../data/KeybindData"
 
 const QUANTS = [
@@ -21,6 +22,10 @@ export function getQuantIndex(beat: number) {
     }
   }
   return 9
+}
+
+export function getNoteEnd(note: PartialNotedataEntry) {
+  return note.beat + (isHoldNote(note) ? note.hold : 0)
 }
 
 export function getDivision(beat: number) {

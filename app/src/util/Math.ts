@@ -49,3 +49,23 @@ export function lcm(array: number[]): number {
   for (let i = 0; i < array.length; ++i) n = lcm2(array[i], n)
   return n
 }
+
+export function minArr(array: number[]): number {
+  let min = Number.MAX_VALUE
+  for (const item of array) {
+    if (item < min) {
+      min = item
+    }
+  }
+  return min
+}
+
+export function maxArr(array: number[]): number {
+  let max = -Number.MAX_VALUE
+  for (const item of array) {
+    if (item > max) {
+      max = item
+    }
+  }
+  return max
+}
