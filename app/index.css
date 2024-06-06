@@ -1415,6 +1415,7 @@ input[type="range"] {
 }
 
 #status-widget .edit-fancy-button img {
+  margin-bottom: 3px;
   height: 23px;
 }
 

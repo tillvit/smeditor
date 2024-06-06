@@ -316,7 +316,7 @@ export class StatusWidget extends Widget {
     this.editSteps.tabIndex = -1
     this.editSteps.classList.add("edit-fancy-button")
     const editStepsIcon = document.createElement("img")
-    editStepsIcon.src = Icons.ADD
+    editStepsIcon.src = Icons.FEET
     this.editSteps.appendChild(editStepsIcon)
     this.editSteps.appendChild(document.createTextNode("Edit Steps"))
     this.editSteps.onclick = () => {
@@ -328,7 +328,7 @@ export class StatusWidget extends Widget {
     this.editTiming.tabIndex = -1
     this.editTiming.classList.add("edit-fancy-button")
     const editTimingIcon = document.createElement("img")
-    editTimingIcon.src = Icons.SPEED
+    editTimingIcon.src = Icons.METRONOME
     this.editTiming.appendChild(editTimingIcon)
     this.editTiming.appendChild(document.createTextNode("Edit Timing"))
     this.editTiming.onclick = () => {
