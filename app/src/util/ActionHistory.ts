@@ -47,6 +47,7 @@ export class ActionHistory {
 
   reset() {
     this.itemIndex = 0
+    this.limit = 0
     this.items = []
   }
 
@@ -63,6 +64,7 @@ export class ActionHistory {
   }
 
   isDirty(): boolean {
+    console.log(this.itemIndex, this.limit)
     return this.itemIndex != this.limit
   }
 }

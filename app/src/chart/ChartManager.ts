@@ -677,8 +677,6 @@ export class ChartManager {
       if (option == "Yes") this.save()
     }
 
-    ActionHistory.instance.setLimit()
-
     // Destroy everything if no path specified
     if (!path) {
       this.smPath = ""
