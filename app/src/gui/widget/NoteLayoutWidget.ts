@@ -192,7 +192,7 @@ export class NoteLayoutWidget extends Widget {
   }
 
   private getYFromRange(chart: Chart, start: number, end: number) {
-    const lastBeat = chart.getNotedata().at(-1)!.beat
+    const lastBeat = getNoteEnd(chart.getNotedata().at(-1)!)
     const lastSecond = chart.getSecondsFromBeat(lastBeat)
     let t_startY = unlerp(0, lastBeat, start)
     let t_endY = unlerp(0, lastBeat, end)

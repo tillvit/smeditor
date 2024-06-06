@@ -367,6 +367,7 @@ export class TimingTrackContainer
       const track =
         this.tracks.getChildByName<TimingTrack>(type) ??
         this.createTrack(type, x)
+      track.visible = true
       if (track.lastX != x) {
         track.lastX = x
         track.targetAlpha = i % 2 == 0 ? 0.1 : 0
