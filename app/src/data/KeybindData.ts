@@ -1157,6 +1157,17 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.paste(data)
     },
   },
+  pasteReplace: {
+    label: "Clear and paste",
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: async app => {
+      const data = await navigator.clipboard.readText()
+      app.chartManager.paste(data, true)
+    },
+  },
   copy: {
     label: "Copy",
     combos: [],

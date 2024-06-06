@@ -68,6 +68,12 @@ export class ContextMenuPopup {
         id: "paste",
       })
     )
+    menu.appendChild(
+      this.createElement(app, {
+        type: "selection",
+        id: "pasteReplace",
+      })
+    )
     if (
       app.chartManager.getMode() == EditMode.Edit &&
       app.chartManager.hasNoteSelection()

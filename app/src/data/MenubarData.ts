@@ -79,6 +79,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         id: "paste",
       },
       {
+        type: "selection",
+        id: "pasteReplace",
+      },
+      {
         type: "separator",
       },
       {
