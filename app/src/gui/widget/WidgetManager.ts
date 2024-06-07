@@ -6,7 +6,7 @@ import { NoteLayoutWidget } from "./NoteLayoutWidget"
 import { PlayInfoWidget } from "./PlayInfoWidget"
 import { StatusWidget } from "./StatusWidget"
 import { Widget } from "./Widget"
-
+import { NPSGraphWidget } from "./NPSGraphWidget"
 export class WidgetManager extends Container {
   app: App
   chartManager: ChartManager
@@ -20,6 +20,7 @@ export class WidgetManager extends Container {
     this.addChild(new PlayInfoWidget(this))
     this.addChild(new StatusWidget(this))
     this.addChild(new DebugWidget(this))
+    this.addChild(new NPSGraphWidget(this))
     this.zIndex = 2
   }
 
