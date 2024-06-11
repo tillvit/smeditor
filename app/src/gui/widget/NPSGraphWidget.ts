@@ -30,15 +30,19 @@ export class NPSGraphWidget extends Widget {
   bars: Sprite
   barTexture: RenderTexture
   overlay: Sprite = new Sprite(Texture.WHITE)
-  graph: Graphics
+  npsGraph: Graphics
 
   private lastHeight = 0
   private lastCMod
   private mouseDown = false
   private queued = false
+  private graphGradient: Texture | null = null
+
+  private graphWidth: number = 40
 
   constructor(manager: WidgetManager) {
     super(manager)
+    this.graphGradient = this.makeGradient()
     this.addChild(this.backing)
     this.visible = false
     this.backing.tint = 0
@@ -49,14 +53,21 @@ export class NPSGraphWidget extends Widget {
     this.bars = new Sprite(this.barTexture)
     this.bars.anchor.set(0.5)
     this.addChild(this.bars)
+
+    this.npsGraph = new Graphics()
+    this.addChild(this.npsGraph)
+
     this.overlay.anchor.x = 0.5
     this.overlay.anchor.y = 0
     this.overlay.alpha = 0.3
     this.lastCMod = Options.chart.CMod
     this.addChild(this.overlay)
     this.x = this.manager.app.renderer.screen.width / 2 - 20
-    this.graph = new Graphics()
-    this.addChild(this.graph)
+
+    this.setupEventHandlers()
+  }
+
+  private setupEventHandlers() {
     EventHandler.on("chartLoaded", () => {
       this.queued = false
       this.populate()
@@ -72,6 +83,15 @@ export class NPSGraphWidget extends Widget {
       }
     }, 3000)
 
+    EventHandler.on("userOptionUpdated", optionId => {
+      if (
+        optionId == "chart.npsGraph.color1" ||
+        optionId == "chart.npsGraph.color2"
+      ) {
+        this.graphGradient = this.makeGradient()
+        this.populate()
+      }
+    })
     this.on("destroyed", () => clearInterval(interval))
     this.populate()
 
@@ -109,6 +129,10 @@ export class NPSGraphWidget extends Widget {
   }
 
   update() {
+    if (!Options.chart.npsGraph.enabled) {
+      this.visible = false
+      return
+    }
     this.scale.y = Options.chart.reverse ? -1 : 1
     const height = this.manager.app.renderer.screen.height - 40
     this.backing.height = height + 10
@@ -179,17 +203,16 @@ export class NPSGraphWidget extends Widget {
       return
     }
     const childIndex = 0
-    const numCols = chart.gameType.numCols
     const lastNote = chart.getNotedata().at(-1)
     const firstNote = chart.getNotedata().at(0)
 
     const height = this.manager.app.renderer.screen.height - 40
     this.backing.height = height
-    this.backing.width = numCols * 6 + 8
-    this.overlay.width = numCols * 6 + 8
+    this.backing.width = this.graphWidth + 8
+    this.overlay.width = this.graphWidth + 8
     this.pivot.x = this.backing.width / 2
 
-    this.barTexture.resize(numCols * 6, height)
+    this.barTexture.resize(this.graphWidth, height)
 
     if (!lastNote || !firstNote) {
       destroyChildIf(this.barContainer.children, () => true)
@@ -205,17 +228,21 @@ export class NPSGraphWidget extends Widget {
     const maxNps = chart.getMaxNPS()
     const npsGraph = chart.getNPSGraph()
 
-    this.graph.clear()
+    this.npsGraph.clear()
     // this.graph.lineStyle(2, 0xffffff, 1)
-    this.graph.beginFill(0x00ff00, 1)
+    if (this.graphGradient) {
+      this.npsGraph.beginTextureFill({ texture: this.graphGradient })
+    } else {
+      this.npsGraph.beginFill(0x000000, 1)
+    }
 
-    this.graph.pivot.x = this.backing.width / 2
-    this.graph.pivot.y = height / 2
+    this.npsGraph.pivot.x = this.backing.width / 2
+    this.npsGraph.pivot.y = height / 2
 
     const lastMeasure = npsGraph.length
 
     const startY = this.getY(lastBeat, songOffset, lastSecond, 0, height)
-    this.graph.moveTo(0, startY)
+    this.npsGraph.moveTo(0, startY)
 
     for (let measureIndex = 0; measureIndex < lastMeasure; measureIndex++) {
       const nps = npsGraph[measureIndex] || 0
@@ -224,7 +251,7 @@ export class NPSGraphWidget extends Widget {
         lastBeat,
         chart.timingData.getBeatFromMeasure(measureIndex + 1)
       )
-      const x = unlerp(0, maxNps, nps) * numCols * 6
+      const x = unlerp(0, maxNps, nps) * this.graphWidth
       const y = this.getY(lastBeat, songOffset, lastSecond, beat, height)
       const endOfMeasureY = this.getY(
         lastBeat,
@@ -233,19 +260,17 @@ export class NPSGraphWidget extends Widget {
         endOfMeasureBeat,
         height
       )
-      console.log(
-        `measure: ${measureIndex}, nps: ${nps.toFixed(3)}, x: ${x}, y: ${y}`
-      )
-      this.graph.lineTo(x, y)
-      this.graph.lineTo(x, endOfMeasureY)
+
+      this.npsGraph.lineTo(x, y)
+      this.npsGraph.lineTo(x, endOfMeasureY)
     }
 
     const lastnps = npsGraph.at(-1)!
-    const lastX = unlerp(0, maxNps, lastnps) * numCols * 6
+    const lastX = unlerp(0, maxNps, lastnps) * this.graphWidth
     const lastY = this.getY(lastBeat, songOffset, lastSecond, lastBeat, height)
-    this.graph.lineTo(lastX, lastY)
-    this.graph.lineTo(0, lastY)
-    this.graph.endFill()
+    this.npsGraph.lineTo(lastX, lastY)
+    this.npsGraph.lineTo(0, lastY)
+    this.npsGraph.endFill()
     destroyChildIf(
       this.barContainer.children,
       (_, index) => index >= childIndex
@@ -272,5 +297,31 @@ export class NPSGraphWidget extends Widget {
   }
   private getChart(): Chart {
     return this.manager.chartManager.loadedChart!
+  }
+
+  private makeGradient() {
+    const quality = this.graphWidth
+    const canvas = document.createElement("canvas")
+
+    canvas.width = quality
+    canvas.height = quality
+
+    const ctx = canvas.getContext("2d")
+
+    if (ctx == null) {
+      return null
+    }
+    // use canvas2d API to create gradient
+    const grd = ctx.createLinearGradient(0, 0, quality, 0)
+
+    const color1 = `#${Options.chart.npsGraph.color1.toString(16)}`
+    const color2 = `#${Options.chart.npsGraph.color2.toString(16)}`
+    grd.addColorStop(0, color1)
+    grd.addColorStop(0.8, color2)
+
+    ctx.fillStyle = grd
+    ctx.fillRect(0, 0, quality, quality)
+
+    return Texture.from(canvas)
   }
 }

@@ -413,6 +413,41 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           },
         ],
       },
+      {
+        type: "subgroup",
+        label: "NPS Graph",
+        children: [
+          {
+            type: "item",
+            label: "Show NPS Graph",
+            id: "chart.npsGraph.enabled",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "subgroup",
+            children: [
+              {
+                type: "item",
+                label: "Start Color",
+                id: "chart.npsGraph.color1",
+                input: {
+                  type: "color",
+                },
+              },
+              {
+                type: "item",
+                label: "End Color",
+                id: "chart.npsGraph.color2",
+                input: {
+                  type: "color",
+                },
+              },
+            ],
+          },
+        ],
+      },
     ],
   },
   {
