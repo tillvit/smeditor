@@ -1,13 +1,5 @@
-import {
-  FederatedPointerEvent,
-  ParticleContainer,
-  RenderTexture,
-  Sprite,
-  Texture,
-  Graphics,
-} from "pixi.js"
+import { FederatedPointerEvent, Sprite, Texture, Graphics } from "pixi.js"
 import { EditMode } from "../../chart/ChartManager"
-import { QUANT_COLORS } from "../../chart/component/edit/SnapContainer"
 import { Chart } from "../../chart/sm/Chart"
 import { isHoldNote } from "../../chart/sm/NoteTypes"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
@@ -15,20 +7,11 @@ import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
 import { clamp, lerp, unlerp } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { destroyChildIf, getDivision } from "../../util/Util"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
 
 export class NPSGraphWidget extends Widget {
-  barContainer = new ParticleContainer(
-    1500,
-    { position: true, scale: true, tint: true },
-    16384,
-    true
-  )
   backing: BetterRoundedRect = new BetterRoundedRect()
-  bars: Sprite
-  barTexture: RenderTexture
   overlay: Sprite = new Sprite(Texture.WHITE)
   npsGraph: Graphics
 
@@ -47,12 +30,6 @@ export class NPSGraphWidget extends Widget {
     this.visible = false
     this.backing.tint = 0
     this.backing.alpha = 0.3
-    this.barTexture = RenderTexture.create({
-      resolution: this.manager.app.renderer.resolution,
-    })
-    this.bars = new Sprite(this.barTexture)
-    this.bars.anchor.set(0.5)
-    this.addChild(this.bars)
 
     this.npsGraph = new Graphics()
     this.addChild(this.npsGraph)
@@ -111,9 +88,7 @@ export class NPSGraphWidget extends Widget {
   private handleMouse(event: FederatedPointerEvent) {
     if (this.manager.chartManager.getMode() == EditMode.Play) return
     if (!this.getChart()) return
-    let t =
-      (this.bars.toLocal(event.global).y + this.bars.height / 2) /
-      this.bars.height
+    let t = this.npsGraph.toLocal(event.global).y / this.npsGraph.height
     t = clamp(t, 0, 1)
     const lastNote = this.getChart().getNotedata().at(-1)
     if (!lastNote) return
@@ -138,7 +113,6 @@ export class NPSGraphWidget extends Widget {
     this.backing.height = height + 10
     this.backing.position.y = -this.backing.height / 2
     this.backing.position.x = -this.backing.width / 2
-    this.bars.height = height
     this.x = this.manager.app.renderer.screen.width / 2 - 60
     const chart = this.getChart()
     const chartView = this.manager.chartManager.chartView!
@@ -195,14 +169,8 @@ export class NPSGraphWidget extends Widget {
   populate() {
     const chart = this.getChart()
     if (!chart) {
-      destroyChildIf(this.barContainer.children, () => true)
-
-      this.manager.app.renderer.render(this.barContainer, {
-        renderTexture: this.barTexture,
-      })
       return
     }
-    const childIndex = 0
     const lastNote = chart.getNotedata().at(-1)
     const firstNote = chart.getNotedata().at(0)
 
@@ -212,13 +180,7 @@ export class NPSGraphWidget extends Widget {
     this.overlay.width = this.graphWidth + 8
     this.pivot.x = this.backing.width / 2
 
-    this.barTexture.resize(this.graphWidth, height)
-
     if (!lastNote || !firstNote) {
-      destroyChildIf(this.barContainer.children, () => true)
-      this.manager.app.renderer.render(this.barContainer, {
-        renderTexture: this.barTexture,
-      })
       return
     }
     const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
@@ -229,7 +191,6 @@ export class NPSGraphWidget extends Widget {
     const npsGraph = chart.getNPSGraph()
 
     this.npsGraph.clear()
-    // this.graph.lineStyle(2, 0xffffff, 1)
     if (this.graphGradient) {
       this.npsGraph.beginTextureFill({ texture: this.graphGradient })
     } else {
@@ -271,14 +232,6 @@ export class NPSGraphWidget extends Widget {
     this.npsGraph.lineTo(lastX, lastY)
     this.npsGraph.lineTo(0, lastY)
     this.npsGraph.endFill()
-    destroyChildIf(
-      this.barContainer.children,
-      (_, index) => index >= childIndex
-    )
-
-    this.manager.app.renderer.render(this.barContainer, {
-      renderTexture: this.barTexture,
-    })
   }
 
   private getY(
