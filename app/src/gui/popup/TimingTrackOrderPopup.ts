@@ -30,7 +30,7 @@ export class TimingTrackOrderPopup {
         !this.popup?.contains(event.target as Node | null) &&
         !this.draggedElement?.contains(event.target as Node | null) &&
         !document
-          .getElementById("arrange-tracks")
+          .getElementById("toggle-tracks")
           ?.contains(event.target as Node | null)
       )
         this.close()
@@ -403,7 +403,7 @@ export class TimingTrackOrderPopup {
 
   private static movePosition() {
     if (!this.popup) return
-    const button = document.getElementById("arrange-tracks")
+    const button = document.getElementById("toggle-tracks")
     if (!button) return
     this.popup.style.display = ``
     const point = button.getBoundingClientRect()

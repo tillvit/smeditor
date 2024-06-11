@@ -11,6 +11,7 @@ import { Options } from "../../util/Options"
 import { Icons } from "../Icons"
 import { Dropdown } from "../element/Dropdown"
 import { TimingTrackOrderPopup } from "../popup/TimingTrackOrderPopup"
+import { SyncWindow } from "../window/SyncWindow"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
 
@@ -49,13 +50,17 @@ export class StatusWidget extends Widget {
   private readonly editChoiceContainer: HTMLDivElement
 
   private readonly addTimingEvent: HTMLButtonElement
-  private readonly arrangeTimingTracks: HTMLButtonElement
+  private readonly toggleTimingTracks: HTMLButtonElement
+  private readonly detectSync: HTMLButtonElement
+  private readonly offsetCounter: HTMLDivElement
+  private readonly offset: HTMLDivElement
 
   private noteArrows: NoteArrow[] = []
   private readonly noteArrowMask: Sprite
 
-  private lastTime = -1
-  private lastBeat = -1
+  private lastTime: number | null = null
+  private lastBeat: number | null = null
+  private lastOffset: number | null = null
   private lastMode = EditMode.Edit
   private lastTimingMode = EditTimingMode.Off
   private lastHover = 0
@@ -173,7 +178,7 @@ export class StatusWidget extends Widget {
     timeContainer.classList.add("playback-counter-main")
     const min = document.createElement("div")
     min.classList.add("inlineEdit")
-    min.innerText = "-"
+    min.innerText = "00"
     min.spellcheck = false
     min.contentEditable = "true"
     min.style.maxWidth = "27px"
@@ -193,7 +198,7 @@ export class StatusWidget extends Widget {
     min.ondragstart = ev => ev.preventDefault()
     const sec = document.createElement("div")
     sec.classList.add("inlineEdit")
-    sec.innerText = "-"
+    sec.innerText = "00"
     sec.spellcheck = false
     sec.contentEditable = "true"
     sec.style.maxWidth = "18px"
@@ -213,7 +218,7 @@ export class StatusWidget extends Widget {
     sec.ondragstart = ev => ev.preventDefault()
     const millis = document.createElement("div")
     millis.classList.add("inlineEdit")
-    millis.innerText = "-"
+    millis.innerText = "000"
     millis.spellcheck = false
     millis.contentEditable = "true"
     millis.style.maxWidth = "27px"
@@ -254,7 +259,7 @@ export class StatusWidget extends Widget {
     this.beatCounter.classList.add("playback-counter")
     const beat = document.createElement("div")
     beat.classList.add("playback-counter-main", "inlineEdit")
-    beat.innerText = "-"
+    beat.innerText = "0.000"
     beat.spellcheck = false
     beat.contentEditable = "true"
     beat.onkeydown = ev => {
@@ -374,23 +379,76 @@ export class StatusWidget extends Widget {
       content: "Add timing events",
     })
 
-    this.arrangeTimingTracks = document.createElement("button")
-    this.arrangeTimingTracks.tabIndex = -1
+    this.toggleTimingTracks = document.createElement("button")
+    this.toggleTimingTracks.tabIndex = -1
     const arrangeTimingTracksIcon = document.createElement("img")
     arrangeTimingTracksIcon.style.height = "32px"
     arrangeTimingTracksIcon.src = Icons.EYE
-    this.arrangeTimingTracks.appendChild(arrangeTimingTracksIcon)
-    this.arrangeTimingTracks.onclick = () => {
+    this.toggleTimingTracks.appendChild(arrangeTimingTracksIcon)
+    this.toggleTimingTracks.onclick = () => {
       TimingTrackOrderPopup.active
         ? TimingTrackOrderPopup.close()
         : TimingTrackOrderPopup.open()
     }
-    this.arrangeTimingTracks.id = "arrange-tracks"
-    this.timingContainer.appendChild(this.arrangeTimingTracks)
+    this.toggleTimingTracks.id = "toggle-tracks"
+    this.timingContainer.appendChild(this.toggleTimingTracks)
 
-    tippy(this.arrangeTimingTracks, {
+    tippy(this.toggleTimingTracks, {
       content: "Toggle timing track visibility",
     })
+
+    this.detectSync = document.createElement("button")
+    this.detectSync.tabIndex = -1
+    const detectSyncIcon = document.createElement("img")
+    detectSyncIcon.style.height = "32px"
+    detectSyncIcon.src = Icons.DETECT_SYNC
+    this.detectSync.appendChild(detectSyncIcon)
+    this.detectSync.onclick = () => {
+      this.manager.app.windowManager.openWindow(new SyncWindow(app))
+    }
+    this.detectSync.id = "detect-sync"
+    this.timingContainer.appendChild(this.detectSync)
+
+    tippy(this.detectSync, {
+      content: "Detect audio sync",
+    })
+
+    const line5 = document.createElement("div")
+    line5.classList.add("playback-separator")
+    this.timingContainer.appendChild(line5)
+
+    this.offsetCounter = document.createElement("div")
+    this.offsetCounter.classList.add("playback-counter")
+    const offsetLabel = document.createElement("div")
+    offsetLabel.classList.add("playback-counter-label")
+    offsetLabel.innerText = "Offset"
+    const offset = document.createElement("div")
+    offset.classList.add("playback-counter-main", "inlineEdit")
+    offset.innerText = "0.000"
+    offset.spellcheck = false
+    offset.contentEditable = "true"
+    offset.onkeydown = ev => {
+      if (ev.key == "Enter") offset.blur()
+      if (ev.key == "Escape") {
+        offset.innerText = roundDigit(
+          this.manager.chartManager.loadedChart?.timingData.getOffset() ?? 0,
+          3
+        ).toFixed(3)
+        offset.blur()
+      }
+    }
+    offset.tabIndex = -1
+    offset.onfocus = () => {
+      setTimeout(() => this.selectText(offset), 25)
+    }
+    offset.onblur = () => this.updateOffset()
+    offset.ondragstart = ev => ev.preventDefault()
+
+    this.offset = offset
+    this.offsetCounter.appendChild(offset)
+    this.offsetCounter.appendChild(offsetLabel)
+
+    this.timingContainer.appendChild(this.offsetCounter)
 
     this.editBar.appendChild(this.editChoiceContainer)
 
@@ -547,6 +605,14 @@ export class StatusWidget extends Widget {
       this.lastBeat = beat
     }
 
+    const offset =
+      this.manager.chartManager.loadedChart?.timingData.getOffset() ?? 0
+    if (this.lastOffset != offset) {
+      if (document.activeElement != this.offset) {
+        this.offset.innerText = roundDigit(offset, 3).toFixed(3)
+      }
+    }
+
     const mode = this.manager.chartManager.getMode()
     const timingMode = this.manager.chartManager.editTimingMode
     if (this.lastMode != mode) {
@@ -560,6 +626,7 @@ export class StatusWidget extends Widget {
           this.sec.contentEditable = "true"
           this.millis.contentEditable = "true"
           this.beat.contentEditable = "true"
+          this.offset.contentEditable = "true"
           this.record.style.background = ""
           this.playtest.style.background = ""
           this.view.style.opacity = ""
@@ -578,6 +645,7 @@ export class StatusWidget extends Widget {
           this.sec.contentEditable = "false"
           this.millis.contentEditable = "false"
           this.beat.contentEditable = "false"
+          this.offset.contentEditable = "false"
           if (timingMode != EditTimingMode.Off) {
             this.visible = false
           }
@@ -596,6 +664,7 @@ export class StatusWidget extends Widget {
           this.sec.contentEditable = "false"
           this.millis.contentEditable = "false"
           this.beat.contentEditable = "false"
+          this.offset.contentEditable = "false"
           if (timingMode != EditTimingMode.Off) {
             this.visible = false
           }
@@ -613,6 +682,7 @@ export class StatusWidget extends Widget {
           this.sec.contentEditable = "true"
           this.millis.contentEditable = "true"
           this.beat.contentEditable = "true"
+          this.offset.contentEditable = "true"
           if (timingMode != EditTimingMode.Off) {
             this.visible = false
           }
@@ -633,12 +703,14 @@ export class StatusWidget extends Widget {
           this.timingContainer.style.transform = ""
           this.editSteps.style.background = "rgba(255,255,255,0.15)"
           this.editTiming.style.background = ""
+          this.offset.tabIndex = -1
           break
         case EditTimingMode.Add:
           this.addTimingEvent.style.background = "rgba(255,255,255,0.15)"
           break
         case EditTimingMode.Edit:
           this.addTimingEvent.style.background = ""
+          this.offset.tabIndex = 0
       }
       if (
         (this.lastTimingMode == EditTimingMode.Off &&
@@ -749,20 +821,21 @@ export class StatusWidget extends Widget {
     const sec = this.parseString(this.sec)
     const millis = this.parseString(this.millis)
     if (min === null || sec === null || millis === null) {
-      this.lastTime = -999
+      this.lastTime = null
       return
     }
     let time = min * 60 + sec + millis / 1000
     if (time > 9999999) time = 9999999
+    if (time < 0) time = 0
     this.manager.chartManager.setTime(time)
     // force update
-    this.lastTime = -999
+    this.lastTime = null
   }
 
   private updateBeat() {
     let beat = this.parseString(this.beat)
     if (beat === null) {
-      this.lastBeat = -999
+      this.lastBeat = null
       return
     }
     if (this.beatDropdown.value == "Measure") {
@@ -770,16 +843,40 @@ export class StatusWidget extends Widget {
       beat = timingData?.getBeatFromMeasure(beat) ?? beat * 4
     }
     if (beat > 9999999) beat = 9999999
+    if (beat < 0) beat = 0
     this.manager.chartManager.setBeat(beat)
     // force update
-    this.lastBeat = -999
+    this.lastBeat = null
+  }
+
+  private updateOffset() {
+    let offset = this.parseString(this.offset)
+    if (offset === null) {
+      this.lastOffset = null
+      return
+    }
+    if (offset > 9999999) offset = 9999999
+    if (offset < -9999999) offset = -9999999
+
+    // force update
+    this.lastOffset = null
+
+    if (
+      !this.manager.chartManager.loadedChart ||
+      !this.manager.chartManager.loadedSM
+    )
+      return
+    ;(this.manager.chartManager.loadedChart.timingData.hasChartOffset()
+      ? this.manager.chartManager.loadedChart.timingData
+      : this.manager.chartManager.loadedSM.timingData
+    ).setOffset(offset)
+    this.manager.chartManager.setBeat(this.manager.chartManager.getBeat())
   }
 
   private parseString(el: HTMLDivElement) {
     try {
       const val = Parser.evaluate(el.innerText)
       if (!isFinite(val)) return 0
-      if (val < 0) return 0
       return val
     } catch {
       return null
