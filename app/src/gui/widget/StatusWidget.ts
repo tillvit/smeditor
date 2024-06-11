@@ -404,7 +404,9 @@ export class StatusWidget extends Widget {
     detectSyncIcon.src = Icons.DETECT_SYNC
     this.detectSync.appendChild(detectSyncIcon)
     this.detectSync.onclick = () => {
-      this.manager.app.windowManager.openWindow(new SyncWindow(app))
+      this.manager.app.windowManager.openWindow(
+        new SyncWindow(this.manager.app)
+      )
     }
     this.detectSync.id = "detect-sync"
     this.timingContainer.appendChild(this.detectSync)
