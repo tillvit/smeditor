@@ -39,10 +39,11 @@ export class Keybinds {
   }
 
   static checkKey(event: KeyboardEvent, type: "keydown" | "keyup") {
-    if (this.app.windowManager.getFocusedWindow()) return
+    // if (this.app.windowManager.getFocusedWindow()) return
     if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
     if (event.target instanceof HTMLTextAreaElement) return
     if (event.target instanceof HTMLInputElement) return
+    if (event.target instanceof HTMLButtonElement) return
     if (["Meta", "Control", "Shift", "Alt"].includes(event.key)) return
 
     const mods: Modifier[] = []
