@@ -131,7 +131,7 @@ export class ParityGenerator {
 
   help() {
     console.log(`Currently only compatible with dance-single.
-Available commands: 
+Available commands:
 analyze(): analyze the current chart
 clear(): clear parity highlights`)
   }
@@ -710,13 +710,13 @@ clear(): clear parity highlights`)
     for (const note of notedata) {
       if (note.type == "Mine") {
         if (note.second == lastColumnSecond && rows.length > 0) {
-          if (note.fake) {
+          if (note.fake || note.warped) {
             nextFakeMines[note.col] = note.second
           } else {
             nextMines[note.col] = note.second
           }
         } else {
-          if (note.fake) {
+          if (note.fake || note.warped) {
             fakeMines[note.col] = note.second
           } else {
             mines[note.col] = note.second
@@ -724,7 +724,7 @@ clear(): clear parity highlights`)
         }
         continue
       }
-      if (note.fake) continue
+      if (note.fake || note.warped) continue
       if (lastColumnSecond != note.second) {
         if (lastColumnSecond != null) {
           rows.push({

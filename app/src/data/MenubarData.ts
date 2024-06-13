@@ -269,6 +269,11 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "checkbox",
+        id: "reverse",
+        checked: () => Options.chart.reverse,
+      },
+      {
+        type: "checkbox",
         id: "hideWarpedArrows",
         checked: () => Options.chart.hideWarpedArrows,
       },

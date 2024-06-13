@@ -191,8 +191,8 @@ export class BasicNotedataParser extends NotedataParser {
         cols = 0
         row = note.beat
       }
-      if (note.type != "Mine" && !note.fake) cols++
-      if (note.fake) {
+      if (note.type != "Mine" && !note.fake && !note.warped) cols++
+      if (note.fake || note.warped) {
         stats.Fakes++
         continue
       }

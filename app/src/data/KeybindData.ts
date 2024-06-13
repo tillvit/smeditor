@@ -559,6 +559,17 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       WaterfallManager.create("Switched to CMod")
     },
   },
+  reverse: {
+    label: "Reverse playfield",
+    combos: [],
+    disabled: false,
+    callback: () => {
+      Options.chart.reverse = !Options.chart.reverse
+      WaterfallManager.create(
+        "Reverse Playfield: " + (Options.chart.reverse ? "on" : "off")
+      )
+    },
+  },
   hideWarpedArrows: {
     label: "Hide warped arrows (CMod only)",
     combos: [{ key: "W", mods: [Modifier.SHIFT] }],

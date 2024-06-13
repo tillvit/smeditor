@@ -93,10 +93,12 @@ export class StatusWidget extends Widget {
     this.skipStart.appendChild(skipStartIcon)
     this.skipStart.onclick = () => {
       this.manager.chartManager.setBeat(0)
+      this.skipStart.blur()
     }
-    tippy(this.skipStart, {
-      content: "Skip to start" + this.keybind("jumpSongStart"),
-    })
+
+    Keybinds.createKeybindTooltip(
+      this.skipStart
+    )`Skip to end ${"jumpSongStart"}`
 
     this.skipEnd = document.createElement("button")
     this.skipEnd.tabIndex = -1
@@ -110,11 +112,10 @@ export class StatusWidget extends Widget {
           this.manager.chartManager.chartAudio.getSongLength()
         )
       )
+      this.skipEnd.blur()
     }
 
-    tippy(this.skipEnd, {
-      content: "Skip to end" + this.keybind("jumpSongEnd"),
-    })
+    Keybinds.createKeybindTooltip(this.skipEnd)`Skip to end ${"jumpSongEnd"}`
 
     this.play = document.createElement("button")
     this.play.tabIndex = -1
@@ -130,11 +131,10 @@ export class StatusWidget extends Widget {
         this.manager.chartManager.setMode(EditMode.Edit)
       }
       this.manager.chartManager.playPause()
+      this.play.blur()
     }
 
-    tippy(this.play, {
-      content: "Play/Pause" + this.keybind("playback"),
-    })
+    Keybinds.createKeybindTooltip(this.play)`Play/Pause ${"playback"}`
 
     this.record = document.createElement("button")
     this.record.tabIndex = -1
@@ -144,11 +144,10 @@ export class StatusWidget extends Widget {
     this.record.appendChild(recordIcon)
     this.record.onclick = () => {
       this.manager.chartManager.setMode(EditMode.Record)
+      this.record.blur()
     }
 
-    tippy(this.record, {
-      content: "Record" + this.keybind("recordMode"),
-    })
+    Keybinds.createKeybindTooltip(this.record)`Record ${"recordMode"}`
 
     if (Flags.viewMode || !Flags.recordMode) this.record.style.display = "none"
 
@@ -160,11 +159,10 @@ export class StatusWidget extends Widget {
     this.playtest.appendChild(playtestIcon)
     this.playtest.onclick = () => {
       this.manager.chartManager.setMode(EditMode.Play)
+      this.playtest.blur()
     }
 
-    tippy(this.playtest, {
-      content: "Playtest" + this.keybind("playMode"),
-    })
+    Keybinds.createKeybindTooltip(this.playtest)`Playtest ${"playMode"}`
 
     if (!Flags.playMode) this.playtest.style.display = "none"
 
@@ -326,6 +324,7 @@ export class StatusWidget extends Widget {
     this.editSteps.appendChild(document.createTextNode("Edit Steps"))
     this.editSteps.onclick = () => {
       this.manager.chartManager.editTimingMode = EditTimingMode.Off
+      this.editSteps.blur()
     }
     this.editSteps.style.background = "rgba(255,255,255,0.15)"
 
@@ -338,6 +337,7 @@ export class StatusWidget extends Widget {
     this.editTiming.appendChild(document.createTextNode("Edit Timing"))
     this.editTiming.onclick = () => {
       this.manager.chartManager.editTimingMode = EditTimingMode.Edit
+      this.editTiming.blur()
     }
 
     const line4 = document.createElement("div")
@@ -372,6 +372,7 @@ export class StatusWidget extends Widget {
       if (this.manager.chartManager.editTimingMode == EditTimingMode.Add)
         this.manager.chartManager.editTimingMode = EditTimingMode.Edit
       else this.manager.chartManager.editTimingMode = EditTimingMode.Add
+      this.addTimingEvent.blur()
     }
     this.timingContainer.appendChild(this.addTimingEvent)
 
@@ -389,6 +390,7 @@ export class StatusWidget extends Widget {
       TimingTrackOrderPopup.active
         ? TimingTrackOrderPopup.close()
         : TimingTrackOrderPopup.open()
+      this.toggleTimingTracks.blur()
     }
     this.toggleTimingTracks.id = "toggle-tracks"
     this.timingContainer.appendChild(this.toggleTimingTracks)
@@ -407,13 +409,14 @@ export class StatusWidget extends Widget {
       this.manager.app.windowManager.openWindow(
         new SyncWindow(this.manager.app)
       )
+      this.detectSync.blur()
     }
     this.detectSync.id = "detect-sync"
     this.timingContainer.appendChild(this.detectSync)
 
-    tippy(this.detectSync, {
-      content: "Detect audio sync",
-    })
+    Keybinds.createKeybindTooltip(
+      this.detectSync
+    )`Detect audio sync ${"detectSync"}`
 
     const line5 = document.createElement("div")
     line5.classList.add("playback-separator")
@@ -509,8 +512,11 @@ export class StatusWidget extends Widget {
         element.classList.add("note-placeholder")
         element.onclick = () => {
           this.manager.chartManager.setEditingNoteType(type)
+          element.blur()
         }
-        tippy(element, { content: type + this.keybind("noteType" + type) })
+        Keybinds.createKeybindTooltip(element)`${"\\" + type} ${
+          "noteType" + type
+        }`
         const noteArrow = {
           element,
           sprite,
@@ -883,11 +889,5 @@ export class StatusWidget extends Widget {
     } catch {
       return null
     }
-  }
-
-  private keybind(id: string) {
-    const kbd = Keybinds.getKeybindString(id)
-    if (kbd == "") return ""
-    return " (" + kbd + ")"
   }
 }
