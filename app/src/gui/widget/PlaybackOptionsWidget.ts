@@ -260,6 +260,63 @@ export class PlaybackOptionsWidget extends Widget {
 
     this.fakeRow = fakeRow
 
+    const audioIcon = document.createElement("img")
+    audioIcon.src = Icons.VOLUME
+    audioIcon.style.marginLeft = "auto"
+    audioIcon.style.marginRight = "-16px"
+    audioIcon.style.height = "22px"
+    audioIcon.style.width = "22px"
+    audioIcon.style.alignSelf = "center"
+    view.appendChild(audioIcon)
+
+    const masterRow = this.createRow("Master")
+    const masterSpinner = this.createSpinner({
+      value: Options.audio.masterVolume * 100,
+      step: 5,
+      altStep: 1,
+      min: 0,
+      max: 200,
+      hardMin: 0,
+      hardMax: 200,
+      onChange: value => (Options.audio.masterVolume = value / 100),
+      getValue: () => Options.audio.masterVolume * 100,
+    })
+
+    masterRow.appendChild(masterSpinner)
+    view.appendChild(masterRow)
+
+    const songRow = this.createRow("Song")
+    const songSpinner = this.createSpinner({
+      value: Options.audio.songVolume * 100,
+      step: 5,
+      altStep: 1,
+      min: 0,
+      max: 200,
+      hardMin: 0,
+      hardMax: 200,
+      onChange: value => (Options.audio.songVolume = value / 100),
+      getValue: () => Options.audio.songVolume * 100,
+    })
+
+    songRow.appendChild(songSpinner)
+    view.appendChild(songRow)
+
+    const fxRow = this.createRow("FX")
+    const fxSpinner = this.createSpinner({
+      value: Options.audio.soundEffectVolume * 100,
+      step: 5,
+      altStep: 1,
+      min: 0,
+      max: 200,
+      hardMin: 0,
+      hardMax: 200,
+      onChange: value => (Options.audio.soundEffectVolume = value / 100),
+      getValue: () => Options.audio.soundEffectVolume * 100,
+    })
+
+    fxRow.appendChild(fxSpinner)
+    view.appendChild(fxRow)
+
     this.changeRow.style.setProperty("--w", this.changeRow.offsetWidth + "px")
     this.warpRow.style.setProperty("--w", this.warpRow.offsetWidth + "px")
     this.fakeRow.style.setProperty("--w", this.fakeRow.offsetWidth + "px")

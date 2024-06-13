@@ -306,7 +306,6 @@ html {
 #view-wrapper {
   display: flex;
   flex-direction: column;
-  height: 100%;
   width: 100%;
   caret-color: transparent;
 }
@@ -1213,8 +1212,13 @@ input.right {
 }
 
 #waterfall {
+  position: relative;
+  top: 0;
+}
+
+#waterfall-container {
   position: absolute;
-  top: 35px;
+  top: 9px;
   display: flex;
   flex-direction: column;
   text-align: right;
@@ -2393,7 +2397,7 @@ input[type="color"] {
 }
 
 #playback-options {
-  position: absolute;
+  height: 40px;
   top: 26px;
   left: 0px;
   display: flex;
@@ -2402,10 +2406,17 @@ input[type="color"] {
   user-select: none;
   gap: 24px;
   background-color: var(--bg-widget);
-  padding: 10px 10px;
+  padding: 0px 10px;
   font-size: 15px;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
   width: 100%;
+  position: relative;
+  top: 0;
+}
+
+#playback-options.collapsed {
+  height: 0px;
 }
 
 .playback-options-title {

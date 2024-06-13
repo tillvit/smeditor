@@ -1,4 +1,3 @@
-import { Flags } from "../../util/Flags"
 import { capitalize } from "../../util/Util"
 
 interface WaterfallMessage {
@@ -15,10 +14,9 @@ export class WaterfallManager {
 
   private static get view(): HTMLDivElement {
     if (!this._view) {
-      this._view = document.getElementById("waterfall") as HTMLDivElement
-      if (!Flags.menuBar) {
-        this._view.style.top = "10px"
-      }
+      this._view = document.getElementById(
+        "waterfall-container"
+      ) as HTMLDivElement
     }
     return this._view
   }
