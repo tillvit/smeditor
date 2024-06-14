@@ -67,11 +67,12 @@ export class TimingEventPopup {
       leftRestriction,
       rightRestriction
     )}px`
-    const centery = point.top + 35 + point.height / 2
-    this.popup.style.top = `${point.top + point.height + 35}px`
+    const canvasTop = document.getElementById("pixi")!.offsetTop + 9
+    const centery = point.top + canvasTop + point.height / 2
+    this.popup.style.top = `${point.top + point.height + canvasTop}px`
     if (centery + this.popup.clientHeight > window.innerHeight - 15) {
       this.popup.style.transform = `translate(-50%, -100%)`
-      this.popup.style.top = `${point.top - point.height / 2 + 35}px`
+      this.popup.style.top = `${point.top - point.height / 2 + canvasTop}px`
     }
 
     // allow smooth movement after initial one
