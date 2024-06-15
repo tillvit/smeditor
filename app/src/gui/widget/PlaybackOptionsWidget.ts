@@ -87,6 +87,7 @@ export class PlaybackOptionsWidget extends Widget {
 
     const collapseButton = document.createElement("button")
     collapseButton.classList.add("po-collapse")
+    collapseButton.tabIndex = -1
     collapseContainer.appendChild(collapseButton)
 
     const collapseIcon = document.createElement("img")
