@@ -58,7 +58,7 @@ export class NoteLayoutWidget extends Widget {
 
     this.selectionOverlay.anchor.x = 0.5
     this.selectionOverlay.anchor.y = 0
-    this.selectionOverlay.alpha = 0.8
+    this.selectionOverlay.alpha = 0.3
     this.selectionOverlay.tint = 0x4e6fa3
 
     this.lastCMod = Options.chart.CMod
