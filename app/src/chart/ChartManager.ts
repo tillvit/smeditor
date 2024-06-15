@@ -65,7 +65,7 @@ interface PartialHold {
   roll: boolean
   type: "mouse" | "key"
   originalNote: PartialNotedataEntry | undefined
-  removedNotes: PartialNotedataEntry[]
+  removedNotes: NotedataEntry[]
   truncatedHolds: {
     oldNote: PartialHoldNotedataEntry
     newNote: PartialNotedataEntry
@@ -1232,9 +1232,11 @@ export class ChartManager {
     this.getAssistTickIndex()
     this.app.actionHistory.run({
       action: () => {
-        holdEdit.removedNotes.forEach(note =>
+        holdEdit.removedNotes.forEach(note => {
           this.loadedChart!.removeNote(note)
-        )
+          this.removeNoteFromSelection(note)
+        })
+
         holdEdit.truncatedHolds.forEach(data =>
           this.loadedChart!.modifyNote(data.oldNote, data.newNote)
         )
