@@ -227,6 +227,7 @@ export class PlaybackOptionsWidget extends Widget {
     this.changeRow = changeRow
 
     const warpRow = this.createRow("Warped Notes")
+    warpRow.classList.add("hidden")
     const warpCheckbox = this.createCheckbox({
       getValue: () => Options.chart.hideWarpedArrows,
       value: Options.chart.hideWarpedArrows,
@@ -244,6 +245,7 @@ export class PlaybackOptionsWidget extends Widget {
     this.warpRow = warpRow
 
     const fakeRow = this.createRow("Faked Notes")
+    fakeRow.classList.add("hidden")
     const fakeCheckbox = this.createCheckbox({
       getValue: () => Options.chart.hideFakedArrows,
       value: Options.chart.hideFakedArrows,
