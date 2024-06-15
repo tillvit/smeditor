@@ -2398,7 +2398,6 @@ input[type="color"] {
 
 #playback-options {
   height: 40px;
-  top: 26px;
   left: 0px;
   display: flex;
   flex-direction: row;
@@ -2583,4 +2582,53 @@ input[type="color"] {
 
 .animated .po-toggle-highlight {
   transition: 0.15s cubic-bezier(0.61, 0.04, 0.38, 1.02);
+}
+
+.po-collapse-container {
+  position: relative;
+}
+
+#view-wrapper .po-collapse {
+  position: absolute;
+  left: 10px;
+  height: 30px;
+  width: 30px;
+
+  box-shadow: none;
+  transform: none;
+  border: none;
+  outline: none;
+  filter: none;
+  background-color: var(--bg-widget);
+  border-radius: 0px 0px 15px 15px;
+  padding: 0;
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+}
+
+#playback-options + .po-collapse-container .po-collapse img {
+  transform: scaleY(-1);
+}
+
+#playback-options.collapsed + .po-collapse-container .po-collapse img {
+  transform: scaleY(1);
+}
+
+.animated .po-collapse,
+.animated .po-collapse img {
+  transition: 0.15s cubic-bezier(0.61, 0.04, 0.38, 1.02);
+}
+
+#playback-options.collapsed + .po-collapse-container .po-collapse:hover {
+  height: 35px;
+}
+
+#playback-options + .po-collapse-container .po-collapse:hover {
+  height: 25px;
+}
+
+.po-collapse:active {
+  height: 30px;
 }

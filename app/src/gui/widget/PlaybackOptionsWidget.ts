@@ -1,4 +1,5 @@
 import { Parser } from "expr-eval"
+import tippy from "tippy.js"
 import { EditMode } from "../../chart/ChartManager"
 import { Keybinds } from "../../util/Keybinds"
 import { Options } from "../../util/Options"
@@ -73,8 +74,40 @@ export class PlaybackOptionsWidget extends Widget {
 
     const view = document.createElement("div")
     view.id = "playback-options"
+    if (!Options.general.showPlaybackOptions) {
+      view.classList.add("collapsed")
+    }
+
     document.getElementById("menubar")?.insertAdjacentElement("afterend", view)
 
+    // Add toggle button
+    const collapseContainer = document.createElement("div")
+    collapseContainer.classList.add("po-collapse-container")
+    view.insertAdjacentElement("afterend", collapseContainer)
+
+    const collapseButton = document.createElement("button")
+    collapseButton.classList.add("po-collapse")
+    collapseContainer.appendChild(collapseButton)
+
+    const collapseIcon = document.createElement("img")
+    collapseIcon.src = Icons.CHEVRON
+    collapseIcon.style.filter = "invert()"
+    collapseButton.appendChild(collapseIcon)
+
+    collapseButton.onclick = () => {
+      Options.general.showPlaybackOptions = !Options.general.showPlaybackOptions
+      view.classList.toggle("collapsed")
+      collapseButton.blur()
+    }
+
+    tippy(collapseButton, {
+      onShow(instance) {
+        instance.setContent(
+          (view.classList.contains("collapsed") ? "Show " : "Hide ") +
+            "playback options"
+        )
+      },
+    })
     const zoomRow = this.createRow("Zoom")
     const zoomSpinner = this.createSpinner({
       value: Options.chart.zoom * 100,
