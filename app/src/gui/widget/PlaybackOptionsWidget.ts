@@ -63,10 +63,14 @@ export class PlaybackOptionsWidget extends Widget {
   private changeRow: HTMLDivElement
   private warpRow: HTMLDivElement
   private fakeRow: HTMLDivElement
+  private view: HTMLDivElement
+  private collapseButton: HTMLButtonElement
 
   private lastSpeedMod = Options.chart.CMod
 
   private rateSpinner: Spinner
+
+  private enteredMain = false
 
   constructor(manager: WidgetManager) {
     super(manager)
@@ -78,28 +82,39 @@ export class PlaybackOptionsWidget extends Widget {
       view.classList.add("collapsed")
     }
 
+    view.style.height = "0px"
+
     document.getElementById("menubar")?.insertAdjacentElement("afterend", view)
 
-    // Add toggle button
-    const collapseContainer = document.createElement("div")
-    collapseContainer.classList.add("po-collapse-container")
-    view.insertAdjacentElement("afterend", collapseContainer)
+    this.view = view
 
+    // Add toggle button
     const collapseButton = document.createElement("button")
     collapseButton.classList.add("po-collapse")
     collapseButton.tabIndex = -1
-    collapseContainer.appendChild(collapseButton)
 
     const collapseIcon = document.createElement("img")
     collapseIcon.src = Icons.CHEVRON
     collapseIcon.style.filter = "invert()"
     collapseButton.appendChild(collapseIcon)
 
+    if (Options.general.showPlaybackOptions) {
+      collapseButton.classList.add("toggled")
+    }
+
+    this.collapseButton = collapseButton
+
     collapseButton.onclick = () => {
       Options.general.showPlaybackOptions = !Options.general.showPlaybackOptions
       view.classList.toggle("collapsed")
+      collapseButton.classList.toggle(
+        "toggled",
+        !view.classList.contains("collapsed")
+      )
       collapseButton.blur()
     }
+
+    collapseButton.style.display = "none"
 
     tippy(collapseButton, {
       onShow(instance) {
@@ -261,7 +276,6 @@ export class PlaybackOptionsWidget extends Widget {
     this.changeRow = changeRow
 
     const warpRow = this.createRow("Warped Notes")
-    warpRow.classList.add("hidden")
     const warpCheckbox = this.createCheckbox({
       getValue: () => Options.chart.hideWarpedArrows,
       value: Options.chart.hideWarpedArrows,
@@ -279,7 +293,6 @@ export class PlaybackOptionsWidget extends Widget {
     this.warpRow = warpRow
 
     const fakeRow = this.createRow("Faked Notes")
-    fakeRow.classList.add("hidden")
     const fakeCheckbox = this.createCheckbox({
       getValue: () => Options.chart.hideFakedArrows,
       value: Options.chart.hideFakedArrows,
@@ -603,6 +616,16 @@ export class PlaybackOptionsWidget extends Widget {
   }
 
   update() {
+    if (
+      !this.enteredMain &&
+      this.manager.chartManager.loadedChart !== undefined
+    ) {
+      this.enteredMain = true
+      this.view.style.height = ""
+      this.collapseButton.style.display = ""
+      document.getElementById("menubar")?.appendChild(this.collapseButton)
+    }
+
     for (const spinner of this.registeredSpinners) {
       if (spinner.currentValue != spinner.options.getValue()) {
         if (document.activeElement != spinner.input) {
