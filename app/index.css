@@ -2401,7 +2401,6 @@ input[type="color"] {
   left: 0px;
   display: flex;
   flex-direction: row;
-  border-radius: 5px;
   user-select: none;
   gap: 24px;
   background-color: var(--bg-widget);
