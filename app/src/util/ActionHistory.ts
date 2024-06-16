@@ -47,6 +47,7 @@ export class ActionHistory {
 
   reset() {
     this.itemIndex = 0
+    this.limit = 0
     this.items = []
   }
 

@@ -12,9 +12,9 @@ import { isHoldNote } from "../../chart/sm/NoteTypes"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
-import { clamp, lerp, unlerp } from "../../util/Math"
+import { clamp, lerp, maxArr, minArr, unlerp } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { destroyChildIf, getDivision } from "../../util/Util"
+import { destroyChildIf, getDivision, getNoteEnd } from "../../util/Util"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
 
@@ -29,6 +29,7 @@ export class NoteLayoutWidget extends Widget {
   bars: Sprite
   barTexture: RenderTexture
   overlay: Sprite = new Sprite(Texture.WHITE)
+  selectionOverlay: Sprite = new Sprite(Texture.WHITE)
 
   private lastHeight = 0
   private lastCMod
@@ -39,19 +40,30 @@ export class NoteLayoutWidget extends Widget {
     super(manager)
     this.addChild(this.backing)
     this.visible = false
+
     this.backing.tint = 0
     this.backing.alpha = 0.3
+
     this.barTexture = RenderTexture.create({
       resolution: this.manager.app.renderer.resolution,
     })
+
     this.bars = new Sprite(this.barTexture)
     this.bars.anchor.set(0.5)
     this.addChild(this.bars)
+
     this.overlay.anchor.x = 0.5
     this.overlay.anchor.y = 0
     this.overlay.alpha = 0.3
+
+    this.selectionOverlay.anchor.x = 0.5
+    this.selectionOverlay.anchor.y = 0
+    this.selectionOverlay.alpha = 0.3
+    this.selectionOverlay.tint = 0x4e6fa3
+
     this.lastCMod = Options.chart.CMod
     this.addChild(this.overlay)
+    this.addChild(this.selectionOverlay)
     this.x = this.manager.app.renderer.screen.width / 2 - 20
     EventHandler.on("chartLoaded", () => {
       this.queued = false
@@ -124,9 +136,8 @@ export class NoteLayoutWidget extends Widget {
       this.overlay.height = 0
       return
     }
-    const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
-    const lastSecond = chart.getSecondsFromBeat(lastBeat)
-    const start = Options.chart.CMod
+
+    const overlayStart = Options.chart.CMod
       ? chartView.getSecondFromYPos(
           -this.manager.app.renderer.screen.height / 2
         )
@@ -134,12 +145,55 @@ export class NoteLayoutWidget extends Widget {
           -this.manager.app.renderer.screen.height / 2,
           true
         )
-    const end = Options.chart.CMod
+    const overlayEnd = Options.chart.CMod
       ? chartView.getSecondFromYPos(this.manager.app.renderer.screen.height / 2)
       : chartView.getBeatFromYPos(
           this.manager.app.renderer.screen.height / 2,
           true
         )
+    const overlayRange = this.getYFromRange(chart, overlayStart, overlayEnd)
+    this.overlay.y = overlayRange.startY
+    this.overlay.height = overlayRange.endY - overlayRange.startY
+    this.overlay.height = Math.max(2, this.overlay.height)
+
+    const selection = this.manager.chartManager.selection.notes
+    if (selection.length < 1) {
+      this.selectionOverlay.visible = false
+    } else {
+      this.selectionOverlay.visible = true
+      let selectionStart, selectionEnd
+      if (Options.chart.CMod) {
+        selectionStart = minArr(selection.map(note => note.second))
+        selectionEnd = maxArr(
+          selection.map(note => chart.getSecondsFromBeat(getNoteEnd(note)))
+        )
+      } else {
+        selectionStart = minArr(selection.map(note => note.beat))
+        selectionEnd = maxArr(selection.map(note => getNoteEnd(note)))
+      }
+      const selectionRange = this.getYFromRange(
+        chart,
+        selectionStart,
+        selectionEnd
+      )
+      this.selectionOverlay.y = selectionRange.startY
+      this.selectionOverlay.height = selectionRange.endY - selectionRange.startY
+      this.selectionOverlay.height = Math.max(2, this.selectionOverlay.height)
+    }
+
+    if (
+      this.manager.app.renderer.screen.height != this.lastHeight ||
+      this.lastCMod != Options.chart.CMod
+    ) {
+      this.lastCMod = Options.chart.CMod
+      this.lastHeight = this.manager.app.renderer.screen.height
+      this.populate()
+    }
+  }
+
+  private getYFromRange(chart: Chart, start: number, end: number) {
+    const lastBeat = getNoteEnd(chart.getNotedata().at(-1)!)
+    const lastSecond = chart.getSecondsFromBeat(lastBeat)
     let t_startY = unlerp(0, lastBeat, start)
     let t_endY = unlerp(0, lastBeat, end)
     if (Options.chart.CMod) {
@@ -151,16 +205,9 @@ export class NoteLayoutWidget extends Widget {
     if (t_startY > t_endY) [t_startY, t_endY] = [t_endY, t_startY]
     const startY = (t_startY - 0.5) * (this.backing.height - 10)
     const endY = (t_endY - 0.5) * (this.backing.height - 10)
-    this.overlay.y = startY
-    this.overlay.height = endY - startY
-    this.overlay.height = Math.max(2, this.overlay.height)
-    if (
-      this.manager.app.renderer.screen.height != this.lastHeight ||
-      this.lastCMod != Options.chart.CMod
-    ) {
-      this.lastCMod = Options.chart.CMod
-      this.lastHeight = this.manager.app.renderer.screen.height
-      this.populate()
+    return {
+      startY,
+      endY,
     }
   }
 
@@ -182,6 +229,7 @@ export class NoteLayoutWidget extends Widget {
     this.backing.height = height
     this.backing.width = numCols * 6 + 8
     this.overlay.width = numCols * 6 + 8
+    this.selectionOverlay.width = numCols * 6 + 8
     this.pivot.x = this.backing.width / 2
 
     this.barTexture.resize(numCols * 6, height)

@@ -13,7 +13,7 @@ interface KeybindInserts {
   after?: string
 }
 
-const KEYBIND_BLACKLIST = ["cut", "copy", "paste"]
+const KEYBIND_BLACKLIST = ["cut", "copy", "paste", "pasteReplace"]
 const KEYBIND_INSERTS: Record<string, KeybindInserts[]> = {
   edit: [
     {

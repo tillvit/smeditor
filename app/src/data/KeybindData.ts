@@ -559,6 +559,17 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       WaterfallManager.create("Switched to CMod")
     },
   },
+  reverse: {
+    label: "Reverse playfield",
+    combos: [],
+    disabled: false,
+    callback: () => {
+      Options.chart.reverse = !Options.chart.reverse
+      WaterfallManager.create(
+        "Reverse Playfield: " + (Options.chart.reverse ? "on" : "off")
+      )
+    },
+  },
   hideWarpedArrows: {
     label: "Hide warped arrows (CMod only)",
     combos: [{ key: "W", mods: [Modifier.SHIFT] }],
@@ -598,8 +609,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     disabled: app => !app.chartManager.chartAudio || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new EQWindow(app)),
   },
-  syncAudio: {
-    label: "Sync Audio",
+  detectSync: {
+    label: "Detect audio sync",
     combos: [{ key: "L", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartAudio || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new SyncWindow(app)),
@@ -1155,6 +1166,17 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     callback: async app => {
       const data = await navigator.clipboard.readText()
       app.chartManager.paste(data)
+    },
+  },
+  pasteReplace: {
+    label: "Clear and paste",
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: async app => {
+      const data = await navigator.clipboard.readText()
+      app.chartManager.paste(data, true)
     },
   },
   copy: {

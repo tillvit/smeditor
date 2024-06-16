@@ -72,30 +72,30 @@ export class NumberSpinner {
 
     const upButton = document.createElement("button")
     upButton.classList.add("spinner-up")
-    upButton.onclick = () => {
-      if (
-        max !== undefined &&
-        parseFloat(input.value) + (step ?? Options.general.spinnerStep) > max
-      )
+    upButton.tabIndex = -1
+    upButton.onclick = e => {
+      let changeStep = step ?? Options.general.spinnerStep
+      if (e.getModifierState("Shift")) {
+        changeStep /= 10
+      }
+      if (max !== undefined && parseFloat(input.value) + changeStep > max)
         return
-      input.value = this.formatValue(
-        parseFloat(input.value) + (step ?? Options.general.spinnerStep)
-      )
+      input.value = this.formatValue(parseFloat(input.value) + changeStep)
       this.onChange?.(parseFloat(input.value))
     }
     spinner.appendChild(upButton)
 
     const downButton = document.createElement("button")
     downButton.classList.add("spinner-down")
-    downButton.onclick = () => {
-      if (
-        min !== undefined &&
-        parseFloat(input.value) - (step ?? Options.general.spinnerStep) < min
-      )
+    downButton.tabIndex = -1
+    downButton.onclick = e => {
+      let changeStep = step ?? Options.general.spinnerStep
+      if (e.getModifierState("Shift")) {
+        changeStep /= 10
+      }
+      if (min !== undefined && parseFloat(input.value) - changeStep < min)
         return
-      input.value = this.formatValue(
-        parseFloat(input.value) - (step ?? Options.general.spinnerStep)
-      )
+      input.value = this.formatValue(parseFloat(input.value) - changeStep)
       this.onChange?.(parseFloat(input.value))
     }
     spinner.appendChild(downButton)

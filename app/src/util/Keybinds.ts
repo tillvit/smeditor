@@ -1,3 +1,4 @@
+import tippy from "tippy.js"
 import { App } from "../App"
 import { EditMode } from "../chart/ChartManager"
 import { GameTypeRegistry } from "../chart/gameTypes/GameTypeRegistry"
@@ -39,9 +40,11 @@ export class Keybinds {
   }
 
   static checkKey(event: KeyboardEvent, type: "keydown" | "keyup") {
+    // if (this.app.windowManager.getFocusedWindow()) return
     if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
     if (event.target instanceof HTMLTextAreaElement) return
     if (event.target instanceof HTMLInputElement) return
+    if (event.target instanceof HTMLButtonElement) return
     if (["Meta", "Control", "Shift", "Alt"].includes(event.key)) return
 
     const mods: Modifier[] = []
@@ -123,12 +126,9 @@ export class Keybinds {
   }
 
   static getKeybindString(id: string): string {
-    if (!(id in KEYBIND_DATA)) {
-      console.warn("Couldn't find keybind with id " + id)
-      return ""
-    }
-    const item = KEYBIND_DATA[id]
-    return item.combos.map(combo => this.getComboString(combo)).join(" / ")
+    return this.getCombosForKeybind(id)
+      .map(combo => this.getComboString(combo))
+      .join(" / ")
   }
 
   static getComboString(combo: KeyCombo) {
@@ -385,5 +385,58 @@ export class Keybinds {
       gameplayKeybindObj[key] = combos
     }
     localStorage.setItem("keybindsGP", JSON.stringify(gameplayKeybindObj))
+  }
+
+  private static getKeybindTooltip(id: string) {
+    const combos = this.getCombosForKeybind(id)
+    return combos
+      .map(combo => {
+        let kbd = this.getComboString(combo)
+        if (kbd == "") return ""
+        kbd = kbd
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;")
+
+        return "<button class='pref-keybind-combo'>" + kbd + "</button>"
+      })
+      .join("")
+  }
+
+  private static evaluateTaggedTooltip(
+    strings: TemplateStringsArray,
+    ids: string[]
+  ) {
+    ids = ids.map(id => {
+      if (id.startsWith("\\")) return id.slice(1)
+      return this.getKeybindTooltip(id)
+    })
+
+    // Join both arrays together
+    const output = []
+    for (let i = 0; i < ids.length; i++) {
+      output.push(strings[i])
+      output.push(ids[i])
+    }
+    output.push(strings[ids.length + 1])
+
+    return (
+      `<div style='display: flex; align-items: center; gap: 6px'>` +
+      output.join("") +
+      "</div>"
+    )
+  }
+
+  static createKeybindTooltip(element: Element) {
+    return (strings: TemplateStringsArray, ...ids: string[]) => {
+      tippy(element, {
+        allowHTML: true,
+        onShow: inst => {
+          inst.setContent(this.evaluateTaggedTooltip(strings, ids))
+        },
+      })
+    }
   }
 }

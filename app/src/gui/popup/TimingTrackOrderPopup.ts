@@ -30,16 +30,17 @@ export class TimingTrackOrderPopup {
         !this.popup?.contains(event.target as Node | null) &&
         !this.draggedElement?.contains(event.target as Node | null) &&
         !document
-          .getElementById("arrange-tracks")
+          .getElementById("toggle-tracks")
           ?.contains(event.target as Node | null)
       )
         this.close()
     }
     setTimeout(() => window.addEventListener("click", this.clickOutside!, true))
 
-    // don't show until the position has been set
-    this.popup.style.display = `none`
+    // instantly snap to position when first showing
+    this.popup.style.transitionDuration = `0s`
     setTimeout(() => this.movePosition())
+
     clearTimeout(this.exitTimeout)
     this.moveInterval = setInterval(() => this.movePosition(), 150)
     this.active = true
@@ -55,9 +56,6 @@ export class TimingTrackOrderPopup {
     const container = document.createElement("div")
     container.classList.add("container")
     popupZoomer.appendChild(container)
-    const title = document.createElement("div")
-    title.classList.add("title")
-    title.innerText = "Arrange Timing Tracks"
     const gridOptions = document.createElement("div")
     gridOptions.classList.add("track-grid-options")
     const reset = document.createElement("button")
@@ -102,7 +100,6 @@ export class TimingTrackOrderPopup {
     }
     this.grid = document.createElement("div")
     this.grid.classList.add("track-grid")
-    container.appendChild(title)
     container.appendChild(this.grid)
     container.appendChild(gridOptions)
 
@@ -406,7 +403,7 @@ export class TimingTrackOrderPopup {
 
   private static movePosition() {
     if (!this.popup) return
-    const button = document.getElementById("arrange-tracks")
+    const button = document.getElementById("toggle-tracks")
     if (!button) return
     this.popup.style.display = ``
     const point = button.getBoundingClientRect()
@@ -426,6 +423,8 @@ export class TimingTrackOrderPopup {
       this.popup.style.transform = `translate(-50%, -100%)`
       this.popup.style.top = `${point.top - point.height / 2}px`
     }
+
+    setTimeout(() => (this.popup!.style.transitionDuration = ``), 10)
   }
 
   private static getClosestSlot(x: number) {
