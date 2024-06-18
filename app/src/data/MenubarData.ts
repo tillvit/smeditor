@@ -462,6 +462,14 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "selection",
+        id: "selectBeforeCursor",
+      },
+      {
+        type: "selection",
+        id: "selectAfterCursor",
+      },
+      {
+        type: "selection",
         id: "selectAll",
       },
     ],

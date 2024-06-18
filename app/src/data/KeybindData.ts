@@ -73,6 +73,13 @@ export const SPECIAL_KEYS: { [key: string]: string } = {
   Equal: "+",
 }
 
+export const KEY_DISPLAY_OVERRIDES: { [key: string]: string } = {
+  Home: IS_OSX ? "fn Left" : "Home",
+  End: IS_OSX ? "fn Right" : "End",
+  PageUp: IS_OSX ? "fn Up" : "End",
+  PageDown: IS_OSX ? "fn Down" : "End",
+}
+
 export const MODPROPS: ["ctrlKey", "altKey", "shiftKey", "metaKey"] = [
   "ctrlKey",
   "altKey",
@@ -459,7 +466,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   jumpChartStart: {
     label: "Jump to first note",
-    combos: [{ key: "Home", mods: [] }],
+    combos: [],
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
@@ -468,7 +475,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   jumpChartEnd: {
     label: "Jump to last note",
-    combos: [{ key: "End", mods: [] }],
+    combos: [],
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
@@ -477,7 +484,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   jumpSongStart: {
     label: "Jump to song start",
-    combos: [{ key: "Home", mods: [Modifier.SHIFT] }],
+    combos: [{ key: "Home", mods: [] }],
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
@@ -489,7 +496,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   jumpSongEnd: {
     label: "Jump to song end",
-    combos: [{ key: "End", mods: [Modifier.SHIFT] }],
+    combos: [{ key: "End", mods: [] }],
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
@@ -880,6 +887,46 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       })
     },
   },
+  selectBeforeCursor: {
+    label: "Select before cursor",
+    combos: [{ key: "Home", mods: [Modifier.SHIFT] }],
+    disabled: app => !app.chartManager.loadedChart,
+    callback: app => {
+      if (app.chartManager.editTimingMode == EditTimingMode.Off) {
+        app.chartManager.setNoteSelection(
+          app.chartManager
+            .loadedChart!.getNotedata()
+            .filter(note => note.beat < app.chartManager.getBeat())
+        )
+      } else {
+        app.chartManager.setEventSelection(
+          app.chartManager
+            .loadedChart!.timingData.getTimingData()
+            .filter(event => event.beat < app.chartManager.getBeat())
+        )
+      }
+    },
+  },
+  selectAfterCursor: {
+    label: "Select after cursor",
+    combos: [{ key: "End", mods: [Modifier.SHIFT] }],
+    disabled: app => !app.chartManager.loadedChart,
+    callback: app => {
+      if (app.chartManager.editTimingMode == EditTimingMode.Off) {
+        app.chartManager.setNoteSelection(
+          app.chartManager
+            .loadedChart!.getNotedata()
+            .filter(note => note.beat > app.chartManager.getBeat())
+        )
+      } else {
+        app.chartManager.setEventSelection(
+          app.chartManager
+            .loadedChart!.timingData.getTimingData()
+            .filter(event => event.beat > app.chartManager.getBeat())
+        )
+      }
+    },
+  },
   selectAll: {
     label: "Select all",
     combos: [{ key: "A", mods: [DEF_MOD] }],
@@ -1159,7 +1206,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   paste: {
     label: "Paste",
-    combos: [],
+    combos: [{ mods: [DEF_MOD], key: "V" }],
+    preventDefault: false,
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit,
@@ -1170,7 +1218,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   pasteReplace: {
     label: "Clear and paste",
-    combos: [],
+    combos: [{ mods: [DEF_MOD, Modifier.SHIFT], key: "V" }],
+    preventDefault: false,
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit,
@@ -1181,7 +1230,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   copy: {
     label: "Copy",
-    combos: [],
+    combos: [{ mods: [DEF_MOD], key: "C" }],
+    preventDefault: false,
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit ||
@@ -1193,7 +1243,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   cut: {
     label: "Cut",
-    combos: [],
+    combos: [{ mods: [DEF_MOD], key: "X" }],
+    preventDefault: false,
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit ||

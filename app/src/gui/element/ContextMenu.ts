@@ -81,7 +81,7 @@ export class ContextMenuPopup {
       const separator = document.createElement("div")
       separator.classList.add("separator")
       menu.appendChild(separator)
-      MENUBAR_DATA["selection"].options.slice(0, -2).forEach(option => {
+      MENUBAR_DATA["selection"].options.slice(0, -4).forEach(option => {
         menu.appendChild(this.createElement(app, option))
       })
     }
