@@ -1,4 +1,10 @@
-import { FederatedPointerEvent, Sprite, Texture, Graphics } from "pixi.js"
+import {
+  FederatedPointerEvent,
+  Sprite,
+  Texture,
+  Graphics,
+  BitmapText,
+} from "pixi.js"
 import { EditMode } from "../../chart/ChartManager"
 import { Chart } from "../../chart/sm/Chart"
 import { isHoldNote } from "../../chart/sm/NoteTypes"
@@ -22,6 +28,10 @@ export class NPSGraphWidget extends Widget {
   private graphGradient: Texture | null = null
 
   private graphWidth: number = 40
+  private npsText: BitmapText = new BitmapText("npsText", {
+    fontName: "Main",
+    fontSize: 12,
+  })
 
   constructor(manager: WidgetManager) {
     super(manager)
@@ -40,6 +50,10 @@ export class NPSGraphWidget extends Widget {
     this.lastCMod = Options.chart.CMod
     this.addChild(this.overlay)
     this.x = this.manager.app.renderer.screen.width / 2 - 20
+
+    this.npsText.visible = false
+    this.npsText.anchor.x = 1
+    this.addChild(this.npsText)
 
     this.setupEventHandlers()
   }
@@ -78,7 +92,11 @@ export class NPSGraphWidget extends Widget {
       this.handleMouse(event)
     })
     this.on("mousemove", event => {
-      if (this.mouseDown) this.handleMouse(event)
+      this.handleMouse(event)
+    })
+    this.on("mouseleave", () => {
+      this.mouseDown = false
+      this.clearNpsDisplay()
     })
     window.onmouseup = () => {
       this.mouseDown = false
@@ -86,6 +104,13 @@ export class NPSGraphWidget extends Widget {
   }
 
   private handleMouse(event: FederatedPointerEvent) {
+    if (this.mouseDown) {
+      this.handleUpdateChartPosition(event)
+    }
+    this.updateNpsDisplay(event)
+  }
+
+  private handleUpdateChartPosition(event: FederatedPointerEvent) {
     if (this.manager.chartManager.getMode() == EditMode.Play) return
     if (!this.getChart()) return
     let t = this.npsGraph.toLocal(event.global).y / this.npsGraph.height
@@ -101,6 +126,51 @@ export class NPSGraphWidget extends Widget {
     } else {
       this.manager.chartManager.setBeat(lastBeat * t)
     }
+  }
+
+  private updateNpsDisplay(event: FederatedPointerEvent) {
+    const chart = this.getChart()
+    if (!chart) {
+      this.npsText.visible = false
+      return
+    }
+    const lastNote = chart.getNotedata().at(-1)
+    if (!lastNote) {
+      this.npsText.visible = false
+      return
+    }
+    const npsGraph = chart.getNPSGraph()
+    const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
+    const lastSecond = chart.getSecondsFromBeat(lastBeat)
+
+    let t = this.npsGraph.toLocal(event.global).y / this.npsGraph.height
+    t = clamp(t, 0, 1)
+
+    const beat = lerp(0, lastBeat, t)
+    const npsIndex = Math.floor(chart.timingData.getMeasure(beat))
+
+    // npsGraph is a sparse array, so make sure we have a valid number,
+    // otherwise the nps for that measure is 0
+    const nps = npsGraph[npsIndex] ?? 0
+
+    const ypos =
+      this.getY(
+        lastBeat,
+        chart.timingData.getOffset(),
+        lastSecond,
+        beat,
+        this.npsGraph.height
+      ) -
+      this.npsGraph.height / 2
+
+    this.npsText.text = nps.toFixed(1) + " nps"
+    this.npsText.position.y = ypos - 6
+    this.npsText.position.x = -this.backing.width / 2 - 10
+    this.npsText.visible = true
+  }
+
+  private clearNpsDisplay() {
+    this.npsText.visible = false
   }
 
   update() {
