@@ -79,6 +79,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         id: "paste",
       },
       {
+        type: "selection",
+        id: "pasteReplace",
+      },
+      {
         type: "separator",
       },
       {
@@ -262,6 +266,11 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "separator",
+      },
+      {
+        type: "checkbox",
+        id: "reverse",
+        checked: () => Options.chart.reverse,
       },
       {
         type: "checkbox",
@@ -453,6 +462,14 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "selection",
+        id: "selectBeforeCursor",
+      },
+      {
+        type: "selection",
+        id: "selectAfterCursor",
+      },
+      {
+        type: "selection",
         id: "selectAll",
       },
     ],
@@ -463,7 +480,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
     options: [
       {
         type: "selection",
-        id: "adjustOffset",
+        id: "detectSync",
+      },
+      {
+        type: "separator",
       },
       {
         type: "checkbox",

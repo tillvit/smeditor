@@ -657,8 +657,8 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
           break
         if (
           (scroll?.value ?? 1) * sign < 0 &&
-          scrollEndYPos < lowerBound &&
-          (scrollStartYPos > lowerBound ||
+          scrollEndYPos < upperBound &&
+          (scrollStartYPos > upperBound ||
             !scrolls[scrollIndex - 1] ||
             scrolls[scrollIndex - 1].beat <
               this.getVisualBeat() - Options.chart.maxDrawBeatsBack ||
@@ -765,8 +765,8 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
           break
         if (
           (scroll?.value ?? 1) * sign < 0 &&
-          scrollStartYPos > upperBound &&
-          (scrollEndYPos < upperBound ||
+          scrollStartYPos > lowerBound &&
+          (scrollEndYPos < lowerBound ||
             !scrolls[scrollIndex + 1] ||
             scrolls[scrollIndex + 1].beat >
               this.getVisualBeat() + Options.chart.maxDrawBeatsBack ||

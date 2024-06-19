@@ -4,6 +4,7 @@ import { ChartManager } from "../../chart/ChartManager"
 import { DebugWidget } from "./DebugWidget"
 import { NoteLayoutWidget } from "./NoteLayoutWidget"
 import { PlayInfoWidget } from "./PlayInfoWidget"
+import { PlaybackOptionsWidget } from "./PlaybackOptionsWidget"
 import { StatusWidget } from "./StatusWidget"
 import { Widget } from "./Widget"
 import { NPSGraphWidget } from "./NPSGraphWidget"
@@ -21,6 +22,7 @@ export class WidgetManager extends Container {
     this.addChild(new StatusWidget(this))
     this.addChild(new DebugWidget(this))
     this.addChild(new NPSGraphWidget(this))
+    this.addChild(new PlaybackOptionsWidget(this))
     this.zIndex = 2
   }
 

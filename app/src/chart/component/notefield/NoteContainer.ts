@@ -2,6 +2,7 @@ import { Container, Sprite, Texture } from "pixi.js"
 import { rgbtoHex } from "../../../util/Color"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
+import { getNoteEnd } from "../../../util/Util"
 import { EditMode, EditTimingMode } from "../../ChartManager"
 import { NoteObject } from "../../gameTypes/base/Noteskin"
 import { TimingWindowCollection } from "../../play/TimingWindowCollection"
@@ -116,9 +117,8 @@ export class NoteContainer extends Container {
 
       if (isHoldNote(note)) {
         const holdLength =
-          this.notefield.renderer.getYPosFromBeat(
-            note.beat + (isHoldNote(note) ? note.hold : 0)
-          ) - container.y
+          this.notefield.renderer.getYPosFromBeat(getNoteEnd(note)) -
+          container.y
         this.setHoldLength(container.object, holdLength)
         if (note.gameplay?.lastHoldActivation) {
           let t =
@@ -177,7 +177,7 @@ export class NoteContainer extends Container {
       return false
     if (Options.chart.CMod && Options.chart.hideWarpedArrows && note.warped)
       return false
-    if (note.beat + (isHoldNote(note) ? note.hold : 0) < fromBeat) return false
+    if (getNoteEnd(note) < fromBeat) return false
     return note.beat <= toBeat
   }
 

@@ -37,6 +37,7 @@ export class BasicGameLogic extends GameLogic {
         note.beat != lastChord &&
         note.type != "Mine" &&
         !note.fake &&
+        !note.warped &&
         !note.gameplay!.hasHit
       ) {
         lastChord = note.beat
@@ -128,7 +129,7 @@ export class BasicGameLogic extends GameLogic {
     )
     this.chordCohesion.clear()
     for (const note of chartManager.loadedChart.getNotedata()) {
-      if (note.type == "Mine" || note.fake) continue
+      if (note.type == "Mine" || note.fake || note.warped) continue
       if (!this.chordCohesion.has(note.beat))
         this.chordCohesion.set(note.beat, [])
       this.chordCohesion.get(note.beat)!.push(note)
@@ -186,7 +187,7 @@ export class BasicGameLogic extends GameLogic {
   }
 
   shouldAssistTick(note: NotedataEntry): boolean {
-    return !note.fake && note.type != "Mine"
+    return !note.fake && !note.warped && note.type != "Mine"
   }
 
   private hitNote(
@@ -249,6 +250,7 @@ export class BasicGameLogic extends GameLogic {
         note.gameplay!.hasHit ||
         note.col != col ||
         note.fake ||
+        note.warped ||
         !types.includes(note.type)
       ) {
         firstHittableNote++

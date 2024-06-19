@@ -3,6 +3,7 @@ import { TimingData } from "../chart/sm/TimingData"
 import { Dropdown } from "../gui/element/Dropdown"
 import { NumberSpinner } from "../gui/element/NumberSpinner"
 import { roundDigit } from "../util/Math"
+import { Options } from "../util/Options"
 
 type TimingDataWindowElement<T extends HTMLElement> = {
   create: (app: App, getTarget: () => TimingData) => T
@@ -23,7 +24,11 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "Offset",
     element: createElement({
       create: (app, getTarget) => {
-        const input = NumberSpinner.create(0, 0.001, 3)
+        const input = NumberSpinner.create(
+          0,
+          Options.general.spinnerStep / 100,
+          3
+        )
         input.onChange = value => {
           if (value == undefined) return
           getTarget().setOffset(value)

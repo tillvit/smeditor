@@ -12,6 +12,7 @@ export class DefaultOptions {
     spinnerStep: 1,
     smoothAnimations: true,
     warnBeforeExit: true,
+    showPlaybackOptions: true,
   }
   static chart = {
     CMod: false,

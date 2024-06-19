@@ -279,10 +279,11 @@ export class App {
   }
 
   registerListeners() {
+    this.view.addEventListener("mousedown", () => {
+      this.windowManager.unfocusAll()
+    })
+
     window.addEventListener("keydown", function (e) {
-      if (e.code == "Tab") {
-        e.preventDefault()
-      }
       if (e.code == "Enter") {
         if (e.target instanceof HTMLButtonElement) {
           e.preventDefault()
@@ -299,7 +300,9 @@ export class App {
     setInterval(() => {
       const screenWidth = window.innerWidth
       const screenHeight =
-        window.innerHeight - document.getElementById("menubar")!.clientHeight
+        window.innerHeight -
+        document.getElementById("menubar")!.clientHeight -
+        document.getElementById("playback-options")!.clientHeight
       if (this.lastHeight != screenHeight || this.lastWidth != screenWidth) {
         this.lastHeight = screenHeight
         this.lastWidth = screenWidth
@@ -402,11 +405,11 @@ export class App {
 }
 
 document.querySelector("body")!.innerHTML = `<div id="popups"></div>
-          <div id="view-wrapper"> 
+          <div id="view-wrapper">
             <div id="menubar"></div>
-            <div id="waterfall"></div>
+            <div id="waterfall"><div id="waterfall-container"></div></div>
             <canvas id="pixi"></canvas>
-          </div> 
+          </div>
           <div id="context-menu"></div>
           <div id="blocker" style="display: none"></div>
           <div id="windows"></div>

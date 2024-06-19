@@ -142,6 +142,7 @@ export class TimingTrackContainer
   }
 
   private initializeBox(box: TimingBox, event: Cached<TimingEvent>) {
+    BezierAnimator.stop(box.animationId)
     Object.assign(box, {
       event,
       isChartTiming: this.renderer.chart.timingData.isPropertyChartSpecific(
@@ -323,12 +324,15 @@ export class TimingTrackContainer
       this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
       this.renderer.chartManager.getMode() == EditMode.Edit
 
+    this.tracks.children.forEach(child => (child.visible = false))
+
     let x = -this.renderer.chart.gameType.notefieldWidth * 0.5 - 128
     for (let i = leftTypes.length - 1; i >= 0; i--) {
       const type = leftTypes[i]
       const track =
         this.tracks.getChildByName<TimingTrack>(type) ??
         this.createTrack(type, x)
+      track.visible = true
       if (track.lastX != x) {
         track.lastX = x
         track.targetAlpha = i % 2 == 0 ? 0.1 : 0
@@ -364,6 +368,7 @@ export class TimingTrackContainer
       const track =
         this.tracks.getChildByName<TimingTrack>(type) ??
         this.createTrack(type, x)
+      track.visible = true
       if (track.lastX != x) {
         track.lastX = x
         track.targetAlpha = i % 2 == 0 ? 0.1 : 0
@@ -455,7 +460,12 @@ export class TimingTrackContainer
     }
 
     for (const [event, box] of this.timingBoxMap.entries()) {
-      if (event.beat < fromBeat || event.beat > toBeat) {
+      if (
+        event.beat < fromBeat ||
+        event.beat > toBeat ||
+        (!Options.chart.timingEventOrder.left.includes(event.type) &&
+          !Options.chart.timingEventOrder.right.includes(event.type))
+      ) {
         this.timingBoxMap.delete(event)
         if (box.popup?.persistent) box.popup?.detach()
         else box.popup?.close()
@@ -500,7 +510,7 @@ export class TimingTrackContainer
       }
 
       if (box.lastX === undefined || box.lastAnchor === undefined) {
-        box.position.x = targetX
+        box.x = targetX
         box.pivot.x = (targetAnchor - 0.5) * boxWidth
       } else if (box.lastX != targetX || box.lastAnchor != targetAnchor) {
         box.animationId = BezierAnimator.animate(

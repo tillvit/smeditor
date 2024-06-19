@@ -316,6 +316,12 @@ export class Chart {
   }
 
   requiresSSC(): boolean {
-    return this.timingData.requiresSSC()
+    return (
+      this.chartName !== "" ||
+      this.chartStyle !== "" ||
+      this.credit !== "" ||
+      this.music !== undefined ||
+      this.timingData.requiresSSC()
+    )
   }
 }

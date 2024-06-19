@@ -73,6 +73,13 @@ export const SPECIAL_KEYS: { [key: string]: string } = {
   Equal: "+",
 }
 
+export const KEY_DISPLAY_OVERRIDES: { [key: string]: string } = {
+  Home: IS_OSX ? "fn Left" : "Home",
+  End: IS_OSX ? "fn Right" : "End",
+  PageUp: IS_OSX ? "fn Up" : "End",
+  PageDown: IS_OSX ? "fn Down" : "End",
+}
+
 export const MODPROPS: ["ctrlKey", "altKey", "shiftKey", "metaKey"] = [
   "ctrlKey",
   "altKey",
@@ -459,7 +466,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   jumpChartStart: {
     label: "Jump to first note",
-    combos: [{ key: "Home", mods: [] }],
+    combos: [],
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
@@ -468,7 +475,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   jumpChartEnd: {
     label: "Jump to last note",
-    combos: [{ key: "End", mods: [] }],
+    combos: [],
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
@@ -477,7 +484,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   jumpSongStart: {
     label: "Jump to song start",
-    combos: [{ key: "Home", mods: [Modifier.SHIFT] }],
+    combos: [{ key: "Home", mods: [] }],
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
@@ -489,7 +496,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   jumpSongEnd: {
     label: "Jump to song end",
-    combos: [{ key: "End", mods: [Modifier.SHIFT] }],
+    combos: [{ key: "End", mods: [] }],
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() == EditMode.Play ||
@@ -559,6 +566,17 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       WaterfallManager.create("Switched to CMod")
     },
   },
+  reverse: {
+    label: "Reverse playfield",
+    combos: [],
+    disabled: false,
+    callback: () => {
+      Options.chart.reverse = !Options.chart.reverse
+      WaterfallManager.create(
+        "Reverse Playfield: " + (Options.chart.reverse ? "on" : "off")
+      )
+    },
+  },
   hideWarpedArrows: {
     label: "Hide warped arrows (CMod only)",
     combos: [{ key: "W", mods: [Modifier.SHIFT] }],
@@ -598,8 +616,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     disabled: app => !app.chartManager.chartAudio || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new EQWindow(app)),
   },
-  syncAudio: {
-    label: "Sync Audio",
+  detectSync: {
+    label: "Detect audio sync",
     combos: [{ key: "L", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartAudio || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new SyncWindow(app)),
@@ -867,6 +885,46 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
           app.chartManager.loadedChart!.gameType.flipColumns.vertical[note.col]
         return note
       })
+    },
+  },
+  selectBeforeCursor: {
+    label: "Select before cursor",
+    combos: [{ key: "Home", mods: [Modifier.SHIFT] }],
+    disabled: app => !app.chartManager.loadedChart,
+    callback: app => {
+      if (app.chartManager.editTimingMode == EditTimingMode.Off) {
+        app.chartManager.setNoteSelection(
+          app.chartManager
+            .loadedChart!.getNotedata()
+            .filter(note => note.beat < app.chartManager.getBeat())
+        )
+      } else {
+        app.chartManager.setEventSelection(
+          app.chartManager
+            .loadedChart!.timingData.getTimingData()
+            .filter(event => event.beat < app.chartManager.getBeat())
+        )
+      }
+    },
+  },
+  selectAfterCursor: {
+    label: "Select after cursor",
+    combos: [{ key: "End", mods: [Modifier.SHIFT] }],
+    disabled: app => !app.chartManager.loadedChart,
+    callback: app => {
+      if (app.chartManager.editTimingMode == EditTimingMode.Off) {
+        app.chartManager.setNoteSelection(
+          app.chartManager
+            .loadedChart!.getNotedata()
+            .filter(note => note.beat > app.chartManager.getBeat())
+        )
+      } else {
+        app.chartManager.setEventSelection(
+          app.chartManager
+            .loadedChart!.timingData.getTimingData()
+            .filter(event => event.beat > app.chartManager.getBeat())
+        )
+      }
     },
   },
   selectAll: {
@@ -1148,7 +1206,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   paste: {
     label: "Paste",
-    combos: [],
+    combos: [{ mods: [DEF_MOD], key: "V" }],
+    preventDefault: false,
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit,
@@ -1157,9 +1216,22 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.paste(data)
     },
   },
+  pasteReplace: {
+    label: "Clear and paste",
+    combos: [{ mods: [DEF_MOD, Modifier.SHIFT], key: "V" }],
+    preventDefault: false,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
+    callback: async app => {
+      const data = await navigator.clipboard.readText()
+      app.chartManager.paste(data, true)
+    },
+  },
   copy: {
     label: "Copy",
-    combos: [],
+    combos: [{ mods: [DEF_MOD], key: "C" }],
+    preventDefault: false,
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit ||
@@ -1171,7 +1243,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   cut: {
     label: "Cut",
-    combos: [],
+    combos: [{ mods: [DEF_MOD], key: "X" }],
+    preventDefault: false,
     disabled: app =>
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit ||
