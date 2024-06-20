@@ -88,6 +88,7 @@ export class Keybinds {
     // Check for normal keybinds
 
     const matches = Object.keys(KEYBIND_DATA)
+      .filter(id => !["cut", "copy", "paste", "pasteReplace"].includes(id)) // prevent keybinds from using these
       .filter(id => {
         for (const combo of this.getCombosForKeybind(id)) {
           if (this.compareModifiers(combo.mods, mods) && combo.key == key)
