@@ -541,13 +541,6 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       )
     },
   },
-  waveformOptions: {
-    label: "Waveform options...",
-    bindLabel: "Waveform options",
-    combos: [],
-    disabled: true,
-    callback: () => 0,
-  },
   XMod: {
     label: "XMod (Beat-based)",
     combos: [{ key: "X", mods: [Modifier.SHIFT] }],
