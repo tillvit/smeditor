@@ -26,12 +26,14 @@ export default defineConfig({
         items: [
           {
             text: "Timing Tracks and Events",
+            link: "/timing-events",
           },
           {
             text: "Audio Filtering",
           },
           {
             text: "Auto BPM Detection",
+            link: "/auto-sync",
           },
         ],
       },

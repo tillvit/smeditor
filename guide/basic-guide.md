@@ -67,7 +67,7 @@ Used to ArrowVortex? You can select *Chart > Edit timing data at row* for a simi
 :::
 
 You can find the tempo by using a [tap for BPM program online](https://www.all8.com/tools/bpm.htm)
-or by using the [Detect Sync feature]().
+or by using the [Detect Sync feature](./auto-sync).
 
 By default, the tempo is set to 120 beats per minute. You can change this by clicking on the red timing event
 box on the left of the receptors.
@@ -75,7 +75,7 @@ box on the left of the receptors.
 ![BPM Event](basic-guide-assets/bpm-event.png)
 
 If the tempo changes throughout the song you selected, you can read up on how to use
-multiple timing events [here]().
+multiple timing events [here](./timing-events).
 
 ---
 
