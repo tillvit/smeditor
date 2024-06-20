@@ -2132,21 +2132,21 @@ input[type="range"] {
 }
 
 .tippy-box[data-theme~="sm"] {
-  background-color: rgb(54, 54, 54);
+  background-color: rgba(20, 20, 20, 0.95);
   color: white;
 }
 
 .tippy-box[data-theme~="sm"][data-placement^="top"] > .tippy-arrow::before {
-  border-top-color: rgb(54, 54, 54);
+  border-top-color: rgba(20, 20, 20, 0.95);
 }
 .tippy-box[data-theme~="sm"][data-placement^="bottom"] > .tippy-arrow::before {
-  border-bottom-color: rgb(54, 54, 54);
+  border-bottom-color: rgba(20, 20, 20, 0.95);
 }
 .tippy-box[data-theme~="sm"][data-placement^="left"] > .tippy-arrow::before {
-  border-left-color: rgb(54, 54, 54);
+  border-left-color: rgba(20, 20, 20, 0.95);
 }
 .tippy-box[data-theme~="sm"][data-placement^="right"] > .tippy-arrow::before {
-  border-right-color: rgb(54, 54, 54);
+  border-right-color: rgba(20, 20, 20, 0.95);
 }
 
 .export-container {
