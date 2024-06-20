@@ -153,7 +153,7 @@ export class ChartManager {
   private lastMetronomeDivision = -1
   private lastMetronomeMeasure = -1
 
-  private lastSong = ""
+  private lastSong: string | null = null
 
   private mode: EditMode = EditMode.Edit
   private lastMode: EditMode = EditMode.Edit
@@ -689,7 +689,7 @@ export class ChartManager {
     }
 
     this.chartAudio.stop()
-    this.lastSong = ""
+    this.lastSong = null
     this.smPath = path
     this.time = 0
     this.beat = 0
