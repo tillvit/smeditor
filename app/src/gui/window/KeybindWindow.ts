@@ -1,5 +1,9 @@
 import { App } from "../../App"
-import { KEYBIND_DATA, Modifier } from "../../data/KeybindData"
+import {
+  KEYBIND_DATA,
+  KEY_DISPLAY_OVERRIDES,
+  Modifier,
+} from "../../data/KeybindData"
 import { MENUBAR_DATA, MenuOption } from "../../data/MenubarData"
 import { Keybinds } from "../../util/Keybinds"
 import { capitalize } from "../../util/Util"
@@ -224,6 +228,14 @@ export class KeybindWindow extends Window {
       if (
         combos.some(combo =>
           combo.key.toLowerCase().includes(filter.toLowerCase())
+        )
+      )
+        return true
+      if (
+        combos.some(combo =>
+          (KEY_DISPLAY_OVERRIDES[combo.key] ?? combo.key)
+            .toLowerCase()
+            .includes(filter.toLowerCase())
         )
       )
         return true

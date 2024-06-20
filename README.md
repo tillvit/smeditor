@@ -1,14 +1,20 @@
 # SMEditor
 
-Open source tool to view and edit StepMania charts..  
-You can view the tool at https://tillvit.github.io/smeditor  
+Open source tool to view and edit StepMania charts..
+You can view the tool at https://tillvit.github.io/smeditor
 Inspired by [ArrowVortex](https://arrowvortex.ddrnl.com/index.html)
 
 SMEditor is currently a work in progress. You can check the planned features [here](https://github.com/users/tillvit/projects/2)
 
-# Building/Testing
+# Running
 
-1. Clone the repository
-2. Install the required modules by running `npm install`
-3. Build the website with `npm run build` or start a dev web server with `npm run dev`
-4. Build the native app with `npm run app-build` or run the app with `npm run app-dev` (use `npm run dev` first)
+To start a dev web server, use `npm run dev`.
+To run the native app, run `npm run dev` and `npm run app:dev`.
+
+# Building
+
+The website is split into two parts: the core webapp and the guide.
+You can build them seperately using `npm run core:build` or `npm run guide:build`, or build them
+together using `npm run build`.
+
+To build the native app, run `npm run app-build`.

@@ -228,19 +228,9 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         ],
       },
       {
-        type: "dropdown",
-        title: "Waveform",
-        options: [
-          {
-            type: "checkbox",
-            id: "renderWaveform",
-            checked: () => Options.chart.waveform.enabled,
-          },
-          {
-            type: "selection",
-            id: "waveformOptions",
-          },
-        ],
+        type: "checkbox",
+        id: "renderWaveform",
+        checked: () => Options.chart.waveform.enabled,
       },
       {
         type: "separator",
@@ -459,6 +449,14 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "separator",
+      },
+      {
+        type: "selection",
+        id: "selectBeforeCursor",
+      },
+      {
+        type: "selection",
+        id: "selectAfterCursor",
       },
       {
         type: "selection",

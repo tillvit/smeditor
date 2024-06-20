@@ -60,9 +60,9 @@ export const FLAG_MAP: Record<BooleanFlags, { char: string; name: string }> = {
     char: "M",
     name: "Hide menu bar",
   },
-  chartList: {
-    char: "C",
-    name: "Hide chart list (in development)",
+  playbackOptions: {
+    char: "o",
+    name: "Hide playback options",
   },
   barlines: {
     char: "B",
@@ -109,7 +109,7 @@ const CHAR_MAP = Object.fromEntries(
 interface URLFlags {
   viewMode: boolean
   menuBar: boolean
-  chartList: boolean
+  playbackOptions: boolean
   barlines: boolean
   assist: boolean
   recordMode: boolean
@@ -127,7 +127,7 @@ interface URLFlags {
 export const Flags: URLFlags = {
   viewMode: false,
   menuBar: true,
-  chartList: true,
+  playbackOptions: true,
   barlines: true,
   assist: true,
   recordMode: true,

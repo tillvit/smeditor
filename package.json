@@ -5,11 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "app-dev": "cross-env EXECUTION_MODE='DEBUG' node nwrun.js",
-    "app-build": "node nwbuild.js",
+    "build": "npm run core:build && npm run guide:build",
+    "core:build": "tsc && vite build",
+    "app:dev": "cross-env EXECUTION_MODE='DEBUG' node nwrun.js",
+    "app:build": "node nwbuild.js",
     "preview": "vite preview",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "guide:dev": "vitepress dev guide",
+    "guide:build": "vitepress build guide",
+    "guide:preview": "vitepress preview guide"
   },
   "devDependencies": {
     "@types/file-saver": "^2.0.5",
@@ -30,7 +34,8 @@
     "prettier-plugin-glsl": "^0.1.2",
     "typescript": "^5.1.6",
     "vite": "^4.4.9",
-    "vite-plugin-pwa": "^0.16.5"
+    "vite-plugin-pwa": "^0.16.5",
+    "vitepress": "^1.2.3"
   },
   "dependencies": {
     "@pixi/filter-adjustment": "^5.0.0",

@@ -135,8 +135,13 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
         Math.max(0, this.chartManager.getBeat() + selectionSpeed)
       )
       if (this.selectionBounds) {
-        this.selectionBounds.start.y +=
-          Options.chart.receptorYPos / Options.chart.zoom - pos
+        if (Options.chart.reverse) {
+          this.selectionBounds.start.y -=
+            Options.chart.receptorYPos / Options.chart.zoom + pos
+        } else {
+          this.selectionBounds.start.y +=
+            Options.chart.receptorYPos / Options.chart.zoom - pos
+        }
         this.selectionBoundary.update()
       }
     }
@@ -221,6 +226,15 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       if (this.lastMousePos.y < 0) {
         selectionSpeed =
           Math.min(0, this.lastMousePos.y - this.getUpperBound() - 100) / 600
+      }
+
+      if (Options.chart.reverse) {
+        selectionSpeed =
+          Math.max(0, this.getLowerBound() - this.lastMousePos.y + 100) / 600
+        if (this.lastMousePos.y > 0) {
+          selectionSpeed =
+            Math.min(0, this.getUpperBound() - this.lastMousePos.y - 100) / 600
+        }
       }
     })
 

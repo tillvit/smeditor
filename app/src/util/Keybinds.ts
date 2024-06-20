@@ -4,6 +4,7 @@ import { EditMode } from "../chart/ChartManager"
 import { GameTypeRegistry } from "../chart/gameTypes/GameTypeRegistry"
 import { GAMEPLAY_KEYBINDS } from "../data/GameplayKeybindData"
 import {
+  KEY_DISPLAY_OVERRIDES,
   KEYBIND_DATA,
   KeyCombo,
   Modifier,
@@ -87,6 +88,7 @@ export class Keybinds {
     // Check for normal keybinds
 
     const matches = Object.keys(KEYBIND_DATA)
+      .filter(id => !["cut", "copy", "paste", "pasteReplace"].includes(id)) // prevent keybinds from using these
       .filter(id => {
         for (const combo of this.getCombosForKeybind(id)) {
           if (this.compareModifiers(combo.mods, mods) && combo.key == key)
@@ -135,7 +137,11 @@ export class Keybinds {
     const modString = MODORDER.filter(x => combo.mods.includes(x))
       .map(mod => MODIFIER_ASCII[mod])
       .join("")
-    return modString + (modString != "" ? " " : "") + combo.key
+    return (
+      modString +
+      (modString != "" ? " " : "") +
+      (KEY_DISPLAY_OVERRIDES[combo.key] ?? combo.key)
+    )
   }
 
   static getCombosForKeybind(id: string) {

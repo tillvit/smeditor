@@ -1,6 +1,7 @@
 import { Parser } from "expr-eval"
 import tippy from "tippy.js"
 import { EditMode } from "../../chart/ChartManager"
+import { Flags } from "../../util/Flags"
 import { Keybinds } from "../../util/Keybinds"
 import { Options } from "../../util/Options"
 import { Icons } from "../Icons"
@@ -373,6 +374,11 @@ export class PlaybackOptionsWidget extends Widget {
     this.changeRow.classList.toggle("hidden", Options.chart.CMod)
     this.warpRow.classList.toggle("hidden", !Options.chart.CMod)
     this.fakeRow.classList.toggle("hidden", !Options.chart.CMod)
+
+    if (!Flags.playbackOptions) {
+      view.style.display = "none"
+      collapseButton.style.display = "none"
+    }
   }
 
   createRow(name: string) {
