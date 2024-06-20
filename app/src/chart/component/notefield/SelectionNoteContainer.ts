@@ -39,14 +39,17 @@ export class SelectionNoteContainer extends Container {
       this.lastBeatShift = beatShift
       this.lastColShift = columnShift
       for (const [note, container] of this.arrowMap.entries()) {
-        const newNote = {
-          ...note,
-          beat: note.beat + beatShift,
-          col: note.col + columnShift,
-        }
+        const newNote =
+          this.notefield.renderer.chartManager.loadedChart!.computeNote({
+            ...note,
+            beat: note.beat + beatShift,
+            col: note.col + columnShift,
+          })
+
         container.x = this.notefield.getColumnX(newNote.col)
         container.object.destroy()
         container.object.alpha = 0.4
+        console.log("create", newNote)
         container.object = this.notefield.noteskin.createNote(newNote)
         container.object.note.rotation = this.notefield.getColumnRotation(
           newNote.col
