@@ -98,7 +98,7 @@ export class StatusWidget extends Widget {
 
     Keybinds.createKeybindTooltip(
       this.skipStart
-    )`Skip to end ${"jumpSongStart"}`
+    )`Skip to start ${"jumpSongStart"}`
 
     this.skipEnd = document.createElement("button")
     this.skipEnd.tabIndex = -1
