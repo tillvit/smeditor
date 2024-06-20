@@ -49,7 +49,6 @@ export class SelectionNoteContainer extends Container {
         container.x = this.notefield.getColumnX(newNote.col)
         container.object.destroy()
         container.object.alpha = 0.4
-        console.log("create", newNote)
         container.object = this.notefield.noteskin.createNote(newNote)
         container.object.note.rotation = this.notefield.getColumnRotation(
           newNote.col
