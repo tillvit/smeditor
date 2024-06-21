@@ -56,7 +56,9 @@ Now that you have a new chart, you can close the window.
 
 ## Terminology
 
+Here are the names of some parts of the editor:
 
+![Parts](basic-guide-assets/parts.png)
 
 ## Syncing
 
@@ -83,7 +85,7 @@ Next, you can set the offset, measured in seconds, to start the song earlier or 
 Negative values will start the song before beat 0, while positive values will start it
 after.
 
-You can change the offset by clicking the Edit Timing button on the playback bar.
+You can change the offset by clicking the Edit Timing button on the playback toolbar.
 
 
 ![Edit Timing](basic-guide-assets/playback-timing.png)
@@ -117,7 +119,7 @@ arrow keys. The current snap is displayed as two diamonds next to the receptors.
 ## Placing notes
 
 There are several ways to start placing notes, but all of them use the note palette on the
-Edit Steps tab of the playback bar. The Tap note is selected by default, but this can be
+Edit Steps tab of the playback toolbar. The Tap note is selected by default, but this can be
 changed by clicking on a different note type or cycling between them using N/M.
 
 ![Note Palette](basic-guide-assets/palette.png)
@@ -146,14 +148,14 @@ To place a hold, click and drag. To place a roll, drag and then hit Shift.
 ### Record Mode
 
 You can record a sequence of steps in real-time by selecting the record button in the
-playback bar. You can then use your gameplay keys (default arrow keys) to place notes
+playback toolbar. You can then use your gameplay keys (default arrow keys) to place notes
 while the music plays.
 
 <video controls="controls" src="./basic-guide-assets/record.mov"/>
 
 ## Playtesting
 
-Clicking the playtest button on the playback bar allows you to play your chart. The default
+Clicking the playtest button on the playback toolbar allows you to play your chart. The default
 keybinds are the arrow keys and WASD, but these can be changed under *Preferences > Gameplay keybinds...*
 
 <video controls="controls" src="./basic-guide-assets/playtest.mov"/>

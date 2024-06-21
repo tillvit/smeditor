@@ -19,15 +19,15 @@ export default defineConfig({
             text: "Basic Guide",
             link: "/basic-guide",
           },
+          {
+            text: "Timing Tracks and Events",
+            link: "/timing-events",
+          },
         ],
       },
       {
         text: "Advanced",
         items: [
-          {
-            text: "Timing Tracks and Events",
-            link: "/timing-events",
-          },
           {
             text: "Audio Filtering",
           },
