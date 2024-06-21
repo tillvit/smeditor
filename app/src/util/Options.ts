@@ -125,6 +125,7 @@ export class DefaultOptions {
   static debug = {
     showFPS: false,
     showTimers: false,
+    showScroll: false,
   }
   static experimental = {}
 }

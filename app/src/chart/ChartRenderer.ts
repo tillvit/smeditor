@@ -12,6 +12,7 @@ import { bsearch, isRightClick } from "../util/Util"
 import { ChartManager, EditMode, EditTimingMode } from "./ChartManager"
 import { BarlineContainer } from "./component/edit/BarlineContainer"
 import { PreviewAreaContainer } from "./component/edit/PreviewAreaContainer"
+import { ScrollDebug } from "./component/edit/ScrollDebug"
 import { SelectionAreaContainer } from "./component/edit/SelectionAreaContainer"
 import { SelectionBoundary } from "./component/edit/SelectionSprite"
 import { SnapContainer } from "./component/edit/SnapContainer"
@@ -26,6 +27,7 @@ import { TimingTrackContainer } from "./component/timing/TimingTrackContainer"
 import { TimingWindow } from "./play/TimingWindow"
 import { Chart } from "./sm/Chart"
 import { NoteType, NotedataEntry } from "./sm/NoteTypes"
+import { ScrollTimingEvent } from "./sm/TimingTypes"
 
 interface SelectionBounds {
   start: Point
@@ -33,7 +35,7 @@ interface SelectionBounds {
 }
 
 export interface ChartRendererComponent extends DisplayObject {
-  update: (fromBeat: number, toBeat: number) => void
+  update: (firstBeat: number, lastBeat: number) => void
 }
 
 export class ChartRenderer extends Container<ChartRendererComponent> {
@@ -61,6 +63,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   private readonly selectionBoundary: SelectionBoundary
   private readonly selectionArea: SelectionAreaContainer
   private readonly previewArea: PreviewAreaContainer
+  private readonly scrollDebug: ScrollDebug
 
   private selectionBounds?: SelectionBounds
 
@@ -82,6 +85,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     this.judgment = new JudgmentSprite()
     this.combo = new ComboNumber(this)
     this.selectionBoundary = new SelectionBoundary(this)
+    this.scrollDebug = new ScrollDebug(this)
 
     this.addChild(
       this.waveform,
@@ -96,7 +100,8 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       this.notefield,
       this.snapDisplay,
       this.judgment,
-      this.selectionBoundary
+      this.selectionBoundary,
+      this.scrollDebug
     )
 
     this.chartManager.app.stage.addChild(this)
@@ -230,10 +235,10 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
 
       if (Options.chart.reverse) {
         selectionSpeed =
-          Math.max(0, this.getLowerBound() - this.lastMousePos.y + 100) / 600
+          Math.max(0, this.getUpperBound() - this.lastMousePos.y + 100) / 600
         if (this.lastMousePos.y > 0) {
           selectionSpeed =
-            Math.min(0, this.getUpperBound() - this.lastMousePos.y - 100) / 600
+            Math.min(0, this.getLowerBound() - this.lastMousePos.y - 100) / 600
         }
       }
     })
@@ -286,20 +291,17 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   }
 
   update() {
-    const beat = this.getVisualBeat()
-    const time = this.getVisualTime()
-
     this.speedMult = Options.chart.doSpeedChanges
-      ? this.chart.timingData.getSpeedMult(beat, time)
+      ? this.getCurrentSpeedMult()
       : 1
 
-    const fromBeat = this.getUpperBoundBeat()
-    const toBeat = this.getLowerBoundBeat()
+    const firstBeat = this.getEarliestOnScreenBeat()
+    const lastBeat = this.getLastOnScreenBeat()
 
     this.scale.x = Options.chart.zoom
     this.scale.y = Options.chart.zoom
 
-    this.children.forEach(child => child.update(fromBeat, toBeat))
+    this.children.forEach(child => child.update(firstBeat, lastBeat))
     this.notefield.alpha =
       this.chartManager.editTimingMode == EditTimingMode.Off ||
       this.chartManager.getMode() == EditMode.Play
@@ -573,37 +575,219 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   }
 
   /**
-   * Returns the minimum y position to render
+   * Returns the y position of the top of the screen
    *
    * @return {*}  {number}
    * @memberof ChartRenderer
    */
   getUpperBound(): number {
-    if (Options.chart.reverse) {
-      return (
-        (this.chartManager.app.renderer.screen.height - this.y) /
-          Options.chart.zoom +
-        32
-      )
-    }
     return -this.y / Options.chart.zoom - 32
   }
 
   /**
-   * Returns the maximum y position to render.
+   * Returns the y position of the bottom of the screen
    *
    * @return {*}  {number}
    * @memberof ChartRenderer
    */
   getLowerBound(): number {
-    if (Options.chart.reverse) {
-      return -this.y / Options.chart.zoom - 32
-    }
     return (
       (this.chartManager.app.renderer.screen.height - this.y) /
         Options.chart.zoom +
       32
     )
+  }
+
+  findFirstOnScreenScroll(): ScrollTimingEvent {
+    const scrolls: ScrollTimingEvent[] = [
+      ...this.chart.timingData.getTimingData("SCROLLS"),
+    ]
+    if (scrolls[0]?.beat != 0)
+      scrolls.splice(0, 0, { beat: 0, value: 1, type: "SCROLLS" })
+
+    let scrollIndex = bsearch(
+      scrolls,
+      this.getVisualBeat() - Options.chart.maxDrawBeatsBack,
+      a => a.beat
+    )
+
+    while (
+      scrollIndex < scrolls.length &&
+      (scrolls[scrollIndex].beat ?? 0) <
+        this.getVisualBeat() + Options.chart.maxDrawBeats
+    ) {
+      const scroll = scrolls[scrollIndex]
+      scrollIndex++
+
+      if (scroll.value == 0) continue
+
+      const scrollStartY =
+        scroll === undefined
+          ? -Infinity * this.getScrollDirection(scrolls[0]?.value ?? 1)
+          : this.getYPosFromBeat(scroll.beat ?? 0)
+      const scrollEndY =
+        scrolls[scrollIndex] === undefined
+          ? Infinity * this.getScrollDirection(scroll.value)
+          : this.getYPosFromBeat(scrolls[scrollIndex].beat)
+
+      if (this.isAreaOnScreen(scrollStartY, scrollEndY)) {
+        return scroll
+      }
+    }
+    return scrolls.at(-1) ?? { beat: 0, value: 1, type: "SCROLLS" }
+  }
+
+  findLastOnScreenScroll(): ScrollTimingEvent {
+    const scrolls: ScrollTimingEvent[] = [
+      ...this.chart.timingData.getTimingData("SCROLLS"),
+    ]
+    if (scrolls[0]?.beat != 0)
+      scrolls.splice(0, 0, { beat: 0, value: 1, type: "SCROLLS" })
+    let scrollIndex = bsearch(
+      scrolls,
+      this.getVisualBeat() + Options.chart.maxDrawBeats,
+      a => a.beat
+    )
+
+    const endSearchIndex = bsearch(
+      scrolls,
+      this.getVisualBeat() - Options.chart.maxDrawBeatsBack,
+      a => a.beat
+    )
+
+    while (scrollIndex >= endSearchIndex) {
+      const scroll = scrolls[scrollIndex]
+      scrollIndex--
+
+      if (scroll.value == 0) continue
+
+      const scrollStartY =
+        scroll === undefined
+          ? -Infinity * this.getScrollDirection(scrolls[0]?.value ?? 1)
+          : this.getYPosFromBeat(scroll.beat ?? 0)
+      const scrollEndY =
+        scrolls[scrollIndex + 2] === undefined
+          ? Infinity * this.getScrollDirection(scroll.value)
+          : this.getYPosFromBeat(scrolls[scrollIndex + 2].beat)
+
+      if (this.isAreaOnScreen(scrollStartY, scrollEndY)) {
+        return scroll
+      }
+    }
+    return { beat: 0, value: 1, type: "SCROLLS" }
+  }
+
+  getEarliestOnScreenBeat() {
+    if (
+      Options.chart.waveform.speedChanges &&
+      !Options.chart.CMod &&
+      Options.chart.doSpeedChanges
+    ) {
+      const scroll = this.findFirstOnScreenScroll()
+
+      const speedMult = this.getCurrentSpeedMult()
+      const pixelsToEffectiveBeats =
+        100 /
+        Options.chart.speed /
+        Math.abs(speedMult) /
+        64 /
+        Options.chart.zoom
+
+      const scrollStartY = this.getYPosFromBeat(scroll.beat)
+      const pixelsToBeats =
+        (pixelsToEffectiveBeats / Math.abs(scroll.value)) * Options.chart.zoom
+
+      const direction = this.getScrollDirection(scroll.value)
+      const bound = direction == 1 ? this.getUpperBound() : this.getLowerBound()
+
+      const boundBeat =
+        direction * (bound - scrollStartY) * pixelsToBeats + scroll.beat
+
+      return Math.max(
+        this.getVisualBeat() - Options.chart.maxDrawBeatsBack,
+        boundBeat
+      )
+    }
+    if (!Options.chart.CMod)
+      return Math.max(
+        this.getVisualBeat() - Options.chart.maxDrawBeatsBack,
+        this.getBeatFromYPos(this.getUpperBound())
+      )
+    return this.getBeatFromYPos(this.getUpperBound())
+  }
+
+  getLastOnScreenBeat() {
+    if (
+      Options.chart.waveform.speedChanges &&
+      !Options.chart.CMod &&
+      Options.chart.doSpeedChanges
+    ) {
+      const scroll = this.findLastOnScreenScroll()
+
+      const speedMult = this.getCurrentSpeedMult()
+      const pixelsToEffectiveBeats =
+        100 /
+        Options.chart.speed /
+        Math.abs(speedMult) /
+        64 /
+        Options.chart.zoom
+
+      const scrollStartY = this.getYPosFromBeat(scroll.beat)
+      const pixelsToBeats =
+        (pixelsToEffectiveBeats / Math.abs(scroll.value)) * Options.chart.zoom
+
+      const direction = this.getScrollDirection(scroll.value)
+      const bound = direction == 1 ? this.getLowerBound() : this.getUpperBound()
+
+      const boundBeat =
+        direction * (bound - scrollStartY) * pixelsToBeats + scroll.beat
+
+      return Math.min(
+        this.getVisualBeat() + Options.chart.maxDrawBeats,
+        boundBeat
+      )
+    }
+    if (!Options.chart.CMod)
+      return Math.min(
+        this.getVisualBeat() + Options.chart.maxDrawBeats,
+        this.getBeatFromYPos(this.getLowerBound())
+      )
+    return this.getBeatFromYPos(this.getLowerBound())
+  }
+
+  isAreaOnScreen(y1: number, y2: number) {
+    if (y2 < y1) [y1, y2] = [y2, y1]
+    const top = this.getUpperBound()
+    const bottom = this.getLowerBound()
+
+    return y1 < bottom && y2 > top
+  }
+
+  getCurrentSpeedMult() {
+    return this.chart.timingData.getSpeedMult(
+      this.getVisualBeat(),
+      this.getVisualTime()
+    )
+  }
+
+  getScrollDirection(scrollValue: number) {
+    let dir = 1
+    // Flip if the speed is negative
+    if (this.getCurrentSpeedMult() < 0) {
+      dir *= -1
+    }
+
+    // Flip if in reverse
+    if (Options.chart.reverse) {
+      dir *= -1
+    }
+
+    // Flip if the scroll is negative
+    if (scrollValue < 0) {
+      dir *= -1
+    }
+
+    return dir
   }
 
   /**
@@ -647,8 +831,9 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       }
 
       while (
+        scrollIndex < scrolls.length &&
         (scrolls[scrollIndex]?.beat ?? 0) <
-        this.getVisualBeat() + Options.chart.maxDrawBeats
+          this.getVisualBeat() + Options.chart.maxDrawBeats
       ) {
         const scroll = scrolls[scrollIndex]
 
@@ -754,8 +939,9 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       )
 
       while (
+        scrollIndex < scrolls.length &&
         scrollIndex >= 0 &&
-        (scrolls[scrollIndex]?.beat ?? 0) >
+        (scrolls[scrollIndex].beat ?? 0) >
           this.getVisualBeat() - Options.chart.maxDrawBeatsBack
       ) {
         const scroll = scrolls[scrollIndex]

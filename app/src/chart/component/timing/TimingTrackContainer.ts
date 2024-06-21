@@ -113,7 +113,7 @@ export class TimingTrackContainer
     )
   }
 
-  update(fromBeat: number, toBeat: number) {
+  update(firstBeat: number, lastBeat: number) {
     if (this.renderer.chartManager.editTimingMode != EditTimingMode.Add) {
       this.ghostBox?.removeFromParent()
       this.ghostBox?.destroy()
@@ -121,7 +121,7 @@ export class TimingTrackContainer
     }
 
     this.updateTracks()
-    this.updateBoxes(fromBeat, toBeat)
+    this.updateBoxes(firstBeat, lastBeat)
   }
 
   private createTrack(type: string, x: number) {
@@ -415,7 +415,7 @@ export class TimingTrackContainer
     }
   }
 
-  private updateBoxes(fromBeat: number, toBeat: number) {
+  private updateBoxes(firstBeat: number, lastBeat: number) {
     if (this.timingDirty) {
       this.timingBoxMap.clear()
       this.boxPool.destroyAll()
@@ -428,18 +428,19 @@ export class TimingTrackContainer
 
     this.boxPool.visible = this.renderer.shouldDisplayBarlines()
     if (this.ghostBox) {
-      this.ghostBox.visible = this.renderer.shouldDisplayBarlines()
+      this.ghostBox.visible =
+        this.renderer.shouldDisplayBarlines() && editingTiming
     }
 
     // Create all missing boxes
     for (const event of this.renderer.chart.timingData.getTimingData()) {
-      if (toBeat < event.beat) break
+      if (lastBeat < event.beat) break
       if (
         !Options.chart.timingEventOrder.left.includes(event.type) &&
         !Options.chart.timingEventOrder.right.includes(event.type)
       )
         continue
-      if (fromBeat > event.beat) continue
+      if (firstBeat > event.beat) continue
 
       if (!this.timingBoxMap.has(event)) {
         const box = this.boxPool.createChild()
@@ -461,8 +462,8 @@ export class TimingTrackContainer
 
     for (const [event, box] of this.timingBoxMap.entries()) {
       if (
-        event.beat < fromBeat ||
-        event.beat > toBeat ||
+        event.beat < firstBeat ||
+        event.beat > lastBeat ||
         (!Options.chart.timingEventOrder.left.includes(event.type) &&
           !Options.chart.timingEventOrder.right.includes(event.type))
       ) {

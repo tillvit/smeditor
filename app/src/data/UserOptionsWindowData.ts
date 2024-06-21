@@ -698,6 +698,15 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           type: "checkbox",
         },
       },
+      {
+        type: "item",
+
+        label: "Show scrolls/speeds debug visual",
+        id: "debug.showScroll",
+        input: {
+          type: "checkbox",
+        },
+      },
     ],
   },
 ]

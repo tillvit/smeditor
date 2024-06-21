@@ -39,10 +39,13 @@ export class BarlineContainer
     this.addChild(this.barlinePool, this.barlineLabelPool)
   }
 
-  update(fromBeat: number, toBeat: number) {
+  update(firstBeat: number, lastBeat: number) {
     this.visible = this.renderer.shouldDisplayBarlines()
 
-    for (const [barBeat, isMeasure] of this.getBarlineBeats(fromBeat, toBeat)) {
+    for (const [barBeat, isMeasure] of this.getBarlineBeats(
+      firstBeat,
+      lastBeat
+    )) {
       // Create missing barlines
       if (!this.barlineMap.has(barBeat)) {
         const barline = this.barlinePool.createChild()
@@ -71,7 +74,7 @@ export class BarlineContainer
     }
 
     for (const [beat, child] of this.barlineMap.entries()) {
-      if (beat < fromBeat || beat > toBeat) {
+      if (beat < firstBeat || beat > lastBeat) {
         this.barlineMap.delete(beat)
         this.barlinePool.destroyChild(child)
         continue
@@ -80,7 +83,7 @@ export class BarlineContainer
     }
 
     for (const [beat, child] of this.barlineLabelMap.entries()) {
-      if (beat < fromBeat || beat > toBeat) {
+      if (beat < firstBeat || beat > lastBeat) {
         this.barlineLabelMap.delete(beat)
         this.barlineLabelPool.destroyChild(child)
         continue
@@ -90,27 +93,27 @@ export class BarlineContainer
   }
 
   private *getBarlineBeats(
-    fromBeat: number,
-    toBeat: number
+    firstBeat: number,
+    lastBeat: number
   ): Generator<[number, boolean], void> {
-    fromBeat = Math.max(0, fromBeat)
+    firstBeat = Math.max(0, firstBeat)
     const td = this.renderer.chart.timingData
     const timeSigs = td.getTimingData("TIMESIGNATURES")
-    let currentTimeSig = td.getEventAtBeat("TIMESIGNATURES", fromBeat)
+    let currentTimeSig = td.getEventAtBeat("TIMESIGNATURES", firstBeat)
     let timeSigIndex = currentTimeSig
       ? timeSigs.findIndex(t => t.beat == currentTimeSig!.beat)
       : -1
-    let divisionLength = td.getDivisionLength(fromBeat)
+    let divisionLength = td.getDivisionLength(firstBeat)
     const beatsToNearestDivision =
-      (td.getDivisionOfMeasure(fromBeat) % 1) * divisionLength
+      (td.getDivisionOfMeasure(firstBeat) % 1) * divisionLength
 
     // Find the nearest beat division
-    let beat = Math.max(0, fromBeat - beatsToNearestDivision)
-    if (beat < fromBeat) beat += divisionLength
+    let beat = Math.max(0, firstBeat - beatsToNearestDivision)
+    if (beat < firstBeat) beat += divisionLength
     let divisionNumber = Math.round(td.getDivisionOfMeasure(beat))
 
     let divisionsPerMeasure = currentTimeSig?.upper ?? 4
-    while (beat < toBeat) {
+    while (beat < lastBeat) {
       // Don't display warped beats
       if (!Options.chart.CMod || !this.renderer.chart.isBeatWarped(beat)) {
         yield [beat, divisionNumber % divisionsPerMeasure == 0]

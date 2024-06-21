@@ -47,7 +47,7 @@ export class SelectionTimingEventContainer
     this.addChild(this.timingBoxPool)
   }
 
-  update(fromBeat: number, toBeat: number) {
+  update(firstBeat: number, lastBeat: number) {
     if (!this.renderer.chartManager.eventSelection.shift) {
       this.timingBoxPool.destroyAll()
       this.timingBoxMap.clear()
@@ -58,8 +58,8 @@ export class SelectionTimingEventContainer
 
     for (const event of this.renderer.chartManager.eventSelection
       .timingEvents) {
-      if (toBeat < event.beat + beatShift) continue
-      if (fromBeat > event.beat + beatShift) continue
+      if (lastBeat < event.beat + beatShift) continue
+      if (firstBeat > event.beat + beatShift) continue
 
       if (!this.timingBoxMap.has(event)) {
         const box = this.timingBoxPool.createChild()
@@ -154,8 +154,8 @@ export class SelectionTimingEventContainer
 
     for (const [event, box] of this.timingBoxMap.entries()) {
       if (
-        toBeat < event.beat + beatShift ||
-        fromBeat > event.beat + beatShift
+        lastBeat < event.beat + beatShift ||
+        firstBeat > event.beat + beatShift
       ) {
         this.timingBoxPool.destroyChild(box)
         this.timingBoxMap.delete(event)

@@ -29,7 +29,7 @@ export class PreviewAreaContainer
     this.addChild(this.previewArea, this.previewText)
   }
 
-  update(fromBeat: number, toBeat: number) {
+  update(firstBeat: number, lastBEat: number) {
     const sampleStart = Number(this.renderer.chart.sm.properties.SAMPLESTART)
     const sampleLength = Number(this.renderer.chart.sm.properties.SAMPLELENGTH)
     if (
@@ -38,8 +38,8 @@ export class PreviewAreaContainer
       !this.renderer.shouldDisplayBarlines() ||
       this.renderer.chart.timingData.getBeatFromSeconds(
         sampleStart + sampleLength
-      ) < fromBeat ||
-      this.renderer.chart.timingData.getBeatFromSeconds(sampleStart) > toBeat
+      ) < firstBeat ||
+      this.renderer.chart.timingData.getBeatFromSeconds(sampleStart) > lastBEat
     ) {
       this.visible = false
       return
@@ -55,9 +55,10 @@ export class PreviewAreaContainer
     this.previewArea.height = yEnd - yStart
 
     this.previewText.anchor.y = Options.chart.reverse ? 1 : 0
+
     if (Options.chart.reverse) {
       this.previewText.y = clamp(
-        this.renderer.getLowerBound() - 35,
+        this.renderer.getUpperBound() - 35,
         this.previewArea.y + 15,
         this.previewArea.y + this.previewArea.height - 5
       )

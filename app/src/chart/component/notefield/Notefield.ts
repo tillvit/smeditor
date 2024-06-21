@@ -97,12 +97,12 @@ export class Notefield extends Container implements ChartRendererComponent {
     return spr
   }
 
-  update(fromBeat: number, toBeat: number): void {
+  update(firstBeat: number, lastBeat: number): void {
     this.noteskin.update()
     this.receptors.update(this.renderer.getVisualBeat())
     this.flashes.update()
-    this.notes.update(fromBeat, toBeat)
-    this.selectionNotes.update(fromBeat, toBeat)
+    this.notes.update(firstBeat, lastBeat)
+    this.selectionNotes.update(firstBeat, lastBeat)
     this.holdJudges.update()
 
     if (this.ghostNote) {
@@ -113,8 +113,8 @@ export class Notefield extends Container implements ChartRendererComponent {
         Options.chart.mousePlacement &&
         this.renderer.chartManager.getMode() == EditMode.Edit &&
         this.renderer.chartManager.editTimingMode == EditTimingMode.Off &&
-        this.ghostNoteEntry!.beat >= fromBeat &&
-        this.ghostNoteEntry!.beat <= toBeat &&
+        this.ghostNoteEntry!.beat >= firstBeat &&
+        this.ghostNoteEntry!.beat <= lastBeat &&
         this.ghostNoteEntry!.beat >= 0
     }
   }
