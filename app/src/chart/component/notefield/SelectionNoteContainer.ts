@@ -24,7 +24,7 @@ export class SelectionNoteContainer extends Container {
     this.sortableChildren = true
   }
 
-  update(fromBeat: number, toBeat: number) {
+  update(firstBeat: number, lastBeat: number) {
     if (!this.notefield.renderer.chartManager.selection.shift) {
       this.removeChildren()
       this.arrowMap.clear()
@@ -63,9 +63,12 @@ export class SelectionNoteContainer extends Container {
     }
 
     for (const note of this.notefield.renderer.chartManager.selection.notes) {
-      if (note.beat + beatShift + (isHoldNote(note) ? note.hold : 0) < fromBeat)
+      if (
+        note.beat + beatShift + (isHoldNote(note) ? note.hold : 0) <
+        firstBeat
+      )
         continue
-      if (note.beat + beatShift > toBeat) continue
+      if (note.beat + beatShift > lastBeat) continue
 
       if (!this.arrowMap.has(note)) {
         const newNote = {
@@ -99,8 +102,9 @@ export class SelectionNoteContainer extends Container {
 
     for (const [note, container] of this.arrowMap.entries()) {
       if (
-        note.beat + beatShift + (isHoldNote(note) ? note.hold : 0) < fromBeat ||
-        note.beat + beatShift > toBeat
+        note.beat + beatShift + (isHoldNote(note) ? note.hold : 0) <
+          firstBeat ||
+        note.beat + beatShift > lastBeat
       ) {
         container.destroy()
         this.arrowMap.delete(note)

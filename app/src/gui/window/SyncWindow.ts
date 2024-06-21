@@ -906,27 +906,27 @@ export class SyncWindow extends Window {
   }
 
   private *getBarlineBeats(
-    fromBeat: number,
-    toBeat: number
+    firstBeat: number,
+    lastBeat: number
   ): Generator<[number, boolean], void> {
-    fromBeat = Math.max(0, fromBeat)
+    firstBeat = Math.max(0, firstBeat)
     const td = this.app.chartManager.loadedChart!.timingData
     const timeSigs = td.getTimingData("TIMESIGNATURES")
-    let currentTimeSig = td.getEventAtBeat("TIMESIGNATURES", fromBeat)
+    let currentTimeSig = td.getEventAtBeat("TIMESIGNATURES", firstBeat)
     let timeSigIndex = currentTimeSig
       ? timeSigs.findIndex(t => t.beat == currentTimeSig!.beat)
       : -1
-    let divisionLength = td.getDivisionLength(fromBeat)
+    let divisionLength = td.getDivisionLength(firstBeat)
     const beatsToNearestDivision =
-      (td.getDivisionOfMeasure(fromBeat) % 1) * divisionLength
+      (td.getDivisionOfMeasure(firstBeat) % 1) * divisionLength
 
     // Find the nearest beat division
-    let beat = Math.max(0, fromBeat - beatsToNearestDivision)
-    if (beat < fromBeat) beat += divisionLength
+    let beat = Math.max(0, firstBeat - beatsToNearestDivision)
+    if (beat < firstBeat) beat += divisionLength
     let divisionNumber = Math.round(td.getDivisionOfMeasure(beat))
 
     let divisionsPerMeasure = currentTimeSig?.upper ?? 4
-    while (beat < toBeat) {
+    while (beat < lastBeat) {
       // Don't display warped beats
       if (!Options.chart.CMod || !td.isBeatWarped(beat)) {
         yield [beat, divisionNumber % divisionsPerMeasure == 0]

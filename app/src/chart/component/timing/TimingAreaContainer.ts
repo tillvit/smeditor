@@ -71,7 +71,7 @@ export class TimingAreaContainer
     )
   }
 
-  update(fromBeat: number, toBeat: number) {
+  update(firstBeat: number, lastBeat: number) {
     if (this.timingDirty) {
       this.timingAreaMap.clear()
       this.areaPool.destroyAll()
@@ -88,8 +88,8 @@ export class TimingAreaContainer
 
     for (const event of this.timingEvents) {
       // Check beat requirements
-      if (event.beat > toBeat) break
-      if (!this.shouldDrawEvent(event, fromBeat, toBeat)) continue
+      if (event.beat > lastBeat) break
+      if (!this.shouldDrawEvent(event, firstBeat, lastBeat)) continue
 
       if (!this.timingAreaMap.has(event)) {
         const area = this.areaPool.createChild()
@@ -100,7 +100,7 @@ export class TimingAreaContainer
     }
 
     for (const [event, area] of this.timingAreaMap.entries()) {
-      if (!this.shouldDrawEvent(event, fromBeat, toBeat)) {
+      if (!this.shouldDrawEvent(event, firstBeat, lastBeat)) {
         this.timingAreaMap.delete(event)
         this.areaPool.destroyChild(area)
         continue
@@ -145,18 +145,18 @@ export class TimingAreaContainer
     event: Cached<
       StopTimingEvent | WarpTimingEvent | DelayTimingEvent | FakeTimingEvent
     >,
-    fromBeat: number,
-    toBeat: number
+    firstBeat: number,
+    lastBeat: number
   ) {
     if (
       (event.type == "STOPS" || event.type == "DELAYS") &&
       event.second + Math.abs(event.value) <=
-        this.renderer.chart.timingData.getSecondsFromBeat(fromBeat)
+        this.renderer.chart.timingData.getSecondsFromBeat(firstBeat)
     )
       return false
     if (
       (event.type == "WARPS" || event.type == "FAKES") &&
-      event.beat + event.value < fromBeat
+      event.beat + event.value < firstBeat
     )
       return false
     if (event.type == "STOPS" || event.type == "DELAYS") {
@@ -169,6 +169,6 @@ export class TimingAreaContainer
         return false
     }
     if (event.type == "WARPS" && Options.chart.CMod) return false
-    return event.beat <= toBeat
+    return event.beat <= lastBeat
   }
 }

@@ -47,7 +47,7 @@ export class NoteContainer extends Container {
     })
   }
 
-  update(fromBeat: number, toBeat: number) {
+  update(firstBeat: number, lastBeat: number) {
     const notedata = this.notefield.renderer.chart.getNotedata()
     if (this.notesDirty) {
       for (const [note, container] of this.arrowMap.entries()) {
@@ -60,8 +60,8 @@ export class NoteContainer extends Container {
     }
 
     for (const note of notedata) {
-      if (note.beat > toBeat) break
-      if (!this.shouldDisplayNote(note, fromBeat, toBeat)) continue
+      if (note.beat > lastBeat) break
+      if (!this.shouldDisplayNote(note, firstBeat, lastBeat)) continue
       if (!this.arrowMap.has(note)) {
         const container = new Container() as HighlightedNoteObject
         const object = this.notefield.noteskin.createNote(note)
@@ -95,7 +95,7 @@ export class NoteContainer extends Container {
     }
 
     for (const [note, container] of this.arrowMap.entries()) {
-      if (!this.shouldDisplayNote(note, fromBeat, toBeat)) {
+      if (!this.shouldDisplayNote(note, firstBeat, lastBeat)) {
         container.destroy()
         this.arrowMap.delete(note)
         continue
@@ -169,16 +169,16 @@ export class NoteContainer extends Container {
 
   private shouldDisplayNote(
     note: NotedataEntry,
-    fromBeat: number,
-    toBeat: number
+    firstBeat: number,
+    lastBeat: number
   ) {
     if (note.gameplay?.hideNote) return false
     if (Options.chart.CMod && note.fake && Options.chart.hideFakedArrows)
       return false
     if (Options.chart.CMod && Options.chart.hideWarpedArrows && note.warped)
       return false
-    if (getNoteEnd(note) < fromBeat) return false
-    return note.beat <= toBeat
+    if (getNoteEnd(note) < firstBeat) return false
+    return note.beat <= lastBeat
   }
 
   private setHoldLength(object: NoteObject, length: number) {
