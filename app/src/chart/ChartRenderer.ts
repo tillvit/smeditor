@@ -637,7 +637,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return scrolls.at(-1) ?? { beat: 0, value: 1, type: "SCROLLS" }
   }
 
-  findLastOnScreenScroll() {
+  findLastOnScreenScroll(): ScrollTimingEvent {
     const scrolls: ScrollTimingEvent[] = [
       ...this.chart.timingData.getTimingData("SCROLLS"),
     ]
