@@ -295,13 +295,13 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       ? this.getCurrentSpeedMult()
       : 1
 
-    const earliestBeat = this.getEarliestOnScreenBeat()
+    const firstBeat = this.getEarliestOnScreenBeat()
     const lastBeat = this.getLastOnScreenBeat()
 
     this.scale.x = Options.chart.zoom
     this.scale.y = Options.chart.zoom
 
-    this.children.forEach(child => child.update(earliestBeat, lastBeat))
+    this.children.forEach(child => child.update(firstBeat, lastBeat))
     this.notefield.alpha =
       this.chartManager.editTimingMode == EditTimingMode.Off ||
       this.chartManager.getMode() == EditMode.Play
@@ -599,7 +599,12 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   }
 
   findFirstOnScreenScroll(): ScrollTimingEvent {
-    const scrolls = this.chart.timingData.getTimingData("SCROLLS")
+    const scrolls: ScrollTimingEvent[] = [
+      ...this.chart.timingData.getTimingData("SCROLLS"),
+    ]
+    if (scrolls[0]?.beat != 0)
+      scrolls.splice(0, 0, { beat: 0, value: 1, type: "SCROLLS" })
+
     let scrollIndex = bsearch(
       scrolls,
       this.getVisualBeat() - Options.chart.maxDrawBeatsBack,
@@ -633,7 +638,11 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   }
 
   findLastOnScreenScroll() {
-    const scrolls = this.chart.timingData.getTimingData("SCROLLS")
+    const scrolls: ScrollTimingEvent[] = [
+      ...this.chart.timingData.getTimingData("SCROLLS"),
+    ]
+    if (scrolls[0]?.beat != 0)
+      scrolls.splice(0, 0, { beat: 0, value: 1, type: "SCROLLS" })
     let scrollIndex = bsearch(
       scrolls,
       this.getVisualBeat() + Options.chart.maxDrawBeats,
@@ -665,7 +674,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
         return scroll
       }
     }
-    return scrolls[0] ?? { beat: 0, value: 1, type: "SCROLLS" }
+    return { beat: 0, value: 1, type: "SCROLLS" }
   }
 
   getEarliestOnScreenBeat() {
