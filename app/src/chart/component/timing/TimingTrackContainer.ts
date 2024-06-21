@@ -428,7 +428,8 @@ export class TimingTrackContainer
 
     this.boxPool.visible = this.renderer.shouldDisplayBarlines()
     if (this.ghostBox) {
-      this.ghostBox.visible = this.renderer.shouldDisplayBarlines()
+      this.ghostBox.visible =
+        this.renderer.shouldDisplayBarlines() && editingTiming
     }
 
     // Create all missing boxes
