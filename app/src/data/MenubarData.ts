@@ -228,11 +228,6 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         ],
       },
       {
-        type: "checkbox",
-        id: "renderWaveform",
-        checked: () => Options.chart.waveform.enabled,
-      },
-      {
         type: "separator",
       },
       {
