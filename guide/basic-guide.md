@@ -11,7 +11,7 @@ or through *File > New song...* on the menubar.
 
 You will then be prompted to fill out a few details about your simfile.
 
-![New Song Window](basic-guide-assets/new-song.png)
+![New Song Window](assets/basic-guide/new-song.png)
 
 The most important fields to fill out are the **Title** and **Artist** of the song,
 as well as an **Audio Track** (or the song file).
@@ -32,14 +32,14 @@ you will be prompted to select a location to save the new simfile.
 
 After creating the simfile, you will be met with this screen.
 
-![No Chart](basic-guide-assets/no-chart.png)
+![No Chart](assets/basic-guide/no-chart.png)
 
 Each simfile can contain multiple charts, each with a different difficulty rating.
 To create your first chart, click **Create a new chart** at the center of the screen.
 This will open up the Chart List Window (accessible under *Chart > Chart list*)
 
 
-![Chart List Window](basic-guide-assets/empty-chart-list.png)
+![Chart List Window](assets/basic-guide/empty-chart-list.png)
 
 ::: info
 Creating a chart for doubles/pump? Select a different game type from the dropdown first.
@@ -49,7 +49,7 @@ Clicking on *New Blank Chart* will add a new chart to the left side of the windo
 and its details will appear on the right. You can change the difficulty and details
 of each chart by directly editing them on the right.
 
-![New Chart](basic-guide-assets/empty-chart.png)
+![New Chart](assets/basic-guide/empty-chart.png)
 
 Now that you have a new chart, you can close the window.
 
@@ -58,7 +58,7 @@ Now that you have a new chart, you can close the window.
 
 Here are the names of some parts of the editor:
 
-![Parts](basic-guide-assets/parts.png)
+![Parts](assets/basic-guide/parts.png)
 
 ## Syncing
 
@@ -74,7 +74,7 @@ or by using the [Detect Sync feature](./auto-sync).
 By default, the tempo is set to 120 beats per minute. You can change this by clicking on the red timing event
 box on the left of the receptors.
 
-![BPM Event](basic-guide-assets/bpm-event.png)
+![BPM Event](assets/basic-guide/bpm-event.png)
 
 If the tempo changes throughout the song you selected, you can read up on how to use
 multiple timing events [here](./timing-events).
@@ -88,7 +88,7 @@ after.
 You can change the offset by clicking the Edit Timing button on the playback toolbar.
 
 
-![Edit Timing](basic-guide-assets/playback-timing.png)
+![Edit Timing](assets/basic-guide/playback-timing.png)
 
 ---
 
@@ -97,7 +97,7 @@ located in the submenu at the top of the screen.
 **Assist Tick** will play a tick every time a note should be played, while the **Metronome** will
 play a sound on every beat.
 
-![Assist Tick and Metronome](basic-guide-assets/assist.png)
+![Assist Tick and Metronome](assets/basic-guide/assist.png)
 
 ## Navigation
 
@@ -122,7 +122,7 @@ There are several ways to start placing notes, but all of them use the note pale
 Edit Steps tab of the playback toolbar. The Tap note is selected by default, but this can be
 changed by clicking on a different note type or cycling between them using N/M.
 
-![Note Palette](basic-guide-assets/palette.png)
+![Note Palette](assets/basic-guide/palette.png)
 
 ### Number Keys
 
@@ -132,7 +132,7 @@ Pressing a number key while a note is already present will instead remove it.
 To place a hold, hold the number key down and move the cursor.
 To place a roll, hold shift while placing a hold.
 
-![Holds and Rolls for number keys](basic-guide-assets/hold-roll-number.gif)
+![Holds and Rolls for number keys](assets/basic-guide/hold-roll-number.gif)
 
 ### Mouse Placement
 
@@ -143,7 +143,7 @@ where the mouse is located. Clicking on an existing note will instead remove it.
 
 To place a hold, click and drag. To place a roll, drag and then hit Shift.
 
-![Holds and Rolls for mouse](basic-guide-assets/hold-roll-mouse.gif)
+![Holds and Rolls for mouse](assets/basic-guide/hold-roll-mouse.gif)
 
 ### Record Mode
 
@@ -151,14 +151,14 @@ You can record a sequence of steps in real-time by selecting the record button i
 playback toolbar. You can then use your gameplay keys (default arrow keys) to place notes
 while the music plays.
 
-<video controls="controls" src="./basic-guide-assets/record.mov"/>
+<video controls="controls" src="./assets/basic-guide/record.mov"/>
 
 ## Playtesting
 
 Clicking the playtest button on the playback toolbar allows you to play your chart. The default
 keybinds are the arrow keys and WASD, but these can be changed under *Preferences > Gameplay keybinds...*
 
-<video controls="controls" src="./basic-guide-assets/playtest.mov"/>
+<video controls="controls" src="./assets/basic-guide/playtest.mov"/>
 
 You may want to set your global offset to compensate for the delay between hitting the keys
 and the computer registering the input. This offset will apply to every chart you play and can
@@ -170,7 +170,7 @@ histogram for how early or late you were hitting the notes. If you were hitting 
 early or late, this could be an indication of a misaligned offset. You can click the buttons
 below the histogram to automatically readjust the offset according to the previous play.
 
-![Auto offset adjust](basic-guide-assets/adjust.gif)
+![Auto offset adjust](assets/basic-guide/adjust.gif)
 
 ## Saving and Exporting
 

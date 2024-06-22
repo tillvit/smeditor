@@ -14,7 +14,7 @@ tempo.
 Timing events are represented in SMEditor as colored boxes that appear on the left and right
 side of the playfield. Each type of event has its own color.
 
-![Timing events](timing-events-assets/timing-events.png)
+![Timing events](assets/timing-events/timing-events.png)
 
 ## Editing timing events
 
@@ -26,7 +26,7 @@ To start editing timing events, click the **Edit Timing** button in the playback
 This will rearrange the timing events into different columns, also known as "tracks",
 based on their type.
 
-![Edit timing event](timing-events-assets/edit-timing.gif)
+![Edit timing event](assets/timing-events/edit-timing.gif)
 
 Being in this mode allows you to shift timing events by dragging them and select multiple events
 by highlighting an area.
@@ -36,12 +36,12 @@ by highlighting an area.
 To add a timing event, click the **Add timing event** button. A ghost timing event box will appear
 where your cursor is. Clicking will place the timing event and allow you to edit its details.
 
-![Add timing event](timing-events-assets/add-timing.gif)
+![Add timing event](assets/timing-events/add-timing.gif)
 
 To edit an existing timing event, click on it and its details will open. To delete a timing event,
 click on the **Delete** button or press Backspace.
 
-![Editing and deleting timing events](timing-events-assets/edit-delete-timing.gif)
+![Editing and deleting timing events](assets/timing-events/edit-delete-timing.gif)
 
 ## Hiding and rearranging timing tracks
 
@@ -54,7 +54,7 @@ To delete a track, hover over the track and click on the trash button.
 
 To restore a track that has been deleted, click on the track from the bottom tray or drag it back into the grid.
 
-![Hiding and rearranging timing tracks](timing-events-assets/rearrange.gif)
+![Hiding and rearranging timing tracks](assets/timing-events/rearrange.gif)
 
 ## Types of timing events
 
@@ -67,7 +67,7 @@ These events can be used in versions or forks of Stepmania above 3.95 that use t
 A BPM event contains one field: the tempo in beats per minute. This event can be used
 to deal with songs with varying tempos.
 
-![BPM events](timing-events-assets/bpms.png)
+![BPM events](assets/timing-events/bpms.png)
 
 ---
 
@@ -76,12 +76,12 @@ to deal with songs with varying tempos.
 A STOP event will pause the chart at the beat it's on before a specified number of seconds.
 Notes that occur on the STOP will be hit before the pause starts. In CMod, stops will be notated with a yellow area.
 
-![STOPS](timing-events-assets/stops.gif)
+![STOPS](assets/timing-events/stops.gif)
 
 Negative values will instead skip forward instead of stopping. Notes inside the skipped
 area will not be hit. This will appear as a yellow area in XMod.
 
-![Negative STOPS](timing-events-assets/neg-stops.gif)
+![Negative STOPS](assets/timing-events/neg-stops.gif)
 
 ---
 
@@ -116,7 +116,7 @@ Similar to STOPS, a DELAY event will also pause the chart for a specified number
 The difference between STOPS and DELAYS is that notes that occur on the DELAY will be hit
 *after* the pause starts.
 
-![DELAYS vs. STOPS](timing-events-assets/delays-vs-stops.gif)
+![DELAYS vs. STOPS](assets/timing-events/delays-vs-stops.gif)
 
 ---
 
@@ -125,7 +125,7 @@ The difference between STOPS and DELAYS is that notes that occur on the DELAY wi
 A WARP event will skip forwards a specified number of beats. This will appear as a pink area in XMod.
 Notes that occur on the WARP or are skipped by the WARP will not be hit.
 
-![WARPS](timing-events-assets/warps.gif)
+![WARPS](assets/timing-events/warps.gif)
 
 ::: info
 Since this effect is similar to a negative stop, all warps will be converted to negative stops
@@ -139,7 +139,7 @@ when exporting in the SM file format.
 A FAKE event makes all notes in the next specified number of beats unable to be hit. This will
 appear as a gray area.
 
-![FAKES](timing-events-assets/fakes.gif)
+![FAKES](assets/timing-events/fakes.gif)
 
 ---
 
@@ -150,7 +150,7 @@ or decreased over a specified number of beats or seconds. The multiplier can als
 
 SPEED events are disabled in CMod or when **Do Speed Changes** is off.
 
-![SPEEDS](timing-events-assets/speeds.gif)
+![SPEEDS](assets/timing-events/speeds.gif)
 
 ---
 
@@ -160,7 +160,7 @@ A SCROLL event multiplies the scroll speed of the beats *after the event* by a c
 
 SCROLL events are disabled in CMod or when **Do Speed Changes** is off.
 
-![SCROLLS](timing-events-assets/scrolls.gif)
+![SCROLLS](assets/timing-events/scrolls.gif)
 
 ::: warning
 Having the last SCROLL in your chart have a multiplier of 0 will make it impossible to view any beats after it!
@@ -177,7 +177,7 @@ A COMBO event changes the number of combo gained when hitting or missing a note.
 multipliers: a hit combo multiplier and a miss combo multiplier. Both of these multipliers must
 be positive integers.
 
-![COMBOS](timing-events-assets/combos.gif)
+![COMBOS](assets/timing-events/combos.gif)
 
 ---
 
@@ -185,11 +185,11 @@ be positive integers.
 
 A TIMESIGNATURE event allows you to change the time signature (which affects barlines and quantizations).
 
-![TIMESIGNATURES](timing-events-assets/timesigs.png)
+![TIMESIGNATURES](assets/timing-events/timesigs.png)
 
 Each measure will start with a red quantized note, even if the time signature is irregular.
 
-![Irregular TIMESIGNATURES](timing-events-assets/timesigs-irregular.png)
+![Irregular TIMESIGNATURES](assets/timing-events/timesigs-irregular.png)
 
 :::warning
 Note that this behavior does not exist in Stepmania, instead quantizations are based off the
@@ -204,7 +204,7 @@ global beat.
 
 A LABEL event allows you to label certain parts of a song.
 
-![LABELS](timing-events-assets/labels.png)
+![LABELS](assets/timing-events/labels.png)
 
 ---
 
