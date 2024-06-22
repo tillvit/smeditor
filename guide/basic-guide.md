@@ -162,7 +162,8 @@ keybinds are the arrow keys and WASD, but these can be changed under *Preference
 
 You may want to set your global offset to compensate for the delay between hitting the keys
 and the computer registering the input. This offset will apply to every chart you play and can
-be set under *Preferences > Options...*.
+be set under *Preferences > Options...*. This offset does not affect the timing of **Assist Tick**,
+so if it still sounds off, your song offset is incorrect.
 
 The Play Statistics tab in the bottom left shows info about your performance, including a
 histogram for how early or late you were hitting the notes. If you were hitting consistently
