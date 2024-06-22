@@ -571,7 +571,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     },
   },
   hideWarpedArrows: {
-    label: "Hide warped arrows (CMod only)",
+    label: "Hide warped notes (CMod only)",
     combos: [{ key: "W", mods: [Modifier.SHIFT] }],
     disabled: false,
     callback: () => {
@@ -582,7 +582,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     },
   },
   hideFakedArrows: {
-    label: "Hide faked arrows (CMod only)",
+    label: "Hide faked notes (CMod only)",
     combos: [{ key: "F", mods: [Modifier.SHIFT] }],
     disabled: false,
     callback: () => {

@@ -20,6 +20,10 @@ export default defineConfig({
             link: "/basic-guide",
           },
           {
+            text: "XMod vs CMod",
+            link: "/xmod-cmod",
+          },
+          {
             text: "Timing Tracks and Events",
             link: "/timing-events",
           },
