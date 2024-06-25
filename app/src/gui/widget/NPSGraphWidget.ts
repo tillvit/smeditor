@@ -1,13 +1,12 @@
 import {
+  BitmapText,
   FederatedPointerEvent,
+  Graphics,
   Sprite,
   Texture,
-  Graphics,
-  BitmapText,
 } from "pixi.js"
 import { EditMode } from "../../chart/ChartManager"
 import { Chart } from "../../chart/sm/Chart"
-import { isHoldNote } from "../../chart/sm/NoteTypes"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
@@ -53,6 +52,7 @@ export class NPSGraphWidget extends Widget {
 
     this.npsText.visible = false
     this.npsText.anchor.x = 1
+    this.npsText.anchor.y = 0.5
     this.addChild(this.npsText)
 
     this.setupEventHandlers()
@@ -115,16 +115,16 @@ export class NPSGraphWidget extends Widget {
     if (!this.getChart()) return
     let t = this.npsGraph.toLocal(event.global).y / this.npsGraph.height
     t = clamp(t, 0, 1)
-    const lastNote = this.getChart().getNotedata().at(-1)
-    if (!lastNote) return
-    const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
-    const lastSecond = this.getChart().getSecondsFromBeat(lastBeat)
     if (Options.chart.CMod) {
       this.manager.chartManager.setTime(
-        lerp(-this.getChart().timingData.getOffset(), lastSecond, t)
+        lerp(
+          -this.getChart().timingData.getOffset(),
+          this.getChart().getLastSecond(),
+          t
+        )
       )
     } else {
-      this.manager.chartManager.setBeat(lastBeat * t)
+      this.manager.chartManager.setBeat(this.getChart().getLastBeat() * t)
     }
   }
 
@@ -140,31 +140,28 @@ export class NPSGraphWidget extends Widget {
       return
     }
     const npsGraph = chart.getNPSGraph()
-    const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
-    const lastSecond = chart.getSecondsFromBeat(lastBeat)
 
     let t = this.npsGraph.toLocal(event.global).y / this.npsGraph.height
     t = clamp(t, 0, 1)
 
-    const beat = lerp(0, lastBeat, t)
+    let beat = lerp(0, chart.getLastBeat(), t)
+    if (Options.chart.CMod) {
+      const second = lerp(
+        -chart.timingData.getOffset(),
+        chart.getLastSecond(),
+        t
+      )
+      beat = chart.timingData.getBeatFromSeconds(second)
+    }
+
     const npsIndex = Math.floor(chart.timingData.getMeasure(beat))
 
     // npsGraph is a sparse array, so make sure we have a valid number,
     // otherwise the nps for that measure is 0
     const nps = npsGraph[npsIndex] ?? 0
 
-    const ypos =
-      this.getY(
-        lastBeat,
-        chart.timingData.getOffset(),
-        lastSecond,
-        beat,
-        this.npsGraph.height
-      ) -
-      this.npsGraph.height / 2
-
     this.npsText.text = nps.toFixed(1) + " nps"
-    this.npsText.position.y = ypos - 6
+    this.npsText.position.y = this.getYFromBeat(beat) - this.npsGraph.height / 2
     this.npsText.position.x = -this.backing.width / 2 - 10
     this.npsText.visible = true
   }
@@ -178,12 +175,7 @@ export class NPSGraphWidget extends Widget {
       this.visible = false
       return
     }
-    this.scale.y = Options.chart.reverse ? -1 : 1
-    const height = this.manager.app.renderer.screen.height - 40
-    this.backing.height = height + 10
-    this.backing.position.y = -this.backing.height / 2
-    this.backing.position.x = -this.backing.width / 2
-    this.x = this.manager.app.renderer.screen.width / 2 - 60
+
     const chart = this.getChart()
     const chartView = this.manager.chartManager.chartView!
     if (!chart || !chartView || !Flags.layout) {
@@ -191,39 +183,47 @@ export class NPSGraphWidget extends Widget {
       return
     }
     this.visible = true
-    const lastNote = chart.getNotedata().at(-1)
-    if (!lastNote) {
+
+    this.scale.y = Options.chart.reverse ? -1 : 1
+    const height = this.manager.app.renderer.screen.height - 40
+    this.backing.height = height + 10
+    this.backing.position.y = -this.backing.height / 2
+    this.backing.position.x = -this.backing.width / 2
+
+    this.x = this.manager.app.renderer.screen.width / 2 - 60
+
+    if (chart.getNotedata().length == 0) {
       this.overlay.height = 0
       return
     }
-    const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
-    const lastSecond = chart.getSecondsFromBeat(lastBeat)
-    const start = Options.chart.CMod
-      ? chartView.getSecondFromYPos(
+
+    let startY, endY: number
+    if (Options.chart.CMod) {
+      startY = this.getYFromSecond(
+        chartView.getSecondFromYPos(
           -this.manager.app.renderer.screen.height / 2
         )
-      : chartView.getBeatFromYPos(
+      )
+      endY = this.getYFromSecond(
+        chartView.getSecondFromYPos(this.manager.app.renderer.screen.height / 2)
+      )
+    } else {
+      startY = this.getYFromBeat(
+        chartView.getBeatFromYPos(
           -this.manager.app.renderer.screen.height / 2,
           true
         )
-    const end = Options.chart.CMod
-      ? chartView.getSecondFromYPos(this.manager.app.renderer.screen.height / 2)
-      : chartView.getBeatFromYPos(
+      )
+      endY = this.getYFromBeat(
+        chartView.getBeatFromYPos(
           this.manager.app.renderer.screen.height / 2,
           true
         )
-    let t_startY = unlerp(0, lastBeat, start)
-    let t_endY = unlerp(0, lastBeat, end)
-    if (Options.chart.CMod) {
-      t_startY = unlerp(-chart.timingData.getOffset(), lastSecond, start)
-      t_endY = unlerp(-chart.timingData.getOffset(), lastSecond, end)
+      )
     }
-    t_startY = clamp(t_startY, 0, 1)
-    t_endY = clamp(t_endY, 0, 1)
-    if (t_startY > t_endY) [t_startY, t_endY] = [t_endY, t_startY]
-    const startY = (t_startY - 0.5) * (this.backing.height - 10)
-    const endY = (t_endY - 0.5) * (this.backing.height - 10)
-    this.overlay.y = startY
+
+    if (startY > endY) [startY, endY] = [endY, startY]
+    this.overlay.y = startY - this.npsGraph.height / 2
     this.overlay.height = endY - startY
     this.overlay.height = Math.max(2, this.overlay.height)
     if (
@@ -241,24 +241,19 @@ export class NPSGraphWidget extends Widget {
     if (!chart) {
       return
     }
-    const lastNote = chart.getNotedata().at(-1)
-    const firstNote = chart.getNotedata().at(0)
 
     const height = this.manager.app.renderer.screen.height - 40
-    this.backing.height = height
     this.backing.width = this.graphWidth + 8
     this.overlay.width = this.graphWidth + 8
     this.pivot.x = this.backing.width / 2
 
-    if (!lastNote || !firstNote) {
+    if (chart.getNotedata().length == 0) {
       return
     }
-    const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
-    const lastSecond = chart.getSecondsFromBeat(lastBeat)
-    const songOffset = chart.timingData.getOffset()
 
     const maxNps = chart.getMaxNPS()
     const npsGraph = chart.getNPSGraph()
+    const lastBeat = chart.getLastBeat()
 
     this.npsGraph.clear()
     if (this.graphGradient) {
@@ -272,7 +267,7 @@ export class NPSGraphWidget extends Widget {
 
     const lastMeasure = npsGraph.length
 
-    const startY = this.getY(lastBeat, songOffset, lastSecond, 0, height)
+    const startY = this.getYFromBeat(0)
     this.npsGraph.moveTo(0, startY)
 
     for (let measureIndex = 0; measureIndex < lastMeasure; measureIndex++) {
@@ -283,14 +278,8 @@ export class NPSGraphWidget extends Widget {
         chart.timingData.getBeatFromMeasure(measureIndex + 1)
       )
       const x = unlerp(0, maxNps, nps) * this.graphWidth
-      const y = this.getY(lastBeat, songOffset, lastSecond, beat, height)
-      const endOfMeasureY = this.getY(
-        lastBeat,
-        songOffset,
-        lastSecond,
-        endOfMeasureBeat,
-        height
-      )
+      const y = this.getYFromBeat(beat)
+      const endOfMeasureY = this.getYFromBeat(endOfMeasureBeat)
 
       this.npsGraph.lineTo(x, y)
       this.npsGraph.lineTo(x, endOfMeasureY)
@@ -298,26 +287,38 @@ export class NPSGraphWidget extends Widget {
 
     const lastnps = npsGraph.at(-1)!
     const lastX = unlerp(0, maxNps, lastnps) * this.graphWidth
-    const lastY = this.getY(lastBeat, songOffset, lastSecond, lastBeat, height)
+    const lastY = this.getYFromBeat(lastBeat)
     this.npsGraph.lineTo(lastX, lastY)
     this.npsGraph.lineTo(0, lastY)
     this.npsGraph.endFill()
   }
 
-  private getY(
-    lastBeat: number,
-    songOffset: number,
-    lastSecond: number,
-    beat: number,
-    height: number
-  ): number {
-    let t = unlerp(0, lastBeat, beat)
+  private getYFromBeat(beat: number): number {
     if (Options.chart.CMod) {
-      const second = this.getChart().timingData.getSecondsFromBeat(beat)
-      t = unlerp(songOffset, lastSecond, second)
+      return this.getYFromSecond(
+        this.getChart().timingData.getSecondsFromBeat(beat)
+      )
     }
-    return t * height
+    let t = unlerp(0, this.getChart().getLastBeat(), beat)
+    t = clamp(t, 0, 1)
+    return t * (this.backing.height - 10)
   }
+
+  private getYFromSecond(second: number): number {
+    if (!Options.chart.CMod) {
+      return this.getYFromBeat(
+        this.getChart().timingData.getBeatFromSeconds(second)
+      )
+    }
+    let t = unlerp(
+      -this.getChart().timingData.getOffset(),
+      this.getChart().getLastSecond(),
+      second
+    )
+    t = clamp(t, 0, 1)
+    return t * (this.backing.height - 10)
+  }
+
   private getChart(): Chart {
     return this.manager.chartManager.loadedChart!
   }

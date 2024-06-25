@@ -2,12 +2,13 @@ import { Container } from "pixi.js"
 import { App } from "../../App"
 import { ChartManager } from "../../chart/ChartManager"
 import { DebugWidget } from "./DebugWidget"
+import { NPSGraphWidget } from "./NPSGraphWidget"
 import { NoteLayoutWidget } from "./NoteLayoutWidget"
 import { PlayInfoWidget } from "./PlayInfoWidget"
 import { PlaybackOptionsWidget } from "./PlaybackOptionsWidget"
 import { StatusWidget } from "./StatusWidget"
 import { Widget } from "./Widget"
-import { NPSGraphWidget } from "./NPSGraphWidget"
+
 export class WidgetManager extends Container {
   app: App
   chartManager: ChartManager
