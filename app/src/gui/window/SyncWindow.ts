@@ -362,7 +362,7 @@ export class SyncWindow extends Window {
       createLabel(
         "Window Step",
         optionsOnsetsStepSlider.view,
-        "Determines the number of blocks per second. Lower values result in more time-accurate spectograms, but may take more time and mess up tempo analysis. Defaults to 512 and must be lower than FFT Size."
+        "Determines the number of blocks per second. Lower values result in more time-accurate spectrograms, but may take more time and mess up tempo analysis. Defaults to 512 and must be lower than FFT Size."
       ),
       optionsTempoLabel,
       createLabel(
@@ -373,7 +373,7 @@ export class SyncWindow extends Window {
       createLabel(
         "Window Step",
         optionsTempoStepSlider.view,
-        "Determines the number of blocks per second. Lower values result in more time-accurate spectograms, but may take more time. Defaults to 2 and must be lower than FFT Size."
+        "Determines the number of blocks per second. Lower values result in more time-accurate tempograms, but may take more time. Defaults to 2 and must be lower than FFT Size."
       )
     )
     return optionsView
@@ -526,7 +526,7 @@ export class SyncWindow extends Window {
     await this.getMonoAudioData()
     this.sampleRate = this.app.chartManager.chartAudio.getSampleRate()
 
-    // Precalculate heights of spectogram pixels
+    // Precalculate heights of spectrogram pixels
     this.spectroHeights = new Array(this.fftSize).fill(0).map((_, index) => {
       const freq = ((index / (this.fftSize / 2)) * this.sampleRate) / 2
       const freqNext =
@@ -756,6 +756,8 @@ export class SyncWindow extends Window {
         }
       }
 
+      ctx.fillStyle = "rgba(50, 255, 20, 0.3)"
+
       ctx.fillRect(graphWidth * 0.2 - 1, 0, 3, graphHeight * 2)
 
       // Draw threshold line
@@ -863,7 +865,7 @@ export class SyncWindow extends Window {
       ctx.font = "22px Assistant"
       ctx.textAlign = "left"
       ctx.textBaseline = "top"
-      ctx.fillText("Spectogram", 10, 10)
+      ctx.fillText("Spectrogram", 10, 10)
       ctx.fillText("Onsets", 10, graphHeight + 10)
       ctx.fillText("Tempogram", 10, graphHeight * 1.5 + 10)
 
