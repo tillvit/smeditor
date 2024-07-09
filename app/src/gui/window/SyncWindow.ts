@@ -1102,8 +1102,6 @@ export class SyncWindow extends Window {
       return n / t
     })
 
-    let bestResponse = 0
-    let bestBlock = 0
     const options = []
     for (let i = peakScanStart; i < peakScanStart + beatLengthBlocks; i++) {
       const response = this.noveltyCurveIsolated
@@ -1113,10 +1111,6 @@ export class SyncWindow extends Window {
         })
         .reduce((a, b) => a + b, 0)
 
-      if (response > bestResponse) {
-        bestResponse = response
-        bestBlock = i
-      }
       options.push({
         block: i,
         offset: -((i * this.windowStep) / this.sampleRate) % (60 / firstBPM),
