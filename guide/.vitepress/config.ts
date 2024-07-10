@@ -32,9 +32,9 @@ export default defineConfig({
       {
         text: "Advanced",
         items: [
-          {
-            text: "Audio Filtering",
-          },
+          // {
+          //   text: "Audio Filtering",
+          // },
           {
             text: "Auto BPM Detection",
             link: "/auto-sync",
