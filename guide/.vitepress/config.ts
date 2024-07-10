@@ -39,6 +39,10 @@ export default defineConfig({
             text: "Auto BPM Detection",
             link: "/auto-sync",
           },
+          {
+            text: "Scripting",
+            link: "/scripting",
+          },
         ],
       },
     ],
