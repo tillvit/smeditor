@@ -103,6 +103,8 @@ function stutterStops(beat, length, factor = 2) {
 ```
 <video controls="controls" src="./assets/scripting/stutter-stops.mp4"/>
 
+---
+
 Using **SCROLLS**
 
 This does not introduce any timing issues.
