@@ -1423,4 +1423,13 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       Options.chart.snap = 1 / 48
     },
   },
+
+  openGuide: {
+    label: "Open Help Guide",
+    combos: [],
+    disabled: false,
+    callback: () => {
+      window.open("/smeditor/guide/")
+    },
+  },
 }

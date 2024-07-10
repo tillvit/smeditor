@@ -1,22 +1,16 @@
 import ft from "fourier-transform/asm"
+import tippy from "tippy.js"
 import { App } from "../../App"
 import { PartialTapNotedataEntry } from "../../chart/sm/NoteTypes"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, lerp, roundDigit, unlerp } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { parseString } from "../../util/Util"
-import { NumberSpinner } from "../element/NumberSpinner"
+import { NumberSlider } from "../element/NumberSlider"
 import { WaterfallManager } from "../element/WaterfallManager"
 import { Window } from "./Window"
 
-const graphWidth = 1000
-const graphHeight = 300
-
-const FFT_SIZE = 1024
-const WINDOW_STEP = 512
-
-const TEMPO_FFT_SIZE = 4096
-const TEMPO_STEP = 2
+const graphWidth = 800
+const graphHeight = 200
 
 const AVERAGE_WINDOW_RADIUS = 3
 
@@ -24,7 +18,6 @@ const MIN_BPM = 125
 const MAX_BPM = 250
 
 const TEMPOGRAM_SMOOTHING = 3
-const TEMPOGRAM_THRESHOLD = 0.01
 const TEMPOGRAM_OFFSET_THRESHOLD = 0.02
 const TEMPOGRAM_GROUPING_WINDOW = 6
 
@@ -74,6 +67,11 @@ export class SyncWindow extends Window {
   app: App
   private onAudioLoad = this.reset.bind(this)
 
+  private windowStep = 512
+  private fftSize = 1024
+  private tempoFftSize = 4096
+  private tempoStep = 2
+
   private monoAudioData?: Float32Array
   private audioLength = 0
   private sampleRate = 44100
@@ -102,122 +100,42 @@ export class SyncWindow extends Window {
   private spectroHeights: { y: number; height: number }[] = []
   private spectroWeights: number[] = []
 
-  private lastBeat = -1
-  private updateInterval
-  private bpm!: NumberSpinner
-  private offset!: NumberSpinner
-  private placeNotesButton!: HTMLButtonElement
+  private placeNotesSelectionButton!: HTMLButtonElement
   private toggleButton!: HTMLButtonElement
-  private changeHandler = this.updateSpinners.bind(this)
+  private resetButton!: HTMLButtonElement
+
+  private onsetResults!: HTMLDivElement
+
+  private offsetTableLabel!: HTMLDivElement
+  private offsetRows: HTMLDivElement[] = []
+  private bpmRows: HTMLDivElement[] = []
+  private covers: HTMLDivElement[] = []
 
   private doAnalysis = false
+
+  private lastSecond = 0
 
   constructor(app: App) {
     super({
       title: "Detect Audio Sync",
-      width: 500,
-      height: 400,
+      width: 400,
+      height: 450,
       win_id: "detect-sync",
     })
     this.app = app
     this.initView()
 
     this.reset()
-
-    this.updateInterval = setInterval(() => {
-      if (
-        Math.round(this.app.chartManager.getBeat() * 1000) / 1000 !=
-        this.lastBeat
-      ) {
-        this.lastBeat =
-          Math.round(this.app.chartManager.getBeat() * 1000) / 1000
-        this.updateSpinners()
-      }
-    }, 17)
-    EventHandler.on("timingModified", this.changeHandler)
-    EventHandler.on("chartLoaded", this.changeHandler)
     EventHandler.on("audioLoaded", this.onAudioLoad)
   }
 
   onClose() {
-    EventHandler.off("timingModified", this.changeHandler)
-    EventHandler.off("chartLoaded", this.changeHandler)
     EventHandler.off("audioLoaded", this.onAudioLoad)
     this.app.chartManager.chartAudio.offLoad(this.onAudioLoad)
-    clearInterval(this.updateInterval)
-  }
-
-  updateSpinners() {
-    if (document.activeElement != this.offset.input) {
-      this.offset.setValue(
-        this.app.chartManager.loadedChart?.timingData.getOffset() ?? 0
-      )
-    }
-    if (document.activeElement != this.bpm.input) {
-      this.bpm.setValue(
-        this.app.chartManager.loadedChart?.timingData.getEventAtBeat(
-          "BPMS",
-          this.app.chartManager.getBeat()
-        )?.value ?? 120
-      )
-    }
   }
 
   initView() {
     this.viewElement.replaceChildren()
-
-    this.lastBeat = Math.round(this.app.chartManager.getBeat() * 1000) / 1000
-
-    const offsetContainer = document.createElement("div")
-    offsetContainer.classList.add("sync-spinner-container")
-    const offsetLabel = document.createElement("div")
-    offsetLabel.innerText = "Offset"
-
-    this.offset = NumberSpinner.create(
-      this.app.chartManager.loadedChart?.timingData.getOffset() ?? 0,
-      Options.general.spinnerStep / 100,
-      3
-    )
-    this.offset.onChange = value => {
-      if (value == undefined) return
-      if (!this.app.chartManager.loadedChart || !this.app.chartManager.loadedSM)
-        return
-      ;(this.app.chartManager.loadedChart.timingData.hasChartOffset()
-        ? this.app.chartManager.loadedChart.timingData
-        : this.app.chartManager.loadedSM.timingData
-      ).setOffset(value)
-      this.app.chartManager.setBeat(this.app.chartManager.getBeat())
-    }
-
-    offsetContainer.replaceChildren(offsetLabel, this.offset.view)
-
-    const bpmContainer = document.createElement("div")
-    bpmContainer.classList.add("sync-spinner-container")
-    const bpmLabel = document.createElement("div")
-    bpmLabel.innerText = "BPM"
-
-    this.bpm = NumberSpinner.create(
-      this.app.chartManager.loadedChart?.timingData.getEventAtBeat(
-        "BPMS",
-        this.app.chartManager.getBeat()
-      )?.value ?? 120,
-      Options.general.spinnerStep,
-      3
-    )
-    this.bpm.onChange = value => {
-      if (value == undefined) return
-      if (!this.app.chartManager.loadedChart || !this.app.chartManager.loadedSM)
-        return
-      ;(this.app.chartManager.loadedChart.timingData.isPropertyChartSpecific(
-        "BPMS"
-      )
-        ? this.app.chartManager.loadedChart.timingData
-        : this.app.chartManager.loadedSM.timingData
-      ).insert([{ type: "BPMS", beat: this.app.chartManager.getBeat(), value }])
-      this.app.chartManager.setBeat(this.app.chartManager.getBeat())
-    }
-
-    bpmContainer.replaceChildren(bpmLabel, this.bpm.view)
 
     const container = document.createElement("div")
     container.classList.add("sync-container")
@@ -225,89 +143,376 @@ export class SyncWindow extends Window {
     container.style.flexDirection = "column"
     container.style.alignItems = "center"
 
-    const topContainer = document.createElement("div")
-    topContainer.classList.add("sync-top-container")
-    topContainer.replaceChildren(offsetContainer, bpmContainer)
-
-    const bottomContainer = document.createElement("div")
-    bottomContainer.classList.add("sync-bottom-container")
-
-    this.toggleButton = document.createElement("button")
-    this.toggleButton.innerText = "Start analyzing"
-    this.toggleButton.style.width = "120px"
-    this.toggleButton.onclick = () => {
-      this.doAnalysis = !this.doAnalysis
-      this.toggleButton.innerText = this.doAnalysis
-        ? "Stop analyzing"
-        : "Start analyzing"
-    }
-
-    this.placeNotesButton = document.createElement("button")
-    this.placeNotesButton.innerText =
-      this.app.chartManager.startRegion !== undefined &&
-      this.app.chartManager.endRegion !== undefined
-        ? "Place onsets as notes in region"
-        : "Place onsets as notes"
-    this.placeNotesButton.style.width = "185px"
-    this.placeNotesButton.onclick = () => this.placeOnsets()
-
-    const thresholdContainer = document.createElement("div")
-    thresholdContainer.style.display = "flex"
-    thresholdContainer.style.alignItems = "center"
-    thresholdContainer.style.flexDirection = "column"
-    const thresholdInputContainer = document.createElement("div")
-    thresholdInputContainer.style.display = "flex"
-    thresholdInputContainer.style.alignItems = "center"
-    const thresholdLabel = document.createElement("div")
-    thresholdLabel.innerText = "Onset Threshold"
-    const slider = document.createElement("input")
-    slider.type = "range"
-    slider.min = "0"
-    slider.max = "1"
-    slider.step = "0.01"
-    slider.value = `${this._threshold}`
-    slider.style.width = "75px"
-    const numberInput = document.createElement("input")
-    numberInput.type = "text"
-    numberInput.value = `${this._threshold}`
-    numberInput.onblur = () => {
-      let value = parseString(numberInput.value)
-      if (value === null) {
-        numberInput.value = `${this._threshold}`
-        return
-      }
-      value = clamp(value, 0, 1)
-      numberInput.value = roundDigit(value, 2).toString()
-      numberInput.blur()
-      this.threshold = value
-      slider.value = value.toString()
-    }
-    slider.oninput = () => {
-      const value = parseFloat(slider.value)
-      numberInput.value = roundDigit(value, 3).toString()
-      this.threshold = value
-    }
-    numberInput.style.width = "50px"
-    numberInput.onkeydown = ev => {
-      if (ev.key == "Enter") numberInput.blur()
-    }
-    thresholdInputContainer.replaceChildren(slider, numberInput)
-    thresholdContainer.replaceChildren(thresholdLabel, thresholdInputContainer)
-
-    bottomContainer.replaceChildren(
-      thresholdContainer,
-      this.placeNotesButton,
-      this.toggleButton
-    )
+    // Main canvas
 
     const canvas = document.createElement("canvas")
     canvas.style.width = `${graphWidth / 2}px`
     canvas.style.height = `${graphHeight}px`
 
-    container.replaceChildren(topContainer, canvas, bottomContainer)
+    // Create tabs
+
+    const tabContainer = document.createElement("div")
+    tabContainer.classList.add("sync-tab-container")
+
+    const optionsTab = document.createElement("div")
+    optionsTab.classList.add("sync-tab-option", "active")
+    optionsTab.innerText = "Analysis Options"
+
+    const tempoTab = document.createElement("div")
+    tempoTab.classList.add("sync-tab-option")
+    tempoTab.innerText = "Tempo Results"
+
+    const onsetsTab = document.createElement("div")
+    onsetsTab.classList.add("sync-tab-option")
+    onsetsTab.innerText = "Onset Results"
+
+    tabContainer.replaceChildren(optionsTab, tempoTab, onsetsTab)
+    ;[...tabContainer.children].forEach((element, index) => {
+      ;(element as HTMLDivElement).onclick = () => {
+        tabScroller.scrollLeft = 370 * index
+        tabContainer
+          .querySelectorAll(".active")
+          .forEach(e => e.classList.remove("active"))
+        element.classList.add("active")
+      }
+    })
+
+    // Tab view
+
+    const tabView = document.createElement("div")
+    tabView.classList.add("sync-tab-view")
+
+    const tabScroller = document.createElement("div")
+    tabScroller.classList.add("sync-tab-scroller")
+
+    const optionsView = this.createOptionsView()
+    const tempoView = this.createTempoView()
+    const onsetsView = this.createOnsetsView()
+
+    const createCover = (text: string, left: number) => {
+      const container = document.createElement("div")
+      container.classList.add("sync-cover")
+      container.innerText = text
+      container.style.left = `${left * 370}px`
+      return container
+    }
+
+    this.covers = [
+      createCover("Clear analysis results to edit", 0),
+      createCover("Start analysis to view", 1),
+      createCover("Start analysis to view", 2),
+    ]
+
+    tabView.appendChild(tabScroller)
+    tabScroller.replaceChildren(
+      optionsView,
+      this.covers[0],
+      tempoView,
+      this.covers[1],
+      onsetsView,
+      this.covers[2]
+    )
+
+    // Bottom buttons
+
+    const bottomContainer = document.createElement("div")
+    bottomContainer.classList.add("sync-bottom-container")
+
+    this.resetButton = document.createElement("button")
+    this.resetButton.classList.add("delete")
+    this.resetButton.innerText = "Clear results"
+    this.resetButton.style.width = "120px"
+    this.resetButton.disabled = true
+    this.resetButton.onclick = () => {
+      this.resetButton.disabled = true
+      optionsTab.click()
+      this.reset()
+    }
+
+    this.toggleButton = document.createElement("button")
+    this.toggleButton.innerText = "Start analyzing"
+    this.toggleButton.style.width = "200px"
+    this.toggleButton.onclick = () => {
+      if (!this.doAnalysis) {
+        tempoTab.click()
+      }
+      this.doAnalysis = !this.doAnalysis
+      this.toggleButton.innerText = this.doAnalysis
+        ? "Stop analyzing"
+        : this.hasData()
+        ? "Resume analyzing"
+        : "Start analyzing"
+      this.resetButton.disabled = this.doAnalysis
+    }
+
+    bottomContainer.replaceChildren(this.toggleButton, this.resetButton)
+
+    container.replaceChildren(canvas, tabContainer, tabView, bottomContainer)
     this.viewElement.appendChild(container)
     const loop = this.windowLoop(canvas)
     requestAnimationFrame(loop)
+  }
+
+  createOptionsView() {
+    const optionsView = document.createElement("div")
+    optionsView.style.display = "flex"
+    optionsView.style.position = "relative"
+    optionsView.style.flexDirection = "column"
+    optionsView.style.gap = "3px"
+    optionsView.style.height = "100%"
+
+    const createLabel = (
+      text: string,
+      element: HTMLElement,
+      tooltip: string
+    ) => {
+      const container = document.createElement("div")
+      container.style.display = "flex"
+      container.style.flexDirection = "row"
+      container.style.justifyContent = "space-between"
+      container.style.alignItems = "center"
+      const label = document.createElement("div")
+      label.innerText = text
+      container.replaceChildren(label, element)
+
+      tippy(container, { content: tooltip })
+      return container
+    }
+
+    const optionsOnsetsLabel = document.createElement("div")
+    optionsOnsetsLabel.innerText = "Onsets"
+    optionsOnsetsLabel.style.fontWeight = "600"
+
+    const optionsOnsetsFFTSlider = NumberSlider.create({
+      min: Math.log2(128),
+      max: Math.log2(8192),
+      step: 1,
+      value: Math.log2(this.fftSize),
+      transformer: val => 2 ** val,
+      onChange: value => {
+        this.fftSize = 2 ** value
+        if (this.windowStep > this.fftSize) {
+          this.windowStep = this.fftSize
+          optionsOnsetsStepSlider.setValue(value)
+        }
+        this.reset()
+      },
+    })
+
+    const optionsOnsetsStepSlider = NumberSlider.create({
+      min: Math.log2(128),
+      max: Math.log2(8192),
+      step: 1,
+      value: Math.log2(this.windowStep),
+      transformer: val => 2 ** val,
+      onChange: value => {
+        this.windowStep = 2 ** value
+        if (this.windowStep > this.fftSize) {
+          this.windowStep = this.fftSize
+          optionsOnsetsStepSlider.setValue(Math.log2(this.fftSize))
+        }
+        this.reset()
+      },
+    })
+
+    const optionsTempoLabel = document.createElement("div")
+    optionsTempoLabel.innerText = "Tempo"
+    optionsTempoLabel.style.fontWeight = "600"
+    optionsTempoLabel.style.marginTop = "15px"
+
+    const optionsTempoFFTSlider = NumberSlider.create({
+      min: Math.log2(128),
+      max: Math.log2(8192),
+      step: 1,
+      value: Math.log2(this.tempoFftSize),
+      transformer: val => 2 ** val,
+      onChange: value => {
+        this.tempoStep = 2 ** value
+        if (this.tempoStep > this.tempoFftSize) {
+          this.tempoStep = this.tempoFftSize
+          optionsTempoStepSlider.setValue(value)
+        }
+        this.reset()
+      },
+    })
+
+    const optionsTempoStepSlider = NumberSlider.create({
+      min: Math.log2(1),
+      max: Math.log2(1024),
+      step: 1,
+      value: Math.log2(this.tempoStep),
+      transformer: val => 2 ** val,
+      onChange: value => {
+        this.tempoStep = 2 ** value
+        if (this.tempoStep > this.tempoFftSize) {
+          this.tempoStep = this.tempoFftSize
+          optionsTempoStepSlider.setValue(Math.log2(this.tempoFftSize))
+        }
+        this.reset()
+      },
+    })
+
+    optionsView.replaceChildren(
+      optionsOnsetsLabel,
+      createLabel(
+        "FFT Size",
+        optionsOnsetsFFTSlider.view,
+        "Determines the amount of audio to analyze at every block. Higher values result in more accurate frequencies, while lower values result in more accurate timings. Defaults to 1024."
+      ),
+      createLabel(
+        "Window Step",
+        optionsOnsetsStepSlider.view,
+        "Determines the number of blocks per second. Lower values result in more time-accurate spectrograms, but may take more time and mess up tempo analysis. Defaults to 512 and must be lower than FFT Size."
+      ),
+      optionsTempoLabel,
+      createLabel(
+        "FFT Size",
+        optionsTempoFFTSlider.view,
+        "Determines the amount of the onset graph to analyze at every block. Higher values result in more accurate tempos, while lower values result in more accurate timings. Defaults to 4096."
+      ),
+      createLabel(
+        "Window Step",
+        optionsTempoStepSlider.view,
+        "Determines the number of blocks per second. Lower values result in more time-accurate tempograms, but may take more time. Defaults to 2 and must be lower than FFT Size."
+      )
+    )
+    return optionsView
+  }
+
+  createTempoView() {
+    const container = document.createElement("div")
+    container.style.display = "flex"
+    container.style.position = "relative"
+    container.style.gap = "10px"
+
+    const offsetDetectionColumn = document.createElement("div")
+    offsetDetectionColumn.style.flex = "1"
+
+    const offsetLabel = document.createElement("div")
+    offsetLabel.classList.add("sync-table-label")
+    offsetLabel.innerText = "Offsets"
+
+    this.offsetTableLabel = offsetLabel
+
+    const offsetTable = document.createElement("table")
+    offsetTable.classList.add("sync-table")
+    const offsetHeader = document.createElement("tr")
+    const oOffsetHeader = document.createElement("th")
+    oOffsetHeader.innerText = "Offset"
+    const oConfidenceHeader = document.createElement("th")
+    oConfidenceHeader.innerText = "Confidence"
+    offsetHeader.replaceChildren(oOffsetHeader, oConfidenceHeader)
+
+    offsetTable.appendChild(offsetHeader)
+
+    offsetDetectionColumn.replaceChildren(offsetLabel, offsetTable)
+
+    const bpmDetectionColumn = document.createElement("div")
+    bpmDetectionColumn.style.flex = "1"
+
+    const bpmLabel = document.createElement("div")
+    bpmLabel.classList.add("sync-table-label")
+    bpmLabel.innerText = "Current Tempos"
+
+    const bpmTable = document.createElement("table")
+    bpmTable.classList.add("sync-table")
+    const bpmHeader = document.createElement("tr")
+    const bBpmHeader = document.createElement("th")
+    bBpmHeader.innerText = "BPM"
+    const bConfidenceHeader = document.createElement("th")
+    bConfidenceHeader.innerText = "Confidence"
+    bpmHeader.replaceChildren(bBpmHeader, bConfidenceHeader)
+
+    bpmTable.appendChild(bpmHeader)
+
+    // Fill with empty rows
+    for (let i = 0; i < 5; i++) {
+      const row = document.createElement("tr")
+      const a = document.createElement("td")
+      a.innerText = "-"
+      const b = document.createElement("td")
+      b.innerText = "-"
+      row.replaceChildren(a, b)
+      offsetTable.appendChild(row)
+      this.offsetRows.push(row)
+      const clonedRow = row.cloneNode(true) as HTMLDivElement
+      bpmTable.appendChild(clonedRow)
+      this.bpmRows.push(clonedRow)
+    }
+
+    bpmDetectionColumn.replaceChildren(bpmLabel, bpmTable)
+
+    container.replaceChildren(offsetDetectionColumn, bpmDetectionColumn)
+
+    return container
+  }
+
+  createOnsetsView() {
+    const container = document.createElement("div")
+    container.style.display = "flex"
+    container.style.flexDirection = "column"
+    container.style.gap = "10px"
+    container.style.justifyContent = "center"
+    container.style.alignItems = "center"
+    container.style.position = "relative"
+
+    const thresholdRow = document.createElement("div")
+    thresholdRow.style.display = "flex"
+    thresholdRow.style.justifyContent = "space-between"
+    thresholdRow.style.alignItems = "center"
+    thresholdRow.style.width = "100%"
+
+    tippy(thresholdRow, {
+      content:
+        "Adjust the threshold for a block to be considered an onset (red line).",
+    })
+
+    const thresholdLabel = document.createElement("div")
+    thresholdLabel.innerText = "Onset Threshold"
+
+    const thresholdSlider = NumberSlider.create({
+      min: 0,
+      max: 1,
+      step: 0.01,
+      value: 0.3,
+      onChange: value => {
+        this.threshold = value
+      },
+    })
+
+    const onsetResults = document.createElement("div")
+    onsetResults.style.color = "#888888"
+    onsetResults.style.fontStyle = "italic"
+    onsetResults.style.fontSize = "11px"
+    onsetResults.style.marginBottom = "15px"
+    onsetResults.style.marginTop = "-6px"
+    onsetResults.innerText = "Found 0 onsets"
+    this.onsetResults = onsetResults
+
+    thresholdRow.replaceChildren(thresholdLabel, thresholdSlider.view)
+
+    const placeRow = document.createElement("div")
+    placeRow.style.display = "flex"
+    placeRow.style.justifyContent = "space-between"
+    placeRow.style.alignItems = "center"
+    placeRow.style.width = "100%"
+
+    const placeButton = document.createElement("button")
+    placeButton.innerText = "Place onsets as notes"
+    placeButton.onclick = () => this.placeOnsets()
+
+    const placeSelectionButton = document.createElement("button")
+    placeSelectionButton.innerText = "Place onsets as notes in selection"
+    placeSelectionButton.disabled = true
+    placeSelectionButton.onclick = () => this.placeOnsets(true)
+
+    this.placeNotesSelectionButton = placeSelectionButton
+
+    placeRow.replaceChildren(placeButton, placeSelectionButton)
+
+    container.replaceChildren(thresholdRow, onsetResults, placeRow)
+
+    return container
   }
 
   async reset() {
@@ -321,10 +526,11 @@ export class SyncWindow extends Window {
     await this.getMonoAudioData()
     this.sampleRate = this.app.chartManager.chartAudio.getSampleRate()
 
-    // Precalculate heights of spectogram pixels
-    this.spectroHeights = new Array(FFT_SIZE).fill(0).map((_, index) => {
-      const freq = ((index / (FFT_SIZE / 2)) * this.sampleRate) / 2
-      const freqNext = (((index + 1) / (FFT_SIZE / 2)) * this.sampleRate) / 2
+    // Precalculate heights of spectrogram pixels
+    this.spectroHeights = new Array(this.fftSize).fill(0).map((_, index) => {
+      const freq = ((index / (this.fftSize / 2)) * this.sampleRate) / 2
+      const freqNext =
+        (((index + 1) / (this.fftSize / 2)) * this.sampleRate) / 2
       const y =
         graphHeight -
         clamp(
@@ -347,8 +553,8 @@ export class SyncWindow extends Window {
     })
 
     // https://www.iso.org/obp/ui/en/#!iso:std:83117:en
-    this.spectroWeights = new Array(FFT_SIZE).fill(0).map((_, index) => {
-      const freq = ((index / (FFT_SIZE / 2)) * this.sampleRate) / 2
+    this.spectroWeights = new Array(this.fftSize).fill(0).map((_, index) => {
+      const freq = ((index / (this.fftSize / 2)) * this.sampleRate) / 2
       const weightIndex = WEIGHT_DATA.findIndex(point => point.frequency > freq)
       if (weightIndex < 1) return 0
       const lower = WEIGHT_DATA[weightIndex - 1]
@@ -364,7 +570,10 @@ export class SyncWindow extends Window {
       )
     })
 
-    const canvasLength = Math.max(1, Math.ceil(this.audioLength / WINDOW_STEP))
+    const canvasLength = Math.max(
+      1,
+      Math.ceil(this.audioLength / this.windowStep)
+    )
     this.spectrogramCanvases = []
     for (let i = 0; i < Math.ceil(canvasLength / MAX_CANVAS_LENGTH); i++) {
       const canvas = new OffscreenCanvas(
@@ -387,6 +596,20 @@ export class SyncWindow extends Window {
     this.peaks = []
     this.tempogram = []
     this.tempogramGroups = []
+
+    this.offsetTableLabel.innerText = "Offsets"
+    this.offsetRows.forEach(row => {
+      ;(row.firstChild! as HTMLDivElement).innerText = "-"
+      ;(row.lastChild! as HTMLDivElement).innerText = "-"
+    })
+    this.bpmRows.forEach(row => {
+      ;(row.firstChild! as HTMLDivElement).innerText = "-"
+      ;(row.lastChild! as HTMLDivElement).innerText = "-"
+    })
+  }
+
+  hasData() {
+    return this.numRenderedBlocks > 0
   }
 
   windowLoop(canvas: HTMLCanvasElement) {
@@ -395,27 +618,26 @@ export class SyncWindow extends Window {
     ctx.canvas.height = graphHeight * 2
     ctx.imageSmoothingEnabled = false
     const update = () => {
-      this.placeNotesButton.innerText =
-        this.app.chartManager.startRegion !== undefined &&
-        this.app.chartManager.endRegion !== undefined
-          ? "Place onsets as notes in region"
-          : "Place onsets as notes"
+      this.placeNotesSelectionButton.disabled =
+        this.app.chartManager.startRegion === undefined ||
+        this.app.chartManager.endRegion === undefined ||
+        this.app.chartManager.startRegion == this.app.chartManager.endRegion
+
+      this.covers[0].classList.toggle("active", this.hasData())
+      this.covers[1].classList.toggle("active", !this.hasData())
+      this.covers[2].classList.toggle("active", !this.hasData())
 
       if (!this.app.chartManager.chartAudio) return
 
-      const MAX_BLOCKS = Math.ceil(this.audioLength / WINDOW_STEP)
+      const MAX_BLOCKS = Math.ceil(this.audioLength / this.windowStep)
 
       // Render new blocks
-      if (this.monoAudioData && this.doAnalysis) {
+      if (this.monoAudioData !== undefined && this.doAnalysis) {
         const startTime = performance.now()
         while (performance.now() - startTime < MAX_MS_PER_FRAME) {
-          if (
-            this.lowestFinishedBlock >=
-            Math.ceil(this.monoAudioData.length / WINDOW_STEP)
-          ) {
+          if (this.lowestFinishedBlock >= MAX_BLOCKS) {
             if (this.tempogram.length == 0) {
               this.toggleButton.disabled = true
-              this.toggleButton.innerText = "Finding tempo"
               this.calcTempogram()
             }
             break
@@ -428,15 +650,17 @@ export class SyncWindow extends Window {
           }
           this.lowestFinishedBlock++
         }
-        if (
-          this.lowestFinishedBlock <
-          Math.ceil(this.monoAudioData.length / WINDOW_STEP)
-        ) {
+        if (this.lowestFinishedBlock < MAX_BLOCKS) {
           this.toggleButton.style.background = `linear-gradient(90deg, #265296 0 ${
             (this.lowestFinishedBlock / MAX_BLOCKS) * 100
           }%, rgb(83, 82, 82) ${
             (this.lowestFinishedBlock / MAX_BLOCKS) * 100
           }% 100%)`
+
+          this.toggleButton.innerText = `Stop analyzing (${roundDigit(
+            (this.lowestFinishedBlock / MAX_BLOCKS) * 100,
+            1
+          )}%)`
         }
       }
 
@@ -444,15 +668,15 @@ export class SyncWindow extends Window {
       ctx.fillStyle = "rgb(11, 14, 26)"
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-      const zoom = Options.chart.speed / 100
+      const zoom = Options.chart.speed / 40
 
       const leftBoundBlockNum =
-        (this.app.chartManager.getTime() * this.sampleRate) / WINDOW_STEP -
-        200 / zoom
+        (this.app.chartManager.getTime() * this.sampleRate) / this.windowStep -
+        (graphWidth * 0.2) / zoom
 
       const rightBoundBlockNum =
-        (this.app.chartManager.getTime() * this.sampleRate) / WINDOW_STEP +
-        800 / zoom
+        (this.app.chartManager.getTime() * this.sampleRate) / this.windowStep +
+        (graphWidth * 0.8) / zoom
 
       for (
         let i = Math.floor(leftBoundBlockNum / MAX_CANVAS_LENGTH);
@@ -463,8 +687,9 @@ export class SyncWindow extends Window {
         if (!canvas) continue
         ctx.drawImage(
           canvas,
-          (this.app.chartManager.getTime() * this.sampleRate) / WINDOW_STEP -
-            200 / zoom -
+          (this.app.chartManager.getTime() * this.sampleRate) /
+            this.windowStep -
+            (graphWidth * 0.2) / zoom -
             MAX_CANVAS_LENGTH * i,
           0,
           graphWidth / zoom,
@@ -479,9 +704,9 @@ export class SyncWindow extends Window {
       // draw current measure lines
 
       const leftBoundSecond =
-        (leftBoundBlockNum * WINDOW_STEP) / this.sampleRate
+        (leftBoundBlockNum * this.windowStep) / this.sampleRate
       const rightBoundSecond =
-        (rightBoundBlockNum * WINDOW_STEP) / this.sampleRate
+        (rightBoundBlockNum * this.windowStep) / this.sampleRate
 
       if (this.app.chartManager.loadedChart) {
         const leftBoundBeat =
@@ -531,7 +756,9 @@ export class SyncWindow extends Window {
         }
       }
 
-      ctx.fillRect(199, 0, 3, graphHeight * 2)
+      ctx.fillStyle = "rgba(50, 255, 20, 0.3)"
+
+      ctx.fillRect(graphWidth * 0.2 - 1, 0, 3, graphHeight * 2)
 
       // Draw threshold line
       ctx.fillStyle = "rgba(255, 0, 255, 0.5)"
@@ -544,8 +771,8 @@ export class SyncWindow extends Window {
 
       const currentTempoBlock = Math.round(
         (this.app.chartManager.getTime() * this.sampleRate) /
-          WINDOW_STEP /
-          TEMPO_STEP
+          this.windowStep /
+          this.tempoStep
       )
 
       ctx.fillStyle = "rgba(0, 150, 255, 1)"
@@ -562,8 +789,8 @@ export class SyncWindow extends Window {
       ctx.fillStyle = "rgba(0, 150, 255, 1)"
       ctx.textBaseline = "middle"
       if (this.tempogramGroups[currentTempoBlock]) {
+        const aggregateTempos = []
         for (const data of this.tempogramGroups[currentTempoBlock]) {
-          if (data.groups[0].value < TEMPOGRAM_THRESHOLD) break
           // Take the local average
           let weightsTotal = 0
           let bpmTotal = 0
@@ -587,20 +814,49 @@ export class SyncWindow extends Window {
           weightsTotal /= totalBlocksAvailable
           bpmTotal /= totalBlocksAvailable
 
-          ctx.font = `${18 + weightsTotal * 300}px Assistant`
-          ctx.globalAlpha = Math.min(
-            1,
-            (data.groups[0].value - TEMPOGRAM_THRESHOLD) * 100
-          )
+          aggregateTempos.push({
+            bpm: bpmTotal,
+            weight: data.groups[0].value,
+            smoothedWeight: weightsTotal,
+          })
+        }
+
+        aggregateTempos.sort((a, b) => b.smoothedWeight - a.smoothedWeight)
+
+        for (const result of aggregateTempos) {
+          if (result.weight < 0.01) continue
+          ctx.font = `${18 + result.weight * 300}px Assistant`
+          ctx.globalAlpha = Math.min(1, result.weight * 100)
           ctx.fillText(
-            roundDigit(bpmTotal, 0) + "",
+            roundDigit(result.bpm, 0) + "",
             200,
             lerp(
               graphHeight * 2,
               graphHeight * 1.5,
-              unlerp(MIN_BPM, MAX_BPM, bpmTotal)
+              unlerp(MIN_BPM, MAX_BPM, result.bpm)
             )
           )
+        }
+
+        // Update tables
+        if (this.lastSecond != this.app.chartManager.getTime()) {
+          this.lastSecond = this.app.chartManager.getTime()
+
+          const totalConfidence = aggregateTempos
+            .slice(0, 5)
+            .reduce((a, b) => a + b.smoothedWeight, 0)
+
+          for (let i = 0; i < 5; i++) {
+            const row = this.bpmRows[i]
+            const bpm = aggregateTempos[i]?.bpm
+            const confidence = aggregateTempos[i]?.weight
+            ;(row.firstChild as HTMLDivElement).innerText =
+              bpm === undefined ? "-" : Math.round(bpm).toString()
+            ;(row.lastChild as HTMLDivElement).innerText =
+              confidence === undefined
+                ? "-"
+                : Math.round((confidence / totalConfidence) * 100) + "%"
+          }
         }
       }
 
@@ -609,7 +865,7 @@ export class SyncWindow extends Window {
       ctx.font = "22px Assistant"
       ctx.textAlign = "left"
       ctx.textBaseline = "top"
-      ctx.fillText("Spectogram", 10, 10)
+      ctx.fillText("Spectrogram", 10, 10)
       ctx.fillText("Onsets", 10, graphHeight + 10)
       ctx.fillText("Tempogram", 10, graphHeight * 1.5 + 10)
 
@@ -621,18 +877,18 @@ export class SyncWindow extends Window {
   renderBlock(blockNum: number) {
     if (!this.monoAudioData) return
     // Get a chunk of the audio data
-    const slice = new Float32Array(FFT_SIZE)
+    const slice = new Float32Array(this.fftSize)
     slice.set(
       this.monoAudioData.subarray(
-        Math.max(0, blockNum * WINDOW_STEP - FFT_SIZE / 2),
-        blockNum * WINDOW_STEP + FFT_SIZE / 2
+        Math.max(0, blockNum * this.windowStep - this.fftSize / 2),
+        blockNum * this.windowStep + this.fftSize / 2
       ),
-      -Math.min(0, blockNum * WINDOW_STEP - FFT_SIZE / 2)
+      -Math.min(0, blockNum * this.windowStep - this.fftSize / 2)
     )
 
     // apply hanning window
     for (let i = 0; i < slice.length; i++) {
-      slice[i] *= 0.5 * (1 - Math.cos(Math.PI * 2 * (i / FFT_SIZE)))
+      slice[i] *= 0.5 * (1 - Math.cos(Math.PI * 2 * (i / this.fftSize)))
     }
     const response = ft(slice).slice(0)
     // log scale the response
@@ -645,7 +901,7 @@ export class SyncWindow extends Window {
   calcDifference(blockNum: number) {
     const block = this.spectrogram[blockNum].slice(0)
     const previous =
-      this.spectrogram[blockNum - 1]?.slice(0) ?? new Float64Array(FFT_SIZE)
+      this.spectrogram[blockNum - 1]?.slice(0) ?? new Float64Array(this.fftSize)
     for (let i = 0; i < block.length; i++) {
       block[i] = Math.max(0, block[i] - previous[i]) * this.spectroWeights[i]
     }
@@ -709,6 +965,9 @@ export class SyncWindow extends Window {
         this.peaks[blockNum - 1] = false
       }
       this.peaks[blockNum] = true
+      this.onsetResults.innerText = `Found ${
+        this.peaks.filter(x => x).length
+      } onsets`
     } else {
       this.peaks[blockNum] = false
     }
@@ -775,6 +1034,9 @@ export class SyncWindow extends Window {
         value > this._threshold &&
         (this.noveltyCurveIsolated[index - 1] ?? 0) < this._threshold
     )
+    this.onsetResults.innerText = `Found ${
+      this.peaks.filter(x => x).length
+    } onsets`
   }
 
   calculateOffset() {
@@ -821,7 +1083,8 @@ export class SyncWindow extends Window {
       if (highestCount > 50) break
     }
     if (firstBPM == 0) return
-    const beatLengthBlocks = (60 / firstBPM) * (this.sampleRate / WINDOW_STEP)
+    const beatLengthBlocks =
+      (60 / firstBPM) * (this.sampleRate / this.windowStep)
     const analyzeWave = new Array(OFFSET_LOOKAHEAD).fill(0).map((_, i) => {
       const beatBlock = (i % beatLengthBlocks) / beatLengthBlocks
       let t = 0
@@ -839,8 +1102,6 @@ export class SyncWindow extends Window {
       return n / t
     })
 
-    let bestResponse = 0
-    let bestBlock = 0
     const options = []
     for (let i = peakScanStart; i < peakScanStart + beatLengthBlocks; i++) {
       const response = this.noveltyCurveIsolated
@@ -850,13 +1111,9 @@ export class SyncWindow extends Window {
         })
         .reduce((a, b) => a + b, 0)
 
-      if (response > bestResponse) {
-        bestResponse = response
-        bestBlock = i
-      }
       options.push({
         block: i,
-        offset: -((i * WINDOW_STEP) / this.sampleRate) % (60 / firstBPM),
+        offset: -((i * this.windowStep) / this.sampleRate) % (60 / firstBPM),
         response: response,
         curve: this.noveltyCurveIsolated
           .slice(i, i + OFFSET_LOOKAHEAD)
@@ -867,19 +1124,29 @@ export class SyncWindow extends Window {
     }
 
     options.sort((a, b) => b.response - a.response)
-    const bestOffset = -(
-      ((bestBlock * WINDOW_STEP) / this.sampleRate) %
-      (60 / firstBPM)
-    )
-    console.log(firstBPM, topBPM, peakScanStart, bestOffset, options)
+    const totalResponse = options
+      .slice(0, 5)
+      .reduce((a, b) => a + b.response, 0)
+
+    this.offsetTableLabel.innerText = `Offsets (first BPM: ${firstBPM})`
+
+    for (let i = 0; i < Math.min(options.length, 5); i++) {
+      const row = this.offsetRows[i]
+      ;(row.firstChild as HTMLDivElement).innerText = roundDigit(
+        options[i].offset,
+        3
+      ).toString()
+      ;(row.lastChild as HTMLDivElement).innerText =
+        Math.round((options[i].response / totalResponse) * 100) + "%"
+    }
   }
 
-  placeOnsets() {
+  placeOnsets(selection = false) {
     const notes = this.peaks
       .map((value, index) => {
         if (!value) return null
         let beat = this.app.chartManager.loadedChart!.getBeatFromSeconds(
-          (index * WINDOW_STEP) / this.sampleRate
+          (index * this.windowStep) / this.sampleRate
         )
         beat = Math.round(beat * 48) / 48
         if (beat < 0) return null
@@ -891,14 +1158,10 @@ export class SyncWindow extends Window {
       })
       .filter(note => note !== null)
       .filter(note => {
-        if (
-          this.app.chartManager.startRegion === undefined ||
-          this.app.chartManager.endRegion === undefined
-        )
-          return true
+        if (!selection) return true
         return (
-          note!.beat > this.app.chartManager.startRegion &&
-          note!.beat < this.app.chartManager.endRegion
+          note!.beat > this.app.chartManager.startRegion! &&
+          note!.beat < this.app.chartManager.endRegion!
         )
       }) as PartialTapNotedataEntry[]
 
@@ -963,21 +1226,21 @@ export class SyncWindow extends Window {
       scaled[i] = this.noveltyCurveIsolated[i] / max
     }
 
-    const MAX_BLOCKS = Math.ceil(scaled.length / TEMPO_STEP)
+    const MAX_BLOCKS = Math.ceil(scaled.length / this.tempoStep)
 
     let frameTime = performance.now()
     const processBlock = (blockNum: number) => {
-      const slice = new Float32Array(TEMPO_FFT_SIZE)
+      const slice = new Float32Array(this.tempoFftSize)
       slice.set(
         scaled.subarray(
-          Math.max(0, blockNum * TEMPO_STEP - TEMPO_FFT_SIZE / 2),
-          blockNum * TEMPO_STEP + TEMPO_FFT_SIZE / 2
+          Math.max(0, blockNum * this.tempoStep - this.tempoFftSize / 2),
+          blockNum * this.tempoStep + this.tempoFftSize / 2
         ),
-        -Math.min(0, blockNum * TEMPO_STEP - TEMPO_FFT_SIZE / 2)
+        -Math.min(0, blockNum * this.tempoStep - this.tempoFftSize / 2)
       )
       // apply hanning window
       for (let i = 0; i < slice.length; i++) {
-        slice[i] *= 0.5 * (1 - Math.cos(Math.PI * 2 * (i / TEMPO_FFT_SIZE)))
+        slice[i] *= 0.5 * (1 - Math.cos(Math.PI * 2 * (i / this.tempoFftSize)))
       }
       const response = ft(slice).slice(0)
       // log scale the response
@@ -994,6 +1257,10 @@ export class SyncWindow extends Window {
           this.toggleButton.style.background = `linear-gradient(90deg, #265296 0 ${
             (blockNum / MAX_BLOCKS) * 100
           }%, rgb(83, 82, 82) ${(blockNum / MAX_BLOCKS) * 100}% 100%)`
+          this.toggleButton.innerText = `Finding tempo (${roundDigit(
+            (blockNum / MAX_BLOCKS) * 100,
+            1
+          )}%)`
           setTimeout(() => processBlock(++blockNum), 1)
         }
       } else {
@@ -1003,6 +1270,8 @@ export class SyncWindow extends Window {
         this.tempogram = []
         this.monoAudioData = undefined
         this.toggleButton.innerText = "Finished analyzing"
+        this.resetButton.disabled = false
+        this.doAnalysis = false
         this.toggleButton.style.background = `#265296`
       }
     }
@@ -1019,7 +1288,7 @@ export class SyncWindow extends Window {
     // Reduce tempos
     response.forEach((value, index) => {
       let tmp =
-        ((this.sampleRate * 60) / (WINDOW_STEP * TEMPO_FFT_SIZE)) * index
+        ((this.sampleRate * 60) / (this.windowStep * this.tempoFftSize)) * index
       if (tmp > MAX_BPM * 4 || tmp < MIN_BPM / 4) return
       while (tmp > MAX_BPM && tmp != Infinity) tmp /= 2
       while (tmp < MIN_BPM && tmp != 0) tmp *= 2
@@ -1058,7 +1327,7 @@ export class SyncWindow extends Window {
     })
     const ctx =
       this.spectrogramCanvases[
-        Math.floor((blockNum * TEMPO_STEP) / MAX_CANVAS_LENGTH)
+        Math.floor((blockNum * this.tempoStep) / MAX_CANVAS_LENGTH)
       ].getContext("2d")!
 
     ctx.fillStyle = `rgba(0, 166, 255, 1)`
@@ -1066,13 +1335,13 @@ export class SyncWindow extends Window {
       const col = clamp(data.value * 8000, 0, 255)
       ctx.globalAlpha = col / 255
       ctx.fillRect(
-        (blockNum * TEMPO_STEP) % MAX_CANVAS_LENGTH,
+        (blockNum * this.tempoStep) % MAX_CANVAS_LENGTH,
         lerp(
           graphHeight * 2,
           graphHeight * 1.5,
           unlerp(MIN_BPM, MAX_BPM, data.bpm)
         ),
-        1 * TEMPO_STEP,
+        1 * this.tempoStep,
         (graphHeight * 0.5) / (MAX_BPM - MIN_BPM)
       )
     })

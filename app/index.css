@@ -958,6 +958,10 @@ input[type="number"] {
   font-size: 13.33px;
 }
 
+input[type="range"]:focus {
+  outline: none;
+}
+
 input:disabled {
   color: var(--text-color-disabled);
   pointer-events: none;
@@ -1209,6 +1213,11 @@ input.right {
 
 .spinner-down {
   background: linear-gradient(180deg, #484848, #555);
+}
+
+.slider {
+  display: flex;
+  flex-direction: row;
 }
 
 #waterfall {
@@ -2358,6 +2367,13 @@ input[type="color"] {
   background-color: rgba(66, 66, 66, 0.5);
 }
 
+.sync-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
 .sync-spinner-container {
   display: flex;
   flex-direction: row;
@@ -2365,7 +2381,6 @@ input[type="color"] {
   gap: 10px;
 }
 
-.sync-top-container,
 .sync-bottom-container {
   display: flex;
   flex-direction: row;
@@ -2373,6 +2388,118 @@ input[type="color"] {
   gap: 10px;
   justify-content: space-around;
   align-items: center;
+  margin-bottom: 5px;
+}
+
+.sync-tab-container {
+  display: flex;
+  width: 370px;
+  flex-direction: row;
+  align-items: center;
+  margin: 10px 5px;
+  background: var(--bg-tertiary);
+  font-size: 13px;
+  border-radius: 5px;
+}
+
+.sync-tab-option {
+  padding: 5px 10px;
+  flex: 1;
+  text-align: center;
+  border-radius: 5px;
+}
+
+.sync-tab-option:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sync-tab-option.active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.animated .sync-tab-option {
+  transition: 0.1s cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.sync-tab-view {
+  width: 370px;
+  flex: 1;
+  min-height: 0;
+  background: var(--bg-tertiary);
+  border-radius: 5px;
+  position: relative;
+}
+
+.sync-tab-scroller {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  overflow: hidden;
+  position: relative;
+  border-radius: 5px;
+}
+
+.sync-cover-scroller {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  overflow: hidden;
+  width: 370px;
+  pointer-events: none;
+}
+
+.sync-cover {
+  width: 370px;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  height: 100%;
+}
+
+.sync-cover.active {
+  opacity: 1;
+  backdrop-filter: blur(2px);
+  pointer-events: all;
+}
+
+.animated .sync-tab-scroller,
+.animated .sync-cover-scroller {
+  scroll-behavior: smooth;
+}
+
+.sync-tab-scroller > div:not(.sync-cover) {
+  width: 370px;
+  padding: 10px 10px;
+}
+
+.sync-table-label {
+  text-align: center;
+  font-weight: bold;
+}
+
+.sync-table {
+  width: 100%;
+  table-layout: fixed;
+  font-size: 13px;
+}
+
+.sync-table th {
+  font-weight: 500;
+  padding: 3px 1px;
+}
+
+.sync-table td {
+  padding: 1px 1px;
+  text-align: center;
+}
+
+.sync-table tr:nth-child(even) {
+  background: rgb(0, 0, 0, 0.1);
 }
 
 #embed {
