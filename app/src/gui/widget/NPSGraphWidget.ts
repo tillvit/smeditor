@@ -1,78 +1,33 @@
-import {
-  BitmapText,
-  FederatedPointerEvent,
-  Graphics,
-  Sprite,
-  Texture,
-} from "pixi.js"
-import { EditMode } from "../../chart/ChartManager"
-import { Chart } from "../../chart/sm/Chart"
-import { BetterRoundedRect } from "../../util/BetterRoundedRect"
+import { BitmapText, FederatedPointerEvent, Graphics, Texture } from "pixi.js"
 import { EventHandler } from "../../util/EventHandler"
-import { Flags } from "../../util/Flags"
 import { clamp, lerp, unlerp } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { Widget } from "./Widget"
+import { BaseTimelineWidget } from "./BaseTimelineWidget"
 import { WidgetManager } from "./WidgetManager"
 
-export class NPSGraphWidget extends Widget {
-  backing: BetterRoundedRect = new BetterRoundedRect()
-  overlay: Sprite = new Sprite(Texture.WHITE)
+export class NPSGraphWidget extends BaseTimelineWidget {
   npsGraph: Graphics
-
-  private lastHeight = 0
-  private lastCMod
-  private mouseDown = false
-  private queued = false
   private graphGradient: Texture | null = null
-
   private graphWidth: number = 40
-  private npsText: BitmapText = new BitmapText("npsText", {
+  private npsText: BitmapText = new BitmapText("", {
     fontName: "Main",
     fontSize: 12,
   })
 
   constructor(manager: WidgetManager) {
-    super(manager)
+    const graphWidth = 40
+    super(manager, 60, graphWidth)
+    this.graphWidth = graphWidth
+
     this.graphGradient = this.makeGradient()
-    this.addChild(this.backing)
-    this.visible = false
-    this.backing.tint = 0
-    this.backing.alpha = 0.3
 
     this.npsGraph = new Graphics()
-    this.addChild(this.npsGraph)
-
-    this.overlay.anchor.x = 0.5
-    this.overlay.anchor.y = 0
-    this.overlay.alpha = 0.3
-    this.lastCMod = Options.chart.CMod
-    this.addChild(this.overlay)
-    this.x = this.manager.app.renderer.screen.width / 2 - 20
+    this.container.addChild(this.npsGraph)
 
     this.npsText.visible = false
     this.npsText.anchor.x = 1
     this.npsText.anchor.y = 0.5
     this.addChild(this.npsText)
-
-    this.setupEventHandlers()
-  }
-
-  private setupEventHandlers() {
-    EventHandler.on("chartLoaded", () => {
-      this.queued = false
-      this.populate()
-    })
-    EventHandler.on("chartModifiedAfter", () => {
-      if (!this.queued) this.populate()
-      this.queued = true
-    })
-    const interval = setInterval(() => {
-      if (this.queued) {
-        this.queued = false
-        this.populate()
-      }
-    }, 3000)
 
     EventHandler.on("userOptionUpdated", optionId => {
       if (
@@ -83,49 +38,20 @@ export class NPSGraphWidget extends Widget {
         this.populate()
       }
     })
-    this.on("destroyed", () => clearInterval(interval))
-    this.populate()
 
-    this.eventMode = "static"
-    this.on("mousedown", event => {
-      this.mouseDown = true
-      this.handleMouse(event)
-    })
-    this.on("mousemove", event => {
-      this.handleMouse(event)
-    })
     this.on("mouseleave", () => {
-      this.mouseDown = false
-      this.clearNpsDisplay()
+      this.hideNpsDisplay()
     })
-    window.onmouseup = () => {
-      this.mouseDown = false
-    }
-  }
 
-  private handleMouse(event: FederatedPointerEvent) {
-    if (this.mouseDown) {
-      this.handleUpdateChartPosition(event)
-    }
-    this.updateNpsDisplay(event)
-  }
+    this.on("mouseenter", () => {
+      this.showNpsDisplay()
+    })
 
-  private handleUpdateChartPosition(event: FederatedPointerEvent) {
-    if (this.manager.chartManager.getMode() == EditMode.Play) return
-    if (!this.getChart()) return
-    let t = this.npsGraph.toLocal(event.global).y / this.npsGraph.height
-    t = clamp(t, 0, 1)
-    if (Options.chart.CMod) {
-      this.manager.chartManager.setTime(
-        lerp(
-          -this.getChart().timingData.getOffset(),
-          this.getChart().getLastSecond(),
-          t
-        )
-      )
-    } else {
-      this.manager.chartManager.setBeat(this.getChart().getLastBeat() * t)
-    }
+    this.on("mousemove", event => {
+      this.updateNpsDisplay(event)
+    })
+
+    this.populate()
   }
 
   private updateNpsDisplay(event: FederatedPointerEvent) {
@@ -139,7 +65,7 @@ export class NPSGraphWidget extends Widget {
       this.npsText.visible = false
       return
     }
-    const npsGraph = chart.getNPSGraph()
+    const npsGraphData = chart.getNPSGraph()
 
     let t = this.npsGraph.toLocal(event.global).y / this.npsGraph.height
     t = clamp(t, 0, 1)
@@ -158,7 +84,7 @@ export class NPSGraphWidget extends Widget {
 
     // npsGraph is a sparse array, so make sure we have a valid number,
     // otherwise the nps for that measure is 0
-    const nps = npsGraph[npsIndex] ?? 0
+    const nps = npsGraphData[npsIndex] ?? 0
 
     this.npsText.text = nps.toFixed(1) + " nps"
     this.npsText.position.y = this.getYFromBeat(beat) - this.npsGraph.height / 2
@@ -166,8 +92,22 @@ export class NPSGraphWidget extends Widget {
     this.npsText.visible = true
   }
 
-  private clearNpsDisplay() {
+  private hideNpsDisplay() {
     this.npsText.visible = false
+  }
+
+  private showNpsDisplay() {
+    const chart = this.getChart()
+    if (!chart) {
+      this.npsText.visible = false
+      return
+    }
+    const lastNote = chart.getNotedata().at(-1)
+    if (!lastNote) {
+      this.npsText.visible = false
+      return
+    }
+    this.npsText.visible = true
   }
 
   update() {
@@ -175,65 +115,7 @@ export class NPSGraphWidget extends Widget {
       this.visible = false
       return
     }
-
-    const chart = this.getChart()
-    const chartView = this.manager.chartManager.chartView!
-    if (!chart || !chartView || !Flags.layout) {
-      this.visible = false
-      return
-    }
-    this.visible = true
-
-    this.scale.y = Options.chart.reverse ? -1 : 1
-    const height = this.manager.app.renderer.screen.height - 40
-    this.backing.height = height + 10
-    this.backing.position.y = -this.backing.height / 2
-    this.backing.position.x = -this.backing.width / 2
-
-    this.x = this.manager.app.renderer.screen.width / 2 - 60
-
-    if (chart.getNotedata().length == 0) {
-      this.overlay.height = 0
-      return
-    }
-
-    let startY, endY: number
-    if (Options.chart.CMod) {
-      startY = this.getYFromSecond(
-        chartView.getSecondFromYPos(
-          -this.manager.app.renderer.screen.height / 2
-        )
-      )
-      endY = this.getYFromSecond(
-        chartView.getSecondFromYPos(this.manager.app.renderer.screen.height / 2)
-      )
-    } else {
-      startY = this.getYFromBeat(
-        chartView.getBeatFromYPos(
-          -this.manager.app.renderer.screen.height / 2,
-          true
-        )
-      )
-      endY = this.getYFromBeat(
-        chartView.getBeatFromYPos(
-          this.manager.app.renderer.screen.height / 2,
-          true
-        )
-      )
-    }
-
-    if (startY > endY) [startY, endY] = [endY, startY]
-    this.overlay.y = startY - this.npsGraph.height / 2
-    this.overlay.height = endY - startY
-    this.overlay.height = Math.max(2, this.overlay.height)
-    if (
-      this.manager.app.renderer.screen.height != this.lastHeight ||
-      this.lastCMod != Options.chart.CMod
-    ) {
-      this.lastCMod = Options.chart.CMod
-      this.lastHeight = this.manager.app.renderer.screen.height
-      this.populate()
-    }
+    super.update()
   }
 
   populate() {
@@ -243,16 +125,13 @@ export class NPSGraphWidget extends Widget {
     }
 
     const height = this.manager.app.renderer.screen.height - 40
-    this.backing.width = this.graphWidth + 8
-    this.overlay.width = this.graphWidth + 8
-    this.pivot.x = this.backing.width / 2
 
     if (chart.getNotedata().length == 0) {
       return
     }
 
     const maxNps = chart.getMaxNPS()
-    const npsGraph = chart.getNPSGraph()
+    const npsGraphData = chart.getNPSGraph()
     const lastBeat = chart.getLastBeat()
 
     this.npsGraph.clear()
@@ -265,13 +144,13 @@ export class NPSGraphWidget extends Widget {
     this.npsGraph.pivot.x = this.backing.width / 2
     this.npsGraph.pivot.y = height / 2
 
-    const lastMeasure = npsGraph.length
+    const lastMeasure = npsGraphData.length
 
     const startY = this.getYFromBeat(0)
     this.npsGraph.moveTo(0, startY)
 
     for (let measureIndex = 0; measureIndex < lastMeasure; measureIndex++) {
-      const nps = npsGraph[measureIndex] || 0
+      const nps = npsGraphData[measureIndex] ?? 0
       const beat = chart.timingData.getBeatFromMeasure(measureIndex)
       const endOfMeasureBeat = Math.min(
         lastBeat,
@@ -285,7 +164,7 @@ export class NPSGraphWidget extends Widget {
       this.npsGraph.lineTo(x, endOfMeasureY)
     }
 
-    const lastnps = npsGraph.at(-1)!
+    const lastnps = npsGraphData.at(-1) ?? 0
     const lastX = unlerp(0, maxNps, lastnps) * this.graphWidth
     const lastY = this.getYFromBeat(lastBeat)
     this.npsGraph.lineTo(lastX, lastY)
@@ -317,10 +196,6 @@ export class NPSGraphWidget extends Widget {
     )
     t = clamp(t, 0, 1)
     return t * (this.backing.height - 10)
-  }
-
-  private getChart(): Chart {
-    return this.manager.chartManager.loadedChart!
   }
 
   private makeGradient() {
