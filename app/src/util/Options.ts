@@ -105,7 +105,7 @@ export class DefaultOptions {
     effectOffset: 0,
     visualOffset: 0,
     hideBarlines: false,
-    judgmentTilt: true,
+    judgementTilt: true,
     timingCollection: "ITG",
     timingWindowScale: 1,
     timingWindowAdd: 0,
@@ -126,6 +126,7 @@ export class DefaultOptions {
     showFPS: false,
     showTimers: false,
     showScroll: false,
+    showNoteskinErrors: false,
   }
   static experimental = {}
 }

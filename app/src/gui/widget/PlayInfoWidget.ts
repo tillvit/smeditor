@@ -418,7 +418,7 @@ export class PlayInfoWidget extends Widget {
 
     for (const window of [
       ...collection.getStandardWindows(),
-      collection.getMissJudgment(),
+      collection.getMissJudgement(),
     ]) {
       const label = new BitmapText(window.name, {
         fontName: "Main",
@@ -442,7 +442,7 @@ export class PlayInfoWidget extends Widget {
     i = 0
     for (const window of [
       ...collection.getHoldWindows(),
-      collection.getMineJudgment(),
+      collection.getMineJudgement(),
     ]) {
       const name = isHoldTimingWindow(window) ? window.noteType : "Mine"
       const label = new BitmapText(name, {
@@ -586,8 +586,8 @@ export class PlayInfoWidget extends Widget {
     )
     const windowSize = Math.round(collection.maxWindowMS())
     gameStats.getDataPoints().forEach(point => {
-      if (isStandardMissTimingWindow(point.judgment)) return
-      if (!isStandardTimingWindow(point.judgment)) return
+      if (isStandardMissTimingWindow(point.judgement)) return
+      if (!isStandardTimingWindow(point.judgement)) return
       const ms = Math.round(point.error * 1000)
       for (let i = -3; i <= 3; i++) {
         if (!this.barlines.children[ms + windowSize + i]) continue

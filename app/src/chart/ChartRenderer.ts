@@ -20,7 +20,7 @@ import { Waveform } from "./component/edit/Waveform"
 import { Notefield } from "./component/notefield/Notefield"
 import { ComboNumber } from "./component/play/ComboNumber"
 import { ErrorBarContainer } from "./component/play/ErrorBarContainer"
-import { JudgmentSprite } from "./component/play/JudgmentSprite"
+import { JudgementSprite } from "./component/play/JudgementSprite"
 import { SelectionTimingEventContainer } from "./component/timing/SelectionTimingEventContainer"
 import { TimingAreaContainer } from "./component/timing/TimingAreaContainer"
 import { TimingTrackContainer } from "./component/timing/TimingTrackContainer"
@@ -58,7 +58,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   private readonly timingBar: ErrorBarContainer
   private readonly notefield: Notefield
   private readonly snapDisplay: SnapContainer
-  private readonly judgment: JudgmentSprite
+  private readonly judgement: JudgementSprite
   private readonly combo: ComboNumber
   private readonly selectionBoundary: SelectionBoundary
   private readonly selectionArea: SelectionAreaContainer
@@ -82,7 +82,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     this.snapDisplay = new SnapContainer(this)
     this.previewArea = new PreviewAreaContainer(this)
     this.selectionArea = new SelectionAreaContainer(this)
-    this.judgment = new JudgmentSprite()
+    this.judgement = new JudgementSprite()
     this.combo = new ComboNumber(this)
     this.selectionBoundary = new SelectionBoundary(this)
     this.scrollDebug = new ScrollDebug(this)
@@ -99,7 +99,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       this.combo,
       this.notefield,
       this.snapDisplay,
-      this.judgment,
+      this.judgement,
       this.selectionBoundary,
       this.scrollDebug
     )
@@ -264,30 +264,22 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return !!this.selectionBounds
   }
 
-  doJudgment(note: NotedataEntry, error: number, judgment: TimingWindow) {
+  doJudgement(note: NotedataEntry, error: number, judgement: TimingWindow) {
     if (this.chartManager.getMode() == EditMode.Play) {
-      this.judgment.doJudge(error, judgment)
-      this.timingBar.addBar(error, judgment)
+      this.judgement.doJudge(error, judgement)
+      this.timingBar.addBar(error, judgement)
     }
-    this.notefield.onJudgment(note.col, judgment)
+    this.notefield.onJudgement(note.col, judgement)
   }
 
-  activateHold(col: number) {
-    this.notefield.activateHold(col)
-  }
-
-  keyDown(col: number) {
-    this.notefield.keyDown(col)
-  }
-
-  keyUp(col: number) {
-    this.notefield.keyUp(col)
+  startPlay() {
+    this.notefield.startPlay()
   }
 
   endPlay() {
     this.notefield.endPlay()
     this.timingBar.reset()
-    this.judgment.reset()
+    this.judgement.reset()
   }
 
   update() {
@@ -1023,7 +1015,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @return {*}  {boolean}
    * @memberof ChartRenderer
    */
-  selectionTest(object: Container): boolean {
+  selectionTest(object: DisplayObject): boolean {
     if (!this.selectionBounds) return false
     const ab = this.selectionBoundary.getBounds()
     const bb = object.getBounds()

@@ -41,15 +41,15 @@ export class BasicGameLogic extends GameLogic {
         !note.gameplay!.hasHit
       ) {
         lastChord = note.beat
-        chartManager.chartView.doJudgment(
+        chartManager.chartView.doJudgement(
           note,
           0,
-          this.collection.getMissJudgment()
+          this.collection.getMissJudgement()
         )
         const chord = this.chordCohesion.get(note.beat)!
         chartManager.gameStats?.addDataPoint(
           chord,
-          this.collection.getMissJudgment(),
+          this.collection.getMissJudgement(),
           0
         )
       }
@@ -62,17 +62,17 @@ export class BasicGameLogic extends GameLogic {
       if (this.heldCols.isPressed(hold.col) && hold.type == "Hold")
         hold.gameplay!.lastHoldActivation = Date.now()
       if (this.shouldDropHold(hold, Date.now())) {
-        chartManager.chartView.doJudgment(
+        chartManager.chartView.doJudgement(
           hold,
           0,
-          this.collection.getDroppedJudgment()
+          this.collection.getDroppedJudgement()
         )
         hold.gameplay!.droppedHoldBeat =
           chartManager.chartView.getBeatWithOffset()
         this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
         chartManager.gameStats?.addHoldDataPoint(
           hold,
-          this.collection.getDroppedJudgment()
+          this.collection.getDroppedJudgement()
         )
         continue
       }
@@ -81,11 +81,12 @@ export class BasicGameLogic extends GameLogic {
         chartManager.chartView.chart.getSecondsFromBeat(hold.beat + hold.hold)
       ) {
         hold.gameplay!.hideNote = true
-        chartManager.chartView.doJudgment(
+        chartManager.chartView.doJudgement(
           hold,
           0,
           this.collection.getHeldJudgement(hold)
         )
+        chartManager.chartView.getNotefield().releaseHold(hold.col)
         this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
         chartManager.gameStats?.addHoldDataPoint(
           hold,
@@ -99,22 +100,22 @@ export class BasicGameLogic extends GameLogic {
       const mine = this.getClosestNote(
         chartManager.loadedChart.getNotedata(),
         chartManager.chartView.getTimeWithOffset() -
-          this.collection.getMineJudgment().getTimingWindowMS() / 2000,
+          this.collection.getMineJudgement().getTimingWindowMS() / 2000,
         col,
         ["Mine"],
-        this.collection.getMineJudgment().getTimingWindowMS() / 2
+        this.collection.getMineJudgement().getTimingWindowMS() / 2
       )
       if (mine) {
         mine.gameplay!.hasHit = true
         mine.gameplay!.hideNote = true
-        chartManager.chartView.doJudgment(
+        chartManager.chartView.doJudgement(
           mine,
           0,
-          this.collection.getMineJudgment()
+          this.collection.getMineJudgement()
         )
         chartManager.gameStats?.addDataPoint(
           [mine],
-          this.collection.getMineJudgment(),
+          this.collection.getMineJudgement(),
           0
         )
         chartManager.mine.play()
@@ -164,12 +165,13 @@ export class BasicGameLogic extends GameLogic {
       ["Tap", "Hold", "Roll"]
     )
     this.heldCols.keyDown(col)
+    chartManager.chartView.getNotefield().press(col)
     for (const hold of this.holdProgress) {
       if (hold.type == "Roll" && hold.col == col)
         hold.gameplay!.lastHoldActivation = Date.now()
     }
     if (closestNote) this.hitNote(chartManager, closestNote, hitTime)
-    else chartManager.chartView.keyDown(col)
+    else chartManager.chartView.getNotefield().ghostTap(col)
   }
 
   keyUp(chartManager: ChartManager, col: number): void {
@@ -182,7 +184,7 @@ export class BasicGameLogic extends GameLogic {
       ["Lift"]
     )
     this.heldCols.keyUp(col)
-    chartManager.chartView.keyUp(col)
+    chartManager.chartView.getNotefield().lift(col)
     if (closestNote) this.hitNote(chartManager, closestNote, hitTime)
   }
 
@@ -198,7 +200,7 @@ export class BasicGameLogic extends GameLogic {
     note.gameplay!.hasHit = true
     if (isHoldNote(note)) {
       note.gameplay!.lastHoldActivation = Date.now()
-      chartManager.chartView!.activateHold(note.col)
+      chartManager.chartView!.getNotefield().activateHold(note.col)
       this.holdProgress.push(note)
     }
     const chord = this.chordCohesion.get(note.beat)!
@@ -208,7 +210,7 @@ export class BasicGameLogic extends GameLogic {
       )
       const hideNote = this.collection.shouldHideNote(judge)
       chord.forEach(note => {
-        chartManager.chartView!.doJudgment(
+        chartManager.chartView!.doJudgement(
           note,
           (hitTime - note.second) / Options.audio.rate,
           judge

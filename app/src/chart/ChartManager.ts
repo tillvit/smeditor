@@ -425,7 +425,7 @@ export class ChartManager {
           )
         ) {
           if (this.mode != EditMode.Play)
-            this.chartView.doJudgment(
+            this.chartView.doJudgement(
               notedata[this.noteIndex],
               0,
               TIMING_WINDOW_AUTOPLAY
@@ -1422,6 +1422,7 @@ export class ChartManager {
       this.widgetManager.startPlay()
       this.chartAudio.seek(Math.max(0, this.time) - 1)
       this.chartAudio.play()
+      this.chartView.startPlay()
     } else if (this.mode == EditMode.Record) {
       this.chartAudio.seek(Math.max(0, this.time) - 1)
       this.chartAudio.play()

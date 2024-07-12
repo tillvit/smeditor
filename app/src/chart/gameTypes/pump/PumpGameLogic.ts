@@ -30,15 +30,15 @@ export class PumpGameLogic extends BasicGameLogic {
         !note.gameplay!.hasHit
       ) {
         lastChord = note.beat
-        chartManager.chartView.doJudgment(
+        chartManager.chartView.doJudgement(
           note,
           0,
-          this.collection.getMissJudgment()
+          this.collection.getMissJudgement()
         )
         const chord = this.chordCohesion.get(note.beat)!
         chartManager.gameStats?.addDataPoint(
           chord,
-          this.collection.getMissJudgment(),
+          this.collection.getMissJudgement(),
           0
         )
       }
@@ -51,17 +51,17 @@ export class PumpGameLogic extends BasicGameLogic {
       if (this.heldCols.isPressed(hold.col) && hold.type == "Hold")
         hold.gameplay!.lastHoldActivation = Date.now()
       if (this.shouldDropHold(hold, Date.now())) {
-        chartManager.chartView.doJudgment(
+        chartManager.chartView.doJudgement(
           hold,
           0,
-          this.collection.getDroppedJudgment()
+          this.collection.getDroppedJudgement()
         )
         hold.gameplay!.droppedHoldBeat =
           chartManager.chartView.getBeatWithOffset()
         this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
         chartManager.gameStats?.addHoldDataPoint(
           hold,
-          this.collection.getDroppedJudgment()
+          this.collection.getDroppedJudgement()
         )
         continue
       }
@@ -70,7 +70,7 @@ export class PumpGameLogic extends BasicGameLogic {
         chartManager.chartView.chart.getSecondsFromBeat(hold.beat + hold.hold)
       ) {
         hold.gameplay!.hideNote = true
-        chartManager.chartView.doJudgment(
+        chartManager.chartView.doJudgement(
           hold,
           0,
           this.collection.getHeldJudgement(hold)
@@ -88,22 +88,22 @@ export class PumpGameLogic extends BasicGameLogic {
       const mine = this.getClosestNote(
         chartManager.loadedChart.getNotedata(),
         chartManager.chartView.getTimeWithOffset() -
-          this.collection.getMineJudgment().getTimingWindowMS() / 2000,
+          this.collection.getMineJudgement().getTimingWindowMS() / 2000,
         col,
         ["Mine"],
-        this.collection.getMineJudgment().getTimingWindowMS() / 2
+        this.collection.getMineJudgement().getTimingWindowMS() / 2
       )
       if (mine) {
         mine.gameplay!.hasHit = true
         mine.gameplay!.hideNote = true
-        chartManager.chartView.doJudgment(
+        chartManager.chartView.doJudgement(
           mine,
           0,
-          this.collection.getMineJudgment()
+          this.collection.getMineJudgement()
         )
         chartManager.gameStats?.addDataPoint(
           [mine],
-          this.collection.getMineJudgment(),
+          this.collection.getMineJudgement(),
           0
         )
         chartManager.mine.play()

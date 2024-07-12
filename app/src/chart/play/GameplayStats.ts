@@ -21,23 +21,23 @@ import {
   TimingWindowCollection,
 } from "./TimingWindowCollection"
 
-interface JudgmentDataPoint {
+interface JudgementDataPoint {
   second: number
   error: number
-  judgment: TimingWindow
+  judgement: TimingWindow
   notes: NotedataEntry[]
 }
 
 export class GameplayStats {
-  private judgmentCounts: Map<TimingWindow, number> = new Map()
-  private holdJudgmentCounts: Map<HoldTimingWindow, [number, number]> =
+  private judgementCounts: Map<TimingWindow, number> = new Map()
+  private holdJudgementCounts: Map<HoldTimingWindow, [number, number]> =
     new Map()
   private dancePoints = 0
   private maxCumulativeDancePoints = 0
   private maxDancePoints = 0
   private chartManager: ChartManager
   private readonly notedata: Notedata
-  private dataPoints: JudgmentDataPoint[] = []
+  private dataPoints: JudgementDataPoint[] = []
   private handlers: ((error: number, judge: TimingWindow) => void)[] = []
   private combo = 0
   private missCombo = 0
@@ -59,8 +59,8 @@ export class GameplayStats {
 
   applyOffset(offset: number) {
     this.dataPoints = this.dataPoints.map(point => {
-      if (isStandardMissTimingWindow(point.judgment)) return point
-      if (!isStandardTimingWindow(point.judgment)) return point
+      if (isStandardMissTimingWindow(point.judgement)) return point
+      if (!isStandardTimingWindow(point.judgement)) return point
       return {
         ...point,
         error: point.error + offset,
@@ -70,16 +70,16 @@ export class GameplayStats {
   }
 
   /**
-   * Adds a new judgment.
+   * Adds a new judgement.
    *
    * @param {NotedataEntry[]} notes - The notes in this row.
-   * @param {TimingWindow} judge - The judgment received
+   * @param {TimingWindow} judge - The judgement received
    * @param {number} error - The timing error in ms
    * @memberof GameplayStats
    */
   addDataPoint(notes: NotedataEntry[], judge: TimingWindow, error: number) {
-    if (!this.judgmentCounts.has(judge)) this.judgmentCounts.set(judge, 0)
-    this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
+    if (!this.judgementCounts.has(judge)) this.judgementCounts.set(judge, 0)
+    this.judgementCounts.set(judge, this.judgementCounts.get(judge)! + 1)
     this.dancePoints += judge.dancePoints
 
     const comboMult = this.chartManager.loadedChart!.timingData.getEventAtBeat(
@@ -130,33 +130,33 @@ export class GameplayStats {
     this.dataPoints.push({
       second: notes[0].second,
       error,
-      judgment: judge,
+      judgement: judge,
       notes,
     })
   }
 
   /**
-   * Add a new judgment for holds
+   * Add a new judgement for holds
    *
    * @param {HoldNotedataEntry} note - The hold note
-   * @param {(HoldTimingWindow | HoldDroppedTimingWindow)} judge - The judgment received
+   * @param {(HoldTimingWindow | HoldDroppedTimingWindow)} judge - The judgement received
    * @memberof GameplayStats
    */
   addHoldDataPoint(
     note: HoldNotedataEntry,
     judge: HoldTimingWindow | HoldDroppedTimingWindow
   ) {
-    if (!this.judgmentCounts.has(judge)) this.judgmentCounts.set(judge, 0)
-    this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
+    if (!this.judgementCounts.has(judge)) this.judgementCounts.set(judge, 0)
+    this.judgementCounts.set(judge, this.judgementCounts.get(judge)! + 1)
     const holdJudge = TimingWindowCollection.getCollection(
       Options.play.timingCollection
     ).getHeldJudgement(note)
-    if (!this.holdJudgmentCounts.has(holdJudge))
-      this.holdJudgmentCounts.set(holdJudge, [0, 0])
-    const count = this.holdJudgmentCounts.get(holdJudge)!
+    if (!this.holdJudgementCounts.has(holdJudge))
+      this.holdJudgementCounts.set(holdJudge, [0, 0])
+    const count = this.holdJudgementCounts.get(holdJudge)!
     if (isHoldTimingWindow(judge)) count[0]++
     else count[1]++
-    this.holdJudgmentCounts.set(holdJudge, count)
+    this.holdJudgementCounts.set(holdJudge, count)
     this.dancePoints += judge.dancePoints
     this.maxCumulativeDancePoints += TimingWindowCollection.getCollection(
       Options.play.timingCollection
@@ -180,7 +180,7 @@ export class GameplayStats {
 
   /**
    * Returns the cumulative score.
-   * Cumulative score is based on the number of arrows that have received a judgment.
+   * Cumulative score is based on the number of arrows that have received a judgement.
    * 1 is 100%.
    *
    * @return {*}  {number}
@@ -191,7 +191,7 @@ export class GameplayStats {
     return this.dancePoints / this.maxCumulativeDancePoints
   }
 
-  getDataPoints(): JudgmentDataPoint[] {
+  getDataPoints(): JudgementDataPoint[] {
     return this.dataPoints
   }
 
@@ -200,8 +200,8 @@ export class GameplayStats {
       this.dataPoints
         .filter(
           point =>
-            !isStandardMissTimingWindow(point.judgment) &&
-            isStandardTimingWindow(point.judgment)
+            !isStandardMissTimingWindow(point.judgement) &&
+            isStandardTimingWindow(point.judgement)
         )
         .map(data => data.error)
     )
@@ -218,7 +218,7 @@ export class GameplayStats {
   }
 
   /**
-   * Recalculates the judgments and scores of this object using the current timing windows.
+   * Recalculates the judgements and scores of this object using the current timing windows.
    *
    * @memberof GameplayStats
    */
@@ -226,7 +226,7 @@ export class GameplayStats {
     this.calculateMaxDP()
     this.dancePoints = 0
     this.maxCumulativeDancePoints = 0
-    for (const entry of this.holdJudgmentCounts.entries()) {
+    for (const entry of this.holdJudgementCounts.entries()) {
       const judge = entry[0]
       this.dancePoints += entry[0].dancePoints * entry[1][0]
       this.maxCumulativeDancePoints +=
@@ -235,20 +235,20 @@ export class GameplayStats {
           Options.play.timingCollection
         ).getMaxHoldDancePoints(judge.noteType)
     }
-    this.judgmentCounts.clear()
+    this.judgementCounts.clear()
     for (const dataPoint of this.dataPoints) {
       let judge: TimingWindow = TimingWindowCollection.getCollection(
         Options.play.timingCollection
       ).judgeInput(dataPoint.error)
       if (
-        isStandardMissTimingWindow(dataPoint.judgment) ||
-        isMineTimingWindow(dataPoint.judgment)
+        isStandardMissTimingWindow(dataPoint.judgement) ||
+        isMineTimingWindow(dataPoint.judgement)
       )
-        judge = dataPoint.judgment
-      if (!this.judgmentCounts.has(judge)) this.judgmentCounts.set(judge, 0)
-      this.judgmentCounts.set(judge, this.judgmentCounts.get(judge)! + 1)
+        judge = dataPoint.judgement
+      if (!this.judgementCounts.has(judge)) this.judgementCounts.set(judge, 0)
+      this.judgementCounts.set(judge, this.judgementCounts.get(judge)! + 1)
       this.dancePoints += judge.dancePoints
-      dataPoint.judgment = judge
+      dataPoint.judgement = judge
       if (!isMineTimingWindow(judge))
         this.maxCumulativeDancePoints += TimingWindowCollection.getCollection(
           Options.play.timingCollection
@@ -300,14 +300,14 @@ export class GameplayStats {
   }
 
   /**
-   * Returns the number of judgments for a given judgment.
+   * Returns the number of judgements for a given judgement.
    *
    * @param {TimingWindow} window
    * @return {*}  {number}
    * @memberof GameplayStats
    */
   getCount(window: TimingWindow): number {
-    return this.judgmentCounts.get(window) ?? 0
+    return this.judgementCounts.get(window) ?? 0
   }
 
   /**
@@ -331,7 +331,7 @@ export class GameplayStats {
   }
 
   /**
-   * Returns the best judgment received
+   * Returns the best judgement received
    *
    * @return {*}  {(StandardTimingWindow | undefined)}
    * @memberof GameplayStats

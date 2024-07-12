@@ -581,8 +581,8 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
         children: [
           {
             type: "item",
-            label: "Judgment tilt",
-            id: "play.judgmentTilt",
+            label: "Judgement tilt",
+            id: "play.judgementTilt",
             input: {
               type: "checkbox",
             },
