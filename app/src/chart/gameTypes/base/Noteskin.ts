@@ -18,7 +18,7 @@ export abstract class NoteSkin {
    * @return {*}  {Container}
    * @memberof Notefield
    */
-  abstract createReceptor(columnNumber: number): Receptor
+  abstract createReceptor(columnName: string): Receptor
 
   /**
    * Creates a note flash sprite given a judgement.
@@ -28,7 +28,10 @@ export abstract class NoteSkin {
    * @return {*}  {NoteFlash | undefined}
    * @memberof Notefield
    */
-  abstract createNoteFlash(judgement: TimingWindow): NoteFlash | undefined
+  abstract createNoteFlash(
+    judgement: TimingWindow,
+    columnName: string
+  ): NoteFlash | undefined
 
   /**
    * Creates a note flash sprite when a hold is pressed.
@@ -37,7 +40,7 @@ export abstract class NoteSkin {
    * @return {*}  {NoteFlash | undefined}
    * @memberof Notefield
    */
-  abstract createHoldNoteFlash(): NoteFlash
+  abstract createHoldNoteFlash(columnName: string): NoteFlash
 
   /**
    * Called every frame to update the noteskin.
@@ -55,7 +58,7 @@ export abstract class NoteSkin {
    * @return {*}  {NoteObject}
    * @memberof Notefield
    */
-  abstract createNote(note: NotedataEntry): NoteObject
+  abstract createNote(note: NotedataEntry, columnName: string): NoteObject
 }
 
 export interface Receptor extends DisplayObject {
@@ -77,6 +80,7 @@ export interface NoteObject extends Container {
 export interface NoteObjectHold extends Container {
   holdBody: TilingSprite
   holdCap: Sprite
+  setActive: (active: boolean) => void
 }
 
 type NoteSkinConstructor = new (renderer: ChartRenderer) => NoteSkin
@@ -85,5 +89,4 @@ export interface NoteSkinOptions {
   name: string
   object: NoteSkinConstructor
   gameTypes: string[]
-  rotateColumns: boolean
 }

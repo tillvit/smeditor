@@ -7,6 +7,17 @@ import { DanceDefaultNoteObject } from "./DanceDefaultNoteRenderer"
 import { DanceDefaultNoteTexture } from "./DanceDefaultNoteTexture"
 import { DanceDefaultReceptor } from "./DanceDefaultReceptor"
 
+export const rotationMap: Record<string, number> = {
+  Left: 0 * (Math.PI / 180),
+  UpLeft: 45 * (Math.PI / 180),
+  Up: 90 * (Math.PI / 180),
+  UpRight: 135 * (Math.PI / 180),
+  Right: 180 * (Math.PI / 180),
+  DownRight: 225 * (Math.PI / 180),
+  Down: 270 * (Math.PI / 180),
+  DownLeft: 315 * (Math.PI / 180),
+}
+
 class DanceDefaultNoteskinObject extends NoteSkin {
   constructor(renderer: ChartRenderer) {
     super(renderer)
@@ -14,19 +25,20 @@ class DanceDefaultNoteskinObject extends NoteSkin {
     DanceDefaultNoteTexture.initArrowTex()
   }
 
-  createReceptor(_: number) {
-    return new DanceDefaultReceptor()
+  createReceptor(columnName: string) {
+    return new DanceDefaultReceptor(columnName)
   }
 
-  createNote(note: NotedataEntry) {
-    return new DanceDefaultNoteObject(note)
+  createNote(note: NotedataEntry, columnName: string) {
+    return new DanceDefaultNoteObject(note, columnName)
   }
 
-  createNoteFlash(judgement: TimingWindow) {
-    return DanceDefaultNoteFlash.createJudgment(judgement)
+  createNoteFlash(judgement: TimingWindow, columnName: string) {
+    return DanceDefaultNoteFlash.createJudgment(judgement, columnName)
   }
-  createHoldNoteFlash() {
-    return DanceDefaultNoteFlash.createHoldJudgment()
+
+  createHoldNoteFlash(columnName: string) {
+    return DanceDefaultNoteFlash.createHoldJudgment(columnName)
   }
 
   update(): void {
@@ -50,5 +62,4 @@ export const DanceDefaultNoteskin: NoteSkinOptions = {
     "dance-threepanel",
     "dance-threedouble",
   ],
-  rotateColumns: true,
 }

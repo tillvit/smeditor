@@ -49,9 +49,9 @@ export class SelectionNoteContainer extends Container {
         container.x = this.notefield.getColumnX(newNote.col)
         container.object.destroy()
         container.object.alpha = 0.4
-        container.object = this.notefield.noteskin.createNote(newNote)
-        container.object.note.rotation = this.notefield.getColumnRotation(
-          newNote.col
+        container.object = this.notefield.noteskin.createNote(
+          newNote,
+          this.notefield.getColumnName(newNote.col)
         )
         const objectBounds = container.object.getBounds()
         container.selection.x = objectBounds.x
@@ -77,13 +77,15 @@ export class SelectionNoteContainer extends Container {
           col: note.col + columnShift,
         }
         const container = new Container() as HighlightedNoteObject
-        const object = this.notefield.noteskin.createNote(newNote)
+        const object = this.notefield.noteskin.createNote(
+          newNote,
+          this.notefield.getColumnName(newNote.col)
+        )
         Object.assign(container, {
           x: this.notefield.getColumnX(newNote.col),
           zIndex: newNote.beat,
           alpha: 0.4,
         })
-        object.note.rotation = this.notefield.getColumnRotation(newNote.col)
         const selection = new Sprite(Texture.WHITE)
         const objectBounds = object.getBounds()
         selection.x = objectBounds.x

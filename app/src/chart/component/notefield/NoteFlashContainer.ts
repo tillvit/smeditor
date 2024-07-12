@@ -22,7 +22,6 @@ export class NoteFlashContainer extends Container {
 
     for (let colNum = 0; colNum < this.notefield.gameType.numCols; colNum++) {
       const container: ColumnNoteFlashes = new Container() as ColumnNoteFlashes
-      container.rotation = this.notefield.getColumnRotation(colNum)
       container.x = this.notefield.getColumnX(colNum)
 
       const flashes = new Container<NoteFlash>()
@@ -49,12 +48,17 @@ export class NoteFlashContainer extends Container {
     if (isHoldTimingWindow(judge) || isHoldDroppedTimingWindow(judge)) {
       this.children[col].holdFlashes.removeChildren()
     }
-    const holdJudgment = this.notefield.noteskin.createNoteFlash(judge)
+    const holdJudgment = this.notefield.noteskin.createNoteFlash(
+      judge,
+      this.notefield.getColumnName(col)
+    )
     if (!holdJudgment) return
     this.children[col].flashes.addChild(holdJudgment)
   }
   createHoldNoteFlash(col: number): void {
-    const holdJudgment = this.notefield.noteskin.createHoldNoteFlash()
+    const holdJudgment = this.notefield.noteskin.createHoldNoteFlash(
+      this.notefield.getColumnName(col)
+    )
     if (!holdJudgment) return
     this.children[col].holdFlashes.addChild(holdJudgment)
   }

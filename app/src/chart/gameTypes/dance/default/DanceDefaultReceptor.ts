@@ -4,6 +4,7 @@ import receptorUrl from "../../../../../assets/noteskin/dance/default/receptor.p
 import { rgbtoHex } from "../../../../util/Color"
 import { ChartRenderer } from "../../../ChartRenderer"
 import { Receptor } from "../../base/Noteskin"
+import { rotationMap } from "./DanceDefaultNoteskin"
 
 const receptorTex = Texture.from(receptorUrl)
 
@@ -11,8 +12,9 @@ export class DanceDefaultReceptor extends Sprite implements Receptor {
   private lastPressedTime = -1
   private pressedKeys = 0
 
-  constructor() {
+  constructor(columnName: string) {
     super(receptorTex)
+    this.rotation = rotationMap[columnName] ?? 0
     this.width = 69
     this.height = 69
     this.anchor.set(0.5)

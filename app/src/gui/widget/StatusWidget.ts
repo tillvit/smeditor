@@ -1,7 +1,8 @@
 import { Parser } from "expr-eval"
-import { Container, Sprite, Texture } from "pixi.js"
+import { Sprite, Texture } from "pixi.js"
 import tippy from "tippy.js"
 import { EditMode, EditTimingMode } from "../../chart/ChartManager"
+import { NoteObject } from "../../chart/gameTypes/base/Noteskin"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
@@ -17,7 +18,7 @@ import { WidgetManager } from "./WidgetManager"
 
 interface NoteArrow {
   element: HTMLButtonElement
-  sprite: Container
+  sprite: NoteObject
   bg: Sprite
   highlight: BetterRoundedRect
   type: string
@@ -811,6 +812,8 @@ export class StatusWidget extends Widget {
         arrow.highlight.alpha =
           noteType == arrow.type ? 0.15 : arrow.hovered ? 0.05 : 0
       }
+      if (this.manager.chartManager.chartView)
+        arrow.sprite.update(this.manager.chartManager.chartView)
     })
   }
 

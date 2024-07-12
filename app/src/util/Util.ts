@@ -1,5 +1,5 @@
 import { Parser } from "expr-eval"
-import { DisplayObject, FederatedMouseEvent } from "pixi.js"
+import { DisplayObject, FederatedMouseEvent, Rectangle, Texture } from "pixi.js"
 import { PartialNotedataEntry, isHoldNote } from "../chart/sm/NoteTypes"
 import { IS_OSX } from "../data/KeybindData"
 
@@ -114,4 +114,23 @@ export function isIFrame() {
   } catch (e) {
     return true
   }
+}
+
+export function splitTex(texture: Texture, xFrames: number, yFrames: number) {
+  const frames = []
+  const xWidth = texture.width / xFrames
+  const yWidth = texture.height / yFrames
+  for (let y = 0; y < yFrames; y++) {
+    const row = []
+    for (let x = 0; x < xFrames; x++) {
+      row.push(
+        new Texture(
+          texture.baseTexture,
+          new Rectangle(xWidth * x, yWidth * y, xWidth, yWidth)
+        )
+      )
+    }
+    frames.push(row)
+  }
+  return frames
 }

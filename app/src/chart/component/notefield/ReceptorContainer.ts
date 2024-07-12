@@ -11,8 +11,9 @@ export class ReceptorContainer extends Container {
     this.notefield = notefield
 
     for (let colNum = 0; colNum < this.notefield.gameType.numCols; colNum++) {
-      const receptor = this.notefield.noteskin.createReceptor(colNum)
-      receptor.rotation = this.notefield.getColumnRotation(colNum)
+      const receptor = this.notefield.noteskin.createReceptor(
+        this.notefield.getColumnName(colNum)
+      )
       receptor.x = this.notefield.getColumnX(colNum)
       this.addChild(receptor)
     }

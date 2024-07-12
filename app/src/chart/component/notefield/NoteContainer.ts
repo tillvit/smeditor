@@ -13,6 +13,7 @@ interface HighlightedNoteObject extends Container {
   selection: Sprite
   parity: Sprite
   object: NoteObject
+  lastActive: boolean
 }
 
 const parityColors: Record<string, number> = {
@@ -64,12 +65,14 @@ export class NoteContainer extends Container {
       if (!this.shouldDisplayNote(note, firstBeat, lastBeat)) continue
       if (!this.arrowMap.has(note)) {
         const container = new Container() as HighlightedNoteObject
-        const object = this.notefield.noteskin.createNote(note)
+        const object = this.notefield.noteskin.createNote(
+          note,
+          this.notefield.getColumnName(note.col)
+        )
         Object.assign(container, {
           x: this.notefield.getColumnX(note.col),
           zIndex: note.beat,
         })
-        object.note.rotation = this.notefield.getColumnRotation(note.col)
         const selection = new Sprite(Texture.WHITE)
         const objectBounds = object.getBounds()
         selection.x = objectBounds.x
@@ -88,6 +91,7 @@ export class NoteContainer extends Container {
         container.object = object
         container.selection = selection
         container.parity = parity
+        container.lastActive = false
         this.arrowMap.set(note, container)
         container.addChild(object, selection, parity)
         this.addChild(container)
@@ -130,6 +134,17 @@ export class NoteContainer extends Container {
           this.setHoldBrightness(container.object, 1 - t * 0.7)
         } else {
           this.setHoldBrightness(container.object, 0.8)
+        }
+        if (note.gameplay) {
+          const holdActive = !(
+            note.gameplay.lastHoldActivation === undefined ||
+            note.gameplay.droppedHoldBeat !== undefined
+          )
+          if (container.lastActive != holdActive) {
+            container.lastActive = holdActive
+            console.log("active change")
+            container.object.hold?.setActive(holdActive)
+          }
         }
       }
       if (

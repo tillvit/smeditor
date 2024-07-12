@@ -11,6 +11,7 @@ import rollCapUrl from "../../../../../assets/noteskin/dance/default/roll/cap.pn
 import { EditMode } from "../../../ChartManager"
 import { ChartRenderer } from "../../../ChartRenderer"
 import { NoteObject, NoteObjectHold } from "../../base/Noteskin"
+import { rotationMap } from "./DanceDefaultNoteskin"
 
 const holdBodyTex = Texture.from(holdBodyUrl)
 const holdCapTex = Texture.from(holdCapUrl)
@@ -55,13 +56,15 @@ class DanceDefaultNoteHold extends Container implements NoteObjectHold {
     this.addChild(holdBody)
     this.addChild(holdCap)
   }
+
+  setActive(_active: boolean) {}
 }
 
 export class DanceDefaultNoteObject extends Container implements NoteObject {
   type = ""
   hold?: DanceDefaultNoteHold
   note = new NoteItem()
-  constructor(note: NotedataEntry) {
+  constructor(note: NotedataEntry, columnName: string) {
     super()
     this.eventMode = "static"
     const type = note.type
@@ -92,7 +95,10 @@ export class DanceDefaultNoteObject extends Container implements NoteObject {
 
     this.addChild(this.note)
     this.type = note.type
+
+    this.note.rotation = rotationMap[columnName]
   }
+
   update(renderer: ChartRenderer) {
     if (this.type == "Fake") {
       this.note.icon!.visible = renderer.chartManager.getMode() != EditMode.Play

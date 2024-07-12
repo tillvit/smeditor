@@ -1,22 +1,11 @@
-import { ColHeldTracker } from "../../../util/ColHeldTracker"
 import { Options } from "../../../util/Options"
 import { bsearch } from "../../../util/Util"
 import { ChartManager } from "../../ChartManager"
 import { TimingWindowCollection } from "../../play/TimingWindowCollection"
-import {
-  HoldNotedataEntry,
-  isHoldNote,
-  isTapNote,
-  Notedata,
-  NotedataEntry,
-} from "../../sm/NoteTypes"
-import { GameLogic } from "../base/GameLogic"
+import { HoldNotedataEntry } from "../../sm/NoteTypes"
+import { BasicGameLogic } from "../common/BasicGameLogic"
 
-export class BasicGameLogic extends GameLogic {
-  protected chordCohesion: Map<number, NotedataEntry[]> = new Map()
-  protected missNoteIndex = 0
-  protected holdProgress: HoldNotedataEntry[] = []
-  protected heldCols: ColHeldTracker = new ColHeldTracker()
+export class PumpGameLogic extends BasicGameLogic {
   protected collection: TimingWindowCollection =
     TimingWindowCollection.getCollection("ITG")
 
@@ -152,119 +141,6 @@ export class BasicGameLogic extends GameLogic {
     this.missNoteIndex = firstHittableNote
     this.holdProgress = []
     this.heldCols.reset()
-  }
-
-  keyDown(chartManager: ChartManager, col: number): void {
-    if (!chartManager.loadedChart || !chartManager.chartView) return
-    const hitTime = chartManager.chartView.getTimeWithOffset()
-    const closestNote = this.getClosestNote(
-      chartManager.loadedChart.getNotedata(),
-      hitTime,
-      col,
-      ["Tap", "Hold", "Roll"]
-    )
-    this.heldCols.keyDown(col)
-    for (const hold of this.holdProgress) {
-      if (hold.type == "Roll" && hold.col == col)
-        hold.gameplay!.lastHoldActivation = Date.now()
-    }
-    if (closestNote) this.hitNote(chartManager, closestNote, hitTime)
-    else chartManager.chartView.keyDown(col)
-  }
-
-  keyUp(chartManager: ChartManager, col: number): void {
-    if (!chartManager.loadedChart || !chartManager.chartView) return
-    const hitTime = chartManager.chartView.getTimeWithOffset()
-    const closestNote = this.getClosestNote(
-      chartManager.loadedChart.getNotedata(),
-      hitTime,
-      col,
-      ["Lift"]
-    )
-    this.heldCols.keyUp(col)
-    chartManager.chartView.keyUp(col)
-    if (closestNote) this.hitNote(chartManager, closestNote, hitTime)
-  }
-
-  shouldAssistTick(note: NotedataEntry): boolean {
-    return !note.fake && !note.warped && note.type != "Mine"
-  }
-
-  protected hitNote(
-    chartManager: ChartManager,
-    note: NotedataEntry,
-    hitTime: number
-  ) {
-    note.gameplay!.hasHit = true
-    if (isHoldNote(note)) {
-      note.gameplay!.lastHoldActivation = Date.now()
-      chartManager.chartView!.activateHold(note.col)
-      this.holdProgress.push(note)
-    }
-    const chord = this.chordCohesion.get(note.beat)!
-    if (chord.every(note => note.gameplay!.hasHit)) {
-      const judge = this.collection.judgeInput(
-        (hitTime - note.second) / Options.audio.rate
-      )
-      const hideNote = this.collection.shouldHideNote(judge)
-      chord.forEach(note => {
-        chartManager.chartView!.doJudgment(
-          note,
-          (hitTime - note.second) / Options.audio.rate,
-          judge
-        )
-        if (hideNote && isTapNote(note)) note.gameplay!.hideNote = true
-      })
-      chartManager.gameStats?.addDataPoint(
-        chord,
-        judge,
-        (hitTime - note.second) / Options.audio.rate
-      )
-    }
-  }
-
-  protected getClosestNote(
-    notedata: Notedata,
-    hitTime: number,
-    col: number,
-    types: string[],
-    windowMS?: number
-  ): NotedataEntry | undefined {
-    windowMS = windowMS ?? this.collection.maxWindowMS()
-    windowMS *= Options.audio.rate
-    const hitWindowStart = hitTime - windowMS / 1000
-    const hitWindowEnd = hitTime + windowMS / 1000
-    let firstHittableNote = bsearch(notedata, hitWindowStart, a => a.second) + 1
-    if (
-      firstHittableNote >= 1 &&
-      hitWindowStart <= notedata[firstHittableNote - 1].second
-    )
-      firstHittableNote--
-    let closestNote: NotedataEntry | undefined = undefined
-    while (
-      notedata[firstHittableNote] &&
-      notedata[firstHittableNote].second <= hitWindowEnd
-    ) {
-      const note = notedata[firstHittableNote]
-      if (
-        note.gameplay!.hasHit ||
-        note.col != col ||
-        note.fake ||
-        note.warped ||
-        !types.includes(note.type)
-      ) {
-        firstHittableNote++
-        continue
-      }
-      if (
-        !closestNote ||
-        Math.abs(note.second - hitTime) < Math.abs(closestNote.second - hitTime)
-      ) {
-        closestNote = note
-      }
-      firstHittableNote++
-    }
-    return closestNote
   }
 
   protected shouldDropHold(note: HoldNotedataEntry, time: number): boolean {

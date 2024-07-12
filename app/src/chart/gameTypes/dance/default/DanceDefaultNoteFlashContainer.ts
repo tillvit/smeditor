@@ -15,6 +15,7 @@ import flashMineUrl from "../../../../../assets/noteskin/dance/default/flash/min
 import flashW5Url from "../../../../../assets/noteskin/dance/default/flash/way_off.png"
 import flashW1Url from "../../../../../assets/noteskin/dance/default/flash/white_fantastic.png"
 import { NoteFlash } from "../../base/Noteskin"
+import { rotationMap } from "./DanceDefaultNoteskin"
 
 const HOLD_TEX = Texture.from(holdFlashUrl)
 
@@ -58,9 +59,12 @@ export class DanceDefaultNoteFlash extends Sprite implements NoteFlash {
     if (Date.now() - this.createTime > 150 && this.type == "flash") {
       this.destroy()
     }
+    if (Date.now() - this.createTime > 600 && this.type == "mine") {
+      this.destroy()
+    }
   }
 
-  static createJudgment(judgment: TimingWindow) {
+  static createJudgment(judgment: TimingWindow, columnName: string) {
     let tex: Texture | undefined
     if (isStandardTimingWindow(judgment)) tex = FLASH_TEX_MAP[judgment.id]
     if (isMineTimingWindow(judgment)) tex = FLASH_TEX_MAP["mine"]
@@ -68,6 +72,7 @@ export class DanceDefaultNoteFlash extends Sprite implements NoteFlash {
     if (!tex) return
     const flash = new DanceDefaultNoteFlash(tex)
     flash.type = "flash"
+    flash.rotation = rotationMap[columnName]
     if (isMineTimingWindow(judgment)) {
       flash.type = "mine"
       flash.blendMode = BLEND_MODES.ADD
@@ -75,8 +80,9 @@ export class DanceDefaultNoteFlash extends Sprite implements NoteFlash {
     return flash
   }
 
-  static createHoldJudgment() {
+  static createHoldJudgment(columnName: string) {
     const flash = new DanceDefaultNoteFlash(HOLD_TEX)
+    flash.rotation = rotationMap[columnName]
     flash.type = "hold"
     return flash
   }

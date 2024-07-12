@@ -1,6 +1,7 @@
 import { GameType } from "./GameTypeRegistry"
 import { NoteSkinOptions } from "./base/Noteskin"
 import { DanceDefaultNoteskin } from "./dance/default/DanceDefaultNoteskin"
+import { PumpDefaultNoteskin } from "./pump/default/PumpDefaultNoteskin"
 
 export class NoteSkinRegistry {
   private static noteskins = new Map<string, Map<string, NoteSkinOptions>>()
@@ -29,3 +30,4 @@ export class NoteSkinRegistry {
 }
 
 NoteSkinRegistry.register(DanceDefaultNoteskin)
+NoteSkinRegistry.register(PumpDefaultNoteskin)

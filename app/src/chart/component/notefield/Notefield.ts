@@ -84,16 +84,18 @@ export class Notefield extends Container implements ChartRendererComponent {
     this.ghostNote = undefined
     this.ghostNoteEntry = note
     if (!note) return
-    this.ghostNote = this.noteskin.createNote(note)
+    this.ghostNote = this.noteskin.createNote(
+      note,
+      this.getColumnName(note.col)
+    )
     this.addChildAt(this.ghostNote, 1)
     this.ghostNote.alpha = 0.4
     this.ghostNote.x = this.getColumnX(note.col)
-    this.ghostNote.rotation = this.getColumnRotation(note.col)
     this.ghostNote.y = this.renderer.getYPosFromBeat(note.beat)
   }
 
-  getNoteSprite(note: NotedataEntry): Container {
-    const spr = this.noteskin.createNote(note)
+  getNoteSprite(note: NotedataEntry): NoteObject {
+    const spr = this.noteskin.createNote(note, this.getColumnName(note.col))
     return spr
   }
 
@@ -144,9 +146,7 @@ export class Notefield extends Container implements ChartRendererComponent {
     return this.columnX[col] ?? 0
   }
 
-  getColumnRotation(col: number) {
-    return this.noteskinOptions.rotateColumns
-      ? (this.gameType.columnRotations[col] / 180) * Math.PI
-      : 0
+  getColumnName(col: number) {
+    return this.gameType.columnNames[col]
   }
 }
