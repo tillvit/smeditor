@@ -124,6 +124,9 @@ export class NPSGraphWidget extends BaseTimelineWidget {
     } else {
       this.xOffset = 20
     }
+
+    this.npsText.scale.y = Options.chart.reverse ? -1 : 1
+
     super.update()
   }
 
