@@ -81,10 +81,9 @@ export default {
     Left: {
       Receptor: options => {
         let zoomanim: string | undefined
-        const spr = new AnimatedSprite(splitTex(receptorTex, 2, 1)[0])
-        receptorTex.once("update", () => {
-          spr.textures = splitTex(receptorTex, 2, 1)[0]
-        })
+        const tex = splitTex(receptorTex, 2, 1, 256, 256)
+
+        const spr = new AnimatedSprite(tex[0])
         spr.width = 64
         spr.height = 64
         spr.anchor.set(0.5)

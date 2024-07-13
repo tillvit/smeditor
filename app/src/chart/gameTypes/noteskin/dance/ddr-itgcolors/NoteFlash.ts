@@ -76,7 +76,7 @@ const animations: Record<string, BezierKeyFrames> = {
 }
 
 export class NoteFlashContainer extends Container {
-  holdExplosion = new AnimatedSprite(splitTex(holdTex, 4, 1)[0])
+  holdExplosion = new AnimatedSprite(splitTex(holdTex, 4, 1, 160, 160)[0])
   bright = new Sprite(brightTex)
   dim = new Sprite(dimTex)
 
@@ -84,12 +84,6 @@ export class NoteFlashContainer extends Container {
 
   constructor(noteskin: NoteSkin, col: number) {
     super()
-    if (this.holdExplosion.width == 0.25) {
-      // Reload the texture
-      this.holdExplosion.texture.once("update", () => {
-        this.holdExplosion.textures = splitTex(holdTex, 4, 1)[0]
-      })
-    }
 
     noteskin.on(this, "hit", event => {
       if (col == event.columnNumber) {

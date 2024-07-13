@@ -122,10 +122,14 @@ export function isIFrame() {
   }
 }
 
-export function splitTex(texture: Texture, xFrames: number, yFrames: number) {
-  const frames = []
-  const xWidth = texture.width / xFrames
-  const yWidth = texture.height / yFrames
+export function splitTex(
+  texture: Texture,
+  xFrames: number,
+  yFrames: number,
+  xWidth: number,
+  yWidth: number
+) {
+  const frames: Texture[][] = []
   for (let y = 0; y < yFrames; y++) {
     const row = []
     for (let x = 0; x < xFrames; x++) {
