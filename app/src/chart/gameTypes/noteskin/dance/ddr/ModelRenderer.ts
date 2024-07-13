@@ -30,6 +30,7 @@ import arrowBodyGeomText from "./tap/body.txt?raw"
 import arrowFrameGeomText from "./tap/frame.txt?raw"
 
 import liftBodyGeomText from "./lift/body.txt?raw"
+import liftFrameGeomText from "./lift/frame.txt?raw"
 import mineBodyGeomText from "./mine/body.txt?raw"
 
 const mine_frame_texture = Texture.from(mineFrameUrl)
@@ -48,6 +49,7 @@ export class ModelRenderer {
   static arrowBodyGeom: Geometry
   static arrowFrameGeom: Geometry
   static liftBodyGeom: Geometry
+  static liftFrameGeom: Geometry
   static mineBodyGeom: Geometry
 
   static arrowFrameTex: RenderTexture
@@ -90,6 +92,7 @@ export class ModelRenderer {
     this.arrowFrameGeom = await this.loadGeometry(arrowFrameGeomText)
     this.mineBodyGeom = await this.loadGeometry(mineBodyGeomText)
     this.liftBodyGeom = await this.loadGeometry(liftBodyGeomText)
+    this.liftFrameGeom = await this.loadGeometry(liftFrameGeomText)
 
     {
       const shader_frame = Shader.from(noopVert, noopFrag, {
@@ -125,14 +128,23 @@ export class ModelRenderer {
         const shader_body = Shader.from(noopVert, liftGradientFrag, {
           sampler0: this.liftPartsTex,
           time: 0,
-          quant: i,
+        })
+        const shader_frame = Shader.from(noopVert, liftGradientFrag, {
+          sampler0: this.liftPartsTex,
         })
         const arrow_body = new Mesh(ModelRenderer.liftBodyGeom, shader_body)
         arrow_body.x = (i % 3) * 64 + 32
         arrow_body.y = Math.floor(i / 3) * 64 + 32
-        arrow_body.rotation = -Math.PI / 2
+        arrow_body.rotation = Math.PI
         arrow_body.name = "body" + i
         ModelRenderer.liftContainer.addChild(arrow_body)
+
+        const arrow_frame = new Mesh(ModelRenderer.liftFrameGeom, shader_frame)
+        arrow_frame.x = (i % 3) * 64 + 32
+        arrow_frame.y = Math.floor(i / 3) * 64 + 32
+        arrow_frame.rotation = Math.PI
+        arrow_frame.name = "frame" + i
+        ModelRenderer.liftContainer.addChild(arrow_frame)
       }
     }
     {
@@ -206,6 +218,9 @@ export class ModelRenderer {
       const liftShader: Mesh<Shader> =
         ModelRenderer.liftContainer.getChildByName("body" + i)!
       liftShader.shader.uniforms.time = beat / 8
+      const liftFrameShader: Mesh<Shader> =
+        ModelRenderer.liftContainer.getChildByName("frame" + i)!
+      liftFrameShader.shader.uniforms.time = beat / 8
     }
     ;(<Mesh>ModelRenderer.mineContainer.children[0]).shader.uniforms.time =
       second
