@@ -3,7 +3,7 @@ import { QUANT_COLORS } from "../../chart/component/edit/SnapContainer"
 import { isHoldNote } from "../../chart/sm/NoteTypes"
 import { unlerp } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { destroyChildIf, getDivision } from "../../util/Util"
+import { destroyChildIf } from "../../util/Util"
 import { BaseTimelineWidget } from "./BaseTimelineWidget"
 import { WidgetManager } from "./WidgetManager"
 
@@ -91,7 +91,7 @@ export class NoteLayoutWidget extends BaseTimelineWidget {
       let t = unlerp(0, lastBeat, note.beat)
       if (Options.chart.CMod) t = unlerp(songOffset, lastSecond, note.second)
       obj.y = t * height
-      obj.tint = QUANT_COLORS[getDivision(note.beat)]
+      obj.tint = QUANT_COLORS[note.quant]
       if (note.type == "Mine") obj.tint = 0x808080
       childIndex++
       if (isHoldNote(note)) {

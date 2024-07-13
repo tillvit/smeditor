@@ -72,7 +72,6 @@ export class BaseTimelineWidget extends Widget {
     this.on("mousedown", event => {
       this.mouseDown = true
       this.handleMouse(event)
-      console.log("mousedown!")
     })
     this.on("mousemove", event => {
       if (this.mouseDown) this.handleMouse(event)
