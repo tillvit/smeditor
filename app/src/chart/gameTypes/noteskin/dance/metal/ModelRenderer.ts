@@ -27,6 +27,7 @@ import arrowFrameGeomText from "./tap/frame.txt?raw"
 
 import { App } from "../../../../../App"
 import { Options } from "../../../../../util/Options"
+import { loadGeometry } from "../../../../../util/Util"
 import { NotedataEntry } from "../../../../sm/NoteTypes"
 import liftBodyGeomText from "./lift/body.txt?raw"
 import mineBodyGeomText from "./mine/body.txt?raw"
@@ -85,10 +86,10 @@ export class ModelRenderer {
       resolution: Options.performance.resolution,
     })
 
-    this.arrowBodyGeom = await this.loadGeometry(arrowBodyGeomText)
-    this.arrowFrameGeom = await this.loadGeometry(arrowFrameGeomText)
-    this.mineBodyGeom = await this.loadGeometry(mineBodyGeomText)
-    this.liftBodyGeom = await this.loadGeometry(liftBodyGeomText)
+    this.arrowBodyGeom = await loadGeometry(arrowBodyGeomText)
+    this.arrowFrameGeom = await loadGeometry(arrowFrameGeomText)
+    this.mineBodyGeom = await loadGeometry(mineBodyGeomText)
+    this.liftBodyGeom = await loadGeometry(liftBodyGeomText)
 
     {
       const shader_frame = Shader.from(noopVert, noopFrag, {
@@ -151,47 +152,6 @@ export class ModelRenderer {
     }
 
     this.loaded = true
-  }
-
-  private static async loadGeometry(data: string): Promise<Geometry> {
-    const lines = data.split("\n")
-    const numVertices = parseInt(lines[0])
-    const numTriangles = parseInt(lines[numVertices + 1])
-    const vPos = []
-    const vUvs = []
-    const vIndex = []
-    for (let i = 0; i < numVertices; i++) {
-      const match =
-        /(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)/.exec(
-          lines[i + 1]
-        )
-      if (match) {
-        vPos.push(parseFloat(match[1]))
-        vPos.push(parseFloat(match[2]))
-        vUvs.push(parseFloat(match[3]))
-        vUvs.push(parseFloat(match[4]))
-      } else {
-        console.error("Failed to load vertex " + lines[i + 1])
-        return new Geometry()
-      }
-    }
-    for (let i = 0; i < numTriangles; i++) {
-      const match = /(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)/.exec(
-        lines[i + 2 + numVertices]
-      )
-      if (match) {
-        vIndex.push(parseFloat(match[1]))
-        vIndex.push(parseFloat(match[2]))
-        vIndex.push(parseFloat(match[3]))
-      } else {
-        console.error("Failed to load triangle " + lines[i + 2 + numVertices])
-        return new Geometry()
-      }
-    }
-    return new Geometry()
-      .addAttribute("aVertexPosition", vPos, 2)
-      .addAttribute("aUvs", vUvs, 2)
-      .addIndex(vIndex)
   }
 
   static setArrowTexTime(app: App) {

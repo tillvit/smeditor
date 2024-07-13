@@ -72,6 +72,19 @@ NoteSkinRegistry.register({
   path: "./dance/metal/NoteSkin",
 })
 NoteSkinRegistry.register({
+  name: "pastel",
+  gameTypes: [
+    "dance-single",
+    "dance-double",
+    "dance-couple",
+    "dance-solo",
+    "dance-solodouble",
+    "dance-threepanel",
+    "dance-threedouble",
+  ],
+  path: "./dance/pastel/NoteSkin",
+})
+NoteSkinRegistry.register({
   name: "default",
   gameTypes: ["pump-single"],
   path: "./pump/default/NoteSkin",
