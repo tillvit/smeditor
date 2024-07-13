@@ -415,6 +415,20 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
       },
       {
         type: "subgroup",
+        label: "Note Layout",
+        children: [
+          {
+            type: "item",
+            label: "Show Note Layout",
+            id: "chart.noteLayout.enabled",
+            input: {
+              type: "checkbox",
+            },
+          },
+        ],
+      },
+      {
+        type: "subgroup",
         label: "NPS Graph",
         children: [
           {

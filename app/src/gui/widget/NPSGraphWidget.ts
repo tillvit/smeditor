@@ -115,6 +115,15 @@ export class NPSGraphWidget extends BaseTimelineWidget {
       this.visible = false
       return
     }
+    this.visible = true
+    const layoutWidget = this.manager.getChildByName("note-layout") as
+      | NPSGraphWidget
+      | undefined
+    if (layoutWidget !== undefined && layoutWidget.visible) {
+      this.xOffset = layoutWidget.backingWidth + 28
+    } else {
+      this.xOffset = 20
+    }
     super.update()
   }
 

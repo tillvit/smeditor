@@ -23,6 +23,7 @@ export class NoteLayoutWidget extends BaseTimelineWidget {
     this.addChild(this.backing)
     this.addChild(this.container)
     this.visible = false
+    this.name = "note-layout"
 
     this.backing.tint = 0
     this.backing.alpha = 0.3
@@ -35,6 +36,15 @@ export class NoteLayoutWidget extends BaseTimelineWidget {
     this.bars.anchor.set(0.5)
     this.container.addChild(this.bars)
     this.populate()
+  }
+
+  update() {
+    if (!Options.chart.noteLayout.enabled) {
+      this.visible = false
+      return
+    }
+    this.visible = true
+    super.update()
   }
 
   populate() {
@@ -53,6 +63,8 @@ export class NoteLayoutWidget extends BaseTimelineWidget {
 
     const height = this.manager.app.renderer.screen.height - 40
     this.barTexture.resize(numCols * 6, height)
+    this.backingWidth = numCols * 6 + 8
+    this.updateDimensions()
 
     if (!lastNote) {
       destroyChildIf(this.barContainer.children, () => true)
