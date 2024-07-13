@@ -1,5 +1,5 @@
-// Peters-Cel by Pete-Lawrence https://github.com/Pete-Lawrence/Peters-Noteskins/
-// Custom lifts and color modifications by tillvit
+// Pastel by halcyoniix
+// Custom lifts by tillvit
 
 import { AnimatedSprite, Sprite, Texture, TilingSprite } from "pixi.js"
 import { NoteSkinOptions } from "../../NoteSkin"

@@ -1,4 +1,5 @@
 // Peters-DDR-Note by Pete-Lawrence https://github.com/Pete-Lawrence/Peters-Noteskins/
+// Color modifications by tillvit
 
 import { AnimatedSprite, Sprite, Texture, TilingSprite } from "pixi.js"
 import { NoteSkinOptions } from "../../NoteSkin"

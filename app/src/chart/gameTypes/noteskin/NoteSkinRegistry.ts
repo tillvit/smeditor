@@ -59,6 +59,19 @@ NoteSkinRegistry.register({
   path: "./dance/ddr/NoteSkin",
 })
 NoteSkinRegistry.register({
+  name: "ddr-itgcolors",
+  gameTypes: [
+    "dance-single",
+    "dance-double",
+    "dance-couple",
+    "dance-solo",
+    "dance-solodouble",
+    "dance-threepanel",
+    "dance-threedouble",
+  ],
+  path: "./dance/ddr-itgcolors/NoteSkin",
+})
+NoteSkinRegistry.register({
   name: "metal",
   gameTypes: [
     "dance-single",
