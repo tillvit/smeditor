@@ -1,5 +1,5 @@
 import { Sprite, Texture, TilingSprite } from "pixi.js"
-import { NoteSkinOptions } from "../../Noteskin"
+import { NoteSkinOptions } from "../../NoteSkin"
 import { NoteRenderer } from "./NoteRenderer"
 
 import cReceptor from "./centerReceptor.png"

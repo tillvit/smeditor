@@ -1,7 +1,8 @@
 import { GameType } from "../GameTypeRegistry"
-import { NoteSkinOptions } from "./Noteskin"
-import { DanceDefaultNoteSkin } from "./dance/default/Noteskin"
-import { PumpDefaultNoteSkin } from "./pump/default/Noteskin"
+import { NoteSkinOptions } from "./NoteSkin"
+import { DanceDefaultNoteSkin } from "./dance/default/NoteSkin"
+import { DanceMetalNoteSkin } from "./dance/metal/NoteSkin"
+import { PumpDefaultNoteSkin } from "./pump/default/NoteSkin"
 
 export class NoteSkinRegistry {
   private static noteskins = new Map<string, Map<string, NoteSkinOptions>>()
@@ -19,9 +20,9 @@ export class NoteSkinRegistry {
     gameType: GameType,
     name: string
   ): NoteSkinOptions | undefined {
-    const gameTypeNoteskins = this.noteskins.get(gameType.id)
-    if (!gameTypeNoteskins || gameTypeNoteskins.size == 0) return
-    return gameTypeNoteskins.get(name) ?? [...gameTypeNoteskins.values()][0]
+    const gameTypeNoteSkins = this.noteskins.get(gameType.id)
+    if (!gameTypeNoteSkins || gameTypeNoteSkins.size == 0) return
+    return gameTypeNoteSkins.get(name) ?? [...gameTypeNoteSkins.values()][0]
   }
 
   static getNoteSkins() {
@@ -30,4 +31,5 @@ export class NoteSkinRegistry {
 }
 
 NoteSkinRegistry.register(DanceDefaultNoteSkin)
+NoteSkinRegistry.register(DanceMetalNoteSkin)
 NoteSkinRegistry.register(PumpDefaultNoteSkin)

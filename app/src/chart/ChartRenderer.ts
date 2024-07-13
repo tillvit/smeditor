@@ -56,7 +56,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   private readonly timingTracks: TimingTrackContainer
   private readonly selectedEvents: SelectionTimingEventContainer
   private readonly timingBar: ErrorBarContainer
-  private readonly notefield: Notefield
+  private notefield: Notefield
   private readonly snapDisplay: SnapContainer
   private readonly judgement: JudgementSprite
   private readonly combo: ComboNumber
@@ -1153,6 +1153,13 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
 
   getNotefield() {
     return this.notefield
+  }
+
+  reloadNotefield() {
+    const newNotefield = new Notefield(this)
+    this.addChildAt(newNotefield, this.children.indexOf(this.notefield))
+    this.notefield.destroy()
+    this.notefield = newNotefield
   }
 
   getSelectionBounds() {

@@ -126,7 +126,7 @@ export class DefaultOptions {
     showFPS: false,
     showTimers: false,
     showScroll: false,
-    showNoteskinErrors: false,
+    showNoteSkinErrors: false,
   }
   static experimental = {}
 }

@@ -1,5 +1,5 @@
 import { BLEND_MODES, Container, Sprite, Texture } from "pixi.js"
-import { NoteSkin } from "../../Noteskin"
+import { NoteSkin } from "../../NoteSkin"
 
 import { BezierAnimator } from "../../../../../util/BezierEasing"
 import { rgbtoHex } from "../../../../../util/Color"

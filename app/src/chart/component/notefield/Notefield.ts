@@ -4,14 +4,14 @@ import { rgbtoHex } from "../../../util/Color"
 import { Options } from "../../../util/Options"
 import { EditMode, EditTimingMode } from "../../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
-import { NoteSkinRegistry } from "../../gameTypes/noteskin/NoteSkinRegistry"
 import {
   NoteSkin,
+  NoteSkinElementCreationOptions,
+  NoteSkinElementOptions,
   NoteSkinOptions,
   NoteSkinSprite,
-  NoteskinElementCreationOptions,
-  NoteskinElementOptions,
-} from "../../gameTypes/noteskin/Noteskin"
+} from "../../gameTypes/noteskin/NoteSkin"
+import { NoteSkinRegistry } from "../../gameTypes/noteskin/NoteSkinRegistry"
 import { TimingWindow } from "../../play/TimingWindow"
 import {
   isHoldDroppedTimingWindow,
@@ -196,8 +196,8 @@ export class Notefield extends Container implements ChartRendererComponent {
   }
 
   getElement(
-    element: NoteskinElementOptions,
-    options: Partial<NoteskinElementCreationOptions> = {}
+    element: NoteSkinElementOptions,
+    options: Partial<NoteSkinElementCreationOptions> = {}
   ): NoteSkinSprite {
     return this.noteskin.getElement(element, options)
   }
@@ -266,9 +266,7 @@ export class Notefield extends Container implements ChartRendererComponent {
     }
   }
 
-  startPlay(): void {
-    this.flashes.visible = true
-  }
+  startPlay(): void {}
 
   endPlay(): void {
     for (let i = 0; i < this.gameType.numCols; i++) {
@@ -283,7 +281,6 @@ export class Notefield extends Container implements ChartRendererComponent {
         columnNumber: i,
       })
     }
-    this.flashes.visible = false
   }
 
   press(col: number): void {

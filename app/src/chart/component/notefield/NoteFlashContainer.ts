@@ -1,6 +1,6 @@
 import { Container } from "pixi.js"
 
-import { NoteSkinSprite } from "../../gameTypes/noteskin/Noteskin"
+import { NoteSkinSprite } from "../../gameTypes/noteskin/NoteSkin"
 import { Notefield } from "./Notefield"
 
 export class NoteFlashContainer extends Container {

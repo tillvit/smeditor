@@ -70,6 +70,7 @@ export class BasicGameLogic extends GameLogic {
         hold.gameplay!.droppedHoldBeat =
           chartManager.chartView.getBeatWithOffset()
         this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
+        chartManager.chartView.getNotefield().releaseHold(hold.col)
         chartManager.gameStats?.addHoldDataPoint(
           hold,
           this.collection.getDroppedJudgement()

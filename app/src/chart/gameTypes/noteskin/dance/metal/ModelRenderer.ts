@@ -10,7 +10,6 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
-
 import { App } from "../../../../../App"
 import { Options } from "../../../../../util/Options"
 import { NotedataEntry } from "../../../../sm/NoteTypes"
@@ -26,11 +25,11 @@ import mineGradientFrag from "./shader/mine_gradient.frag?raw"
 import noopFrag from "./shader/noop.frag?raw"
 import noopVert from "./shader/noop.vert?raw"
 
-import arrowBodyGeomText from "./tap/body.txt?raw"
-import arrowFrameGeomText from "./tap/frame.txt?raw"
-
 import liftBodyGeomText from "./lift/body.txt?raw"
 import mineBodyGeomText from "./mine/body.txt?raw"
+import mineFrameGeomText from "./mine/frame.txt?raw"
+import arrowBodyGeomText from "./tap/body.txt?raw"
+import arrowFrameGeomText from "./tap/frame.txt?raw"
 
 const mine_frame_texture = Texture.from(mineFrameUrl)
 
@@ -49,6 +48,7 @@ export class ModelRenderer {
   static arrowFrameGeom: Geometry
   static liftBodyGeom: Geometry
   static mineBodyGeom: Geometry
+  static mineFrameGeom: Geometry
 
   static arrowFrameTex: RenderTexture
   static arrowFrame: Mesh<Shader>
@@ -89,6 +89,7 @@ export class ModelRenderer {
     this.arrowBodyGeom = await this.loadGeometry(arrowBodyGeomText)
     this.arrowFrameGeom = await this.loadGeometry(arrowFrameGeomText)
     this.mineBodyGeom = await this.loadGeometry(mineBodyGeomText)
+    this.mineFrameGeom = await this.loadGeometry(mineFrameGeomText)
     this.liftBodyGeom = await this.loadGeometry(liftBodyGeomText)
 
     {
@@ -140,12 +141,13 @@ export class ModelRenderer {
         sampler0: this.minePartsTex,
         time: 0,
       })
+      const shader_frame = Shader.from(noopVert, noopFrag, {
+        sampler0: this.minePartsTex,
+      })
       const mine_body = new Mesh(ModelRenderer.mineBodyGeom, shader_body)
-      const mine_frame = new Sprite(mine_frame_texture)
+      const mine_frame = new Mesh(ModelRenderer.mineFrameGeom, shader_frame)
       mine_frame.width = 64
       mine_frame.height = 64
-      mine_frame.anchor.set(0.5)
-      mine_frame.pivot.y = 3 // epic recenter
       ModelRenderer.mineContainer.position.set(32)
       ModelRenderer.mineContainer.addChild(mine_body)
       ModelRenderer.mineContainer.addChild(mine_frame)

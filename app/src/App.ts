@@ -59,6 +59,7 @@ interface Version {
 }
 
 export class App {
+  options = Options
   renderer: Renderer
   ticker: Ticker
   stage: Container

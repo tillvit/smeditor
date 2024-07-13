@@ -10,24 +10,24 @@ import { StandardTimingWindow } from "../../play/StandardTimingWindow"
 
 export const MISSING_TEX = Texture.from(missingTexUrl)
 
-export interface NoteskinElementOptions {
+export interface NoteSkinElementOptions {
   columnName: string
   columnNumber: number
   element: keyof NoteSkinElements
 }
 
-export interface NoteskinElementCreationOptions {
+export interface NoteSkinElementCreationOptions {
   note: NotedataEntry
 }
 
-export type NoteskinElementCreationData =
-  Partial<NoteskinElementCreationOptions> & {
+export type NoteSkinElementCreationData =
+  Partial<NoteSkinElementCreationOptions> & {
     noteskin: NoteSkin
     columnName: string
     columnNumber: number
   }
 
-export type Generator<Element> = (data: NoteskinElementCreationData) => Element
+export type Generator<Element> = (data: NoteSkinElementCreationData) => Element
 
 export type NoteSkinElements = {
   Tap: NoteSkinSprite
@@ -72,8 +72,8 @@ export interface NoteSkinOptions {
   elements: Record<string, Partial<NoteSkinElementGenerators>>
   load?: (
     this: NoteSkin,
-    element: NoteskinElementOptions,
-    data: NoteskinElementCreationData
+    element: NoteSkinElementOptions,
+    data: NoteSkinElementCreationData
   ) => NoteSkinSprite
   init?: (renderer: ChartRenderer) => void
   update?: (renderer: ChartRenderer) => void
@@ -230,8 +230,8 @@ export class NoteSkin {
   }
 
   getElement(
-    element: NoteskinElementOptions,
-    options: Partial<NoteskinElementCreationOptions> = {}
+    element: NoteSkinElementOptions,
+    options: Partial<NoteSkinElementCreationOptions> = {}
   ): NoteSkinSprite {
     if (this.options.load) {
       const spr = this.options.load.bind(this)(element, {
@@ -246,12 +246,12 @@ export class NoteSkin {
   }
 
   loadElement(
-    element: NoteskinElementOptions,
-    options: Partial<NoteskinElementCreationOptions> = {}
+    element: NoteSkinElementOptions,
+    options: Partial<NoteSkinElementCreationOptions> = {}
   ) {
     const func = this.followRedirs(element)
     if (func === undefined) {
-      if (Options.debug.showNoteskinErrors)
+      if (Options.debug.showNoteSkinErrors)
         WaterfallManager.createFormatted(
           `NoteSkin element ${element.columnName} ${element.element} failed to load for noteskin ${this.options.name}: Redirect loop`,
           "error"
@@ -266,7 +266,7 @@ export class NoteSkin {
     })
   }
 
-  followRedirs(element: NoteskinElementOptions) {
+  followRedirs(element: NoteSkinElementOptions) {
     const visited = [element]
     let current = element
     while (true) {

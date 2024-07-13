@@ -88,8 +88,8 @@ const holdCap = (tex: Texture) => {
   return cap
 }
 
-export const DanceDefaultNoteSkin: NoteSkinOptions = {
-  name: "default",
+export const DanceMetalNoteSkin: NoteSkinOptions = {
+  name: "metal",
   gameTypes: [
     "dance-single",
     "dance-double",
@@ -105,12 +105,12 @@ export const DanceDefaultNoteSkin: NoteSkinOptions = {
         let zoomanim: string | undefined
         const container = new Container()
         const spr = new Sprite(receptorTex)
-        spr.width = 69
-        spr.height = 69
+        spr.width = 64
+        spr.height = 64
         spr.anchor.set(0.5)
         const overlay = new Sprite(receptorTex)
-        overlay.width = 69
-        overlay.height = 69
+        overlay.width = 64
+        overlay.height = 64
         overlay.alpha = 0
         overlay.blendMode = BLEND_MODES.ADD
         overlay.anchor.set(0.5)
