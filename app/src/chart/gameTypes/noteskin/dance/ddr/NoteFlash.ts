@@ -84,7 +84,7 @@ export class NoteFlashContainer extends Container {
 
   constructor(noteskin: NoteSkin, col: number) {
     super()
-    if (this.holdExplosion.texture.width == 1) {
+    if (this.holdExplosion.width == 0.25) {
       // Reload the texture
       this.holdExplosion.texture.once("update", () => {
         this.holdExplosion.textures = splitTex(holdTex, 4, 1)[0]
