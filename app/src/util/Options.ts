@@ -45,6 +45,14 @@ export class DefaultOptions {
       lineHeight: 1,
       speedChanges: true,
     },
+    noteLayout: {
+      enabled: true,
+    },
+    npsGraph: {
+      enabled: false,
+      color1: 0x4aa7bc,
+      color2: 0x423c7a,
+    },
     timingEventOrder: {
       left: [
         "LABELS",

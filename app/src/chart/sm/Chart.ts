@@ -32,6 +32,9 @@ export class Chart {
   private _notedataStats!: Record<string, number>
   private _npsGraph!: number[]
 
+  private _lastBeat = 0
+  private _lastSecond = 0
+
   constructor(sm: Simfile, data?: string | { [key: string]: string }) {
     this.timingData = sm.timingData.createChartTimingData(this)
     this.timingData.reloadCache()
@@ -134,6 +137,14 @@ export class Chart {
     return max
   }
 
+  getLastBeat() {
+    return this._lastBeat
+  }
+
+  getLastSecond() {
+    return this._lastSecond
+  }
+
   getSecondsFromBeat(
     beat: number,
     option?: "noclamp" | "before" | "after" | ""
@@ -155,6 +166,23 @@ export class Chart {
 
   isBeatFaked(beat: number): boolean {
     return this.timingData.isBeatFaked(beat)
+  }
+
+  private recalculateLastNote() {
+    let lastBeat = 0
+    let lastSecond = 0
+    this.notedata.forEach(note => {
+      const endBeat = note.beat + (isHoldNote(note) ? note.hold : 0)
+      const endSecond = this.timingData.getSecondsFromBeat(endBeat)
+      if (endBeat > lastBeat) {
+        lastBeat = endBeat
+      }
+      if (endSecond > lastSecond) {
+        lastSecond = endSecond
+      }
+    })
+    this._lastBeat = lastBeat
+    this._lastSecond = lastSecond
   }
 
   private getNoteIndex(note: PartialNotedataEntry): number {
@@ -268,6 +296,7 @@ export class Chart {
       this.notedata,
       this.timingData
     )
+    this.recalculateLastNote()
   }
 
   getMusicPath(): string {
