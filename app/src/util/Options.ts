@@ -82,6 +82,10 @@ export class DefaultOptions {
       ATTACKS: true,
     } as { [key in TimingEventType]: boolean },
     noteskin: {
+      type: "dance-single",
+      name: "default",
+    },
+    lastNoteskins: {
       "dance-single": "default",
       "dance-double": "default",
       "dance-couple": "default",
@@ -89,6 +93,7 @@ export class DefaultOptions {
       "dance-solodouble": "default",
       "dance-threepanel": "default",
       "dance-threedouble": "default",
+      "pump-single": "default",
     } as Record<string, string>,
   }
   static audio = {

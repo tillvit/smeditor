@@ -144,7 +144,7 @@ export class Notefield extends Container implements ChartRendererComponent {
     this.gameType = renderer.chart.gameType
     NoteSkinRegistry.getNoteSkin(
       this.gameType,
-      Options.chart.noteskin[renderer.chart.gameType.id]
+      Options.chart.noteskin.name
     ).then(noteskinOptions => {
       if (!noteskinOptions) {
         WaterfallManager.createFormatted(

@@ -41,6 +41,7 @@ import { FileHandler } from "../util/file-handler/FileHandler"
 import { ChartRenderer } from "./ChartRenderer"
 import { ChartAudio } from "./audio/ChartAudio"
 import { GameTypeRegistry } from "./gameTypes/GameTypeRegistry"
+import { NoteSkinRegistry } from "./gameTypes/noteskin/NoteSkinRegistry"
 import { GameplayStats } from "./play/GameplayStats"
 import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
 import { Chart } from "./sm/Chart"
@@ -775,6 +776,25 @@ export class ChartManager {
 
     Options.play.timingCollection =
       Options.play.defaultTimingCollection[chart.gameType.id] ?? "ITG"
+
+    // Check if the same noteskin is compatible with the current chart
+    const oldType = GameTypeRegistry.getGameType(Options.chart.noteskin.type)
+    const newNoteSkin = {
+      type: chart.gameType.id,
+      name: Options.chart.lastNoteskins[chart.gameType.id] ?? "default",
+    }
+    if (oldType) {
+      const oldSkin = NoteSkinRegistry.getNoteSkinData(
+        oldType,
+        Options.chart.noteskin.name
+      )
+      if (oldSkin?.gameTypes.includes(chart.gameType.id)) {
+        // Use the old note skin
+        newNoteSkin.name = oldSkin.name
+      }
+    }
+    Options.chart.noteskin = newNoteSkin
+    Options.chart.lastNoteskins[chart.gameType.id] = newNoteSkin.name
 
     this.getAssistTickIndex()
     this.chartView = new ChartRenderer(this)

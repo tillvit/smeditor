@@ -1,3 +1,4 @@
+import { WaterfallManager } from "../../../gui/element/WaterfallManager"
 import { GameType } from "../GameTypeRegistry"
 import { NoteSkinOptions } from "./NoteSkin"
 
@@ -24,12 +25,31 @@ export class NoteSkinRegistry {
     if (!gameTypeNoteSkins || gameTypeNoteSkins.size == 0) return
     const skin =
       gameTypeNoteSkins.get(name) ?? [...gameTypeNoteSkins.values()][0]
+    if (!gameTypeNoteSkins.get(name))
+      WaterfallManager.createFormatted(
+        `Couldn't find the noteskin ${name}!`,
+        "warn"
+      )
     return await skin.load()
+  }
+
+  static getNoteSkinData(gameType: GameType, name: string) {
+    const gameTypeNoteSkins = this.noteskins.get(gameType.id)
+    if (!gameTypeNoteSkins || gameTypeNoteSkins.size == 0) return
+    const skin =
+      gameTypeNoteSkins.get(name) ?? [...gameTypeNoteSkins.values()][0]
+    return skin
   }
 
   static getNoteSkins() {
     return this.noteskins
   }
+
+  // static generatePreview(gameType: string, name: string) {
+  //   const ch = new Chart(window.app.chartManager.loadedSM!)
+  //   ch.gameType = GameTypeRegistry.getGameType(gameType)!
+  //   window.app.chartManager.chartView.reloadNotefield()
+  // }
 }
 
 NoteSkinRegistry.register({

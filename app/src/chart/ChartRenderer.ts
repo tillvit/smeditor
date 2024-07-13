@@ -1155,6 +1155,11 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return this.notefield
   }
 
+  swapNoteskin(name: string) {
+    Options.chart.noteskin.name = name
+    this.reloadNotefield()
+  }
+
   reloadNotefield() {
     const newNotefield = new Notefield(this)
     this.addChildAt(newNotefield, this.children.indexOf(this.notefield))
