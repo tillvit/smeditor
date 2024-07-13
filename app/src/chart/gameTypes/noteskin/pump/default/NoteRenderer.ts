@@ -74,7 +74,7 @@ export class NoteRenderer {
     let frames = splitTex(tex, 6, 9)
     for (let i = 0; i < 9; i++) {
       const spr = new AnimatedSprite(frames[i])
-      if (frames[0][0].width == 1) {
+      if (frames[0][0].width < 1) {
         // Reload the texture once loaded
         tex.once("update", () => {
           frames = splitTex(tex, 6, 9)
