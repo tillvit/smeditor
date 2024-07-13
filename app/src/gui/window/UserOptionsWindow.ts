@@ -5,6 +5,7 @@ import {
   UserOption,
   UserOptionGroup,
 } from "../../data/UserOptionsWindowData"
+import { EventHandler } from "../../util/EventHandler"
 import { clamp, roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { parseString } from "../../util/Util"
@@ -12,7 +13,6 @@ import { Icons } from "../Icons"
 import { Dropdown } from "../element/Dropdown"
 import { NumberSpinner } from "../element/NumberSpinner"
 import { Window } from "./Window"
-import { EventHandler } from "../../util/EventHandler"
 
 export class UserOptionsWindow extends Window {
   app: App
@@ -327,7 +327,7 @@ export class UserOptionsWindow extends Window {
         case "color": {
           const colorInput = document.createElement("input")
           colorInput.type = "color"
-          colorInput.value = "#" + optionValue.toString(16)
+          colorInput.value = "#" + optionValue.toString(16).padStart(6, "0")
           // 'change' event is fired when the user closes the color picker
           colorInput.onchange = () => {
             colorInput.blur()

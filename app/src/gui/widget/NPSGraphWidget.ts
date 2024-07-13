@@ -213,8 +213,12 @@ export class NPSGraphWidget extends BaseTimelineWidget {
     // use canvas2d API to create gradient
     const grd = ctx.createLinearGradient(0, 0, quality, 0)
 
-    const color1 = `#${Options.chart.npsGraph.color1.toString(16)}`
-    const color2 = `#${Options.chart.npsGraph.color2.toString(16)}`
+    const color1 = `#${Options.chart.npsGraph.color1
+      .toString(16)
+      .padStart(6, "0")}`
+    const color2 = `#${Options.chart.npsGraph.color2
+      .toString(16)
+      .padStart(6, "0")}`
     grd.addColorStop(0, color1)
     grd.addColorStop(0.8, color2)
 
