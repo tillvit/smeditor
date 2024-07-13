@@ -1,6 +1,7 @@
 import { Container, Sprite } from "pixi.js"
 import { WaterfallManager } from "../../../gui/element/WaterfallManager"
 import { rgbtoHex } from "../../../util/Color"
+import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
 import { EditMode, EditTimingMode } from "../../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
@@ -122,15 +123,15 @@ export class HoldObject extends Container {
 }
 
 export class Notefield extends Container implements ChartRendererComponent {
-  readonly noteskinOptions!: NoteSkinOptions
-  readonly noteskin!: NoteSkin
+  noteskinOptions?: NoteSkinOptions
+  noteskin?: NoteSkin
   readonly gameType
   readonly renderer
-  private readonly receptors!: ReceptorContainer
-  private readonly notes!: NoteContainer
-  private readonly selectionNotes!: SelectionNoteContainer
-  private readonly flashes!: NoteFlashContainer
-  private readonly holdJudges!: HoldJudgementContainer
+  private receptors?: ReceptorContainer
+  private notes?: NoteContainer
+  private selectionNotes?: SelectionNoteContainer
+  private flashes?: NoteFlashContainer
+  private holdJudges?: HoldJudgementContainer
   private ghostNote?: NotefieldObject
   private ghostNoteEntry?: NotedataEntry
 
@@ -141,46 +142,48 @@ export class Notefield extends Container implements ChartRendererComponent {
 
     this.renderer = renderer
     this.gameType = renderer.chart.gameType
-    const noteskinOptions = NoteSkinRegistry.getNoteSkin(
+    NoteSkinRegistry.getNoteSkin(
       this.gameType,
       Options.chart.noteskin[renderer.chart.gameType.id]
-    )
+    ).then(noteskinOptions => {
+      if (!noteskinOptions) {
+        WaterfallManager.createFormatted(
+          "Couldn't find an available noteskin!",
+          "error"
+        )
+        return
+      }
 
-    if (!noteskinOptions) {
-      WaterfallManager.createFormatted(
-        "Couldn't find an available noteskin!",
-        "error"
+      // Calculate column x positions
+      let accumulatedWidth = 0
+
+      for (let colNum = 0; colNum < this.gameType.numCols; colNum++) {
+        const colWidth = this.gameType.columnWidths[colNum]
+        this.columnX.push(
+          accumulatedWidth - this.gameType.notefieldWidth / 2 + colWidth / 2
+        )
+        accumulatedWidth += colWidth
+      }
+
+      this.noteskinOptions = noteskinOptions
+      this.noteskin = new NoteSkin(this.renderer, noteskinOptions)
+
+      this.receptors = new ReceptorContainer(this)
+      this.flashes = new NoteFlashContainer(this)
+      this.notes = new NoteContainer(this)
+      this.selectionNotes = new SelectionNoteContainer(this)
+
+      this.holdJudges = new HoldJudgementContainer(this)
+      this.addChild(
+        this.receptors,
+        this.notes,
+        this.selectionNotes,
+        this.flashes,
+        this.holdJudges
       )
-      return
-    }
 
-    // Calculate column x positions
-    let accumulatedWidth = 0
-
-    for (let colNum = 0; colNum < this.gameType.numCols; colNum++) {
-      const colWidth = this.gameType.columnWidths[colNum]
-      this.columnX.push(
-        accumulatedWidth - this.gameType.notefieldWidth / 2 + colWidth / 2
-      )
-      accumulatedWidth += colWidth
-    }
-
-    this.noteskinOptions = noteskinOptions
-    this.noteskin = new NoteSkin(this.renderer, noteskinOptions)
-
-    this.receptors = new ReceptorContainer(this)
-    this.flashes = new NoteFlashContainer(this)
-    this.notes = new NoteContainer(this)
-    this.selectionNotes = new SelectionNoteContainer(this)
-
-    this.holdJudges = new HoldJudgementContainer(this)
-    this.addChild(
-      this.receptors,
-      this.notes,
-      this.selectionNotes,
-      this.flashes,
-      this.holdJudges
-    )
+      EventHandler.emit("noteskinLoaded")
+    })
   }
 
   setGhostNote(note?: NotedataEntry): void {
@@ -199,16 +202,17 @@ export class Notefield extends Container implements ChartRendererComponent {
     element: NoteSkinElementOptions,
     options: Partial<NoteSkinElementCreationOptions> = {}
   ): NoteSkinSprite {
-    return this.noteskin.getElement(element, options)
+    return this.noteskin!.getElement(element, options)
   }
 
   update(firstBeat: number, lastBeat: number): void {
+    if (this.noteskin === undefined) return
     this.noteskin.update(this.renderer)
-    this.receptors.update()
-    this.flashes.update()
-    this.notes.update(firstBeat, lastBeat)
-    this.selectionNotes.update(firstBeat, lastBeat)
-    this.holdJudges.update()
+    this.receptors!.update()
+    this.flashes!.update()
+    this.notes!.update(firstBeat, lastBeat)
+    this.selectionNotes!.update(firstBeat, lastBeat)
+    this.holdJudges!.update()
 
     if (this.ghostNote) {
       this.ghostNote.y = this.renderer.getYPosFromBeat(
@@ -225,8 +229,8 @@ export class Notefield extends Container implements ChartRendererComponent {
   }
 
   onJudgement(col: number, judge: TimingWindow): void {
-    // this.flashes.createNoteFlash(col, judge)
-    this.holdJudges.addJudge(col, judge)
+    if (this.noteskin === undefined) return
+    this.holdJudges!.addJudge(col, judge)
     if (isStandardTimingWindow(judge)) {
       this.noteskin.broadcast({
         type: "hit",
@@ -269,9 +273,15 @@ export class Notefield extends Container implements ChartRendererComponent {
   startPlay(): void {}
 
   endPlay(): void {
+    if (this.noteskin === undefined) return
     for (let i = 0; i < this.gameType.numCols; i++) {
       this.noteskin.broadcast({
         type: "holdoff",
+        columnName: this.getColumnName(i),
+        columnNumber: i,
+      })
+      this.noteskin.broadcast({
+        type: "rolloff",
         columnName: this.getColumnName(i),
         columnNumber: i,
       })
@@ -284,6 +294,7 @@ export class Notefield extends Container implements ChartRendererComponent {
   }
 
   press(col: number): void {
+    if (this.noteskin === undefined) return
     this.noteskin.broadcast({
       type: "press",
       columnName: this.getColumnName(col),
@@ -292,6 +303,7 @@ export class Notefield extends Container implements ChartRendererComponent {
   }
 
   lift(col: number): void {
+    if (this.noteskin === undefined) return
     this.noteskin.broadcast({
       type: "lift",
       columnName: this.getColumnName(col),
@@ -300,6 +312,7 @@ export class Notefield extends Container implements ChartRendererComponent {
   }
 
   ghostTap(col: number): void {
+    if (this.noteskin === undefined) return
     this.noteskin.broadcast({
       type: "ghosttap",
       columnName: this.getColumnName(col),
@@ -308,6 +321,7 @@ export class Notefield extends Container implements ChartRendererComponent {
   }
 
   activateHold(col: number): void {
+    if (this.noteskin === undefined) return
     this.noteskin.broadcast({
       type: "holdon",
       columnName: this.getColumnName(col),
@@ -316,8 +330,27 @@ export class Notefield extends Container implements ChartRendererComponent {
   }
 
   releaseHold(col: number): void {
+    if (this.noteskin === undefined) return
     this.noteskin.broadcast({
       type: "holdoff",
+      columnName: this.getColumnName(col),
+      columnNumber: col,
+    })
+  }
+
+  activateRoll(col: number): void {
+    if (this.noteskin === undefined) return
+    this.noteskin.broadcast({
+      type: "rollon",
+      columnName: this.getColumnName(col),
+      columnNumber: col,
+    })
+  }
+
+  releaseRoll(col: number): void {
+    if (this.noteskin === undefined) return
+    this.noteskin.broadcast({
+      type: "rolloff",
       columnName: this.getColumnName(col),
       columnNumber: col,
     })
@@ -336,6 +369,11 @@ export class Notefield extends Container implements ChartRendererComponent {
   }
 
   createNote(note: NotedataEntry): NotefieldObject {
+    if (this.noteskin === undefined) {
+      const a = new Container() as NoteObject
+      a.type = "note"
+      return a
+    }
     const ns = this.noteskin
     const col = this.getColumnName(note.col)
     const opts = { note, columnName: col, columnNumber: note.col }

@@ -226,7 +226,6 @@ export class ModelRenderer {
   }
 
   static setNoteTex(arrow: Sprite, note: NotedataEntry | undefined) {
-    if (!this.loaded) return Texture.WHITE
     if (note !== undefined && note.type == "Mine") {
       arrow.texture = ModelRenderer.mineTex
     } else {

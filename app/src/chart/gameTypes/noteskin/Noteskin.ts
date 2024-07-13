@@ -67,8 +67,6 @@ export type NoteSkinElementGenerators = {
 }
 
 export interface NoteSkinOptions {
-  name: string
-  gameTypes: string[]
   elements: Record<string, Partial<NoteSkinElementGenerators>>
   load?: (
     this: NoteSkin,
@@ -253,7 +251,7 @@ export class NoteSkin {
     if (func === undefined) {
       if (Options.debug.showNoteSkinErrors)
         WaterfallManager.createFormatted(
-          `NoteSkin element ${element.columnName} ${element.element} failed to load for noteskin ${this.options.name}: Redirect loop`,
+          `NoteSkin element ${element.columnName} ${element.element} failed to load for noteskin: Redirect loop`,
           "error"
         )
       return this.getPlaceholderSprite()

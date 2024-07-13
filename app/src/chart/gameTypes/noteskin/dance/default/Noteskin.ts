@@ -1,3 +1,6 @@
+// Peters-Cel by Pete-Lawrence https://github.com/Pete-Lawrence/Peters-Noteskins/
+// Custom lifts and color modifications by tillvit
+
 import { BLEND_MODES, Container, Sprite, Texture, TilingSprite } from "pixi.js"
 import { NoteSkinOptions } from "../../NoteSkin"
 
@@ -88,17 +91,7 @@ const holdCap = (tex: Texture) => {
   return cap
 }
 
-export const DanceDefaultNoteSkin: NoteSkinOptions = {
-  name: "default",
-  gameTypes: [
-    "dance-single",
-    "dance-double",
-    "dance-couple",
-    "dance-solo",
-    "dance-solodouble",
-    "dance-threepanel",
-    "dance-threedouble",
-  ],
+export default {
   elements: {
     Left: {
       Receptor: options => {
@@ -201,4 +194,4 @@ export const DanceDefaultNoteSkin: NoteSkinOptions = {
   update(renderer) {
     ModelRenderer.setArrowTexTime(renderer.chartManager.app)
   },
-}
+} satisfies NoteSkinOptions

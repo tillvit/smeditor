@@ -1,3 +1,6 @@
+// FourV2 by Jousway, bundled with Project Outfox
+// Color modifications by tillvit
+
 import { Sprite, Texture, TilingSprite } from "pixi.js"
 import { NoteSkinOptions } from "../../NoteSkin"
 import { NoteRenderer } from "./NoteRenderer"
@@ -83,9 +86,7 @@ const holdCap = (tex: Texture, reverse = false) => {
   return cap
 }
 
-export const PumpDefaultNoteSkin: NoteSkinOptions = {
-  name: "default",
-  gameTypes: ["pump-single"],
+export default {
   elements: {
     DownLeft: {
       Receptor: options => {
@@ -176,4 +177,4 @@ export const PumpDefaultNoteSkin: NoteSkinOptions = {
   update(renderer) {
     NoteRenderer.setArrowTexTime(renderer.chartManager.app)
   },
-}
+} satisfies NoteSkinOptions

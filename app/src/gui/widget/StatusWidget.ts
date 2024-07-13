@@ -467,7 +467,7 @@ export class StatusWidget extends Widget {
       this.idleFrames = 5
     })
 
-    EventHandler.on("chartLoaded", () => {
+    EventHandler.on("noteskinLoaded", () => {
       this.stepsContainer.replaceChildren()
       this.noteArrows.forEach(noteArrow => {
         this.removeChild(noteArrow.sprite)

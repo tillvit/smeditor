@@ -1,5 +1,7 @@
+// Peters-Metal by Pete-Lawrence https://github.com/Pete-Lawrence/Peters-Noteskins/
+// Custom lifts and color modifications by tillvit
+
 import { BLEND_MODES, Container, Sprite, Texture, TilingSprite } from "pixi.js"
-import { NoteSkinOptions } from "../../NoteSkin"
 
 import { ModelRenderer } from "./ModelRenderer"
 import { NoteFlashContainer } from "./NoteFlash"
@@ -15,6 +17,7 @@ import holdTopCapInactiveUrl from "./hold/topCapInactive.png"
 import { BezierAnimator } from "../../../../../util/BezierEasing"
 import { rgbtoHex } from "../../../../../util/Color"
 import { clamp } from "../../../../../util/Math"
+import { NoteSkinOptions } from "../../NoteSkin"
 import rollBodyActiveUrl from "./roll/bodyActive.png"
 import rollBodyInactiveUrl from "./roll/bodyInactive.png"
 import rollBottomCapActiveUrl from "./roll/bottomCapActive.png"
@@ -88,17 +91,7 @@ const holdCap = (tex: Texture) => {
   return cap
 }
 
-export const DanceMetalNoteSkin: NoteSkinOptions = {
-  name: "metal",
-  gameTypes: [
-    "dance-single",
-    "dance-double",
-    "dance-couple",
-    "dance-solo",
-    "dance-solodouble",
-    "dance-threepanel",
-    "dance-threedouble",
-  ],
+export default {
   elements: {
     Left: {
       Receptor: options => {
@@ -201,4 +194,4 @@ export const DanceMetalNoteSkin: NoteSkinOptions = {
   update(renderer) {
     ModelRenderer.setArrowTexTime(renderer.chartManager.app)
   },
-}
+} satisfies NoteSkinOptions

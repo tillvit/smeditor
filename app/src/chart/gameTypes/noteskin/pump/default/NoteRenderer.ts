@@ -71,9 +71,16 @@ export class NoteRenderer {
   }
 
   static layoutRow(container: Container, tex: Texture, offset: number) {
-    const frames = splitTex(tex, 6, 9)
+    let frames = splitTex(tex, 6, 9)
     for (let i = 0; i < 9; i++) {
       const spr = new AnimatedSprite(frames[i])
+      if (frames[0][0].width == 1) {
+        // Reload the texture once loaded
+        tex.once("update", () => {
+          frames = splitTex(tex, 6, 9)
+          spr.textures = frames[i]
+        })
+      }
       spr.x = i * 128
       spr.y = offset * 128
       container.addChild(spr)

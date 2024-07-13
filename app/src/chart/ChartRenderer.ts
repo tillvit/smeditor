@@ -575,7 +575,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @memberof ChartRenderer
    */
   getUpperBound(): number {
-    return -this.y / Options.chart.zoom - 32
+    return -this.y / Options.chart.zoom - 64
   }
 
   /**
@@ -588,7 +588,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return (
       (this.chartManager.app.renderer.screen.height - this.y) /
         Options.chart.zoom +
-      32
+      64
     )
   }
 

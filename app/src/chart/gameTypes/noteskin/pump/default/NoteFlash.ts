@@ -100,6 +100,19 @@ export class NoteFlashContainer extends Container {
         this.standard.alpha = 0
       }
     })
+
+    noteskin.on(this, "rollon", event => {
+      if (col == event.columnNumber) {
+        this.standard.alpha = 1
+      }
+    })
+
+    noteskin.on(this, "rolloff", event => {
+      if (col == event.columnNumber) {
+        this.standard.alpha = 0
+      }
+    })
+
     noteskin.on(this, "hitmine", event => {
       if (col == event.columnNumber) {
         const mine = new Sprite(mineTex)

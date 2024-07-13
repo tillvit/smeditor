@@ -70,7 +70,11 @@ export class BasicGameLogic extends GameLogic {
         hold.gameplay!.droppedHoldBeat =
           chartManager.chartView.getBeatWithOffset()
         this.holdProgress.splice(this.holdProgress.indexOf(hold), 1)
-        chartManager.chartView.getNotefield().releaseHold(hold.col)
+        if (hold.type == "Roll") {
+          chartManager.chartView.getNotefield().releaseRoll(hold.col)
+        } else {
+          chartManager.chartView.getNotefield().releaseHold(hold.col)
+        }
         chartManager.gameStats?.addHoldDataPoint(
           hold,
           this.collection.getDroppedJudgement()
@@ -201,7 +205,11 @@ export class BasicGameLogic extends GameLogic {
     note.gameplay!.hasHit = true
     if (isHoldNote(note)) {
       note.gameplay!.lastHoldActivation = Date.now()
-      chartManager.chartView!.getNotefield().activateHold(note.col)
+      if (note.type == "Roll") {
+        chartManager.chartView!.getNotefield().activateRoll(note.col)
+      } else {
+        chartManager.chartView!.getNotefield().activateHold(note.col)
+      }
       this.holdProgress.push(note)
     }
     const chord = this.chordCohesion.get(note.beat)!

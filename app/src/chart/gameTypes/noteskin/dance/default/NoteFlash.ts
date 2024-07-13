@@ -103,6 +103,19 @@ export class NoteFlashContainer extends Container {
         this.holdExplosion.visible = false
       }
     })
+
+    noteskin.on(this, "rollon", event => {
+      if (col == event.columnNumber) {
+        this.holdExplosion.visible = true
+      }
+    })
+
+    noteskin.on(this, "rolloff", event => {
+      if (col == event.columnNumber) {
+        this.holdExplosion.visible = false
+      }
+    })
+
     noteskin.on(this, "hitmine", event => {
       if (col == event.columnNumber) {
         const mine = new Sprite(flashTex.mine)

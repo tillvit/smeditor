@@ -1,13 +1,16 @@
 import { GameType } from "../GameTypeRegistry"
 import { NoteSkinOptions } from "./NoteSkin"
-import { DanceDefaultNoteSkin } from "./dance/default/NoteSkin"
-import { DanceMetalNoteSkin } from "./dance/metal/NoteSkin"
-import { PumpDefaultNoteSkin } from "./pump/default/NoteSkin"
+
+interface RegistryData {
+  name: string
+  gameTypes: string[]
+  path: string
+}
 
 export class NoteSkinRegistry {
-  private static noteskins = new Map<string, Map<string, NoteSkinOptions>>()
+  private static noteskins = new Map<string, Map<string, RegistryData>>()
 
-  static register(options: NoteSkinOptions) {
+  static register(options: RegistryData) {
     for (const gameType of new Set(options.gameTypes)) {
       if (!NoteSkinRegistry.noteskins.has(gameType)) {
         NoteSkinRegistry.noteskins.set(gameType, new Map())
@@ -16,13 +19,12 @@ export class NoteSkinRegistry {
     }
   }
 
-  static getNoteSkin(
-    gameType: GameType,
-    name: string
-  ): NoteSkinOptions | undefined {
+  static async getNoteSkin(gameType: GameType, name: string) {
     const gameTypeNoteSkins = this.noteskins.get(gameType.id)
     if (!gameTypeNoteSkins || gameTypeNoteSkins.size == 0) return
-    return gameTypeNoteSkins.get(name) ?? [...gameTypeNoteSkins.values()][0]
+    const skin =
+      gameTypeNoteSkins.get(name) ?? [...gameTypeNoteSkins.values()][0]
+    return (await import(skin.path)).default as NoteSkinOptions
   }
 
   static getNoteSkins() {
@@ -30,6 +32,47 @@ export class NoteSkinRegistry {
   }
 }
 
-NoteSkinRegistry.register(DanceDefaultNoteSkin)
-NoteSkinRegistry.register(DanceMetalNoteSkin)
-NoteSkinRegistry.register(PumpDefaultNoteSkin)
+NoteSkinRegistry.register({
+  name: "default",
+  gameTypes: [
+    "dance-single",
+    "dance-double",
+    "dance-couple",
+    "dance-solo",
+    "dance-solodouble",
+    "dance-threepanel",
+    "dance-threedouble",
+  ],
+  path: "./dance/default/NoteSkin",
+})
+NoteSkinRegistry.register({
+  name: "ddr",
+  gameTypes: [
+    "dance-single",
+    "dance-double",
+    "dance-couple",
+    "dance-solo",
+    "dance-solodouble",
+    "dance-threepanel",
+    "dance-threedouble",
+  ],
+  path: "./dance/ddr/NoteSkin",
+})
+NoteSkinRegistry.register({
+  name: "metal",
+  gameTypes: [
+    "dance-single",
+    "dance-double",
+    "dance-couple",
+    "dance-solo",
+    "dance-solodouble",
+    "dance-threepanel",
+    "dance-threedouble",
+  ],
+  path: "./dance/metal/NoteSkin",
+})
+NoteSkinRegistry.register({
+  name: "default",
+  gameTypes: ["pump-single"],
+  path: "./pump/default/NoteSkin",
+})

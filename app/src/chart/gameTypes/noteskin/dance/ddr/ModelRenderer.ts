@@ -11,6 +11,10 @@ import {
   Texture,
 } from "pixi.js"
 
+import { App } from "../../../../../App"
+import { Options } from "../../../../../util/Options"
+import { NotedataEntry } from "../../../../sm/NoteTypes"
+
 import liftPartsUrl from "./lift/parts.png"
 import mineFrameUrl from "./mine/frame.png"
 import minePartsUrl from "./mine/parts.png"
@@ -25,9 +29,6 @@ import noopVert from "./shader/noop.vert?raw"
 import arrowBodyGeomText from "./tap/body.txt?raw"
 import arrowFrameGeomText from "./tap/frame.txt?raw"
 
-import { App } from "../../../../../App"
-import { Options } from "../../../../../util/Options"
-import { NotedataEntry } from "../../../../sm/NoteTypes"
 import liftBodyGeomText from "./lift/body.txt?raw"
 import mineBodyGeomText from "./mine/body.txt?raw"
 
@@ -56,7 +57,7 @@ export class ModelRenderer {
   static liftTex: RenderTexture
   static liftContainer = new Container()
   static mineTex: RenderTexture
-  static mineConainer = new Container()
+  static mineContainer = new Container()
 
   private static loaded = false
 
@@ -97,7 +98,7 @@ export class ModelRenderer {
       const arrow_frame = new Mesh(ModelRenderer.arrowFrameGeom, shader_frame)
       arrow_frame.x = 32
       arrow_frame.y = 32
-      arrow_frame.rotation = -Math.PI / 2
+      arrow_frame.rotation = Math.PI
       this.arrowFrame = arrow_frame
     }
     {
@@ -113,7 +114,7 @@ export class ModelRenderer {
         const arrow_body = new Mesh(ModelRenderer.arrowBodyGeom, shader_body)
         arrow_body.x = (i % 3) * 64 + 32
         arrow_body.y = Math.floor(i / 3) * 64 + 32
-        arrow_body.rotation = -Math.PI / 2
+        arrow_body.rotation = Math.PI
         arrow_body.name = "body" + i
         ModelRenderer.arrowContainer.addChild(arrow_frame)
         ModelRenderer.arrowContainer.addChild(arrow_body)
@@ -145,9 +146,9 @@ export class ModelRenderer {
       mine_frame.height = 64
       mine_frame.anchor.set(0.5)
       mine_frame.pivot.y = 3 // epic recenter
-      ModelRenderer.mineConainer.position.set(32)
-      ModelRenderer.mineConainer.addChild(mine_body)
-      ModelRenderer.mineConainer.addChild(mine_frame)
+      ModelRenderer.mineContainer.position.set(32)
+      ModelRenderer.mineContainer.addChild(mine_body)
+      ModelRenderer.mineContainer.addChild(mine_frame)
     }
 
     this.loaded = true
@@ -201,14 +202,14 @@ export class ModelRenderer {
     for (let i = 0; i < 10; i++) {
       const tapShader: Mesh<Shader> =
         ModelRenderer.arrowContainer.getChildByName("body" + i)!
-      tapShader.shader.uniforms.time = beat
+      tapShader.shader.uniforms.time = beat / 8
       const liftShader: Mesh<Shader> =
         ModelRenderer.liftContainer.getChildByName("body" + i)!
-      liftShader.shader.uniforms.time = beat
+      liftShader.shader.uniforms.time = beat / 8
     }
-    ;(<Mesh>ModelRenderer.mineConainer.children[0]).shader.uniforms.time =
+    ;(<Mesh>ModelRenderer.mineContainer.children[0]).shader.uniforms.time =
       second
-    ModelRenderer.mineConainer.rotation = (second % 1) * Math.PI * 2
+    ModelRenderer.mineContainer.rotation = (second % 1) * Math.PI * 2
 
     app.renderer.render(ModelRenderer.arrowFrame, {
       renderTexture: ModelRenderer.arrowFrameTex,
@@ -216,7 +217,7 @@ export class ModelRenderer {
     app.renderer.render(ModelRenderer.arrowContainer, {
       renderTexture: ModelRenderer.arrowTex,
     })
-    app.renderer.render(ModelRenderer.mineConainer, {
+    app.renderer.render(ModelRenderer.mineContainer, {
       renderTexture: ModelRenderer.mineTex,
     })
     app.renderer.render(ModelRenderer.liftContainer, {
