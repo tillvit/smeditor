@@ -1437,7 +1437,7 @@ export class ChartManager {
         if (note.second < this.time) note.gameplay!.hasHit = true
         else break
       }
-      this.loadedChart.gameType.gameLogic.endPlay(this)
+      this.loadedChart.gameType.gameLogic.startPlay(this)
       this.gameStats = new GameplayStats(this)
       this.widgetManager.startPlay()
       this.chartAudio.seek(Math.max(0, this.time) - 1)
@@ -1448,6 +1448,7 @@ export class ChartManager {
       this.chartAudio.play()
     } else {
       this.chartView.endPlay()
+
       notedata.forEach(note => (note.gameplay = undefined))
     }
   }

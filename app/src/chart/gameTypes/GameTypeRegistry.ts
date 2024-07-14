@@ -4,6 +4,7 @@ import { NotedataParser } from "./base/NotedataParser"
 
 import { BasicGameLogic } from "./common/BasicGameLogic"
 import { BasicNotedataParser } from "./common/BasicNotedataParser"
+import { PumpGameLogic } from "./pump/PumpGameLogic"
 
 export interface GameType {
   id: string
@@ -162,7 +163,7 @@ GameTypeRegistry.register({
   numCols: 5,
   columnWidths: [58, 58, 58, 58, 58],
   columnNames: ["DownLeft", "UpLeft", "Center", "UpRight", "DownRight"],
-  gameLogic: new BasicGameLogic(),
+  gameLogic: new PumpGameLogic(),
   parser: new BasicNotedataParser(),
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
   flipColumns: {

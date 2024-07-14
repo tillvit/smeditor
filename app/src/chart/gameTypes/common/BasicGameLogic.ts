@@ -10,6 +10,7 @@ import {
   Notedata,
   NotedataEntry,
 } from "../../sm/NoteTypes"
+import { TimingData } from "../../sm/TimingData"
 import { GameLogic } from "../base/GameLogic"
 
 export class BasicGameLogic extends GameLogic {
@@ -19,6 +20,7 @@ export class BasicGameLogic extends GameLogic {
   protected heldCols: ColHeldTracker = new ColHeldTracker()
   protected collection: TimingWindowCollection =
     TimingWindowCollection.getCollection("ITG")
+  usesHoldTicks = false
 
   update(chartManager: ChartManager): void {
     if (!chartManager.loadedChart || !chartManager.chartView) return
@@ -128,7 +130,7 @@ export class BasicGameLogic extends GameLogic {
     }
   }
 
-  endPlay(chartManager: ChartManager): void {
+  startPlay(chartManager: ChartManager): void {
     if (!chartManager.loadedChart || !chartManager.chartView) return
     this.collection = TimingWindowCollection.getCollection(
       Options.play.timingCollection
@@ -283,5 +285,37 @@ export class BasicGameLogic extends GameLogic {
     const window = this.collection.getHeldJudgement(note)
     if (!window) return false
     return time - note.gameplay.lastHoldActivation >= window.getTimingWindowMS()
+  }
+
+  calculateMaxDP(notedata: Notedata, _: TimingData) {
+    const chordCohesion: Map<number, NotedataEntry[]> = new Map()
+    const numHoldsMap: Map<string, number> = new Map()
+    for (const note of notedata) {
+      if (note.type == "Mine" || note.fake || note.warped) continue
+      if (isHoldNote(note)) {
+        if (!numHoldsMap.has(note.type)) numHoldsMap.set(note.type, 0)
+        numHoldsMap.set(note.type, numHoldsMap.get(note.type)! + 1)
+      }
+      if (!chordCohesion.has(note.beat)) chordCohesion.set(note.beat, [])
+      chordCohesion.get(note.beat)!.push(note)
+    }
+    let maxDancePoints =
+      chordCohesion.size *
+      TimingWindowCollection.getCollection(
+        Options.play.timingCollection
+      ).getMaxDancePoints()
+    maxDancePoints += Array.from(numHoldsMap.entries()).reduce(
+      (totalDP, entry) => {
+        return (
+          totalDP +
+          entry[1] *
+            TimingWindowCollection.getCollection(
+              Options.play.timingCollection
+            ).getMaxHoldDancePoints(entry[0])
+        )
+      },
+      0
+    )
+    return maxDancePoints
   }
 }

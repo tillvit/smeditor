@@ -23,7 +23,7 @@ import {
 
 interface JudgementDataPoint {
   second: number
-  error: number
+  error: number | null
   judgement: TimingWindow
   notes: NotedataEntry[]
 }
@@ -38,7 +38,7 @@ export class GameplayStats {
   private chartManager: ChartManager
   private readonly notedata: Notedata
   private dataPoints: JudgementDataPoint[] = []
-  private handlers: ((error: number, judge: TimingWindow) => void)[] = []
+  private handlers: ((error: number | null, judge: TimingWindow) => void)[] = []
   private combo = 0
   private missCombo = 0
   private maxCombo = 0
@@ -53,7 +53,7 @@ export class GameplayStats {
     this.calculateMaxDP()
   }
 
-  onJudge(handler: (error: number, judge: TimingWindow) => void) {
+  onJudge(handler: (error: number | null, judge: TimingWindow) => void) {
     this.handlers.push(handler)
   }
 
@@ -63,10 +63,9 @@ export class GameplayStats {
       if (!isStandardTimingWindow(point.judgement)) return point
       return {
         ...point,
-        error: point.error + offset,
+        error: point.error !== null ? point.error + offset : null,
       }
     })
-    this.recalculate()
   }
 
   /**
@@ -77,7 +76,11 @@ export class GameplayStats {
    * @param {number} error - The timing error in ms
    * @memberof GameplayStats
    */
-  addDataPoint(notes: NotedataEntry[], judge: TimingWindow, error: number) {
+  addDataPoint(
+    notes: NotedataEntry[],
+    judge: TimingWindow,
+    error: number | null
+  ) {
     if (!this.judgementCounts.has(judge)) this.judgementCounts.set(judge, 0)
     this.judgementCounts.set(judge, this.judgementCounts.get(judge)! + 1)
     this.dancePoints += judge.dancePoints
@@ -201,9 +204,10 @@ export class GameplayStats {
         .filter(
           point =>
             !isStandardMissTimingWindow(point.judgement) &&
-            isStandardTimingWindow(point.judgement)
+            isStandardTimingWindow(point.judgement) &&
+            point.error != null
         )
-        .map(data => data.error)
+        .map(data => data.error!)
     )
   }
 
@@ -217,86 +221,12 @@ export class GameplayStats {
     return this.maxCombo
   }
 
-  /**
-   * Recalculates the judgements and scores of this object using the current timing windows.
-   *
-   * @memberof GameplayStats
-   */
-  recalculate() {
-    this.calculateMaxDP()
-    this.dancePoints = 0
-    this.maxCumulativeDancePoints = 0
-    for (const entry of this.holdJudgementCounts.entries()) {
-      const judge = entry[0]
-      this.dancePoints += entry[0].dancePoints * entry[1][0]
-      this.maxCumulativeDancePoints +=
-        (entry[1][0] + entry[1][1]) *
-        TimingWindowCollection.getCollection(
-          Options.play.timingCollection
-        ).getMaxHoldDancePoints(judge.noteType)
-    }
-    this.judgementCounts.clear()
-    for (const dataPoint of this.dataPoints) {
-      let judge: TimingWindow = TimingWindowCollection.getCollection(
-        Options.play.timingCollection
-      ).judgeInput(dataPoint.error)
-      if (
-        isStandardMissTimingWindow(dataPoint.judgement) ||
-        isMineTimingWindow(dataPoint.judgement)
-      )
-        judge = dataPoint.judgement
-      if (!this.judgementCounts.has(judge)) this.judgementCounts.set(judge, 0)
-      this.judgementCounts.set(judge, this.judgementCounts.get(judge)! + 1)
-      this.dancePoints += judge.dancePoints
-      dataPoint.judgement = judge
-      if (!isMineTimingWindow(judge))
-        this.maxCumulativeDancePoints += TimingWindowCollection.getCollection(
-          Options.play.timingCollection
-        ).getMaxDancePoints()
-      if (isStandardMissTimingWindow(judge)) {
-        this.maxCumulativeDancePoints += dataPoint.notes
-          .filter(isHoldNote)
-          .reduce((totalDP, note) => {
-            return (
-              totalDP +
-              TimingWindowCollection.getCollection(
-                Options.play.timingCollection
-              ).getMaxHoldDancePoints(note.type)
-            )
-          }, 0)
-      }
-    }
-  }
-
   private calculateMaxDP() {
-    const chordCohesion: Map<number, NotedataEntry[]> = new Map()
-    const numHoldsMap: Map<string, number> = new Map()
-    for (const note of this.notedata) {
-      if (note.type == "Mine" || note.fake) continue
-      if (isHoldNote(note)) {
-        if (!numHoldsMap.has(note.type)) numHoldsMap.set(note.type, 0)
-        numHoldsMap.set(note.type, numHoldsMap.get(note.type)! + 1)
-      }
-      if (!chordCohesion.has(note.beat)) chordCohesion.set(note.beat, [])
-      chordCohesion.get(note.beat)!.push(note)
-    }
     this.maxDancePoints =
-      chordCohesion.size *
-      TimingWindowCollection.getCollection(
-        Options.play.timingCollection
-      ).getMaxDancePoints()
-    this.maxDancePoints += Array.from(numHoldsMap.entries()).reduce(
-      (totalDP, entry) => {
-        return (
-          totalDP +
-          entry[1] *
-            TimingWindowCollection.getCollection(
-              Options.play.timingCollection
-            ).getMaxHoldDancePoints(entry[0])
-        )
-      },
-      0
-    )
+      this.chartManager.loadedChart!.gameType.gameLogic.calculateMaxDP(
+        this.notedata,
+        this.chartManager.loadedChart!.timingData
+      )
   }
 
   /**

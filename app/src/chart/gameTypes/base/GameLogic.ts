@@ -1,5 +1,6 @@
 import { ChartManager } from "../../ChartManager"
-import { NotedataEntry } from "../../sm/NoteTypes"
+import { Notedata, NotedataEntry } from "../../sm/NoteTypes"
+import { TimingData } from "../../sm/TimingData"
 
 export abstract class GameLogic {
   /**
@@ -12,13 +13,13 @@ export abstract class GameLogic {
   abstract update(chartManager: ChartManager): void
 
   /**
-   * Called when play mode is exited.
+   * Called when play mode is started.
    *
    * @abstract
    * @param {ChartManager} chartManager
    * @memberof GameLogic
    */
-  abstract endPlay(chartManager: ChartManager): void
+  abstract startPlay(chartManager: ChartManager): void
 
   /**
    * Called when a column is pressed down.
@@ -49,4 +50,8 @@ export abstract class GameLogic {
    * @memberof GameLogic
    */
   abstract shouldAssistTick(note: NotedataEntry): boolean
+
+  abstract calculateMaxDP(notedata: Notedata, timingData: TimingData): number
+
+  abstract usesHoldTicks: boolean
 }

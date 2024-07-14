@@ -48,8 +48,8 @@ export type TapNotedataEntry = PartialTapNotedataEntry & ExtraNotedata
 export type HoldNotedataEntry = PartialHoldNotedataEntry &
   ExtraNotedata & {
     gameplay?: {
-      lastHoldActivation: number
-      droppedHoldBeat: number
+      lastHoldActivation?: number
+      droppedHoldBeat?: number
     }
   }
 export type NotedataEntry = TapNotedataEntry | HoldNotedataEntry
