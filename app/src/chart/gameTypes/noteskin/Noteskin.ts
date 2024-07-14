@@ -231,16 +231,24 @@ export class NoteSkin {
     element: NoteSkinElementOptions,
     options: Partial<NoteSkinElementCreationOptions> = {}
   ): NoteSkinSprite {
-    if (this.options.load) {
-      const spr = this.options.load.bind(this)(element, {
-        noteskin: this,
-        columnName: element.columnName,
-        columnNumber: element.columnNumber,
-        ...options,
-      })
-      return spr ?? this.getPlaceholderSprite()
+    try {
+      if (this.options.load) {
+        const spr = this.options.load.bind(this)(element, {
+          noteskin: this,
+          columnName: element.columnName,
+          columnNumber: element.columnNumber,
+          ...options,
+        })
+        return spr ?? this.getPlaceholderSprite()
+      }
+      return this.loadElement(element, options) ?? this.getPlaceholderSprite()
+    } catch (e: any) {
+      console.error(e)
+      if (Options.debug.showNoteSkinErrors) {
+        WaterfallManager.createFormatted("Noteskin Error: " + e, "error")
+      }
+      return this.getPlaceholderSprite()
     }
-    return this.loadElement(element, options) ?? this.getPlaceholderSprite()
   }
 
   loadElement(

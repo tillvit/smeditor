@@ -59,6 +59,10 @@ const rotationMap: Record<string, number> = {
   Down: -90,
   Up: 90,
   Right: 180,
+  UpLeft: 45,
+  UpRight: 135,
+  DownRight: -135,
+  DownLeft: -45,
 }
 
 const toRotate = [

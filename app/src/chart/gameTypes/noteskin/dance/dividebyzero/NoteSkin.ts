@@ -1,43 +1,36 @@
-// Peters-DDR-Note by Pete-Lawrence https://github.com/Pete-Lawrence/Peters-Noteskins/
+// Pastel by MinaciousGrace https://beta.etternaonline.com/customisation/noteskins
+// Custom lifts by tillvit
 
 import { AnimatedSprite, Sprite, Texture, TilingSprite } from "pixi.js"
 import { NoteSkinOptions } from "../../NoteSkin"
 
+import { BezierAnimator } from "../../../../../util/BezierEasing"
 import { ModelRenderer } from "./ModelRenderer"
 import { NoteFlashContainer } from "./NoteFlash"
-import receptorUrl from "./receptor.png"
 
-import { BezierAnimator } from "../../../../../util/BezierEasing"
 import { splitTex } from "../../../../../util/Util"
+
+import rollBodyUrl from "./rollBody.png"
+
+import holdBodyUrl from "./holdBody.png"
+
+import holdHeadUrl from "./holdHead.png"
+import receptorUrl from "./receptor.png"
+import tapUrl from "./tap.png"
 
 const receptorTex = Texture.from(receptorUrl)
 
-const holdTex: Record<string, Record<string, Record<string, Texture>>> = {}
-const rollTex: Record<string, Record<string, Texture>> = {}
+const tapTex = splitTex(Texture.from(tapUrl), 1, 8, 64, 64)
+const holdHeadTex = splitTex(Texture.from(holdHeadUrl), 1, 8, 64, 64)
 
-for (const dir of ["Left", "Down", "Up", "Right", "UpLeft", "UpRight"]) {
-  for (const asset of ["Body", "BottomCap"]) {
-    for (const state of ["Active", "Inactive"]) {
-      if (holdTex[dir] === undefined) holdTex[dir] = {}
-      if (holdTex[dir][state] === undefined) holdTex[dir][state] = {}
-      holdTex[dir][state][asset] = Texture.from(
-        new URL(
-          `./hold/${dir.toLowerCase()}${asset}${state}.png`,
-          import.meta.url
-        ).href
-      )
-    }
-  }
+const liftTex: Texture[] = []
+
+for (let i = 0; i < 9; i++) {
+  liftTex[i] = Texture.from(new URL(`./lift/${i}.png`, import.meta.url).href)
 }
 
-for (const asset of ["body", "bottomCap"]) {
-  for (const state of ["Active", "Inactive"]) {
-    if (rollTex[state] === undefined) rollTex[state] = {}
-    rollTex[state][asset] = Texture.from(
-      new URL(`./roll/${asset}${state}.png`, import.meta.url).href
-    )
-  }
-}
+const holdTex = Texture.from(holdBodyUrl)
+const rollTex = Texture.from(rollBodyUrl)
 
 const rotationMap: Record<string, number> = {
   Left: 90,
@@ -64,20 +57,12 @@ const toRotate = [
 
 const holdBody = (tex: Texture) => {
   const body = new TilingSprite(tex, 64, 0)
-  body.tileScale.x = 0.5
-  body.tileScale.y = 0.5
+  body.tileScale.x = 1
+  body.tileScale.y = 1
   body.uvRespectAnchor = true
   body.anchor.y = 1
   body.x = -32
   return body
-}
-
-const holdCap = (tex: Texture) => {
-  const cap = new Sprite(tex)
-  cap.width = 64
-  cap.height = 32
-  cap.anchor.x = 0.5
-  return cap
 }
 
 export default {
@@ -85,9 +70,7 @@ export default {
     Left: {
       Receptor: options => {
         let zoomanim: string | undefined
-        const tex = splitTex(receptorTex, 2, 1, 256, 256)
-
-        const spr = new AnimatedSprite(tex[0])
+        const spr = new AnimatedSprite(splitTex(receptorTex, 2, 1, 64, 64)[0])
         spr.width = 64
         spr.height = 64
         spr.anchor.set(0.5)
@@ -119,37 +102,77 @@ export default {
         return spr
       },
       Tap: options => {
-        const spr = new Sprite(Texture.WHITE)
-        ModelRenderer.setNoteTex(spr, options.note)
+        const tex =
+          tapTex[
+            Math.min(
+              [4, 8, 12, 16, 24, 32, 48, 64, 96, 192].indexOf(
+                options.note?.quant ?? 4
+              ) ?? 0,
+              7
+            )
+          ]
+        const spr = new Sprite(tex[0])
         spr.anchor.set(0.5)
+        spr.width = 64
+        spr.height = 64
         return spr
       },
       NoteFlash: options => {
         return new NoteFlashContainer(options.noteskin, options.columnNumber)
       },
       Fake: { element: "Tap" },
-      Lift: { element: "Tap" },
-      Mine: { element: "Tap" },
-      "Hold Active Head": { element: "Tap" },
+      Lift: options => {
+        const tex =
+          liftTex[
+            [4, 8, 12, 16, 24, 32, 48, 64, 96, 192].indexOf(
+              options.note?.quant ?? 4
+            ) ?? 0
+          ]
+        const spr = new Sprite(tex)
+        spr.anchor.set(0.5)
+        spr.width = 64
+        spr.height = 64
+        return spr
+      },
+      Mine: () => {
+        const spr = new Sprite(ModelRenderer.mineTex)
+        spr.anchor.set(0.5)
+        spr.width = 64
+        spr.height = 64
+        return spr
+      },
+      "Hold Active Head": options => {
+        const tex =
+          holdHeadTex[
+            Math.min(
+              [4, 8, 12, 16, 24, 32, 48, 64, 96, 192].indexOf(
+                options.note?.quant ?? 4
+              ) ?? 0,
+              7
+            )
+          ]
+        const spr = new Sprite(tex[0])
+        spr.anchor.set(0.5)
+        spr.width = 64
+        spr.height = 64
+        return spr
+      },
       "Hold Inactive Head": { element: "Tap" },
-      "Hold Active Body": opt => holdBody(holdTex[opt.columnName].Active.Body),
-      "Hold Inactive Body": opt =>
-        holdBody(holdTex[opt.columnName].Inactive.Body),
+      "Hold Active Body": () => holdBody(holdTex),
+      "Hold Inactive Body": { element: "Hold Active Body" },
       "Hold Active TopCap": () => new Sprite(Texture.EMPTY),
       "Hold Inactive TopCap": () => new Sprite(Texture.EMPTY),
-      "Hold Active BottomCap": opt =>
-        holdCap(holdTex[opt.columnName].Active.BottomCap),
-      "Hold Inactive BottomCap": opt =>
-        holdCap(holdTex[opt.columnName].Inactive.BottomCap),
+      "Hold Active BottomCap": () => new Sprite(Texture.EMPTY),
+      "Hold Inactive BottomCap": { element: "Hold Active BottomCap" },
 
-      "Roll Active Head": { element: "Tap" },
+      "Roll Active Head": { element: "Hold Active Head" },
       "Roll Inactive Head": { element: "Tap" },
-      "Roll Active Body": () => holdBody(rollTex.Active.body),
-      "Roll Inactive Body": () => holdBody(rollTex.Inactive.body),
+      "Roll Active Body": () => holdBody(rollTex),
+      "Roll Inactive Body": { element: "Roll Active Body" },
       "Roll Active TopCap": () => new Sprite(Texture.EMPTY),
       "Roll Inactive TopCap": () => new Sprite(Texture.EMPTY),
-      "Roll Active BottomCap": () => holdCap(rollTex.Active.bottomCap),
-      "Roll Inactive BottomCap": () => holdCap(rollTex.Inactive.bottomCap),
+      "Roll Active BottomCap": () => new Sprite(Texture.EMPTY),
+      "Roll Inactive BottomCap": { element: "Roll Active BottomCap" },
     },
   },
   load: function (element, options) {

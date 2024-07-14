@@ -16,7 +16,7 @@ const receptorTex = Texture.from(receptorUrl)
 const holdTex: Record<string, Record<string, Record<string, Texture>>> = {}
 const rollTex: Record<string, Record<string, Texture>> = {}
 
-for (const dir of ["Left", "Down", "Up", "Right"]) {
+for (const dir of ["Left", "Down", "Up", "Right", "UpLeft", "UpRight"]) {
   for (const asset of ["Body", "BottomCap"]) {
     for (const state of ["Active", "Inactive"]) {
       if (holdTex[dir] === undefined) holdTex[dir] = {}
@@ -45,6 +45,10 @@ const rotationMap: Record<string, number> = {
   Down: 0,
   Up: 180,
   Right: -90,
+  UpLeft: 135,
+  UpRight: -135,
+  DownRight: -45,
+  DownLeft: 45,
 }
 
 const toRotate = [
