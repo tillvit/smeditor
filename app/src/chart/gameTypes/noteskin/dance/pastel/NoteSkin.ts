@@ -77,7 +77,7 @@ const holdBody = (tex: Texture) => {
 const holdCap = (tex: Texture) => {
   const cap = new Sprite(tex)
   cap.width = 64
-  cap.height = 32
+  cap.height = 64
   cap.anchor.x = 0.5
   return cap
 }

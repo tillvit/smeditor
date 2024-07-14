@@ -1159,7 +1159,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return this.notefield
   }
 
-  swapNoteskin(name: string) {
+  swapNoteSkin(name: string) {
     Options.chart.noteskin.name = name
     this.reloadNotefield()
   }

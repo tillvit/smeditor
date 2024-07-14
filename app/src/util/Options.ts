@@ -85,7 +85,7 @@ export class DefaultOptions {
       type: "dance-single",
       name: "default",
     },
-    lastNoteskins: {
+    lastNoteSkins: {
       "dance-single": "default",
       "dance-double": "default",
       "dance-couple": "default",

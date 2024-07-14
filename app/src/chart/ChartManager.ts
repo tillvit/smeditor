@@ -781,7 +781,7 @@ export class ChartManager {
     const oldType = GameTypeRegistry.getGameType(Options.chart.noteskin.type)
     const newNoteSkin = {
       type: chart.gameType.id,
-      name: Options.chart.lastNoteskins[chart.gameType.id] ?? "default",
+      name: Options.chart.lastNoteSkins[chart.gameType.id] ?? "default",
     }
     if (oldType) {
       const oldSkin = NoteSkinRegistry.getNoteSkinData(
@@ -794,7 +794,7 @@ export class ChartManager {
       }
     }
     Options.chart.noteskin = newNoteSkin
-    Options.chart.lastNoteskins[chart.gameType.id] = newNoteSkin.name
+    Options.chart.lastNoteSkins[chart.gameType.id] = newNoteSkin.name
 
     this.getAssistTickIndex()
     this.chartView = new ChartRenderer(this)

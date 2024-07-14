@@ -1,5 +1,4 @@
-// FourV2 by Jousway, bundled with Project Outfox
-// Color modifications by tillvit
+// SM4 Bold, bundled with SM4
 
 import { Sprite, Texture, TilingSprite } from "pixi.js"
 import { NoteSkinOptions } from "../../NoteSkin"

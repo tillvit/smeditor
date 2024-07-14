@@ -117,7 +117,10 @@ export class HoldObject extends Container {
       this.options[state].Body.height = length
       this.options[state].Body.y = length
       this.options[state].BottomCap.y = length
-      this.options[state].BottomCap.scale.y = length < 0 ? -0.5 : 0.5
+      const bottomCapScale = Math.abs(this.options[state].BottomCap.scale.y)
+
+      this.options[state].BottomCap.scale.y =
+        length < 0 ? -bottomCapScale : bottomCapScale
     }
   }
 }
