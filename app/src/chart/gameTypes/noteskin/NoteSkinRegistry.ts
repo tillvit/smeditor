@@ -131,6 +131,19 @@ NoteSkinRegistry.register({
   load: async () => (await import("./dance/dividebyzero/NoteSkin")).default,
 })
 NoteSkinRegistry.register({
+  name: "subtractbyzero",
+  gameTypes: [
+    "dance-single",
+    "dance-double",
+    "dance-couple",
+    "dance-solo",
+    "dance-solodouble",
+    "dance-threepanel",
+    "dance-threedouble",
+  ],
+  load: async () => (await import("./dance/subtractbyzero/NoteSkin")).default,
+})
+NoteSkinRegistry.register({
   name: "default",
   gameTypes: ["pump-single"],
   load: async () => (await import("./pump/default/NoteSkin")).default,

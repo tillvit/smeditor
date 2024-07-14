@@ -1,4 +1,4 @@
-// DivideByZero, bundled with Etterna
+// SubtractByZero, bundled with Etterna
 // Custom lifts by tillvit
 
 import { AnimatedSprite, Sprite, Texture, TilingSprite } from "pixi.js"
@@ -20,7 +20,7 @@ import mineUrl from "./mine.png"
 import receptorUrl from "./receptor.png"
 import tapUrl from "./tap.png"
 
-const receptorTex = Texture.from(receptorUrl)
+const receptorTex = splitTex(Texture.from(receptorUrl), 2, 1, 64, 64)[0]
 
 const mineTex = splitTex(Texture.from(mineUrl), 8, 1, 64, 64)[0]
 
@@ -31,29 +31,6 @@ const liftTex = splitTex(Texture.from(liftUrl), 1, 8, 64, 64)
 
 const holdTex = Texture.from(holdBodyUrl)
 const rollTex = Texture.from(rollBodyUrl)
-
-const rotationMap: Record<string, number> = {
-  Left: 90,
-  Down: 0,
-  Up: 180,
-  Right: -90,
-  UpLeft: 135,
-  UpRight: -135,
-  DownRight: -45,
-  DownLeft: 45,
-}
-
-const toRotate = [
-  "Receptor",
-  "Tap",
-  "Lift",
-  "Fake",
-  "Hold Inactive Head",
-  "Hold Active Head",
-  "Roll Inactive Head",
-  "Roll Active Head",
-  "NoteFlash",
-]
 
 const holdBody = (tex: Texture) => {
   const body = new TilingSprite(tex, 64, 0)
@@ -70,7 +47,7 @@ export default {
     Left: {
       Receptor: options => {
         let zoomanim: string | undefined
-        const spr = new AnimatedSprite(splitTex(receptorTex, 2, 1, 64, 64)[0])
+        const spr = new AnimatedSprite(receptorTex)
         spr.width = 64
         spr.height = 64
         spr.anchor.set(0.5)
@@ -186,14 +163,9 @@ export default {
     },
   },
   load: function (element, options) {
-    const col = element.columnName
     element.columnName = "Left"
 
     const sprite = this.loadElement(element, options)
-
-    if (toRotate.includes(element.element)) {
-      sprite.rotation = (rotationMap[col] * Math.PI) / 180
-    }
 
     return sprite
   },
