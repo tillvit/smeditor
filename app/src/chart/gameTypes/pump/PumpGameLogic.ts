@@ -13,12 +13,12 @@ import { TimingData } from "../../sm/TimingData"
 import { BasicGameLogic } from "../common/BasicGameLogic"
 
 export class PumpGameLogic extends BasicGameLogic {
-  protected tickProgress: {
+  protected tickProgress: Set<{
     ticks: number[]
     hold: HoldNotedataEntry
     nextTick: number
     hitLast: boolean
-  }[] = []
+  }> = new Set()
   protected collection: TimingWindowCollection =
     TimingWindowCollection.getCollection("ITG")
 
@@ -68,7 +68,7 @@ export class PumpGameLogic extends BasicGameLogic {
     ) {
       const note = chartManager.loadedChart.getNotedata()[this.holdIndex]
       if (isHoldNote(note) && !note.fake && !note.warped) {
-        this.tickProgress.push({
+        this.tickProgress.add({
           ticks: this.generateHoldTicks(
             chartManager.loadedChart.timingData,
             note
@@ -137,6 +137,34 @@ export class PumpGameLogic extends BasicGameLogic {
             )
           }
         }
+        if (hold.type == "Roll") {
+          if (hold.gameplay?.droppedHoldBeat === undefined) {
+            chartManager.chartView.doJudgement(
+              hold,
+              null,
+              this.collection.getStandardWindows()[0]
+            )
+            chartManager.gameStats?.addDataPoint(
+              [hold],
+              this.collection.getStandardWindows()[0],
+              null
+            )
+            if (dat.nextTick == ticks.length - 1) {
+              dat.hitLast = true
+            }
+          } else {
+            chartManager.chartView.doJudgement(
+              hold,
+              null,
+              this.collection.getMissJudgement()
+            )
+            chartManager.gameStats?.addDataPoint(
+              [hold],
+              this.collection.getMissJudgement(),
+              null
+            )
+          }
+        }
         dat.nextTick++
       }
 
@@ -144,8 +172,11 @@ export class PumpGameLogic extends BasicGameLogic {
         chartManager.chartView.getTimeWithOffset() >=
         chartManager.chartView.chart.getSecondsFromBeat(hold.beat + hold.hold)
       ) {
-        hold.gameplay!.hideNote = dat.hitLast
-        this.tickProgress.splice(this.tickProgress.indexOf(dat), 1)
+        hold.gameplay!.hideNote =
+          dat.hitLast ||
+          ticks.length == 0 ||
+          hold.gameplay?.droppedHoldBeat === undefined
+        this.tickProgress.delete(dat)
       }
     }
 
@@ -234,7 +265,7 @@ export class PumpGameLogic extends BasicGameLogic {
       firstHittableNote--
     this.missNoteIndex = firstHittableNote
     this.holdIndex = firstHittableNote
-    this.tickProgress = []
+    this.tickProgress = new Set()
     this.heldCols.reset()
   }
 
@@ -296,13 +327,11 @@ export class PumpGameLogic extends BasicGameLogic {
         currentTick = tickCounts[tickIndex].beat
         tickLength = 1 / tickCounts[tickIndex].value
       }
-      if (
-        (tickCounts[tickIndex]?.value ?? 4) != 0 &&
-        currentTick < getNoteEnd(hold)
-      )
-        ticks.push(currentTick)
+      if ((tickCounts[tickIndex]?.value ?? 4) != 0) ticks.push(currentTick)
     }
-    return ticks
+    return ticks.filter(
+      tick => tick < getNoteEnd(hold) && !timingData.isBeatWarped(tick)
+    )
   }
 
   calculateMaxDP(notedata: Notedata, timingData: TimingData): number {

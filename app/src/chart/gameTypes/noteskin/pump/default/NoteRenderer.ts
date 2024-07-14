@@ -84,7 +84,7 @@ export class NoteRenderer {
     if (!this.loaded) return
     const beat = app.chartManager.chartView!.getVisualBeat()
 
-    const frame = Math.floor(((beat % 1) + 1) % 1) * 6
+    const frame = Math.floor((((beat % 1) + 1) % 1) * 6)
 
     this.downLeftContainer.children.forEach(a => (a.currentFrame = frame))
     this.centerContainer.children.forEach(a => (a.currentFrame = frame))
