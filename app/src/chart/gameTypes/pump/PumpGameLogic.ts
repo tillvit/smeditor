@@ -67,7 +67,7 @@ export class PumpGameLogic extends BasicGameLogic {
       chartManager.loadedChart.getNotedata()[this.holdIndex].beat < beat
     ) {
       const note = chartManager.loadedChart.getNotedata()[this.holdIndex]
-      if (isHoldNote(note) && !note.fake && !note.warped) {
+      if (isHoldNote(note) && !note.fake) {
         this.tickProgress.add({
           ticks: this.generateHoldTicks(
             chartManager.loadedChart.timingData,
@@ -313,19 +313,22 @@ export class PumpGameLogic extends BasicGameLogic {
     if (currentTick == hold.beat) currentTick += tickLength
     const ticks = []
     if ((tickCounts[tickIndex]?.value ?? 4) != 0) ticks.push(currentTick)
+    else currentTick = hold.beat
     while (currentTick < getNoteEnd(hold)) {
-      if ((tickCounts[tickIndex]?.value ?? 4) == 0) {
-        currentTick = tickCounts[tickIndex + 1]?.beat
-        if (currentTick === undefined) {
-          return ticks
-        }
-      } else {
-        currentTick += tickLength
-      }
-      if (tickCounts[tickIndex + 1]?.beat <= currentTick) {
+      if (
+        (tickCounts[tickIndex]?.value ?? 4) == 0 ||
+        tickCounts[tickIndex + 1]?.beat <= currentTick
+      ) {
         tickIndex += 1
         currentTick = tickCounts[tickIndex].beat
         tickLength = 1 / tickCounts[tickIndex].value
+        if (currentTick === undefined) {
+          return ticks.filter(
+            tick => tick < getNoteEnd(hold) && !timingData.isBeatWarped(tick)
+          )
+        }
+      } else {
+        currentTick += tickLength
       }
       if ((tickCounts[tickIndex]?.value ?? 4) != 0) ticks.push(currentTick)
     }
@@ -338,7 +341,7 @@ export class PumpGameLogic extends BasicGameLogic {
     const chordCohesion: Map<number, NotedataEntry[]> = new Map()
     let maxDancePoints = 0
     for (const note of notedata) {
-      if (note.type == "Mine" || note.fake || note.warped) continue
+      if (note.type == "Mine" || note.fake) continue
       if (isHoldNote(note)) {
         maxDancePoints +=
           TimingWindowCollection.getCollection(
@@ -346,6 +349,7 @@ export class PumpGameLogic extends BasicGameLogic {
           ).getMaxDancePoints() *
           this.generateHoldTicks(timingData, note).length
       }
+      if (note.warped) continue
       if (!chordCohesion.has(note.beat)) chordCohesion.set(note.beat, [])
       chordCohesion.get(note.beat)!.push(note)
     }
