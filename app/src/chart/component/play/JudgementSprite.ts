@@ -51,7 +51,8 @@ export class JudgementSprite extends Sprite implements ChartRendererComponent {
     }
   }
 
-  doJudge(error: number, judgment: TimingWindow) {
+  doJudge(error: number | null, judgment: TimingWindow) {
+    if (error == null) error = 0
     if (
       !isStandardTimingWindow(judgment) &&
       !isStandardMissTimingWindow(judgment)

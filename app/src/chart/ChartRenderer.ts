@@ -264,7 +264,11 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return !!this.selectionBounds
   }
 
-  doJudgement(note: NotedataEntry, error: number, judgement: TimingWindow) {
+  doJudgement(
+    note: NotedataEntry,
+    error: number | null,
+    judgement: TimingWindow
+  ) {
     if (this.chartManager.getMode() == EditMode.Play) {
       this.judgement.doJudge(error, judgement)
       this.timingBar.addBar(error, judgement)

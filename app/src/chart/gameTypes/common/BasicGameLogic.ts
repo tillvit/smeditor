@@ -45,14 +45,14 @@ export class BasicGameLogic extends GameLogic {
         lastChord = note.beat
         chartManager.chartView.doJudgement(
           note,
-          0,
+          null,
           this.collection.getMissJudgement()
         )
         const chord = this.chordCohesion.get(note.beat)!
         chartManager.gameStats?.addDataPoint(
           chord,
           this.collection.getMissJudgement(),
-          0
+          null
         )
       }
       this.missNoteIndex++
@@ -66,7 +66,7 @@ export class BasicGameLogic extends GameLogic {
       if (this.shouldDropHold(hold, Date.now())) {
         chartManager.chartView.doJudgement(
           hold,
-          0,
+          null,
           this.collection.getDroppedJudgement()
         )
         hold.gameplay!.droppedHoldBeat =
@@ -90,7 +90,7 @@ export class BasicGameLogic extends GameLogic {
         hold.gameplay!.hideNote = true
         chartManager.chartView.doJudgement(
           hold,
-          0,
+          null,
           this.collection.getHeldJudgement(hold)
         )
         chartManager.chartView.getNotefield().releaseHold(hold.col)
@@ -117,13 +117,13 @@ export class BasicGameLogic extends GameLogic {
         mine.gameplay!.hideNote = true
         chartManager.chartView.doJudgement(
           mine,
-          0,
+          null,
           this.collection.getMineJudgement()
         )
         chartManager.gameStats?.addDataPoint(
           [mine],
           this.collection.getMineJudgement(),
-          0
+          null
         )
         chartManager.mine.play()
       }

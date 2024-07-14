@@ -49,14 +49,14 @@ export class PumpGameLogic extends BasicGameLogic {
         lastChord = note.beat
         chartManager.chartView.doJudgement(
           note,
-          0,
+          null,
           this.collection.getMissJudgement()
         )
         const chord = this.chordCohesion.get(note.beat)!
         chartManager.gameStats?.addDataPoint(
           chord,
           this.collection.getMissJudgement(),
-          0
+          null
         )
       }
       this.missNoteIndex++
@@ -113,7 +113,7 @@ export class PumpGameLogic extends BasicGameLogic {
           if (this.heldCols.isPressed(hold.col)) {
             chartManager.chartView.doJudgement(
               hold,
-              0,
+              null,
               this.collection.getStandardWindows()[0]
             )
             chartManager.gameStats?.addDataPoint(
@@ -127,7 +127,7 @@ export class PumpGameLogic extends BasicGameLogic {
           } else {
             chartManager.chartView.doJudgement(
               hold,
-              0,
+              null,
               this.collection.getMissJudgement()
             )
             chartManager.gameStats?.addDataPoint(
