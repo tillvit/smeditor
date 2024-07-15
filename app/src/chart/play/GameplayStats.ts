@@ -97,16 +97,18 @@ export class GameplayStats {
         Options.play.timingCollection
       ).getMaxDancePoints()
     if (isStandardMissTimingWindow(judge)) {
-      this.maxCumulativeDancePoints += notes
-        .filter(isHoldNote)
-        .reduce((totalDP, note) => {
-          return (
-            totalDP +
-            TimingWindowCollection.getCollection(
-              Options.play.timingCollection
-            ).getMaxHoldDancePoints(note.type)
-          )
-        }, 0)
+      if (!this.chartManager.loadedChart!.gameType.gameLogic.usesHoldTicks) {
+        this.maxCumulativeDancePoints += notes
+          .filter(isHoldNote)
+          .reduce((totalDP, note) => {
+            return (
+              totalDP +
+              TimingWindowCollection.getCollection(
+                Options.play.timingCollection
+              ).getMaxHoldDancePoints(note.type)
+            )
+          }, 0)
+      }
       this.combo = 0
       this.missCombo += missMult
       this.bestJudge = undefined

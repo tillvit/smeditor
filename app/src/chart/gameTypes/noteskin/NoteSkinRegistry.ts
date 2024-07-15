@@ -171,6 +171,12 @@ NoteSkinRegistry.register({
 })
 NoteSkinRegistry.register({
   name: "default",
-  gameTypes: ["pump-single"],
+  gameTypes: [
+    "pump-single",
+    "pump-double",
+    "pump-couple",
+    "pump-versus",
+    "pump-halfdouble",
+  ],
   load: async () => (await import("./pump/default/NoteSkin")).default,
 })

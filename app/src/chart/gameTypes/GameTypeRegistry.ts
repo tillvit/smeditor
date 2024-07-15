@@ -171,3 +171,99 @@ GameTypeRegistry.register({
     vertical: [1, 0, 2, 4, 3],
   },
 })
+
+GameTypeRegistry.register({
+  id: "pump-double",
+  numCols: 10,
+  columnWidths: [58, 58, 58, 58, 58, 58, 58, 58, 58, 58],
+  columnNames: [
+    "DownLeft",
+    "UpLeft",
+    "Center",
+    "UpRight",
+    "DownRight",
+    "DownLeft",
+    "UpLeft",
+    "Center",
+    "UpRight",
+    "DownRight",
+  ],
+  gameLogic: new PumpGameLogic(),
+  parser: new BasicNotedataParser(),
+  editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [4, 3, 2, 1, 0, 9, 8, 7, 6, 5],
+    vertical: [1, 0, 2, 4, 3, 6, 5, 7, 9, 8],
+  },
+})
+
+GameTypeRegistry.register({
+  id: "pump-versus",
+  numCols: 10,
+  columnWidths: [58, 58, 58, 58, 58, 58, 58, 58, 58, 58],
+  columnNames: [
+    "DownLeft",
+    "UpLeft",
+    "Center",
+    "UpRight",
+    "DownRight",
+    "DownLeft",
+    "UpLeft",
+    "Center",
+    "UpRight",
+    "DownRight",
+  ],
+  gameLogic: new PumpGameLogic(),
+  parser: new BasicNotedataParser(),
+  editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [4, 3, 2, 1, 0, 9, 8, 7, 6, 5],
+    vertical: [1, 0, 2, 4, 3, 6, 5, 7, 9, 8],
+  },
+})
+
+GameTypeRegistry.register({
+  id: "pump-couple",
+  numCols: 10,
+  columnWidths: [58, 58, 58, 58, 58, 58, 58, 58, 58, 58],
+  columnNames: [
+    "DownLeft",
+    "UpLeft",
+    "Center",
+    "UpRight",
+    "DownRight",
+    "DownLeft",
+    "UpLeft",
+    "Center",
+    "UpRight",
+    "DownRight",
+  ],
+  gameLogic: new PumpGameLogic(),
+  parser: new BasicNotedataParser(),
+  editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [4, 3, 2, 1, 0, 9, 8, 7, 6, 5],
+    vertical: [1, 0, 2, 4, 3, 6, 5, 7, 9, 8],
+  },
+})
+
+GameTypeRegistry.register({
+  id: "pump-halfdouble",
+  numCols: 6,
+  columnWidths: [58, 58, 58, 58, 58, 58],
+  columnNames: [
+    "Center",
+    "UpRight",
+    "DownRight",
+    "DownLeft",
+    "UpLeft",
+    "Center",
+  ],
+  gameLogic: new PumpGameLogic(),
+  parser: new BasicNotedataParser(),
+  editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [5, 1, 2, 3, 4, 0],
+    vertical: [0, 2, 1, 4, 3, 5],
+  },
+})

@@ -324,7 +324,7 @@ export class PumpGameLogic extends BasicGameLogic {
         tickLength = 1 / tickCounts[tickIndex].value
         if (currentTick === undefined) {
           return ticks.filter(
-            tick => tick < getNoteEnd(hold) && !timingData.isBeatWarped(tick)
+            tick => tick <= getNoteEnd(hold) && !timingData.isBeatWarped(tick)
           )
         }
       } else {
@@ -333,7 +333,7 @@ export class PumpGameLogic extends BasicGameLogic {
       if ((tickCounts[tickIndex]?.value ?? 4) != 0) ticks.push(currentTick)
     }
     return ticks.filter(
-      tick => tick < getNoteEnd(hold) && !timingData.isBeatWarped(tick)
+      tick => tick <= getNoteEnd(hold) && !timingData.isBeatWarped(tick)
     )
   }
 
