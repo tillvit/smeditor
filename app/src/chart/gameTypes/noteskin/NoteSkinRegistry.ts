@@ -217,3 +217,15 @@ NoteSkinRegistry.register({
   ],
   load: async () => (await import("./pump/fourv2/NoteSkin")).default,
 })
+
+NoteSkinRegistry.register({
+  name: "prime",
+  gameTypes: [
+    "pump-single",
+    "pump-double",
+    "pump-couple",
+    "pump-versus",
+    "pump-halfdouble",
+  ],
+  load: async () => (await import("./pump/prime/NoteSkin")).default,
+})

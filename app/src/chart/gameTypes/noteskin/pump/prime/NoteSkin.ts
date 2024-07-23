@@ -1,4 +1,4 @@
-// FIESTA, from https://github.com/cesarmades/piunoteskins
+// PRIME, from https://github.com/cesarmades/piunoteskins
 
 import {
   AnimatedSprite,
