@@ -138,7 +138,10 @@ export class PumpGameLogic extends BasicGameLogic {
           }
         }
         if (hold.type == "Roll") {
-          if (hold.gameplay?.droppedHoldBeat === undefined) {
+          if (
+            hold.gameplay?.droppedHoldBeat === undefined &&
+            hold.gameplay?.lastHoldActivation !== undefined
+          ) {
             chartManager.chartView.doJudgement(
               hold,
               null,
