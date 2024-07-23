@@ -121,35 +121,35 @@ export class NoteFlashContainer extends Container {
       }
     })
 
-    // noteskin.on(this, "hitmine", event => {
-    //   if (col == event.columnNumber) {
-    //     const mine = new Sprite(mineTex)
-    //     mine.alpha = 0
-    //     mine.anchor.set(0.5)
-    //     mine.blendMode = BLEND_MODES.ADD
-    //     this.addChild(mine)
-    //     BezierAnimator.animate(
-    //       mine,
-    //       {
-    //         "0": {
-    //           alpha: 1,
-    //           rotation: 0,
-    //         },
-    //         "0.5": {
-    //           alpha: 1,
-    //           rotation: (90 * Math.PI) / 180,
-    //         },
-    //         "1": {
-    //           alpha: 0,
-    //           rotation: (180 * Math.PI) / 180,
-    //         },
-    //       },
-    //       0.4,
-    //       undefined,
-    //       () => mine.destroy()
-    //     )
-    //   }
-    // })
+    noteskin.on(this, "hitmine", event => {
+      if (col == event.columnNumber) {
+        const mine = new Sprite(mineTex)
+        mine.alpha = 0
+        mine.anchor.set(0.5)
+        mine.blendMode = BLEND_MODES.ADD
+        this.addChild(mine)
+        BezierAnimator.animate(
+          mine,
+          {
+            "0": {
+              alpha: 1,
+              rotation: 0,
+            },
+            "0.5": {
+              alpha: 1,
+              rotation: (90 * Math.PI) / 180,
+            },
+            "1": {
+              alpha: 0,
+              rotation: (180 * Math.PI) / 180,
+            },
+          },
+          0.4,
+          undefined,
+          () => mine.destroy()
+        )
+      }
+    })
 
     this.addChild(this.press, this.hitContainer, this.flash)
   }

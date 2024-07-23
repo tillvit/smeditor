@@ -130,8 +130,15 @@ export default {
       "Hold Active BottomCap": () => new Sprite(Texture.EMPTY),
       "Hold Inactive BottomCap": () => new Sprite(Texture.EMPTY),
 
-      "Roll Active Head": { element: "Tap" },
-      "Roll Inactive Head": { element: "Tap" },
+      "Roll Active Head": options => {
+        const spr = new Sprite(Texture.WHITE)
+        NoteRenderer.setRollTex(spr, options.columnName)
+        spr.anchor.set(0.5)
+        spr.width = 72
+        spr.height = 72
+        return spr
+      },
+      "Roll Inactive Head": { element: "Roll Active Head" },
       "Roll Active Body": { element: "Hold Active Body" },
       "Roll Inactive Body": { element: "Hold Active Body" },
       "Roll Active TopCap": () => new Sprite(Texture.EMPTY),
@@ -141,8 +148,6 @@ export default {
     },
   },
   load: function (element, options) {
-    const col = element.columnName
-
     element.columnName = "DownLeft"
 
     const sprite = this.loadElement(element, options)
