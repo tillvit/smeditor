@@ -66,6 +66,32 @@ NoteSkinRegistry.register({
   load: async () => (await import("./dance/default/NoteSkin")).default,
 })
 NoteSkinRegistry.register({
+  name: "cf-chrome",
+  gameTypes: [
+    "dance-single",
+    "dance-double",
+    "dance-couple",
+    "dance-solo",
+    "dance-solodouble",
+    "dance-threepanel",
+    "dance-threedouble",
+  ],
+  load: async () => (await import("./dance/cf-chrome/NoteSkin")).default,
+})
+NoteSkinRegistry.register({
+  name: "ddr",
+  gameTypes: [
+    "dance-single",
+    "dance-double",
+    "dance-couple",
+    "dance-solo",
+    "dance-solodouble",
+    "dance-threepanel",
+    "dance-threedouble",
+  ],
+  load: async () => (await import("./dance/ddr/NoteSkin")).default,
+})
+NoteSkinRegistry.register({
   name: "ddr",
   gameTypes: [
     "dance-single",
@@ -179,4 +205,15 @@ NoteSkinRegistry.register({
     "pump-halfdouble",
   ],
   load: async () => (await import("./pump/default/NoteSkin")).default,
+})
+NoteSkinRegistry.register({
+  name: "fourv2",
+  gameTypes: [
+    "pump-single",
+    "pump-double",
+    "pump-couple",
+    "pump-versus",
+    "pump-halfdouble",
+  ],
+  load: async () => (await import("./pump/fourv2/NoteSkin")).default,
 })

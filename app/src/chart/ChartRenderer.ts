@@ -293,8 +293,11 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       ? this.getCurrentSpeedMult()
       : 1
 
-    const firstBeat = this.getEarliestOnScreenBeat()
-    const lastBeat = this.getLastOnScreenBeat()
+    const topBeat = this.getTopOnScreenBeat()
+    const bottomBeat = this.getBottomOnScreenBeat()
+
+    const firstBeat = Math.min(topBeat, bottomBeat)
+    const lastBeat = Math.max(topBeat, bottomBeat)
 
     this.scale.x = Options.chart.zoom
     this.scale.y = Options.chart.zoom
@@ -675,7 +678,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return { beat: 0, value: 1, type: "SCROLLS" }
   }
 
-  getEarliestOnScreenBeat() {
+  getTopOnScreenBeat() {
     if (
       Options.chart.waveform.speedChanges &&
       !Options.chart.CMod &&
@@ -714,7 +717,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return this.getBeatFromYPos(this.getUpperBound())
   }
 
-  getLastOnScreenBeat() {
+  getBottomOnScreenBeat() {
     if (
       Options.chart.waveform.speedChanges &&
       !Options.chart.CMod &&
