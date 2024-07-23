@@ -10,6 +10,7 @@ export class NoteFlashContainer extends Container {
   constructor(notefield: Notefield) {
     super()
     this.notefield = notefield
+    this.eventMode = "none"
 
     for (let colNum = 0; colNum < this.notefield.gameType.numCols; colNum++) {
       const noteflash = this.notefield.getElement({

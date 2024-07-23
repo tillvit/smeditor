@@ -529,6 +529,19 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return currentBeat + deltaBeat
   }
 
+  getColumnFromXPos(xp: number) {
+    const gt = this.chart.gameType
+    let lastDist = null
+    for (let i = 0; i < gt.numCols; i++) {
+      const dist = Math.abs(this.notefield.getColumnX(i) - xp)
+      if (lastDist !== null && dist > lastDist) {
+        return i - 1
+      }
+      lastDist = dist
+    }
+    return gt.numCols - 1
+  }
+
   /**
    * Returns the y position of the receptors after zooming.
    *
@@ -1054,6 +1067,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     const moveHandler = (event: FederatedMouseEvent) => {
       const note = movedNote!
       const position = this.toLocal(event.global)
+      console.log(position)
       if (
         Math.abs(position.y - dragYOffset - initialPosY) ** 2 +
           Math.abs(position.x - initialPosX) ** 2 <
@@ -1073,7 +1087,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       if (Math.abs(snapBeat - newBeat) > Math.abs(newBeat - note.beat)) {
         snapBeat = note.beat
       }
-      const col = Math.round((position.x + 96) / 64)
+      const col = this.getColumnFromXPos(position.x)
       this.chartManager.selection.shift ||= {
         columnShift: 0,
         beatShift: 0,
