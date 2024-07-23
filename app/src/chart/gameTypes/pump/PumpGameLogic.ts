@@ -330,7 +330,11 @@ export class PumpGameLogic extends BasicGameLogic {
       } else {
         currentTick += tickLength
       }
-      if ((tickCounts[tickIndex]?.value ?? 4) != 0) ticks.push(currentTick)
+      if (
+        (tickCounts[tickIndex]?.value ?? 4) != 0 &&
+        ticks.at(-1) != currentTick
+      )
+        ticks.push(currentTick)
     }
     return ticks.filter(
       tick => tick <= getNoteEnd(hold) && !timingData.isBeatWarped(tick)
