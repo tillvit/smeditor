@@ -2,6 +2,7 @@ import { Container } from "pixi.js"
 import { App } from "../../App"
 import { ChartManager } from "../../chart/ChartManager"
 import { DebugWidget } from "./DebugWidget"
+import { NPSGraphWidget } from "./NPSGraphWidget"
 import { NoteLayoutWidget } from "./NoteLayoutWidget"
 import { PlayInfoWidget } from "./PlayInfoWidget"
 import { PlaybackOptionsWidget } from "./PlaybackOptionsWidget"
@@ -21,6 +22,7 @@ export class WidgetManager extends Container {
     this.addChild(new PlayInfoWidget(this))
     this.addChild(new StatusWidget(this))
     this.addChild(new DebugWidget(this))
+    this.addChild(new NPSGraphWidget(this))
     this.addChild(new PlaybackOptionsWidget(this))
     this.zIndex = 2
   }
