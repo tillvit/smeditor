@@ -1,3 +1,5 @@
+// Converts MS3DASCII into model txt files that SMEditor uses
+
 function convert(model_text) {
   const lines = model_text
     .replaceAll(/\/\/.+/g, "")

@@ -25,6 +25,7 @@ export class DefaultOptions {
     hideFakedArrows: false,
     doSpeedChanges: true,
     drawNoteFlash: true,
+    drawIcons: true,
     receptorYPos: -200,
     maxDrawBeats: 20,
     maxDrawBeatsBack: 10,

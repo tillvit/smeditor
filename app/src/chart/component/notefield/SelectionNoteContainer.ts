@@ -1,10 +1,10 @@
 import { Container, Sprite, Texture } from "pixi.js"
-import { NotedataEntry, isHoldNote } from "../../sm/NoteTypes"
-import { HoldObject, Notefield, NotefieldObject } from "./Notefield"
+import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
+import { HoldObject, Notefield, NoteWrapper } from "./Notefield"
 
 interface HighlightedNoteObject extends Container {
   selection: Sprite
-  object: NotefieldObject
+  wrapper: NoteWrapper
 }
 
 export class SelectionNoteContainer extends Container {
@@ -45,15 +45,15 @@ export class SelectionNoteContainer extends Container {
           })
 
         container.x = this.notefield.getColumnX(newNote.col)
-        container.object.destroy()
-        container.object.alpha = 0.4
-        container.object = this.notefield.createNote(newNote)
-        const objectBounds = container.object.getBounds()
+        container.wrapper.destroy()
+        container.wrapper.alpha = 0.4
+        container.wrapper = this.notefield.createNote(newNote)
+        const objectBounds = container.wrapper.getBounds()
         container.selection.x = objectBounds.x
         container.selection.y = objectBounds.y
         container.selection.width = objectBounds.width
         container.selection.height = objectBounds.height
-        container.addChild(container.object, container.selection)
+        container.addChild(container.wrapper, container.selection)
       }
     }
 
@@ -86,7 +86,7 @@ export class SelectionNoteContainer extends Container {
         selection.height = objectBounds.height
         selection.alpha = 0
         this.notefield.renderer.registerDragNote(object, newNote)
-        container.object = object
+        container.wrapper = object
         container.selection = selection
         this.arrowMap.set(note, container)
         container.addChild(object, selection)
@@ -112,10 +112,10 @@ export class SelectionNoteContainer extends Container {
           this.notefield.renderer.getYPosFromBeat(
             newBeat + (isHoldNote(note) ? note.hold : 0)
           ) - container.y
-        const hold = container.object as HoldObject
+        const hold = container.wrapper.object as HoldObject
         hold.setLength(holdLength)
         hold.setBrightness(1)
-        const objectBounds = container.object.getLocalBounds()
+        const objectBounds = container.wrapper.getLocalBounds()
         container.selection.x = objectBounds.x
         container.selection.y = objectBounds.y
         container.selection.width = objectBounds.width

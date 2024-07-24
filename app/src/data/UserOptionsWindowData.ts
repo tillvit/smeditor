@@ -256,6 +256,16 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                   type: "checkbox",
                 },
               },
+              {
+                type: "item",
+                label: "Draw note icons",
+                id: "chart.drawIcons",
+                input: {
+                  type: "checkbox",
+                },
+                tooltip:
+                  "Draw indicators above notes that some noteskins may not differentiate, like Fakes and Lifts.",
+              },
             ],
           },
         ],

@@ -4,13 +4,13 @@ import { Options } from "../../../util/Options"
 import { getNoteEnd } from "../../../util/Util"
 import { EditMode, EditTimingMode } from "../../ChartManager"
 import { TimingWindowCollection } from "../../play/TimingWindowCollection"
-import { NotedataEntry, isHoldNote } from "../../sm/NoteTypes"
-import { HoldObject, Notefield, NotefieldObject } from "./Notefield"
+import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
+import { HoldObject, Notefield, NoteWrapper } from "./Notefield"
 
 interface HighlightedNoteObject extends Container {
   selection: Sprite
   parity: Sprite
-  object: NotefieldObject
+  wrapper: NoteWrapper
   lastActive: boolean
 }
 
@@ -83,7 +83,7 @@ export class NoteContainer extends Container {
         parity.height = objectBounds.height
         parity.alpha = 0
         this.notefield.renderer.registerDragNote(container, note)
-        container.object = object
+        container.wrapper = object
         container.selection = selection
         container.parity = parity
         container.lastActive = false
@@ -116,7 +116,7 @@ export class NoteContainer extends Container {
         const holdLength =
           this.notefield.renderer.getYPosFromBeat(getNoteEnd(note)) -
           container.y
-        const hold = container.object as HoldObject
+        const hold = container.wrapper.object as HoldObject
         hold.setLength(holdLength)
         if (note.gameplay?.lastHoldActivation) {
           let t =
@@ -150,8 +150,8 @@ export class NoteContainer extends Container {
         container.selection.alpha = inSelection
           ? Math.sin(Date.now() / 320) * 0.1 + 0.3
           : 0
-        if (inSelection && container.object.type == "hold") {
-          const objectBounds = container.object.getLocalBounds()
+        if (inSelection && container.wrapper.object.type == "hold") {
+          const objectBounds = container.wrapper.getLocalBounds()
           container.selection.x = objectBounds.x
           container.selection.y = objectBounds.y
           container.selection.width = objectBounds.width
@@ -160,7 +160,7 @@ export class NoteContainer extends Container {
         container.visible =
           !inSelection || !this.notefield.renderer.chartManager.selection.shift
         const inSelectionBounds = this.notefield.renderer.selectionTest(
-          container.object
+          container.wrapper
         )
         if (!inSelection && inSelectionBounds) {
           this.notefield.renderer.chartManager.addNoteToDragSelection(note)

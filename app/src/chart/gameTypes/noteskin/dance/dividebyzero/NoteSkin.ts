@@ -197,4 +197,5 @@ export default {
 
     return sprite
   },
+  hideIcons: ["Lift"],
 } satisfies NoteSkinOptions

@@ -190,4 +190,5 @@ export default {
   update(renderer) {
     ModelRenderer.setArrowTexTime(renderer.chartManager.app)
   },
+  hideIcons: ["Lift"],
 } satisfies NoteSkinOptions

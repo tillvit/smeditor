@@ -75,6 +75,7 @@ export interface NoteSkinOptions {
   ) => NoteSkinSprite
   init?: (renderer: ChartRenderer) => void
   update?: (renderer: ChartRenderer) => void
+  hideIcons?: string[]
 }
 
 export interface NoteSkinElement {}

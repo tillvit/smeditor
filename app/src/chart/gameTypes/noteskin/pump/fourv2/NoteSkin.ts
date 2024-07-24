@@ -176,4 +176,5 @@ export default {
   update(renderer) {
     NoteRenderer.setArrowTexTime(renderer.chartManager.app)
   },
+  hideIcons: ["Lift", "Fake"],
 } satisfies NoteSkinOptions

@@ -1,4 +1,4 @@
-import { Container, Sprite } from "pixi.js"
+import { Container, Sprite, Texture } from "pixi.js"
 import { WaterfallManager } from "../../../gui/element/WaterfallManager"
 import { rgbtoHex } from "../../../util/Color"
 import { EventHandler } from "../../../util/EventHandler"
@@ -21,14 +21,57 @@ import {
   isStandardMissTimingWindow,
   isStandardTimingWindow,
 } from "../../play/TimingWindowCollection"
-import { NotedataEntry } from "../../sm/NoteTypes"
+import { NotedataEntry, PartialNotedataEntry } from "../../sm/NoteTypes"
 import { HoldJudgementContainer } from "./HoldJudgementContainer"
 import { NoteContainer } from "./NoteContainer"
 import { NoteFlashContainer } from "./NoteFlashContainer"
 import { ReceptorContainer } from "./ReceptorContainer"
 import { SelectionNoteContainer } from "./SelectionNoteContainer"
 
+import fakeIcon from "../../../../assets/icon/fake.png"
+import liftIcon from "../../../../assets/icon/lift.png"
+
+const ICONS: Record<string, Texture> = {
+  Fake: Texture.from(fakeIcon),
+  Lift: Texture.from(liftIcon),
+}
+
 export type NotefieldObject = NoteObject | HoldObject
+
+export class NoteWrapper extends Container {
+  object: NotefieldObject
+  icon
+  constructor(
+    object: NotefieldObject,
+    note: PartialNotedataEntry,
+    notefield: Notefield
+  ) {
+    super()
+    this.object = object
+
+    this.icon = new Sprite(ICONS[note.type])
+    this.icon.anchor.set(0.5)
+    this.icon.scale.set(0.3)
+    this.icon.alpha = 0.8
+
+    this.addChild(object, this.icon)
+
+    notefield.noteskin?.onUpdate(this, cr => {
+      if (!Options.chart.drawIcons) {
+        this.icon.visible = false
+        return
+      }
+      if (notefield.noteskinOptions?.hideIcons?.includes(note.type)) {
+        this.icon.visible = false
+        return
+      }
+      this.icon.visible = true
+      if (note.type == "Fake") {
+        this.icon.visible = cr.chartManager.getMode() != EditMode.Play
+      }
+    })
+  }
+}
 
 export interface NoteObject extends Container {
   type: "note"
@@ -135,7 +178,7 @@ export class Notefield extends Container implements ChartRendererComponent {
   private selectionNotes?: SelectionNoteContainer
   private flashes?: NoteFlashContainer
   private holdJudges?: HoldJudgementContainer
-  private ghostNote?: NotefieldObject
+  private ghostNote?: NoteWrapper
   private ghostNoteEntry?: NotedataEntry
 
   private readonly columnX: number[] = []
@@ -371,11 +414,11 @@ export class Notefield extends Container implements ChartRendererComponent {
     return this.gameType.columnNames[col]
   }
 
-  createNote(note: NotedataEntry): NotefieldObject {
+  createNote(note: NotedataEntry): NoteWrapper {
     if (this.noteskin === undefined) {
       const a = new Container() as NoteObject
       a.type = "note"
-      return a
+      return new NoteWrapper(a, { beat: 0, type: "Tap", col: 0 }, this)
     }
     const ns = this.noteskin
     const col = this.getColumnName(note.col)
@@ -390,80 +433,84 @@ export class Notefield extends Container implements ChartRendererComponent {
           opts
         ) as NotefieldObject
         element.type = "note"
-        return element
+        return new NoteWrapper(element, note, this)
       }
       case "Hold":
       case "Roll": {
-        return new HoldObject({
-          Active: {
-            Body: ns.getElement(
-              {
-                element: `${note.type} Active Body`,
-                columnName: col,
-                columnNumber: note.col,
-              },
-              opts
-            ),
-            TopCap: ns.getElement(
-              {
-                element: `${note.type} Active TopCap`,
-                columnName: col,
-                columnNumber: note.col,
-              },
-              opts
-            ),
-            BottomCap: ns.getElement(
-              {
-                element: `${note.type} Active BottomCap`,
-                columnName: col,
-                columnNumber: note.col,
-              },
-              opts
-            ),
-            Head: ns.getElement(
-              {
-                element: `${note.type} Active Head`,
-                columnName: col,
-                columnNumber: note.col,
-              },
-              opts
-            ),
-          },
-          Inactive: {
-            Body: ns.getElement(
-              {
-                element: `${note.type} Inactive Body`,
-                columnName: col,
-                columnNumber: note.col,
-              },
-              opts
-            ),
-            TopCap: ns.getElement(
-              {
-                element: `${note.type} Inactive TopCap`,
-                columnName: col,
-                columnNumber: note.col,
-              },
-              opts
-            ),
-            BottomCap: ns.getElement(
-              {
-                element: `${note.type} Inactive BottomCap`,
-                columnName: col,
-                columnNumber: note.col,
-              },
-              opts
-            ),
-            Head: ns.getElement(
-              {
-                element: `${note.type} Inactive Head`,
-                columnName: col,
-                columnNumber: note.col,
-              },
-              opts
-            ),
-          },
-        })
+        return new NoteWrapper(
+          new HoldObject({
+            Active: {
+              Body: ns.getElement(
+                {
+                  element: `${note.type} Active Body`,
+                  columnName: col,
+                  columnNumber: note.col,
+                },
+                opts
+              ),
+              TopCap: ns.getElement(
+                {
+                  element: `${note.type} Active TopCap`,
+                  columnName: col,
+                  columnNumber: note.col,
+                },
+                opts
+              ),
+              BottomCap: ns.getElement(
+                {
+                  element: `${note.type} Active BottomCap`,
+                  columnName: col,
+                  columnNumber: note.col,
+                },
+                opts
+              ),
+              Head: ns.getElement(
+                {
+                  element: `${note.type} Active Head`,
+                  columnName: col,
+                  columnNumber: note.col,
+                },
+                opts
+              ),
+            },
+            Inactive: {
+              Body: ns.getElement(
+                {
+                  element: `${note.type} Inactive Body`,
+                  columnName: col,
+                  columnNumber: note.col,
+                },
+                opts
+              ),
+              TopCap: ns.getElement(
+                {
+                  element: `${note.type} Inactive TopCap`,
+                  columnName: col,
+                  columnNumber: note.col,
+                },
+                opts
+              ),
+              BottomCap: ns.getElement(
+                {
+                  element: `${note.type} Inactive BottomCap`,
+                  columnName: col,
+                  columnNumber: note.col,
+                },
+                opts
+              ),
+              Head: ns.getElement(
+                {
+                  element: `${note.type} Inactive Head`,
+                  columnName: col,
+                  columnNumber: note.col,
+                },
+                opts
+              ),
+            },
+          }),
+          note,
+          this
+        )
       }
     }
   }
