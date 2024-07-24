@@ -1067,7 +1067,6 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     const moveHandler = (event: FederatedMouseEvent) => {
       const note = movedNote!
       const position = this.toLocal(event.global)
-      console.log(position)
       if (
         Math.abs(position.y - dragYOffset - initialPosY) ** 2 +
           Math.abs(position.x - initialPosX) ** 2 <

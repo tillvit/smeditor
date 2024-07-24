@@ -196,6 +196,20 @@ NoteSkinRegistry.register({
   load: async () => (await import("./dance/sm4-bold/NoteSkin")).default,
 })
 NoteSkinRegistry.register({
+  name: "starlight-vivid",
+  gameTypes: [
+    "dance-single",
+    "dance-double",
+    "dance-couple",
+    "dance-solo",
+    "dance-solodouble",
+    "dance-threepanel",
+    "dance-threedouble",
+  ],
+  load: async () => (await import("./dance/starlight-vivid/NoteSkin")).default,
+})
+
+NoteSkinRegistry.register({
   name: "default",
   gameTypes: [
     "pump-single",

@@ -45,13 +45,14 @@ export class JudgementTexture {
     error: number,
     judgment: StandardTimingWindow
   ): Texture | undefined {
+    if (!this.texture) return
     if (!this.judgeNames.includes(judgment.id)) return
     let tex_coord_x = 0
     const tex_coord_y =
       (this.judgeNames.indexOf(judgment.id) * this.texHeight) /
       this.judgeNames.length
     if (error >= 0) tex_coord_x += this.texWidth / 2
-    this.texture!.frame = new Rectangle(
+    this.texture.frame = new Rectangle(
       tex_coord_x,
       tex_coord_y,
       this.texWidth / 2,

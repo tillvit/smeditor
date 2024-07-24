@@ -492,8 +492,7 @@ export class StatusWidget extends Widget {
             warped: false,
             fake: false,
           })
-        sprite.width = 32
-        sprite.height = 32
+        sprite.scale.set(0.5)
         const bg = new Sprite(Texture.WHITE)
         bg.tint = 0
         bg.alpha = 0.5
