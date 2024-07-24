@@ -217,8 +217,10 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       const chartSpeed = Options.chart.speed
       const speedMult = this.renderer.getCurrentSpeedMult()
 
-      const startBeat = this.renderer.getEarliestOnScreenBeat()
-      const endBeat = this.renderer.getLastOnScreenBeat()
+      const topBeat = this.renderer.getTopOnScreenBeat()
+      const bottomBeat = this.renderer.getBottomOnScreenBeat()
+      const startBeat = Math.min(topBeat, bottomBeat)
+      const endBeat = Math.max(topBeat, bottomBeat)
 
       const startScroll = this.renderer.findFirstOnScreenScroll()
       const endScroll = this.renderer.findLastOnScreenScroll()
@@ -233,8 +235,10 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       if (scrolls[0]?.beat != 0)
         scrolls.unshift({ type: "SCROLLS", beat: 0, value: 1 })
 
-      const startScrollIndex = scrolls.indexOf(startScroll)
-      const endScrollIndex = scrolls.indexOf(endScroll)
+      const startScrollIndex = scrolls.findIndex(
+        a => a.beat == startScroll.beat
+      )
+      const endScrollIndex = scrolls.findIndex(a => a.beat == endScroll.beat)
 
       const timingChanges = this.renderer.chart.timingData.getBeatTiming()
       const pixelsToEffectiveBeats =
@@ -287,7 +291,6 @@ export class Waveform extends Sprite implements ChartRendererComponent {
           if (currentYPos > screenHeight) {
             // Skip the scroll if we step off the bottom of the screen
             if (scroll.value * scrollDirection > 0) {
-              console.log("ended at ", currentBeat)
               currentBeat = scrollEndBeat
               break
             }
