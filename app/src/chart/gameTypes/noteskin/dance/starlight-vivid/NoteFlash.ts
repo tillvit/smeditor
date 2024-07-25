@@ -5,7 +5,7 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
-import { NoteSkin } from "../../NoteSkin"
+import { Noteskin } from "../../Noteskin"
 
 import { BezierAnimator } from "../../../../../util/BezierEasing"
 
@@ -15,7 +15,7 @@ import { splitTex } from "../../../../../util/Util"
 import holdFlashUrl from "./flash/hold.png"
 import mineUrl from "./flash/mine.png"
 import particleUrl from "./flash/particles.png"
-import { rotationMap } from "./NoteSkin"
+import { rotationMap } from "./Noteskin"
 
 const holdTex = Texture.from(holdFlashUrl)
 const mineTex = splitTex(Texture.from(mineUrl), 16, 1, 160, 1024)[0]
@@ -41,7 +41,7 @@ export class NoteFlashContainer extends Container {
   particleAnim?: string
   mineAnim?: string
 
-  constructor(noteskin: NoteSkin, col: number, columnName: string) {
+  constructor(noteskin: Noteskin, col: number, columnName: string) {
     super()
 
     const baseScale = 0.5

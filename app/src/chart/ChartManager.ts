@@ -41,7 +41,7 @@ import { FileHandler } from "../util/file-handler/FileHandler"
 import { ChartRenderer } from "./ChartRenderer"
 import { ChartAudio } from "./audio/ChartAudio"
 import { GameTypeRegistry } from "./gameTypes/GameTypeRegistry"
-import { NoteSkinRegistry } from "./gameTypes/noteskin/NoteSkinRegistry"
+import { NoteskinRegistry } from "./gameTypes/noteskin/NoteskinRegistry"
 import { GameplayStats } from "./play/GameplayStats"
 import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
 import { Chart } from "./sm/Chart"
@@ -779,22 +779,22 @@ export class ChartManager {
 
     // Check if the same noteskin is compatible with the current chart
     const oldType = GameTypeRegistry.getGameType(Options.chart.noteskin.type)
-    const newNoteSkin = {
+    const newNoteskin = {
       type: chart.gameType.id,
-      name: Options.chart.lastNoteSkins[chart.gameType.id] ?? "default",
+      name: Options.chart.lastNoteskins[chart.gameType.id] ?? "default",
     }
     if (oldType) {
-      const oldSkin = NoteSkinRegistry.getNoteSkinData(
+      const oldSkin = NoteskinRegistry.getNoteskinData(
         oldType,
         Options.chart.noteskin.name
       )
       if (oldSkin?.gameTypes.includes(chart.gameType.id)) {
         // Use the old note skin
-        newNoteSkin.name = oldSkin.name
+        newNoteskin.name = oldSkin.name
       }
     }
-    Options.chart.noteskin = newNoteSkin
-    Options.chart.lastNoteSkins[chart.gameType.id] = newNoteSkin.name
+    Options.chart.noteskin = newNoteskin
+    Options.chart.lastNoteskins[chart.gameType.id] = newNoteskin.name
 
     this.getAssistTickIndex()
     this.chartView = new ChartRenderer(this)

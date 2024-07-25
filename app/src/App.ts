@@ -13,7 +13,7 @@ import "tippy.js/dist/tippy.css"
 import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
 import { GameTypeRegistry } from "./chart/gameTypes/GameTypeRegistry"
-import { NoteSkinRegistry } from "./chart/gameTypes/noteskin/NoteSkinRegistry"
+import { NoteskinRegistry } from "./chart/gameTypes/noteskin/NoteskinRegistry"
 import { Chart } from "./chart/sm/Chart"
 import { ContextMenuPopup } from "./gui/element/ContextMenu"
 import { MenubarManager } from "./gui/element/MenubarManager"
@@ -40,7 +40,7 @@ declare global {
     app: App
     Parity?: ParityGenerator
     GameTypeRegistry: GameTypeRegistry
-    NoteSkinRegistry: NoteSkinRegistry
+    NoteskinRegistry: NoteskinRegistry
   }
   interface File {
     path?: string
@@ -448,6 +448,6 @@ function init() {
   } else {
     window.app = new App()
     window.GameTypeRegistry = GameTypeRegistry
-    window.NoteSkinRegistry = NoteSkinRegistry
+    window.NoteskinRegistry = NoteskinRegistry
   }
 }

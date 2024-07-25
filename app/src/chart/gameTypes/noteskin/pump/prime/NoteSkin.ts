@@ -7,7 +7,7 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
-import { NoteSkin, NoteSkinOptions } from "../../NoteSkin"
+import { Noteskin, NoteskinOptions } from "../../Noteskin"
 import { NoteRenderer } from "./NoteRenderer"
 
 import receptorsUrl from "./receptors.png"
@@ -42,7 +42,7 @@ for (const col of texOrder) {
 class HoldWithTail extends Container {
   body
   cap
-  constructor(columnName: string, noteskin: NoteSkin) {
+  constructor(columnName: string, noteskin: Noteskin) {
     super()
     const body = new AnimatedSprite(holdTex[columnName].body)
     body.width = 72
@@ -160,4 +160,4 @@ export default {
   update(renderer) {
     NoteRenderer.setArrowTexTime(renderer.chartManager.app)
   },
-} satisfies NoteSkinOptions
+} satisfies NoteskinOptions

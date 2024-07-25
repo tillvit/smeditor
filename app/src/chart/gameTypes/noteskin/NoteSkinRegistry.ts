@@ -1,47 +1,49 @@
 import { WaterfallManager } from "../../../gui/element/WaterfallManager"
 import { GameType } from "../GameTypeRegistry"
-import { NoteSkinOptions } from "./NoteSkin"
+import { NoteskinOptions } from "./Noteskin"
 
 interface RegistryData {
   name: string
   gameTypes: string[]
-  load: () => Promise<NoteSkinOptions>
+  path: string
 }
 
-export class NoteSkinRegistry {
+export class NoteskinRegistry {
   private static noteskins = new Map<string, Map<string, RegistryData>>()
 
   static register(options: RegistryData) {
     for (const gameType of new Set(options.gameTypes)) {
-      if (!NoteSkinRegistry.noteskins.has(gameType)) {
-        NoteSkinRegistry.noteskins.set(gameType, new Map())
+      if (!NoteskinRegistry.noteskins.has(gameType)) {
+        NoteskinRegistry.noteskins.set(gameType, new Map())
       }
-      NoteSkinRegistry.noteskins.get(gameType)!.set(options.name, options)
+      NoteskinRegistry.noteskins.get(gameType)!.set(options.name, options)
     }
   }
 
-  static async getNoteSkin(gameType: GameType, name: string) {
-    const gameTypeNoteSkins = this.noteskins.get(gameType.id)
-    if (!gameTypeNoteSkins || gameTypeNoteSkins.size == 0) return
+  static async getNoteskin(gameType: GameType, name: string) {
+    const gameTypeNoteskins = this.noteskins.get(gameType.id)
+    if (!gameTypeNoteskins || gameTypeNoteskins.size == 0) return
     const skin =
-      gameTypeNoteSkins.get(name) ?? [...gameTypeNoteSkins.values()][0]
-    if (!gameTypeNoteSkins.get(name))
+      gameTypeNoteskins.get(name) ?? [...gameTypeNoteskins.values()][0]
+    if (!gameTypeNoteskins.get(name))
       WaterfallManager.createFormatted(
         `Couldn't find the noteskin ${name}!`,
         "warn"
       )
-    return await skin.load()
+    return (await (
+      await import(skin.path)
+    ).default) as NoteskinOptions
   }
 
-  static getNoteSkinData(gameType: GameType, name: string) {
-    const gameTypeNoteSkins = this.noteskins.get(gameType.id)
-    if (!gameTypeNoteSkins || gameTypeNoteSkins.size == 0) return
+  static getNoteskinData(gameType: GameType, name: string) {
+    const gameTypeNoteskins = this.noteskins.get(gameType.id)
+    if (!gameTypeNoteskins || gameTypeNoteskins.size == 0) return
     const skin =
-      gameTypeNoteSkins.get(name) ?? [...gameTypeNoteSkins.values()][0]
+      gameTypeNoteskins.get(name) ?? [...gameTypeNoteskins.values()][0]
     return skin
   }
 
-  static getNoteSkins() {
+  static getNoteskins() {
     return this.noteskins
   }
 
@@ -52,7 +54,7 @@ export class NoteSkinRegistry {
   // }
 }
 
-NoteSkinRegistry.register({
+NoteskinRegistry.register({
   name: "default",
   gameTypes: [
     "dance-single",
@@ -63,9 +65,9 @@ NoteSkinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  load: async () => (await import("./dance/default/NoteSkin")).default,
+  path: "./dance/default/Noteskin",
 })
-NoteSkinRegistry.register({
+NoteskinRegistry.register({
   name: "cf-chrome",
   gameTypes: [
     "dance-single",
@@ -76,9 +78,9 @@ NoteSkinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  load: async () => (await import("./dance/cf-chrome/NoteSkin")).default,
+  path: "./dance/cf-chrome/Noteskin",
 })
-NoteSkinRegistry.register({
+NoteskinRegistry.register({
   name: "ddr",
   gameTypes: [
     "dance-single",
@@ -89,9 +91,9 @@ NoteSkinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  load: async () => (await import("./dance/ddr/NoteSkin")).default,
+  path: "./dance/ddr/Noteskin",
 })
-NoteSkinRegistry.register({
+NoteskinRegistry.register({
   name: "ddr",
   gameTypes: [
     "dance-single",
@@ -102,9 +104,9 @@ NoteSkinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  load: async () => (await import("./dance/ddr/NoteSkin")).default,
+  path: "./dance/ddr/Noteskin",
 })
-NoteSkinRegistry.register({
+NoteskinRegistry.register({
   name: "ddr-itgcolors",
   gameTypes: [
     "dance-single",
@@ -115,9 +117,9 @@ NoteSkinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  load: async () => (await import("./dance/ddr-itgcolors/NoteSkin")).default,
+  path: "./dance/ddr-itgcolors/Noteskin",
 })
-NoteSkinRegistry.register({
+NoteskinRegistry.register({
   name: "metal",
   gameTypes: [
     "dance-single",
@@ -128,9 +130,9 @@ NoteSkinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  load: async () => (await import("./dance/metal/NoteSkin")).default,
+  path: "./dance/metal/Noteskin",
 })
-NoteSkinRegistry.register({
+NoteskinRegistry.register({
   name: "pastel",
   gameTypes: [
     "dance-single",
@@ -141,9 +143,9 @@ NoteSkinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  load: async () => (await import("./dance/pastel/NoteSkin")).default,
+  path: "./dance/pastel/Noteskin",
 })
-NoteSkinRegistry.register({
+NoteskinRegistry.register({
   name: "dividebyzero",
   gameTypes: [
     "dance-single",
@@ -154,9 +156,9 @@ NoteSkinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  load: async () => (await import("./dance/dividebyzero/NoteSkin")).default,
+  path: "./dance/dividebyzero/Noteskin",
 })
-NoteSkinRegistry.register({
+NoteskinRegistry.register({
   name: "subtractbyzero",
   gameTypes: [
     "dance-single",
@@ -167,9 +169,9 @@ NoteSkinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  load: async () => (await import("./dance/subtractbyzero/NoteSkin")).default,
+  path: "./dance/subtractbyzero/Noteskin",
 })
-NoteSkinRegistry.register({
+NoteskinRegistry.register({
   name: "sm4",
   gameTypes: [
     "dance-single",
@@ -180,9 +182,9 @@ NoteSkinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  load: async () => (await import("./dance/sm4/NoteSkin")).default,
+  path: "./dance/sm4/Noteskin",
 })
-NoteSkinRegistry.register({
+NoteskinRegistry.register({
   name: "sm4-bold",
   gameTypes: [
     "dance-single",
@@ -193,9 +195,9 @@ NoteSkinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  load: async () => (await import("./dance/sm4-bold/NoteSkin")).default,
+  path: "./dance/sm4-bold/Noteskin",
 })
-NoteSkinRegistry.register({
+NoteskinRegistry.register({
   name: "starlight-vivid",
   gameTypes: [
     "dance-single",
@@ -206,10 +208,10 @@ NoteSkinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  load: async () => (await import("./dance/starlight-vivid/NoteSkin")).default,
+  path: "./dance/starlight-vivid/Noteskin",
 })
 
-NoteSkinRegistry.register({
+NoteskinRegistry.register({
   name: "default",
   gameTypes: [
     "pump-single",
@@ -218,9 +220,9 @@ NoteSkinRegistry.register({
     "pump-versus",
     "pump-halfdouble",
   ],
-  load: async () => (await import("./pump/default/NoteSkin")).default,
+  path: "./pump/default/Noteskin",
 })
-NoteSkinRegistry.register({
+NoteskinRegistry.register({
   name: "fourv2",
   gameTypes: [
     "pump-single",
@@ -229,10 +231,10 @@ NoteSkinRegistry.register({
     "pump-versus",
     "pump-halfdouble",
   ],
-  load: async () => (await import("./pump/fourv2/NoteSkin")).default,
+  path: "./pump/fourv2/Noteskin",
 })
 
-NoteSkinRegistry.register({
+NoteskinRegistry.register({
   name: "prime",
   gameTypes: [
     "pump-single",
@@ -241,5 +243,5 @@ NoteSkinRegistry.register({
     "pump-versus",
     "pump-halfdouble",
   ],
-  load: async () => (await import("./pump/prime/NoteSkin")).default,
+  path: "./pump/prime/Noteskin",
 })

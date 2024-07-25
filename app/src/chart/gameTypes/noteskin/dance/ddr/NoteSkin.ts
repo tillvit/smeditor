@@ -1,7 +1,7 @@
 // Peters-DDR-Note by Pete-Lawrence https://github.com/Pete-Lawrence/Peters-Noteskins/
 
 import { AnimatedSprite, Sprite, Texture, TilingSprite } from "pixi.js"
-import { NoteSkinOptions } from "../../NoteSkin"
+import { NoteskinOptions } from "../../Noteskin"
 
 import { ModelRenderer } from "./ModelRenderer"
 import { NoteFlashContainer } from "./NoteFlash"
@@ -171,4 +171,4 @@ export default {
     ModelRenderer.setArrowTexTime(renderer.chartManager.app)
   },
   hideIcons: ["Lift"],
-} satisfies NoteSkinOptions
+} satisfies NoteskinOptions

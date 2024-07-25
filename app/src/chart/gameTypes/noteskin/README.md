@@ -1,4 +1,4 @@
-All noteskins sources are in their respective NoteSkin.ts files. If you are the owner of the noteskin and want it to be removed, please
+All noteskins sources are in their respective Noteskin.ts files. If you are the owner of the noteskin and want it to be removed, please
 contact me on GitHub.
 
 Some best practices:

@@ -6,13 +6,13 @@ import { Options } from "../../../util/Options"
 import { EditMode, EditTimingMode } from "../../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import {
-  NoteSkin,
-  NoteSkinElementCreationOptions,
-  NoteSkinElementOptions,
-  NoteSkinOptions,
-  NoteSkinSprite,
-} from "../../gameTypes/noteskin/NoteSkin"
-import { NoteSkinRegistry } from "../../gameTypes/noteskin/NoteSkinRegistry"
+  Noteskin,
+  NoteskinElementCreationOptions,
+  NoteskinElementOptions,
+  NoteskinOptions,
+  NoteskinSprite,
+} from "../../gameTypes/noteskin/Noteskin"
+import { NoteskinRegistry } from "../../gameTypes/noteskin/NoteskinRegistry"
 import { TimingWindow } from "../../play/TimingWindow"
 import {
   isHoldDroppedTimingWindow,
@@ -79,16 +79,16 @@ export interface NoteObject extends Container {
 
 interface HoldObjectOptions {
   Active: {
-    Body: NoteSkinSprite
-    TopCap: NoteSkinSprite
-    BottomCap: NoteSkinSprite
-    Head: NoteSkinSprite
+    Body: NoteskinSprite
+    TopCap: NoteskinSprite
+    BottomCap: NoteskinSprite
+    Head: NoteskinSprite
   }
   Inactive: {
-    Body: NoteSkinSprite
-    TopCap: NoteSkinSprite
-    BottomCap: NoteSkinSprite
-    Head: NoteSkinSprite
+    Body: NoteskinSprite
+    TopCap: NoteskinSprite
+    BottomCap: NoteskinSprite
+    Head: NoteskinSprite
   }
 }
 
@@ -169,8 +169,8 @@ export class HoldObject extends Container {
 }
 
 export class Notefield extends Container implements ChartRendererComponent {
-  noteskinOptions?: NoteSkinOptions
-  noteskin?: NoteSkin
+  noteskinOptions?: NoteskinOptions
+  noteskin?: Noteskin
   readonly gameType
   readonly renderer
   private receptors?: ReceptorContainer
@@ -188,7 +188,7 @@ export class Notefield extends Container implements ChartRendererComponent {
 
     this.renderer = renderer
     this.gameType = renderer.chart.gameType
-    NoteSkinRegistry.getNoteSkin(
+    NoteskinRegistry.getNoteskin(
       this.gameType,
       Options.chart.noteskin.name
     ).then(noteskinOptions => {
@@ -212,7 +212,7 @@ export class Notefield extends Container implements ChartRendererComponent {
       }
 
       this.noteskinOptions = noteskinOptions
-      this.noteskin = new NoteSkin(this.renderer, noteskinOptions)
+      this.noteskin = new Noteskin(this.renderer, noteskinOptions)
 
       this.receptors = new ReceptorContainer(this)
       this.flashes = new NoteFlashContainer(this)
@@ -245,9 +245,9 @@ export class Notefield extends Container implements ChartRendererComponent {
   }
 
   getElement(
-    element: NoteSkinElementOptions,
-    options: Partial<NoteSkinElementCreationOptions> = {}
-  ): NoteSkinSprite {
+    element: NoteskinElementOptions,
+    options: Partial<NoteskinElementCreationOptions> = {}
+  ): NoteskinSprite {
     return this.noteskin!.getElement(element, options)
   }
 

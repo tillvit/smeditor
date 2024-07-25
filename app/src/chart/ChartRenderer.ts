@@ -1175,9 +1175,9 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return this.notefield
   }
 
-  swapNoteSkin(name: string) {
+  swapNoteskin(name: string) {
     Options.chart.noteskin.name = name
-    Options.chart.lastNoteSkins[this.chart.gameType.id] = name
+    Options.chart.lastNoteskins[this.chart.gameType.id] = name
     this.reloadNotefield()
   }
 

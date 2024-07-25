@@ -94,7 +94,7 @@ export class DefaultOptions {
       type: "dance-single",
       name: "default",
     },
-    lastNoteSkins: {
+    lastNoteskins: {
       "dance-single": "default",
       "dance-double": "default",
       "dance-couple": "default",
@@ -140,7 +140,7 @@ export class DefaultOptions {
     showFPS: false,
     showTimers: false,
     showScroll: false,
-    showNoteSkinErrors: false,
+    showNoteskinErrors: false,
   }
   static experimental = {}
 }

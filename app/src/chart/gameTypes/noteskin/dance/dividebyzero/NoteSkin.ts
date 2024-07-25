@@ -2,7 +2,7 @@
 // Custom lifts by tillvit
 
 import { AnimatedSprite, Sprite, Texture, TilingSprite } from "pixi.js"
-import { NoteSkinOptions } from "../../NoteSkin"
+import { NoteskinOptions } from "../../Noteskin"
 
 import { BezierAnimator } from "../../../../../util/BezierEasing"
 
@@ -198,4 +198,4 @@ export default {
     return sprite
   },
   hideIcons: ["Lift"],
-} satisfies NoteSkinOptions
+} satisfies NoteskinOptions

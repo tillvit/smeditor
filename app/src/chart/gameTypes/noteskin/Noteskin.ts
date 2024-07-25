@@ -10,79 +10,79 @@ import { StandardTimingWindow } from "../../play/StandardTimingWindow"
 
 export const MISSING_TEX = Texture.from(missingTexUrl)
 
-export interface NoteSkinElementOptions {
+export interface NoteskinElementOptions {
   columnName: string
   columnNumber: number
-  element: keyof NoteSkinElements
+  element: keyof NoteskinElements
 }
 
-export interface NoteSkinElementCreationOptions {
+export interface NoteskinElementCreationOptions {
   note: NotedataEntry
 }
 
-export type NoteSkinElementCreationData =
-  Partial<NoteSkinElementCreationOptions> & {
-    noteskin: NoteSkin
+export type NoteskinElementCreationData =
+  Partial<NoteskinElementCreationOptions> & {
+    noteskin: Noteskin
     columnName: string
     columnNumber: number
   }
 
-export type Generator<Element> = (data: NoteSkinElementCreationData) => Element
+export type Generator<Element> = (data: NoteskinElementCreationData) => Element
 
-export type NoteSkinElements = {
-  Tap: NoteSkinSprite
-  Fake: NoteSkinSprite
-  Lift: NoteSkinSprite
-  Mine: NoteSkinSprite
-  "Hold Inactive Head": NoteSkinSprite
-  "Hold Inactive TopCap": NoteSkinSprite
-  "Hold Inactive Body": NoteSkinSprite
-  "Hold Inactive BottomCap": NoteSkinSprite
-  "Hold Active Head": NoteSkinSprite
-  "Hold Active TopCap": NoteSkinSprite
-  "Hold Active Body": NoteSkinSprite
-  "Hold Active BottomCap": NoteSkinSprite
-  "Roll Inactive Head": NoteSkinSprite
-  "Roll Inactive TopCap": NoteSkinSprite
-  "Roll Inactive Body": NoteSkinSprite
-  "Roll Inactive BottomCap": NoteSkinSprite
-  "Roll Active Head": NoteSkinSprite
-  "Roll Active TopCap": NoteSkinSprite
-  "Roll Active Body": NoteSkinSprite
-  "Roll Active BottomCap": NoteSkinSprite
-  Receptor: NoteSkinSprite
-  NoteFlash: NoteSkinSprite
+export type NoteskinElements = {
+  Tap: NoteskinSprite
+  Fake: NoteskinSprite
+  Lift: NoteskinSprite
+  Mine: NoteskinSprite
+  "Hold Inactive Head": NoteskinSprite
+  "Hold Inactive TopCap": NoteskinSprite
+  "Hold Inactive Body": NoteskinSprite
+  "Hold Inactive BottomCap": NoteskinSprite
+  "Hold Active Head": NoteskinSprite
+  "Hold Active TopCap": NoteskinSprite
+  "Hold Active Body": NoteskinSprite
+  "Hold Active BottomCap": NoteskinSprite
+  "Roll Inactive Head": NoteskinSprite
+  "Roll Inactive TopCap": NoteskinSprite
+  "Roll Inactive Body": NoteskinSprite
+  "Roll Inactive BottomCap": NoteskinSprite
+  "Roll Active Head": NoteskinSprite
+  "Roll Active TopCap": NoteskinSprite
+  "Roll Active Body": NoteskinSprite
+  "Roll Active BottomCap": NoteskinSprite
+  Receptor: NoteskinSprite
+  NoteFlash: NoteskinSprite
 }
 
-export type NoteSkinElementRedirect = {
-  element: keyof NoteSkinElements
+export type NoteskinElementRedirect = {
+  element: keyof NoteskinElements
   columnName?: string
   columnNumber?: number
 }
 
-export type NoteSkinElementGenerators = {
-  [K in keyof NoteSkinElements]:
-    | Generator<NoteSkinElements[K]>
-    | NoteSkinElementRedirect
+export type NoteskinElementGenerators = {
+  [K in keyof NoteskinElements]:
+    | Generator<NoteskinElements[K]>
+    | NoteskinElementRedirect
 }
 
-export interface NoteSkinOptions {
-  elements: Record<string, Partial<NoteSkinElementGenerators>>
+export interface NoteskinOptions {
+  elements: Record<string, Partial<NoteskinElementGenerators>>
   load?: (
-    this: NoteSkin,
-    element: NoteSkinElementOptions,
-    data: NoteSkinElementCreationData
-  ) => NoteSkinSprite
+    this: Noteskin,
+    element: NoteskinElementOptions,
+    data: NoteskinElementCreationData
+  ) => NoteskinSprite
   init?: (renderer: ChartRenderer) => void
   update?: (renderer: ChartRenderer) => void
   hideIcons?: string[]
 }
 
-export interface NoteSkinElement {}
+export interface NoteskinElement {}
 
-export type NoteSkinSprite = NoteSkinElement & Container
+export type NoteskinSprite = NoteskinElement & Container
 
-export type NoteSkinEvent =
+export type NoteskinEvent =
   | PressEvent
   | LiftEvent
   | GhostTapEvent
@@ -97,7 +97,7 @@ export type NoteSkinEvent =
   | HoldLetGoEvent
   | HoldHeldEvent
 
-export type NoteSkinEventNames = NoteSkinEvent["type"]
+export type NoteskinEventNames = NoteskinEvent["type"]
 
 // Button presses
 
@@ -185,25 +185,25 @@ type HoldHeldEvent = {
   columnNumber: number
 }
 
-export class NoteSkin {
+export class Noteskin {
   protected readonly renderer
   protected readonly options
 
-  protected objects: NoteSkinSprite[] = []
+  protected objects: NoteskinSprite[] = []
 
   protected readonly updateHooks: Set<{
-    item: NoteSkinSprite
+    item: NoteskinSprite
     cb: (renderer: ChartRenderer) => void
   }> = new Set()
 
   protected readonly hooks: {
-    [Name in NoteSkinEventNames]?: Set<{
-      item: NoteSkinSprite
-      cb: (event: Extract<NoteSkinEvent, { type: Name }>) => void
+    [Name in NoteskinEventNames]?: Set<{
+      item: NoteskinSprite
+      cb: (event: Extract<NoteskinEvent, { type: Name }>) => void
     }>
   } = {}
 
-  constructor(renderer: ChartRenderer, options: NoteSkinOptions) {
+  constructor(renderer: ChartRenderer, options: NoteskinOptions) {
     this.renderer = renderer
     this.options = options
     this.options.init?.(renderer)
@@ -217,21 +217,21 @@ export class NoteSkin {
     })
   }
 
-  getPlaceholderSprite(): NoteSkinSprite {
+  getPlaceholderSprite(): NoteskinSprite {
     const spr = new Sprite(MISSING_TEX)
     spr.anchor.set(0.5)
     return spr
   }
 
-  getBlankSprite(): NoteSkinSprite {
+  getBlankSprite(): NoteskinSprite {
     const spr = new Sprite(Texture.EMPTY)
     return spr
   }
 
   getElement(
-    element: NoteSkinElementOptions,
-    options: Partial<NoteSkinElementCreationOptions> = {}
-  ): NoteSkinSprite {
+    element: NoteskinElementOptions,
+    options: Partial<NoteskinElementCreationOptions> = {}
+  ): NoteskinSprite {
     try {
       if (this.options.load) {
         const spr = this.options.load.bind(this)(element, {
@@ -245,7 +245,7 @@ export class NoteSkin {
       return this.loadElement(element, options) ?? this.getPlaceholderSprite()
     } catch (e: any) {
       console.error(e)
-      if (Options.debug.showNoteSkinErrors) {
+      if (Options.debug.showNoteskinErrors) {
         WaterfallManager.createFormatted("Noteskin Error: " + e, "error")
       }
       return this.getPlaceholderSprite()
@@ -253,14 +253,14 @@ export class NoteSkin {
   }
 
   loadElement(
-    element: NoteSkinElementOptions,
-    options: Partial<NoteSkinElementCreationOptions> = {}
+    element: NoteskinElementOptions,
+    options: Partial<NoteskinElementCreationOptions> = {}
   ) {
     const func = this.followRedirs(element)
     if (func === undefined) {
-      if (Options.debug.showNoteSkinErrors)
+      if (Options.debug.showNoteskinErrors)
         WaterfallManager.createFormatted(
-          `NoteSkin element ${element.columnName} ${element.element} failed to load for noteskin: Redirect loop`,
+          `Noteskin element ${element.columnName} ${element.element} failed to load for noteskin: Redirect loop`,
           "error"
         )
       return this.getPlaceholderSprite()
@@ -273,7 +273,7 @@ export class NoteSkin {
     })
   }
 
-  followRedirs(element: NoteSkinElementOptions) {
+  followRedirs(element: NoteskinElementOptions) {
     const visited = [element]
     let current = element
     while (true) {
@@ -301,10 +301,10 @@ export class NoteSkin {
     }
   }
 
-  on<Event extends NoteSkinEventNames>(
-    item: NoteSkinSprite,
+  on<Event extends NoteskinEventNames>(
+    item: NoteskinSprite,
     event: Event,
-    cb: (event: Extract<NoteSkinEvent, { type: Event }>) => void
+    cb: (event: Extract<NoteskinEvent, { type: Event }>) => void
   ) {
     if (this.hooks[event] === undefined) this.hooks[event] = new Set<any>()
     const c = { item, cb }
@@ -312,20 +312,20 @@ export class NoteSkin {
     item.once("destroyed", () => this.hooks[event]!.delete(c))
   }
 
-  onUpdate(item: NoteSkinSprite, cb: (renderer: ChartRenderer) => void) {
+  onUpdate(item: NoteskinSprite, cb: (renderer: ChartRenderer) => void) {
     const c = { item, cb }
     this.updateHooks.add(c)
     item.once("destroyed", () => this.updateHooks.delete(c))
   }
 
-  broadcast<Type extends NoteSkinEventNames>(
-    event: Extract<NoteSkinEvent, { type: Type }>
+  broadcast<Type extends NoteskinEventNames>(
+    event: Extract<NoteskinEvent, { type: Type }>
   ) {
     if (this.hooks[event.type] === undefined) return
     const hooks = this.hooks[event.type]!
     hooks.forEach(({ item, cb }) => {
       if (item.destroyed) return
-      ;(cb as (event: Extract<NoteSkinEvent, { type: Type }>) => void)(event)
+      ;(cb as (event: Extract<NoteskinEvent, { type: Type }>) => void)(event)
     })
   }
 }

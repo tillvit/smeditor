@@ -1,5 +1,5 @@
 import { BLEND_MODES, Container, Sprite, Texture } from "pixi.js"
-import { NoteSkin } from "../../NoteSkin"
+import { Noteskin } from "../../Noteskin"
 
 import { BezierAnimator } from "../../../../../util/BezierEasing"
 import { rgbtoHex } from "../../../../../util/Color"
@@ -25,7 +25,7 @@ export class NoteFlashContainer extends Container {
 
   anims = new Set<string>()
 
-  constructor(noteskin: NoteSkin, col: number) {
+  constructor(noteskin: Noteskin, col: number) {
     super()
 
     this.standard.blendMode = BLEND_MODES.ADD

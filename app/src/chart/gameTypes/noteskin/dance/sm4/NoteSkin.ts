@@ -1,7 +1,7 @@
 // SM4 Default, bundled with SM4
 
 import { BLEND_MODES, Container, Sprite, Texture, TilingSprite } from "pixi.js"
-import { NoteSkinOptions } from "../../NoteSkin"
+import { NoteskinOptions } from "../../Noteskin"
 
 import { ModelRenderer } from "./ModelRenderer"
 import { NoteFlashContainer } from "./NoteFlash"
@@ -190,4 +190,4 @@ export default {
     ModelRenderer.setArrowTexTime(renderer.chartManager.app)
   },
   hideIcons: ["Lift"],
-} satisfies NoteSkinOptions
+} satisfies NoteskinOptions

@@ -1,11 +1,11 @@
 import { Container } from "pixi.js"
 
-import { NoteSkinSprite } from "../../gameTypes/noteskin/NoteSkin"
+import { NoteskinSprite } from "../../gameTypes/noteskin/Noteskin"
 import { Notefield } from "./Notefield"
 
 export class ReceptorContainer extends Container {
   private readonly notefield
-  readonly children: NoteSkinSprite[] = []
+  readonly children: NoteskinSprite[] = []
 
   constructor(notefield: Notefield) {
     super()

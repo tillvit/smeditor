@@ -2,7 +2,7 @@ import { Parser } from "expr-eval"
 import { Sprite, Texture } from "pixi.js"
 import tippy from "tippy.js"
 import { EditMode, EditTimingMode } from "../../chart/ChartManager"
-import { NoteSkinSprite } from "../../chart/gameTypes/noteskin/NoteSkin"
+import { NoteskinSprite } from "../../chart/gameTypes/noteskin/Noteskin"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
@@ -18,7 +18,7 @@ import { WidgetManager } from "./WidgetManager"
 
 interface NoteArrow {
   element: HTMLButtonElement
-  sprite: NoteSkinSprite
+  sprite: NoteskinSprite
   bg: Sprite
   highlight: BetterRoundedRect
   type: string

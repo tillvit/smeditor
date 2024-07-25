@@ -1,5 +1,5 @@
 import { BLEND_MODES, Container, Sprite, Texture } from "pixi.js"
-import { NoteSkin } from "../../NoteSkin"
+import { Noteskin } from "../../Noteskin"
 
 import bezier from "bezier-easing"
 import { BezierAnimator } from "../../../../../util/BezierEasing"
@@ -15,7 +15,7 @@ export class NoteFlashContainer extends Container {
 
   anims = new Set<string>()
 
-  constructor(noteskin: NoteSkin, col: number) {
+  constructor(noteskin: Noteskin, col: number) {
     super()
     noteskin.on(this, "hit", event => {
       if (col == event.columnNumber) {

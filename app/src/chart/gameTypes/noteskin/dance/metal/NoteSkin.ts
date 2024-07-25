@@ -17,7 +17,7 @@ import holdTopCapInactiveUrl from "./hold/topCapInactive.png"
 import { BezierAnimator } from "../../../../../util/BezierEasing"
 import { rgbtoHex } from "../../../../../util/Color"
 import { clamp } from "../../../../../util/Math"
-import { NoteSkinOptions } from "../../NoteSkin"
+import { NoteskinOptions } from "../../Noteskin"
 import rollBodyActiveUrl from "./roll/bodyActive.png"
 import rollBodyInactiveUrl from "./roll/bodyInactive.png"
 import rollBottomCapActiveUrl from "./roll/bottomCapActive.png"
@@ -199,4 +199,4 @@ export default {
     ModelRenderer.setArrowTexTime(renderer.chartManager.app)
   },
   hideIcons: ["Lift"],
-} satisfies NoteSkinOptions
+} satisfies NoteskinOptions

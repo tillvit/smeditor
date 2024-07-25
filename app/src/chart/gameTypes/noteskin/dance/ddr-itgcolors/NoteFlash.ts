@@ -5,7 +5,7 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
-import { NoteSkin } from "../../NoteSkin"
+import { Noteskin } from "../../Noteskin"
 
 import {
   BezierAnimator,
@@ -82,7 +82,7 @@ export class NoteFlashContainer extends Container {
 
   anims = new Set<string>()
 
-  constructor(noteskin: NoteSkin, col: number) {
+  constructor(noteskin: Noteskin, col: number) {
     super()
 
     noteskin.on(this, "hit", event => {

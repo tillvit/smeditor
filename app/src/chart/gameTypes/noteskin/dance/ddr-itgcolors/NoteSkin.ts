@@ -2,7 +2,7 @@
 // Color modifications by tillvit
 
 import { AnimatedSprite, Sprite, Texture, TilingSprite } from "pixi.js"
-import { NoteSkinOptions } from "../../NoteSkin"
+import { NoteskinOptions } from "../../Noteskin"
 
 import { ModelRenderer } from "./ModelRenderer"
 import { NoteFlashContainer } from "./NoteFlash"
@@ -170,4 +170,4 @@ export default {
     ModelRenderer.setArrowTexTime(renderer.chartManager.app)
   },
   hideIcons: ["Lift"],
-} satisfies NoteSkinOptions
+} satisfies NoteskinOptions

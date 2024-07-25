@@ -5,7 +5,7 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
-import { NoteSkin } from "../../NoteSkin"
+import { Noteskin } from "../../Noteskin"
 
 import { BezierAnimator } from "../../../../../util/BezierEasing"
 import { splitTex } from "../../../../../util/Util"
@@ -13,7 +13,7 @@ import flashUrl from "./flash/flash.png"
 import mineUrl from "./flash/mine.png"
 import pressUrl from "./flash/press.png"
 import { tapTex } from "./NoteRenderer"
-import { texOrder } from "./NoteSkin"
+import { texOrder } from "./Noteskin"
 
 const flashTex = splitTex(Texture.from(flashUrl), 5, 1, 128, 128)[0]
 const mineTex = Texture.from(mineUrl)
@@ -36,7 +36,7 @@ export class NoteFlashContainer extends Container {
 
   anims = new Set<string>()
 
-  constructor(noteskin: NoteSkin, colName: string, col: number) {
+  constructor(noteskin: Noteskin, colName: string, col: number) {
     super()
 
     const baseScale = 1 / 1.5

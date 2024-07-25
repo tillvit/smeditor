@@ -1,7 +1,7 @@
 // SM4 Bold, bundled with SM4
 
 import { Sprite, Texture, TilingSprite } from "pixi.js"
-import { NoteSkinOptions } from "../../NoteSkin"
+import { NoteskinOptions } from "../../Noteskin"
 import { NoteRenderer } from "./NoteRenderer"
 
 import cReceptor from "./centerReceptor.png"
@@ -177,4 +177,4 @@ export default {
     NoteRenderer.setArrowTexTime(renderer.chartManager.app)
   },
   hideIcons: ["Lift", "Fake"],
-} satisfies NoteSkinOptions
+} satisfies NoteskinOptions

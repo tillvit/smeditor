@@ -2,7 +2,7 @@
 // Custom lifts by tillvit
 
 import { AnimatedSprite, Sprite, Texture, TilingSprite } from "pixi.js"
-import { NoteSkinOptions } from "../../NoteSkin"
+import { NoteskinOptions } from "../../Noteskin"
 
 import { BezierAnimator } from "../../../../../util/BezierEasing"
 import { ModelRenderer } from "./ModelRenderer"
@@ -193,4 +193,4 @@ export default {
     ModelRenderer.setArrowTexTime(renderer.chartManager.app)
   },
   hideIcons: ["Lift"],
-} satisfies NoteSkinOptions
+} satisfies NoteskinOptions

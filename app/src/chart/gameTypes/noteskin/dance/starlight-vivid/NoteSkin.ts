@@ -8,7 +8,7 @@ import {
   Texture,
   TilingSprite,
 } from "pixi.js"
-import { NoteSkinOptions } from "../../NoteSkin"
+import { NoteskinOptions } from "../../Noteskin"
 
 import { NoteFlashContainer } from "./NoteFlash"
 import { NoteRenderer } from "./NoteRenderer"
@@ -319,4 +319,4 @@ export default {
   update(renderer) {
     NoteRenderer.setArrowTexTime(renderer.chartManager.app)
   },
-} satisfies NoteSkinOptions
+} satisfies NoteskinOptions
