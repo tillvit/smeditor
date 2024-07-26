@@ -9,6 +9,7 @@ import { ExportNotedataWindow } from "../gui/window/ExportNotedataWindow"
 import { GameplayKeybindWindow } from "../gui/window/GameplayKeybindWindow"
 import { KeybindWindow } from "../gui/window/KeybindWindow"
 import { NewSongWindow } from "../gui/window/NewSongWindow"
+import { NoteskinWindow } from "../gui/window/NoteSkinWindow"
 import { OffsetWindow } from "../gui/window/OffsetWindow"
 import { SMPropertiesWindow } from "../gui/window/SMPropertiesWindow"
 import { SyncWindow } from "../gui/window/SyncWindow"
@@ -1431,5 +1432,13 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     callback: () => {
       window.open("/smeditor/guide/")
     },
+  },
+
+  noteskinWindow: {
+    label: "Noteskins...",
+    bindLabel: "Open Noteskin Window",
+    combos: [{ mods: [Modifier.SHIFT], key: "N" }],
+    disabled: false,
+    callback: app => app.windowManager.openWindow(new NoteskinWindow(app)),
   },
 }

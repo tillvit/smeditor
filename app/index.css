@@ -2743,3 +2743,79 @@ input[type="color"] {
 .animated .po-collapse img {
   transition: 0.15s cubic-bezier(0.61, 0.04, 0.38, 1.02);
 }
+
+.noteskin-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  width: 100%;
+  gap: 15px;
+  padding: 10px;
+  background: var(--bg-secondary);
+  margin-top: 10px;
+  border-radius: 5px;
+  overflow: auto;
+  height: 330px;
+}
+
+.noteskin-cell {
+  height: 250px;
+  position: relative;
+  border-radius: 5px;
+}
+
+.noteskin-cell img {
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 9 / 21;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.noteskin-label {
+  position: absolute;
+  bottom: 0;
+  padding: 10px;
+  width: 100%;
+  padding-top: 100px;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.7),
+    rgba(0, 0, 0, 0.7) 30%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  border-radius: 5px;
+}
+
+.noteskin-title {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.noteskin-subtitle {
+  font-style: italic;
+  font-size: 12px;
+}
+
+.noteskin-cell:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.6);
+}
+
+.noteskin-cell:hover img {
+  filter: brightness(1.1);
+}
+
+.noteskin-cell:active {
+  transform: scale(0.98);
+}
+
+.noteskin-cell.selected img {
+  box-shadow: 0 0 5px 2px rgba(24, 147, 195, 0.6);
+  filter: brightness(1.2);
+}
+
+.animated .noteskin-cell,
+.animated .noteskin-cell img {
+  transition: 0.2s cubic-bezier(0.26, 0.64, 0.47, 1.6);
+}

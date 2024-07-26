@@ -790,7 +790,7 @@ export class ChartManager {
       )
       if (oldSkin?.gameTypes.includes(chart.gameType.id)) {
         // Use the old note skin
-        newNoteskin.name = oldSkin.name
+        newNoteskin.name = oldSkin.id
       }
     }
     Options.chart.noteskin = newNoteskin

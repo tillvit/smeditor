@@ -1,6 +1,7 @@
-
-const previewNotes = `ArrowVortex:notes:!"=J[(]]*k"p"]@!?_Fh""8[L8-/fK!]^?DJOi<6Jk/E8!`
-
+const previewNotes = {
+  "dance-single": `ArrowVortex:notes:!"=J[(]]*q$ip>F!?_Fh""8[L8-/fK!]^?DJOi<6Jk/E8!`,
+  "pump-single": `ArrowVortex:notes:!"=J[(]]*q$ip>F!?_Fh""8gP8-/cJ!BC3BJOi<6Jk/E8!`,
+}
 
 const viewOptions = {
   "chart.speed": 400,
@@ -28,10 +29,12 @@ const imageOptions = {
   exportWidth: 450,
 }
 
-async function generateNoteskinPreview(gameType, skinName, notes = previewNotes) {
+async function generateNoteskinPreview(gameType, skinName, notes) {
   if (!gameType || !skinName) {
     throw "No gameType/skinName provided!"
   }
+
+  if (notes == undefined) notes = previewNotes[gameType] ?? previewNotes["dance-single"]
 
   const cm = window.app.chartManager
   const sm = cm.loadedSM
@@ -178,7 +181,7 @@ async function generateNoteskinPreview(gameType, skinName, notes = previewNotes)
   }
 }
 
-async function generateAllPreviews(gameType, notes = previewNotes) {
+async function generateAllPreviews(gameType, notes) {
   const noteskins = window.NoteskinRegistry.getNoteskins().get(gameType).keys()
   for (const skin of noteskins) {
     await generateNoteskinPreview(gameType, skin, notes)
