@@ -531,17 +531,6 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       )
     },
   },
-  renderWaveform: {
-    label: "Render waveform",
-    combos: [],
-    disabled: false,
-    callback: () => {
-      Options.chart.waveform.enabled = !Options.chart.waveform.enabled
-      WaterfallManager.create(
-        "Waveform: " + (Options.chart.waveform.enabled ? "on" : "off")
-      )
-    },
-  },
   XMod: {
     label: "XMod (Beat-based)",
     combos: [{ key: "X", mods: [Modifier.SHIFT] }],
