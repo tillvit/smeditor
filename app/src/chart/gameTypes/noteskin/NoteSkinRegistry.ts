@@ -22,7 +22,10 @@ export class NoteskinRegistry {
     }
   }
 
-  static async getNoteskin(gameType: GameType, id: string) {
+  static async getNoteskin(
+    gameType: GameType,
+    id: string
+  ): Promise<NoteskinOptions | undefined> {
     const gameTypeNoteskins = this.noteskins.get(gameType.id)
     if (!gameTypeNoteskins || gameTypeNoteskins.size == 0) return
     const skin = gameTypeNoteskins.get(id) ?? [...gameTypeNoteskins.values()][0]
