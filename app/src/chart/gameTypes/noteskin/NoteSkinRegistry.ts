@@ -67,6 +67,8 @@ NoteskinRegistry.register({
     "dance-threedouble",
   ],
   path: "./dance/default",
+  title: "Scalable",
+  subtitle: "Pete-Lawrence",
 })
 NoteskinRegistry.register({
   id: "cf-chrome",
@@ -80,6 +82,8 @@ NoteskinRegistry.register({
     "dance-threedouble",
   ],
   path: "./dance/cf-chrome",
+  title: "CF_CHROME",
+  subtitle: "Pete-Lawrence",
 })
 NoteskinRegistry.register({
   id: "ddr",
@@ -93,19 +97,8 @@ NoteskinRegistry.register({
     "dance-threedouble",
   ],
   path: "./dance/ddr",
-})
-NoteskinRegistry.register({
-  id: "ddr",
-  gameTypes: [
-    "dance-single",
-    "dance-double",
-    "dance-couple",
-    "dance-solo",
-    "dance-solodouble",
-    "dance-threepanel",
-    "dance-threedouble",
-  ],
-  path: "./dance/ddr",
+  title: "DDR",
+  subtitle: "Pete-Lawrence",
 })
 NoteskinRegistry.register({
   id: "ddr-itgcolors",
@@ -119,6 +112,8 @@ NoteskinRegistry.register({
     "dance-threedouble",
   ],
   path: "./dance/ddr-itgcolors",
+  title: "DDR (ITG quants)",
+  subtitle: "Pete-Lawrence",
 })
 NoteskinRegistry.register({
   id: "metal",
@@ -132,6 +127,8 @@ NoteskinRegistry.register({
     "dance-threedouble",
   ],
   path: "./dance/metal",
+  title: "Metal",
+  subtitle: "Pete-Lawrence",
 })
 NoteskinRegistry.register({
   id: "pastel",
@@ -145,6 +142,8 @@ NoteskinRegistry.register({
     "dance-threedouble",
   ],
   path: "./dance/pastel",
+  title: "Pastel",
+  subtitle: "halcyoniix",
 })
 NoteskinRegistry.register({
   id: "dividebyzero",
@@ -158,6 +157,8 @@ NoteskinRegistry.register({
     "dance-threedouble",
   ],
   path: "./dance/dividebyzero",
+  title: "DivideByZero",
+  subtitle: "MinaciousGrace",
 })
 NoteskinRegistry.register({
   id: "subtractbyzero",
@@ -171,6 +172,8 @@ NoteskinRegistry.register({
     "dance-threedouble",
   ],
   path: "./dance/subtractbyzero",
+  title: "SubtractByZero",
+  subtitle: "qwertyzoro/Vague",
 })
 NoteskinRegistry.register({
   id: "sm4",
@@ -184,6 +187,8 @@ NoteskinRegistry.register({
     "dance-threedouble",
   ],
   path: "./dance/sm4",
+  title: "SM4",
+  subtitle: "from SM4",
 })
 NoteskinRegistry.register({
   id: "sm4-bold",
@@ -197,6 +202,8 @@ NoteskinRegistry.register({
     "dance-threedouble",
   ],
   path: "./dance/sm4-bold",
+  title: "SM4 Bold",
+  subtitle: "from SM4",
 })
 NoteskinRegistry.register({
   id: "starlight-vivid",
@@ -210,6 +217,8 @@ NoteskinRegistry.register({
     "dance-threedouble",
   ],
   path: "./dance/starlight-vivid",
+  title: "SLNEXXT-vivid",
+  subtitle: "from STARLiGHT-NEXXT",
 })
 
 NoteskinRegistry.register({
@@ -222,6 +231,7 @@ NoteskinRegistry.register({
     "pump-halfdouble",
   ],
   path: "./pump/default",
+  title: "Fiesta",
 })
 NoteskinRegistry.register({
   id: "fourv2",
@@ -233,6 +243,8 @@ NoteskinRegistry.register({
     "pump-halfdouble",
   ],
   path: "./pump/fourv2",
+  title: "FourV2",
+  subtitle: "Jousway",
 })
 
 NoteskinRegistry.register({
@@ -245,4 +257,5 @@ NoteskinRegistry.register({
     "pump-halfdouble",
   ],
   path: "./pump/prime",
+  title: "Prime",
 })

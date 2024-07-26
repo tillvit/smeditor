@@ -80,7 +80,7 @@ export class NoteskinWindow extends Window {
       subtitle.classList.add("noteskin-subtitle")
 
       title.innerText = options.title ?? id
-      subtitle.innerText = options.subtitle ?? "subtitle"
+      subtitle.innerText = options.subtitle ?? ""
 
       image.src = NoteskinRegistry.getPreviewUrl(gameType, id)
       image.onerror = () => {
