@@ -90,8 +90,14 @@ export class NoteskinWindow extends Window {
       container.replaceChildren(image, labelContainer)
       labelContainer.replaceChildren(title, subtitle)
 
-      if (id == Options.chart.noteskin.name) container.classList.add("selected")
       this.grid.appendChild(container)
+
+      if (id == Options.chart.noteskin.name) {
+        container.classList.add("selected")
+        setTimeout(() => {
+          container.scrollIntoView({ behavior: "smooth", block: "center" })
+        })
+      }
 
       container.dataset.id = id
       container.dataset.title = options.title ?? ""
