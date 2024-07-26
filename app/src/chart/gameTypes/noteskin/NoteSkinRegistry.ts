@@ -89,7 +89,7 @@ NoteskinRegistry.register({
   subtitle: "Pete-Lawrence",
 })
 NoteskinRegistry.register({
-  id: "ddr",
+  id: "ddr-note",
   gameTypes: [
     "dance-single",
     "dance-double",
@@ -99,12 +99,12 @@ NoteskinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  path: "./dance/ddr",
-  title: "DDR",
+  path: "./dance/ddr-note",
+  title: "DDR-Note",
   subtitle: "Pete-Lawrence",
 })
 NoteskinRegistry.register({
-  id: "ddr-itgcolors",
+  id: "ddr-note-itg",
   gameTypes: [
     "dance-single",
     "dance-double",
@@ -114,8 +114,8 @@ NoteskinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  path: "./dance/ddr-itgcolors",
-  title: "DDR (ITG quants)",
+  path: "./dance/ddr-note-itg",
+  title: "DDR-Note (ITG quants)",
   subtitle: "Pete-Lawrence",
 })
 NoteskinRegistry.register({
