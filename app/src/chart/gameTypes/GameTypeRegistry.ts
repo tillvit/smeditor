@@ -4,13 +4,14 @@ import { NotedataParser } from "./base/NotedataParser"
 
 import { BasicGameLogic } from "./common/BasicGameLogic"
 import { BasicNotedataParser } from "./common/BasicNotedataParser"
+import { PumpGameLogic } from "./pump/PumpGameLogic"
 
 export interface GameType {
   id: string
   numCols: number
   columnWidths: number[]
   notefieldWidth: number
-  columnRotations: number[]
+  columnNames: string[]
   gameLogic: GameLogic
   parser: NotedataParser
   editNoteTypes: NoteType[]
@@ -50,7 +51,7 @@ GameTypeRegistry.register({
   id: "dance-single",
   numCols: 4,
   columnWidths: [64, 64, 64, 64],
-  columnRotations: [0, -90, 90, 180],
+  columnNames: ["Left", "Down", "Up", "Right"],
   gameLogic: new BasicGameLogic(),
   parser: new BasicNotedataParser(),
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
@@ -64,7 +65,7 @@ GameTypeRegistry.register({
   id: "dance-double",
   numCols: 8,
   columnWidths: [64, 64, 64, 64, 64, 64, 64, 64],
-  columnRotations: [0, -90, 90, 180, 0, -90, 90, 180],
+  columnNames: ["Left", "Down", "Up", "Right", "Left", "Down", "Up", "Right"],
   gameLogic: new BasicGameLogic(),
   parser: new BasicNotedataParser(),
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
@@ -78,7 +79,7 @@ GameTypeRegistry.register({
   id: "dance-couple",
   numCols: 8,
   columnWidths: [64, 64, 64, 64, 64, 64, 64, 64],
-  columnRotations: [0, -90, 90, 180, 0, -90, 90, 180],
+  columnNames: ["Left", "Down", "Up", "Right", "Left", "Down", "Up", "Right"],
   gameLogic: new BasicGameLogic(),
   parser: new BasicNotedataParser(),
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
@@ -92,7 +93,7 @@ GameTypeRegistry.register({
   id: "dance-solo",
   numCols: 6,
   columnWidths: [64, 64, 64, 64, 64, 64],
-  columnRotations: [0, 45, -90, 90, 135, 180],
+  columnNames: ["Left", "UpLeft", "Down", "Up", "UpRight", "Right"],
   gameLogic: new BasicGameLogic(),
   parser: new BasicNotedataParser(),
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
@@ -106,7 +107,20 @@ GameTypeRegistry.register({
   id: "dance-solodouble",
   numCols: 12,
   columnWidths: [64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64],
-  columnRotations: [0, 45, -90, 90, 135, 180, 0, 45, -90, 90, 135, 180],
+  columnNames: [
+    "Left",
+    "UpLeft",
+    "Down",
+    "Up",
+    "UpRight",
+    "Right",
+    "Left",
+    "UpLeft",
+    "Down",
+    "Up",
+    "UpRight",
+    "Right",
+  ],
   gameLogic: new BasicGameLogic(),
   parser: new BasicNotedataParser(),
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
@@ -120,7 +134,7 @@ GameTypeRegistry.register({
   id: "dance-threepanel",
   numCols: 3,
   columnWidths: [64, 64, 64],
-  columnRotations: [45, -90, 135],
+  columnNames: ["UpLeft", "Down", "UpRight"],
   gameLogic: new BasicGameLogic(),
   parser: new BasicNotedataParser(),
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
@@ -134,12 +148,122 @@ GameTypeRegistry.register({
   id: "dance-threedouble",
   numCols: 6,
   columnWidths: [64, 64, 64, 64, 64, 64],
-  columnRotations: [45, -90, 135, 45, -90, 135],
+  columnNames: ["UpLeft", "Down", "UpRight", "UpLeft", "Down", "UpRight"],
   gameLogic: new BasicGameLogic(),
   parser: new BasicNotedataParser(),
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
   flipColumns: {
     horizontal: [2, 1, 0, 5, 4, 3],
     vertical: [0, 1, 2, 3, 4, 5],
+  },
+})
+
+GameTypeRegistry.register({
+  id: "pump-single",
+  numCols: 5,
+  columnWidths: [58, 58, 58, 58, 58],
+  columnNames: ["DownLeft", "UpLeft", "Center", "UpRight", "DownRight"],
+  gameLogic: new PumpGameLogic(),
+  parser: new BasicNotedataParser(),
+  editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [4, 3, 2, 1, 0],
+    vertical: [1, 0, 2, 4, 3],
+  },
+})
+
+GameTypeRegistry.register({
+  id: "pump-double",
+  numCols: 10,
+  columnWidths: [58, 58, 58, 58, 58, 58, 58, 58, 58, 58],
+  columnNames: [
+    "DownLeft",
+    "UpLeft",
+    "Center",
+    "UpRight",
+    "DownRight",
+    "DownLeft",
+    "UpLeft",
+    "Center",
+    "UpRight",
+    "DownRight",
+  ],
+  gameLogic: new PumpGameLogic(),
+  parser: new BasicNotedataParser(),
+  editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [4, 3, 2, 1, 0, 9, 8, 7, 6, 5],
+    vertical: [1, 0, 2, 4, 3, 6, 5, 7, 9, 8],
+  },
+})
+
+GameTypeRegistry.register({
+  id: "pump-versus",
+  numCols: 10,
+  columnWidths: [58, 58, 58, 58, 58, 58, 58, 58, 58, 58],
+  columnNames: [
+    "DownLeft",
+    "UpLeft",
+    "Center",
+    "UpRight",
+    "DownRight",
+    "DownLeft",
+    "UpLeft",
+    "Center",
+    "UpRight",
+    "DownRight",
+  ],
+  gameLogic: new PumpGameLogic(),
+  parser: new BasicNotedataParser(),
+  editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [4, 3, 2, 1, 0, 9, 8, 7, 6, 5],
+    vertical: [1, 0, 2, 4, 3, 6, 5, 7, 9, 8],
+  },
+})
+
+GameTypeRegistry.register({
+  id: "pump-couple",
+  numCols: 10,
+  columnWidths: [58, 58, 58, 58, 58, 58, 58, 58, 58, 58],
+  columnNames: [
+    "DownLeft",
+    "UpLeft",
+    "Center",
+    "UpRight",
+    "DownRight",
+    "DownLeft",
+    "UpLeft",
+    "Center",
+    "UpRight",
+    "DownRight",
+  ],
+  gameLogic: new PumpGameLogic(),
+  parser: new BasicNotedataParser(),
+  editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [4, 3, 2, 1, 0, 9, 8, 7, 6, 5],
+    vertical: [1, 0, 2, 4, 3, 6, 5, 7, 9, 8],
+  },
+})
+
+GameTypeRegistry.register({
+  id: "pump-halfdouble",
+  numCols: 6,
+  columnWidths: [58, 58, 58, 58, 58, 58],
+  columnNames: [
+    "Center",
+    "UpRight",
+    "DownRight",
+    "DownLeft",
+    "UpLeft",
+    "Center",
+  ],
+  gameLogic: new PumpGameLogic(),
+  parser: new BasicNotedataParser(),
+  editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
+  flipColumns: {
+    horizontal: [5, 1, 2, 3, 4, 0],
+    vertical: [0, 2, 1, 4, 3, 5],
   },
 })

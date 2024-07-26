@@ -1,12 +1,10 @@
 import { Container, Sprite, Texture } from "pixi.js"
-import { rgbtoHex } from "../../../util/Color"
-import { NoteObject } from "../../gameTypes/base/Noteskin"
-import { NotedataEntry, isHoldNote } from "../../sm/NoteTypes"
-import { Notefield } from "./Notefield"
+import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
+import { HoldObject, Notefield, NoteWrapper } from "./Notefield"
 
 interface HighlightedNoteObject extends Container {
   selection: Sprite
-  object: NoteObject
+  wrapper: NoteWrapper
 }
 
 export class SelectionNoteContainer extends Container {
@@ -47,18 +45,15 @@ export class SelectionNoteContainer extends Container {
           })
 
         container.x = this.notefield.getColumnX(newNote.col)
-        container.object.destroy()
-        container.object.alpha = 0.4
-        container.object = this.notefield.noteskin.createNote(newNote)
-        container.object.note.rotation = this.notefield.getColumnRotation(
-          newNote.col
-        )
-        const objectBounds = container.object.getBounds()
+        container.wrapper.destroy()
+        container.wrapper.alpha = 0.4
+        container.wrapper = this.notefield.createNote(newNote)
+        const objectBounds = container.wrapper.getBounds()
         container.selection.x = objectBounds.x
         container.selection.y = objectBounds.y
         container.selection.width = objectBounds.width
         container.selection.height = objectBounds.height
-        container.addChild(container.object, container.selection)
+        container.addChild(container.wrapper, container.selection)
       }
     }
 
@@ -77,13 +72,12 @@ export class SelectionNoteContainer extends Container {
           col: note.col + columnShift,
         }
         const container = new Container() as HighlightedNoteObject
-        const object = this.notefield.noteskin.createNote(newNote)
+        const object = this.notefield.createNote(newNote)
         Object.assign(container, {
           x: this.notefield.getColumnX(newNote.col),
           zIndex: newNote.beat,
           alpha: 0.4,
         })
-        object.note.rotation = this.notefield.getColumnRotation(newNote.col)
         const selection = new Sprite(Texture.WHITE)
         const objectBounds = object.getBounds()
         selection.x = objectBounds.x
@@ -92,7 +86,7 @@ export class SelectionNoteContainer extends Container {
         selection.height = objectBounds.height
         selection.alpha = 0
         this.notefield.renderer.registerDragNote(object, newNote)
-        container.object = object
+        container.wrapper = object
         container.selection = selection
         this.arrowMap.set(note, container)
         container.addChild(object, selection)
@@ -118,36 +112,15 @@ export class SelectionNoteContainer extends Container {
           this.notefield.renderer.getYPosFromBeat(
             newBeat + (isHoldNote(note) ? note.hold : 0)
           ) - container.y
-        this.setHoldLength(container.object, holdLength)
-        this.setHoldBrightness(container.object, 0.8)
-        const objectBounds = container.object.getLocalBounds()
+        const hold = container.wrapper.object as HoldObject
+        hold.setLength(holdLength)
+        hold.setBrightness(1)
+        const objectBounds = container.wrapper.getLocalBounds()
         container.selection.x = objectBounds.x
         container.selection.y = objectBounds.y
         container.selection.width = objectBounds.width
         container.selection.height = objectBounds.height
       }
     }
-  }
-
-  private setHoldLength(object: NoteObject, length: number) {
-    if (!object.hold) return
-    object.hold.holdBody.height = length
-    object.hold.holdBody.y = length
-    object.hold.holdCap.y = length
-    object.hold.holdCap.scale.y = length < 0 ? -0.5 : 0.5
-  }
-
-  private setHoldBrightness(object: NoteObject, brightness: number) {
-    if (!object.hold) return
-    object.hold.holdBody.tint = rgbtoHex(
-      brightness * 255,
-      brightness * 255,
-      brightness * 255
-    )
-    object.hold.holdCap.tint = rgbtoHex(
-      brightness * 255,
-      brightness * 255,
-      brightness * 255
-    )
   }
 }

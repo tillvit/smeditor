@@ -1,18 +1,17 @@
 import { Container, Sprite, Texture } from "pixi.js"
-import { rgbtoHex } from "../../../util/Color"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
 import { getNoteEnd } from "../../../util/Util"
 import { EditMode, EditTimingMode } from "../../ChartManager"
-import { NoteObject } from "../../gameTypes/base/Noteskin"
 import { TimingWindowCollection } from "../../play/TimingWindowCollection"
-import { NotedataEntry, isHoldNote } from "../../sm/NoteTypes"
-import { Notefield } from "./Notefield"
+import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
+import { HoldObject, Notefield, NoteWrapper } from "./Notefield"
 
 interface HighlightedNoteObject extends Container {
   selection: Sprite
   parity: Sprite
-  object: NoteObject
+  wrapper: NoteWrapper
+  lastActive: boolean
 }
 
 const parityColors: Record<string, number> = {
@@ -64,12 +63,11 @@ export class NoteContainer extends Container {
       if (!this.shouldDisplayNote(note, firstBeat, lastBeat)) continue
       if (!this.arrowMap.has(note)) {
         const container = new Container() as HighlightedNoteObject
-        const object = this.notefield.noteskin.createNote(note)
+        const object = this.notefield.createNote(note)
         Object.assign(container, {
           x: this.notefield.getColumnX(note.col),
           zIndex: note.beat,
         })
-        object.note.rotation = this.notefield.getColumnRotation(note.col)
         const selection = new Sprite(Texture.WHITE)
         const objectBounds = object.getBounds()
         selection.x = objectBounds.x
@@ -85,9 +83,10 @@ export class NoteContainer extends Container {
         parity.height = objectBounds.height
         parity.alpha = 0
         this.notefield.renderer.registerDragNote(container, note)
-        container.object = object
+        container.wrapper = object
         container.selection = selection
         container.parity = parity
+        container.lastActive = false
         this.arrowMap.set(note, container)
         container.addChild(object, selection, parity)
         this.addChild(container)
@@ -100,8 +99,6 @@ export class NoteContainer extends Container {
         this.arrowMap.delete(note)
         continue
       }
-
-      container.object.update(this.notefield.renderer)
 
       container.y = this.notefield.renderer.getActualReceptorYPos()
       if (
@@ -119,7 +116,8 @@ export class NoteContainer extends Container {
         const holdLength =
           this.notefield.renderer.getYPosFromBeat(getNoteEnd(note)) -
           container.y
-        this.setHoldLength(container.object, holdLength)
+        const hold = container.wrapper.object as HoldObject
+        hold.setLength(holdLength)
         if (note.gameplay?.lastHoldActivation) {
           let t =
             (Date.now() - note.gameplay.lastHoldActivation) /
@@ -127,9 +125,19 @@ export class NoteContainer extends Container {
               .getHeldJudgement(note)
               .getTimingWindowMS()
           t = Math.min(1.2, t)
-          this.setHoldBrightness(container.object, 1 - t * 0.7)
+          hold.setBrightness(1 - t * 0.7)
         } else {
-          this.setHoldBrightness(container.object, 0.8)
+          hold.setBrightness(1)
+        }
+        if (note.gameplay) {
+          hold.setActive(
+            !(
+              note.gameplay.lastHoldActivation === undefined ||
+              note.gameplay.droppedHoldBeat !== undefined
+            )
+          )
+        } else {
+          hold.setActive(false)
         }
       }
       if (
@@ -142,8 +150,8 @@ export class NoteContainer extends Container {
         container.selection.alpha = inSelection
           ? Math.sin(Date.now() / 320) * 0.1 + 0.3
           : 0
-        if (inSelection && container.object.hold) {
-          const objectBounds = container.object.getLocalBounds()
+        if (inSelection && container.wrapper.object.type == "hold") {
+          const objectBounds = container.wrapper.getLocalBounds()
           container.selection.x = objectBounds.x
           container.selection.y = objectBounds.y
           container.selection.width = objectBounds.width
@@ -152,7 +160,7 @@ export class NoteContainer extends Container {
         container.visible =
           !inSelection || !this.notefield.renderer.chartManager.selection.shift
         const inSelectionBounds = this.notefield.renderer.selectionTest(
-          container.object
+          container.wrapper
         )
         if (!inSelection && inSelectionBounds) {
           this.notefield.renderer.chartManager.addNoteToDragSelection(note)
@@ -179,27 +187,5 @@ export class NoteContainer extends Container {
       return false
     if (getNoteEnd(note) < firstBeat) return false
     return note.beat <= lastBeat
-  }
-
-  private setHoldLength(object: NoteObject, length: number) {
-    if (!object.hold) return
-    object.hold.holdBody.height = length
-    object.hold.holdBody.y = length
-    object.hold.holdCap.y = length
-    object.hold.holdCap.scale.y = length < 0 ? -0.5 : 0.5
-  }
-
-  private setHoldBrightness(object: NoteObject, brightness: number) {
-    if (!object.hold) return
-    object.hold.holdBody.tint = rgbtoHex(
-      brightness * 255,
-      brightness * 255,
-      brightness * 255
-    )
-    object.hold.holdCap.tint = rgbtoHex(
-      brightness * 255,
-      brightness * 255,
-      brightness * 255
-    )
   }
 }

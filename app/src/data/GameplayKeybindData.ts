@@ -206,4 +206,27 @@ export const GAMEPLAY_KEYBINDS: { [key: string]: GameplayKeybind[] } = {
       keys: ["E"],
     },
   ],
+  // Pump
+  "pump-single": [
+    {
+      label: "DownLeft",
+      keys: [],
+    },
+    {
+      label: "UpLeft",
+      keys: [],
+    },
+    {
+      label: "Center",
+      keys: [],
+    },
+    {
+      label: "UpRight",
+      keys: [],
+    },
+    {
+      label: "DownRight",
+      keys: [],
+    },
+  ],
 }

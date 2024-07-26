@@ -579,6 +579,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         type: "selection",
         id: "gameplayKeybinds",
       },
+      {
+        type: "selection",
+        id: "noteskinWindow",
+      },
     ],
   },
   help: {

@@ -418,7 +418,7 @@ export class PlayInfoWidget extends Widget {
 
     for (const window of [
       ...collection.getStandardWindows(),
-      collection.getMissJudgment(),
+      collection.getMissJudgement(),
     ]) {
       const label = new BitmapText(window.name, {
         fontName: "Main",
@@ -438,12 +438,14 @@ export class PlayInfoWidget extends Widget {
       count.anchor.y = 0.5
       count.anchor.x = 1
     }
-    const extraNumWindows = collection.getHoldWindows().length + 2
+    const ht =
+      this.manager.chartManager.loadedChart?.gameType.gameLogic.usesHoldTicks ??
+      false
+    const extraNumWindows = (ht ? 0 : collection.getHoldWindows().length) + 2
     i = 0
-    for (const window of [
-      ...collection.getHoldWindows(),
-      collection.getMineJudgment(),
-    ]) {
+    for (const window of ht
+      ? [collection.getMineJudgement()]
+      : [...collection.getHoldWindows(), collection.getMineJudgement()]) {
       const name = isHoldTimingWindow(window) ? window.noteType : "Mine"
       const label = new BitmapText(name, {
         fontName: "Main",
@@ -544,6 +546,7 @@ export class PlayInfoWidget extends Widget {
         roundDigit(gameStats.getCumulativeScore() * 100, 2).toFixed(2)
       if (isStandardMissTimingWindow(judge)) return
       if (!isStandardTimingWindow(judge)) return
+      if (error == null) return
       const ms = Math.round(error * 1000)
       for (let i = -3; i <= 3; i++) {
         if (!this.barlines.children[ms + windowSize + i]) continue
@@ -586,8 +589,9 @@ export class PlayInfoWidget extends Widget {
     )
     const windowSize = Math.round(collection.maxWindowMS())
     gameStats.getDataPoints().forEach(point => {
-      if (isStandardMissTimingWindow(point.judgment)) return
-      if (!isStandardTimingWindow(point.judgment)) return
+      if (isStandardMissTimingWindow(point.judgement)) return
+      if (!isStandardTimingWindow(point.judgement)) return
+      if (point.error === null) return
       const ms = Math.round(point.error * 1000)
       for (let i = -3; i <= 3; i++) {
         if (!this.barlines.children[ms + windowSize + i]) continue

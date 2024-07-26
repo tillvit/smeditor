@@ -1,7 +1,7 @@
 import { HoldNotedataEntry } from "../sm/NoteTypes"
 import { HoldDroppedTimingWindow } from "./HoldDroppedTimingWindow"
 import { HoldTimingWindow } from "./HoldTimingWindow"
-import { JudgmentTexture } from "./JudgmentTexture"
+import { JudgementTexture } from "./JudgementTexture"
 import { MineTimingWindow } from "./MineTimingWindow"
 import { StandardMissTimingWindow } from "./StandardMissTimingWindow"
 import { StandardTimingWindow } from "./StandardTimingWindow"
@@ -54,7 +54,7 @@ export class TimingWindowCollection {
           23,
           5,
           0.008,
-          JudgmentTexture.ITG
+          JudgementTexture.ITG
         ),
         new StandardTimingWindow(
           "w2",
@@ -63,7 +63,7 @@ export class TimingWindowCollection {
           44.5,
           4,
           0.008,
-          JudgmentTexture.ITG
+          JudgementTexture.ITG
         ),
         new StandardTimingWindow(
           "w3",
@@ -72,7 +72,7 @@ export class TimingWindowCollection {
           103.5,
           2,
           0.004,
-          JudgmentTexture.ITG
+          JudgementTexture.ITG
         ),
         new StandardTimingWindow(
           "w4",
@@ -81,7 +81,7 @@ export class TimingWindowCollection {
           136.5,
           0,
           0,
-          JudgmentTexture.ITG
+          JudgementTexture.ITG
         ),
         new StandardTimingWindow(
           "w5",
@@ -90,14 +90,14 @@ export class TimingWindowCollection {
           181.5,
           -6,
           -0.05,
-          JudgmentTexture.ITG
+          JudgementTexture.ITG
         ),
         new StandardMissTimingWindow(
           "Miss",
           0xff3030,
           -12,
           -0.1,
-          JudgmentTexture.ITG
+          JudgementTexture.ITG
         ),
         new HoldTimingWindow("Hold", 321.5, 5, -0.008),
         new HoldTimingWindow("Roll", 351.5, 5, -0.008),
@@ -116,7 +116,7 @@ export class TimingWindowCollection {
           15,
           3.5,
           0.008,
-          JudgmentTexture.ITG
+          JudgementTexture.ITG
         ),
         new StandardTimingWindow(
           "w1",
@@ -125,7 +125,7 @@ export class TimingWindowCollection {
           23,
           3,
           0.008,
-          JudgmentTexture.ITG
+          JudgementTexture.ITG
         ),
         new StandardTimingWindow(
           "w2",
@@ -134,7 +134,7 @@ export class TimingWindowCollection {
           44.5,
           2,
           0.008,
-          JudgmentTexture.ITG
+          JudgementTexture.ITG
         ),
         new StandardTimingWindow(
           "w3",
@@ -143,7 +143,7 @@ export class TimingWindowCollection {
           103.5,
           1,
           0.004,
-          JudgmentTexture.ITG
+          JudgementTexture.ITG
         ),
         new StandardTimingWindow(
           "w4",
@@ -152,7 +152,7 @@ export class TimingWindowCollection {
           136.5,
           0,
           0,
-          JudgmentTexture.ITG
+          JudgementTexture.ITG
         ),
         new StandardTimingWindow(
           "w5",
@@ -161,14 +161,14 @@ export class TimingWindowCollection {
           181.5,
           0,
           -0.05,
-          JudgmentTexture.ITG
+          JudgementTexture.ITG
         ),
         new StandardMissTimingWindow(
           "Miss",
           0xff3030,
           0,
           -0.1,
-          JudgmentTexture.ITG
+          JudgementTexture.ITG
         ),
         new HoldTimingWindow("Hold", 321.5, 1, -0.008),
         new HoldTimingWindow("Roll", 351.5, 1, -0.008),
@@ -187,7 +187,7 @@ export class TimingWindowCollection {
           15,
           10,
           0.008,
-          JudgmentTexture.WATERFALL
+          JudgementTexture.WATERFALL
         ),
         new StandardTimingWindow(
           "w2",
@@ -196,7 +196,7 @@ export class TimingWindowCollection {
           30,
           9,
           0.008,
-          JudgmentTexture.WATERFALL
+          JudgementTexture.WATERFALL
         ),
         new StandardTimingWindow(
           "w3",
@@ -205,7 +205,7 @@ export class TimingWindowCollection {
           50,
           6,
           0.008,
-          JudgmentTexture.WATERFALL
+          JudgementTexture.WATERFALL
         ),
         new StandardTimingWindow(
           "w4",
@@ -214,7 +214,7 @@ export class TimingWindowCollection {
           100,
           3,
           0.004,
-          JudgmentTexture.WATERFALL
+          JudgementTexture.WATERFALL
         ),
         new StandardTimingWindow(
           "w5",
@@ -223,14 +223,14 @@ export class TimingWindowCollection {
           160,
           0,
           0,
-          JudgmentTexture.WATERFALL
+          JudgementTexture.WATERFALL
         ),
         new StandardMissTimingWindow(
           "Miss",
           0xff3030,
           0,
           -0.1,
-          JudgmentTexture.WATERFALL
+          JudgementTexture.WATERFALL
         ),
         new HoldTimingWindow("Hold", 300, 6, -0.008),
         new HoldTimingWindow("Roll", 350, 6, -0.008),
@@ -254,7 +254,7 @@ export class TimingWindowCollection {
       0xff3030,
       -12,
       -0.1,
-      JudgmentTexture.ITG
+      JudgementTexture.ITG
     )
     this.droppedWindow = new HoldDroppedTimingWindow(0, -0.08)
     this.mineWindow = new MineTimingWindow(71.5, -1, -0.05)
@@ -271,7 +271,7 @@ export class TimingWindowCollection {
   }
 
   /**
-   * Returns the achieved judgment given an error in ms.
+   * Returns the achieved judgement given an error in ms.
    *
    * @param {number} error
    * @return {*}  {StandardTimingWindow}
@@ -287,7 +287,7 @@ export class TimingWindowCollection {
   }
 
   /**
-   * Gets the held judgment in this collection for a given note.
+   * Gets the held judgement in this collection for a given note.
    *
    * @param {HoldNotedataEntry} note
    * @return {*}  {HoldTimingWindow}
@@ -298,48 +298,50 @@ export class TimingWindowCollection {
   }
 
   /**
-   * Gets this miss judgment in this collection.
+   * Gets this miss judgement in this collection.
    *
    * @return {*}  {StandardMissTimingWindow}
    * @memberof TimingWindowCollection
    */
-  getMissJudgment(): StandardMissTimingWindow {
+  getMissJudgement(): StandardMissTimingWindow {
     return this.missWindow
   }
 
   /**
-   * Gets the dropped judgment in this collection.
+   * Gets the dropped judgement in this collection.
    *
    * @return {*}  {HoldDroppedTimingWindow}
    * @memberof TimingWindowCollection
    */
-  getDroppedJudgment(): HoldDroppedTimingWindow {
+  getDroppedJudgement(): HoldDroppedTimingWindow {
     return this.droppedWindow
   }
 
   /**
-   * Gets the mine judgment in this collection.
+   * Gets the mine judgement in this collection.
    *
    * @return {*}  {MineTimingWindow}
    * @memberof TimingWindowCollection
    */
-  getMineJudgment(): MineTimingWindow {
+  getMineJudgement(): MineTimingWindow {
     return this.mineWindow
   }
 
   /**
    * Determines if a note should be hidden.
    *
-   * @param {StandardTimingWindow} judgment
+   * @param {StandardTimingWindow} judgement
    * @return {*}  {boolean}
    * @memberof TimingWindowCollection
    */
-  shouldHideNote(judgment: StandardTimingWindow): boolean {
-    return judgment.id != "miss" && judgment.timingWindowMS <= this.hideLimitMS
+  shouldHideNote(judgement: StandardTimingWindow): boolean {
+    return (
+      judgement.id != "miss" && judgement.timingWindowMS <= this.hideLimitMS
+    )
   }
 
   /**
-   * Returns the maximum MS to get a judgment (non-miss).
+   * Returns the maximum MS to get a judgement (non-miss).
    *
    * @return {*}  {number}
    * @memberof TimingWindowCollection
@@ -349,7 +351,7 @@ export class TimingWindowCollection {
   }
 
   /**
-   * Returns the maximum dance points achievable for one judgment.
+   * Returns the maximum dance points achievable for one judgement.
    *
    * @return {*}  {number}
    * @memberof TimingWindowCollection
@@ -362,7 +364,7 @@ export class TimingWindowCollection {
   }
 
   /**
-   * Returns the maximum dance points achievable for one hold judgment.
+   * Returns the maximum dance points achievable for one hold judgement.
    *
    * @return {*}  {number}
    * @memberof TimingWindowCollection

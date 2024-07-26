@@ -1,7 +1,8 @@
 import { Parser } from "expr-eval"
-import { Container, Sprite, Texture } from "pixi.js"
+import { Sprite, Texture } from "pixi.js"
 import tippy from "tippy.js"
 import { EditMode, EditTimingMode } from "../../chart/ChartManager"
+import { NoteskinSprite } from "../../chart/gameTypes/noteskin/Noteskin"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
@@ -17,7 +18,7 @@ import { WidgetManager } from "./WidgetManager"
 
 interface NoteArrow {
   element: HTMLButtonElement
-  sprite: Container
+  sprite: NoteskinSprite
   bg: Sprite
   highlight: BetterRoundedRect
   type: string
@@ -466,7 +467,7 @@ export class StatusWidget extends Widget {
       this.idleFrames = 5
     })
 
-    EventHandler.on("chartLoaded", () => {
+    EventHandler.on("noteskinLoaded", () => {
       this.stepsContainer.replaceChildren()
       this.noteArrows.forEach(noteArrow => {
         this.removeChild(noteArrow.sprite)
@@ -482,7 +483,7 @@ export class StatusWidget extends Widget {
         .editNoteTypes) {
         const sprite = this.manager.chartManager
           .chartView!.getNotefield()
-          .getNoteSprite({
+          .createNote({
             type,
             beat: 0,
             col: 0,
@@ -491,8 +492,7 @@ export class StatusWidget extends Widget {
             warped: false,
             fake: false,
           })
-        sprite.width = 32
-        sprite.height = 32
+        sprite.scale.set(0.5)
         const bg = new Sprite(Texture.WHITE)
         bg.tint = 0
         bg.alpha = 0.5

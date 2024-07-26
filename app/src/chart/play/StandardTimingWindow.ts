@@ -1,11 +1,11 @@
-import { JudgmentTexture } from "./JudgmentTexture"
+import { JudgementTexture } from "./JudgementTexture"
 import { TimingWindow } from "./TimingWindow"
 
 export class StandardTimingWindow extends TimingWindow {
   id: string
   name: string
   color: number
-  judgmentTexture: JudgmentTexture
+  judgementTexture: JudgementTexture
 
   constructor(
     id: string,
@@ -14,13 +14,13 @@ export class StandardTimingWindow extends TimingWindow {
     timingWindowMS: number,
     dancePoints: number,
     lifeChange: number,
-    judgmentTexture: JudgmentTexture
+    judgementTexture: JudgementTexture
   ) {
     super(timingWindowMS, dancePoints, lifeChange)
     this.id = id
     this.name = name
     this.color = color
-    this.judgmentTexture = judgmentTexture
+    this.judgementTexture = judgementTexture
   }
 }
 
@@ -31,5 +31,5 @@ export const TIMING_WINDOW_AUTOPLAY = new StandardTimingWindow(
   0,
   0,
   0,
-  JudgmentTexture.ITG
+  JudgementTexture.ITG
 )

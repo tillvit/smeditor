@@ -25,6 +25,7 @@ export class DefaultOptions {
     hideFakedArrows: false,
     doSpeedChanges: true,
     drawNoteFlash: true,
+    drawIcons: true,
     receptorYPos: -200,
     maxDrawBeats: 20,
     maxDrawBeatsBack: 10,
@@ -90,6 +91,10 @@ export class DefaultOptions {
       ATTACKS: true,
     } as { [key in TimingEventType]: boolean },
     noteskin: {
+      type: "dance-single",
+      name: "default",
+    },
+    lastNoteskins: {
       "dance-single": "default",
       "dance-double": "default",
       "dance-couple": "default",
@@ -97,6 +102,7 @@ export class DefaultOptions {
       "dance-solodouble": "default",
       "dance-threepanel": "default",
       "dance-threedouble": "default",
+      "pump-single": "default",
     } as Record<string, string>,
   }
   static audio = {
@@ -113,7 +119,7 @@ export class DefaultOptions {
     effectOffset: 0,
     visualOffset: 0,
     hideBarlines: false,
-    judgmentTilt: true,
+    judgementTilt: true,
     timingCollection: "ITG",
     timingWindowScale: 1,
     timingWindowAdd: 0,
@@ -134,6 +140,7 @@ export class DefaultOptions {
     showFPS: false,
     showTimers: false,
     showScroll: false,
+    showNoteskinErrors: false,
   }
   static experimental = {}
 }
