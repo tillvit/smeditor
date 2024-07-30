@@ -5,6 +5,7 @@ import { NotedataEntry } from "../../sm/NoteTypes"
 import missingTexUrl from "../../../../assets/missing.png"
 import { WaterfallManager } from "../../../gui/element/WaterfallManager"
 import { Options } from "../../../util/Options"
+import { VertCropSprite } from "../../../util/VertCropSprite"
 import { StandardMissTimingWindow } from "../../play/StandardMissTimingWindow"
 import { StandardTimingWindow } from "../../play/StandardTimingWindow"
 
@@ -37,19 +38,19 @@ export type NoteskinElements = {
   "Hold Inactive Head": NoteskinSprite
   "Hold Inactive TopCap": NoteskinSprite
   "Hold Inactive Body": NoteskinSprite
-  "Hold Inactive BottomCap": NoteskinSprite
+  "Hold Inactive BottomCap": NoteskinHoldTail
   "Hold Active Head": NoteskinSprite
   "Hold Active TopCap": NoteskinSprite
   "Hold Active Body": NoteskinSprite
-  "Hold Active BottomCap": NoteskinSprite
+  "Hold Active BottomCap": NoteskinHoldTail
   "Roll Inactive Head": NoteskinSprite
   "Roll Inactive TopCap": NoteskinSprite
   "Roll Inactive Body": NoteskinSprite
-  "Roll Inactive BottomCap": NoteskinSprite
+  "Roll Inactive BottomCap": NoteskinHoldTail
   "Roll Active Head": NoteskinSprite
   "Roll Active TopCap": NoteskinSprite
   "Roll Active Body": NoteskinSprite
-  "Roll Active BottomCap": NoteskinSprite
+  "Roll Active BottomCap": NoteskinHoldTail
   Receptor: NoteskinSprite
   NoteFlash: NoteskinSprite
 }
@@ -66,8 +67,11 @@ export type NoteskinElementGenerators = {
     | NoteskinElementRedirect
 }
 
+export type NoteskinMetrics = typeof DEFAULT_METRICS
+
 export interface NoteskinOptions {
   elements: Record<string, Partial<NoteskinElementGenerators>>
+  metrics?: Partial<NoteskinMetrics>
   load?: (
     this: Noteskin,
     element: NoteskinElementOptions,
@@ -81,6 +85,8 @@ export interface NoteskinOptions {
 export interface NoteskinElement {}
 
 export type NoteskinSprite = NoteskinElement & Container
+
+export type NoteskinHoldTail = NoteskinElement & VertCropSprite
 
 export type NoteskinEvent =
   | PressEvent
@@ -185,6 +191,13 @@ type HoldHeldEvent = {
   columnNumber: number
 }
 
+const DEFAULT_METRICS = {
+  HoldBodyTopOffset: 0,
+  HoldBodyBottomOffset: 0,
+  RollBodyTopOffset: 0,
+  RollBodyBottomOffset: 0,
+}
+
 export class Noteskin {
   protected readonly renderer
   protected readonly options
@@ -203,10 +216,16 @@ export class Noteskin {
     }>
   } = {}
 
+  readonly metrics: NoteskinMetrics
+
   constructor(renderer: ChartRenderer, options: NoteskinOptions) {
     this.renderer = renderer
     this.options = options
     this.options.init?.(renderer)
+    this.metrics = {
+      ...DEFAULT_METRICS,
+      ...this.options.metrics,
+    }
   }
 
   update(renderer: ChartRenderer) {

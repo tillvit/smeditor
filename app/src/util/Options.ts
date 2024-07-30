@@ -103,6 +103,10 @@ export class DefaultOptions {
       "dance-threepanel": "default",
       "dance-threedouble": "default",
       "pump-single": "default",
+      "pump-double": "default",
+      "pump-versus": "default",
+      "pump-couple": "default",
+      "pump-halfdouble": "default",
     } as Record<string, string>,
   }
   static audio = {

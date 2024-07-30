@@ -1,7 +1,7 @@
 // SubtractByZero, bundled with Etterna
 // Custom lifts by tillvit
 
-import { AnimatedSprite, Sprite, Texture, TilingSprite } from "pixi.js"
+import { AnimatedSprite, Sprite, Texture } from "pixi.js"
 import { NoteskinOptions } from "../../Noteskin"
 
 import { BezierAnimator } from "../../../../../util/BezierEasing"
@@ -14,6 +14,8 @@ import rollBodyUrl from "./rollBody.png"
 
 import holdBodyUrl from "./holdBody.png"
 
+import { HoldBody } from "../../_template/HoldBody"
+import { HoldTail } from "../../_template/HoldTail"
 import holdHeadUrl from "./holdHead.png"
 import liftUrl from "./lift.png"
 import mineUrl from "./mine.png"
@@ -31,16 +33,6 @@ const liftTex = splitTex(Texture.from(liftUrl), 1, 8, 64, 64)
 
 const holdTex = Texture.from(holdBodyUrl)
 const rollTex = Texture.from(rollBodyUrl)
-
-const holdBody = (tex: Texture) => {
-  const body = new TilingSprite(tex, 64, 0)
-  body.tileScale.x = 1
-  body.tileScale.y = 1
-  body.uvRespectAnchor = true
-  body.anchor.y = 1
-  body.x = -32
-  return body
-}
 
 export default {
   elements: {
@@ -145,20 +137,20 @@ export default {
         return spr
       },
       "Hold Inactive Head": { element: "Tap" },
-      "Hold Active Body": () => holdBody(holdTex),
+      "Hold Active Body": () => new HoldBody(holdTex),
       "Hold Inactive Body": { element: "Hold Active Body" },
       "Hold Active TopCap": () => new Sprite(Texture.EMPTY),
       "Hold Inactive TopCap": () => new Sprite(Texture.EMPTY),
-      "Hold Active BottomCap": () => new Sprite(Texture.EMPTY),
+      "Hold Active BottomCap": () => new HoldTail(Texture.EMPTY),
       "Hold Inactive BottomCap": { element: "Hold Active BottomCap" },
 
       "Roll Active Head": { element: "Hold Active Head" },
       "Roll Inactive Head": { element: "Tap" },
-      "Roll Active Body": () => holdBody(rollTex),
+      "Roll Active Body": () => new HoldBody(rollTex),
       "Roll Inactive Body": { element: "Roll Active Body" },
       "Roll Active TopCap": () => new Sprite(Texture.EMPTY),
       "Roll Inactive TopCap": () => new Sprite(Texture.EMPTY),
-      "Roll Active BottomCap": () => new Sprite(Texture.EMPTY),
+      "Roll Active BottomCap": () => new HoldTail(Texture.EMPTY),
       "Roll Inactive BottomCap": { element: "Roll Active BottomCap" },
     },
   },

@@ -2,30 +2,27 @@ export type Notedata = NotedataEntry[]
 
 export type PartialNotedata = PartialNotedataEntry[]
 
-export const NOTE_TYPES = [
-  "Tap",
-  "Hold",
-  "Roll",
-  "Mine",
-  "Lift",
-  "Fake",
-] as const
-
 export const HOLD_NOTE_TYPES = ["Hold", "Roll"] as const
+export const TAP_NOTE_TYPES = ["Tap", "Mine", "Lift", "Fake"] as const
 
-export type NoteType = (typeof NOTE_TYPES)[number]
+export type NoteType = TapNoteType | HoldNoteType
 export type HoldNoteType = (typeof HOLD_NOTE_TYPES)[number]
+export type TapNoteType = (typeof TAP_NOTE_TYPES)[number]
 
-export interface PartialTapNotedataEntry {
+export interface PartialBaseNotedata {
   beat: number
   col: number
-  type: NoteType
   notemods?: string
   keysounds?: string
 }
 
-export interface PartialHoldNotedataEntry extends PartialTapNotedataEntry {
+export interface PartialTapNotedataEntry extends PartialBaseNotedata {
+  type: TapNoteType
+}
+
+export interface PartialHoldNotedataEntry extends PartialBaseNotedata {
   hold: number
+  type: HoldNoteType
 }
 
 export type PartialNotedataEntry =

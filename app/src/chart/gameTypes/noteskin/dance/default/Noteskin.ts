@@ -1,7 +1,7 @@
 // Peters-Cel by Pete-Lawrence https://github.com/Pete-Lawrence/Peters-Noteskins/
 // Custom lifts and color modifications by tillvit
 
-import { BLEND_MODES, Container, Sprite, Texture, TilingSprite } from "pixi.js"
+import { BLEND_MODES, Container, Sprite, Texture } from "pixi.js"
 import { NoteskinOptions } from "../../Noteskin"
 
 import { ModelRenderer } from "./ModelRenderer"
@@ -18,6 +18,8 @@ import holdTopCapInactiveUrl from "./hold/topCapInactive.png"
 import { BezierAnimator } from "../../../../../util/BezierEasing"
 import { rgbtoHex } from "../../../../../util/Color"
 import { clamp } from "../../../../../util/Math"
+import { HoldBody } from "../../_template/HoldBody"
+import { HoldTail } from "../../_template/HoldTail"
 import rollBodyActiveUrl from "./roll/bodyActive.png"
 import rollBodyInactiveUrl from "./roll/bodyInactive.png"
 import rollBottomCapActiveUrl from "./roll/bottomCapActive.png"
@@ -76,24 +78,6 @@ const toRotate = [
   "Roll Active Head",
   "NoteFlash",
 ]
-
-const holdBody = (tex: Texture) => {
-  const body = new TilingSprite(tex, 64, 0)
-  body.tileScale.x = 0.5
-  body.tileScale.y = 0.5
-  body.uvRespectAnchor = true
-  body.anchor.y = 1
-  body.x = -32
-  return body
-}
-
-const holdCap = (tex: Texture) => {
-  const cap = new Sprite(tex)
-  cap.width = 64
-  cap.height = 32
-  cap.anchor.x = 0.5
-  return cap
-}
 
 export default {
   elements: {
@@ -163,21 +147,25 @@ export default {
       Mine: { element: "Tap" },
       "Hold Active Head": { element: "Tap" },
       "Hold Inactive Head": { element: "Tap" },
-      "Hold Active Body": () => holdBody(holdTex.hold.active.body),
-      "Hold Inactive Body": () => holdBody(holdTex.hold.inactive.body),
+      "Hold Active Body": () => new HoldBody(holdTex.hold.active.body),
+      "Hold Inactive Body": () => new HoldBody(holdTex.hold.inactive.body),
       "Hold Active TopCap": () => new Sprite(Texture.EMPTY),
       "Hold Inactive TopCap": () => new Sprite(Texture.EMPTY),
-      "Hold Active BottomCap": () => holdCap(holdTex.hold.active.bottomCap),
-      "Hold Inactive BottomCap": () => holdCap(holdTex.hold.inactive.bottomCap),
+      "Hold Active BottomCap": () =>
+        new HoldTail(holdTex.hold.active.bottomCap),
+      "Hold Inactive BottomCap": () =>
+        new HoldTail(holdTex.hold.inactive.bottomCap),
 
       "Roll Active Head": { element: "Tap" },
       "Roll Inactive Head": { element: "Tap" },
-      "Roll Active Body": () => holdBody(holdTex.roll.active.body),
-      "Roll Inactive Body": () => holdBody(holdTex.roll.inactive.body),
+      "Roll Active Body": () => new HoldBody(holdTex.roll.active.body),
+      "Roll Inactive Body": () => new HoldBody(holdTex.roll.inactive.body),
       "Roll Active TopCap": () => new Sprite(Texture.EMPTY),
       "Roll Inactive TopCap": () => new Sprite(Texture.EMPTY),
-      "Roll Active BottomCap": () => holdCap(holdTex.roll.active.bottomCap),
-      "Roll Inactive BottomCap": () => holdCap(holdTex.roll.inactive.bottomCap),
+      "Roll Active BottomCap": () =>
+        new HoldTail(holdTex.roll.active.bottomCap),
+      "Roll Inactive BottomCap": () =>
+        new HoldTail(holdTex.roll.inactive.bottomCap),
     },
   },
   load: function (element, options) {

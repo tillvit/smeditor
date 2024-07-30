@@ -6,9 +6,12 @@ import { Options } from "../../../util/Options"
 import { EditMode, EditTimingMode } from "../../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import {
+  MISSING_TEX,
   Noteskin,
   NoteskinElementCreationOptions,
   NoteskinElementOptions,
+  NoteskinElements,
+  NoteskinHoldTail,
   NoteskinOptions,
   NoteskinSprite,
 } from "../../gameTypes/noteskin/Noteskin"
@@ -21,7 +24,11 @@ import {
   isStandardMissTimingWindow,
   isStandardTimingWindow,
 } from "../../play/TimingWindowCollection"
-import { NotedataEntry, PartialNotedataEntry } from "../../sm/NoteTypes"
+import {
+  HoldNotedataEntry,
+  NotedataEntry,
+  TapNotedataEntry,
+} from "../../sm/NoteTypes"
 import { HoldJudgementContainer } from "./HoldJudgementContainer"
 import { NoteContainer } from "./NoteContainer"
 import { NoteFlashContainer } from "./NoteFlashContainer"
@@ -30,6 +37,7 @@ import { SelectionNoteContainer } from "./SelectionNoteContainer"
 
 import fakeIcon from "../../../../assets/icon/fake.png"
 import liftIcon from "../../../../assets/icon/lift.png"
+import { HoldTail } from "../../gameTypes/noteskin/_template/HoldTail"
 
 const ICONS: Record<string, Texture> = {
   Fake: Texture.from(fakeIcon),
@@ -41,86 +49,124 @@ export type NotefieldObject = NoteObject | HoldObject
 export class NoteWrapper extends Container {
   object: NotefieldObject
   icon
-  constructor(
-    object: NotefieldObject,
-    note: PartialNotedataEntry,
-    notefield: Notefield
-  ) {
+  constructor(object: NotefieldObject) {
     super()
     this.object = object
 
-    this.icon = new Sprite(ICONS[note.type])
+    this.icon = new Sprite(ICONS[object.note.type])
     this.icon.anchor.set(0.5)
     this.icon.scale.set(0.3)
     this.icon.alpha = 0.8
 
     this.addChild(object, this.icon)
 
-    notefield.noteskin?.onUpdate(this, cr => {
+    object.nf.noteskin?.onUpdate(this, cr => {
       if (!Options.chart.drawIcons) {
         this.icon.visible = false
         return
       }
-      if (notefield.noteskinOptions?.hideIcons?.includes(note.type)) {
+      if (object.nf.noteskinOptions?.hideIcons?.includes(object.note.type)) {
         this.icon.visible = false
         return
       }
       this.icon.visible = true
-      if (note.type == "Fake") {
+      if (object.note.type == "Fake") {
         this.icon.visible = cr.chartManager.getMode() != EditMode.Play
       }
     })
   }
 }
 
-export interface NoteObject extends Container {
-  type: "note"
+export class NoteObject extends Container {
+  type = "note"
+  note: NotedataEntry
+  readonly nf: Notefield
+
+  constructor(notefield: Notefield, note: TapNotedataEntry) {
+    super()
+    this.note = note
+    this.nf = notefield
+    const element = this.nf.noteskin!.getElement(
+      {
+        element: note.type,
+        columnName: this.nf.getColumnName(note.col),
+        columnNumber: note.col,
+      },
+      { note }
+    )
+    this.addChild(element)
+  }
 }
 
-interface HoldObjectOptions {
+interface HoldElements {
   Active: {
     Body: NoteskinSprite
     TopCap: NoteskinSprite
-    BottomCap: NoteskinSprite
+    BottomCap: NoteskinHoldTail
     Head: NoteskinSprite
   }
   Inactive: {
     Body: NoteskinSprite
     TopCap: NoteskinSprite
-    BottomCap: NoteskinSprite
+    BottomCap: NoteskinHoldTail
     Head: NoteskinSprite
   }
 }
 
+function isHoldTail(tail: NoteskinSprite): tail is NoteskinHoldTail {
+  return (tail as any).cropTop !== undefined
+}
+
 export class HoldObject extends Container {
   type = "hold"
+
+  note: HoldNotedataEntry
 
   private active
   private inactive
 
   private wasActive = false
 
-  private options
+  private elements!: HoldElements
 
-  constructor(options: HoldObjectOptions) {
+  private readonly metrics
+  private readonly ns
+  readonly nf
+
+  constructor(notefield: Notefield, note: HoldNotedataEntry) {
     super()
     const active = new Container()
     const inactive = new Container()
 
-    active.addChild(
-      options.Active.BottomCap,
-      options.Active.Body,
-      options.Active.TopCap,
-      options.Active.Head
-    )
-    inactive.addChild(
-      options.Inactive.BottomCap,
-      options.Inactive.Body,
-      options.Inactive.TopCap,
-      options.Inactive.Head
-    )
-
-    this.options = options
+    this.note = note
+    this.ns = notefield.noteskin!
+    this.nf = notefield
+    this.metrics = this.ns.metrics
+    ;(this.elements as any) = {}
+    for (const state of ["Active", "Inactive"] as const) {
+      ;(this.elements[state] as any) = {}
+      for (const part of ["BottomCap", "Body", "TopCap", "Head"] as const) {
+        const element = this.getNoteskinElement(`${state} ${part}`)
+        if (part == "BottomCap") {
+          if (isHoldTail(element)) {
+            this.elements[state][part] = element
+          } else {
+            if (Options.debug.showNoteskinErrors) {
+              WaterfallManager.createFormatted(
+                `Noteskin Error: invalid tail found for ${state} ${part}!`,
+                "error"
+              )
+            }
+            this.elements[state][part] = new HoldTail(MISSING_TEX, 64)
+          }
+        } else {
+          this.elements[state][part] = element
+        }
+        ;(state == "Active" ? active : inactive).addChild(
+          this.elements[state][part]
+        )
+      }
+    }
 
     active.visible = false
 
@@ -128,6 +174,17 @@ export class HoldObject extends Container {
     this.inactive = inactive
 
     this.addChild(inactive, active)
+  }
+
+  getNoteskinElement(element: string) {
+    return this.ns.getElement(
+      {
+        element: `${this.note.type} ${element}` as keyof NoteskinElements,
+        columnName: this.nf.getColumnName(this.note.col),
+        columnNumber: this.note.col,
+      },
+      { note: this.note }
+    )
   }
 
   setActive(active: boolean) {
@@ -143,8 +200,8 @@ export class HoldObject extends Container {
     const items = ["Body", "TopCap", "BottomCap"] as const
     for (const state of states) {
       for (const item of items) {
-        if ("tint" in this.options[state][item]) {
-          ;(this.options[state][item] as Sprite).tint = rgbtoHex(
+        if ("tint" in this.elements[state][item]) {
+          ;(this.elements[state][item] as Sprite).tint = rgbtoHex(
             brightness * 255,
             brightness * 255,
             brightness * 255
@@ -156,14 +213,44 @@ export class HoldObject extends Container {
 
   setLength(length: number) {
     const states = ["Active", "Inactive"] as const
+    const sign = Math.sign(length)
+    const absLength = Math.abs(length)
     for (const state of states) {
-      this.options[state].Body.height = length
-      this.options[state].Body.y = length
-      this.options[state].BottomCap.y = length
-      const bottomCapScale = Math.abs(this.options[state].BottomCap.scale.y)
+      this.elements[state].Body.height = Math.max(
+        0,
+        absLength +
+          this.metrics[`${this.note.type}BodyBottomOffset`] -
+          this.metrics[`${this.note.type}BodyTopOffset`]
+      )
+      this.elements[state].Body.y =
+        absLength + this.metrics[`${this.note.type}BodyBottomOffset`]
 
-      this.options[state].BottomCap.scale.y =
+      this.elements[state].BottomCap.y =
+        absLength + this.metrics[`${this.note.type}BodyBottomOffset`]
+
+      if (this.elements[state].BottomCap.y < 0) {
+        this.elements[state].BottomCap.cropTop(
+          -this.elements[state].BottomCap.y
+        )
+        if (length < 0) {
+          this.elements[state].BottomCap.y -=
+            this.elements[state].BottomCap.y /
+            Math.abs(this.elements[state].BottomCap.scale.y)
+        }
+      } else {
+        this.elements[state].BottomCap.cropTop(0)
+      }
+
+      this.elements[state].TopCap.y =
+        absLength + this.metrics[`${this.note.type}BodyTopOffset`]
+      const bottomCapScale = Math.abs(this.elements[state].BottomCap.scale.y)
+      this.elements[state].BottomCap.scale.y =
         length < 0 ? -bottomCapScale : bottomCapScale
+
+      this.elements[state].Body.height *= sign
+      this.elements[state].Body.y *= sign
+      this.elements[state].BottomCap.y *= sign
+      this.elements[state].TopCap.y *= sign
     }
   }
 }
@@ -418,7 +505,16 @@ export class Notefield extends Container implements ChartRendererComponent {
     if (this.noteskin === undefined) {
       const a = new Container() as NoteObject
       a.type = "note"
-      return new NoteWrapper(a, { beat: 0, type: "Tap", col: 0 }, this)
+      a.note = {
+        beat: 0,
+        type: "Tap",
+        col: 0,
+        warped: false,
+        fake: false,
+        second: 0,
+        quant: 4,
+      }
+      return new NoteWrapper(a)
     }
     const ns = this.noteskin
     const col = this.getColumnName(note.col)
@@ -428,89 +524,11 @@ export class Notefield extends Container implements ChartRendererComponent {
       case "Lift":
       case "Fake":
       case "Mine": {
-        const element = ns.getElement(
-          { element: note.type, columnName: col, columnNumber: note.col },
-          opts
-        ) as NotefieldObject
-        element.type = "note"
-        return new NoteWrapper(element, note, this)
+        return new NoteWrapper(new NoteObject(this, note))
       }
       case "Hold":
       case "Roll": {
-        return new NoteWrapper(
-          new HoldObject({
-            Active: {
-              Body: ns.getElement(
-                {
-                  element: `${note.type} Active Body`,
-                  columnName: col,
-                  columnNumber: note.col,
-                },
-                opts
-              ),
-              TopCap: ns.getElement(
-                {
-                  element: `${note.type} Active TopCap`,
-                  columnName: col,
-                  columnNumber: note.col,
-                },
-                opts
-              ),
-              BottomCap: ns.getElement(
-                {
-                  element: `${note.type} Active BottomCap`,
-                  columnName: col,
-                  columnNumber: note.col,
-                },
-                opts
-              ),
-              Head: ns.getElement(
-                {
-                  element: `${note.type} Active Head`,
-                  columnName: col,
-                  columnNumber: note.col,
-                },
-                opts
-              ),
-            },
-            Inactive: {
-              Body: ns.getElement(
-                {
-                  element: `${note.type} Inactive Body`,
-                  columnName: col,
-                  columnNumber: note.col,
-                },
-                opts
-              ),
-              TopCap: ns.getElement(
-                {
-                  element: `${note.type} Inactive TopCap`,
-                  columnName: col,
-                  columnNumber: note.col,
-                },
-                opts
-              ),
-              BottomCap: ns.getElement(
-                {
-                  element: `${note.type} Inactive BottomCap`,
-                  columnName: col,
-                  columnNumber: note.col,
-                },
-                opts
-              ),
-              Head: ns.getElement(
-                {
-                  element: `${note.type} Inactive Head`,
-                  columnName: col,
-                  columnNumber: note.col,
-                },
-                opts
-              ),
-            },
-          }),
-          note,
-          this
-        )
+        return new NoteWrapper(new HoldObject(this, note))
       }
     }
   }

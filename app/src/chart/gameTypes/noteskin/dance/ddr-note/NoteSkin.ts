@@ -1,6 +1,6 @@
 // Peters-DDR-Note by Pete-Lawrence https://github.com/Pete-Lawrence/Peters-Noteskins/
 
-import { AnimatedSprite, Sprite, Texture, TilingSprite } from "pixi.js"
+import { AnimatedSprite, Sprite, Texture } from "pixi.js"
 import { NoteskinOptions } from "../../Noteskin"
 
 import { ModelRenderer } from "./ModelRenderer"
@@ -9,6 +9,8 @@ import receptorUrl from "./receptor.png"
 
 import { BezierAnimator } from "../../../../../util/BezierEasing"
 import { splitTex } from "../../../../../util/Util"
+import { HoldBody } from "../../_template/HoldBody"
+import { HoldTail } from "../../_template/HoldTail"
 
 const receptorTex = Texture.from(receptorUrl)
 
@@ -62,24 +64,6 @@ const toRotate = [
   "NoteFlash",
 ]
 
-const holdBody = (tex: Texture) => {
-  const body = new TilingSprite(tex, 64, 0)
-  body.tileScale.x = 0.5
-  body.tileScale.y = 0.5
-  body.uvRespectAnchor = true
-  body.anchor.y = 1
-  body.x = -32
-  return body
-}
-
-const holdCap = (tex: Texture) => {
-  const cap = new Sprite(tex)
-  cap.width = 64
-  cap.height = 64
-  cap.anchor.x = 0.5
-  return cap
-}
-
 export default {
   elements: {
     Left: {
@@ -132,24 +116,25 @@ export default {
       Mine: { element: "Tap" },
       "Hold Active Head": { element: "Tap" },
       "Hold Inactive Head": { element: "Tap" },
-      "Hold Active Body": opt => holdBody(holdTex[opt.columnName].Active.Body),
+      "Hold Active Body": opt =>
+        new HoldBody(holdTex[opt.columnName].Active.Body),
       "Hold Inactive Body": opt =>
-        holdBody(holdTex[opt.columnName].Inactive.Body),
+        new HoldBody(holdTex[opt.columnName].Inactive.Body),
       "Hold Active TopCap": () => new Sprite(Texture.EMPTY),
       "Hold Inactive TopCap": () => new Sprite(Texture.EMPTY),
       "Hold Active BottomCap": opt =>
-        holdCap(holdTex[opt.columnName].Active.BottomCap),
+        new HoldTail(holdTex[opt.columnName].Active.BottomCap),
       "Hold Inactive BottomCap": opt =>
-        holdCap(holdTex[opt.columnName].Inactive.BottomCap),
+        new HoldTail(holdTex[opt.columnName].Inactive.BottomCap),
 
       "Roll Active Head": { element: "Tap" },
       "Roll Inactive Head": { element: "Tap" },
-      "Roll Active Body": () => holdBody(rollTex.Active.body),
-      "Roll Inactive Body": () => holdBody(rollTex.Inactive.body),
+      "Roll Active Body": () => new HoldBody(rollTex.Active.body),
+      "Roll Inactive Body": () => new HoldBody(rollTex.Inactive.body),
       "Roll Active TopCap": () => new Sprite(Texture.EMPTY),
       "Roll Inactive TopCap": () => new Sprite(Texture.EMPTY),
-      "Roll Active BottomCap": () => holdCap(rollTex.Active.bottomCap),
-      "Roll Inactive BottomCap": () => holdCap(rollTex.Inactive.bottomCap),
+      "Roll Active BottomCap": () => new HoldTail(rollTex.Active.bottomCap),
+      "Roll Inactive BottomCap": () => new HoldTail(rollTex.Inactive.bottomCap),
     },
   },
   load: function (element, options) {
@@ -169,6 +154,10 @@ export default {
   },
   update(renderer) {
     ModelRenderer.setArrowTexTime(renderer.chartManager.app)
+  },
+  metrics: {
+    HoldBodyBottomOffset: -32,
+    RollBodyBottomOffset: -32,
   },
   hideIcons: ["Lift"],
 } satisfies NoteskinOptions
