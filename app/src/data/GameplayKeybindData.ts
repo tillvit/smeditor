@@ -210,23 +210,175 @@ export const GAMEPLAY_KEYBINDS: { [key: string]: GameplayKeybind[] } = {
   "pump-single": [
     {
       label: "DownLeft",
-      keys: [],
+      keys: ["Z"],
     },
     {
       label: "UpLeft",
-      keys: [],
+      keys: ["Q"],
     },
     {
       label: "Center",
-      keys: [],
+      keys: ["S"],
     },
     {
       label: "UpRight",
-      keys: [],
+      keys: ["R"],
     },
     {
       label: "DownRight",
-      keys: [],
+      keys: ["C"],
+    },
+  ],
+  "pump-double": [
+    {
+      label: "P1 DownLeft",
+      keys: ["Z"],
+    },
+    {
+      label: "P1 UpLeft",
+      keys: ["Q"],
+    },
+    {
+      label: "P1 Center",
+      keys: ["S"],
+    },
+    {
+      label: "P1 UpRight",
+      keys: ["R"],
+    },
+    {
+      label: "P1 DownRight",
+      keys: ["C"],
+    },
+    {
+      label: "P2 DownLeft",
+      keys: ["V"],
+    },
+    {
+      label: "P2 UpLeft",
+      keys: ["R"],
+    },
+    {
+      label: "P2 Center",
+      keys: ["G"],
+    },
+    {
+      label: "P2 UpRight",
+      keys: ["Y"],
+    },
+    {
+      label: "P2 DownRight",
+      keys: ["N"],
+    },
+  ],
+  "pump-versus": [
+    {
+      label: "P1 DownLeft",
+      keys: ["Z"],
+    },
+    {
+      label: "P1 UpLeft",
+      keys: ["Q"],
+    },
+    {
+      label: "P1 Center",
+      keys: ["S"],
+    },
+    {
+      label: "P1 UpRight",
+      keys: ["R"],
+    },
+    {
+      label: "P1 DownRight",
+      keys: ["C"],
+    },
+    {
+      label: "P2 DownLeft",
+      keys: ["V"],
+    },
+    {
+      label: "P2 UpLeft",
+      keys: ["R"],
+    },
+    {
+      label: "P2 Center",
+      keys: ["G"],
+    },
+    {
+      label: "P2 UpRight",
+      keys: ["Y"],
+    },
+    {
+      label: "P2 DownRight",
+      keys: ["N"],
+    },
+  ],
+  "pump-couple": [
+    {
+      label: "P1 DownLeft",
+      keys: ["Z"],
+    },
+    {
+      label: "P1 UpLeft",
+      keys: ["Q"],
+    },
+    {
+      label: "P1 Center",
+      keys: ["S"],
+    },
+    {
+      label: "P1 UpRight",
+      keys: ["R"],
+    },
+    {
+      label: "P1 DownRight",
+      keys: ["C"],
+    },
+    {
+      label: "P2 DownLeft",
+      keys: ["V"],
+    },
+    {
+      label: "P2 UpLeft",
+      keys: ["R"],
+    },
+    {
+      label: "P2 Center",
+      keys: ["G"],
+    },
+    {
+      label: "P2 UpRight",
+      keys: ["Y"],
+    },
+    {
+      label: "P2 DownRight",
+      keys: ["N"],
+    },
+  ],
+  "pump-halfdouble": [
+    {
+      label: "P1 Center",
+      keys: ["S"],
+    },
+    {
+      label: "P1 UpRight",
+      keys: ["R"],
+    },
+    {
+      label: "P1 DownRight",
+      keys: ["C"],
+    },
+    {
+      label: "P2 DownLeft",
+      keys: ["V"],
+    },
+    {
+      label: "P2 UpLeft",
+      keys: ["R"],
+    },
+    {
+      label: "P2 Center",
+      keys: ["G"],
     },
   ],
 }
