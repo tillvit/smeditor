@@ -12,6 +12,8 @@ import "tippy.js/animations/scale-subtle.css"
 import "tippy.js/dist/tippy.css"
 import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
+import { GameTypeRegistry } from "./chart/gameTypes/GameTypeRegistry"
+import { NoteskinRegistry } from "./chart/gameTypes/noteskin/NoteskinRegistry"
 import { Chart } from "./chart/sm/Chart"
 import { ContextMenuPopup } from "./gui/element/ContextMenu"
 import { MenubarManager } from "./gui/element/MenubarManager"
@@ -37,6 +39,8 @@ declare global {
   interface Window {
     app: App
     Parity?: ParityGenerator
+    GameTypeRegistry: GameTypeRegistry
+    NoteskinRegistry: NoteskinRegistry
   }
   interface File {
     path?: string
@@ -59,6 +63,7 @@ interface Version {
 }
 
 export class App {
+  options = Options
   renderer: Renderer
   ticker: Ticker
   stage: Container
@@ -442,5 +447,7 @@ function init() {
     </div>`
   } else {
     window.app = new App()
+    window.GameTypeRegistry = GameTypeRegistry
+    window.NoteskinRegistry = NoteskinRegistry
   }
 }

@@ -83,11 +83,13 @@ usually work well, but these can be tweaked for specific situations.
 ### Onsets
 
 **FFT Step**
+
 The FFT step represents the amount of audio to analyze around a block.
 A higher value results in a more frequency-accurate, but a less time-accurate spectrogram.
 Additionally, a higher value will take longer to analyze.
 
 **Window Step**
+
 The window step changes the number of blocks per second of audio.
 A lower value results in more time-accurate spectrograms,
 but may take more time and mess up tempo analysis. This value must be less than **FFT Step**.
@@ -95,11 +97,13 @@ but may take more time and mess up tempo analysis. This value must be less than 
 ### Tempogram
 
 **FFT Step**
+
 The FFT step represents the amount of the onset graph to analyze around a block.
 A higher value results in more accurate tempos, but less accurate timings.
 Additionally, a higher value will take longer to analyze.
 
 **Window Step**
+
 The window step changes the number of blocks per second of audio.
 A lower value results in more time-accurate tempograms,
 but may take more time. This value must be less than **FFT Step**.

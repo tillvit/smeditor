@@ -103,6 +103,8 @@ function stutterStops(beat, length, factor = 2) {
 ```
 <video controls="controls" src="./assets/scripting/stutter-stops.mp4"/>
 
+---
+
 Using **SCROLLS**
 
 This does not introduce any timing issues.
@@ -231,6 +233,9 @@ class Simfile {
 addChart(chart: Chart): void
 ```
 Adds a new chart to the simfile.
+
+---
+
 ```ts
 removeChart(chart: Chart): boolean
 ```
@@ -273,11 +278,15 @@ addNote(note: PartialNotedataEntry, callListeners = true): NotedataEntry
 Adds a note to the current chart. Returns the computed note. If callListeners is
 off, will not trigger any post editing effects, such as computing note count stats.
 
+---
+
 ```ts
 addNotes(notes: PartialNotedataEntry[], callListeners = true): NotedataEntry[]
 ```
 Adds notes to the current chart. Returns all the computed notes. If callListeners is
 off, will not trigger any post editing effects, such as computing note count stats.
+
+---
 
 ```ts
 removeNote(note: PartialNotedataEntry, callListeners = true): NotedataEntry | undefined
@@ -286,6 +295,8 @@ Removes a note in the current notedata. Returns the computed removed note
 if it exists. If callListeners is
 off, will not trigger any post editing effects, such as computing note count stats.
 
+---
+
 ```ts
 removeNotes(notes: PartialNotedataEntry[], callListeners = true): NotedataEntry[]
 ```
@@ -293,17 +304,22 @@ Removes notes in the current notedata. Returns all computed removed note
 if they exist. If callListeners is
 off, will not trigger any post editing effects, such as computing note count stats.
 
+---
+
 ```ts
 setNotedata(notedata: Notedata): void
 ```
 Replaces the current notedata with a new one.
 
+---
 
 ```ts
 modifyNote(note: PartialNotedataEntry, properties: Partial<NotedataEntry>, callListeners = true): NotedataEntry
 ```
 Modifies a note by replacing its properties with a new set of properties. If callListeners is
 off, will not trigger any post editing effects, such as computing note count stats.
+
+---
 
 ```ts
 computeNote(note: PartialNotedataEntry): NotedataEntry
@@ -477,6 +493,8 @@ getTimingData(types?: TimingEventType[]): Cached<TimingEvent>[]
 
 Returns all events with the given type names. If no types are given, returns all timing events.
 
+---
+
 ```ts
 getEventAtBeat(
   type: TimingEventType,
@@ -491,17 +509,23 @@ is enabled.
 
 For instant events, only returns an event if there is an event on the exact beat specified.
 
+---
+
 ```ts
 setOffset(offset: number): void
 ```
 
 Sets the offset for this timing data. When used on a `ChartTimingData`, sets the chart-specific offset.
 
+---
+
 ```ts
 getBeatFromSeconds(seconds: number): number
 ```
 
 Returns the beat corresponding to the given second.
+
+---
 
 ```ts
 getSecondsFromBeat(
@@ -516,30 +540,42 @@ Options:
 - before: get the second before STOPS/DELAYS
 - after: get the second after STOPS/DELAYS
 
+---
+
 ```ts
 isBeatWarped(beat: number): boolean
 ```
 Returns true if the beat given is in a warped section.
+
+---
 
 ```ts
 isBeatFaked(beat: number): boolean
 ```
 Returns true if the beat given is in a faked section.
 
+---
+
 ```ts
 getMeasure(beat: number): number
 ```
 Returns the measure number at the given beat.
+
+---
 
 ```ts
 getDivisionLength(beat: number): number
 ```
 Returns the division length at the given beat. In x/**4**, the division length is 1, while in x/**8**, it is 0.5.
 
+---
+
 ```ts
 getMeasureLength(beat: number): number
 ```
 Returns the length of a measure at the given beat.
+
+---
 
 ```ts
 getBeatOfMeasure(measure: number): number
@@ -547,10 +583,14 @@ getBeatOfMeasure(measure: number): number
 Returns the beat number of the current measure. For example, if the time signature was 4/4, beat 5 would return 1,
 since it is the second beat (0-indexed) of measure 1.
 
+---
+
 ```ts
 getBeatFromMeasure(measure: number): number
 ```
 Returns the beat at the given measure number.
+
+---
 
 ```ts
 getDivisionOfMeasure(measure: number): number
@@ -558,10 +598,14 @@ getDivisionOfMeasure(measure: number): number
 Returns the division number of the current measure. For example, if the time signature was 6/8, beat 1 would return 2,
 since it is the third division (0-indexed) of measure 0 (beat 0, beat 0.5, beat 1).
 
+---
+
 ```ts
 getEffectiveBeat(beat: number): number
 ```
 Returns the effective beat at the given beat. The effective beat is what is used when calculating **SCROLLS**.
+
+---
 
 ```ts
 getBeatFromEffectiveBeat(effBeat: number): number
@@ -569,10 +613,14 @@ getBeatFromEffectiveBeat(effBeat: number): number
 Returns the beat at the given effective beat. This method may not work when dealing with negative **SCROLLS**
 since there can be two beats with the same effective beat.
 
+---
+
 ```ts
 getSpeedMult(beat: number, seconds: number): number
 ```
 Returns the speed multiplier at the given beat and second. The speed multiplier is affected by **SPEEDS**.
+
+---
 
 ```ts
 reloadCache(types: TimingType[] = []): number
@@ -592,6 +640,8 @@ getColumn(type: TimingEventType): TimingColumn
 Returns the timing column with the given type. If there is no chart-specific timing column, will return the
 simfile-specific timing column instead.
 
+---
+
 ```ts
 insert(events: TimingEvent[]): void
 ```
@@ -599,6 +649,7 @@ insert(events: TimingEvent[]): void
 Inserts the given timing events into the timing data. If an event has `isChartTiming` set to true, it will be
 added to the corresponding chart-specific timing column and the column will be used.
 
+---
 
 ```ts
 modify(events: [TimingEvent, TimingEvent][]): void
@@ -606,6 +657,7 @@ modify(events: [TimingEvent, TimingEvent][]): void
 
 For each pair of events, replaces the first timing event with the second one.
 
+---
 
 ```ts
 delete(events: TimingEvent[]): void
@@ -613,11 +665,15 @@ delete(events: TimingEvent[]): void
 
 Deletes the given timing events.
 
+---
+
 ```ts
 getOffset(): number
 ```
 
 Returns the chart offset, if there is one. Otherwise, returns the simfile offset.
+
+---
 
 ```ts
 usesChartTiming(): boolean
@@ -625,11 +681,15 @@ usesChartTiming(): boolean
 
 Returns true if chart-specific timing data is present.
 
+---
+
 ```ts
 hasChartOffset(): boolean
 ```
 
 Returns true if chart-specific offset is used.
+
+---
 
 ```ts
 isPropertyChartSpecific(type: TimingEventType): boolean
@@ -645,12 +705,15 @@ getColumn(type: TimingEventType): TimingColumn
 
 Returns the timing column with the given type.
 
+---
+
 ```ts
 insert(events: TimingEvent[]): void
 ```
 
 Inserts the given timing events into the timing data.
 
+---
 
 ```ts
 modify(events: [TimingEvent, TimingEvent][]): void
@@ -658,12 +721,15 @@ modify(events: [TimingEvent, TimingEvent][]): void
 
 For each pair of events, replaces the first timing event with the second one.
 
+---
 
 ```ts
 delete(events: TimingEvent[]): void
 ```
 
 Deletes the given timing events.
+
+---
 
 ```ts
 getOffset(): number

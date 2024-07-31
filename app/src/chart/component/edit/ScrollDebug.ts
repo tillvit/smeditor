@@ -219,17 +219,17 @@ export class ScrollDebug extends Container implements ChartRendererComponent {
       this.renderer.getVisualBeat() + Options.chart.maxDrawBeats
     )
     this.topScreenBeat.y = this.renderer.getYPosFromBeat(
-      this.renderer.getEarliestOnScreenBeat()
+      this.renderer.getTopOnScreenBeat()
     )
     this.bottomScreenBeat.y = this.renderer.getYPosFromBeat(
-      this.renderer.getLastOnScreenBeat()
+      this.renderer.getBottomOnScreenBeat()
     )
     this.topScreenBeatText.y = this.topScreenBeat.y
     this.topScreenBeatText.text =
-      roundDigit(this.renderer.getEarliestOnScreenBeat(), 3) + ""
+      roundDigit(this.renderer.getTopOnScreenBeat(), 3) + ""
     this.bottomScreenBeatText.y = this.bottomScreenBeat.y
     this.bottomScreenBeatText.text =
-      roundDigit(this.renderer.getLastOnScreenBeat(), 3) + ""
+      roundDigit(this.renderer.getBottomOnScreenBeat(), 3) + ""
   }
 
   inBounds(y: number) {

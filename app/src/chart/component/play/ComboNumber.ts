@@ -31,7 +31,7 @@ export class ComboNumber extends BitmapText implements ChartRendererComponent {
     if (gameStats.getCombo() == 0) {
       this.tint = TimingWindowCollection.getCollection(
         Options.play.timingCollection
-      ).getMissJudgment().color
+      ).getMissJudgement().color
     } else if (gameStats.getBestJudge()) {
       this.tint = lighten(
         gameStats.getBestJudge()!.color,

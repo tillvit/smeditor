@@ -103,7 +103,8 @@ export class ErrorBarContainer
     else this.currentMedian.x = this.target
   }
 
-  addBar(error: number, judge: TimingWindow) {
+  addBar(error: number | null, judge: TimingWindow) {
+    if (error == null) return
     if (!isStandardMissTimingWindow(judge) && !isStandardTimingWindow(judge))
       return
     const bar = new Sprite(Texture.WHITE) as ErrorBar

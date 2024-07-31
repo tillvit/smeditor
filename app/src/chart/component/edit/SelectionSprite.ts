@@ -12,6 +12,7 @@ export class SelectionBoundary
     this.renderer = renderer
     this.visible = false
     this.alpha = 0.2
+    this.eventMode = "none"
   }
   update() {
     const bounds = this.renderer.getSelectionBounds()

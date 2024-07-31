@@ -83,9 +83,7 @@
       "@typescript-eslint"
     ],
     "ignorePatterns": [
-      "vite.config.js",
-      "nwbuild.js",
-      "nwrun.js"
+      "*.js"
     ],
     "rules": {
       "require-await": "off",

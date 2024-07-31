@@ -20,7 +20,7 @@ import { Waveform } from "./component/edit/Waveform"
 import { Notefield } from "./component/notefield/Notefield"
 import { ComboNumber } from "./component/play/ComboNumber"
 import { ErrorBarContainer } from "./component/play/ErrorBarContainer"
-import { JudgmentSprite } from "./component/play/JudgmentSprite"
+import { JudgementSprite } from "./component/play/JudgementSprite"
 import { SelectionTimingEventContainer } from "./component/timing/SelectionTimingEventContainer"
 import { TimingAreaContainer } from "./component/timing/TimingAreaContainer"
 import { TimingTrackContainer } from "./component/timing/TimingTrackContainer"
@@ -56,9 +56,9 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   private readonly timingTracks: TimingTrackContainer
   private readonly selectedEvents: SelectionTimingEventContainer
   private readonly timingBar: ErrorBarContainer
-  private readonly notefield: Notefield
+  private notefield: Notefield
   private readonly snapDisplay: SnapContainer
-  private readonly judgment: JudgmentSprite
+  private readonly judgement: JudgementSprite
   private readonly combo: ComboNumber
   private readonly selectionBoundary: SelectionBoundary
   private readonly selectionArea: SelectionAreaContainer
@@ -82,7 +82,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     this.snapDisplay = new SnapContainer(this)
     this.previewArea = new PreviewAreaContainer(this)
     this.selectionArea = new SelectionAreaContainer(this)
-    this.judgment = new JudgmentSprite()
+    this.judgement = new JudgementSprite()
     this.combo = new ComboNumber(this)
     this.selectionBoundary = new SelectionBoundary(this)
     this.scrollDebug = new ScrollDebug(this)
@@ -99,7 +99,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       this.combo,
       this.notefield,
       this.snapDisplay,
-      this.judgment,
+      this.judgement,
       this.selectionBoundary,
       this.scrollDebug
     )
@@ -264,39 +264,40 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return !!this.selectionBounds
   }
 
-  doJudgment(note: NotedataEntry, error: number, judgment: TimingWindow) {
+  doJudgement(
+    note: NotedataEntry,
+    error: number | null,
+    judgement: TimingWindow
+  ) {
     if (this.chartManager.getMode() == EditMode.Play) {
-      this.judgment.doJudge(error, judgment)
-      this.timingBar.addBar(error, judgment)
+      this.judgement.doJudge(error, judgement)
+      this.timingBar.addBar(error, judgement)
     }
-    this.notefield.onJudgment(note.col, judgment)
+    this.notefield.onJudgement(note.col, judgement)
   }
 
-  activateHold(col: number) {
-    this.notefield.activateHold(col)
-  }
-
-  keyDown(col: number) {
-    this.notefield.keyDown(col)
-  }
-
-  keyUp(col: number) {
-    this.notefield.keyUp(col)
+  startPlay() {
+    this.notefield.startPlay()
   }
 
   endPlay() {
     this.notefield.endPlay()
     this.timingBar.reset()
-    this.judgment.reset()
+    this.judgement.reset()
   }
 
   update() {
+    if (this.destroyed) return
+
     this.speedMult = Options.chart.doSpeedChanges
       ? this.getCurrentSpeedMult()
       : 1
 
-    const firstBeat = this.getEarliestOnScreenBeat()
-    const lastBeat = this.getLastOnScreenBeat()
+    const topBeat = this.getTopOnScreenBeat()
+    const bottomBeat = this.getBottomOnScreenBeat()
+
+    const firstBeat = Math.min(topBeat, bottomBeat)
+    const lastBeat = Math.max(topBeat, bottomBeat)
 
     this.scale.x = Options.chart.zoom
     this.scale.y = Options.chart.zoom
@@ -528,6 +529,19 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return currentBeat + deltaBeat
   }
 
+  getColumnFromXPos(xp: number) {
+    const gt = this.chart.gameType
+    let lastDist = null
+    for (let i = 0; i < gt.numCols; i++) {
+      const dist = Math.abs(this.notefield.getColumnX(i) - xp)
+      if (lastDist !== null && dist > lastDist) {
+        return i - 1
+      }
+      lastDist = dist
+    }
+    return gt.numCols - 1
+  }
+
   /**
    * Returns the y position of the receptors after zooming.
    *
@@ -581,7 +595,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @memberof ChartRenderer
    */
   getUpperBound(): number {
-    return -this.y / Options.chart.zoom - 32
+    return -this.y / Options.chart.zoom - 64
   }
 
   /**
@@ -594,7 +608,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return (
       (this.chartManager.app.renderer.screen.height - this.y) /
         Options.chart.zoom +
-      32
+      64
     )
   }
 
@@ -677,7 +691,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return { beat: 0, value: 1, type: "SCROLLS" }
   }
 
-  getEarliestOnScreenBeat() {
+  getTopOnScreenBeat() {
     if (
       Options.chart.waveform.speedChanges &&
       !Options.chart.CMod &&
@@ -716,7 +730,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return this.getBeatFromYPos(this.getUpperBound())
   }
 
-  getLastOnScreenBeat() {
+  getBottomOnScreenBeat() {
     if (
       Options.chart.waveform.speedChanges &&
       !Options.chart.CMod &&
@@ -1021,7 +1035,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @return {*}  {boolean}
    * @memberof ChartRenderer
    */
-  selectionTest(object: Container): boolean {
+  selectionTest(object: DisplayObject): boolean {
     if (!this.selectionBounds) return false
     const ab = this.selectionBoundary.getBounds()
     const bb = object.getBounds()
@@ -1072,7 +1086,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       if (Math.abs(snapBeat - newBeat) > Math.abs(newBeat - note.beat)) {
         snapBeat = note.beat
       }
-      const col = Math.round((position.x + 96) / 64)
+      const col = this.getColumnFromXPos(position.x)
       this.chartManager.selection.shift ||= {
         columnShift: 0,
         beatShift: 0,
@@ -1159,6 +1173,19 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
 
   getNotefield() {
     return this.notefield
+  }
+
+  swapNoteskin(name: string) {
+    Options.chart.noteskin.name = name
+    Options.chart.lastNoteskins[this.chart.gameType.id] = name
+    this.reloadNotefield()
+  }
+
+  reloadNotefield() {
+    const newNotefield = new Notefield(this)
+    this.addChildAt(newNotefield, this.children.indexOf(this.notefield))
+    this.notefield.destroy()
+    this.notefield = newNotefield
   }
 
   getSelectionBounds() {

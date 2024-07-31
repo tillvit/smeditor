@@ -8,7 +8,7 @@ import {
 import { EventHandler } from "../../../util/EventHandler"
 import { clamp } from "../../../util/Math"
 import { Options } from "../../../util/Options"
-import { bsearch, destroyChildIf } from "../../../util/Util"
+import { destroyChildIf } from "../../../util/Util"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import { BeatTimingCache, ScrollTimingEvent } from "../../sm/TimingTypes"
 
@@ -215,74 +215,71 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       // XMod with speed changes
 
       const chartSpeed = Options.chart.speed
-      const speedMult = this.renderer.chart.timingData.getSpeedMult(
-        this.renderer.getVisualBeat(),
-        this.renderer.getVisualTime()
-      )
-      const speedSign = speedMult >= 0 != Options.chart.reverse ? 1 : -1
+      const speedMult = this.renderer.getCurrentSpeedMult()
 
-      const maxDrawBeats =
-        this.renderer.getVisualBeat() + Options.chart.maxDrawBeats
+      const topBeat = this.renderer.getTopOnScreenBeat()
+      const bottomBeat = this.renderer.getBottomOnScreenBeat()
+      const startBeat = Math.min(topBeat, bottomBeat)
+      const endBeat = Math.max(topBeat, bottomBeat)
+
+      const startScroll = this.renderer.findFirstOnScreenScroll()
+      const endScroll = this.renderer.findLastOnScreenScroll()
+
+      const offset = this.renderer.chart.timingData.getOffset()
+      const startBPM =
+        this.renderer.chart.timingData.getEventAtBeat("BPMS", 0)?.value ?? 120
+
       const scrolls: ScrollTimingEvent[] = [
         ...this.renderer.chart.timingData.getTimingData("SCROLLS"),
       ]
       if (scrolls[0]?.beat != 0)
         scrolls.unshift({ type: "SCROLLS", beat: 0, value: 1 })
-      const offset = this.renderer.chart.timingData.getOffset()
-      const startBPM =
-        this.renderer.chart.timingData.getEventAtBeat("BPMS", 0)?.value ?? 120
+
+      const startScrollIndex = scrolls.findIndex(
+        a => a.beat == startScroll.beat
+      )
+      const endScrollIndex = scrolls.findIndex(a => a.beat == endScroll.beat)
+
       const timingChanges = this.renderer.chart.timingData.getBeatTiming()
       const pixelsToEffectiveBeats =
         100 / chartSpeed / Math.abs(speedMult) / 64 / Options.chart.zoom
       const screenHeight = this.renderer.chartManager.app.renderer.screen.height
 
-      let finishedDrawing = false
-
-      // Get the first scroll index after curBeat
-      let scrollIndex = bsearch(
-        scrolls,
-        this.renderer.getVisualBeat() - Options.chart.maxDrawBeatsBack,
-        a => a.beat
-      )
-
-      let currentBeat = scrolls[scrollIndex]?.beat ?? 0 // start drawing from the start of the scroll section
-      if (currentBeat == 0) currentBeat = -Options.chart.maxDrawBeatsBack // Draw the waveform before beat 0
-      let curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
-
+      let currentBeat = startBeat
       let currentYPos = Math.round(
         this.renderer.getYPosFromBeat(currentBeat) * Options.chart.zoom +
           this.parent.y
       )
-      while (currentBeat < maxDrawBeats && !finishedDrawing) {
-        const scroll = scrolls[scrollIndex] ?? { beat: 0, value: 1 }
-        const scrollEndBeat = scrolls[scrollIndex + 1]?.beat ?? maxDrawBeats
-        const scrollEndYPos =
-          this.renderer.getYPosFromBeat(scrollEndBeat) * Options.chart.zoom +
-          this.parent.y
+      let curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
 
-        // Skip this scroll if
-        // a. value is 0,
-        // b. value is positive and ends off the top of the screen
-        // c. value is negative and ends off the bottom of the screen
-        if (
-          scrolls[scrollIndex + 1] &&
-          (scroll.value == 0 ||
-            (scroll.value * speedSign < 0 && scrollEndYPos > screenHeight) ||
-            (scroll.value * speedSign > 0 && scrollEndYPos < 0))
-        ) {
-          scrollIndex++
-          currentBeat = scrolls[scrollIndex]!.beat
-          currentYPos = Math.round(scrollEndYPos)
-          continue
-        }
-
+      for (const scroll of scrolls.slice(
+        startScrollIndex,
+        endScrollIndex + 1
+      )) {
+        if (scroll.value == 0) continue
         const pixelsToBeats = pixelsToEffectiveBeats / Math.abs(scroll.value)
-        // Start drawing this scroll segment by stepping by 1 pixel
-        while (currentBeat < Math.min(scrollEndBeat, maxDrawBeats)) {
+        if (scroll != startScroll) {
+          currentBeat = scroll.beat
+        } else {
+          // fix flickering by rounding the current beat to land on a pixel
+          currentBeat =
+            Math.round((currentBeat - scroll.beat) / pixelsToBeats) *
+              pixelsToBeats +
+            scroll.beat
+        }
+        currentYPos = Math.round(
+          this.renderer.getYPosFromBeat(currentBeat) * Options.chart.zoom +
+            this.parent.y
+        )
+        curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
+        const scrollDirection = this.renderer.getScrollDirection(scroll.value)
+        const scrollEndBeat =
+          scrolls[scrolls.indexOf(scroll) + 1]?.beat ?? Number.MAX_VALUE
+        while (currentBeat < Math.min(scrollEndBeat, endBeat)) {
           // Stop if the scroll is off the screen
           if (currentYPos < 0) {
-            // Skip the scroll if we step off the stop of the screen
-            if (scroll.value * speedSign < 0) {
+            // Skip the scroll if we step off the top of the screen
+            if (scroll.value * scrollDirection < 0) {
               currentBeat = scrollEndBeat
               break
             }
@@ -292,9 +289,9 @@ export class Waveform extends Sprite implements ChartRendererComponent {
           }
 
           if (currentYPos > screenHeight) {
-            // Stop, waveform finished rendering
-            if (scroll.value * speedSign > 0) {
-              finishedDrawing = true
+            // Skip the scroll if we step off the bottom of the screen
+            if (scroll.value * scrollDirection > 0) {
+              currentBeat = scrollEndBeat
               break
             }
             // Skip to the bottom of the screen and keep stepping from there
@@ -306,7 +303,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
           // Step by 1 or -1 pixels and get the current beat
           currentBeat += pixelsToBeats * Options.chart.waveform.lineHeight
           currentYPos +=
-            (scroll.value * speedSign > 0 ? 1 : -1) *
+            (scroll.value * scrollDirection > 0 ? 1 : -1) *
             Options.chart.waveform.lineHeight
 
           curSec = this.calculateSecond(
@@ -317,9 +314,6 @@ export class Waveform extends Sprite implements ChartRendererComponent {
           )
           this.drawLine(curSec, currentYPos, hasFilters)
         }
-        scrollIndex++
-        currentBeat = scrollEndBeat
-        currentYPos = scrollEndYPos
       }
     } else if (!Options.chart.CMod) {
       // XMod no speed changes

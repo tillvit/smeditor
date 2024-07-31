@@ -1,6 +1,6 @@
 import { App } from "../App"
 import { EditMode, EditTimingMode } from "../chart/ChartManager"
-import { isHoldNote } from "../chart/sm/NoteTypes"
+import { isHoldNote, NotedataEntry } from "../chart/sm/NoteTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
 import { DirectoryWindow } from "../gui/window/DirectoryWindow"
@@ -9,6 +9,7 @@ import { ExportNotedataWindow } from "../gui/window/ExportNotedataWindow"
 import { GameplayKeybindWindow } from "../gui/window/GameplayKeybindWindow"
 import { KeybindWindow } from "../gui/window/KeybindWindow"
 import { NewSongWindow } from "../gui/window/NewSongWindow"
+import { NoteskinWindow } from "../gui/window/NoteskinWindow"
 import { OffsetWindow } from "../gui/window/OffsetWindow"
 import { SMPropertiesWindow } from "../gui/window/SMPropertiesWindow"
 import { SyncWindow } from "../gui/window/SyncWindow"
@@ -530,17 +531,6 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       )
     },
   },
-  renderWaveform: {
-    label: "Render waveform",
-    combos: [],
-    disabled: false,
-    callback: () => {
-      Options.chart.waveform.enabled = !Options.chart.waveform.enabled
-      WaterfallManager.create(
-        "Waveform: " + (Options.chart.waveform.enabled ? "on" : "off")
-      )
-    },
-  },
   XMod: {
     label: "XMod (Beat-based)",
     combos: [{ key: "X", mods: [Modifier.SHIFT] }],
@@ -782,7 +772,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.modifySelection(note => {
-        if (note.type == "Hold" || note.type == "Roll") note.type = "Tap"
+        if (note.type == "Hold" || note.type == "Roll")
+          (note as NotedataEntry).type = "Tap"
         return note
       })
     },
@@ -1431,5 +1422,13 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     callback: () => {
       window.open("/smeditor/guide/")
     },
+  },
+
+  noteskinWindow: {
+    label: "Noteskins...",
+    bindLabel: "Open Noteskin Window",
+    combos: [{ mods: [Modifier.SHIFT], key: "N" }],
+    disabled: false,
+    callback: app => app.windowManager.openWindow(new NoteskinWindow(app)),
   },
 }

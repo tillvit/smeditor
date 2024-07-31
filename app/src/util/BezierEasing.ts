@@ -8,7 +8,7 @@ export type BezierKeyFrames = {
 export interface BezierAnimation<T> {
   obj: T
   animation: BezierKeyFrames
-  speed: number
+  seconds: number
   progress: number
   curve: bezier.EasingFunction
   onend: (obj: T) => void
@@ -80,7 +80,7 @@ export class BezierAnimator {
         } else {
           animation.progress = Math.min(
             1,
-            animation.progress + animation.speed * delta
+            animation.progress + animation.seconds * delta
           )
           this.updateObject(
             animation.obj,
@@ -146,10 +146,15 @@ export class BezierAnimator {
     this.animations.delete(id)
   }
 
+  static finish(id: string | undefined) {
+    if (id === undefined) return
+    this.stop(id, 1)
+  }
+
   static animate(
     obj: any,
     animation: BezierKeyFrames,
-    speed: number,
+    seconds: number,
     curve?: bezier.EasingFunction,
     onend = () => {},
     id?: string
@@ -158,7 +163,7 @@ export class BezierAnimator {
     this.animations.set(id, {
       obj,
       animation,
-      speed: 1 / (60 * speed),
+      seconds: 1 / (60 * seconds),
       progress: 0,
       curve: void 0 !== curve ? curve : noEase,
       onend: onend,

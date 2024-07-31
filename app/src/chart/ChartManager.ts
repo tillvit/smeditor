@@ -41,6 +41,7 @@ import { FileHandler } from "../util/file-handler/FileHandler"
 import { ChartRenderer } from "./ChartRenderer"
 import { ChartAudio } from "./audio/ChartAudio"
 import { GameTypeRegistry } from "./gameTypes/GameTypeRegistry"
+import { NoteskinRegistry } from "./gameTypes/noteskin/NoteskinRegistry"
 import { GameplayStats } from "./play/GameplayStats"
 import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
 import { Chart } from "./sm/Chart"
@@ -425,7 +426,7 @@ export class ChartManager {
           )
         ) {
           if (this.mode != EditMode.Play)
-            this.chartView.doJudgment(
+            this.chartView.doJudgement(
               notedata[this.noteIndex],
               0,
               TIMING_WINDOW_AUTOPLAY
@@ -775,6 +776,25 @@ export class ChartManager {
 
     Options.play.timingCollection =
       Options.play.defaultTimingCollection[chart.gameType.id] ?? "ITG"
+
+    // Check if the same noteskin is compatible with the current chart
+    const oldType = GameTypeRegistry.getGameType(Options.chart.noteskin.type)
+    const newNoteskin = {
+      type: chart.gameType.id,
+      name: Options.chart.lastNoteskins[chart.gameType.id] ?? "default",
+    }
+    if (oldType) {
+      const oldSkin = NoteskinRegistry.getNoteskinData(
+        oldType,
+        Options.chart.noteskin.name
+      )
+      if (oldSkin?.gameTypes.includes(chart.gameType.id)) {
+        // Use the old note skin
+        newNoteskin.name = oldSkin.id
+      }
+    }
+    Options.chart.noteskin = newNoteskin
+    Options.chart.lastNoteskins[chart.gameType.id] = newNoteskin.name
 
     this.getAssistTickIndex()
     this.chartView = new ChartRenderer(this)
@@ -1417,16 +1437,18 @@ export class ChartManager {
         if (note.second < this.time) note.gameplay!.hasHit = true
         else break
       }
-      this.loadedChart.gameType.gameLogic.endPlay(this)
+      this.loadedChart.gameType.gameLogic.startPlay(this)
       this.gameStats = new GameplayStats(this)
       this.widgetManager.startPlay()
       this.chartAudio.seek(Math.max(0, this.time) - 1)
       this.chartAudio.play()
+      this.chartView.startPlay()
     } else if (this.mode == EditMode.Record) {
       this.chartAudio.seek(Math.max(0, this.time) - 1)
       this.chartAudio.play()
     } else {
       this.chartView.endPlay()
+
       notedata.forEach(note => (note.gameplay = undefined))
     }
   }

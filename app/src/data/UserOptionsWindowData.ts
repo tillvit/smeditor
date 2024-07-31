@@ -256,6 +256,16 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                   type: "checkbox",
                 },
               },
+              {
+                type: "item",
+                label: "Draw note icons",
+                id: "chart.drawIcons",
+                input: {
+                  type: "checkbox",
+                },
+                tooltip:
+                  "Draw indicators above notes that some noteskins may not differentiate, like Fakes and Lifts.",
+              },
             ],
           },
         ],
@@ -410,6 +420,55 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             },
             tooltip:
               "Allows the waveform to be affected by SPEEDS and SCROLLS.",
+          },
+        ],
+      },
+      {
+        type: "subgroup",
+        label: "Note Layout",
+        children: [
+          {
+            type: "item",
+            label: "Show Note Layout",
+            id: "chart.noteLayout.enabled",
+            input: {
+              type: "checkbox",
+            },
+          },
+        ],
+      },
+      {
+        type: "subgroup",
+        label: "NPS Graph",
+        children: [
+          {
+            type: "item",
+            label: "Show NPS Graph",
+            id: "chart.npsGraph.enabled",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "subgroup",
+            children: [
+              {
+                type: "item",
+                label: "Start Color",
+                id: "chart.npsGraph.color1",
+                input: {
+                  type: "color",
+                },
+              },
+              {
+                type: "item",
+                label: "End Color",
+                id: "chart.npsGraph.color2",
+                input: {
+                  type: "color",
+                },
+              },
+            ],
           },
         ],
       },
@@ -581,8 +640,8 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
         children: [
           {
             type: "item",
-            label: "Judgment tilt",
-            id: "play.judgmentTilt",
+            label: "Judgement tilt",
+            id: "play.judgementTilt",
             input: {
               type: "checkbox",
             },
