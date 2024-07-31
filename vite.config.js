@@ -1,3 +1,4 @@
+import dynamicImportVariables from '@rollup/plugin-dynamic-import-vars';
 import { resolve } from 'path';
 import { defineConfig } from "vite";
 import { VitePWA } from 'vite-plugin-pwa';
@@ -32,8 +33,7 @@ export default defineConfig({
         ignoreURLParametersMatching: [/^flags/, /^url/, /^chartIndex/, /^chartType/],
         navigateFallback: null,
       }
-
-    })
+    }),
   ],
   server: {
     host: "127.0.0.1",
@@ -41,6 +41,7 @@ export default defineConfig({
   build: {
     target: "esnext",
     rollupOptions: {
+      plugins: [dynamicImportVariables({})],
       input: {
         main: resolve(__dirname, 'index.html'),
         app: resolve(__dirname, 'app/index.html'),
@@ -55,6 +56,9 @@ export default defineConfig({
           return "[name]-[hash].js"
         },
         entryFileNames: "[name].js",
+        manualChunks: () => {
+
+        }
       }
     }
   },
