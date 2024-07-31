@@ -26,8 +26,11 @@ import {
 } from "../../play/TimingWindowCollection"
 import {
   HoldNotedataEntry,
+  HoldNoteType,
+  isHoldNote,
   NotedataEntry,
   TapNotedataEntry,
+  TapNoteType,
 } from "../../sm/NoteTypes"
 import { HoldJudgementContainer } from "./HoldJudgementContainer"
 import { NoteContainer } from "./NoteContainer"
@@ -111,7 +114,7 @@ export class NoteObject extends Container {
   loadElement(note: TapNotedataEntry) {
     const element = this.nf.noteskin!.getElement(
       {
-        element: note.type,
+        element: note.type as TapNoteType,
         columnName: this.nf.getColumnName(note.col),
         columnNumber: note.col,
       },
@@ -251,21 +254,18 @@ export class HoldObject extends Container {
 
   setLength(length: number) {
     if (!this.loaded) return
+    const bbO =
+      this.metrics[`${this.note.type as HoldNoteType}BodyBottomOffset`]
+    const btO = this.metrics[`${this.note.type as HoldNoteType}BodyTopOffset`]
+
     const states = ["Active", "Inactive"] as const
     const sign = Math.sign(length)
     const absLength = Math.abs(length)
     for (const state of states) {
-      this.elements[state].Body.height = Math.max(
-        0,
-        absLength +
-          this.metrics[`${this.note.type}BodyBottomOffset`] -
-          this.metrics[`${this.note.type}BodyTopOffset`]
-      )
-      this.elements[state].Body.y =
-        absLength + this.metrics[`${this.note.type}BodyBottomOffset`]
+      this.elements[state].Body.height = Math.max(0, absLength + bbO - btO)
+      this.elements[state].Body.y = absLength + bbO
 
-      this.elements[state].BottomCap.y =
-        absLength + this.metrics[`${this.note.type}BodyBottomOffset`]
+      this.elements[state].BottomCap.y = absLength + bbO
 
       if (this.elements[state].BottomCap.y < 0) {
         this.elements[state].BottomCap.cropTop(
@@ -280,8 +280,7 @@ export class HoldObject extends Container {
         this.elements[state].BottomCap.cropTop(0)
       }
 
-      this.elements[state].TopCap.y =
-        this.metrics[`${this.note.type}BodyTopOffset`]
+      this.elements[state].TopCap.y = btO
       const bottomCapScale = Math.abs(this.elements[state].BottomCap.scale.y)
       this.elements[state].BottomCap.scale.y =
         length < 0 ? -bottomCapScale : bottomCapScale
@@ -544,17 +543,10 @@ export class Notefield extends Container implements ChartRendererComponent {
   }
 
   createNote(note: NotedataEntry): NoteWrapper {
-    switch (note.type) {
-      case "Tap":
-      case "Lift":
-      case "Fake":
-      case "Mine": {
-        return new NoteWrapper(new NoteObject(this, note))
-      }
-      case "Hold":
-      case "Roll": {
-        return new NoteWrapper(new HoldObject(this, note))
-      }
+    if (isHoldNote(note)) {
+      return new NoteWrapper(new HoldObject(this, note))
+    } else {
+      return new NoteWrapper(new NoteObject(this, note))
     }
   }
 }
