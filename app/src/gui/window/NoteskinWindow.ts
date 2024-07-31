@@ -95,7 +95,10 @@ export class NoteskinWindow extends Window {
       if (id == Options.chart.noteskin.name) {
         container.classList.add("selected")
         setTimeout(() => {
-          container.scrollIntoView({ behavior: "smooth", block: "center" })
+          container.scrollIntoView({
+            behavior: Options.general.smoothAnimations ? "smooth" : "instant",
+            block: "center",
+          })
         })
       }
 

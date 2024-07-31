@@ -222,7 +222,7 @@ export const GAMEPLAY_KEYBINDS: { [key: string]: GameplayKeybind[] } = {
     },
     {
       label: "UpRight",
-      keys: ["R"],
+      keys: ["E"],
     },
     {
       label: "DownRight",
@@ -244,7 +244,7 @@ export const GAMEPLAY_KEYBINDS: { [key: string]: GameplayKeybind[] } = {
     },
     {
       label: "P1 UpRight",
-      keys: ["R"],
+      keys: ["E"],
     },
     {
       label: "P1 DownRight",
@@ -286,7 +286,7 @@ export const GAMEPLAY_KEYBINDS: { [key: string]: GameplayKeybind[] } = {
     },
     {
       label: "P1 UpRight",
-      keys: ["R"],
+      keys: ["E"],
     },
     {
       label: "P1 DownRight",
@@ -328,7 +328,7 @@ export const GAMEPLAY_KEYBINDS: { [key: string]: GameplayKeybind[] } = {
     },
     {
       label: "P1 UpRight",
-      keys: ["R"],
+      keys: ["E"],
     },
     {
       label: "P1 DownRight",
@@ -362,7 +362,7 @@ export const GAMEPLAY_KEYBINDS: { [key: string]: GameplayKeybind[] } = {
     },
     {
       label: "P1 UpRight",
-      keys: ["R"],
+      keys: ["E"],
     },
     {
       label: "P1 DownRight",
