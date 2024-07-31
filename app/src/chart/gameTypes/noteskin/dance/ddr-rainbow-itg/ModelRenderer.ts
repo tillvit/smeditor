@@ -114,7 +114,7 @@ export class ModelRenderer {
         const shader_body = Shader.from(noopVert, arrowGradientFrag, {
           sampler0: this.arrowPartsTex,
           time: 0,
-          quant: Math.min(i, 9),
+          quant: Math.min(i, 8),
         })
         const arrow_frame = new Sprite(ModelRenderer.arrowFrameTex)
         arrow_frame.x = (i % 3) * 64
@@ -133,7 +133,7 @@ export class ModelRenderer {
         const shader_body = Shader.from(noopVert, arrowGradientFrag, {
           sampler0: this.liftQuantsTex,
           time: 0,
-          quant: Math.min(i, 9),
+          quant: Math.min(i, 8),
         })
         const shader_frame = Shader.from(noopVert, liftGradientFrag, {
           sampler0: this.liftPartsTex,
