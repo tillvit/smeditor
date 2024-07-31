@@ -5,7 +5,8 @@ import { NoteskinOptions } from "./Noteskin"
 interface RegistryData {
   id: string
   gameTypes: string[]
-  path: string
+  load: () => Promise<NoteskinOptions>
+  preview: string
   title?: string
   subtitle?: string
 }
@@ -34,9 +35,7 @@ export class NoteskinRegistry {
         `Couldn't find the noteskin ${id}!`,
         "warn"
       )
-    return (await (
-      await import(`${skin.path}/Noteskin`)
-    ).default) as NoteskinOptions
+    return await skin.load()
   }
 
   static getNoteskinData(gameType: GameType, id: string) {
@@ -51,10 +50,7 @@ export class NoteskinRegistry {
   }
 
   static getPreviewUrl(gameType: GameType, id: string) {
-    return new URL(
-      `${this.getNoteskinData(gameType, id)?.path}/preview.png`,
-      import.meta.url
-    ).href
+    return this.getNoteskinData(gameType, id)!.preview
   }
 }
 
@@ -69,7 +65,8 @@ NoteskinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  path: "./dance/default",
+  load: async () => (await import(`./dance/default/Noteskin`)).default,
+  preview: new URL(`./dance/default/preview.png`, import.meta.url).href,
   title: "Scalable",
   subtitle: "Pete-Lawrence",
 })
@@ -84,7 +81,8 @@ NoteskinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  path: "./dance/cf-chrome",
+  load: async () => (await import(`./dance/cf-chrome/Noteskin`)).default,
+  preview: new URL(`./dance/cf-chrome/preview.png`, import.meta.url).href,
   title: "CF_CHROME",
   subtitle: "Pete-Lawrence",
 })
@@ -99,7 +97,8 @@ NoteskinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  path: "./dance/ddr-note",
+  load: async () => (await import(`./dance/ddr-note/Noteskin`)).default,
+  preview: new URL(`./dance/ddr-note/preview.png`, import.meta.url).href,
   title: "DDR-Note",
   subtitle: "Pete-Lawrence",
 })
@@ -114,21 +113,24 @@ NoteskinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  path: "./dance/ddr-note-itg",
+  load: async () => (await import(`./dance/ddr-note-itg/Noteskin`)).default,
+  preview: new URL(`./dance/ddr-note-itg/preview.png`, import.meta.url).href,
   title: "DDR-Note (ITG quants)",
   subtitle: "Pete-Lawrence",
 })
 NoteskinRegistry.register({
   id: "ddr-rainbow",
   gameTypes: ["dance-single", "dance-double", "dance-couple"],
-  path: "./dance/ddr-rainbow",
+  load: async () => (await import(`./dance/ddr-rainbow/Noteskin`)).default,
+  preview: new URL(`./dance/ddr-rainbow/preview.png`, import.meta.url).href,
   title: "DDR-Rainbow",
   subtitle: "LemmaEOF",
 })
 NoteskinRegistry.register({
   id: "ddr-rainbow-itg",
   gameTypes: ["dance-single", "dance-double", "dance-couple"],
-  path: "./dance/ddr-rainbow-itg",
+  load: async () => (await import(`./dance/ddr-rainbow-itg/Noteskin`)).default,
+  preview: new URL(`./dance/ddr-rainbow-itg/preview.png`, import.meta.url).href,
   title: "DDR-Rainbow (ITG quants)",
   subtitle: "LemmaEOF",
 })
@@ -143,7 +145,8 @@ NoteskinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  path: "./dance/metal",
+  load: async () => (await import(`./dance/metal/Noteskin`)).default,
+  preview: new URL(`./dance/metal/preview.png`, import.meta.url).href,
   title: "Metal",
   subtitle: "Pete-Lawrence",
 })
@@ -158,7 +161,8 @@ NoteskinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  path: "./dance/pastel",
+  load: async () => (await import(`./dance/pastel/Noteskin`)).default,
+  preview: new URL(`./dance/pastel/preview.png`, import.meta.url).href,
   title: "Pastel",
   subtitle: "halcyoniix",
 })
@@ -173,7 +177,8 @@ NoteskinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  path: "./dance/dividebyzero",
+  load: async () => (await import(`./dance/dividebyzero/Noteskin`)).default,
+  preview: new URL(`./dance/dividebyzero/preview.png`, import.meta.url).href,
   title: "DivideByZero",
   subtitle: "MinaciousGrace",
 })
@@ -188,7 +193,8 @@ NoteskinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  path: "./dance/subtractbyzero",
+  load: async () => (await import(`./dance/subtractbyzero/Noteskin`)).default,
+  preview: new URL(`./dance/subtractbyzero/preview.png`, import.meta.url).href,
   title: "SubtractByZero",
   subtitle: "qwertyzoro/Vague",
 })
@@ -203,7 +209,8 @@ NoteskinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  path: "./dance/sm4",
+  load: async () => (await import(`./dance/sm4/Noteskin`)).default,
+  preview: new URL(`./dance/sm4/preview.png`, import.meta.url).href,
   title: "SM4",
   subtitle: "from SM4",
 })
@@ -218,14 +225,16 @@ NoteskinRegistry.register({
     "dance-threepanel",
     "dance-threedouble",
   ],
-  path: "./dance/sm4-bold",
+  load: async () => (await import(`./dance/sm4-bold/Noteskin`)).default,
+  preview: new URL(`./dance/sm4-bold/preview.png`, import.meta.url).href,
   title: "SM4 Bold",
   subtitle: "from SM4",
 })
 NoteskinRegistry.register({
   id: "starlight-vivid",
   gameTypes: ["dance-single", "dance-double", "dance-couple"],
-  path: "./dance/starlight-vivid",
+  load: async () => (await import(`./dance/starlight-vivid/Noteskin`)).default,
+  preview: new URL(`./dance/starlight-vivid/preview.png`, import.meta.url).href,
   title: "SLNEXXT-vivid",
   subtitle: "from STARLiGHT-NEXXT",
 })
@@ -239,7 +248,8 @@ NoteskinRegistry.register({
     "pump-versus",
     "pump-halfdouble",
   ],
-  path: "./pump/default",
+  load: async () => (await import(`./pump/default/Noteskin`)).default,
+  preview: new URL(`./pump/default/preview.png`, import.meta.url).href,
   title: "Fiesta",
 })
 NoteskinRegistry.register({
@@ -251,7 +261,8 @@ NoteskinRegistry.register({
     "pump-versus",
     "pump-halfdouble",
   ],
-  path: "./pump/fourv2",
+  load: async () => (await import(`./pump/fourv2/Noteskin`)).default,
+  preview: new URL(`./pump/fourv2/preview.png`, import.meta.url).href,
   title: "FourV2",
   subtitle: "Jousway",
 })
@@ -265,6 +276,7 @@ NoteskinRegistry.register({
     "pump-versus",
     "pump-halfdouble",
   ],
-  path: "./pump/prime",
+  load: async () => (await import(`./pump/prime/Noteskin`)).default,
+  preview: new URL(`./pump/prime/preview.png`, import.meta.url).href,
   title: "Prime",
 })
