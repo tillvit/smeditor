@@ -16,6 +16,7 @@ import { Options } from "../../../../../util/Options"
 import { NotedataEntry } from "../../../../sm/NoteTypes"
 
 import liftPartsUrl from "./lift/parts.png"
+import liftQuantsUrl from "./lift/quants.png"
 import mineFrameUrl from "./mine/frame.png"
 import minePartsUrl from "./mine/parts.png"
 import tapPartsUrl from "./tap/parts.png"
@@ -44,6 +45,9 @@ export class ModelRenderer {
     mipmap: MIPMAP_MODES.OFF,
   })
   static liftPartsTex = BaseTexture.from(liftPartsUrl, {
+    mipmap: MIPMAP_MODES.OFF,
+  })
+  static liftQuantsTex = BaseTexture.from(liftQuantsUrl, {
     mipmap: MIPMAP_MODES.OFF,
   })
 
@@ -79,8 +83,8 @@ export class ModelRenderer {
       resolution: Options.performance.resolution,
     })
     ModelRenderer.liftTex = RenderTexture.create({
-      width: 64,
-      height: 64,
+      width: 256,
+      height: 320,
       resolution: Options.performance.resolution,
     })
     ModelRenderer.mineTex = RenderTexture.create({
@@ -125,26 +129,29 @@ export class ModelRenderer {
       }
     }
     {
-      const shader_body = Shader.from(noopVert, liftGradientFrag, {
-        sampler0: this.liftPartsTex,
-        time: 0,
-      })
-      const shader_frame = Shader.from(noopVert, liftGradientFrag, {
-        sampler0: this.liftPartsTex,
-      })
-      const arrow_body = new Mesh(ModelRenderer.liftBodyGeom, shader_body)
-      arrow_body.x = 32
-      arrow_body.y = 32
-      arrow_body.rotation = Math.PI
-      arrow_body.name = "body"
-      ModelRenderer.liftContainer.addChild(arrow_body)
+      for (let i = 0; i < 10; i++) {
+        const shader_body = Shader.from(noopVert, arrowGradientFrag, {
+          sampler0: this.liftQuantsTex,
+          time: 0,
+          quant: Math.min(i, 9),
+        })
+        const shader_frame = Shader.from(noopVert, liftGradientFrag, {
+          sampler0: this.liftPartsTex,
+        })
+        const lift_body = new Mesh(ModelRenderer.liftBodyGeom, shader_body)
+        lift_body.x = (i % 3) * 64 + 32
+        lift_body.y = Math.floor(i / 3) * 64 + 32
+        lift_body.rotation = Math.PI
+        lift_body.name = "body" + i
+        ModelRenderer.liftContainer.addChild(lift_body)
 
-      const arrow_frame = new Mesh(ModelRenderer.liftFrameGeom, shader_frame)
-      arrow_frame.x = 32
-      arrow_frame.y = 32
-      arrow_frame.rotation = Math.PI
-      arrow_frame.name = "frame"
-      ModelRenderer.liftContainer.addChild(arrow_frame)
+        const lift_frame = new Mesh(ModelRenderer.liftFrameGeom, shader_frame)
+        lift_frame.x = (i % 3) * 64 + 32
+        lift_frame.y = Math.floor(i / 3) * 64 + 32
+        lift_frame.rotation = Math.PI
+        lift_frame.name = "frame" + i
+        ModelRenderer.liftContainer.addChild(lift_frame)
+      }
     }
     {
       const shader_body = Shader.from(noopVert, mineGradientFrag, {
@@ -173,13 +180,15 @@ export class ModelRenderer {
       const tapShader: Mesh<Shader> =
         ModelRenderer.arrowContainer.getChildByName("body" + i)!
       tapShader.shader.uniforms.time = beat / 8
+
+      const liftShader: Mesh<Shader> =
+        ModelRenderer.liftContainer.getChildByName("body" + i)!
+      liftShader.shader.uniforms.time = beat / 8
+      const liftFrameShader: Mesh<Shader> =
+        ModelRenderer.liftContainer.getChildByName("frame" + i)!
+      liftFrameShader.shader.uniforms.time = beat / 8
     }
-    const liftShader: Mesh<Shader> =
-      ModelRenderer.liftContainer.getChildByName("body")!
-    liftShader.shader.uniforms.time = beat / 8
-    const liftFrameShader: Mesh<Shader> =
-      ModelRenderer.liftContainer.getChildByName("frame")!
-    liftFrameShader.shader.uniforms.time = beat / 8
+
     ;(<Mesh>ModelRenderer.mineContainer.children[0]).shader.uniforms.time =
       second
     ModelRenderer.mineContainer.rotation = (second % 1) * Math.PI * 2
@@ -202,7 +211,13 @@ export class ModelRenderer {
     if (note !== undefined && note.type == "Mine") {
       arrow.texture = ModelRenderer.mineTex
     } else if (note !== undefined && note.type == "Lift") {
-      arrow.texture = ModelRenderer.liftTex
+      const i = [4, 8, 12, 16, 24, 32, 48, 64, 96, 192].indexOf(
+        note?.quant ?? 4
+      )
+      arrow.texture = new Texture(
+        ModelRenderer.liftTex.baseTexture,
+        new Rectangle((i % 3) * 64, Math.floor(i / 3) * 64, 64, 64)
+      )
     } else {
       const i = [4, 8, 12, 16, 24, 32, 48, 64, 96, 192].indexOf(
         note?.quant ?? 4

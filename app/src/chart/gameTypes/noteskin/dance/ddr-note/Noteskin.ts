@@ -1,4 +1,5 @@
 // Peters-DDR-Note by Pete-Lawrence https://github.com/Pete-Lawrence/Peters-Noteskins/
+// Quantized Lifts by LemmaEOF https://github.com/lemmaeof/lemmas-ddrainbow
 
 import { AnimatedSprite, Sprite, Texture } from "pixi.js"
 import { NoteskinOptions } from "../../Noteskin"
