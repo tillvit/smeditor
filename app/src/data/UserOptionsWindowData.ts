@@ -711,7 +711,6 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
     children: [
       {
         type: "item",
-
         label: "Antialiasing",
         id: "performance.antialiasing",
         input: {
@@ -741,7 +740,6 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
     children: [
       {
         type: "item",
-
         label: "Show FPS",
         id: "debug.showFPS",
         input: {
@@ -750,7 +748,6 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
       },
       {
         type: "item",
-
         label: "Show rendering timers",
         id: "debug.showTimers",
         input: {
@@ -759,9 +756,16 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
       },
       {
         type: "item",
-
         label: "Show scrolls/speeds debug visual",
         id: "debug.showScroll",
+        input: {
+          type: "checkbox",
+        },
+      },
+      {
+        type: "item",
+        label: "Show noteskin errors",
+        id: "debug.showNoteskinErrors",
         input: {
           type: "checkbox",
         },
