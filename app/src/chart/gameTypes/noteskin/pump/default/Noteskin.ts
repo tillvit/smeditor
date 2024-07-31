@@ -1,18 +1,14 @@
 // FIESTA, from https://github.com/cesarmades/piunoteskins
 
-import {
-  AnimatedSprite,
-  BLEND_MODES,
-  Container,
-  Sprite,
-  Texture,
-} from "pixi.js"
-import { Noteskin, NoteskinOptions } from "../../Noteskin"
+import { BLEND_MODES, Container, Rectangle, Sprite, Texture } from "pixi.js"
+import { NoteskinOptions } from "../../Noteskin"
 import { NoteRenderer } from "./NoteRenderer"
 
 import receptorsUrl from "./receptors.png"
 
 import { splitTex } from "../../../../../util/Util"
+import { AnimatedHoldBody } from "../../_template/HoldBody"
+import { AnimatedHoldTail } from "../../_template/HoldTail"
 import { NoteFlashContainer } from "./NoteFlash"
 
 const receptorTex = splitTex(Texture.from(receptorsUrl), 5, 2, 96, 96)
@@ -21,61 +17,28 @@ export const texOrder = ["DownLeft", "UpLeft", "Center", "UpRight", "DownRight"]
 
 const holdTex: Record<string, { body: Texture[]; cap: Texture[] }> = {}
 
+const tailHeight = 96
+
 for (const col of texOrder) {
-  const body = splitTex(
-    Texture.from(new URL(`./hold/${col}Body.png`, import.meta.url).href),
-    6,
-    1,
-    96,
-    128
-  )[0]
-  const cap = splitTex(
-    Texture.from(new URL(`./hold/${col}Cap.png`, import.meta.url).href),
-    6,
-    1,
-    96,
-    120
-  )[0]
+  // Split the hold into body and tail
+  const tex = Texture.from(new URL(`./hold/${col}.png`, import.meta.url).href)
+  const body: Texture[] = []
+  const cap: Texture[] = []
+  for (let i = 0; i < 6; i++) {
+    body.push(
+      new Texture(
+        tex.baseTexture,
+        new Rectangle(i * 96, 0, 96, 288 - tailHeight)
+      )
+    )
+    cap.push(
+      new Texture(
+        tex.baseTexture,
+        new Rectangle(i * 96, 288 - tailHeight, 96, tailHeight)
+      )
+    )
+  }
   holdTex[col] = { body, cap }
-}
-
-class HoldWithTail extends Container {
-  body
-  cap
-  constructor(columnName: string, noteskin: Noteskin) {
-    super()
-    const body = new AnimatedSprite(holdTex[columnName].body)
-    body.width = 72
-    body.anchor.y = 1
-    body.x = -36
-
-    const cap = new AnimatedSprite(holdTex[columnName].cap)
-    cap.scale.set(72 / 96)
-    cap.anchor.y = 0.5
-    cap.x = -36
-
-    this.body = body
-    this.cap = cap
-    this.addChild(body, cap)
-
-    noteskin.onUpdate(this, cr => {
-      const time = cr.getVisualTime()
-
-      const frame = Math.floor(((((time % 0.3) + 0.3) % 0.3) / 0.3) * 6)
-
-      cap.currentFrame = frame
-      body.currentFrame = frame
-    })
-  }
-
-  set height(height: number) {
-    this.body.height = Math.abs(height)
-    this.body.anchor.y = height >= 0 ? 1 : 0
-
-    this.cap.scale.y = ((height >= 0 ? 1 : -1) * 72) / 96
-
-    return
-  }
 }
 
 export default {
@@ -123,12 +86,32 @@ export default {
         ),
       "Hold Active Head": { element: "Tap" },
       "Hold Inactive Head": { element: "Tap" },
-      "Hold Active Body": opt => new HoldWithTail(opt.columnName, opt.noteskin),
+      "Hold Active Body": opt => {
+        const body = new AnimatedHoldBody(holdTex[opt.columnName].body, 72)
+        opt.noteskin.onUpdate(body, cr => {
+          const time = cr.getVisualTime()
+
+          const frame = Math.floor(((((time % 0.3) + 0.3) % 0.3) / 0.3) * 6)
+
+          body.currentFrame = frame
+        })
+        return body
+      },
       "Hold Inactive Body": { element: "Hold Active Body" },
       "Hold Active TopCap": () => new Sprite(Texture.EMPTY),
       "Hold Inactive TopCap": () => new Sprite(Texture.EMPTY),
-      "Hold Active BottomCap": () => new Sprite(Texture.EMPTY),
-      "Hold Inactive BottomCap": () => new Sprite(Texture.EMPTY),
+      "Hold Active BottomCap": opt => {
+        const cap = new AnimatedHoldTail(holdTex[opt.columnName].cap, 72)
+        opt.noteskin.onUpdate(cap, cr => {
+          const time = cr.getVisualTime()
+
+          const frame = Math.floor(((((time % 0.3) + 0.3) % 0.3) / 0.3) * 6)
+
+          cap.currentFrame = frame
+        })
+        return cap
+      },
+      "Hold Inactive BottomCap": { element: "Hold Active BottomCap" },
 
       "Roll Active Head": options => {
         const spr = new Sprite(Texture.WHITE)
@@ -143,8 +126,8 @@ export default {
       "Roll Inactive Body": { element: "Hold Active Body" },
       "Roll Active TopCap": () => new Sprite(Texture.EMPTY),
       "Roll Inactive TopCap": () => new Sprite(Texture.EMPTY),
-      "Roll Active BottomCap": () => new Sprite(Texture.EMPTY),
-      "Roll Inactive BottomCap": () => new Sprite(Texture.EMPTY),
+      "Roll Active BottomCap": { element: "Hold Active BottomCap" },
+      "Roll Inactive BottomCap": { element: "Hold Active BottomCap" },
     },
   },
   load: function (element, options) {
@@ -159,5 +142,9 @@ export default {
   },
   update(renderer) {
     NoteRenderer.setArrowTexTime(renderer.chartManager.app)
+  },
+  metrics: {
+    HoldBodyBottomOffset: -36,
+    RollBodyBottomOffset: -36,
   },
 } satisfies NoteskinOptions

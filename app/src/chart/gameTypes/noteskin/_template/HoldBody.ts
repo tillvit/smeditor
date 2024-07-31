@@ -88,15 +88,16 @@ export class AnimatedHoldBody extends HoldBody {
 
   updateTexture() {
     const currentFrame = this.currentFrame
-    this._previousFrame !== currentFrame &&
-      ((this._previousFrame = currentFrame),
-      (this._texture = this._textures[currentFrame]),
-      (this._textureID = -1),
-      (this._textureTrimmedID = -1),
-      (this._cachedTint = 16777215),
-      (this.uvs = this._texture._uvs.uvsFloat32),
-      this.updateAnchor && this._anchor.copyFrom(this._texture.defaultAnchor),
-      this.onFrameChange?.(this.currentFrame))
+    if (this._previousFrame !== currentFrame) {
+      this._previousFrame = currentFrame
+      this.texture = this._textures[currentFrame]
+      this._textureID = -1
+      this._textureTrimmedID = -1
+      this._cachedTint = 16777215
+      this.uvs = this._texture._uvs.uvsFloat32
+      if (this.updateAnchor) this._anchor.copyFrom(this._texture.defaultAnchor)
+      this.onFrameChange?.(this.currentFrame)
+    }
   }
 
   destroy(options?: IDestroyOptions | boolean) {

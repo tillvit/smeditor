@@ -3,6 +3,11 @@ import { Sprite, Texture } from "pixi.js"
 import tippy from "tippy.js"
 import { EditMode, EditTimingMode } from "../../chart/ChartManager"
 import { NoteskinSprite } from "../../chart/gameTypes/noteskin/Noteskin"
+import {
+  HOLD_NOTE_TYPES,
+  HoldNoteType,
+  TapNoteType,
+} from "../../chart/sm/NoteTypes"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
@@ -481,10 +486,11 @@ export class StatusWidget extends Widget {
       if (!this.manager.chartManager.loadedChart) return
       for (const type of this.manager.chartManager.loadedChart.gameType
         .editNoteTypes) {
+        if (HOLD_NOTE_TYPES.includes(type as HoldNoteType)) continue
         const sprite = this.manager.chartManager
           .chartView!.getNotefield()
           .createNote({
-            type,
+            type: type as TapNoteType,
             beat: 0,
             col: 0,
             quant: 4,

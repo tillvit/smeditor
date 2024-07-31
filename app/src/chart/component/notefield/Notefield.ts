@@ -60,17 +60,29 @@ export class NoteWrapper extends Container {
 
     this.addChild(object, this.icon)
 
-    object.nf.noteskin?.onUpdate(this, cr => {
+    if (object.nf.noteskin === undefined) {
+      EventHandler.on("noteskinLoaded", () => this.loadEventHandler())
+    } else {
+      this.loadEventHandler()
+    }
+  }
+
+  loadEventHandler() {
+    this.object.nf.noteskin!.onUpdate(this, cr => {
       if (!Options.chart.drawIcons) {
         this.icon.visible = false
         return
       }
-      if (object.nf.noteskinOptions?.hideIcons?.includes(object.note.type)) {
+      if (
+        this.object.nf.noteskinOptions?.hideIcons?.includes(
+          this.object.note.type
+        )
+      ) {
         this.icon.visible = false
         return
       }
       this.icon.visible = true
-      if (object.note.type == "Fake") {
+      if (this.object.note.type == "Fake") {
         this.icon.visible = cr.chartManager.getMode() != EditMode.Play
       }
     })
@@ -86,6 +98,17 @@ export class NoteObject extends Container {
     super()
     this.note = note
     this.nf = notefield
+
+    if (this.nf.noteskin === undefined) {
+      EventHandler.on("noteskinLoaded", () => {
+        this.loadElement(note)
+      })
+    } else {
+      this.loadElement(note)
+    }
+  }
+
+  loadElement(note: TapNotedataEntry) {
     const element = this.nf.noteskin!.getElement(
       {
         element: note.type,
@@ -132,6 +155,7 @@ export class HoldObject extends Container {
   private readonly metrics
   private readonly ns
   readonly nf
+  private loaded = false
 
   constructor(notefield: Notefield, note: HoldNotedataEntry) {
     super()
@@ -142,6 +166,25 @@ export class HoldObject extends Container {
     this.ns = notefield.noteskin!
     this.nf = notefield
     this.metrics = this.ns.metrics
+
+    active.visible = false
+
+    this.active = active
+    this.inactive = inactive
+
+    this.addChild(inactive, active)
+
+    if (notefield.noteskin === undefined) {
+      EventHandler.on("noteskinLoaded", () => {
+        this.loadElements()
+      })
+    } else {
+      this.loadElements()
+    }
+  }
+
+  loadElements() {
+    if (this.loaded) return
     ;(this.elements as any) = {}
     for (const state of ["Active", "Inactive"] as const) {
       ;(this.elements[state] as any) = {}
@@ -162,18 +205,12 @@ export class HoldObject extends Container {
         } else {
           this.elements[state][part] = element
         }
-        ;(state == "Active" ? active : inactive).addChild(
+        ;(state == "Active" ? this.active : this.inactive).addChild(
           this.elements[state][part]
         )
       }
     }
-
-    active.visible = false
-
-    this.active = active
-    this.inactive = inactive
-
-    this.addChild(inactive, active)
+    this.loaded = true
   }
 
   getNoteskinElement(element: string) {
@@ -196,6 +233,7 @@ export class HoldObject extends Container {
   }
 
   setBrightness(brightness: number) {
+    if (!this.loaded) return
     const states = ["Active", "Inactive"] as const
     const items = ["Body", "TopCap", "BottomCap"] as const
     for (const state of states) {
@@ -212,6 +250,7 @@ export class HoldObject extends Container {
   }
 
   setLength(length: number) {
+    if (!this.loaded) return
     const states = ["Active", "Inactive"] as const
     const sign = Math.sign(length)
     const absLength = Math.abs(length)
@@ -242,10 +281,13 @@ export class HoldObject extends Container {
       }
 
       this.elements[state].TopCap.y =
-        absLength + this.metrics[`${this.note.type}BodyTopOffset`]
+        this.metrics[`${this.note.type}BodyTopOffset`]
       const bottomCapScale = Math.abs(this.elements[state].BottomCap.scale.y)
       this.elements[state].BottomCap.scale.y =
         length < 0 ? -bottomCapScale : bottomCapScale
+      const topCapScale = Math.abs(this.elements[state].TopCap.scale.y)
+      this.elements[state].TopCap.scale.y =
+        length < 0 ? -topCapScale : topCapScale
 
       this.elements[state].Body.height *= sign
       this.elements[state].Body.y *= sign
@@ -502,23 +544,6 @@ export class Notefield extends Container implements ChartRendererComponent {
   }
 
   createNote(note: NotedataEntry): NoteWrapper {
-    if (this.noteskin === undefined) {
-      const a = new Container() as NoteObject
-      a.type = "note"
-      a.note = {
-        beat: 0,
-        type: "Tap",
-        col: 0,
-        warped: false,
-        fake: false,
-        second: 0,
-        quant: 4,
-      }
-      return new NoteWrapper(a)
-    }
-    const ns = this.noteskin
-    const col = this.getColumnName(note.col)
-    const opts = { note, columnName: col, columnNumber: note.col }
     switch (note.type) {
       case "Tap":
       case "Lift":

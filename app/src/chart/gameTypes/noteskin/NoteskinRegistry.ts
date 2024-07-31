@@ -210,15 +210,7 @@ NoteskinRegistry.register({
 })
 NoteskinRegistry.register({
   id: "starlight-vivid",
-  gameTypes: [
-    "dance-single",
-    "dance-double",
-    "dance-couple",
-    "dance-solo",
-    "dance-solodouble",
-    "dance-threepanel",
-    "dance-threedouble",
-  ],
+  gameTypes: ["dance-single", "dance-double", "dance-couple"],
   path: "./dance/starlight-vivid",
   title: "SLNEXXT-vivid",
   subtitle: "from STARLiGHT-NEXXT",

@@ -1,22 +1,26 @@
-import { IDestroyOptions, Texture, Ticker, UPDATE_PRIORITY } from "pixi.js"
-import { VertCropSprite } from "../../../../util/VertCropSprite"
+import {
+  IDestroyOptions,
+  Sprite,
+  Texture,
+  Ticker,
+  UPDATE_PRIORITY,
+} from "pixi.js"
 
-export class HoldTail extends VertCropSprite {
-  constructor(texture: Texture, holdWidth = 64) {
+export class HoldTopCap extends Sprite {
+  constructor(texture: Texture, holdWidth = 64, reverse = false) {
     super(texture)
     this.scale.set(holdWidth / this.texture.width)
-    this.pivot.x = holdWidth / 2 / this.scale.x
+    this.anchor.x = 0.5
+    if (reverse) {
+      this.rotation = Math.PI
+    }
     this.texture.on("update", () => {
-      this.width = this.texture.width
-      this.height = this.texture.height
       this.scale.set(holdWidth / this.texture.width)
-      this.pivot.x = holdWidth / 2 / this.scale.x
-      this.refresh()
     })
   }
 }
 
-export class AnimatedHoldTail extends HoldTail {
+export class AnimatedHoldTopCap extends HoldTopCap {
   private _playing = false
   private _autoUpdate = false
   private _isConnectedToTicker = false

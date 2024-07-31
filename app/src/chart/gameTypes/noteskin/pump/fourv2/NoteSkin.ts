@@ -1,6 +1,6 @@
 // SM4 Bold, bundled with SM4
 
-import { Sprite, Texture, TilingSprite } from "pixi.js"
+import { Sprite, Texture } from "pixi.js"
 import { NoteskinOptions } from "../../Noteskin"
 import { NoteRenderer } from "./NoteRenderer"
 
@@ -14,6 +14,9 @@ import holdCapInactiveUrl from "./hold/capInactive.png"
 
 import { BezierAnimator } from "../../../../../util/BezierEasing"
 import { rgbtoHex } from "../../../../../util/Color"
+import { HoldBody } from "../../_template/HoldBody"
+import { HoldTail } from "../../_template/HoldTail"
+import { HoldTopCap } from "../../_template/HoldTopCap"
 import { NoteFlashContainer } from "./NoteFlash"
 import rollBodyActiveUrl from "./roll/bodyActive.png"
 import rollBodyInactiveUrl from "./roll/bodyInactive.png"
@@ -63,27 +66,6 @@ const toRotate = [
   "Roll Inactive Head",
   "Roll Active Head",
 ]
-
-const holdBody = (tex: Texture) => {
-  const body = new TilingSprite(tex, 64, 0)
-  body.tileScale.x = 0.5
-  body.tileScale.y = 0.5
-  body.uvRespectAnchor = true
-  body.anchor.y = 1
-  body.x = -32
-  return body
-}
-
-const holdCap = (tex: Texture, reverse = false) => {
-  const cap = new Sprite(tex)
-  cap.width = 64
-  cap.height = 32
-  cap.anchor.x = 0.5
-  if (reverse) {
-    cap.height = -32
-  }
-  return cap
-}
 
 export default {
   elements: {
@@ -140,21 +122,25 @@ export default {
         new NoteFlashContainer(options.noteskin, options.columnNumber),
       "Hold Active Head": { element: "Tap" },
       "Hold Inactive Head": { element: "Tap" },
-      "Hold Active Body": () => holdBody(holdTex.hold.active.body),
-      "Hold Inactive Body": () => holdBody(holdTex.hold.inactive.body),
-      "Hold Active TopCap": () => holdCap(holdTex.hold.active.cap, true),
-      "Hold Inactive TopCap": () => holdCap(holdTex.hold.inactive.cap, true),
-      "Hold Active BottomCap": () => holdCap(holdTex.hold.active.cap),
-      "Hold Inactive BottomCap": () => holdCap(holdTex.hold.inactive.cap),
+      "Hold Active Body": () => new HoldBody(holdTex.hold.active.body),
+      "Hold Inactive Body": () => new HoldBody(holdTex.hold.inactive.body),
+      "Hold Active TopCap": () =>
+        new HoldTopCap(holdTex.hold.active.cap, 64, true),
+      "Hold Inactive TopCap": () =>
+        new HoldTopCap(holdTex.hold.inactive.cap, 64, true),
+      "Hold Active BottomCap": () => new HoldTail(holdTex.hold.active.cap),
+      "Hold Inactive BottomCap": () => new HoldTail(holdTex.hold.inactive.cap),
 
       "Roll Active Head": { element: "Tap" },
       "Roll Inactive Head": { element: "Tap" },
-      "Roll Active Body": () => holdBody(holdTex.roll.active.body),
-      "Roll Inactive Body": () => holdBody(holdTex.roll.inactive.body),
-      "Roll Active TopCap": () => holdCap(holdTex.roll.active.cap, true),
-      "Roll Inactive TopCap": () => holdCap(holdTex.roll.inactive.cap, true),
-      "Roll Active BottomCap": () => holdCap(holdTex.roll.active.cap),
-      "Roll Inactive BottomCap": () => holdCap(holdTex.roll.inactive.cap),
+      "Roll Active Body": () => new HoldBody(holdTex.roll.active.body),
+      "Roll Inactive Body": () => new HoldBody(holdTex.roll.inactive.body),
+      "Roll Active TopCap": () =>
+        new HoldTopCap(holdTex.roll.active.cap, 64, true),
+      "Roll Inactive TopCap": () =>
+        new HoldTopCap(holdTex.roll.inactive.cap, 64, true),
+      "Roll Active BottomCap": () => new HoldTail(holdTex.roll.active.cap),
+      "Roll Inactive BottomCap": () => new HoldTail(holdTex.roll.inactive.cap),
     },
   },
   load: function (element, options) {
