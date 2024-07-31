@@ -152,6 +152,7 @@ export class HoldObject extends Container {
   private inactive
 
   private wasActive = false
+  private lastLength: number | null = null
 
   private elements!: HoldElements
 
@@ -254,12 +255,14 @@ export class HoldObject extends Container {
 
   setLength(length: number) {
     if (!this.loaded) return
+    if (this.lastLength == length) return
+    this.lastLength = length
     const bbO =
       this.metrics[`${this.note.type as HoldNoteType}BodyBottomOffset`]
     const btO = this.metrics[`${this.note.type as HoldNoteType}BodyTopOffset`]
 
     const states = ["Active", "Inactive"] as const
-    const sign = Math.sign(length)
+    const sign = length >= 0 ? 1 : -1
     const absLength = Math.abs(length)
     for (const state of states) {
       this.elements[state].Body.height = Math.max(0, absLength + bbO - btO)
