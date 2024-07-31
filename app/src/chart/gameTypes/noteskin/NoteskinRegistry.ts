@@ -119,6 +119,20 @@ NoteskinRegistry.register({
   subtitle: "Pete-Lawrence",
 })
 NoteskinRegistry.register({
+  id: "ddr-rainbow",
+  gameTypes: ["dance-single", "dance-double", "dance-couple"],
+  path: "./dance/ddr-rainbow",
+  title: "DDR-Rainbow",
+  subtitle: "LemmaEOF",
+})
+NoteskinRegistry.register({
+  id: "ddr-rainbow-itg",
+  gameTypes: ["dance-single", "dance-double", "dance-couple"],
+  path: "./dance/ddr-rainbow-itg",
+  title: "DDR-Rainbow (ITG quants)",
+  subtitle: "LemmaEOF",
+})
+NoteskinRegistry.register({
   id: "metal",
   gameTypes: [
     "dance-single",
