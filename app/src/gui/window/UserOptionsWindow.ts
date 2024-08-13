@@ -96,14 +96,16 @@ export class UserOptionsWindow extends Window {
   }
 
   private createOptions(options: UserOption[]) {
-    return options.map(option => {
-      const element = this.makeOption(option)
-      if (option.type == "group") {
-        this.observer!.observe(element)
-        this.sectionContainer?.appendChild(this.createEmptyGroup(option))
-      }
-      return element
-    })
+    return options
+      .filter(option => !option.disable?.(this.app))
+      .map(option => {
+        const element = this.makeOption(option)
+        if (option.type == "group") {
+          this.observer!.observe(element)
+          this.sectionContainer?.appendChild(this.createEmptyGroup(option))
+        }
+        return element
+      })
   }
 
   private makeOption(option: UserOption): HTMLDivElement {
@@ -183,7 +185,7 @@ export class UserOptionsWindow extends Window {
                 Options.getOption(option.id)
                   ? "none"
                   : "block"
-              callback?.(deserializer(value))
+              callback?.(this.app, deserializer(value))
             })
             dropdown.view.classList.add("pref-input", "dropdown-right")
             input = dropdown.view
@@ -198,7 +200,7 @@ export class UserOptionsWindow extends Window {
                 Options.getOption(option.id)
                   ? "none"
                   : "block"
-              callback?.(value)
+              callback?.(this.app, value)
             })
             dropdown.view.classList.add("pref-input", "dropdown-right")
             input = dropdown.view
@@ -230,7 +232,7 @@ export class UserOptionsWindow extends Window {
               Options.getOption(option.id)
                 ? "none"
                 : "block"
-            callback?.(deserializer(value))
+            callback?.(this.app, deserializer(value))
           }
           input = spinner.view
           break
@@ -282,7 +284,7 @@ export class UserOptionsWindow extends Window {
               Options.getOption(option.id)
                 ? "none"
                 : "block"
-            callback?.(deserializer(value))
+            callback?.(this.app, deserializer(value))
           }
           slider.oninput = () => {
             const value = parseFloat(slider.value)
@@ -316,7 +318,7 @@ export class UserOptionsWindow extends Window {
               Options.getOption(option.id)
                 ? "none"
                 : "block"
-            callback?.(textInput.value)
+            callback?.(this.app, textInput.value)
           }
           textInput.onkeydown = ev => {
             if (ev.key == "Enter") textInput.blur()

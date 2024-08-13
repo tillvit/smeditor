@@ -10,16 +10,22 @@ const baseOptions = {
   arch: "x64",
 }
 
-const mac = Object.assign(structuredClone(baseOptions), {
-  outDir: "build/mac/SMEditor",
+const mac_x64 = Object.assign(structuredClone(baseOptions), {
+  outDir: "build/mac-x64/SMEditor",
   platform: "osx",
   app: {
     name: "SMEditor",
     genericName: "SMEditor",
     icon: "./public/assets/icon/mac.icns",
     comment: "Open source tool to view and edit StepMania charts",
-    CFBundleIdentifier: "io.github.tillvit.smeditor"
+    CFBundleIdentifier: "io.github.tillvit.smeditor",
+    NSHumanReadableCopyright: ""
   }
+})
+
+const mac_arm = Object.assign(structuredClone(mac_x64), {
+  outDir: "build/mac-arm/SMEditor",
+  arch: "arm64",
 })
 
 
@@ -48,6 +54,7 @@ const linux = Object.assign(structuredClone(baseOptions), {
   }
 })
 
-await nwbuild(mac)
+await nwbuild(mac_arm)
+await nwbuild(mac_x64)
 await nwbuild(win)
 await nwbuild(linux)

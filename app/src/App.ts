@@ -80,12 +80,37 @@ export class App {
     tippy.setDefaultProps({ duration: [200, 100], theme: "sm" })
 
     if (window.nw) {
-      const activeWin = nw.Window.get()
+      const win = nw.Window.get()
+
       window.addEventListener("keydown", e => {
         if ((e.key == "r" && (e.metaKey || e.ctrlKey)) || e.key == "F5") {
           e.preventDefault()
-          activeWin.reload()
+          win.reload()
         }
+        if (
+          process.versions["nw-flavor"] == "sdk" &&
+          e.code == "KeyI" &&
+          e.metaKey &&
+          e.altKey
+        ) {
+          e.preventDefault()
+          win.showDevTools()
+        }
+      })
+      win.on("enter-fullscreen", () => {
+        console.log("enter-fullscreen")
+      })
+      win.on("maximize", () => {
+        console.log("maximize")
+      })
+      win.on("minimize", () => {
+        console.log("minimize")
+      })
+      win.on("resize", (x, y) => {
+        console.log("resize", x, y)
+      })
+      win.on("restore", () => {
+        console.log("restore")
       })
       this.checkAppVersion()
     }
@@ -93,6 +118,15 @@ export class App {
     Options.loadOptions()
     loadFlags()
     Keybinds.load(this)
+
+    if (window.nw) {
+      const win = nw.Window.get()
+      if (Options.app.fullscreen) {
+        win.enterFullscreen()
+      } else {
+        win.resizeTo(Options.app.width, Options.app.height)
+      }
+    }
 
     setInterval(() => Options.saveOptions(), 10000)
     if (Options.general.smoothAnimations)
@@ -126,7 +160,7 @@ export class App {
     })
 
     this.ticker = new Ticker()
-    this.ticker.maxFPS = 120
+    this.ticker.maxFPS = 0
     this.ticker.add(() => {
       const startTime = performance.now()
       this.renderer.render(this.stage)
@@ -437,9 +471,8 @@ function init() {
     canvas.getContext("experimental-webgl")) as WebGLRenderingContext
 
   if (!gl) {
-    document.querySelector(
-      "body"
-    )!.innerHTML = `<div class='browser-unsupported'>
+    document.querySelector("body")!.innerHTML =
+      `<div class='browser-unsupported'>
       <div class='browser-unsupported-item'>
       <h1>WebGL is not enabled</h1>
       <div>Please visit your browser settings and enable WebGL.</div>
