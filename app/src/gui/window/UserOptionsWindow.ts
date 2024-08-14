@@ -128,6 +128,9 @@ export class UserOptionsWindow extends Window {
       revert.style.width = "12px"
       revert.addEventListener("click", () => {
         Options.applyOption([option.id, Options.getDefaultOption(option.id)])
+        const callback: ((app: App, value: any) => void) | undefined =
+          option.input.onChange
+        callback?.(this.app, Options.getDefaultOption(option.id))
         EventHandler.emit("userOptionUpdated", option.id)
         // Reload the option
         item.replaceWith(this.makeOption(option))

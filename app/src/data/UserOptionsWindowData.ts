@@ -94,6 +94,7 @@ interface UserOptionCheckboxInput {
 
 interface UserOptionColorInput {
   type: "color"
+  onChange?: (app: App, value: string) => void
 }
 
 type UserOptionInput<T> =

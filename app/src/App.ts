@@ -98,19 +98,16 @@ export class App {
         }
       })
       win.on("enter-fullscreen", () => {
-        console.log("enter-fullscreen")
+        Options.app.fullscreen = win.isFullscreen
       })
-      win.on("maximize", () => {
-        console.log("maximize")
-      })
-      win.on("minimize", () => {
-        console.log("minimize")
-      })
-      win.on("resize", (x, y) => {
-        console.log("resize", x, y)
+      win.on("resize", (w, h) => {
+        if (!win.isFullscreen) {
+          Options.app.width = w!
+          Options.app.height = h!
+        }
       })
       win.on("restore", () => {
-        console.log("restore")
+        Options.app.fullscreen = win.isFullscreen
       })
       this.checkAppVersion()
     }
