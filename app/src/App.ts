@@ -418,7 +418,7 @@ export class App {
     }
     let os = "win"
     if (process.platform == "darwin") {
-      os = process.arch == "arm64" ? "mac-arm" : "mac-x64"
+      os = nw.require("os").arch() == "arm64" ? "mac-arm" : "mac-x64"
     } else if (process.platform == "linux") os = "linux"
     fetch("/smeditor/assets/app/versions.json")
       .then(data => data.json())
