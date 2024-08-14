@@ -14,7 +14,7 @@
     <link rel="icon" type="image/mp4" href="/smeditor/assets/icon/favicon.ico" />
     
     <title>SMEditor</title>
-    <link rel="stylesheet" href="/smeditor/assets/index-8a1528ec.css">
+    <link rel="stylesheet" href="/smeditor/assets/index-d7a91955.css">
   <link rel="manifest" href="/smeditor/manifest.json"><script id="vite-plugin-pwa:register-sw" src="/smeditor/registerSW.js"></script></head>
   <body>
     <div class="banner">
@@ -26,32 +26,42 @@
         </div>
         <p>An open source tool to view and edit StepMania charts.</p>
         <div class="banner-button-container">
-          <a id="download-link">
-            <button id="download-button" class="large">
-              <div class="button-content">
-                <svg
-                  width="800px"
-                  height="800px"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    stroke="currentColor"
-                    d="M17 17H17.01M17.4 14H18C18.9319 14 19.3978 14 19.7654 14.1522C20.2554 14.3552 20.6448 14.7446 20.8478 15.2346C21 15.6022 21 16.0681 21 17C21 17.9319 21 18.3978 20.8478 18.7654C20.6448 19.2554 20.2554 19.6448 19.7654 19.8478C19.3978 20 18.9319 20 18 20H6C5.06812 20 4.60218 20 4.23463 19.8478C3.74458 19.6448 3.35523 19.2554 3.15224 18.7654C3 18.3978 3 17.9319 3 17C3 16.0681 3 15.6022 3.15224 15.2346C3.35523 14.7446 3.74458 14.3552 4.23463 14.1522C4.60218 14 5.06812 14 6 14H6.6M12 15V4M12 15L9 12M12 15L15 12"
-                    stroke="#000000"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-                <div class="button-text">
-                  <h3>Download the desktop app</h3>
-                  <div id="version" style="font-size: 12px">-</div>
+          <div
+            style="display: flex; flex-direction: column; align-items: center"
+          >
+            <a id="download-link">
+              <button id="download-button" class="large">
+                <div class="button-content">
+                  <svg
+                    width="800px"
+                    height="800px"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      stroke="currentColor"
+                      d="M17 17H17.01M17.4 14H18C18.9319 14 19.3978 14 19.7654 14.1522C20.2554 14.3552 20.6448 14.7446 20.8478 15.2346C21 15.6022 21 16.0681 21 17C21 17.9319 21 18.3978 20.8478 18.7654C20.6448 19.2554 20.2554 19.6448 19.7654 19.8478C19.3978 20 18.9319 20 18 20H6C5.06812 20 4.60218 20 4.23463 19.8478C3.74458 19.6448 3.35523 19.2554 3.15224 18.7654C3 18.3978 3 17.9319 3 17C3 16.0681 3 15.6022 3.15224 15.2346C3.35523 14.7446 3.74458 14.3552 4.23463 14.1522C4.60218 14 5.06812 14 6 14H6.6M12 15V4M12 15L9 12M12 15L15 12"
+                      stroke="#000000"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  <div class="button-text">
+                    <h3>Download the desktop app</h3>
+                    <div id="version" style="font-size: 12px">-</div>
+                  </div>
                 </div>
-              </div>
-            </button>
-          </a>
+              </button>
+            </a>
+            <a
+              id="other-downloads"
+              href="https://github.com/tillvit/smeditor/releases/"
+              target="_blank"
+              >All Downloads</a
+            >
+          </div>
           <a href="app/">
             <button id="web-button" class="large">
               <div class="button-content">
@@ -249,98 +259,113 @@
       </div>
     </div>
     <script>
-      const OS_NAMES = {
-        win: "Windows",
-        mac: "MacOS",
-        linux: "Linux",
-      }
-      const BUILD_TYPES = {
-        stable: 3,
-        beta: 2,
-        alpha: 1,
-        nightly: 0,
-      }
-      let os = "win"
-      if (navigator.userAgent.includes("Mac")) os = "mac"
-      else if (navigator.userAgent.includes("Linux")) os = "linux"
-      fetch("/smeditor/assets/app/versions.json")
-        .then(data => data.json())
-        .then(versions => {
-          versions = versions.sort((a, b) => {
-            if (BUILD_TYPES[a.type] != BUILD_TYPES[b.type])
-              return BUILD_TYPES[b.type] - BUILD_TYPES[a.type]
-            return b.date - a.date
-          })
-          const version = versions[0]
-          document.getElementById(
-            "version"
-          ).innerText = `${version.version} • ${OS_NAMES[os]}`
-          document.getElementById("download-link").href = version.downloads[os]
-        })
-      document
-        .querySelectorAll("#feature-container .feature")
-        .forEach(element => {
-          const open = () => {
-            const clone = element.cloneNode(true)
-            clone.style.position = "absolute"
-            const elbr = element.getBoundingClientRect()
-            const ctbr = document
-              .getElementById("feature-container")
-              .getBoundingClientRect()
-            const imgCopy = clone.querySelector(".preview").cloneNode()
-            imgCopy.classList.remove("preview")
-            imgCopy.classList.add("hover")
-            clone.appendChild(imgCopy)
-            clone.style.left = elbr.left - ctbr.left + "px"
-            clone.style.top = elbr.top - ctbr.top + "px"
-            clone.style.width = elbr.width + "px"
-            clone.style.maxWidth = "none"
-            clone.style.height = elbr.height + "px"
-            clone.style.zIndex = "100"
-            clone.style.justifyContent = "normal"
-            clone.querySelector(".description").style.position = "absolute"
-            clone.querySelector(".description").style.top =
-              element.querySelector(".description").offsetTop + "px"
-            clone.querySelector(".title").style.position = "absolute"
-            clone.querySelector(".title").style.top =
-              element.querySelector(".title").offsetTop + "px"
-            clone.querySelector(".preview").style.position = "absolute"
-            clone.querySelector(".preview").style.top =
-              element.querySelector(".preview").offsetTop + "px"
-            imgCopy.style.position = "absolute"
-            imgCopy.style.top = elbr.height + "px"
-            clone.style.opacity = 1
-            element.style.opacity = 0
-            const close = () => {
-              clone.style.pointerEvents = "none"
-              window.removeEventListener("mousemove", mouseHandler)
-              clone.style.height = elbr.height + "px"
-              clone.classList.remove("hovered")
-              clone.style.pointerEvents = "none"
-              setTimeout(() => {
-                element.style.opacity = 1
-                clone.remove()
-              }, 500)
+      ;(async () => {
+        const OS_NAMES = {
+          win: "Windows",
+          "mac-x64": "MacOS (Intel)",
+          "mac-arm": "MacOS (Apple Silicon)",
+          linux: "Linux",
+        }
+        const BUILD_TYPES = {
+          stable: 3,
+          beta: 2,
+          alpha: 1,
+          nightly: 0,
+        }
+        let os = "win"
+        if (navigator.userAgent.includes("Mac")) {
+          os = "mac-x64"
+          if (navigator.userAgentData) {
+            // Try to get architecture
+            const data = await navigator.userAgentData.getHighEntropyValues([
+              "architecture",
+            ])
+            if (data.architecture === "arm") {
+              os = "mac-arm"
             }
-            const mouseHandler = e => {
-              if (e.clientY - elbr.top > elbr.height + 2) close()
-              if (e.clientY - elbr.top < -2) close()
-              if (e.clientX - elbr.left > elbr.width + 2) close()
-              if (e.clientX - elbr.left < -2) close()
-            }
-            window.addEventListener("mousemove", mouseHandler)
-            setTimeout(() => {
-              clone.style.height =
-                elbr.height +
-                element.querySelector(".preview").clientHeight +
-                "px"
-              clone.classList.add("hovered")
-            })
-            document.getElementById("feature-popups").appendChild(clone)
           }
-          element.onmouseenter = () => open()
-          element.onclick = () => open()
-        })
+        } else if (navigator.userAgent.includes("Linux")) {
+          os = "linux"
+        }
+        fetch("/smeditor/assets/app/versions.json")
+          .then(data => data.json())
+          .then(versions => {
+            versions = versions.sort((a, b) => {
+              if (BUILD_TYPES[a.type] != BUILD_TYPES[b.type])
+                return BUILD_TYPES[b.type] - BUILD_TYPES[a.type]
+              return b.date - a.date
+            })
+            const version = versions[0]
+            document.getElementById("version").innerText =
+              `${version.version} • ${OS_NAMES[os]}`
+            document.getElementById("download-link").href =
+              version.downloads[os]
+          })
+        document
+          .querySelectorAll("#feature-container .feature")
+          .forEach(element => {
+            const open = () => {
+              const clone = element.cloneNode(true)
+              clone.style.position = "absolute"
+              const elbr = element.getBoundingClientRect()
+              const ctbr = document
+                .getElementById("feature-container")
+                .getBoundingClientRect()
+              const imgCopy = clone.querySelector(".preview").cloneNode()
+              imgCopy.classList.remove("preview")
+              imgCopy.classList.add("hover")
+              clone.appendChild(imgCopy)
+              clone.style.left = elbr.left - ctbr.left + "px"
+              clone.style.top = elbr.top - ctbr.top + "px"
+              clone.style.width = elbr.width + "px"
+              clone.style.maxWidth = "none"
+              clone.style.height = elbr.height + "px"
+              clone.style.zIndex = "100"
+              clone.style.justifyContent = "normal"
+              clone.querySelector(".description").style.position = "absolute"
+              clone.querySelector(".description").style.top =
+                element.querySelector(".description").offsetTop + "px"
+              clone.querySelector(".title").style.position = "absolute"
+              clone.querySelector(".title").style.top =
+                element.querySelector(".title").offsetTop + "px"
+              clone.querySelector(".preview").style.position = "absolute"
+              clone.querySelector(".preview").style.top =
+                element.querySelector(".preview").offsetTop + "px"
+              imgCopy.style.position = "absolute"
+              imgCopy.style.top = elbr.height + "px"
+              clone.style.opacity = 1
+              element.style.opacity = 0
+              const close = () => {
+                clone.style.pointerEvents = "none"
+                window.removeEventListener("mousemove", mouseHandler)
+                clone.style.height = elbr.height + "px"
+                clone.classList.remove("hovered")
+                clone.style.pointerEvents = "none"
+                setTimeout(() => {
+                  element.style.opacity = 1
+                  clone.remove()
+                }, 500)
+              }
+              const mouseHandler = e => {
+                if (e.clientY - elbr.top > elbr.height + 2) close()
+                if (e.clientY - elbr.top < -2) close()
+                if (e.clientX - elbr.left > elbr.width + 2) close()
+                if (e.clientX - elbr.left < -2) close()
+              }
+              window.addEventListener("mousemove", mouseHandler)
+              setTimeout(() => {
+                clone.style.height =
+                  elbr.height +
+                  element.querySelector(".preview").clientHeight +
+                  "px"
+                clone.classList.add("hovered")
+              })
+              document.getElementById("feature-popups").appendChild(clone)
+            }
+            element.onmouseenter = () => open()
+            element.onclick = () => open()
+          })
+      })()
     </script>
   </body>
 </html>
