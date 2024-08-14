@@ -161,6 +161,7 @@ export class ChartManager {
 
   private readonly noChartTextA: BitmapText
   private readonly noChartTextB: BitmapText
+  private readonly loadingText: BitmapText
 
   private shiftPressed = 0
 
@@ -342,15 +343,27 @@ export class ChartManager {
     })
     this.noChartTextA.visible = false
     this.noChartTextB.visible = false
+    this.app.stage.addChild(this.noChartTextB)
 
-    const moveNoChartText = () => {
+    this.loadingText = new BitmapText("Loading simfile...", {
+      fontName: "Main",
+      fontSize: 20,
+    })
+    this.loadingText.anchor.set(0.5)
+    this.loadingText.tint = 0x555555
+    this.app.stage.addChild(this.loadingText)
+    this.loadingText.visible = false
+
+    const moveCenterText = () => {
       this.noChartTextA.x = this.app.renderer.screen.width / 2
       this.noChartTextA.y = this.app.renderer.screen.height / 2 - 20
       this.noChartTextB.x = this.app.renderer.screen.width / 2
       this.noChartTextB.y = this.app.renderer.screen.height / 2 + 10
+
+      this.loadingText.x = this.app.renderer.screen.width / 2
+      this.loadingText.y = this.app.renderer.screen.height / 2
     }
-    moveNoChartText()
-    this.app.stage.addChild(this.noChartTextB)
+    moveCenterText()
 
     // Update ChartRenderer every frame
     this.app.ticker.add(() => {
@@ -484,7 +497,7 @@ export class ChartManager {
         this.chartView.x = this.app.renderer.screen.width / 2
         this.chartView.y = this.app.renderer.screen.height / 2
       }
-      moveNoChartText()
+      moveCenterText()
     })
 
     EventHandler.on("chartModified", () => {
@@ -695,6 +708,8 @@ export class ChartManager {
     this.time = 0
     this.beat = 0
 
+    this.loadingText.visible = true
+
     // Load the SM file
     const smHandle = await FileHandler.getFileHandle(this.smPath)
     if (!smHandle) {
@@ -703,12 +718,15 @@ export class ChartManager {
         "error"
       )
       this.app.windowManager.openWindow(new InitialWindow(this.app))
+      this.loadingText.visible = false
       return
     }
     const smFile = await smHandle.getFile()
     this.loadedSM = new Simfile(smFile)
 
     await this.loadedSM.loaded
+
+    this.loadingText.visible = false
 
     this.noChartTextA.visible = true
     this.noChartTextB.visible = true
@@ -1332,8 +1350,8 @@ export class ChartManager {
         hold.endBeat - hold.startBeat == 0
           ? "Tap"
           : hold.roll
-          ? "Roll"
-          : "Hold",
+            ? "Roll"
+            : "Hold",
       hold:
         hold.endBeat - hold.startBeat == 0
           ? undefined

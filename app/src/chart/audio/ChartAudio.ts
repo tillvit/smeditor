@@ -84,10 +84,14 @@ export class ChartAudio {
     this._loadedBuffer = this._audioContext.createBuffer(2, 1, 44100)
     this.initSource()
     this.loaded = new Promise(resolve => {
+      if (data) {
+        WaterfallManager.create("Loading audio...")
+      }
       this.decodeData(data)
         .then(buffer => {
           if (!buffer) return
           this._loadedBuffer = buffer
+          WaterfallManager.create("Loaded audio")
           return buffer
         })
         .then(async buffer => {
