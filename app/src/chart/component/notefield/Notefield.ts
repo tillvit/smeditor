@@ -60,6 +60,7 @@ export class NoteWrapper extends Container {
     this.icon.anchor.set(0.5)
     this.icon.scale.set(0.3)
     this.icon.alpha = 0.8
+    this.icon.visible = false
 
     this.addChild(object, this.icon)
 
