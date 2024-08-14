@@ -55,7 +55,8 @@ interface Version {
   type: string
   date: number
   downloads: {
-    mac: string
+    "mac-x64": string
+    "mac-arm": string
     win: string
     linux: string
   }
@@ -416,8 +417,9 @@ export class App {
       nightly: 0,
     }
     let os = "win"
-    if (navigator.userAgent.includes("Mac")) os = "mac"
-    else if (navigator.userAgent.includes("Linux")) os = "linux"
+    if (process.platform == "darwin") {
+      os = process.arch == "arm64" ? "mac-arm" : "mac-x64"
+    } else if (process.platform == "linux") os = "linux"
     fetch("/smeditor/assets/app/versions.json")
       .then(data => data.json())
       .then((versions: Version[]) => {

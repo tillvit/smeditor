@@ -1,6 +1,6 @@
 {
   "name": "SMEditor",
-  "version": "0.1.1-beta",
+  "version": "1.0.0",
   "main": "index.html",
   "node-remote": [
     "http://127.0.0.1:5173/smeditor/app",
