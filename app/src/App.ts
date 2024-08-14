@@ -83,7 +83,8 @@ export class App {
     if (window.nw) {
       const win = nw.Window.get()
 
-      nw.App.on("open", () => {
+      nw.App.on("open", args => {
+        console.log(args)
         nw.Window.open(window.location.href)
       })
 
@@ -92,7 +93,7 @@ export class App {
           e.preventDefault()
           win.reload()
         }
-        if (e.key == "w" && (e.metaKey || e.ctrlKey)) {
+        if (e.code == "KeyW" && (e.metaKey || e.ctrlKey)) {
           e.preventDefault()
           win.close()
         }
