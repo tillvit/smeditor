@@ -55,7 +55,8 @@ interface Version {
   type: string
   date: number
   downloads: {
-    mac: string
+    "mac-x64": string
+    "mac-arm": string
     win: string
     linux: string
   }
@@ -80,12 +81,34 @@ export class App {
     tippy.setDefaultProps({ duration: [200, 100], theme: "sm" })
 
     if (window.nw) {
-      const activeWin = nw.Window.get()
+      const win = nw.Window.get()
+
       window.addEventListener("keydown", e => {
         if ((e.key == "r" && (e.metaKey || e.ctrlKey)) || e.key == "F5") {
           e.preventDefault()
-          activeWin.reload()
+          win.reload()
         }
+        if (
+          process.versions["nw-flavor"] == "sdk" &&
+          e.code == "KeyI" &&
+          e.metaKey &&
+          e.altKey
+        ) {
+          e.preventDefault()
+          win.showDevTools()
+        }
+      })
+      win.on("enter-fullscreen", () => {
+        Options.app.fullscreen = win.isFullscreen
+      })
+      win.on("resize", (w, h) => {
+        if (!win.isFullscreen) {
+          Options.app.width = w!
+          Options.app.height = h!
+        }
+      })
+      win.on("restore", () => {
+        Options.app.fullscreen = win.isFullscreen
       })
       this.checkAppVersion()
     }
@@ -93,6 +116,15 @@ export class App {
     Options.loadOptions()
     loadFlags()
     Keybinds.load(this)
+
+    if (window.nw) {
+      const win = nw.Window.get()
+      if (Options.app.fullscreen) {
+        win.enterFullscreen()
+      } else {
+        win.resizeTo(Options.app.width, Options.app.height)
+      }
+    }
 
     setInterval(() => Options.saveOptions(), 10000)
     if (Options.general.smoothAnimations)
@@ -126,7 +158,7 @@ export class App {
     })
 
     this.ticker = new Ticker()
-    this.ticker.maxFPS = 120
+    this.ticker.maxFPS = 0
     this.ticker.add(() => {
       const startTime = performance.now()
       this.renderer.render(this.stage)
@@ -385,8 +417,9 @@ export class App {
       nightly: 0,
     }
     let os = "win"
-    if (navigator.userAgent.includes("Mac")) os = "mac"
-    else if (navigator.userAgent.includes("Linux")) os = "linux"
+    if (process.platform == "darwin") {
+      os = process.arch == "arm64" ? "mac-arm" : "mac-x64"
+    } else if (process.platform == "linux") os = "linux"
     fetch("/smeditor/assets/app/versions.json")
       .then(data => data.json())
       .then((versions: Version[]) => {
@@ -437,9 +470,8 @@ function init() {
     canvas.getContext("experimental-webgl")) as WebGLRenderingContext
 
   if (!gl) {
-    document.querySelector(
-      "body"
-    )!.innerHTML = `<div class='browser-unsupported'>
+    document.querySelector("body")!.innerHTML =
+      `<div class='browser-unsupported'>
       <div class='browser-unsupported-item'>
       <h1>WebGL is not enabled</h1>
       <div>Please visit your browser settings and enable WebGL.</div>

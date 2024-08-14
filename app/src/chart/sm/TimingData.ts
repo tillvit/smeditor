@@ -869,7 +869,7 @@ export abstract class TimingData {
       case "TIMESIGNATURES":
       case "COMBOS":
       case "FAKES":
-        return !!this.columns[type] && this.columns[type]!.events.length > 0
+        return !!this.columns[type] && this.columns[type].events.length > 0
     }
   }
 

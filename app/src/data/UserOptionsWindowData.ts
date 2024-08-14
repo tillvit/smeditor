@@ -8,12 +8,14 @@ export interface UserOptionGroup {
   id: string
   label: string
   children: UserOption[]
+  disable?: (app: App) => boolean
 }
 
 interface UserOptionSubgroup {
   type: "subgroup"
   label?: string
   children: UserOption[]
+  disable?: (app: App) => boolean
 }
 
 interface UserOptionItem {
@@ -22,6 +24,7 @@ interface UserOptionItem {
   label: string
   tooltip?: string
   input: UserOptionInput<any>
+  disable?: (app: App) => boolean
 }
 
 interface UserOptionTextInput {
@@ -30,7 +33,7 @@ interface UserOptionTextInput {
     serialize: (value: string) => string
     deserialize: (value: string) => string
   }
-  onChange?: (value: string) => void
+  onChange?: (app: App, value: string) => void
 }
 
 type UserOptionDropdownInput<T> =
@@ -38,13 +41,13 @@ type UserOptionDropdownInput<T> =
       type: "dropdown"
       items: readonly string[]
       advanced: false
-      onChange?: (value: string | number) => void
+      onChange?: (app: App, value: string | number) => void
     }
   | {
       type: "dropdown"
       items: readonly number[]
       advanced: false
-      onChange?: (value: string | number) => void
+      onChange?: (app: App, value: string | number) => void
     }
   | {
       type: "dropdown"
@@ -54,7 +57,7 @@ type UserOptionDropdownInput<T> =
         serialize: (value: string | number | boolean) => T
         deserialize: (value: T) => string | number | boolean
       }
-      onChange?: (value: string | number | boolean) => void
+      onChange?: (app: App, value: string | number | boolean) => void
     }
 
 interface UserOptionNumberInput {
@@ -67,7 +70,7 @@ interface UserOptionNumberInput {
     serialize: (value: number) => number
     deserialize: (value: number) => number
   }
-  onChange?: (value: number) => void
+  onChange?: (app: App, value: number) => void
 }
 
 interface UserOptionSliderInput {
@@ -81,7 +84,7 @@ interface UserOptionSliderInput {
     serialize: (value: number) => number
     deserialize: (value: number) => number
   }
-  onChange?: (value: number) => void
+  onChange?: (app: App, value: number) => void
 }
 
 interface UserOptionCheckboxInput {
@@ -91,6 +94,7 @@ interface UserOptionCheckboxInput {
 
 interface UserOptionColorInput {
   type: "color"
+  onChange?: (app: App, value: string) => void
 }
 
 type UserOptionInput<T> =
@@ -102,6 +106,74 @@ type UserOptionInput<T> =
   | UserOptionColorInput
 
 export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
+  {
+    type: "group",
+    id: "app",
+    label: "App",
+    disable: () => window.nw === undefined,
+    children: [
+      {
+        type: "subgroup",
+        children: [
+          {
+            type: "item",
+            label: "Window Width",
+            id: "app.width",
+            input: {
+              type: "number",
+              step: 50,
+              min: 300,
+              onChange: (_, value) => {
+                const win = nw.Window.get()
+                if (!win.isFullscreen) {
+                  win.width = value
+                }
+              },
+            },
+          },
+          {
+            type: "item",
+            label: "Window Height",
+            id: "app.height",
+            input: {
+              type: "number",
+              step: 50,
+              min: 300,
+              onChange: (_, value) => {
+                const win = nw.Window.get()
+                if (!win.isFullscreen) {
+                  win.height = value
+                }
+              },
+            },
+          },
+        ],
+      },
+      {
+        type: "subgroup",
+        children: [
+          {
+            type: "item",
+            label: "Fullscreen",
+            id: "app.fullscreen",
+            input: {
+              type: "checkbox",
+              onChange: (_, value) => {
+                const win = nw.Window.get()
+                if (value) {
+                  nw.Window.get().enterFullscreen()
+                } else {
+                  win.hide()
+                  nw.Window.get().leaveFullscreen()
+                  win.show()
+                }
+              },
+            },
+          },
+        ],
+      },
+    ],
+  },
   {
     type: "group",
     id: "general",

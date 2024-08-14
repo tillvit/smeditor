@@ -31,6 +31,13 @@ export class UserOptionsWindow extends Window {
     this.app = app
 
     this.initView()
+
+    EventHandler.on("resize", () => {
+      this.move(
+        window.innerWidth / 2 - this.options.width / 2,
+        window.innerHeight / 2 - this.options.height / 2
+      )
+    })
   }
 
   initView(): void {
@@ -96,14 +103,16 @@ export class UserOptionsWindow extends Window {
   }
 
   private createOptions(options: UserOption[]) {
-    return options.map(option => {
-      const element = this.makeOption(option)
-      if (option.type == "group") {
-        this.observer!.observe(element)
-        this.sectionContainer?.appendChild(this.createEmptyGroup(option))
-      }
-      return element
-    })
+    return options
+      .filter(option => !option.disable?.(this.app))
+      .map(option => {
+        const element = this.makeOption(option)
+        if (option.type == "group") {
+          this.observer!.observe(element)
+          this.sectionContainer?.appendChild(this.createEmptyGroup(option))
+        }
+        return element
+      })
   }
 
   private makeOption(option: UserOption): HTMLDivElement {
@@ -126,6 +135,9 @@ export class UserOptionsWindow extends Window {
       revert.style.width = "12px"
       revert.addEventListener("click", () => {
         Options.applyOption([option.id, Options.getDefaultOption(option.id)])
+        const callback: ((app: App, value: any) => void) | undefined =
+          option.input.onChange
+        callback?.(this.app, Options.getDefaultOption(option.id))
         EventHandler.emit("userOptionUpdated", option.id)
         // Reload the option
         item.replaceWith(this.makeOption(option))
@@ -183,7 +195,7 @@ export class UserOptionsWindow extends Window {
                 Options.getOption(option.id)
                   ? "none"
                   : "block"
-              callback?.(deserializer(value))
+              callback?.(this.app, deserializer(value))
             })
             dropdown.view.classList.add("pref-input", "dropdown-right")
             input = dropdown.view
@@ -198,7 +210,7 @@ export class UserOptionsWindow extends Window {
                 Options.getOption(option.id)
                   ? "none"
                   : "block"
-              callback?.(value)
+              callback?.(this.app, value)
             })
             dropdown.view.classList.add("pref-input", "dropdown-right")
             input = dropdown.view
@@ -230,7 +242,7 @@ export class UserOptionsWindow extends Window {
               Options.getOption(option.id)
                 ? "none"
                 : "block"
-            callback?.(deserializer(value))
+            callback?.(this.app, deserializer(value))
           }
           input = spinner.view
           break
@@ -282,7 +294,7 @@ export class UserOptionsWindow extends Window {
               Options.getOption(option.id)
                 ? "none"
                 : "block"
-            callback?.(deserializer(value))
+            callback?.(this.app, deserializer(value))
           }
           slider.oninput = () => {
             const value = parseFloat(slider.value)
@@ -316,7 +328,7 @@ export class UserOptionsWindow extends Window {
               Options.getOption(option.id)
                 ? "none"
                 : "block"
-            callback?.(textInput.value)
+            callback?.(this.app, textInput.value)
           }
           textInput.onkeydown = ev => {
             if (ev.key == "Enter") textInput.blur()

@@ -8,6 +8,11 @@ const SAVE_BLACKLIST = [
 ]
 
 export class DefaultOptions {
+  static app = {
+    width: 800,
+    height: 600,
+    fullscreen: true,
+  }
   static general = {
     spinnerStep: 1,
     smoothAnimations: true,

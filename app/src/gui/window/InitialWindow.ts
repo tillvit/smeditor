@@ -1,6 +1,7 @@
 import scrollIntoView from "scroll-into-view-if-needed"
 import { App } from "../../App"
 
+import { EventHandler } from "../../util/EventHandler"
 import { RecentFileHandler } from "../../util/RecentFileHandler"
 import { Icons } from "../Icons"
 import { DirectoryWindow } from "./DirectoryWindow"
@@ -24,6 +25,13 @@ export class InitialWindow extends Window {
     this.keyHandler = this.handleKeyEvent.bind(this)
     window.addEventListener("keydown", this.keyHandler)
     this.initView()
+
+    EventHandler.on("resize", () => {
+      this.move(
+        window.innerWidth / 2 - this.options.width / 2,
+        window.innerHeight / 2 - this.options.height / 2
+      )
+    })
   }
 
   onClose(): void {

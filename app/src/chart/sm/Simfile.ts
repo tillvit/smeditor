@@ -79,8 +79,8 @@ export class Simfile {
 
   addChart(chart: Chart) {
     this.charts[chart.gameType.id] ||= []
-    this.charts[chart.gameType.id]!.push(chart)
-    this.charts[chart.gameType.id]!.sort((a, b) => {
+    this.charts[chart.gameType.id].push(chart)
+    this.charts[chart.gameType.id].sort((a, b) => {
       if (
         CHART_DIFFICULTIES.indexOf(a.difficulty) ==
         CHART_DIFFICULTIES.indexOf(b.difficulty)

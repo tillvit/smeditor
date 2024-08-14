@@ -176,4 +176,9 @@ export abstract class Window {
         bounds.height - this.windowElement.clientHeight + bounds.top
       ) + "px"
   }
+
+  move(x: number, y: number) {
+    this.windowElement.style.left = x + "px"
+    this.windowElement.style.top = y + "px"
+  }
 }

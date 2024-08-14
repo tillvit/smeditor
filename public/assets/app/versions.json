@@ -1,10 +1,26 @@
 [
   {
+    "version": "1.0.0",
+    "type": "stable",
+    "date": 1723601217471,
+    "downloads": {
+      "mac-x64": "https://github.com/tillvit/smeditor/releases/download/v1.0.0/SMEditor-Mac-x64.zip",
+      "mac-arm": "https://github.com/tillvit/smeditor/releases/download/v1.0.0/SMEditor-Mac-arm.zip",
+      "win": "https://github.com/tillvit/smeditor/releases/download/v1.0.0/SMEditor-Windows.zip",
+      "linux": "https://github.com/tillvit/smeditor/releases/download/v1.0.0/SMEditor-Linux.zip"
+    },
+    "changelog": [
+      "Add Apple Silicon release",
+      "Fix faulty chrome flags"
+    ]
+  },
+  {
     "version": "0.1.1-beta",
     "type": "beta",
     "date": 1700175762544,
     "downloads": {
-      "mac": "https://github.com/tillvit/smeditor/releases/download/v0.1.1-beta/SMEditor.app.zip",
+      "mac-x64": "https://github.com/tillvit/smeditor/releases/download/v0.1.1-beta/SMEditor.app.zip",
+      "mac-arm": "https://github.com/tillvit/smeditor/releases/download/v0.1.1-beta/SMEditor.app.zip",
       "win": "https://github.com/tillvit/smeditor/releases/download/v0.1.1-beta/SMEditor-Windows.zip",
       "linux": "https://github.com/tillvit/smeditor/releases/download/v0.1.1-beta/SMEditor-Linux.zip"
     },
@@ -17,7 +33,8 @@
     "type": "beta",
     "date": 1696428414145,
     "downloads": {
-      "mac": "https://github.com/tillvit/smeditor/releases/download/v0.1.0-beta/SMEditor.app.zip",
+      "mac-x64": "https://github.com/tillvit/smeditor/releases/download/v0.1.0-beta/SMEditor.app.zip",
+      "mac-arm": "https://github.com/tillvit/smeditor/releases/download/v0.1.0-beta/SMEditor.app.zip",
       "win": "https://github.com/tillvit/smeditor/releases/download/v0.1.0-beta/SMEditor-Windows.zip",
       "linux": "https://github.com/tillvit/smeditor/releases/download/v0.1.0-beta/SMEditor-Linux.zip"
     },
