@@ -84,8 +84,23 @@ export class App {
       const win = nw.Window.get()
 
       nw.App.on("open", args => {
-        console.log(args)
-        nw.Window.open(window.location.href)
+        if (!args || args?.length === 0) {
+          nw.Window.open(window.location.href)
+          return
+        }
+        let foundSM = ""
+        for (const file of args) {
+          if (extname(file) == ".ssc") {
+            foundSM = file
+            break
+          } else if (foundSM == "" && extname(file) == ".sm") {
+            foundSM = file
+          }
+        }
+        if (foundSM != "") {
+          this.chartManager.loadSM(foundSM)
+          this.windowManager.getWindowById("select_sm_initial")?.closeWindow()
+        }
       })
 
       window.addEventListener("keydown", e => {
