@@ -1420,7 +1420,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Noteskins...",
     bindLabel: "Open Noteskin Window",
     combos: [{ mods: [Modifier.SHIFT], key: "N" }],
-    disabled: false,
+    disabled: app => !app.chartManager.chartView,
     callback: app => app.windowManager.openWindow(new NoteskinWindow(app)),
   },
 }
