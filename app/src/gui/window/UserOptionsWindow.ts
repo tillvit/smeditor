@@ -31,6 +31,13 @@ export class UserOptionsWindow extends Window {
     this.app = app
 
     this.initView()
+
+    EventHandler.on("resize", () => {
+      this.move(
+        window.innerWidth / 2 - this.options.width / 2,
+        window.innerHeight / 2 - this.options.height / 2
+      )
+    })
   }
 
   initView(): void {
