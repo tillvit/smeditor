@@ -13,12 +13,12 @@ export class InitialWindow extends Window {
 
   private readonly keyHandler
 
-  constructor(app: App) {
+  constructor(app: App, disableClose = true) {
     super({
       title: "Open a Song",
       width: 400,
       height: 320,
-      disableClose: true,
+      disableClose,
       win_id: "select_sm_initial",
     })
     this.app = app
