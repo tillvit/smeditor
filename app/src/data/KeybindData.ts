@@ -1,12 +1,12 @@
 import { App } from "../App"
 import { EditMode, EditTimingMode } from "../chart/ChartManager"
-import { isHoldNote, NotedataEntry } from "../chart/sm/NoteTypes"
+import { isHoldNote } from "../chart/sm/NoteTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
-import { DirectoryWindow } from "../gui/window/DirectoryWindow"
 import { EQWindow } from "../gui/window/EQWindow"
 import { ExportNotedataWindow } from "../gui/window/ExportNotedataWindow"
 import { GameplayKeybindWindow } from "../gui/window/GameplayKeybindWindow"
+import { InitialWindow } from "../gui/window/InitialWindow"
 import { KeybindWindow } from "../gui/window/KeybindWindow"
 import { NewSongWindow } from "../gui/window/NewSongWindow"
 import { NoteskinWindow } from "../gui/window/NoteskinWindow"
@@ -220,14 +220,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
           app.chartManager.loadSM(fileSelector.value)
         fileSelector.click()
       } else {
-        app.windowManager.openWindow(
-          new DirectoryWindow(app, {
-            title: "Select an sm/ssc file...",
-            accepted_file_types: [".sm", ".ssc"],
-            disableClose: true,
-            callback: (path: string) => app.chartManager.loadSM(path),
-          })
-        )
+        app.windowManager.openWindow(new InitialWindow(app, false))
       }
     },
   },
@@ -772,8 +765,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.modifySelection(note => {
-        if (note.type == "Hold" || note.type == "Roll")
-          (note as NotedataEntry).type = "Tap"
+        if (note.type == "Hold" || note.type == "Roll") note.type = "Tap"
         return note
       })
     },
@@ -1428,7 +1420,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Noteskins...",
     bindLabel: "Open Noteskin Window",
     combos: [{ mods: [Modifier.SHIFT], key: "N" }],
-    disabled: false,
+    disabled: app => !app.chartManager.chartView,
     callback: app => app.windowManager.openWindow(new NoteskinWindow(app)),
   },
 }

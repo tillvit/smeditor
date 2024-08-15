@@ -83,16 +83,38 @@ export class App {
     if (window.nw) {
       const win = nw.Window.get()
 
+      nw.App.on("open", args => {
+        if (!args || args?.length === 0) {
+          nw.Window.open(window.location.href)
+          return
+        }
+        let foundSM = ""
+        for (const file of args) {
+          if (extname(file) == ".ssc") {
+            foundSM = file
+            break
+          } else if (foundSM == "" && extname(file) == ".sm") {
+            foundSM = file
+          }
+        }
+        if (foundSM != "") {
+          this.chartManager.loadSM(foundSM)
+          this.windowManager.getWindowById("select_sm_initial")?.closeWindow()
+        }
+      })
+
       window.addEventListener("keydown", e => {
         if ((e.key == "r" && (e.metaKey || e.ctrlKey)) || e.key == "F5") {
           e.preventDefault()
           win.reload()
         }
+        if (e.code == "KeyW" && (e.metaKey || e.ctrlKey)) {
+          e.preventDefault()
+          win.close()
+        }
         if (
           process.versions["nw-flavor"] == "sdk" &&
-          e.code == "KeyI" &&
-          e.metaKey &&
-          e.altKey
+          ((e.code == "KeyI" && e.metaKey && e.altKey) || e.key == "F5")
         ) {
           e.preventDefault()
           win.showDevTools()

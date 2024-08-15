@@ -11,7 +11,7 @@ export class DefaultOptions {
   static app = {
     width: 800,
     height: 600,
-    fullscreen: true,
+    fullscreen: false,
   }
   static general = {
     spinnerStep: 1,
