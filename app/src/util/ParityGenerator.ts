@@ -943,7 +943,7 @@ clear(): clear parity highlights`)
 
     cost[start] = 0
     for (let i = 0; i <= end; i++) {
-      const node = graph.nodes[i]!
+      const node = graph.nodes[i]
       for (const [neighborNodeIdx, weight] of node.neighbors) {
         if (cost[i] + weight < cost[neighborNodeIdx]) {
           cost[neighborNodeIdx] = cost[i] + weight

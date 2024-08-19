@@ -205,9 +205,9 @@ export class NewSongWindow extends Window {
         // Remove the old file
         if (
           this.sm.properties[propName] &&
-          this.fileTable[this.sm.properties[propName]!]
+          this.fileTable[this.sm.properties[propName]]
         ) {
-          delete this.fileTable[this.sm.properties[propName]!]
+          delete this.fileTable[this.sm.properties[propName]]
         }
 
         let fileName = file.name
@@ -236,9 +236,9 @@ export class NewSongWindow extends Window {
     deleteButton.onclick = () => {
       if (
         this.sm.properties[propName] &&
-        this.fileTable[this.sm.properties[propName]!]
+        this.fileTable[this.sm.properties[propName]]
       ) {
-        delete this.fileTable[this.sm.properties[propName]!]
+        delete this.fileTable[this.sm.properties[propName]]
       }
       this.sm.properties[propName] = undefined
       input.value = ""
