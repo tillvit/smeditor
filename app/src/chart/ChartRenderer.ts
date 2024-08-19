@@ -617,7 +617,11 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       ...this.chart.timingData.getTimingData("SCROLLS"),
     ]
     if (scrolls[0]?.beat != 0)
-      scrolls.splice(0, 0, { beat: 0, value: 1, type: "SCROLLS" })
+      scrolls.splice(0, 0, {
+        beat: 0,
+        value: scrolls[0]?.value ?? 1,
+        type: "SCROLLS",
+      })
 
     let scrollIndex = bsearch(
       scrolls,
@@ -632,8 +636,6 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     ) {
       const scroll = scrolls[scrollIndex]
       scrollIndex++
-
-      if (scroll.value == 0) continue
 
       const scrollStartY =
         scroll === undefined
@@ -656,7 +658,11 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       ...this.chart.timingData.getTimingData("SCROLLS"),
     ]
     if (scrolls[0]?.beat != 0)
-      scrolls.splice(0, 0, { beat: 0, value: 1, type: "SCROLLS" })
+      scrolls.splice(0, 0, {
+        beat: 0,
+        value: scrolls[0]?.value ?? 1,
+        type: "SCROLLS",
+      })
     let scrollIndex = bsearch(
       scrolls,
       this.getVisualBeat() + Options.chart.maxDrawBeats,
@@ -672,8 +678,6 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     while (scrollIndex >= endSearchIndex) {
       const scroll = scrolls[scrollIndex]
       scrollIndex--
-
-      if (scroll.value == 0) continue
 
       const scrollStartY =
         scroll === undefined
@@ -699,12 +703,8 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     ) {
       const scroll = this.findFirstOnScreenScroll()
 
-      const speedMult = this.getCurrentSpeedMult()
       const pixelsToEffectiveBeats =
-        100 /
-        Options.chart.speed /
-        Math.abs(speedMult) /
-        64 /
+        (1 / Math.abs(this.getEffectiveBeatsToPixelsRatio())) *
         Options.chart.zoom
 
       const scrollStartY = this.getYPosFromBeat(scroll.beat)

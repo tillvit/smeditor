@@ -541,7 +541,7 @@ export class TimingTrackContainer
             TIMING_EVENT_COLORS[event.type] ?? 0x000000,
             Math.sin(Date.now() / 320) * 0.4 + 1.5
           )
-        : TIMING_EVENT_COLORS[event.type] ?? 0x000000
+        : (TIMING_EVENT_COLORS[event.type] ?? 0x000000)
       box.selection.alpha = inSelection ? 1 : 0
       box.visible =
         !inSelection || !this.renderer.chartManager.eventSelection.shift

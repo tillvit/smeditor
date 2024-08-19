@@ -133,7 +133,7 @@ export abstract class TimingData {
       cache.unshift({
         type: "SCROLLS",
         beat: 0,
-        value: 1,
+        value: cache[0].value ?? 1,
       })
     effBeat = cache[0].beat
     for (let i = 0; i < cache.length - 1; i++) {
