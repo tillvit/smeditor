@@ -1423,4 +1423,38 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     disabled: app => !app.chartManager.chartView,
     callback: app => app.windowManager.openWindow(new NoteskinWindow(app)),
   },
+  previousChart: {
+    label: "Previous chart",
+    combos: [{ key: "F5", mods: [] }],
+    disabled: app => !app.chartManager.chartView,
+    callback: app => {
+      if (!app.chartManager.loadedSM?.charts || !app.chartManager.loadedChart)
+        return
+      const charts =
+        app.chartManager.loadedSM?.charts[
+          app.chartManager.loadedChart.gameType.id
+        ]
+      const curIndex = charts.indexOf(app.chartManager.loadedChart)
+      if (charts[curIndex - 1]) {
+        app.chartManager.loadChart(charts[curIndex - 1])
+      }
+    },
+  },
+  nextChart: {
+    label: "Next chart",
+    combos: [{ key: "F6", mods: [] }],
+    disabled: app => !app.chartManager.chartView,
+    callback: app => {
+      if (!app.chartManager.loadedSM?.charts || !app.chartManager.loadedChart)
+        return
+      const charts =
+        app.chartManager.loadedSM?.charts[
+          app.chartManager.loadedChart.gameType.id
+        ]
+      const curIndex = charts.indexOf(app.chartManager.loadedChart)
+      if (charts[curIndex + 1]) {
+        app.chartManager.loadChart(charts[curIndex + 1])
+      }
+    },
+  },
 }
