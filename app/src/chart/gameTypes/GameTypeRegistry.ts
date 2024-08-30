@@ -192,7 +192,7 @@ GameTypeRegistry.register({
   parser: new BasicNotedataParser(),
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
   flipColumns: {
-    horizontal: [4, 3, 2, 1, 0, 9, 8, 7, 6, 5],
+    horizontal: [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
     vertical: [1, 0, 2, 4, 3, 6, 5, 7, 9, 8],
   },
 })
@@ -217,7 +217,7 @@ GameTypeRegistry.register({
   parser: new BasicNotedataParser(),
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
   flipColumns: {
-    horizontal: [4, 3, 2, 1, 0, 9, 8, 7, 6, 5],
+    horizontal: [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
     vertical: [1, 0, 2, 4, 3, 6, 5, 7, 9, 8],
   },
 })
@@ -242,7 +242,7 @@ GameTypeRegistry.register({
   parser: new BasicNotedataParser(),
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
   flipColumns: {
-    horizontal: [4, 3, 2, 1, 0, 9, 8, 7, 6, 5],
+    horizontal: [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
     vertical: [1, 0, 2, 4, 3, 6, 5, 7, 9, 8],
   },
 })
@@ -263,7 +263,7 @@ GameTypeRegistry.register({
   parser: new BasicNotedataParser(),
   editNoteTypes: ["Tap", "Mine", "Fake", "Lift"],
   flipColumns: {
-    horizontal: [5, 1, 2, 3, 4, 0],
+    horizontal: [5, 4, 3, 2, 1, 0],
     vertical: [0, 2, 1, 4, 3, 5],
   },
 })
