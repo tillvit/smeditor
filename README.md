@@ -17,4 +17,4 @@ The website is split into two parts: the core webapp and the guide.
 You can build them seperately using `npm run core:build` or `npm run guide:build`, or build them
 together using `npm run build`.
 
-To build the native app, run `npm run app-build`.
+To build the native app, run `npm run app:build`.
