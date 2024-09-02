@@ -478,6 +478,7 @@ export abstract class TimingData {
     switch (event.type) {
       case "BPMS":
       case "SPEEDS":
+      case "SCROLLS":
       case "TICKCOUNTS":
       case "TIMESIGNATURES":
       case "COMBOS":
@@ -485,7 +486,6 @@ export abstract class TimingData {
       case "STOPS":
       case "WARPS":
       case "DELAYS":
-      case "SCROLLS":
       case "FAKES":
         return event.value == 0
       case "LABELS":
