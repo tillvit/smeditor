@@ -240,8 +240,8 @@ export class SyncWindow extends Window {
       this.toggleButton.innerText = this.doAnalysis
         ? "Stop analyzing"
         : this.hasData()
-        ? "Resume analyzing"
-        : "Start analyzing"
+          ? "Resume analyzing"
+          : "Start analyzing"
       this.resetButton.disabled = this.doAnalysis
     }
 
@@ -1160,10 +1160,10 @@ export class SyncWindow extends Window {
       .filter(note => {
         if (!selection) return true
         return (
-          note!.beat > this.app.chartManager.startRegion! &&
-          note!.beat < this.app.chartManager.endRegion!
+          note.beat > this.app.chartManager.startRegion! &&
+          note.beat < this.app.chartManager.endRegion!
         )
-      }) as PartialTapNotedataEntry[]
+      })
 
     this.app.chartManager.insertNotes(notes)
   }

@@ -199,7 +199,7 @@ export class KeybindWindow extends Window {
       KEYBIND_INSERTS[id].forEach(insert => {
         const insertIndex = !insert.after
           ? 0
-          : GROUPS[id].findIndex(id => insert.after == id) + 1 ?? 0
+          : (GROUPS[id].findIndex(id => insert.after == id) + 1 ?? 0)
         GROUPS[id].splice(insertIndex, 0, ...insert.ids)
         insert.ids.forEach(option => {
           const idx = missingKeybindTest.indexOf(option)

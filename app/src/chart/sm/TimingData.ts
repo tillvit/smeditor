@@ -133,7 +133,7 @@ export abstract class TimingData {
       cache.unshift({
         type: "SCROLLS",
         beat: 0,
-        value: 1,
+        value: cache[0].value ?? 1,
       })
     effBeat = cache[0].beat
     for (let i = 0; i < cache.length - 1; i++) {
@@ -478,6 +478,7 @@ export abstract class TimingData {
     switch (event.type) {
       case "BPMS":
       case "SPEEDS":
+      case "SCROLLS":
       case "TICKCOUNTS":
       case "TIMESIGNATURES":
       case "COMBOS":
@@ -485,7 +486,6 @@ export abstract class TimingData {
       case "STOPS":
       case "WARPS":
       case "DELAYS":
-      case "SCROLLS":
       case "FAKES":
         return event.value == 0
       case "LABELS":

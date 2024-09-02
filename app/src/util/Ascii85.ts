@@ -49,7 +49,7 @@ function _85encode(
   if (padding && !pad) {
     if (chunks.at(-1) == "z".charCodeAt(0)) {
       chunks.pop()
-      for (let i = 0; i < 5; i++) chunks.push(chunks[0])
+      for (let i = 0; i < 5; i++) chunks.push(chars[0])
     }
     for (let i = 0; i < padding; i++) chunks.pop()
   }

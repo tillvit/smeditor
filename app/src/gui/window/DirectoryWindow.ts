@@ -580,7 +580,7 @@ export class DirectoryWindow extends Window {
       if (!next && item.parentElement!.classList.contains("children"))
         next = (<HTMLElement>(
           item.parentElement!.parentElement!.nextSibling
-        ))!.querySelector(".info") as HTMLElement
+        )).querySelector(".info") as HTMLElement
       if (next) {
         this.selectElement(next)
         scrollIntoView(next, {
@@ -736,7 +736,7 @@ export class DirectoryWindow extends Window {
 
   private handleMouseEvent(event: MouseEvent) {
     const scroll = this.viewElement.querySelector(".dir-selector")!
-    let items = Array.from(scroll.querySelectorAll("div.item.folder"))!
+    let items = Array.from(scroll.querySelectorAll("div.item.folder"))
     const prevOwner = this.viewElement.querySelector(".outlined")
     items = items.filter(x => !x.parentElement!.closest(".collapsed"))
     items.reverse()

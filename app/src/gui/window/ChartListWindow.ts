@@ -236,34 +236,32 @@ export class ChartListWindow extends Window {
     if (!chart) return
 
     const sortDifficulties = () =>
-      this.app.chartManager.loadedSM!.charts[chart!.gameType.id]!.sort(
-        (a, b) => {
-          if (
-            CHART_DIFFICULTIES.indexOf(a.difficulty) ==
-            CHART_DIFFICULTIES.indexOf(b.difficulty)
-          )
-            return a.meter - b.meter
-          return (
-            CHART_DIFFICULTIES.indexOf(a.difficulty) -
-            CHART_DIFFICULTIES.indexOf(b.difficulty)
-          )
-        }
-      )
+      this.app.chartManager.loadedSM!.charts[chart.gameType.id].sort((a, b) => {
+        if (
+          CHART_DIFFICULTIES.indexOf(a.difficulty) ==
+          CHART_DIFFICULTIES.indexOf(b.difficulty)
+        )
+          return a.meter - b.meter
+        return (
+          CHART_DIFFICULTIES.indexOf(a.difficulty) -
+          CHART_DIFFICULTIES.indexOf(b.difficulty)
+        )
+      })
 
     const main = document.createElement("div")
     main.classList.add("chart-info-main")
     const difficulty = Dropdown.create(CHART_DIFFICULTIES, chart.difficulty)
     difficulty.view.classList.add("no-border", "white")
     difficulty.onChange(value => {
-      const lastVal = chart!.difficulty
+      const lastVal = chart.difficulty
       ActionHistory.instance.run({
         action: () => {
-          chart!.difficulty = value
+          chart.difficulty = value
           sortDifficulties()
           this.loadCharts()
         },
         undo: () => {
-          chart!.difficulty = lastVal
+          chart.difficulty = lastVal
           sortDifficulties()
           this.loadCharts()
         },
@@ -285,17 +283,17 @@ export class ChartListWindow extends Window {
         return
       }
       value = Math.round(clamp(1, value, 2 ** 31 - 1))
-      const lastVal = chart!.meter
+      const lastVal = chart.meter
       ActionHistory.instance.run({
         action: () => {
-          chart!.meter = value!
-          chart!.meterF = value!
+          chart.meter = value!
+          chart.meterF = value!
           sortDifficulties()
           this.loadCharts()
         },
         undo: () => {
-          chart!.meter = lastVal
-          chart!.meterF = lastVal!
+          chart.meter = lastVal
+          chart.meterF = lastVal!
           sortDifficulties()
           this.loadCharts()
         },
@@ -315,7 +313,7 @@ export class ChartListWindow extends Window {
       label.classList.add("label")
       label.innerText = entry.title
 
-      const item = entry.element(chart!, this.app)
+      const item = entry.element(chart, this.app)
 
       if (entry.title == "Artist") {
         item.addEventListener("blur", () => this.loadCharts())
@@ -366,7 +364,7 @@ export class ChartListWindow extends Window {
         chart
       )
       newChart.setNotedata(
-        chart!.getNotedata().map(note => chart!.computeNote(note)) ?? []
+        chart.getNotedata().map(note => chart.computeNote(note)) ?? []
       )
       this.app.chartManager.loadedSM!.addChart(newChart)
       this.app.chartManager.loadChart(newChart)
@@ -403,7 +401,7 @@ export class ChartListWindow extends Window {
               type: "delete",
               label: "Delete",
               callback: () => {
-                if (this.app.chartManager.loadedSM!.removeChart(chart!)) {
+                if (this.app.chartManager.loadedSM!.removeChart(chart)) {
                   this.app.chartManager.loadChart()
                   this.gameType =
                     this.app.chartManager.loadedChart?.gameType ?? this.gameType

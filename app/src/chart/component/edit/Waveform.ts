@@ -233,7 +233,11 @@ export class Waveform extends Sprite implements ChartRendererComponent {
         ...this.renderer.chart.timingData.getTimingData("SCROLLS"),
       ]
       if (scrolls[0]?.beat != 0)
-        scrolls.unshift({ type: "SCROLLS", beat: 0, value: 1 })
+        scrolls.unshift({
+          type: "SCROLLS",
+          beat: 0,
+          value: scrolls[0]?.value ?? 1,
+        })
 
       const startScrollIndex = scrolls.findIndex(
         a => a.beat == startScroll.beat
@@ -258,7 +262,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       )) {
         if (scroll.value == 0) continue
         const pixelsToBeats = pixelsToEffectiveBeats / Math.abs(scroll.value)
-        if (scroll != startScroll) {
+        if (scroll.beat != startScroll.beat) {
           currentBeat = scroll.beat
         } else {
           // fix flickering by rounding the current beat to land on a pixel
@@ -279,7 +283,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
           // Stop if the scroll is off the screen
           if (currentYPos < 0) {
             // Skip the scroll if we step off the top of the screen
-            if (scroll.value * scrollDirection < 0) {
+            if (scrollDirection < 0) {
               currentBeat = scrollEndBeat
               break
             }
@@ -290,7 +294,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
 
           if (currentYPos > screenHeight) {
             // Skip the scroll if we step off the bottom of the screen
-            if (scroll.value * scrollDirection > 0) {
+            if (scrollDirection > 0) {
               currentBeat = scrollEndBeat
               break
             }
@@ -302,9 +306,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
 
           // Step by 1 or -1 pixels and get the current beat
           currentBeat += pixelsToBeats * Options.chart.waveform.lineHeight
-          currentYPos +=
-            (scroll.value * scrollDirection > 0 ? 1 : -1) *
-            Options.chart.waveform.lineHeight
+          currentYPos += scrollDirection * Options.chart.waveform.lineHeight
 
           curSec = this.calculateSecond(
             currentBeat,

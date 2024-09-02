@@ -287,6 +287,17 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "selection",
+        id: "previousChart",
+      },
+      {
+        type: "selection",
+        id: "nextChart",
+      },
+      {
+        type: "separator",
+      },
+      {
+        type: "selection",
         id: "songProperties",
       },
       {
