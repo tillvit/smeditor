@@ -4,6 +4,7 @@ import { Icons } from "../gui/Icons"
 import { DirectoryWindow } from "../gui/window/DirectoryWindow"
 import { ActionHistory } from "../util/ActionHistory"
 import { FileHandler } from "../util/file-handler/FileHandler"
+import { dirname } from "../util/Path"
 import { AUDIO_EXT } from "./FileData"
 
 type ChartPropertyEditor = {
@@ -109,7 +110,7 @@ export const CHART_PROPERTIES_DATA: {
 
       const dirButton = document.createElement("button")
       dirButton.onclick = () => {
-        const dir = app.chartManager.smPath.split("/").slice(0, -1).join("/")
+        const dir = dirname(app.chartManager.smPath)
         if (window.nw) {
           const fileSelector = document.createElement("input")
           fileSelector.type = "file"

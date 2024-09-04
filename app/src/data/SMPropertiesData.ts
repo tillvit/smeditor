@@ -5,6 +5,7 @@ import { Icons } from "../gui/Icons"
 import { NumberSpinner } from "../gui/element/NumberSpinner"
 import { DirectoryWindow } from "../gui/window/DirectoryWindow"
 import { ActionHistory } from "../util/ActionHistory"
+import { dirname } from "../util/Path"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { AUDIO_EXT, IMG_EXT } from "./FileData"
 
@@ -338,7 +339,7 @@ export function createInputElement(
       input.onclick = ev => {
         ev.preventDefault()
         input.blur()
-        const dir = app.chartManager.smPath.split("/").slice(0, -1).join("/")
+        const dir = dirname(app.chartManager.smPath)
         if (window.nw) {
           const fileSelector = document.createElement("input")
           fileSelector.type = "file"
