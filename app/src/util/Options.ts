@@ -18,6 +18,7 @@ export class DefaultOptions {
     smoothAnimations: true,
     warnBeforeExit: true,
     showPlaybackOptions: true,
+    backgroundColor: 0x18191c,
   }
   static chart = {
     CMod: false,
@@ -32,6 +33,7 @@ export class DefaultOptions {
     drawNoteFlash: true,
     drawIcons: true,
     receptorYPos: -200,
+    receptorXPos: 0,
     maxDrawBeats: 20,
     maxDrawBeatsBack: 10,
     scroll: {

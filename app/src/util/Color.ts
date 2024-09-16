@@ -1,3 +1,4 @@
+import { Color } from "pixi.js"
 import { clamp } from "./Math"
 
 export function rgbtoHex(r: number, g: number, b: number): number {
@@ -27,4 +28,10 @@ export function blendColors(colorA: string, colorB: string, amount: number) {
     .toString(16)
     .padStart(2, "0")
   return "#" + r + g + b
+}
+
+export function getCSSColor(id: string) {
+  return new Color(
+    document.body.computedStyleMap().get(id)?.toString() ?? "rgba(0, 0, 0, 1)"
+  )
 }

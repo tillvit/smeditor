@@ -2,6 +2,7 @@ import { Container, FederatedPointerEvent, Sprite, Texture } from "pixi.js"
 import { EditMode } from "../../chart/ChartManager"
 import { Chart } from "../../chart/sm/Chart"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
+import { getCSSColor } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
 import { clamp, lerp, maxArr, minArr, unlerp } from "../../util/Math"
@@ -41,6 +42,15 @@ export class BaseTimelineWidget extends Widget {
 
     this.backing.tint = 0
     this.backing.alpha = 0.3
+
+    const themeHandler = () => {
+      const c = getCSSColor("--bg-widget")
+      this.backing.tint = c.toNumber()
+      this.backing.alpha = c.alpha
+    }
+    themeHandler()
+    EventHandler.on("themeChanged", themeHandler)
+    this.on("destroy", () => EventHandler.off("themeChanged", themeHandler))
 
     this.overlay.anchor.x = 0.5
     this.overlay.anchor.y = 0

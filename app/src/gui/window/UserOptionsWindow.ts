@@ -337,6 +337,7 @@ export class UserOptionsWindow extends Window {
           break
         }
         case "color": {
+          const callback = option.input.onChange
           const colorInput = document.createElement("input")
           colorInput.type = "color"
           colorInput.value = "#" + optionValue.toString(16).padStart(6, "0")
@@ -355,6 +356,7 @@ export class UserOptionsWindow extends Window {
               Options.getOption(option.id)
                 ? "none"
                 : "block"
+            callback?.(this.app, parseInt(colorInput.value.slice(1), 16))
           }
           input = colorInput
         }

@@ -9,6 +9,7 @@ import {
   TapNoteType,
 } from "../../chart/sm/NoteTypes"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
+import { getCSSColor } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
 import { Keybinds } from "../../util/Keybinds"
@@ -500,8 +501,14 @@ export class StatusWidget extends Widget {
           })
         sprite.scale.set(0.5)
         const bg = new Sprite(Texture.WHITE)
-        bg.tint = 0
-        bg.alpha = 0.5
+        const themeHandler = () => {
+          const c = getCSSColor("--bg-widget")
+          bg.tint = c.toNumber()
+          bg.alpha = c.alpha
+        }
+        themeHandler()
+        EventHandler.on("themeChanged", themeHandler)
+        bg.on("destroy", () => EventHandler.off("themeChanged", themeHandler))
         bg.width = 48
         bg.height = 48
         bg.anchor.set(0.5)
