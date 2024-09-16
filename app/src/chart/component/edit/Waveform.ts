@@ -10,7 +10,12 @@ import { clamp } from "../../../util/Math"
 import { Options } from "../../../util/Options"
 import { destroyChildIf } from "../../../util/Util"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
-import { BeatTimingCache, ScrollTimingEvent } from "../../sm/TimingTypes"
+import { TimingData } from "../../sm/TimingData"
+import {
+  BeatTimingCache,
+  BPMTimingEvent,
+  ScrollTimingEvent,
+} from "../../sm/TimingTypes"
 
 const MAX_ZOOM = 3500
 
@@ -207,6 +212,74 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       Options.chart.waveform.allowFilter &&
       this.renderer.chartManager.chartAudio.hasFilters()
 
+    // Lasy getSecond calculation
+    // works only when only moving forwards in time
+    const lazyCalc = {
+      data: {
+        bpms: [] as BPMTimingEvent[],
+        bpmIndex: 0,
+        timing: [] as BeatTimingCache[],
+        timingIndex: 0,
+        offset: 0,
+        lastBeat: -999,
+        timingData: null as TimingData | null,
+      },
+      init(data: TimingData) {
+        this.data.bpms = data.getTimingData("BPMS")
+        this.data.timing = data.getBeatTiming()
+        this.data.offset = data.getOffset()
+        if (this.data.bpms[0]?.beat !== 0) {
+          const firstEvent = this.data.bpms[0] ?? {
+            value: 120,
+            type: "BPMS",
+            beat: 0,
+          }
+          firstEvent.beat = 0
+          this.data.bpms.unshift(firstEvent)
+        }
+        if (this.data.timing.length == 0) {
+          this.data.timing.unshift({
+            beat: 0,
+            secondBefore: -this.data.offset,
+            secondAfter: -this.data.offset,
+            secondClamp: -this.data.offset,
+            secondOf: -this.data.offset,
+            warped: false,
+            bpm: 120,
+          })
+        }
+        this.data.timingData = data
+      },
+      getBPM(beat: number) {
+        while (beat > this.data.bpms[this.data.bpmIndex + 1]?.beat) {
+          this.data.bpmIndex++
+        }
+        return this.data.bpms[this.data.bpmIndex].value
+      },
+      getSecond(beat: number) {
+        const flooredBeat = Math.floor(beat * 1000) / 1000
+        if (beat <= 0)
+          return -this.data.offset + (beat * 60) / this.getBPM(beat)
+        else if (
+          flooredBeat >= this.data.timing[this.data.timingIndex + 1]?.beat
+        ) {
+          // Use getSeconds for every timing event
+          while (
+            flooredBeat >= this.data.timing[this.data.timingIndex + 1]?.beat
+          )
+            this.data.timingIndex++
+          return this.data.timingData!.getSecondsFromBeat(beat)
+        } else {
+          // Use normal bpm to beats calculation to not use getSeconds
+          const event = this.data.timing[this.data.timingIndex]
+          const beatsElapsed = beat - event.beat
+          let timeElapsed = (beatsElapsed * 60) / event.bpm
+          if (event.warped) timeElapsed = 0
+          return Math.max(event.secondClamp, event.secondAfter + timeElapsed)
+        }
+      },
+    }
+
     if (
       Options.chart.waveform.speedChanges &&
       !Options.chart.CMod &&
@@ -225,10 +298,6 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       const startScroll = this.renderer.findFirstOnScreenScroll()
       const endScroll = this.renderer.findLastOnScreenScroll()
 
-      const offset = this.renderer.chart.timingData.getOffset()
-      const startBPM =
-        this.renderer.chart.timingData.getEventAtBeat("BPMS", 0)?.value ?? 120
-
       const scrolls: ScrollTimingEvent[] = [
         ...this.renderer.chart.timingData.getTimingData("SCROLLS"),
       ]
@@ -239,12 +308,13 @@ export class Waveform extends Sprite implements ChartRendererComponent {
           value: scrolls[0]?.value ?? 1,
         })
 
+      lazyCalc.init(this.renderer.chart.timingData)
+
       const startScrollIndex = scrolls.findIndex(
         a => a.beat == startScroll.beat
       )
       const endScrollIndex = scrolls.findIndex(a => a.beat == endScroll.beat)
 
-      const timingChanges = this.renderer.chart.timingData.getBeatTiming()
       const pixelsToEffectiveBeats =
         100 / chartSpeed / Math.abs(speedMult) / 64 / Options.chart.zoom
       const screenHeight = this.renderer.chartManager.app.renderer.screen.height
@@ -290,6 +360,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
             // Skip to the top of the screen and keep stepping from there
             currentBeat += pixelsToBeats * -currentYPos
             currentYPos = 0
+            continue
           }
 
           if (currentYPos > screenHeight) {
@@ -308,12 +379,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
           currentBeat += pixelsToBeats * Options.chart.waveform.lineHeight
           currentYPos += scrollDirection * Options.chart.waveform.lineHeight
 
-          curSec = this.calculateSecond(
-            currentBeat,
-            timingChanges,
-            offset,
-            startBPM
-          )
+          curSec = lazyCalc.getSecond(currentBeat)
           this.drawLine(curSec, currentYPos, hasFilters)
         }
       }
@@ -327,10 +393,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
             : 0)) /
           Options.chart.zoom
       )
-      const offset = this.renderer.chart.timingData.getOffset()
-      const startBPM =
-        this.renderer.chart.timingData.getEventAtBeat("BPMS", 0)?.value ?? 120
-      const timingChanges = this.renderer.chart.timingData.getBeatTiming()
+      lazyCalc.init(this.renderer.chart.timingData)
 
       // Snap current time to the nearest pixel to avoid flickering
       const pixelsToBeatsRatio =
@@ -341,12 +404,8 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       let curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
       const drawLine = (y: number) => {
         currentBeat += pixelsToBeatsRatio * Options.chart.waveform.lineHeight
-        curSec = this.calculateSecond(
-          currentBeat,
-          timingChanges,
-          offset,
-          startBPM
-        )
+        curSec = lazyCalc.getSecond(currentBeat)
+
         this.drawLine(curSec, y, hasFilters)
       }
       if (Options.chart.reverse) {
@@ -401,30 +460,6 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     }
 
     this.purgePool()
-  }
-
-  private calculateSecond(
-    beat: number,
-    timingChanges: BeatTimingCache[],
-    offset: number,
-    startBPM: number
-  ) {
-    const flooredBeat = Math.floor(beat * 1000) / 1000
-    if (beat <= 0) return -offset + (beat * 60) / startBPM
-    else if (flooredBeat >= timingChanges[1]?.beat) {
-      // Use getSeconds for every timing event
-      while (flooredBeat >= timingChanges[1]?.beat) timingChanges.shift()
-      return this.renderer.chart.getSecondsFromBeat(beat)
-    } else {
-      // Use normal bpm to beats calculation to not use getSeconds
-      const beatsElapsed = beat - timingChanges[0].beat
-      let timeElapsed = (beatsElapsed * 60) / timingChanges[0].bpm
-      if (timingChanges[0].warped) timeElapsed = 0
-      return Math.max(
-        timingChanges[0].secondClamp,
-        timingChanges[0].secondAfter + timeElapsed
-      )
-    }
   }
 
   private drawLine(second: number, y: number, hasFilters: boolean) {
