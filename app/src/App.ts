@@ -104,7 +104,7 @@ export class App {
       })
 
       window.addEventListener("keydown", e => {
-        if ((e.key == "r" && (e.metaKey || e.ctrlKey)) || e.key == "F5") {
+        if (e.key == "r" && (e.metaKey || e.ctrlKey)) {
           e.preventDefault()
           win.reload()
         }
@@ -114,7 +114,9 @@ export class App {
         }
         if (
           process.versions["nw-flavor"] == "sdk" &&
-          ((e.code == "KeyI" && e.metaKey && e.altKey) || e.key == "F5")
+          e.code == "KeyI" &&
+          e.metaKey &&
+          e.altKey
         ) {
           e.preventDefault()
           win.showDevTools()
