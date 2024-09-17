@@ -46,8 +46,8 @@ interface CheckboxOptions {
   getValue: () => boolean
   onChange: (value: boolean) => void
   value: boolean
-  onSrc: string
-  offSrc: string
+  onEl: HTMLElement
+  offEl: HTMLElement
 }
 
 interface Checkbox {
@@ -94,9 +94,7 @@ export class PlaybackOptionsWidget extends Widget {
     collapseButton.classList.add("po-collapse")
     collapseButton.tabIndex = -1
 
-    const collapseIcon = document.createElement("img")
-    collapseIcon.src = Icons.CHEVRON
-    collapseIcon.style.filter = "invert()"
+    const collapseIcon = Icons.getIcon("CHEVRON", 18)
     collapseButton.appendChild(collapseIcon)
 
     if (Options.general.showPlaybackOptions) {
@@ -174,8 +172,8 @@ export class PlaybackOptionsWidget extends Widget {
     const assistCheckbox = this.createCheckbox({
       getValue: () => Options.audio.assistTick,
       value: Options.audio.assistTick,
-      onSrc: Icons.CLAP,
-      offSrc: Icons.X_CLAP,
+      onEl: Icons.getIcon("CLAP", 18),
+      offEl: Icons.getIcon("X_CLAP", 18),
       onChange: value => (Options.audio.assistTick = value),
     })
     assistContainer.appendChild(assistCheckbox)
@@ -187,8 +185,8 @@ export class PlaybackOptionsWidget extends Widget {
     const metronomeCheckbox = this.createCheckbox({
       getValue: () => Options.audio.metronome,
       value: Options.audio.metronome,
-      onSrc: Icons.METRONOME,
-      offSrc: Icons.X_METRONOME,
+      onEl: Icons.getIcon("METRONOME", 18),
+      offEl: Icons.getIcon("X_METRONOME", 18),
       onChange: value => (Options.audio.metronome = value),
     })
     assistContainer.appendChild(metronomeCheckbox)
@@ -202,16 +200,10 @@ export class PlaybackOptionsWidget extends Widget {
 
     const scrollRow = this.createRow("Scroll")
 
-    const upIcon = document.createElement("img")
-    upIcon.src = Icons.DBL_CHEVRON
-    upIcon.style.height = "16px"
-    upIcon.style.width = "16px"
+    const upIcon = Icons.getIcon("DBL_CHEVRON", 16)
     upIcon.style.padding = "2px"
 
-    const downIcon = document.createElement("img")
-    downIcon.src = Icons.DBL_CHEVRON
-    downIcon.style.height = "16px"
-    downIcon.style.width = "16px"
+    const downIcon = Icons.getIcon("DBL_CHEVRON", 16)
     downIcon.style.padding = "2px"
     downIcon.style.transform = "rotate(180deg)"
     const directionToggle = this.createToggle({
@@ -280,8 +272,8 @@ export class PlaybackOptionsWidget extends Widget {
     const warpCheckbox = this.createCheckbox({
       getValue: () => Options.chart.hideWarpedArrows,
       value: Options.chart.hideWarpedArrows,
-      onSrc: Icons.X_EYE,
-      offSrc: Icons.EYE,
+      onEl: Icons.getIcon("X_EYE", 18),
+      offEl: Icons.getIcon("EYE", 18),
       onChange: value => (Options.chart.hideWarpedArrows = value),
     })
     warpRow.appendChild(warpCheckbox)
@@ -297,8 +289,8 @@ export class PlaybackOptionsWidget extends Widget {
     const fakeCheckbox = this.createCheckbox({
       getValue: () => Options.chart.hideFakedArrows,
       value: Options.chart.hideFakedArrows,
-      onSrc: Icons.X_EYE,
-      offSrc: Icons.EYE,
+      onEl: Icons.getIcon("X_EYE", 18),
+      offEl: Icons.getIcon("EYE", 18),
       onChange: value => (Options.chart.hideFakedArrows = value),
     })
     fakeRow.appendChild(fakeCheckbox)
@@ -310,8 +302,7 @@ export class PlaybackOptionsWidget extends Widget {
 
     this.fakeRow = fakeRow
 
-    const audioIcon = document.createElement("img")
-    audioIcon.src = Icons.VOLUME
+    const audioIcon = Icons.getIcon("VOLUME", 22)
     audioIcon.style.marginLeft = "auto"
     audioIcon.style.marginRight = "-16px"
     audioIcon.style.height = "22px"
@@ -441,6 +432,7 @@ export class PlaybackOptionsWidget extends Widget {
 
     const input = document.createElement("input")
     input.classList.add("po-spinner-input")
+    input.type = "text"
 
     const update = (trigger = true) => {
       if (
@@ -593,14 +585,13 @@ export class PlaybackOptionsWidget extends Widget {
   }
 
   createCheckbox(options: CheckboxOptions) {
-    const item = document.createElement("img")
+    const item = document.createElement("div")
     item.classList.add("po-checkbox")
 
     const update = (trigger = true) => {
       if (trigger) options.onChange(checkbox.currentValue)
-      item.src = checkbox.currentValue
-        ? checkbox.options.onSrc
-        : checkbox.options.offSrc
+      checkbox.options.onEl.style.display = checkbox.currentValue ? "" : "none"
+      checkbox.options.offEl.style.display = checkbox.currentValue ? "none" : ""
     }
 
     const checkbox = {
@@ -617,6 +608,8 @@ export class PlaybackOptionsWidget extends Widget {
     this.registeredCheckboxes.push(checkbox)
 
     update(false)
+
+    item.replaceChildren(checkbox.options.onEl, checkbox.options.offEl)
 
     return item
   }

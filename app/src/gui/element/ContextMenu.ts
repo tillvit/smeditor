@@ -122,9 +122,7 @@ export class ContextMenuPopup {
           this.close()
         })
       } else {
-        title_bar_right = document.createElement("img")
-        title_bar_right.classList.add("icon")
-        title_bar_right.src = Icons.CHEVRON
+        title_bar_right = Icons.getIcon("CHEVRON", 16)
         title_bar_right.style.transform = "rotate(-90deg)"
         title.innerText =
           typeof data.title == "function" ? data.title(app) : data.title

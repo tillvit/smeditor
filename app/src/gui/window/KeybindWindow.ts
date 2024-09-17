@@ -335,7 +335,9 @@ export class KeybindWindow extends Window {
         (event.target as HTMLElement).classList.contains(
           "pref-keybind-combo"
         ) ||
-        (event.target as HTMLElement).tagName == "IMG"
+        keybindElement
+          .querySelector(".icon")
+          ?.contains(event.target as HTMLElement)
       )
         return
       this.app.windowManager.openWindow(
@@ -366,8 +368,7 @@ export class KeybindWindow extends Window {
     label.classList.add("pref-keybind-label")
     label.innerText = KEYBIND_DATA[id].bindLabel ?? KEYBIND_DATA[id].label
 
-    const revert = document.createElement("img")
-    revert.src = Icons.REVERT
+    const revert = Icons.getIcon("REVERT")
     revert.style.width = "12px"
     revert.addEventListener("click", () => {
       Keybinds.revertKeybind(id)

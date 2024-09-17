@@ -4,6 +4,7 @@ import { BezierAnimator } from "../../util/BezierEasing"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, roundDigit } from "../../util/Math"
 import { parseString as numericParse } from "../../util/Util"
+import { Icons } from "../Icons"
 import { Window } from "./Window"
 
 const FILTER_DEFAULTS: { frequency: number; Q?: number; gain?: number }[] = [
@@ -108,31 +109,15 @@ export class EQWindow extends Window {
     const iconContainer = document.createElement("div")
     iconContainer.classList.add("icon-container")
     this.app.chartManager.chartAudio.getFilters().forEach((filter, index) => {
-      const iconPlaceholder = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "svg"
+      const icon = Icons.getIcon(
+        filter.type.toUpperCase(),
+        36,
+        24,
+        fills[index]
       )
-      fetch(
-        new URL(`../../../assets/svg/${filter.type}.svg`, import.meta.url).href
-      )
-        .then(response => response.text())
-        .then(text => {
-          const parser = new DOMParser()
-          const doc = parser.parseFromString(text, "image/svg+xml")
-          const svg = doc.getElementsByTagName("svg")[0]
-          for (const { name, value } of svg.attributes) {
-            if (!iconPlaceholder.getAttribute(name)) {
-              iconPlaceholder.setAttribute(name, value)
-            }
-          }
-          iconPlaceholder.replaceChildren(...svg.children)
-        })
-      iconPlaceholder.setAttribute("fill", fills[index])
-      iconPlaceholder.classList.add("eq-icon")
-      iconPlaceholder.style.backgroundColor = `${fills[index]}40`
-      iconPlaceholder.setAttribute("width", "36px")
-      iconPlaceholder.setAttribute("height", "24px")
-      iconPlaceholder.onclick = () => {
+      icon.classList.add("eq-icon")
+      icon.style.backgroundColor = `${fills[index]}40`
+      icon.onclick = () => {
         const enabled =
           this.app.chartManager.chartAudio.getFilter(index).enabled
         if (enabled) this.app.chartManager.chartAudio.disableFilter(index)
@@ -140,9 +125,9 @@ export class EQWindow extends Window {
         this.endTrack()
         this.updateIcons()
       }
-      iconPlaceholder.onmouseenter = () => this.points[index].highlight()
-      iconPlaceholder.onmouseleave = () => this.points[index].unhighlight()
-      iconContainer.appendChild(iconPlaceholder)
+      icon.onmouseenter = () => this.points[index].highlight()
+      icon.onmouseleave = () => this.points[index].unhighlight()
+      iconContainer.appendChild(icon)
     })
     this.icons = iconContainer
     this.updateIcons()
@@ -346,8 +331,24 @@ export class EQWindow extends Window {
     ctx.canvas.height = 400
     const call = () => {
       if (!this.app.chartManager.chartAudio) return
-      ctx.fillStyle = "rgb(11, 14, 26)"
+
+      const gradient = ctx.createRadialGradient(
+        canvas.width / 2,
+        canvas.height / 2,
+        0,
+        canvas.width / 2,
+        canvas.height / 2,
+        canvas.width / 2
+      )
+
+      // Add three color stops
+      gradient.addColorStop(0, "rgb(11, 14, 26)")
+      gradient.addColorStop(1, "rgb(5, 7, 13)")
+
+      // Set the fill style and draw a rectangle
+      ctx.fillStyle = gradient
       ctx.fillRect(0, 0, canvas.width, canvas.height)
+
       ctx.fillStyle = "rgb(0, 50, 150)"
       this.drawFrequencies(
         ctx,

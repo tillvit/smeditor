@@ -65,11 +65,7 @@ export class InitialWindow extends Window {
     openButton.style.backgroundColor = "#414352"
     topContainer.appendChild(openButton)
 
-    const openIcon = document.createElement("img")
-    openIcon.src = Icons.UPLOAD
-    openIcon.classList.add("icon")
-    openIcon.style.width = "30px"
-    openIcon.style.height = "30px"
+    const openIcon = Icons.getIcon("UPLOAD", 30)
     openButton.appendChild(openIcon)
 
     const openTitle = document.createElement("div")
@@ -109,11 +105,7 @@ export class InitialWindow extends Window {
     newButton.style.backgroundColor = "#506352"
     topContainer.appendChild(newButton)
 
-    const newIcon = document.createElement("img")
-    newIcon.src = Icons.PLUS
-    newIcon.classList.add("icon")
-    newIcon.style.width = "30px"
-    newIcon.style.height = "30px"
+    const newIcon = Icons.getIcon("PLUS", 30)
     newButton.appendChild(newIcon)
 
     const newTitle = document.createElement("div")

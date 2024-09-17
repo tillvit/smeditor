@@ -1,4 +1,5 @@
-import { Color } from "pixi.js"
+import { Color, ColorSource } from "pixi.js"
+import { EventHandler } from "./EventHandler"
 import { clamp } from "./Math"
 
 export function rgbtoHex(r: number, g: number, b: number): number {
@@ -34,4 +35,37 @@ export function getCSSColor(id: string) {
   return new Color(
     document.body.computedStyleMap().get(id)?.toString() ?? "rgba(0, 0, 0, 1)"
   )
+}
+
+type TintableObject = { tint: ColorSource; alpha: number; destroyed: boolean }
+
+const themeObjectMap = new Map<string, TintableObject[]>()
+
+EventHandler.on("themeChanged", () => {
+  console.log("Theme reloaded")
+  for (const [id, objects] of themeObjectMap.entries()) {
+    const color = getCSSColor(id)
+    console.log(
+      `Updating ${objects.length} objects for ${id}: ${color.toNumber()}|${color.alpha}`
+    )
+    objects.forEach(o => {
+      if (o.destroyed) return
+      o.tint = color.toNumber()
+      o.alpha = color.alpha
+    })
+    themeObjectMap.set(
+      id,
+      objects.filter(o => !o.destroyed)
+    )
+  }
+})
+
+export function assignTint(element: TintableObject, id: string) {
+  if (!themeObjectMap.has(id)) {
+    themeObjectMap.set(id, [])
+  }
+  themeObjectMap.get(id)!.push(element)
+  const color = getCSSColor(id)
+  element.tint = color.toNumber()
+  element.alpha = color.alpha
 }

@@ -421,10 +421,7 @@ export function createInputElement(
         input.value = ""
         deleteButton.disabled = true
       }
-      const icon = document.createElement("img")
-      icon.classList.add("icon")
-      icon.style.height = "12px"
-      icon.src = Icons.TRASH
+      const icon = Icons.getIcon("TRASH", 12)
       deleteButton.appendChild(icon)
       container.appendChild(deleteButton)
       return container

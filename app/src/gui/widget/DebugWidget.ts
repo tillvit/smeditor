@@ -6,8 +6,7 @@ import {
   Texture,
 } from "pixi.js"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
-import { getCSSColor } from "../../util/Color"
-import { EventHandler } from "../../util/EventHandler"
+import { assignTint } from "../../util/Color"
 import { clamp, roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { getFPS, getTPS } from "../../util/Performance"
@@ -86,19 +85,10 @@ export class DebugWidget extends Widget {
     this.cpuGraph.y += (GRAPH_HEIGHT + 5) * 4
     DebugWidget.instance = this
 
-    this.fpsBg.tint = 0
-    this.fpsBg.alpha = 0.5
     this.fpsText.x = 5
     this.fpsBg.y = -5
-
-    const themeHandler = () => {
-      const c = getCSSColor("--bg-widget")
-      this.fpsBg.tint = c.toNumber()
-      this.fpsBg.alpha = c.alpha
-    }
-    themeHandler()
-    EventHandler.on("themeChanged", themeHandler)
-    this.on("destroy", () => EventHandler.off("themeChanged", themeHandler))
+    assignTint(this.fpsBg, "--bg-widget")
+    assignTint(this.fpsText, "--text-color")
 
     this.graphs.addChild(
       this.frameTimeGraph,
@@ -230,14 +220,7 @@ class DebugGraph extends Container {
     bg.width = this.graphWidth
     bg.height = this.graphHeight
 
-    const themeHandler = () => {
-      const c = getCSSColor("--bg-widget")
-      bg.tint = c.toNumber()
-      bg.alpha = c.alpha
-    }
-    themeHandler()
-    EventHandler.on("themeChanged", themeHandler)
-    this.on("destroy", () => EventHandler.off("themeChanged", themeHandler))
+    assignTint(bg, "--text-color")
 
     this.labelText = new BitmapText(label, {
       fontName: "Main",

@@ -1,4 +1,5 @@
 import { BitmapText, FederatedPointerEvent, Graphics, Texture } from "pixi.js"
+import { assignTint } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, lerp, unlerp } from "../../util/Math"
 import { Options } from "../../util/Options"
@@ -27,6 +28,7 @@ export class NPSGraphWidget extends BaseTimelineWidget {
     this.npsText.visible = false
     this.npsText.anchor.x = 1
     this.npsText.anchor.y = 0.5
+    assignTint(this.npsText, "--text-color")
     this.addChild(this.npsText)
 
     EventHandler.on("userOptionUpdated", optionId => {

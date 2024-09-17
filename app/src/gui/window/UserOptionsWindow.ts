@@ -129,9 +129,8 @@ export class UserOptionsWindow extends Window {
       item.appendChild(label)
     }
 
-    const revert = document.createElement("img")
+    const revert = Icons.getIcon("REVERT")
     if (option.type == "item") {
-      revert.src = Icons.REVERT
       revert.style.width = "12px"
       revert.addEventListener("click", () => {
         Options.applyOption([option.id, Options.getDefaultOption(option.id)])

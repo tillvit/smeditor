@@ -1,3 +1,5 @@
+import { Icons } from "../Icons"
+
 export class Dropdown<T> {
   view: HTMLDivElement
 
@@ -20,6 +22,11 @@ export class Dropdown<T> {
     this.selectedItem = selectedItem ?? this.items[0]
     const itemDisplay = document.createElement("div")
     itemDisplay.classList.add("dropdown-selected")
+    const itemDisplayText = document.createElement("div")
+    itemDisplayText.classList.add("dropdown-selected-text")
+    const chevron = Icons.getIcon("CHEVRON", 12)
+    itemDisplay.appendChild(itemDisplayText)
+    itemDisplay.appendChild(chevron)
     const itemList = document.createElement("div")
     itemList.classList.add("dropdown-items")
     itemList.style.height = ""
@@ -74,8 +81,9 @@ export class Dropdown<T> {
 
   setSelected(item?: T) {
     this.selectedItem = item ?? this.selectedItem
-    const itemDisplay: HTMLElement =
-      this.view.querySelector(".dropdown-selected")!
+    const itemDisplay: HTMLElement = this.view.querySelector(
+      ".dropdown-selected-text"
+    )!
     itemDisplay.innerText = this.selectedItem ? this.selectedItem + "" : ""
   }
 

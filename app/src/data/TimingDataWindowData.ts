@@ -399,7 +399,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         delayInput.disabled = event?.beat != beat
 
         const unitInput: HTMLDivElement =
-          element.lastElementChild!.querySelector(".dropdown-selected")!
+          element.lastElementChild!.querySelector(".dropdown-selected-text")!
         if (unitInput.innerText != unit) {
           unitInput.innerText = unit
         }

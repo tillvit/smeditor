@@ -1,4 +1,5 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
+import { assignTint } from "../../../util/Color"
 import { clamp } from "../../../util/Math"
 import { Options } from "../../../util/Options"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
@@ -26,6 +27,7 @@ export class PreviewAreaContainer
     })
     this.previewText.x = -this.previewArea.width / 2 + 5
     this.previewArea.anchor.x = 0.5
+    assignTint(this.previewText, "--text-color")
     this.addChild(this.previewArea, this.previewText)
   }
 

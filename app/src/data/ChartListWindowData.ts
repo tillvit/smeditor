@@ -145,10 +145,7 @@ export const CHART_PROPERTIES_DATA: {
           )
         }
       }
-      const icon = document.createElement("img")
-      icon.classList.add("icon")
-      icon.style.height = "12px"
-      icon.src = Icons.SELECT_FILE
+      const icon = Icons.getIcon("FOLDER", 12)
       dirButton.appendChild(icon)
 
       const revertButton = document.createElement("button")
@@ -160,10 +157,7 @@ export const CHART_PROPERTIES_DATA: {
         input.innerText = app.chartManager.loadedSM!.properties.MUSIC ?? ""
         handleInput()
       }
-      const icon2 = document.createElement("img")
-      icon2.classList.add("icon")
-      icon2.style.height = "12px"
-      icon2.src = Icons.REVERT
+      const icon2 = Icons.getIcon("REVERT", 12)
       revertButton.appendChild(icon2)
 
       container.appendChild(input)
