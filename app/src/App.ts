@@ -65,6 +65,7 @@ interface Version {
 
 export class App {
   options = Options
+  events = EventHandler
   renderer: Renderer
   ticker: Ticker
   stage: Container
