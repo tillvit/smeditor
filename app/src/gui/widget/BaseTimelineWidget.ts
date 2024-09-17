@@ -12,7 +12,7 @@ import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
 
 export class BaseTimelineWidget extends Widget {
-  backing: BetterRoundedRect = new BetterRoundedRect()
+  backing: BetterRoundedRect = new BetterRoundedRect("noBorder")
   overlay: Sprite = new Sprite(Texture.WHITE)
   selectionOverlay: Sprite = new Sprite(Texture.WHITE)
   container: Container = new Container()

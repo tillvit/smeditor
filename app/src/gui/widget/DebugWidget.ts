@@ -71,7 +71,7 @@ export class DebugWidget extends Widget {
   private graphs = new Container<DebugGraph>()
   private fpsCounter = new Container()
 
-  private fpsBg = new BetterRoundedRect()
+  private fpsBg = new BetterRoundedRect("noBorder")
   private fpsText = new BitmapText("", {
     fontName: "Main",
     fontSize: 12,
@@ -224,7 +224,7 @@ class DebugGraph extends Container {
       16384,
       true
     )
-    const bg = new BetterRoundedRect()
+    const bg = new BetterRoundedRect("noBorder")
     bg.tint = 0
     bg.alpha = 0.3
     bg.width = this.graphWidth

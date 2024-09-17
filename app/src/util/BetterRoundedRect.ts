@@ -30,7 +30,7 @@ export class BetterRoundedRect extends NineSlicePlane {
     renderer.render(this.graphics, { renderTexture: this.textures.default })
     this.graphics.clear()
     this.graphics.beginFill(0xffffff, 1)
-    this.graphics.lineStyle(1, 0xffffff)
+    this.graphics.lineStyle(0, 0xffffff)
     this.graphics.drawRoundedRect(0, 0, 50, 50, 5)
     this.graphics.endFill()
     renderer.render(this.graphics, { renderTexture: this.textures.noBorder })
