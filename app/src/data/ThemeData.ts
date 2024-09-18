@@ -8,7 +8,6 @@ export const THEME_VAR_WHITELIST = [
   "bg-editable-overlay-active",
   "text-color",
   "text-color-secondary",
-  "text-color-tertiary",
   "text-color-detail",
   "text-color-disabled",
   "bg-primary",
@@ -38,12 +37,43 @@ export type Theme = {
   [key in ThemeProperty]: Color
 }
 
+export const THEME_PROPERTY_DESCRIPTIONS: {
+  [key in ThemeProperty]: string
+} = {
+  "accent-color": "Color used for focus input rings, confirm buttons",
+  "text-color": "Base text color",
+  "text-color-secondary":
+    "Secondary text color, used for text in recent files, menubar keybinds",
+  "text-color-detail": "Detail text color, used for text in timing event boxes",
+  "text-color-disabled":
+    "Used for texts relating to empty/disabled things (ex. no files in directory picker)",
+  "bg-primary": "Primary background, used for menubar, context/dropdown menus",
+  "bg-primary-border": "",
+  "bg-primary-active": "",
+  "bg-primary-hover": "",
+  "bg-window": "Window navbar background",
+  "bg-window-inactive": "",
+  "bg-secondary": "Secondary background, used for subareas in menus",
+  "bg-secondary-border": "",
+  "bg-secondary-active": "",
+  "bg-secondary-hover": "",
+  "bg-editable-overlay":
+    "Overlay on top of editable items (status widget buttons, playback option toggles, textareas)",
+  "bg-editable-overlay-active": "",
+  "bg-input": "Background color for input",
+  "bg-input-active": "",
+  "bg-input-hover": "",
+  "bg-input-border": "",
+  "bg-widget": "Widget background",
+  "bg-tooltip": "Color of these tooltips",
+  "bg-editor": "Editor background",
+}
+
 export const DEFAULT_THEMES: Record<string, Theme> = {
   default: {
     "accent-color": new Color("rgb(23, 131, 208)"),
     "text-color": new Color("#fff"),
-    "text-color-secondary": new Color("#ddd"),
-    "text-color-tertiary": new Color("#888"),
+    "text-color-secondary": new Color("#888"),
     "text-color-detail": new Color("#757a89"),
     "text-color-disabled": new Color("#888"),
     "bg-primary": new Color("#555"),
@@ -69,8 +99,7 @@ export const DEFAULT_THEMES: Record<string, Theme> = {
   amethyst: {
     "accent-color": new Color("rgb(23, 131, 208)"),
     "text-color": new Color("#e4b3ffff"),
-    "text-color-secondary": new Color("#e4b3ffab"),
-    "text-color-tertiary": new Color("#e4b3ff78"),
+    "text-color-secondary": new Color("#e4b3ff78"),
     "text-color-detail": new Color("#e4b3ff45"),
     "text-color-disabled": new Color("#e4b3ff87"),
     "bg-primary": new Color("#3a1a75ff"),
@@ -96,8 +125,7 @@ export const DEFAULT_THEMES: Record<string, Theme> = {
   nord: {
     "accent-color": new Color("rgb(23, 131, 208)"),
     "text-color": new Color("#d9dee8ff"),
-    "text-color-secondary": new Color("#d9dee8ab"),
-    "text-color-tertiary": new Color("#d9dee878"),
+    "text-color-secondary": new Color("#d9dee878"),
     "text-color-detail": new Color("#d9dee845"),
     "text-color-disabled": new Color("#d9dee887"),
     "bg-primary": new Color("#2e3440ff"),
@@ -123,8 +151,7 @@ export const DEFAULT_THEMES: Record<string, Theme> = {
   light: {
     "accent-color": new Color("#ff5c74ff"),
     "text-color": new Color("#000000ff"),
-    "text-color-secondary": new Color("#000000ab"),
-    "text-color-tertiary": new Color("#00000078"),
+    "text-color-secondary": new Color("#00000078"),
     "text-color-detail": new Color("#00000045"),
     "text-color-disabled": new Color("#00000087"),
     "bg-primary": new Color("#ffffffff"),

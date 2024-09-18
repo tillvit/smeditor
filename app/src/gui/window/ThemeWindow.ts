@@ -1,6 +1,12 @@
 import { Color } from "pixi.js"
+import tippy from "tippy.js"
 import { App } from "../../App"
-import { Theme, THEME_VAR_WHITELIST, ThemeProperty } from "../../data/ThemeData"
+import {
+  Theme,
+  THEME_PROPERTY_DESCRIPTIONS,
+  THEME_VAR_WHITELIST,
+  ThemeProperty,
+} from "../../data/ThemeData"
 import { add, lighten } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { Themes } from "../../util/Theme"
@@ -51,11 +57,11 @@ export class ThemeWindow extends Window {
 
   createGenerator(id: ThemeProperty) {
     const updateValue = () => {
-      if (document.activeElement == colorInput) return
       const c = new Color(this.generatorOptions[id] ?? "black")
+      colorLabel.innerText = c.toHex() + " | " + Math.round(c.alpha * 100) + "%"
+      if (document.activeElement == colorInput) return
       colorInput.value = c.toHex()
       alphaInput.value = c.alpha.toString()
-      colorLabel.innerText = c.toHex() + " | " + Math.round(c.alpha * 100) + "%"
     }
 
     const setValue = () => {
@@ -68,6 +74,11 @@ export class ThemeWindow extends Window {
 
     const container = document.createElement("div")
     container.classList.add("theme-color-cell")
+
+    if (THEME_PROPERTY_DESCRIPTIONS[id] != "")
+      tippy(container, {
+        content: THEME_PROPERTY_DESCRIPTIONS[id],
+      })
 
     const label = document.createElement("div")
     label.innerText = id
@@ -97,11 +108,11 @@ export class ThemeWindow extends Window {
 
   createPicker(id: ThemeProperty) {
     const updateValue = () => {
-      if (document.activeElement == colorInput) return
       const c = new Color(Themes.getCurrentTheme()[id])
+      colorLabel.innerText = c.toHex() + " | " + Math.round(c.alpha * 100) + "%"
+      if (document.activeElement == colorInput) return
       colorInput.value = c.toHex()
       alphaInput.value = c.alpha.toString()
-      colorLabel.innerText = c.toHex() + " | " + Math.round(c.alpha * 100) + "%"
     }
 
     const setValue = () => {
@@ -114,6 +125,11 @@ export class ThemeWindow extends Window {
 
     const container = document.createElement("div")
     container.classList.add("theme-color-cell")
+
+    if (THEME_PROPERTY_DESCRIPTIONS[id] != "")
+      tippy(container, {
+        content: THEME_PROPERTY_DESCRIPTIONS[id],
+      })
 
     const label = document.createElement("div")
     label.innerText = id
@@ -179,9 +195,6 @@ export class ThemeWindow extends Window {
     theme["bg-editor"] =
       theme["bg-editor"] ?? this.lighten(theme["bg-primary"]!, -60)
     theme["text-color-secondary"] = new Color(theme["text-color"]).setAlpha(
-      0xaa / 0xff
-    )
-    theme["text-color-tertiary"] = new Color(theme["text-color"]).setAlpha(
       0x77 / 0xff
     )
     theme["text-color-detail"] = new Color(theme["text-color"]).setAlpha(

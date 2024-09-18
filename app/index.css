@@ -221,8 +221,7 @@ body {
   accent-color: var(--accent-color);
 
   --text-color: white;
-  --text-color-secondary: #ddd;
-  --text-color-tertiary: #888;
+  --text-color-secondary: #888;
   --text-color-detail: #757a89;
   --text-color-disabled: #888;
   --bg-primary: #555;
@@ -329,7 +328,7 @@ html {
   filter: none;
 }
 button {
-  background: var(--bg-primary);
+  background: var(--bg-input);
   border: 0.5px solid rgba(0, 0, 0, 0.6);
   border-radius: 5px;
   padding: 4px 7px;
@@ -577,7 +576,7 @@ textarea {
 }
 .recent-item .recent-path {
   font-style: italic;
-  color: var(--text-color-tertiary);
+  color: var(--text-color-secondary);
   text-overflow: ellipsis;
   overflow: hidden;
 }
@@ -656,7 +655,7 @@ textarea {
 
 .menu-item-title .keybind {
   margin-right: 10px;
-  color: var(--text-color-tertiary);
+  color: var(--text-color-secondary);
   white-space: nowrap;
 }
 
@@ -1189,19 +1188,11 @@ input.right {
 }
 
 .spinner-up {
-  background: linear-gradient(
-    0deg,
-    var(--bg-primary-active),
-    var(--bg-primary)
-  );
+  background: linear-gradient(0deg, var(--bg-input-active), var(--bg-input));
 }
 
 .spinner-down {
-  background: linear-gradient(
-    180deg,
-    var(--bg-primary-active),
-    var(--bg-primary)
-  );
+  background: linear-gradient(180deg, var(--bg-input-active), var(--bg-input));
 }
 
 .slider {
@@ -1381,7 +1372,7 @@ input[type="range"] {
 
 #status-widget .playback-counter .playback-counter-label {
   font-size: 10px;
-  color: var(--text-color-tertiary);
+  color: var(--text-color-secondary);
 }
 
 #status-widget .playback-counter .playback-counter-label::after {
