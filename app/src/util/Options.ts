@@ -18,6 +18,7 @@ export class DefaultOptions {
     smoothAnimations: true,
     warnBeforeExit: true,
     showPlaybackOptions: true,
+    theme: "default",
   }
   static chart = {
     CMod: false,

@@ -63,6 +63,7 @@ export class InitialWindow extends Window {
     openButton.style.flexDirection = "column"
     openButton.style.padding = "10px"
     openButton.style.backgroundColor = "#414352"
+    openButton.style.color = "white"
     topContainer.appendChild(openButton)
 
     const openIcon = Icons.getIcon("UPLOAD", 30)
@@ -103,6 +104,7 @@ export class InitialWindow extends Window {
     newButton.style.flexDirection = "column"
     newButton.style.padding = "10px"
     newButton.style.backgroundColor = "#506352"
+    newButton.style.color = "white"
     topContainer.appendChild(newButton)
 
     const newIcon = Icons.getIcon("PLUS", 30)

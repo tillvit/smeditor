@@ -584,6 +584,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "selection",
+        id: "themes",
+      },
+      {
+        type: "selection",
         id: "keybinds",
       },
       {

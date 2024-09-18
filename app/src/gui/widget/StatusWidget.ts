@@ -1,5 +1,5 @@
 import { Parser } from "expr-eval"
-import { Sprite, Texture } from "pixi.js"
+import { Color, Sprite, Texture } from "pixi.js"
 import tippy from "tippy.js"
 import { EditMode, EditTimingMode } from "../../chart/ChartManager"
 import { NoteskinSprite } from "../../chart/gameTypes/noteskin/Noteskin"
@@ -9,7 +9,7 @@ import {
   TapNoteType,
 } from "../../chart/sm/NoteTypes"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
-import { assignTint } from "../../util/Color"
+import { assignTint, blendPixiColors, getCSSColor } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
 import { Keybinds } from "../../util/Keybinds"
@@ -332,7 +332,7 @@ export class StatusWidget extends Widget {
       this.manager.chartManager.editTimingMode = EditTimingMode.Off
       this.editSteps.blur()
     }
-    this.editSteps.style.background = "rgba(255,255,255,0.15)"
+    this.editSteps.classList.add("active")
 
     this.editTiming = document.createElement("button")
     this.editTiming.tabIndex = -1
@@ -708,15 +708,15 @@ export class StatusWidget extends Widget {
           this.visible = true
           this.stepsContainer.style.transform = ""
           this.timingContainer.style.transform = ""
-          this.editSteps.style.background = "rgba(255,255,255,0.15)"
-          this.editTiming.style.background = ""
+          this.editSteps.classList.add("active")
+          this.editTiming.classList.remove("active")
           this.offset.tabIndex = -1
           break
         case EditTimingMode.Add:
-          this.addTimingEvent.style.background = "rgba(255,255,255,0.15)"
+          this.addTimingEvent.classList.add("active")
           break
         case EditTimingMode.Edit:
-          this.addTimingEvent.style.background = ""
+          this.addTimingEvent.classList.remove("active")
           this.offset.tabIndex = 0
       }
       if (
@@ -733,10 +733,14 @@ export class StatusWidget extends Widget {
         timingMode == EditTimingMode.Off ? "" : "translateY(-48px)"
       this.timingContainer.style.transform =
         timingMode == EditTimingMode.Off ? "" : "translateY(-48px)"
-      this.editSteps.style.background =
-        timingMode == EditTimingMode.Off ? "rgba(255,255,255,0.15)" : ""
-      this.editTiming.style.background =
-        timingMode == EditTimingMode.Off ? "" : "rgba(255,255,255,0.15)"
+      this.editSteps.classList.toggle(
+        "active",
+        timingMode == EditTimingMode.Off
+      )
+      this.editTiming.classList.toggle(
+        "active",
+        timingMode != EditTimingMode.Off
+      )
     }
 
     const playing = this.manager.chartManager.chartAudio.isPlaying()
@@ -800,15 +804,27 @@ export class StatusWidget extends Widget {
     }
 
     const noteType = this.manager.chartManager.getEditingNoteType()
+    const hoverColor = getCSSColor("--bg-editable-overlay")
+    const activeColor = getCSSColor("--bg-editable-overlay-active")
+    const emptyColor = new Color(hoverColor).setAlpha(0)
     this.noteArrows.forEach(arrow => {
+      let color =
+        noteType == arrow.type
+          ? activeColor
+          : arrow.hovered
+            ? hoverColor
+            : emptyColor
       if (Options.general.smoothAnimations) {
-        const target = noteType == arrow.type ? 0.15 : arrow.hovered ? 0.05 : 0
-        arrow.highlight.alpha =
-          (target - arrow.highlight.alpha) * 0.3 + arrow.highlight.alpha
-      } else {
-        arrow.highlight.alpha =
-          noteType == arrow.type ? 0.15 : arrow.hovered ? 0.05 : 0
+        color = new Color(
+          blendPixiColors(
+            new Color(arrow.highlight.tint).setAlpha(arrow.highlight.alpha),
+            color,
+            0.3
+          )
+        )
       }
+      arrow.highlight.tint = color.toNumber()
+      arrow.highlight.alpha = color.alpha
     })
   }
 

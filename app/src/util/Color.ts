@@ -1,6 +1,6 @@
 import { Color, ColorSource } from "pixi.js"
 import { EventHandler } from "./EventHandler"
-import { clamp } from "./Math"
+import { clamp, lerp } from "./Math"
 
 export function rgbtoHex(r: number, g: number, b: number): number {
   return (r << 16) + (g << 8) + b
@@ -10,9 +10,19 @@ export function lighten(col: number, gamma: number): number {
   let r = col >> 16
   let g = (col >> 8) & 0xff
   let b = col & 0xff
-  r = clamp(r * gamma, 0, 255)
-  g = clamp(g * gamma, 0, 255)
-  b = clamp(b * gamma, 0, 255)
+  r = clamp(Math.round(r * gamma), 0, 255)
+  g = clamp(Math.round(g * gamma), 0, 255)
+  b = clamp(Math.round(b * gamma), 0, 255)
+  return rgbtoHex(r, g, b)
+}
+
+export function add(col: number, gamma: number): number {
+  let r = col >> 16
+  let g = (col >> 8) & 0xff
+  let b = col & 0xff
+  r = clamp(Math.round(r + gamma), 0, 255)
+  g = clamp(Math.round(g + gamma), 0, 255)
+  b = clamp(Math.round(b + gamma), 0, 255)
   return rgbtoHex(r, g, b)
 }
 
@@ -29,6 +39,14 @@ export function blendColors(colorA: string, colorB: string, amount: number) {
     .toString(16)
     .padStart(2, "0")
   return "#" + r + g + b
+}
+
+export function blendPixiColors(colorA: Color, colorB: Color, amount: number) {
+  const r = lerp(colorA.red, colorB.red, amount)
+  const g = lerp(colorA.green, colorB.green, amount)
+  const b = lerp(colorA.blue, colorB.blue, amount)
+  const a = lerp(colorA.alpha, colorB.alpha, amount)
+  return new Color([r, g, b, a])
 }
 
 export function getCSSColor(id: string) {
