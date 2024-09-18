@@ -42,12 +42,8 @@ type TintableObject = { tint: ColorSource; alpha: number; destroyed: boolean }
 const themeObjectMap = new Map<string, TintableObject[]>()
 
 EventHandler.on("themeChanged", () => {
-  console.log("Theme reloaded")
   for (const [id, objects] of themeObjectMap.entries()) {
     const color = getCSSColor(id)
-    console.log(
-      `Updating ${objects.length} objects for ${id}: ${color.toNumber()}|${color.alpha}`
-    )
     objects.forEach(o => {
       if (o.destroyed) return
       o.tint = color.toNumber()

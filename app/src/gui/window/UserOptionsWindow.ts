@@ -341,10 +341,7 @@ export class UserOptionsWindow extends Window {
           colorInput.type = "color"
           colorInput.value = "#" + optionValue.toString(16).padStart(6, "0")
           // 'change' event is fired when the user closes the color picker
-          colorInput.onchange = () => {
-            colorInput.blur()
-          }
-          colorInput.onblur = () => {
+          colorInput.oninput = () => {
             Options.applyOption([
               option.id,
               parseInt(colorInput.value.slice(1), 16),
