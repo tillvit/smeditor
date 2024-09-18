@@ -353,7 +353,7 @@ export class App {
 
     EventHandler.on("themeChanged", () => {
       this.renderer.background.color = new Color(
-        Themes.getCurrentTheme()["bg-editor"]
+        Themes.getCurrentTheme()["editor-bg"]
       ).toNumber()
     })
 

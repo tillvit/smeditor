@@ -40,7 +40,7 @@ export class BaseTimelineWidget extends Widget {
     this.addChild(this.container)
     this.visible = false
 
-    assignTint(this.backing, "--bg-widget")
+    assignTint(this.backing, "--widget-bg")
 
     this.overlay.anchor.x = 0.5
     this.overlay.anchor.y = 0

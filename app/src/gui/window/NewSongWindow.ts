@@ -244,8 +244,7 @@ export class NewSongWindow extends Window {
       input.value = ""
       deleteButton.disabled = true
     }
-    const icon = Icons.getIcon("TRASH")
-    icon.style.height = "12px"
+    const icon = Icons.getIcon("TRASH", 12)
     deleteButton.appendChild(icon)
     container.appendChild(deleteButton)
     return container

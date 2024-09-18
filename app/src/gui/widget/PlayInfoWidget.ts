@@ -54,7 +54,7 @@ export class PlayInfoWidget extends Widget {
     this.visible = false
 
     this.background.addChild(this.backgroundRect)
-    assignTint(this.backgroundRect, "--bg-widget")
+    assignTint(this.backgroundRect, "--widget-bg")
     this.addChild(this.background)
     this.addChild(this.backgroundLines)
     this.eventMode = "static"

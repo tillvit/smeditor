@@ -586,7 +586,7 @@ export class PlaybackOptionsWidget extends Widget {
 
   createCheckbox(options: CheckboxOptions) {
     const item = document.createElement("div")
-    item.classList.add("po-checkbox")
+    item.classList.add("ico-checkbox")
 
     const update = (trigger = true) => {
       if (trigger) options.onChange(checkbox.currentValue)

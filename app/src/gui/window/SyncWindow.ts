@@ -651,9 +651,9 @@ export class SyncWindow extends Window {
           this.lowestFinishedBlock++
         }
         if (this.lowestFinishedBlock < MAX_BLOCKS) {
-          this.toggleButton.style.background = `linear-gradient(90deg, #265296 0 ${
+          this.toggleButton.style.background = `linear-gradient(90deg, var(--accent-color) 0 ${
             (this.lowestFinishedBlock / MAX_BLOCKS) * 100
-          }%, rgb(83, 82, 82) ${
+          }%, var(--input-bg) ${
             (this.lowestFinishedBlock / MAX_BLOCKS) * 100
           }% 100%)`
 
@@ -1254,9 +1254,9 @@ export class SyncWindow extends Window {
           processBlock(++blockNum)
         } else {
           frameTime = performance.now()
-          this.toggleButton.style.background = `linear-gradient(90deg, #265296 0 ${
+          this.toggleButton.style.background = `linear-gradient(90deg, var(--accent-color) 0 ${
             (blockNum / MAX_BLOCKS) * 100
-          }%, rgb(83, 82, 82) ${(blockNum / MAX_BLOCKS) * 100}% 100%)`
+          }%, var(--input-bg) ${(blockNum / MAX_BLOCKS) * 100}% 100%)`
           this.toggleButton.innerText = `Finding tempo (${roundDigit(
             (blockNum / MAX_BLOCKS) * 100,
             1
@@ -1272,7 +1272,7 @@ export class SyncWindow extends Window {
         this.toggleButton.innerText = "Finished analyzing"
         this.resetButton.disabled = false
         this.doAnalysis = false
-        this.toggleButton.style.background = `#265296`
+        this.toggleButton.style.background = `var(--accent-color)`
       }
     }
     processBlock(0)

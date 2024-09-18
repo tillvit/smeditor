@@ -1,30 +1,33 @@
 import { Color } from "pixi.js"
+import { ThemeWindow } from "../gui/window/ThemeWindow"
 
 export const THEME_VAR_WHITELIST = [
   "accent-color",
-  "bg-editor",
-  "bg-widget",
-  "bg-editable-overlay",
-  "bg-editable-overlay-active",
+  "editor-bg",
+  "widget-bg",
+  "editable-overlay-hover",
+  "editable-overlay-active",
   "text-color",
   "text-color-secondary",
   "text-color-detail",
   "text-color-disabled",
-  "bg-primary",
-  "bg-primary-border",
-  "bg-primary-active",
-  "bg-primary-hover",
-  "bg-secondary",
-  "bg-secondary-border",
-  "bg-secondary-active",
-  "bg-secondary-hover",
-  "bg-tooltip",
-  "bg-input",
-  "bg-input-active",
-  "bg-input-hover",
-  "bg-input-border",
-  "bg-window",
-  "bg-window-inactive",
+  "primary-bg",
+  "primary-border",
+  "primary-bg-active",
+  "primary-bg-hover",
+  "secondary-bg",
+  "secondary-border",
+  "secondary-bg-active",
+  "secondary-bg-hover",
+  "tooltip-bg",
+  "input-bg",
+  "input-bg-active",
+  "input-bg-hover",
+  "input-border",
+  "navbar-bg",
+  "navbar-bg-inactive",
+  "window-bg",
+  "window-border",
 ] as const
 
 export type ThemeProperty = (typeof THEME_VAR_WHITELIST)[number]
@@ -37,6 +40,161 @@ export type Theme = {
   [key in ThemeProperty]: Color
 }
 
+export type ThemeGroup = {
+  name: string
+  ids: {
+    id: ThemeProperty
+    label: string
+  }[]
+}
+
+export const THEME_GROUPS: ThemeGroup[] = [
+  {
+    name: "main",
+    ids: [
+      {
+        id: "accent-color",
+        label: "accent-color",
+      },
+      {
+        id: "widget-bg",
+        label: "widget-bg",
+      },
+      {
+        id: "tooltip-bg",
+        label: "tooltip-bg",
+      },
+      {
+        id: "editor-bg",
+        label: "editor-bg",
+      },
+    ],
+  },
+  {
+    name: "text-color",
+    ids: [
+      {
+        id: "text-color",
+        label: "primary",
+      },
+      {
+        id: "text-color-secondary",
+        label: "secondary",
+      },
+      {
+        id: "text-color-detail",
+        label: "detail",
+      },
+      {
+        id: "text-color-disabled",
+        label: "disabled",
+      },
+    ],
+  },
+  {
+    name: "primary-bg",
+    ids: [
+      {
+        id: "primary-bg",
+        label: "base",
+      },
+      {
+        id: "primary-bg-active",
+        label: "active",
+      },
+      {
+        id: "primary-bg-hover",
+        label: "hover",
+      },
+      {
+        id: "primary-border",
+        label: "border",
+      },
+    ],
+  },
+  {
+    name: "secondary-bg",
+    ids: [
+      {
+        id: "secondary-bg",
+        label: "base",
+      },
+      {
+        id: "secondary-bg-active",
+        label: "active",
+      },
+      {
+        id: "secondary-bg-hover",
+        label: "hover",
+      },
+      {
+        id: "secondary-border",
+        label: "border",
+      },
+    ],
+  },
+  {
+    name: "navbar",
+    ids: [
+      {
+        id: "navbar-bg",
+        label: "active",
+      },
+      {
+        id: "navbar-bg-inactive",
+        label: "inactive",
+      },
+    ],
+  },
+  {
+    name: "editable-overlay",
+    ids: [
+      {
+        id: "editable-overlay-hover",
+        label: "hover",
+      },
+      {
+        id: "editable-overlay-active",
+        label: "active",
+      },
+    ],
+  },
+  {
+    name: "input",
+    ids: [
+      {
+        id: "input-bg",
+        label: "background",
+      },
+      {
+        id: "input-bg-active",
+        label: "active",
+      },
+      {
+        id: "input-bg-hover",
+        label: "hover",
+      },
+      {
+        id: "input-border",
+        label: "border",
+      },
+    ],
+  },
+  {
+    name: "window",
+    ids: [
+      {
+        id: "window-bg",
+        label: "background",
+      },
+      {
+        id: "window-border",
+        label: "border",
+      },
+    ],
+  },
+]
+
 export const THEME_PROPERTY_DESCRIPTIONS: {
   [key in ThemeProperty]: string
 } = {
@@ -47,26 +205,115 @@ export const THEME_PROPERTY_DESCRIPTIONS: {
   "text-color-detail": "Detail text color, used for text in timing event boxes",
   "text-color-disabled":
     "Used for texts relating to empty/disabled things (ex. no files in directory picker)",
-  "bg-primary": "Primary background, used for menubar, context/dropdown menus",
-  "bg-primary-border": "",
-  "bg-primary-active": "",
-  "bg-primary-hover": "",
-  "bg-window": "Window navbar background",
-  "bg-window-inactive": "",
-  "bg-secondary": "Secondary background, used for subareas in menus",
-  "bg-secondary-border": "",
-  "bg-secondary-active": "",
-  "bg-secondary-hover": "",
-  "bg-editable-overlay":
+  "primary-bg": "Primary background, used for menubar, context/dropdown menus",
+  "primary-border": "",
+  "primary-bg-active": "",
+  "primary-bg-hover": "",
+  "navbar-bg": "Window navbar background",
+  "navbar-bg-inactive": "",
+  "window-bg": "Window background",
+  "window-border": "",
+  "secondary-bg": "Secondary background, used for subareas in menus",
+  "secondary-border": "",
+  "secondary-bg-active": "",
+  "secondary-bg-hover": "",
+  "editable-overlay-hover":
     "Overlay on top of editable items (status widget buttons, playback option toggles, textareas)",
-  "bg-editable-overlay-active": "",
-  "bg-input": "Background color for input",
-  "bg-input-active": "",
-  "bg-input-hover": "",
-  "bg-input-border": "",
-  "bg-widget": "Widget background",
-  "bg-tooltip": "Color of these tooltips",
-  "bg-editor": "Editor background",
+  "editable-overlay-active": "",
+  "input-bg": "Background color for input",
+  "input-bg-active": "",
+  "input-bg-hover": "",
+  "input-border": "",
+  "widget-bg": "Widget background",
+  "tooltip-bg": "Color of these tooltips",
+  "editor-bg": "Editor background",
+}
+
+export type ThemeColorLinks = {
+  [key in ThemeProperty]?: (this: ThemeWindow, c: Color) => Color
+}
+
+export const THEME_GENERATOR_LINKS: {
+  [key in ThemeProperty]?: ThemeColorLinks
+} = {
+  "primary-bg": {
+    "primary-border": function (c) {
+      return this.lighten(c, 10).setAlpha(0xbb)
+    },
+    "primary-bg-active": function (c) {
+      return this.lighten(c, 10)
+    },
+    "primary-bg-hover": function (c) {
+      return this.lighten(c, 30)
+    },
+    "widget-bg": function (c) {
+      return this.add(c, -50).setAlpha(0x88)
+    },
+    "navbar-bg": function (c) {
+      return this.lighten(c, -10)
+    },
+    "text-color": function (c) {
+      return this.average(c) > 0.5 ? new Color("#000") : new Color("#fff")
+    },
+    "input-bg": function (c) {
+      return this.average(c) < 0.5 ? new Color("#000") : new Color("#fff")
+    },
+    "input-border": function (c) {
+      return this.average(c) > 0.5
+        ? this.add(c, -30).setAlpha(0x77)
+        : this.add(c, +30).setAlpha(0x77)
+    },
+    "tooltip-bg": function (c) {
+      return this.lighten(c, -10).setAlpha(0xee)
+    },
+    "secondary-bg": function (c) {
+      return this.lighten(c, -20)
+    },
+    "editor-bg": function (c) {
+      return this.lighten(c, -60)
+    },
+  },
+  "secondary-bg": {
+    "secondary-border": function (c) {
+      return this.lighten(c, 10).setAlpha(0xbb)
+    },
+    "secondary-bg-active": function (c) {
+      return this.lighten(c, 10)
+    },
+    "secondary-bg-hover": function (c) {
+      return this.lighten(c, 30)
+    },
+  },
+  "navbar-bg": {
+    "navbar-bg-inactive": function (c) {
+      return this.lighten(c, -33)
+    },
+    "window-bg": function (c) {
+      return new Color(c)
+    },
+  },
+  "text-color": {
+    "text-color-secondary": function (c) {
+      return new Color(c).setAlpha(0x77 / 0xff)
+    },
+    "text-color-detail": function (c) {
+      return new Color(c).setAlpha(0x44 / 0xff)
+    },
+    "text-color-disabled": function (c) {
+      return new Color(c).setAlpha(0x88 / 0xff)
+    },
+  },
+  "input-bg": {
+    "input-border": function (c) {
+      return this.lighten(c, 10).setAlpha(0xbb)
+    },
+    "input-bg-active": function (c) {
+      return this.lighten(c, 10)
+    },
+    "input-bg-hover": function (c) {
+      return this.lighten(c, 30)
+    },
+  },
 }
 
 export const DEFAULT_THEMES: Record<string, Theme> = {
@@ -76,25 +323,27 @@ export const DEFAULT_THEMES: Record<string, Theme> = {
     "text-color-secondary": new Color("#888"),
     "text-color-detail": new Color("#757a89"),
     "text-color-disabled": new Color("#888"),
-    "bg-primary": new Color("#555"),
-    "bg-primary-border": new Color("#444"),
-    "bg-primary-active": new Color("#575757"),
-    "bg-primary-hover": new Color("#666"),
-    "bg-window": new Color("#3d3d3d"),
-    "bg-window-inactive": new Color("#626262"),
-    "bg-secondary": new Color("#373737"),
-    "bg-secondary-border": new Color("#333"),
-    "bg-secondary-active": new Color("#555"),
-    "bg-secondary-hover": new Color("#454545"),
-    "bg-editable-overlay": new Color("rgb(255, 255, 255, 0.1)"),
-    "bg-editable-overlay-active": new Color("rgb(255, 255, 255, 0.2)"),
-    "bg-input": new Color("rgba(35, 35, 35, 0.309)"),
-    "bg-input-active": new Color("rgba(50, 50, 50, 0.309)"),
-    "bg-input-hover": new Color("rgba(79, 79, 79, 0.309)"),
-    "bg-input-border": new Color("rgba(0, 0, 0, 0.3)"),
-    "bg-widget": new Color("rgba(0, 0, 0, 0.5)"),
-    "bg-tooltip": new Color("rgba(20, 20, 20, 0.95)"),
-    "bg-editor": new Color("#18191c"),
+    "primary-bg": new Color("#555"),
+    "primary-border": new Color("#444"),
+    "primary-bg-active": new Color("#575757"),
+    "primary-bg-hover": new Color("#666"),
+    "navbar-bg": new Color("#3d3d3d"),
+    "navbar-bg-inactive": new Color("#626262"),
+    "window-bg": new Color("#3d3d3d"),
+    "window-border": new Color("#00000000"),
+    "secondary-bg": new Color("#373737"),
+    "secondary-border": new Color("#333"),
+    "secondary-bg-active": new Color("#555"),
+    "secondary-bg-hover": new Color("#454545"),
+    "editable-overlay-hover": new Color("rgb(255, 255, 255, 0.1)"),
+    "editable-overlay-active": new Color("rgb(255, 255, 255, 0.2)"),
+    "input-bg": new Color("rgba(35, 35, 35, 0.309)"),
+    "input-bg-active": new Color("rgba(50, 50, 50, 0.309)"),
+    "input-bg-hover": new Color("rgba(79, 79, 79, 0.309)"),
+    "input-border": new Color("rgba(0, 0, 0, 0.3)"),
+    "widget-bg": new Color("rgba(0, 0, 0, 0.5)"),
+    "tooltip-bg": new Color("rgba(20, 20, 20, 0.95)"),
+    "editor-bg": new Color("#18191c"),
   },
   amethyst: {
     "accent-color": new Color("rgb(23, 131, 208)"),
@@ -102,25 +351,27 @@ export const DEFAULT_THEMES: Record<string, Theme> = {
     "text-color-secondary": new Color("#e4b3ff78"),
     "text-color-detail": new Color("#e4b3ff45"),
     "text-color-disabled": new Color("#e4b3ff87"),
-    "bg-primary": new Color("#3a1a75ff"),
-    "bg-primary-border": new Color("#3f1c80ba"),
-    "bg-primary-active": new Color("#3f1c80ff"),
-    "bg-primary-hover": new Color("#4b2198ff"),
-    "bg-window": new Color("#341769ff"),
-    "bg-window-inactive": new Color("#220f46ff"),
-    "bg-secondary": new Color("#2e145dff"),
-    "bg-secondary-border": new Color("#321666ba"),
-    "bg-secondary-active": new Color("#321666ff"),
-    "bg-secondary-hover": new Color("#3b1a78ff"),
-    "bg-editable-overlay": new Color("rgb(255, 255, 255, 0.1)"),
-    "bg-editable-overlay-active": new Color("rgb(255, 255, 255, 0.2)"),
-    "bg-input": new Color("rgba(35, 35, 35, 0.309)"),
-    "bg-input-active": new Color("rgba(50, 50, 50, 0.309)"),
-    "bg-input-hover": new Color("rgba(79, 79, 79, 0.309)"),
-    "bg-input-border": new Color("#58389378"),
-    "bg-widget": new Color("#08004387"),
-    "bg-tooltip": new Color("#341769ed"),
-    "bg-editor": new Color("#170a2e"),
+    "primary-bg": new Color("#3a1a75ff"),
+    "primary-border": new Color("#3f1c80ba"),
+    "primary-bg-active": new Color("#3f1c80ff"),
+    "primary-bg-hover": new Color("#4b2198ff"),
+    "navbar-bg": new Color("#341769ff"),
+    "navbar-bg-inactive": new Color("#220f46ff"),
+    "window-bg": new Color("#341769ff"),
+    "window-border": new Color("#00000000"),
+    "secondary-bg": new Color("#2e145dff"),
+    "secondary-border": new Color("#321666ba"),
+    "secondary-bg-active": new Color("#321666ff"),
+    "secondary-bg-hover": new Color("#3b1a78ff"),
+    "editable-overlay-hover": new Color("rgb(255, 255, 255, 0.1)"),
+    "editable-overlay-active": new Color("rgb(255, 255, 255, 0.2)"),
+    "input-bg": new Color("rgba(35, 35, 35, 0.309)"),
+    "input-bg-active": new Color("rgba(50, 50, 50, 0.309)"),
+    "input-bg-hover": new Color("rgba(79, 79, 79, 0.309)"),
+    "input-border": new Color("#58389378"),
+    "widget-bg": new Color("#08004387"),
+    "tooltip-bg": new Color("#341769ed"),
+    "editor-bg": new Color("#170a2e"),
   },
   nord: {
     "accent-color": new Color("rgb(23, 131, 208)"),
@@ -128,50 +379,110 @@ export const DEFAULT_THEMES: Record<string, Theme> = {
     "text-color-secondary": new Color("#d9dee878"),
     "text-color-detail": new Color("#d9dee845"),
     "text-color-disabled": new Color("#d9dee887"),
-    "bg-primary": new Color("#2e3440ff"),
-    "bg-primary-border": new Color("#323946ba"),
-    "bg-primary-active": new Color("#323946ff"),
-    "bg-primary-hover": new Color("#3b4353ff"),
-    "bg-window": new Color("#292e39ff"),
-    "bg-window-inactive": new Color("#2f333c"),
-    "bg-secondary": new Color("#242933ff"),
-    "bg-secondary-border": new Color("#272d38ba"),
-    "bg-secondary-active": new Color("#272d38ff"),
-    "bg-secondary-hover": new Color("#2e3542ff"),
-    "bg-editable-overlay": new Color("rgb(255, 255, 255, 0.1)"),
-    "bg-editable-overlay-active": new Color("rgb(255, 255, 255, 0.2)"),
-    "bg-input": new Color("rgba(35, 35, 35, 0.309)"),
-    "bg-input-active": new Color("rgba(50, 50, 50, 0.309)"),
-    "bg-input-hover": new Color("rgba(79, 79, 79, 0.309)"),
-    "bg-input-border": new Color("#4c525e78"),
-    "bg-widget": new Color("#00020e87"),
-    "bg-tooltip": new Color("#292e39ed"),
-    "bg-editor": new Color("#18191c"),
+    "primary-bg": new Color("#2e3440ff"),
+    "primary-border": new Color("#323946ba"),
+    "primary-bg-active": new Color("#323946ff"),
+    "primary-bg-hover": new Color("#3b4353ff"),
+    "navbar-bg": new Color("#292e39ff"),
+    "navbar-bg-inactive": new Color("#2f333c"),
+    "window-bg": new Color("#292e39ff"),
+    "window-border": new Color("#00000000"),
+    "secondary-bg": new Color("#242933ff"),
+    "secondary-border": new Color("#272d38ba"),
+    "secondary-bg-active": new Color("#272d38ff"),
+    "secondary-bg-hover": new Color("#2e3542ff"),
+    "editable-overlay-hover": new Color("rgb(255, 255, 255, 0.1)"),
+    "editable-overlay-active": new Color("rgb(255, 255, 255, 0.2)"),
+    "input-bg": new Color("rgba(35, 35, 35, 0.309)"),
+    "input-bg-active": new Color("rgba(50, 50, 50, 0.309)"),
+    "input-bg-hover": new Color("rgba(79, 79, 79, 0.309)"),
+    "input-border": new Color("#4c525e78"),
+    "widget-bg": new Color("#00020e87"),
+    "tooltip-bg": new Color("#292e39ed"),
+    "editor-bg": new Color("#18191c"),
   },
   light: {
-    "accent-color": new Color("#ff5c74ff"),
+    "accent-color": new Color("#ff594cff"),
     "text-color": new Color("#000000ff"),
     "text-color-secondary": new Color("#00000078"),
     "text-color-detail": new Color("#00000045"),
     "text-color-disabled": new Color("#00000087"),
-    "bg-primary": new Color("#ffffffff"),
-    "bg-primary-border": new Color("#b5b5b5ff"),
-    "bg-primary-active": new Color("#ebebebff"),
-    "bg-primary-hover": new Color("#fff0f6ff"),
-    "bg-window": new Color("#edededff"),
-    "bg-window-inactive": new Color("#d1d1d1ff"),
-    "bg-secondary": new Color("#d9d9d9ff"),
-    "bg-secondary-border": new Color("#c7c7c7ff"),
-    "bg-secondary-active": new Color("#f0f0f0ff"),
-    "bg-secondary-hover": new Color("#e3e3e3ff"),
-    "bg-editable-overlay": new Color("#ff5c743d"),
-    "bg-editable-overlay-active": new Color("#ff5c7473"),
-    "bg-input": new Color("#ebebebff"),
-    "bg-input-active": new Color("#e0e0e0ff"),
-    "bg-input-hover": new Color("#ffffffff"),
-    "bg-input-border": new Color("#9e9e9eff"),
-    "bg-widget": new Color("#f7f7f7e5"),
-    "bg-tooltip": new Color("#ffffffff"),
-    "bg-editor": new Color("#cfcfcfff"),
+    "primary-bg": new Color("#ffffffff"),
+    "primary-border": new Color("#b5b5b5ff"),
+    "primary-bg-active": new Color("#ebebebff"),
+    "primary-bg-hover": new Color("#ffd4d1ff"),
+    "navbar-bg": new Color("#edededff"),
+    "navbar-bg-inactive": new Color("#d1d1d1ff"),
+    "window-bg": new Color("#edededff"),
+    "window-border": new Color("#00000000"),
+    "secondary-bg": new Color("#d9d9d9ff"),
+    "secondary-border": new Color("#c7c7c7ff"),
+    "secondary-bg-active": new Color("#f0f0f0ff"),
+    "secondary-bg-hover": new Color("#e3e3e3ff"),
+    "editable-overlay-hover": new Color("#ff594c3d"),
+    "editable-overlay-active": new Color("#ff594c73"),
+    "input-bg": new Color("#ebebebff"),
+    "input-bg-active": new Color("#e0e0e0ff"),
+    "input-bg-hover": new Color("#ffffffff"),
+    "input-border": new Color("#9e9e9eff"),
+    "widget-bg": new Color("#f7f7f7e5"),
+    "tooltip-bg": new Color("#ffffffff"),
+    "editor-bg": new Color("#cfcfcfff"),
+  },
+  rust: {
+    "accent-color": new Color("#b37100ff"),
+    "text-color": new Color("#ffd7bdf2"),
+    "text-color-secondary": new Color("#ffd7bd78"),
+    "text-color-detail": new Color("#ffd7bd45"),
+    "text-color-disabled": new Color("#ffd7bd87"),
+    "primary-bg": new Color("#3c2e2aff"),
+    "primary-border": new Color("#42332eff"),
+    "primary-bg-active": new Color("#42332eff"),
+    "primary-bg-hover": new Color("#4e3c37ff"),
+    "navbar-bg": new Color("#362926ff"),
+    "navbar-bg-inactive": new Color("#241b19ff"),
+    "window-bg": new Color("#58413cff"),
+    "window-border": new Color("#00000000"),
+    "secondary-bg": new Color("#40302ba1"),
+    "secondary-border": new Color("#46352fff"),
+    "secondary-bg-active": new Color("#46352fff"),
+    "secondary-bg-hover": new Color("#533e38ff"),
+    "editable-overlay-hover": new Color("#ffffff1a"),
+    "editable-overlay-active": new Color("#ffffff33"),
+    "input-bg": new Color("#231515ff"),
+    "input-bg-active": new Color("#271717ff"),
+    "input-bg-hover": new Color("#2e1b1bff"),
+    "input-border": new Color("#5a4c48ff"),
+    "widget-bg": new Color("#311e1cff"),
+    "tooltip-bg": new Color("#362926ff"),
+    "editor-bg": new Color("#181211ff"),
+  },
+  highcontrast: {
+    "accent-color": new Color("#00ccffff"),
+    "text-color": new Color("#ffffffff"),
+    "text-color-secondary": new Color("#ffffff79"),
+    "text-color-detail": new Color("#ffffff91"),
+    "text-color-disabled": new Color("#ffffff88"),
+    "primary-bg": new Color("#000000ff"),
+    "primary-border": new Color("#00ccffff"),
+    "primary-bg-active": new Color("#616161ff"),
+    "primary-bg-hover": new Color("#404040ff"),
+    "navbar-bg": new Color("#000000ff"),
+    "navbar-bg-inactive": new Color("#000000ff"),
+    "window-bg": new Color("#000000ff"),
+    "window-border": new Color("#00ccffff"),
+    "secondary-bg": new Color("#000000ff"),
+    "secondary-border": new Color("#00ccffff"),
+    "secondary-bg-active": new Color("#616161ff"),
+    "secondary-bg-hover": new Color("#404040ff"),
+    "editable-overlay-hover": new Color("#ffffff1a"),
+    "editable-overlay-active": new Color("#ffffff33"),
+    "input-bg": new Color("#000000ff"),
+    "input-bg-active": new Color("#616161ff"),
+    "input-bg-hover": new Color("#404040ff"),
+    "input-border": new Color("#00ccffff"),
+    "widget-bg": new Color("#000000ff"),
+    "tooltip-bg": new Color("#000000ff"),
+    "editor-bg": new Color("#000000ff"),
   },
 }

@@ -494,7 +494,7 @@ export class StatusWidget extends Widget {
           })
         sprite.scale.set(0.5)
         const bg = new Sprite(Texture.WHITE)
-        assignTint(bg, "--bg-widget")
+        assignTint(bg, "--widget-bg")
         bg.width = 48
         bg.height = 48
         bg.anchor.set(0.5)
@@ -804,8 +804,8 @@ export class StatusWidget extends Widget {
     }
 
     const noteType = this.manager.chartManager.getEditingNoteType()
-    const hoverColor = getCSSColor("--bg-editable-overlay")
-    const activeColor = getCSSColor("--bg-editable-overlay-active")
+    const hoverColor = getCSSColor("--editable-overlay-hover")
+    const activeColor = getCSSColor("--editable-overlay-active")
     const emptyColor = new Color(hoverColor).setAlpha(0)
     this.noteArrows.forEach(arrow => {
       let color =

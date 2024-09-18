@@ -87,7 +87,7 @@ export class DebugWidget extends Widget {
 
     this.fpsText.x = 5
     this.fpsBg.y = -5
-    assignTint(this.fpsBg, "--bg-widget")
+    assignTint(this.fpsBg, "--widget-bg")
     assignTint(this.fpsText, "--text-color")
 
     this.graphs.addChild(
