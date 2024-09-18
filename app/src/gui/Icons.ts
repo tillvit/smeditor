@@ -76,6 +76,7 @@ export class Icons {
       }
     }
     wrapper.width = width
+    if (height === undefined && width !== undefined) height = width
     wrapper.height = height
     wrapper.color = color
     return wrapper
