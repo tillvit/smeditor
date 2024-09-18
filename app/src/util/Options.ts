@@ -18,7 +18,6 @@ export class DefaultOptions {
     smoothAnimations: true,
     warnBeforeExit: true,
     showPlaybackOptions: true,
-    backgroundColor: 0x18191c,
   }
   static chart = {
     CMod: false,

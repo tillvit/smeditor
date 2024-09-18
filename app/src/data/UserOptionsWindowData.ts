@@ -1,6 +1,5 @@
 import { App } from "../App"
 import { TimingWindowCollection } from "../chart/play/TimingWindowCollection"
-import { EventHandler } from "../util/EventHandler"
 
 export type UserOption = UserOptionGroup | UserOptionSubgroup | UserOptionItem
 
@@ -218,23 +217,6 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               hardMax: 2 ** 31 - 1,
             },
             tooltip: "The default increment for all number spinners.",
-          },
-        ],
-      },
-      {
-        type: "subgroup",
-        children: [
-          {
-            type: "item",
-            label: "Background Color",
-            id: "general.backgroundColor",
-            input: {
-              type: "color",
-              onChange: (app, value) => {
-                app.renderer.background.color = value
-                EventHandler.emit("themeChanged")
-              },
-            },
           },
         ],
       },

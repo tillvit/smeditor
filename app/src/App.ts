@@ -172,7 +172,7 @@ export class App {
     this.stage = new Container()
     this.stage.sortableChildren = true
     this.renderer = new Renderer({
-      backgroundColor: Options.general.backgroundColor,
+      backgroundColor: 0x18191c,
       antialias: Options.performance.antialiasing,
       width: this.view.clientWidth,
       height: this.view.clientHeight,
