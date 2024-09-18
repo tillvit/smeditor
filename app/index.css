@@ -221,7 +221,8 @@ body {
 }
 
 body {
-  --accent-color: rgb(16, 98, 156);
+  --accent-color: rgb(23, 131, 208);
+  accent-color: var(--accent-color);
 
   --text-color: white;
   --text-color-secondary: #ddd;
@@ -256,7 +257,7 @@ body {
 }
 /* hell */
 body.light {
-  --accent-color: rgb(16, 98, 156);
+  --accent-color: rgb(23, 131, 208);
   --text-color: #000000;
   --text-color-secondary: #262626;
   --text-color-tertiary: #3d3d3d;
