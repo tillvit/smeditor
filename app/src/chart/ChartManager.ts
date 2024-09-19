@@ -512,7 +512,8 @@ export class ChartManager {
       (event: KeyboardEvent) => {
         if (this.mode != EditMode.Edit) return
         if (event.code.startsWith("Digit")) {
-          const col = parseInt(event.code.slice(5)) - 1
+          let col = parseInt(event.code.slice(5)) - 1
+          if (col == -1) col = 9 // 0 key to 10th column
           this.endEditing(col)
         }
       },
@@ -536,8 +537,9 @@ export class ChartManager {
           !event.altKey &&
           !event.ctrlKey
         ) {
-          const col = parseInt(event.code.slice(5)) - 1
-          if (col < (this.loadedChart?.gameType.numCols ?? 4) && col > -1) {
+          let col = parseInt(event.code.slice(5)) - 1
+          if (col == -1) col = 9 // 0 key to 10th column
+          if (col < (this.loadedChart?.gameType.numCols ?? 4)) {
             this.setNote(col, "key")
             event.preventDefault()
             event.stopImmediatePropagation()
