@@ -41,6 +41,17 @@ export class Themes {
     this._userThemes = loadedThemes
   }
 
+  private static _saveUserThemes() {
+    // Convert colors back into strings
+    const themeStrings = Object.fromEntries(
+      Object.entries(this._userThemes).map(([id, theme]) => [
+        id,
+        this.convertThemeToString(theme),
+      ])
+    )
+    localStorage.setItem("themes", JSON.stringify(themeStrings))
+  }
+
   private static validateTheme(theme: ThemeString): Theme {
     const newTheme = DEFAULT_THEMES["default"]
     if (typeof theme !== "object") return newTheme
@@ -57,7 +68,15 @@ export class Themes {
   }
 
   static getThemes() {
-    return { ...this._userThemes, ...this._themes }
+    return { ...this._themes, ...this._userThemes }
+  }
+
+  static getBuiltinThemes() {
+    return this._themes
+  }
+
+  static getUserThemes() {
+    return this._userThemes
   }
 
   static loadTheme(id: string) {
@@ -82,7 +101,7 @@ export class Themes {
         `--${key}: ${(theme[key] ?? DEFAULT_THEMES["default"][key]).toHexa()};`
     ).join("")}}`
     this.style.innerHTML = styleText
-    this.currentTheme = theme
+    this.currentTheme = { ...theme }
     EventHandler.emit("themeChanged")
   }
 
@@ -94,16 +113,56 @@ export class Themes {
     return this.currentTheme
   }
 
-  static exportCurrentTheme() {
-    return JSON.stringify(
-      Object.fromEntries(
-        Object.entries(this.currentTheme).map(([prop, col]) => [
-          prop,
-          `^new Color('${col.toHexa()}')^`,
-        ])
+  private static convertThemeToString(theme: Theme) {
+    return Object.fromEntries(
+      Object.entries(theme).map(([prop, col]) => [prop, col.toHexa()])
+    ) as ThemeString
+  }
+
+  static exportCurrentTheme(code = false) {
+    if (code) {
+      return JSON.stringify(
+        Object.fromEntries(
+          Object.entries(this.currentTheme).map(([prop, col]) => [
+            prop,
+            `^new Color('${col.toHexa()}')^`,
+          ])
+        )
       )
-    )
-      .replaceAll(`"^`, "")
-      .replaceAll(`^"`, "")
+        .replaceAll(`"^`, "")
+        .replaceAll(`^"`, "")
+    }
+    return JSON.stringify(this.convertThemeToString(this.currentTheme))
+  }
+
+  static createUserTheme(id: string, base?: Theme) {
+    if (this.getThemes()[id] !== undefined) return
+    if (base) {
+      this._userThemes[id] = { ...base }
+    } else {
+      this._userThemes[id] = { ...DEFAULT_THEMES["default"] }
+    }
+    this._saveUserThemes()
+  }
+
+  static setUserTheme(id: string, base: Theme) {
+    if (this._userThemes[id] === undefined) return
+    this._userThemes[id] = { ...base }
+    this._saveUserThemes()
+  }
+
+  static deleteUserTheme(id: string) {
+    if (this._userThemes[id] === undefined) return
+    delete this._userThemes[id]
+    this.loadTheme("default")
+    this._saveUserThemes()
+  }
+
+  static renameUserTheme(id: string, newId: string) {
+    if (this._userThemes[id] === undefined) return
+    if (this.getThemes()[newId] !== undefined) return
+    this._userThemes[newId] = this._userThemes[id]
+    delete this._userThemes[id]
+    this._saveUserThemes()
   }
 }

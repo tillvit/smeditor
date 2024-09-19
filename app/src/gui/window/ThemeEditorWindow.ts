@@ -11,24 +11,27 @@ import {
 } from "../../data/ThemeData"
 import { add, lighten } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
+import { Options } from "../../util/Options"
 import { Themes } from "../../util/Theme"
 import { ColorPicker } from "../element/ColorPicker"
 import { Icons } from "../Icons"
+import { ThemeSelectionWindow } from "./ThemeSelectionWindow"
 import { Window } from "./Window"
 
-export class ThemeWindow extends Window {
+export class ThemeEditorWindow extends Window {
   app: App
 
   private pickers: Record<string, HTMLDivElement> = {}
   private handlers: ((...args: any[]) => void)[] = []
-  private static linkBlacklist = new Set<ThemeProperty>()
+  private linkBlacklist = new Set<ThemeProperty>()
 
   constructor(app: App) {
     super({
-      title: "scufed teheme enditor",
+      title: "Theme Color Editor",
       width: 500,
       height: 400,
-      win_id: "theme_window",
+      win_id: "theme-editor",
+      disableClose: true,
     })
     this.app = app
     this.initView()
@@ -47,7 +50,36 @@ export class ThemeWindow extends Window {
       colorGrid.appendChild(this.createGroup(g))
     })
 
-    padding.appendChild(colorGrid)
+    const menu_options = document.createElement("div")
+    menu_options.classList.add("menu-options")
+
+    const menu_options_left = document.createElement("div")
+    menu_options_left.classList.add("menu-left")
+    const menu_options_right = document.createElement("div")
+    menu_options_right.classList.add("menu-right")
+    menu_options.appendChild(menu_options_left)
+    menu_options.appendChild(menu_options_right)
+
+    const cancel = document.createElement("button")
+    cancel.innerText = "Cancel"
+    cancel.onclick = () => {
+      this.closeWindow()
+      Themes.loadTheme(Options.general.theme)
+      this.app.windowManager.openWindow(new ThemeSelectionWindow(this.app))
+    }
+    menu_options_left.appendChild(cancel)
+
+    const create_btn = document.createElement("button")
+    create_btn.innerText = "Save"
+    create_btn.classList.add("confirm")
+    create_btn.onclick = () => {
+      Themes.setUserTheme(Options.general.theme, Themes.getCurrentTheme())
+      Themes.loadTheme(Options.general.theme)
+      this.app.windowManager.openWindow(new ThemeSelectionWindow(this.app))
+    }
+    menu_options_right.appendChild(create_btn)
+
+    padding.replaceChildren(colorGrid, menu_options)
 
     this.viewElement.appendChild(padding)
   }
@@ -94,7 +126,7 @@ export class ThemeWindow extends Window {
     if (links) {
       container.onmouseover = () => {
         Object.keys(links).forEach(key => {
-          if (ThemeWindow.linkBlacklist.has(key as ThemeProperty)) return
+          if (this.linkBlacklist.has(key as ThemeProperty)) return
           this.pickers[key].classList.add("linked")
         })
       }
@@ -132,9 +164,9 @@ export class ThemeWindow extends Window {
 
       const update = () => {
         if (currentValue) {
-          ThemeWindow.linkBlacklist.delete(opt.id)
+          this.linkBlacklist.delete(opt.id)
         } else {
-          ThemeWindow.linkBlacklist.add(opt.id)
+          this.linkBlacklist.add(opt.id)
         }
         on.style.display = currentValue ? "" : "none"
         off.style.display = currentValue ? "none" : ""
@@ -214,7 +246,7 @@ export class ThemeWindow extends Window {
       const links = THEME_GENERATOR_LINKS[currentId]
       if (!links) continue
       for (const [id, transform] of Object.entries(links)) {
-        if (ThemeWindow.linkBlacklist.has(id as ThemeProperty)) continue
+        if (this.linkBlacklist.has(id as ThemeProperty)) continue
         if (visited.has(id)) continue
         theme[id as ThemeProperty] = transform.bind(this)(theme[currentId])
         queue.push(id as ThemeProperty)

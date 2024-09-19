@@ -486,7 +486,8 @@ button:disabled {
   overflow: auto;
   padding: 5px;
 }
-.file-options {
+.file-options,
+.theme-tray {
   display: flex;
   flex-direction: row;
   column-gap: 5px;
@@ -1944,6 +1945,10 @@ input[type="range"] {
   gap: 10px;
 }
 
+input[type="text"].pref-search-bar {
+  flex: 0;
+}
+
 .pref-scrollers {
   display: flex;
   gap: 20px;
@@ -2761,6 +2766,7 @@ input[type="color"] {
   height: 250px;
   position: relative;
   border-radius: 5px;
+  color: white;
 }
 
 .noteskin-cell img {
@@ -2874,7 +2880,8 @@ input[type="color"] {
   width: 24px;
   height: 24px;
   border-radius: 3px;
-  border: 1px solid var(--input-border);
+  border: 1px solid rgb(111, 111, 111);
+  overflow: hidden;
 }
 
 .color-picker:hover:not(:active) {
@@ -2909,7 +2916,6 @@ input[type="color"] {
 
 .animated .color-picker-popup {
   animation: 0.1s popup-enter cubic-bezier(0.47, 0.02, 0, 0.95) forwards;
-  /* transition: 0.2s cubic-bezier(0.47, 0.02, 0, 0.95); */
 }
 
 .animated .color-picker-popup.exiting {
@@ -3036,4 +3042,59 @@ input[type="color"] {
 
 .color-picker-popup .color-picker-transparent {
   flex: 1;
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  width: 100%;
+  gap: 5px;
+  padding: 10px;
+  background: var(--secondary-bg);
+  border: 1px solid var(--secondary-border);
+  margin-top: 10px;
+  overflow: auto;
+  flex: 1;
+  border-radius: 5px 5px 0 0;
+}
+
+.theme-cell {
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 5px;
+  border-radius: 5px;
+  height: fit-content;
+  min-width: 0;
+}
+
+.theme-title {
+  text-align: center !important;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.theme-cell:hover:not(.selected) {
+  background: var(--secondary-bg-hover);
+}
+
+.theme-cell.selected {
+  background: var(--secondary-bg-active);
+}
+
+.animated .theme-cell {
+  transition: 0.2s cubic-bezier(0.47, 0.02, 0, 0.95);
+}
+
+.theme-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 66px;
+  height: 66px;
+  border: 1px solid rgb(0, 0, 0, 0.5);
+  border-radius: 5px;
+  overflow: hidden;
 }

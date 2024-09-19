@@ -1,5 +1,5 @@
 import { Color } from "pixi.js"
-import { ThemeWindow } from "../gui/window/ThemeWindow"
+import { ThemeEditorWindow } from "../gui/window/ThemeEditorWindow"
 
 export const THEME_VAR_WHITELIST = [
   "accent-color",
@@ -48,49 +48,19 @@ export type ThemeGroup = {
   }[]
 }
 
+export const THEME_GRID_PROPS: ThemeProperty[] = [
+  "primary-bg",
+  "secondary-bg",
+  "text-color",
+  "accent-color",
+  "widget-bg",
+  "editor-bg",
+  "editable-overlay-active",
+  "input-bg",
+  "window-bg",
+]
+
 export const THEME_GROUPS: ThemeGroup[] = [
-  {
-    name: "main",
-    ids: [
-      {
-        id: "accent-color",
-        label: "accent-color",
-      },
-      {
-        id: "widget-bg",
-        label: "widget-bg",
-      },
-      {
-        id: "tooltip-bg",
-        label: "tooltip-bg",
-      },
-      {
-        id: "editor-bg",
-        label: "editor-bg",
-      },
-    ],
-  },
-  {
-    name: "text-color",
-    ids: [
-      {
-        id: "text-color",
-        label: "primary",
-      },
-      {
-        id: "text-color-secondary",
-        label: "secondary",
-      },
-      {
-        id: "text-color-detail",
-        label: "detail",
-      },
-      {
-        id: "text-color-disabled",
-        label: "disabled",
-      },
-    ],
-  },
   {
     name: "primary-bg",
     ids: [
@@ -130,6 +100,48 @@ export const THEME_GROUPS: ThemeGroup[] = [
       {
         id: "secondary-border",
         label: "border",
+      },
+    ],
+  },
+  {
+    name: "text-color",
+    ids: [
+      {
+        id: "text-color",
+        label: "primary",
+      },
+      {
+        id: "text-color-secondary",
+        label: "secondary",
+      },
+      {
+        id: "text-color-detail",
+        label: "detail",
+      },
+      {
+        id: "text-color-disabled",
+        label: "disabled",
+      },
+    ],
+  },
+  {
+    name: "other",
+    ids: [
+      {
+        id: "accent-color",
+        label: "accent-color",
+      },
+      {
+        id: "widget-bg",
+        label: "widget-bg",
+      },
+      {
+        id: "tooltip-bg",
+        label: "tooltip-bg",
+      },
+      {
+        id: "editor-bg",
+        label: "editor-bg",
       },
     ],
   },
@@ -230,7 +242,7 @@ export const THEME_PROPERTY_DESCRIPTIONS: {
 }
 
 export type ThemeColorLinks = {
-  [key in ThemeProperty]?: (this: ThemeWindow, c: Color) => Color
+  [key in ThemeProperty]?: (this: ThemeEditorWindow, c: Color) => Color
 }
 
 export const THEME_GENERATOR_LINKS: {

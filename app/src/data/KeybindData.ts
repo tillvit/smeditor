@@ -13,7 +13,7 @@ import { NoteskinWindow } from "../gui/window/NoteskinWindow"
 import { OffsetWindow } from "../gui/window/OffsetWindow"
 import { SMPropertiesWindow } from "../gui/window/SMPropertiesWindow"
 import { SyncWindow } from "../gui/window/SyncWindow"
-import { ThemeWindow } from "../gui/window/ThemeWindow"
+import { ThemeSelectionWindow } from "../gui/window/ThemeSelectionWindow"
 import { TimingDataWindow } from "../gui/window/TimingDataWindow"
 import { UserOptionsWindow } from "../gui/window/UserOptionsWindow"
 import { ActionHistory } from "../util/ActionHistory"
@@ -721,7 +721,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [],
     disabled: () => !Flags.openWindows || !Flags.openWindows,
     callback: app => {
-      app.windowManager.openWindow(new ThemeWindow(app))
+      app.windowManager.openWindow(new ThemeSelectionWindow(app))
     },
   },
   convertHoldsRolls: {
