@@ -149,3 +149,14 @@ export function colorToHsva(color: Color) {
 
   return [h, s, v, a]
 }
+
+export function colorFallback(
+  colorString: ColorSource,
+  fallback?: ColorSource
+) {
+  try {
+    return new Color(colorString)
+  } catch (e) {
+    return new Color(fallback ?? "black")
+  }
+}

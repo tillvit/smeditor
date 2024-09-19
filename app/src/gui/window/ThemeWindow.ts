@@ -111,7 +111,7 @@ export class ThemeWindow extends Window {
     const colorLabel = document.createElement("div")
     colorLabel.classList.add("theme-color-detail")
 
-    const colorPicker = ColorPicker.createPicker({
+    const colorPicker = ColorPicker.create({
       value: "white",
       width: 30,
       height: 30,

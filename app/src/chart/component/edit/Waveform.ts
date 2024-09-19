@@ -1,10 +1,12 @@
 import {
+  Color,
   FXAAFilter,
   ParticleContainer,
   RenderTexture,
   Sprite,
   Texture,
 } from "pixi.js"
+import { colorFallback } from "../../../util/Color"
 import { EventHandler } from "../../../util/EventHandler"
 import { clamp } from "../../../util/Math"
 import { Options } from "../../../util/Options"
@@ -51,6 +53,9 @@ export class Waveform extends Sprite implements ChartRendererComponent {
   private drawDirty = true
   private blockCache = new Map<string, number[]>()
 
+  private colorCache = new Color("black")
+  private filteredColorCache = new Color("black")
+
   constructor(renderer: ChartRenderer) {
     super()
     this.renderer = renderer
@@ -95,8 +100,6 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       () => this.renderer.chartManager.app.renderer.screen.height,
       () => this.resizeWaveform()
     )
-    this.trackVariable(() => Options.chart.waveform.opacity)
-    this.trackVariable(() => Options.chart.waveform.filteredOpacity)
     this.trackVariable(() => Options.chart.waveform.filteredColor)
     this.trackVariable(() => Options.chart.waveform.color)
     this.trackVariable(() => Options.chart.waveform.speedChanges)
@@ -165,6 +168,16 @@ export class Waveform extends Sprite implements ChartRendererComponent {
 
     if (!Options.chart.waveform.enabled) return
     if (this.drawDirty || this.variableChanged()) {
+      if (this.colorCache.toHexa() != Options.chart.waveform.color) {
+        this.colorCache = colorFallback(Options.chart.waveform.color)
+      }
+      if (
+        this.filteredColorCache.toHexa() != Options.chart.waveform.filteredColor
+      ) {
+        this.filteredColorCache = colorFallback(
+          Options.chart.waveform.filteredColor
+        )
+      }
       this.drawDirty = false
       this.renderData()
       this.renderer.chartManager.app.renderer.render(this.lineContainer, {
@@ -471,8 +484,8 @@ export class Waveform extends Sprite implements ChartRendererComponent {
         16 *
         Options.chart.zoom
       line.y = y
-      line.tint = Options.chart.waveform.color
-      line.alpha = Options.chart.waveform.opacity
+      line.tint = this.colorCache
+      line.alpha = this.colorCache.alpha
       line.x =
         this.waveformTex.width / 2 +
         288 * (channel + 0.5 - this.rawData.length / 2) * Options.chart.zoom
@@ -482,8 +495,8 @@ export class Waveform extends Sprite implements ChartRendererComponent {
         this.getSample(this.filteredRawData[channel], second, "filter") *
         16 *
         Options.chart.zoom
-      filteredLine.tint = Options.chart.waveform.filteredColor
-      filteredLine.alpha = Options.chart.waveform.filteredOpacity
+      filteredLine.tint = this.filteredColorCache
+      filteredLine.alpha = this.filteredColorCache.alpha
       filteredLine.y = y
       filteredLine.x =
         this.waveformTex.width / 2 +

@@ -45,11 +45,9 @@ export class DefaultOptions {
     waveform: {
       enabled: true,
       antialiasing: true,
-      color: 0x606172,
-      opacity: 0.5,
+      color: "#60617288",
       allowFilter: true,
-      filteredColor: 0x1e523e,
-      filteredOpacity: 0.5,
+      filteredColor: "#1e523e88",
       lineHeight: 1,
       speedChanges: true,
     },
@@ -58,8 +56,8 @@ export class DefaultOptions {
     },
     npsGraph: {
       enabled: false,
-      color1: 0x4aa7bc,
-      color2: 0x423c7a,
+      color1: "#4aa7bcff",
+      color2: "#423c7aff",
     },
     timingEventOrder: {
       left: [

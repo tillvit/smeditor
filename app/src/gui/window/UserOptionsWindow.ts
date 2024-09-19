@@ -10,6 +10,7 @@ import { clamp, roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { parseString } from "../../util/Util"
 import { Icons } from "../Icons"
+import { ColorPicker } from "../element/ColorPicker"
 import { Dropdown } from "../element/Dropdown"
 import { NumberSpinner } from "../element/NumberSpinner"
 import { Window } from "./Window"
@@ -337,22 +338,19 @@ export class UserOptionsWindow extends Window {
         }
         case "color": {
           const callback = option.input.onChange
-          const colorInput = document.createElement("input")
-          colorInput.type = "color"
-          colorInput.value = "#" + optionValue.toString(16).padStart(6, "0")
+          const colorInput = ColorPicker.create({
+            value: optionValue,
+          })
           // 'change' event is fired when the user closes the color picker
-          colorInput.oninput = () => {
-            Options.applyOption([
-              option.id,
-              parseInt(colorInput.value.slice(1), 16),
-            ])
+          colorInput.onColorChange = c => {
+            Options.applyOption([option.id, c.toHexa()])
             EventHandler.emit("userOptionUpdated", option.id)
             revert.style.display =
               Options.getDefaultOption(option.id) ===
               Options.getOption(option.id)
                 ? "none"
                 : "block"
-            callback?.(this.app, parseInt(colorInput.value.slice(1), 16))
+            callback?.(this.app, c)
           }
           input = colorInput
         }

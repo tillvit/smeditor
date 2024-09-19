@@ -1,24 +1,25 @@
 import { Color } from "pixi.js"
-import { colorToHsla, colorToHsva } from "../../util/Color"
+import { colorFallback, colorToHsla, colorToHsva } from "../../util/Color"
 import { clamp } from "../../util/Math"
 
 class TransparentPreview extends HTMLDivElement {
   colorElement!: HTMLDivElement
-  static create() {
-    const bg = document.createElement("div") as TransparentPreview
-    bg.classList.add("color-picker-transparent")
-    Object.setPrototypeOf(bg, TransparentPreview.prototype)
-    const color = document.createElement("div")
-    color.style.width = "100%"
-    color.style.height = "100%"
-    bg.colorElement = color
-    bg.appendChild(color)
-    return bg
-  }
 
   set color(value: Color) {
     this.colorElement.style.background = value.toHexa()
   }
+}
+
+function createTransparent() {
+  const bg = document.createElement("div") as TransparentPreview
+  bg.classList.add("color-picker-transparent")
+  Object.setPrototypeOf(bg, TransparentPreview.prototype)
+  const color = document.createElement("div")
+  color.style.width = "100%"
+  color.style.height = "100%"
+  bg.colorElement = color
+  bg.appendChild(color)
+  return bg
 }
 
 interface ColorFormatInputOptions {
@@ -158,10 +159,10 @@ export class ColorPicker extends TransparentPreview {
 
   onColorChange?: (color: Color) => void
 
-  static createPicker(options: ColorPickerOptions): ColorPicker {
-    const picker = TransparentPreview.create() as ColorPicker
+  static create(options: ColorPickerOptions): ColorPicker {
+    const picker = createTransparent() as ColorPicker
     Object.setPrototypeOf(picker, ColorPicker.prototype)
-    picker.value = new Color(options.value)
+    picker.value = colorFallback(options.value)
     picker.classList.add("color-picker")
     picker.formats = []
 
@@ -266,7 +267,10 @@ export class ColorPicker extends TransparentPreview {
     const [hueSlider, hueThumb] = this.createSlider({
       ondrag: () => (this.hueDragging = true),
       offdrag: () => (this.hueDragging = false),
-      change: v => (this.hue = v),
+      change: v => {
+        this.hue = v
+        this.onColorChange?.(this._value)
+      },
     })
     this.hueThumb = hueThumb
     hueSlider.style.background =
@@ -275,7 +279,10 @@ export class ColorPicker extends TransparentPreview {
     const [alphaSlider, alphaThumb] = this.createSlider({
       ondrag: () => (this.alphaDragging = true),
       offdrag: () => (this.alphaDragging = false),
-      change: v => (this.alpha = v),
+      change: v => {
+        this.alpha = v
+        this.onColorChange?.(this._value)
+      },
     })
     this.alphaThumb = alphaThumb
     alphaSlider.classList.add("color-picker-transparent")
@@ -431,8 +438,8 @@ export class ColorPicker extends TransparentPreview {
     const previewContainer = document.createElement("div")
     previewContainer.classList.add("color-picker-preview")
 
-    const previewNew = TransparentPreview.create()
-    const previewOld = TransparentPreview.create()
+    const previewNew = createTransparent()
+    const previewOld = createTransparent()
     previewOld.color = this._value
     previewNew.color = this._value
     previewContainer.replaceChildren(previewNew, previewOld)
@@ -477,7 +484,7 @@ export class ColorPicker extends TransparentPreview {
   updatePopup() {
     if (!this.popup) return
     this.matrix!.style.backgroundColor = `hsl(${this._hue * 360} 100% 50%)`
-    this.matrixDot!.style.backgroundColor = this._value.toRgbaString()
+    this.matrixDot!.style.backgroundColor = this._value.toHex()
     if (!this.matrixDragging) {
       this.matrixDot!.style.left = this._sat * 200 + "px"
       this.matrixDot!.style.top = (1 - this._val) * 200 + "px"

@@ -1,3 +1,4 @@
+import { Color } from "pixi.js"
 import { App } from "../App"
 import { TimingWindowCollection } from "../chart/play/TimingWindowCollection"
 
@@ -94,7 +95,7 @@ interface UserOptionCheckboxInput {
 
 interface UserOptionColorInput {
   type: "color"
-  onChange?: (app: App, value: number) => void
+  onChange?: (app: App, value: Color) => void
 }
 
 type UserOptionInput<T> =
@@ -416,17 +417,6 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                   type: "color",
                 },
               },
-              {
-                type: "item",
-                label: "Opacity",
-                id: "chart.waveform.opacity",
-                input: {
-                  type: "slider",
-                  min: 0,
-                  max: 1,
-                  step: 0.01,
-                },
-              },
             ],
           },
           {
@@ -446,17 +436,6 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                 id: "chart.waveform.filteredColor",
                 input: {
                   type: "color",
-                },
-              },
-              {
-                type: "item",
-                label: "Filtered opacity",
-                id: "chart.waveform.filteredOpacity",
-                input: {
-                  type: "slider",
-                  min: 0,
-                  max: 1,
-                  step: 0.01,
                 },
               },
             ],
