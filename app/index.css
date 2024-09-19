@@ -623,7 +623,7 @@ textarea {
 
 .menu-item {
   position: relative;
-  z-index: 9999;
+  z-index: 15;
 }
 
 .menu-item > .menu-item-title {
@@ -1863,11 +1863,6 @@ input[type="range"] {
   }
 }
 
-.menu-item {
-  position: relative;
-  z-index: 9999;
-}
-
 .menu-item > .menu-item-title {
   padding: 3px 0 3px 0;
   display: flex;
@@ -2855,7 +2850,17 @@ input[type="color"] {
   display: flex;
   flex-direction: column;
   align-items: center;
+  border-radius: 5px;
 }
+
+.theme-color-cell.linked {
+  background-color: var(--editable-overlay-hover);
+}
+
+.animated .theme-color-cell {
+  transition: 0.3s cubic-bezier(0.39, 0.575, 0.565, 1);
+}
+
 .theme-color-detail {
   color: var(--text-color-detail);
   font-size: 10px;
@@ -2863,4 +2868,172 @@ input[type="color"] {
 .theme-color-cell input[type="range"] {
   width: 50px;
   margin-right: 0;
+}
+
+.color-picker {
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+  border: 1px solid var(--input-border);
+}
+
+.color-picker:hover:not(:active) {
+  transform: scale(1.03);
+  box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.6);
+}
+
+.color-picker:active {
+  transform: scale(0.93);
+  box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.6);
+}
+
+.animated .color-picker {
+  transition: 0.1s cubic-bezier(0.39, 0.575, 0.565, 1);
+}
+
+.color-picker-popup {
+  position: absolute;
+  background: #dcdcdc;
+  padding: 15px;
+  display: flex;
+  flex-direction: row;
+  gap: 15px;
+  z-index: 20;
+  border-radius: 5px;
+
+  transform-origin: top center;
+  border: 1px solid black;
+  animation: 0.001s popup-enter cubic-bezier(0.47, 0.02, 0, 0.95) forwards;
+  box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.6);
+}
+
+.animated .color-picker-popup {
+  animation: 0.1s popup-enter cubic-bezier(0.47, 0.02, 0, 0.95) forwards;
+  /* transition: 0.2s cubic-bezier(0.47, 0.02, 0, 0.95); */
+}
+
+.animated .color-picker-popup.exiting {
+  animation: 0.1s popup-exit cubic-bezier(0.47, 0.02, 0, 0.95) forwards;
+  pointer-events: none;
+}
+
+.color-picker-popup .color-matrix {
+  position: relative;
+  width: 200px;
+  height: 200px;
+}
+
+.color-picker-popup .color-matrix-x {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200px;
+  height: 200px;
+  background: linear-gradient(to right, #fff 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+.color-picker-popup .color-matrix-y {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200px;
+  height: 200px;
+  background: linear-gradient(to bottom, transparent 0%, #000 100%);
+}
+.color-picker-popup .color-matrix-dot {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgb(0, 0, 0);
+  border-radius: 15px;
+  transform: translate(-50%, -50%);
+}
+
+.color-picker-popup .color-slider {
+  width: 200px;
+  height: 20px;
+  position: relative;
+  border-radius: 5px;
+}
+
+.color-picker-transparent {
+  background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
+    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ccc 75%),
+    linear-gradient(-45deg, transparent 75%, #ccc 75%);
+  background-position:
+    0 0,
+    0 4px,
+    4px -4px,
+    -4px 0px;
+  background-size: 8px 8px;
+}
+
+.color-picker-popup .color-slider-thumb {
+  position: absolute;
+  width: 5px;
+  height: 24px;
+  border: 1px solid white;
+  border-radius: 15px;
+  transform: translate(-50%, -2px);
+  z-index: 21;
+}
+
+.color-picker-popup .color-slider-thumb:after {
+  content: " ";
+  position: absolute;
+  width: 5px;
+  height: 24px;
+  border: 1px solid black;
+  border-radius: 15px;
+  transform: translate(-2px, -2px);
+  z-index: 21;
+}
+
+.color-picker-popup .color-picker-area {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.color-picker-popup .color-format {
+  background-color: #cbced2;
+  padding: 10px;
+  border-radius: 5px;
+  display: flex;
+  gap: 5px;
+}
+
+.color-picker-popup .color-format-label {
+  color: #000;
+  width: 45px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.color-picker-popup .color-format-inputs {
+  width: 170px;
+  display: flex;
+  gap: 5px;
+}
+
+.color-picker-popup .color-format-inputs input {
+  min-width: none;
+  width: 100%;
+  color: #000;
+  background-color: #ebebeb;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.color-picker-popup .color-picker-preview {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+}
+
+.color-picker-popup .color-picker-transparent {
+  flex: 1;
 }

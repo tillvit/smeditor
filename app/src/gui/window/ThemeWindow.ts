@@ -12,14 +12,16 @@ import {
 import { add, lighten } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { Themes } from "../../util/Theme"
+import { ColorPicker } from "../element/ColorPicker"
 import { Icons } from "../Icons"
 import { Window } from "./Window"
 
 export class ThemeWindow extends Window {
   app: App
 
+  private pickers: Record<string, HTMLDivElement> = {}
   private handlers: ((...args: any[]) => void)[] = []
-  private linkBlacklist = new Set<ThemeProperty>()
+  private static linkBlacklist = new Set<ThemeProperty>()
 
   constructor(app: App) {
     super({
@@ -69,15 +71,12 @@ export class ThemeWindow extends Window {
     const updateValue = () => {
       const c = new Color(Themes.getCurrentTheme()[opt.id])
       colorLabel.innerText = c.toHex() + " | " + Math.round(c.alpha * 100) + "%"
-      if (document.activeElement == colorInput) return
-      colorInput.value = c.toHex()
-      alphaInput.value = c.alpha.toString()
+      if (colorPicker.isActive()) return
+      colorPicker.value = c
     }
 
-    const setValue = () => {
+    const setValue = (color: Color) => {
       const newTheme = Themes.getCurrentTheme()
-      const color = new Color(colorInput.value)
-      color.setAlpha(parseFloat(alphaInput.value))
       newTheme[opt.id] = color
       Themes._applyTheme(this.updateLinks(opt.id, newTheme))
     }
@@ -90,40 +89,52 @@ export class ThemeWindow extends Window {
         content: THEME_PROPERTY_DESCRIPTIONS[opt.id],
       })
 
+    const links = THEME_GENERATOR_LINKS[opt.id]
+
+    if (links) {
+      container.onmouseover = () => {
+        Object.keys(links).forEach(key => {
+          if (ThemeWindow.linkBlacklist.has(key as ThemeProperty)) return
+          this.pickers[key].classList.add("linked")
+        })
+      }
+      container.onmouseout = () => {
+        Object.keys(links).forEach(key => {
+          this.pickers[key].classList.remove("linked")
+        })
+      }
+    }
+
     const label = document.createElement("div")
     label.innerText = opt.label
 
     const colorLabel = document.createElement("div")
     colorLabel.classList.add("theme-color-detail")
 
-    const colorInput = document.createElement("input")
-    colorInput.type = "color"
-    colorInput.oninput = setValue
-    colorInput.onblur = updateValue
+    const colorPicker = ColorPicker.createPicker({
+      value: "white",
+      width: 30,
+      height: 30,
+    })
 
-    const alphaInput = document.createElement("input")
-    alphaInput.type = "range"
-    alphaInput.min = "0"
-    alphaInput.max = "1"
-    alphaInput.step = "0.001"
-    alphaInput.oninput = setValue
-    alphaInput.onblur = updateValue
+    colorPicker.onColorChange = setValue
 
-    container.replaceChildren(label, colorLabel, colorInput, alphaInput)
+    container.replaceChildren(label, colorLabel, colorPicker)
 
-    if (this.hasLink(opt.id)) {
+    const linkId = this.getLink(opt.id)
+    if (linkId !== null) {
       const link = document.createElement("div")
       link.classList.add("ico-checkbox")
-      const on = Icons.getIcon("LINK", 12)
-      const off = Icons.getIcon("LINK_BROKEN", 12)
+      const on = Icons.getIcon("LINK", 16)
+      const off = Icons.getIcon("LINK_BROKEN", 16)
 
       let currentValue = true
 
       const update = () => {
         if (currentValue) {
-          this.linkBlacklist.delete(opt.id)
+          ThemeWindow.linkBlacklist.delete(opt.id)
         } else {
-          this.linkBlacklist.add(opt.id)
+          ThemeWindow.linkBlacklist.add(opt.id)
         }
         on.style.display = currentValue ? "" : "none"
         off.style.display = currentValue ? "none" : ""
@@ -134,36 +145,53 @@ export class ThemeWindow extends Window {
         update()
       }
 
+      tippy(link, {
+        onShow(inst) {
+          inst.setContent(currentValue ? `Linked to ${linkId}` : "Unlinked")
+        },
+      })
+
+      tippy(link, {
+        trigger: "click",
+        onShow(inst) {
+          inst.setContent(currentValue ? `Linked to ${linkId}` : "Unlinked")
+        },
+      })
+
       update()
 
       link.replaceChildren(on, off)
 
       container.appendChild(link)
 
-      const newSetInput = () => {
+      const newSetInput = (color: Color) => {
         if (currentValue) {
           currentValue = false
           update()
         }
-        setValue()
+        setValue(color)
       }
 
-      colorInput.oninput = newSetInput
-      alphaInput.oninput = newSetInput
+      colorPicker.onColorChange = newSetInput
+      // alphaInput.oninput = newSetInput
     }
 
     updateValue()
 
     EventHandler.on("themeChanged", updateValue)
     this.handlers.push(updateValue)
+    this.pickers[opt.id] = container
 
     return container
   }
 
-  hasLink(id: ThemeProperty) {
-    return Object.values(THEME_GENERATOR_LINKS)
-      .flatMap(links => Object.keys(links))
-      .includes(id)
+  getLink(id: ThemeProperty) {
+    for (const [linker, links] of Object.entries(THEME_GENERATOR_LINKS)) {
+      if (id in links) {
+        return linker as ThemeProperty
+      }
+    }
+    return null
   }
 
   average(c: Color) {
@@ -186,7 +214,7 @@ export class ThemeWindow extends Window {
       const links = THEME_GENERATOR_LINKS[currentId]
       if (!links) continue
       for (const [id, transform] of Object.entries(links)) {
-        if (this.linkBlacklist.has(id as ThemeProperty)) continue
+        if (ThemeWindow.linkBlacklist.has(id as ThemeProperty)) continue
         if (visited.has(id)) continue
         theme[id as ThemeProperty] = transform.bind(this)(theme[currentId])
         queue.push(id as ThemeProperty)
