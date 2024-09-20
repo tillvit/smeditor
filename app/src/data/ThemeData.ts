@@ -193,7 +193,7 @@ export const THEME_GROUPS: ThemeGroup[] = [
     ],
   },
   {
-    name: "navbar",
+    name: "window-navbar",
     ids: [
       {
         id: "navbar-bg",
