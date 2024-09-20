@@ -250,7 +250,7 @@ export const THEME_GENERATOR_LINKS: {
 } = {
   "primary-bg": {
     "primary-border": function (c) {
-      return this.lighten(c, 10).setAlpha(0xbb)
+      return this.lighten(c, 10).setAlpha(0xbb / 0xff)
     },
     "primary-bg-active": function (c) {
       return this.lighten(c, 10)
@@ -259,7 +259,7 @@ export const THEME_GENERATOR_LINKS: {
       return this.lighten(c, 30)
     },
     "widget-bg": function (c) {
-      return this.add(c, -50).setAlpha(0x88)
+      return this.add(c, -50).setAlpha(0x88 / 0xff)
     },
     "navbar-bg": function (c) {
       return this.lighten(c, -10)
@@ -272,11 +272,11 @@ export const THEME_GENERATOR_LINKS: {
     },
     "input-border": function (c) {
       return this.average(c) > 0.5
-        ? this.add(c, -30).setAlpha(0x77)
-        : this.add(c, +30).setAlpha(0x77)
+        ? this.add(c, -30).setAlpha(0x77 / 0xff)
+        : this.add(c, +30).setAlpha(0x77 / 0xff)
     },
     "tooltip-bg": function (c) {
-      return this.lighten(c, -10).setAlpha(0xee)
+      return this.lighten(c, -10).setAlpha(0xee / 0xff)
     },
     "secondary-bg": function (c) {
       return this.lighten(c, -20)
@@ -287,7 +287,7 @@ export const THEME_GENERATOR_LINKS: {
   },
   "secondary-bg": {
     "secondary-border": function (c) {
-      return this.lighten(c, 10).setAlpha(0xbb)
+      return this.lighten(c, 10).setAlpha(0xbb / 0xff)
     },
     "secondary-bg-active": function (c) {
       return this.lighten(c, 50)
@@ -317,7 +317,7 @@ export const THEME_GENERATOR_LINKS: {
   },
   "input-bg": {
     "input-border": function (c) {
-      return this.lighten(c, 10).setAlpha(0xbb)
+      return this.lighten(c, 10).setAlpha(0xbb / 0xff)
     },
     "input-bg-active": function (c) {
       return this.lighten(c, 50)
