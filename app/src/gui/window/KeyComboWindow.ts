@@ -81,8 +81,8 @@ export class KeyComboWindow extends Window {
     cancelButton.onclick = () => {
       this.closeWindow()
     }
-    menu_options.append(okButton)
     menu_options.append(cancelButton)
+    menu_options.append(okButton)
 
     padding.appendChild(menu_options)
     this.viewElement.appendChild(padding)
