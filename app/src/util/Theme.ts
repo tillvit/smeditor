@@ -53,7 +53,7 @@ export class Themes {
   }
 
   private static validateTheme(theme: ThemeString): Theme {
-    const newTheme = DEFAULT_THEMES["default"]
+    const newTheme = { ...DEFAULT_THEMES["default"] }
     if (typeof theme !== "object") return newTheme
     for (const prop of THEME_VAR_WHITELIST) {
       if (theme[prop] === undefined) continue
@@ -119,20 +119,31 @@ export class Themes {
     ) as ThemeString
   }
 
-  static exportCurrentTheme(code = false) {
-    if (code) {
+  static exportCurrentTheme(options?: { code?: boolean; spaces?: boolean }) {
+    options = {
+      code: false,
+      spaces: false,
+      ...options,
+    }
+    if (options.code) {
       return JSON.stringify(
         Object.fromEntries(
           Object.entries(this.currentTheme).map(([prop, col]) => [
             prop,
             `^new Color('${col.toHexa()}')^`,
           ])
-        )
+        ),
+        null,
+        options.spaces ? 2 : 0
       )
         .replaceAll(`"^`, "")
         .replaceAll(`^"`, "")
     }
-    return JSON.stringify(this.convertThemeToString(this.currentTheme))
+    return JSON.stringify(
+      this.convertThemeToString(this.currentTheme),
+      null,
+      options.spaces ? 2 : 0
+    )
   }
 
   static createUserTheme(id: string, base?: Theme) {
@@ -164,5 +175,15 @@ export class Themes {
     this._userThemes[newId] = this._userThemes[id]
     delete this._userThemes[id]
     this._saveUserThemes()
+  }
+
+  static parseThemeText(text: string) {
+    let theme
+    try {
+      theme = JSON.parse(text)
+    } catch (_) {
+      return null
+    }
+    return this.validateTheme(theme)
   }
 }

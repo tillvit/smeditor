@@ -1945,10 +1945,6 @@ input[type="range"] {
   gap: 10px;
 }
 
-input[type="text"].pref-search-bar {
-  flex: 0;
-}
-
 .pref-scrollers {
   display: flex;
   gap: 20px;

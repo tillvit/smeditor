@@ -1,7 +1,10 @@
+import { showOpenFilePicker } from "file-system-access"
 import { App } from "../../App"
 import { DEFAULT_THEMES, THEME_GRID_PROPS } from "../../data/ThemeData"
 import { Options } from "../../util/Options"
+import { basename } from "../../util/Path"
 import { Themes } from "../../util/Theme"
+import { WaterfallManager } from "../element/WaterfallManager"
 import { Icons } from "../Icons"
 import { ConfirmationWindow } from "./ConfirmationWindow"
 import { ThemeEditorWindow } from "./ThemeEditorWindow"
@@ -36,6 +39,9 @@ export class ThemeSelectionWindow extends Window {
     const padding = document.createElement("div")
     padding.classList.add("padding")
 
+    const searchContainer = document.createElement("div")
+    searchContainer.classList.add("pref-search")
+
     const searchBar = document.createElement("input")
     searchBar.classList.add("pref-search-bar")
     searchBar.type = "text"
@@ -44,6 +50,7 @@ export class ThemeSelectionWindow extends Window {
     searchBar.oninput = () => {
       this.filterGrid(searchBar.value)
     }
+    searchContainer.appendChild(searchBar)
 
     const grid = document.createElement("div")
     grid.classList.add("theme-grid")
@@ -51,7 +58,7 @@ export class ThemeSelectionWindow extends Window {
 
     const optionTray = this.createOptionTray()
 
-    padding.replaceChildren(searchBar, grid, optionTray)
+    padding.replaceChildren(searchContainer, grid, optionTray)
 
     this.viewElement.appendChild(padding)
   }
@@ -128,7 +135,60 @@ export class ThemeSelectionWindow extends Window {
     this.actions.del = del
     optionTray.appendChild(del)
 
-    // import/export
+    const imp = document.createElement("button")
+    imp.appendChild(Icons.getIcon("UPLOAD", 16))
+    imp.appendChild(document.createTextNode("Import"))
+    imp.onclick = async () => {
+      const fileHandlers = await showOpenFilePicker({
+        _preferPolyfill: false,
+        excludeAcceptAllOption: false,
+        multiple: true,
+        accepts: [{ extensions: ["txt"] }],
+      })
+      fileHandlers.forEach(handle => {
+        handle
+          .getFile()
+          .then(file => file.text())
+          .then(text => {
+            const theme = Themes.parseThemeText(text)
+            let themeName = basename(handle.name, ".txt")
+            if (!theme) {
+              WaterfallManager.createFormatted(
+                "Failed to load theme " + themeName,
+                "error"
+              )
+              return
+            }
+            themeName = this.getNonConflictingName(themeName)
+            Themes.createUserTheme(themeName, theme)
+            this.loadGrid()
+          })
+      })
+    }
+    this.actions.imp = imp
+    optionTray.appendChild(imp)
+
+    const exp = document.createElement("button")
+    exp.appendChild(Icons.getIcon("DOWNLOAD", 16))
+    exp.appendChild(document.createTextNode("Export"))
+    exp.onclick = () => {
+      const str = Themes.exportCurrentTheme({ spaces: true })
+      const file = new File([str], Options.general.theme + ".txt", {
+        type: "text/plain",
+      })
+      const a = document.createElement("a")
+      const url = URL.createObjectURL(file)
+
+      a.href = url
+      a.download = file.name
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    }
+    this.actions.exp = exp
+    exp.disabled = true
+    optionTray.appendChild(exp)
 
     return optionTray
   }
@@ -204,6 +264,7 @@ export class ThemeSelectionWindow extends Window {
         this.actions.edit.disabled = isDefault
         this.actions.del.disabled = isDefault
         this.actions.copy.disabled = false
+        this.actions.exp.disabled = false
       }
 
       container.dataset.id = id
@@ -217,6 +278,7 @@ export class ThemeSelectionWindow extends Window {
         this.actions.edit.disabled = isDefault
         this.actions.del.disabled = isDefault
         this.actions.copy.disabled = false
+        this.actions.exp.disabled = false
       }
     }
   }
