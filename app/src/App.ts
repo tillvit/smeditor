@@ -94,7 +94,8 @@ export class App {
           return
         }
         let foundSM = ""
-        for (const file of args) {
+        for (let file of args) {
+          if (file.startsWith("file://")) file = file.substring(7)
           if (extname(file) == ".ssc") {
             foundSM = file
             break
