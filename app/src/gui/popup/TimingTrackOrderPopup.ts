@@ -155,9 +155,7 @@ export class TimingTrackOrderPopup {
 
     let active = true
 
-    const deleteIcon = document.createElement("img")
-    deleteIcon.src = Icons.TRASH
-    deleteIcon.style.width = "16px"
+    const deleteIcon = Icons.getIcon("TRASH", 16)
     deleteIcon.addEventListener("click", () => {
       if (!active) return
       active = false
@@ -174,7 +172,7 @@ export class TimingTrackOrderPopup {
     trackContainer.appendChild(deleteIcon)
     trackContainer.addEventListener("mousedown", ev => {
       if (!active) return
-      if (ev.target == deleteIcon) return
+      if (deleteIcon.contains(ev.target as HTMLElement)) return
       this.startDragging(ev, trackContainer)
     })
     trackContainer.dataset.type = type
@@ -185,8 +183,7 @@ export class TimingTrackOrderPopup {
     const container = document.createElement("div")
     container.classList.add("leftover-track")
 
-    const icon = document.createElement("img")
-    icon.src = Icons.PLUS
+    const icon = Icons.getIcon("PLUS", 8)
 
     container.append(icon)
 

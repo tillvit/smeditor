@@ -63,13 +63,10 @@ export class InitialWindow extends Window {
     openButton.style.flexDirection = "column"
     openButton.style.padding = "10px"
     openButton.style.backgroundColor = "#414352"
+    openButton.style.color = "white"
     topContainer.appendChild(openButton)
 
-    const openIcon = document.createElement("img")
-    openIcon.src = Icons.UPLOAD
-    openIcon.classList.add("icon")
-    openIcon.style.width = "30px"
-    openIcon.style.height = "30px"
+    const openIcon = Icons.getIcon("UPLOAD", 30)
     openButton.appendChild(openIcon)
 
     const openTitle = document.createElement("div")
@@ -107,13 +104,10 @@ export class InitialWindow extends Window {
     newButton.style.flexDirection = "column"
     newButton.style.padding = "10px"
     newButton.style.backgroundColor = "#506352"
+    newButton.style.color = "white"
     topContainer.appendChild(newButton)
 
-    const newIcon = document.createElement("img")
-    newIcon.src = Icons.PLUS
-    newIcon.classList.add("icon")
-    newIcon.style.width = "30px"
-    newIcon.style.height = "30px"
+    const newIcon = Icons.getIcon("PLUS", 30)
     newButton.appendChild(newIcon)
 
     const newTitle = document.createElement("div")

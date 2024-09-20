@@ -10,6 +10,7 @@ import { clamp, roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { parseString } from "../../util/Util"
 import { Icons } from "../Icons"
+import { ColorPicker } from "../element/ColorPicker"
 import { Dropdown } from "../element/Dropdown"
 import { NumberSpinner } from "../element/NumberSpinner"
 import { Window } from "./Window"
@@ -129,9 +130,8 @@ export class UserOptionsWindow extends Window {
       item.appendChild(label)
     }
 
-    const revert = document.createElement("img")
+    const revert = Icons.getIcon("REVERT")
     if (option.type == "item") {
-      revert.src = Icons.REVERT
       revert.style.width = "12px"
       revert.addEventListener("click", () => {
         Options.applyOption([option.id, Options.getDefaultOption(option.id)])
@@ -337,24 +337,20 @@ export class UserOptionsWindow extends Window {
           break
         }
         case "color": {
-          const colorInput = document.createElement("input")
-          colorInput.type = "color"
-          colorInput.value = "#" + optionValue.toString(16).padStart(6, "0")
+          const callback = option.input.onChange
+          const colorInput = ColorPicker.create({
+            value: optionValue,
+          })
           // 'change' event is fired when the user closes the color picker
-          colorInput.onchange = () => {
-            colorInput.blur()
-          }
-          colorInput.onblur = () => {
-            Options.applyOption([
-              option.id,
-              parseInt(colorInput.value.slice(1), 16),
-            ])
+          colorInput.onColorChange = c => {
+            Options.applyOption([option.id, c.toHexa()])
             EventHandler.emit("userOptionUpdated", option.id)
             revert.style.display =
               Options.getDefaultOption(option.id) ===
               Options.getOption(option.id)
                 ? "none"
                 : "block"
+            callback?.(this.app, c)
           }
           input = colorInput
         }

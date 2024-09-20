@@ -6,6 +6,7 @@ import {
   Texture,
 } from "pixi.js"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
+import { assignTint } from "../../util/Color"
 import { clamp, roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { getFPS, getTPS } from "../../util/Performance"
@@ -69,7 +70,7 @@ export class DebugWidget extends Widget {
   private graphs = new Container<DebugGraph>()
   private fpsCounter = new Container()
 
-  private fpsBg = new BetterRoundedRect()
+  private fpsBg = new BetterRoundedRect("noBorder")
   private fpsText = new BitmapText("", {
     fontName: "Main",
     fontSize: 12,
@@ -84,10 +85,10 @@ export class DebugWidget extends Widget {
     this.cpuGraph.y += (GRAPH_HEIGHT + 5) * 4
     DebugWidget.instance = this
 
-    this.fpsBg.tint = 0
-    this.fpsBg.alpha = 0.5
     this.fpsText.x = 5
     this.fpsBg.y = -5
+    assignTint(this.fpsBg, "--widget-bg")
+    assignTint(this.fpsText, "--text-color")
 
     this.graphs.addChild(
       this.frameTimeGraph,
@@ -213,11 +214,13 @@ class DebugGraph extends Container {
       16384,
       true
     )
-    const bg = new BetterRoundedRect()
+    const bg = new BetterRoundedRect("noBorder")
     bg.tint = 0
     bg.alpha = 0.3
     bg.width = this.graphWidth
     bg.height = this.graphHeight
+
+    assignTint(bg, "--text-color")
 
     this.labelText = new BitmapText(label, {
       fontName: "Main",

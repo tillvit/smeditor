@@ -1,5 +1,6 @@
 import {
   BitmapFont,
+  Color,
   Container,
   Renderer,
   TEXT_GRADIENT,
@@ -26,14 +27,15 @@ import { WindowManager } from "./gui/window/WindowManager"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
 import { EventHandler } from "./util/EventHandler"
+import { FileHandler } from "./util/file-handler/FileHandler"
 import { Flags, loadFlags } from "./util/Flags"
 import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
 import { ParityGenerator } from "./util/ParityGenerator"
 import { extname } from "./util/Path"
 import { fpsUpdate } from "./util/Performance"
+import { Themes } from "./util/Theme"
 import { isIFrame } from "./util/Util"
-import { FileHandler } from "./util/file-handler/FileHandler"
 
 declare global {
   interface Window {
@@ -65,6 +67,9 @@ interface Version {
 
 export class App {
   options = Options
+  events = EventHandler
+  themes = Themes
+
   renderer: Renderer
   ticker: Ticker
   stage: Container
@@ -104,7 +109,7 @@ export class App {
       })
 
       window.addEventListener("keydown", e => {
-        if ((e.key == "r" && (e.metaKey || e.ctrlKey)) || e.key == "F5") {
+        if (e.key == "r" && (e.metaKey || e.ctrlKey)) {
           e.preventDefault()
           win.reload()
         }
@@ -114,7 +119,9 @@ export class App {
         }
         if (
           process.versions["nw-flavor"] == "sdk" &&
-          ((e.code == "KeyI" && e.metaKey && e.altKey) || e.key == "F5")
+          e.code == "KeyI" &&
+          e.metaKey &&
+          e.altKey
         ) {
           e.preventDefault()
           win.showDevTools()
@@ -291,6 +298,8 @@ export class App {
     window.onunload = () => {
       Options.saveOptions()
     }
+
+    Themes.loadTheme(Options.general.theme)
   }
 
   registerFonts() {
@@ -340,6 +349,12 @@ export class App {
   registerListeners() {
     this.view.addEventListener("mousedown", () => {
       this.windowManager.unfocusAll()
+    })
+
+    EventHandler.on("themeChanged", () => {
+      this.renderer.background.color = new Color(
+        Themes.getCurrentTheme()["editor-bg"]
+      ).toNumber()
     })
 
     window.addEventListener("keydown", function (e) {

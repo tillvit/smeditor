@@ -11,6 +11,7 @@ import {
 } from "../../chart/play/TimingWindowCollection"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
 import { BezierAnimator } from "../../util/BezierEasing"
+import { assignTint } from "../../util/Color"
 import { mean, median, roundDigit, stdDev } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { destroyChildIf } from "../../util/Util"
@@ -30,7 +31,7 @@ interface HistogramLine extends Sprite {
 export class PlayInfoWidget extends Widget {
   private max = 0
   private barlines = new Container<HistogramLine>()
-  private backgroundRect = new BetterRoundedRect()
+  private backgroundRect = new BetterRoundedRect("noBorder")
   private background = new Container()
   private backgroundLines = new Container<Sprite>()
   private statText = new Container()
@@ -51,9 +52,9 @@ export class PlayInfoWidget extends Widget {
   constructor(manager: WidgetManager) {
     super(manager)
     this.visible = false
-    this.backgroundRect.tint = 0
-    this.backgroundRect.alpha = 0.3
+
     this.background.addChild(this.backgroundRect)
+    assignTint(this.backgroundRect, "--widget-bg")
     this.addChild(this.background)
     this.addChild(this.backgroundLines)
     this.eventMode = "static"
@@ -139,6 +140,7 @@ export class PlayInfoWidget extends Widget {
     early.y = -HISTOGRAM_HEIGHT - 40
     early.alpha = 0.3
     this.background.addChild(early)
+    assignTint(early, "--text-color")
 
     const late = new BitmapText("Late", {
       fontName: "Main",
@@ -149,6 +151,7 @@ export class PlayInfoWidget extends Widget {
     late.y = -HISTOGRAM_HEIGHT - 40
     late.alpha = 0.3
     this.background.addChild(late)
+    assignTint(late, "--text-color")
 
     this.meanText = new BitmapText("-", {
       fontName: "Main",
@@ -222,9 +225,13 @@ export class PlayInfoWidget extends Widget {
     stddevLabel.y = -HISTOGRAM_HEIGHT - 80
     this.statText.addChild(stddevLabel)
 
+    this.statText.children.forEach(child => {
+      assignTint(child as BitmapText, "--text-color")
+    })
+
     const alignSongContainer = new Container()
 
-    const alignSongBg = new BetterRoundedRect()
+    const alignSongBg = new BetterRoundedRect("noBorder")
     alignSongBg.tint = 0x333333
     alignSongBg.alpha = 0.3
     alignSongBg.width = WIDGET_WIDTH / 2 - 10
@@ -233,7 +240,6 @@ export class PlayInfoWidget extends Widget {
     alignSongBg.x = -WIDGET_WIDTH / 4
     alignSongBg.pivot.x = (WIDGET_WIDTH / 2 - 10) / 2
     alignSongBg.pivot.y = 15
-
     const alignSongText = new BitmapText("Adjust song offset", {
       fontName: "Main",
       fontSize: 12,
@@ -255,10 +261,11 @@ export class PlayInfoWidget extends Widget {
       alignSongBg.alpha = 0.3
     })
     this.statText.addChild(alignSongContainer)
+    assignTint(alignSongText, "--text-color")
 
     const alignGlobalContainer = new Container()
 
-    const alignGlobalBg = new BetterRoundedRect()
+    const alignGlobalBg = new BetterRoundedRect("noBorder")
     alignGlobalBg.tint = 0x333333
     alignGlobalBg.alpha = 0.3
     alignGlobalBg.width = WIDGET_WIDTH / 2 - 10
@@ -283,6 +290,7 @@ export class PlayInfoWidget extends Widget {
     alignGlobalText.x = WIDGET_WIDTH / 4
     alignGlobalText.y = -25
     alignGlobalContainer.addChild(alignGlobalBg, alignGlobalText)
+    assignTint(alignGlobalText, "--text-color")
 
     alignGlobalContainer.eventMode = "static"
     alignGlobalContainer.addEventListener("mouseenter", () => {
@@ -455,14 +463,16 @@ export class PlayInfoWidget extends Widget {
         fontName: "Main",
         fontSize: 15,
       })
+      assignTint(label, "--text-color")
+      assignTint(count, "--text-color")
       if (name != "Mine")
         count.text =
           "0 / " +
           this.manager.chartManager
             .loadedChart!.getNotedata()
             .filter(note => note.type == name && !note.fake).length
-      label.tint = 0xdddddd
-      count.tint = 0xdddddd
+      label.alpha = 0.8
+      count.alpha = 0.8
       count.name = name
       this.texts.addChild(label)
       this.texts.addChild(count)
@@ -479,12 +489,14 @@ export class PlayInfoWidget extends Widget {
       fontName: "Main",
       fontSize: 15,
     })
+    assignTint(label, "--text-color")
     const count = new BitmapText("0", {
       fontName: "Main",
       fontSize: 15,
     })
-    label.tint = 0xdddddd
-    count.tint = 0xdddddd
+    assignTint(count, "--text-color")
+    label.alpha = 0.8
+    count.alpha = 0.8
     count.name = "Combo"
     this.texts.addChild(label)
     this.texts.addChild(count)
@@ -500,7 +512,8 @@ export class PlayInfoWidget extends Widget {
       fontName: "Main",
       fontSize: 20,
     })
-    score.tint = 0xdddddd
+    assignTint(score, "--text-color")
+    score.alpha = 0.8
     score.x = -WIDGET_WIDTH / 2 + 225
     score.y = -HISTOGRAM_HEIGHT - 112
     score.name = "Score"
@@ -511,7 +524,8 @@ export class PlayInfoWidget extends Widget {
       fontName: "Main",
       fontSize: 13,
     })
-    scoreLabel.tint = 0x888888
+    assignTint(scoreLabel, "--text-color")
+    scoreLabel.alpha = 0.5
     scoreLabel.x = -WIDGET_WIDTH / 2 + 225
     scoreLabel.y = -HISTOGRAM_HEIGHT - 135
     this.texts.addChild(scoreLabel)
@@ -523,6 +537,7 @@ export class PlayInfoWidget extends Widget {
     })
     windowLabel.y = -HISTOGRAM_HEIGHT - 245
     windowLabel.anchor.set(0.5)
+    assignTint(windowLabel, "--text-color")
     this.texts.addChild(windowLabel)
 
     gameStats.onJudge((error, judge) => {

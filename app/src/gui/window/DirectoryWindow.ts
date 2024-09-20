@@ -109,9 +109,7 @@ export class DirectoryWindow extends Window {
     file_options.classList.add("file-options")
 
     const add_file = document.createElement("button")
-    const add_file_icon = document.createElement("img")
-    add_file_icon.src = Icons.ADD_FILE
-    add_file_icon.classList.add("icon")
+    const add_file_icon = Icons.getIcon("ADD_FILE", 16)
     add_file.appendChild(add_file_icon)
     add_file.appendChild(document.createTextNode("Upload files"))
     file_options.appendChild(add_file)
@@ -144,9 +142,7 @@ export class DirectoryWindow extends Window {
     }
 
     const add_dir = document.createElement("button")
-    const add_dir_icon = document.createElement("img")
-    add_dir_icon.src = Icons.ADD_FOLDER
-    add_dir_icon.classList.add("icon")
+    const add_dir_icon = Icons.getIcon("FOLDER", 16)
     add_dir.appendChild(add_dir_icon)
     add_dir.appendChild(document.createTextNode("Upload folder"))
     file_options.appendChild(add_dir)
@@ -176,9 +172,7 @@ export class DirectoryWindow extends Window {
 
     const rename_file = document.createElement("button")
     rename_file.classList.add("rename")
-    const rename_file_icon = document.createElement("img")
-    rename_file_icon.src = Icons.EDIT
-    rename_file_icon.classList.add("icon")
+    const rename_file_icon = Icons.getIcon("EDIT", 16)
     rename_file.appendChild(rename_file_icon)
     rename_file.appendChild(document.createTextNode("Rename"))
     rename_file.disabled = true
@@ -193,9 +187,7 @@ export class DirectoryWindow extends Window {
 
     const delete_file = document.createElement("button")
     delete_file.classList.add("delete")
-    const delete_file_icon = document.createElement("img")
-    delete_file_icon.src = Icons.TRASH
-    delete_file_icon.classList.add("icon")
+    const delete_file_icon = Icons.getIcon("TRASH", 16)
     delete_file.appendChild(delete_file_icon)
     delete_file.appendChild(document.createTextNode("Delete"))
     delete_file.disabled = true
@@ -307,11 +299,8 @@ export class DirectoryWindow extends Window {
     info.classList.add("info")
     new_div.appendChild(info)
     if (handle.kind == "directory") {
-      const folder_open = document.createElement("img")
-      folder_open.classList.add("icon")
+      const folder_open = Icons.getIcon("CHEVRON", 16)
       folder_open.classList.add("folder-icon")
-      folder_open.src =
-        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAAbklEQVRIie2PMQqAMAxFXwfP6qJVPIjYzcOKdUkhQ0BaCoLkLS3k818CjuN8ztApYzIDl7xvmalFsAIZuIFozKPMMrC0CAJwKIkuGVX5KdkmLEm3ci1JSlLKU49yLSmXVG1es0EANvnvInKcP/AA784fpjlWwNQAAAAASUVORK5CYII="
       info.appendChild(folder_open)
       const children = document.createElement("div")
       children.classList.add("children")
@@ -332,9 +321,7 @@ export class DirectoryWindow extends Window {
       })
     } else {
       if (!this.acceptableFileType(handle.name)) info.classList.add("disabled")
-      const icon = document.createElement("img")
-      icon.src = this.getIcon(handle.name)
-      icon.classList.add("icon")
+      const icon = Icons.getIcon(this.getIconId(handle.name), 16)
       info.appendChild(icon)
     }
     info.dataset.path = path + handle.name
@@ -379,19 +366,19 @@ export class DirectoryWindow extends Window {
     )
   }
 
-  private getIcon(name: string): string {
+  private getIconId(name: string): string {
     const ext = extname(name)
     if (ext == "" && !name.startsWith(".")) {
-      return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAAY0lEQVRIiWNgGAWDCXgwMDA8ZmBg+I8DN1BqwSM8hlPFEpgh2EA4AwPDbyIc8B/qUA9SLSDHEpItIBagmMNEBQPxglELRi0YtQDVgsdQmpiiAB9GNgsFeDAQV6KSXdiNgoEBAG+iU6T/ixEpAAAAAElFTkSuQmCC"
+      return "FOLDER"
     }
     if (IMG_EXT.includes(ext)) {
-      return Icons.IMAGE_FILE
+      return "IMAGE_FILE"
     }
     if (AUDIO_EXT.includes(ext)) {
-      return Icons.AUDIO_FILE
+      return "VOLUME"
     }
-    if ([".sm", ".ssc"].includes(ext)) return Icons.SM_FILE
-    return Icons.UNKNOWN_FILE
+    if ([".sm", ".ssc"].includes(ext)) return "SM_FILE"
+    return "UNKNOWN_FILE"
   }
 
   private startEditing(title: HTMLTextAreaElement) {

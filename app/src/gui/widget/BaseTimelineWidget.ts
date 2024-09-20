@@ -2,6 +2,7 @@ import { Container, FederatedPointerEvent, Sprite, Texture } from "pixi.js"
 import { EditMode } from "../../chart/ChartManager"
 import { Chart } from "../../chart/sm/Chart"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
+import { assignTint } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
 import { clamp, lerp, maxArr, minArr, unlerp } from "../../util/Math"
@@ -11,7 +12,7 @@ import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
 
 export class BaseTimelineWidget extends Widget {
-  backing: BetterRoundedRect = new BetterRoundedRect()
+  backing: BetterRoundedRect = new BetterRoundedRect("noBorder")
   overlay: Sprite = new Sprite(Texture.WHITE)
   selectionOverlay: Sprite = new Sprite(Texture.WHITE)
   container: Container = new Container()
@@ -39,8 +40,7 @@ export class BaseTimelineWidget extends Widget {
     this.addChild(this.container)
     this.visible = false
 
-    this.backing.tint = 0
-    this.backing.alpha = 0.3
+    assignTint(this.backing, "--widget-bg")
 
     this.overlay.anchor.x = 0.5
     this.overlay.anchor.y = 0

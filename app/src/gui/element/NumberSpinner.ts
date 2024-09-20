@@ -1,6 +1,7 @@
 import { clamp, roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { parseString } from "../../util/Util"
+import { Icons } from "../Icons"
 
 export class NumberSpinner {
   view: HTMLDivElement
@@ -72,6 +73,7 @@ export class NumberSpinner {
 
     const upButton = document.createElement("button")
     upButton.classList.add("spinner-up")
+    upButton.appendChild(Icons.getIcon("CHEVRON", 10))
     upButton.tabIndex = -1
     upButton.onclick = e => {
       let changeStep = step ?? Options.general.spinnerStep
@@ -87,6 +89,7 @@ export class NumberSpinner {
 
     const downButton = document.createElement("button")
     downButton.classList.add("spinner-down")
+    downButton.appendChild(Icons.getIcon("CHEVRON", 10))
     downButton.tabIndex = -1
     downButton.onclick = e => {
       let changeStep = step ?? Options.general.spinnerStep

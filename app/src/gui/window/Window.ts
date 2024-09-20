@@ -41,12 +41,11 @@ export abstract class Window {
     navbarElement.classList.add("navbar")
     navbarElement.appendChild(navbarTitleElement)
     if (!options.disableClose) {
-      const minimizeElement = document.createElement("img")
-      const closeElement = document.createElement("img")
+      const minimizeElement = Icons.getIcon("MINIMIZE", 15)
+      const closeElement = Icons.getIcon("CLOSE_WINDOW", 15)
 
       minimizeElement.classList.add("unselectable")
       minimizeElement.draggable = false
-      minimizeElement.src = Icons.MINIMIZE_WINDOW
       minimizeElement.onclick = () => {
         if (viewElement.style.height != "0px") {
           viewElement.style.height = "0px"
@@ -58,7 +57,6 @@ export abstract class Window {
 
       closeElement.classList.add("unselectable")
       closeElement.draggable = false
-      closeElement.src = Icons.CLOSE_WINDOW
       closeElement.onclick = () => this.closeWindow()
 
       navbarElement.appendChild(minimizeElement)

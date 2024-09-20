@@ -1,5 +1,5 @@
 import { Parser } from "expr-eval"
-import { Sprite, Texture } from "pixi.js"
+import { Color, Sprite, Texture } from "pixi.js"
 import tippy from "tippy.js"
 import { EditMode, EditTimingMode } from "../../chart/ChartManager"
 import { NoteskinSprite } from "../../chart/gameTypes/noteskin/Noteskin"
@@ -9,6 +9,7 @@ import {
   TapNoteType,
 } from "../../chart/sm/NoteTypes"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
+import { assignTint, blendPixiColors, getCSSColor } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
 import { Keybinds } from "../../util/Keybinds"
@@ -37,7 +38,8 @@ export class StatusWidget extends Widget {
   private readonly skipStart: HTMLButtonElement
   private readonly skipEnd: HTMLButtonElement
   private readonly play: HTMLButtonElement
-  private readonly playIcon: HTMLImageElement
+  private readonly playIcon: HTMLDivElement
+  private readonly stopIcon: HTMLDivElement
   private readonly record: HTMLButtonElement
   private readonly playtest: HTMLButtonElement
   private readonly timeCounter: HTMLDivElement
@@ -93,9 +95,7 @@ export class StatusWidget extends Widget {
 
     this.skipStart = document.createElement("button")
     this.skipStart.tabIndex = -1
-    const skipStartIcon = document.createElement("img")
-    skipStartIcon.src = Icons.SKIP_START
-    skipStartIcon.style.height = "36px"
+    const skipStartIcon = Icons.getIcon("SKIP_START", 36)
     this.skipStart.appendChild(skipStartIcon)
     this.skipStart.onclick = () => {
       this.manager.chartManager.setBeat(0)
@@ -108,9 +108,7 @@ export class StatusWidget extends Widget {
 
     this.skipEnd = document.createElement("button")
     this.skipEnd.tabIndex = -1
-    const skipEndIcon = document.createElement("img")
-    skipEndIcon.style.height = "36px"
-    skipEndIcon.src = Icons.SKIP_END
+    const skipEndIcon = Icons.getIcon("SKIP_END", 36)
     this.skipEnd.appendChild(skipEndIcon)
     this.skipEnd.onclick = () => {
       this.manager.chartManager.setBeat(
@@ -125,10 +123,16 @@ export class StatusWidget extends Widget {
 
     this.play = document.createElement("button")
     this.play.tabIndex = -1
-    const playIcon = document.createElement("img")
-    playIcon.src = Icons.PLAY
+
+    const playIcon = Icons.getIcon("PLAY", 40)
     this.play.appendChild(playIcon)
     this.playIcon = playIcon
+
+    const stopIcon = Icons.getIcon("STOP", 32)
+    this.play.appendChild(stopIcon)
+    this.stopIcon = stopIcon
+    this.stopIcon.style.display = "none"
+
     this.play.onclick = () => {
       if (
         this.manager.chartManager.getMode() == EditMode.Record ||
@@ -144,9 +148,7 @@ export class StatusWidget extends Widget {
 
     this.record = document.createElement("button")
     this.record.tabIndex = -1
-    const recordIcon = document.createElement("img")
-    recordIcon.style.height = "36px"
-    recordIcon.src = Icons.RECORD
+    const recordIcon = Icons.getIcon("RECORD", 36, undefined, "red")
     this.record.appendChild(recordIcon)
     this.record.onclick = () => {
       this.manager.chartManager.setMode(EditMode.Record)
@@ -159,9 +161,7 @@ export class StatusWidget extends Widget {
 
     this.playtest = document.createElement("button")
     this.playtest.tabIndex = -1
-    const playtestIcon = document.createElement("img")
-    playtestIcon.style.height = "30px"
-    playtestIcon.src = Icons.PLAYTEST
+    const playtestIcon = Icons.getIcon("PLAYTEST", 30)
     this.playtest.appendChild(playtestIcon)
     this.playtest.onclick = () => {
       this.manager.chartManager.setMode(EditMode.Play)
@@ -324,21 +324,21 @@ export class StatusWidget extends Widget {
     this.editSteps = document.createElement("button")
     this.editSteps.tabIndex = -1
     this.editSteps.classList.add("edit-fancy-button")
-    const editStepsIcon = document.createElement("img")
-    editStepsIcon.src = Icons.FEET
+    const editStepsIcon = Icons.getIcon("FEET", 24)
+    editStepsIcon.style.marginBottom = "2px"
     this.editSteps.appendChild(editStepsIcon)
     this.editSteps.appendChild(document.createTextNode("Edit Steps"))
     this.editSteps.onclick = () => {
       this.manager.chartManager.editTimingMode = EditTimingMode.Off
       this.editSteps.blur()
     }
-    this.editSteps.style.background = "rgba(255,255,255,0.15)"
+    this.editSteps.classList.add("active")
 
     this.editTiming = document.createElement("button")
     this.editTiming.tabIndex = -1
     this.editTiming.classList.add("edit-fancy-button")
-    const editTimingIcon = document.createElement("img")
-    editTimingIcon.src = Icons.METRONOME
+    const editTimingIcon = Icons.getIcon("METRONOME", 24)
+    editTimingIcon.style.marginBottom = "2px"
     this.editTiming.appendChild(editTimingIcon)
     this.editTiming.appendChild(document.createTextNode("Edit Timing"))
     this.editTiming.onclick = () => {
@@ -370,9 +370,7 @@ export class StatusWidget extends Widget {
 
     this.addTimingEvent = document.createElement("button")
     this.addTimingEvent.tabIndex = -1
-    const addTimingEventIcon = document.createElement("img")
-    addTimingEventIcon.style.height = "32px"
-    addTimingEventIcon.src = Icons.ADD_EVENT
+    const addTimingEventIcon = Icons.getIcon("ADD_EVENT", 32)
     this.addTimingEvent.appendChild(addTimingEventIcon)
     this.addTimingEvent.onclick = () => {
       if (this.manager.chartManager.editTimingMode == EditTimingMode.Add)
@@ -388,9 +386,7 @@ export class StatusWidget extends Widget {
 
     this.toggleTimingTracks = document.createElement("button")
     this.toggleTimingTracks.tabIndex = -1
-    const arrangeTimingTracksIcon = document.createElement("img")
-    arrangeTimingTracksIcon.style.height = "32px"
-    arrangeTimingTracksIcon.src = Icons.EYE
+    const arrangeTimingTracksIcon = Icons.getIcon("EYE", 32)
     this.toggleTimingTracks.appendChild(arrangeTimingTracksIcon)
     this.toggleTimingTracks.onclick = () => {
       TimingTrackOrderPopup.active
@@ -407,9 +403,7 @@ export class StatusWidget extends Widget {
 
     this.detectSync = document.createElement("button")
     this.detectSync.tabIndex = -1
-    const detectSyncIcon = document.createElement("img")
-    detectSyncIcon.style.height = "32px"
-    detectSyncIcon.src = Icons.DETECT_SYNC
+    const detectSyncIcon = Icons.getIcon("DETECT_SYNC", 32)
     this.detectSync.appendChild(detectSyncIcon)
     this.detectSync.onclick = () => {
       this.manager.app.windowManager.openWindow(
@@ -500,8 +494,7 @@ export class StatusWidget extends Widget {
           })
         sprite.scale.set(0.5)
         const bg = new Sprite(Texture.WHITE)
-        bg.tint = 0
-        bg.alpha = 0.5
+        assignTint(bg, "--widget-bg")
         bg.width = 48
         bg.height = 48
         bg.anchor.set(0.5)
@@ -715,15 +708,15 @@ export class StatusWidget extends Widget {
           this.visible = true
           this.stepsContainer.style.transform = ""
           this.timingContainer.style.transform = ""
-          this.editSteps.style.background = "rgba(255,255,255,0.15)"
-          this.editTiming.style.background = ""
+          this.editSteps.classList.add("active")
+          this.editTiming.classList.remove("active")
           this.offset.tabIndex = -1
           break
         case EditTimingMode.Add:
-          this.addTimingEvent.style.background = "rgba(255,255,255,0.15)"
+          this.addTimingEvent.classList.add("active")
           break
         case EditTimingMode.Edit:
-          this.addTimingEvent.style.background = ""
+          this.addTimingEvent.classList.remove("active")
           this.offset.tabIndex = 0
       }
       if (
@@ -740,19 +733,22 @@ export class StatusWidget extends Widget {
         timingMode == EditTimingMode.Off ? "" : "translateY(-48px)"
       this.timingContainer.style.transform =
         timingMode == EditTimingMode.Off ? "" : "translateY(-48px)"
-      this.editSteps.style.background =
-        timingMode == EditTimingMode.Off ? "rgba(255,255,255,0.15)" : ""
-      this.editTiming.style.background =
-        timingMode == EditTimingMode.Off ? "" : "rgba(255,255,255,0.15)"
+      this.editSteps.classList.toggle(
+        "active",
+        timingMode == EditTimingMode.Off
+      )
+      this.editTiming.classList.toggle(
+        "active",
+        timingMode != EditTimingMode.Off
+      )
     }
 
     const playing = this.manager.chartManager.chartAudio.isPlaying()
     if (this.lastPlaying != playing) {
-      this.playIcon.src = playing ? Icons.STOP : Icons.PLAY
+      this.playIcon.style.display = playing ? "none" : ""
+      this.stopIcon.style.display = playing ? "" : "none"
       this.lastPlaying = playing
     }
-    this.playIcon.style.height =
-      this.manager.chartManager.chartAudio.isPlaying() ? "28px" : ""
 
     if (mode == EditMode.Play || mode == EditMode.Record) {
       if (
@@ -808,15 +804,27 @@ export class StatusWidget extends Widget {
     }
 
     const noteType = this.manager.chartManager.getEditingNoteType()
+    const hoverColor = getCSSColor("--editable-overlay-hover")
+    const activeColor = getCSSColor("--editable-overlay-active")
+    const emptyColor = new Color(hoverColor).setAlpha(0)
     this.noteArrows.forEach(arrow => {
+      let color =
+        noteType == arrow.type
+          ? activeColor
+          : arrow.hovered
+            ? hoverColor
+            : emptyColor
       if (Options.general.smoothAnimations) {
-        const target = noteType == arrow.type ? 0.15 : arrow.hovered ? 0.05 : 0
-        arrow.highlight.alpha =
-          (target - arrow.highlight.alpha) * 0.3 + arrow.highlight.alpha
-      } else {
-        arrow.highlight.alpha =
-          noteType == arrow.type ? 0.15 : arrow.hovered ? 0.05 : 0
+        color = new Color(
+          blendPixiColors(
+            new Color(arrow.highlight.tint).setAlpha(arrow.highlight.alpha),
+            color,
+            0.3
+          )
+        )
       }
+      arrow.highlight.tint = color.toNumber()
+      arrow.highlight.alpha = color.alpha
     })
   }
 

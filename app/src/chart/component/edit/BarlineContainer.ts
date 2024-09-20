@@ -1,4 +1,5 @@
 import { BitmapText, Container, Sprite, Texture } from "pixi.js"
+import { assignTint } from "../../../util/Color"
 import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
@@ -17,10 +18,18 @@ export class BarlineContainer
   private barlineMap: Map<number, Sprite> = new Map()
   private barlineLabelMap: Map<number, BitmapText> = new Map()
   private barlinePool = new DisplayObjectPool({
-    create: () => new Sprite(Texture.WHITE),
+    create: () => {
+      const line = new Sprite(Texture.WHITE)
+      assignTint(line, "--text-color")
+      return line
+    },
   })
   private barlineLabelPool = new DisplayObjectPool({
-    create: () => new BitmapText("", measureNumbers),
+    create: () => {
+      const text = new BitmapText("", measureNumbers)
+      assignTint(text, "--text-color")
+      return text
+    },
   })
 
   constructor(renderer: ChartRenderer) {
