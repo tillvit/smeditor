@@ -2957,9 +2957,19 @@ input[type="color"] {
   position: absolute;
   width: 15px;
   height: 15px;
-  border: 2px solid rgb(0, 0, 0);
+  border: 2px solid white;
   border-radius: 15px;
   transform: translate(-50%, -50%);
+}
+
+.color-picker-popup .color-matrix-dot:after {
+  content: " ";
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border: 2px solid black;
+  border-radius: 15px;
+  transform: translate(-4px, -4px);
 }
 
 .color-picker-popup .color-slider {
