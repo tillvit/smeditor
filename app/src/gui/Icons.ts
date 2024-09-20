@@ -83,7 +83,7 @@ export class Icons {
   }
 
   private static fetchIcon(id: string) {
-    fetch(`/assets/svg/${id}.svg`)
+    fetch(`/smeditor/assets/svg/${id}.svg`)
       .then(res => res.text())
       .then(text => {
         this.cache.set(id, text)
