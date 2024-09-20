@@ -50,19 +50,19 @@ export class ErrorBarContainer
     this.barline.anchor.set(0.5)
     this.barline.height = 1
     this.barline.alpha = 0.5
-    assignTint(this.barline, "--text-color")
+    assignTint(this.barline, "text-color")
     const target = new Sprite(Texture.WHITE)
     target.width = 2
     target.height = BAR_HEIGHT
     target.anchor.set(0.5)
-    assignTint(target, "--text-color")
+    assignTint(target, "text-color")
     this.currentMedian = new Graphics()
     this.currentMedian.beginFill(0xffffff)
     this.currentMedian.moveTo(0, -10)
     this.currentMedian.lineTo(5, -15)
     this.currentMedian.lineTo(-5, -15)
     this.currentMedian.lineTo(0, -10)
-    assignTint(this.currentMedian, "--text-color")
+    assignTint(this.currentMedian, "text-color")
     this.errorText.y = -25
     this.errorText.anchor.set(0.5)
     this.addChild(

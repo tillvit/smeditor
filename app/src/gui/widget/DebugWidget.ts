@@ -87,8 +87,8 @@ export class DebugWidget extends Widget {
 
     this.fpsText.x = 5
     this.fpsBg.y = -5
-    assignTint(this.fpsBg, "--widget-bg")
-    assignTint(this.fpsText, "--text-color")
+    assignTint(this.fpsBg, "widget-bg")
+    assignTint(this.fpsText, "text-color")
 
     this.graphs.addChild(
       this.frameTimeGraph,
@@ -220,7 +220,7 @@ class DebugGraph extends Container {
     bg.width = this.graphWidth
     bg.height = this.graphHeight
 
-    assignTint(bg, "--text-color")
+    assignTint(bg, "text-color")
 
     this.labelText = new BitmapText(label, {
       fontName: "Main",

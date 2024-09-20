@@ -9,12 +9,13 @@ import {
   TapNoteType,
 } from "../../chart/sm/NoteTypes"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
-import { assignTint, blendPixiColors, getCSSColor } from "../../util/Color"
+import { assignTint, blendPixiColors } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
 import { Keybinds } from "../../util/Keybinds"
 import { roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
+import { Themes } from "../../util/Theme"
 import { Icons } from "../Icons"
 import { Dropdown } from "../element/Dropdown"
 import { TimingTrackOrderPopup } from "../popup/TimingTrackOrderPopup"
@@ -494,7 +495,7 @@ export class StatusWidget extends Widget {
           })
         sprite.scale.set(0.5)
         const bg = new Sprite(Texture.WHITE)
-        assignTint(bg, "--widget-bg")
+        assignTint(bg, "widget-bg")
         bg.width = 48
         bg.height = 48
         bg.anchor.set(0.5)
@@ -804,8 +805,8 @@ export class StatusWidget extends Widget {
     }
 
     const noteType = this.manager.chartManager.getEditingNoteType()
-    const hoverColor = getCSSColor("--editable-overlay-hover")
-    const activeColor = getCSSColor("--editable-overlay-active")
+    const hoverColor = Themes.getColor("editable-overlay-hover")
+    const activeColor = Themes.getColor("editable-overlay-active")
     const emptyColor = new Color(hoverColor).setAlpha(0)
     this.noteArrows.forEach(arrow => {
       let color =

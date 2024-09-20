@@ -20,14 +20,14 @@ export class BarlineContainer
   private barlinePool = new DisplayObjectPool({
     create: () => {
       const line = new Sprite(Texture.WHITE)
-      assignTint(line, "--text-color")
+      assignTint(line, "text-color")
       return line
     },
   })
   private barlineLabelPool = new DisplayObjectPool({
     create: () => {
       const text = new BitmapText("", measureNumbers)
-      assignTint(text, "--text-color")
+      assignTint(text, "text-color")
       return text
     },
   })
