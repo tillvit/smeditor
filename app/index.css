@@ -305,6 +305,10 @@ html {
   padding: 3px;
   gap: 3px;
 }
+.navbar:empty {
+  border-bottom: none;
+}
+
 .window:not(.focused) > .navbar {
   background: var(--navbar-bg-inactive);
   border-bottom: 1px solid transparent;
@@ -1049,6 +1053,11 @@ input.right {
   box-shadow: 0 3px 15px 0 rgba(0, 0, 0, 0.6);
   cursor: pointer;
   top: 100%;
+  border: 1px solid var(--input-border);
+}
+
+.dropdown-items.collapsed {
+  border: none;
 }
 
 .dropdown-right > .dropdown-items {
