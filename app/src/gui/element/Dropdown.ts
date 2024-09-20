@@ -55,6 +55,7 @@ export class Dropdown<T> {
       if (!target.closest(".dropdown") || target.closest(".dropdown") != view)
         itemList.style.height = ""
     })
+    itemList.classList.add("collapsed")
     this.view.appendChild(itemDisplay)
     this.view.appendChild(itemList)
     this.setSelected()
