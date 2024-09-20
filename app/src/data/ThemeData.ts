@@ -146,19 +146,6 @@ export const THEME_GROUPS: ThemeGroup[] = [
     ],
   },
   {
-    name: "navbar",
-    ids: [
-      {
-        id: "navbar-bg",
-        label: "active",
-      },
-      {
-        id: "navbar-bg-inactive",
-        label: "inactive",
-      },
-    ],
-  },
-  {
     name: "editable-overlay",
     ids: [
       {
@@ -202,6 +189,19 @@ export const THEME_GROUPS: ThemeGroup[] = [
       {
         id: "window-border",
         label: "border",
+      },
+    ],
+  },
+  {
+    name: "navbar",
+    ids: [
+      {
+        id: "navbar-bg",
+        label: "active",
+      },
+      {
+        id: "navbar-bg-inactive",
+        label: "inactive",
       },
     ],
   },
@@ -261,7 +261,7 @@ export const THEME_GENERATOR_LINKS: {
     "widget-bg": function (c) {
       return this.add(c, -50).setAlpha(0x88 / 0xff)
     },
-    "navbar-bg": function (c) {
+    "window-bg": function (c) {
       return this.lighten(c, -10)
     },
     "text-color": function (c) {
@@ -285,6 +285,11 @@ export const THEME_GENERATOR_LINKS: {
       return this.lighten(c, -60)
     },
   },
+  "window-bg": {
+    "navbar-bg": function (c) {
+      return new Color(c)
+    },
+  },
   "secondary-bg": {
     "secondary-border": function (c) {
       return this.lighten(c, 10).setAlpha(0xbb / 0xff)
@@ -299,9 +304,6 @@ export const THEME_GENERATOR_LINKS: {
   "navbar-bg": {
     "navbar-bg-inactive": function (c) {
       return this.lighten(c, -33)
-    },
-    "window-bg": function (c) {
-      return new Color(c)
     },
   },
   "text-color": {
