@@ -39,7 +39,9 @@ export abstract class Window {
     viewElement.style.width = options.width + "px"
 
     navbarElement.classList.add("navbar")
-    navbarElement.appendChild(navbarTitleElement)
+    if (options.title !== "") {
+      navbarElement.appendChild(navbarTitleElement)
+    }
     if (!options.disableClose) {
       const minimizeElement = Icons.getIcon("MINIMIZE", 15)
       const closeElement = Icons.getIcon("CLOSE_WINDOW", 15)

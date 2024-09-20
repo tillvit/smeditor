@@ -13,6 +13,7 @@ import { NoteskinWindow } from "../gui/window/NoteskinWindow"
 import { OffsetWindow } from "../gui/window/OffsetWindow"
 import { SMPropertiesWindow } from "../gui/window/SMPropertiesWindow"
 import { SyncWindow } from "../gui/window/SyncWindow"
+import { ThemeEditorWindow } from "../gui/window/ThemeEditorWindow"
 import { ThemeSelectionWindow } from "../gui/window/ThemeSelectionWindow"
 import { TimingDataWindow } from "../gui/window/TimingDataWindow"
 import { UserOptionsWindow } from "../gui/window/UserOptionsWindow"
@@ -719,7 +720,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Themes...",
     bindLabel: "Edit themes",
     combos: [],
-    disabled: () => !Flags.openWindows || !Flags.openWindows,
+    disabled: () =>
+      !Flags.openWindows || !Flags.openWindows || ThemeEditorWindow.isOpen,
     callback: app => {
       app.windowManager.openWindow(new ThemeSelectionWindow(app))
     },

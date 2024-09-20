@@ -146,19 +146,6 @@ export const THEME_GROUPS: ThemeGroup[] = [
     ],
   },
   {
-    name: "navbar",
-    ids: [
-      {
-        id: "navbar-bg",
-        label: "active",
-      },
-      {
-        id: "navbar-bg-inactive",
-        label: "inactive",
-      },
-    ],
-  },
-  {
     name: "editable-overlay",
     ids: [
       {
@@ -202,6 +189,19 @@ export const THEME_GROUPS: ThemeGroup[] = [
       {
         id: "window-border",
         label: "border",
+      },
+    ],
+  },
+  {
+    name: "window-navbar",
+    ids: [
+      {
+        id: "navbar-bg",
+        label: "active",
+      },
+      {
+        id: "navbar-bg-inactive",
+        label: "inactive",
       },
     ],
   },
@@ -250,7 +250,7 @@ export const THEME_GENERATOR_LINKS: {
 } = {
   "primary-bg": {
     "primary-border": function (c) {
-      return this.lighten(c, 10).setAlpha(0xbb)
+      return this.lighten(c, 10).setAlpha(0xbb / 0xff)
     },
     "primary-bg-active": function (c) {
       return this.lighten(c, 10)
@@ -259,9 +259,9 @@ export const THEME_GENERATOR_LINKS: {
       return this.lighten(c, 30)
     },
     "widget-bg": function (c) {
-      return this.add(c, -50).setAlpha(0x88)
+      return this.add(c, -50).setAlpha(0x88 / 0xff)
     },
-    "navbar-bg": function (c) {
+    "window-bg": function (c) {
       return this.lighten(c, -10)
     },
     "text-color": function (c) {
@@ -272,11 +272,11 @@ export const THEME_GENERATOR_LINKS: {
     },
     "input-border": function (c) {
       return this.average(c) > 0.5
-        ? this.add(c, -30).setAlpha(0x77)
-        : this.add(c, +30).setAlpha(0x77)
+        ? this.add(c, -30).setAlpha(0x77 / 0xff)
+        : this.add(c, +30).setAlpha(0x77 / 0xff)
     },
     "tooltip-bg": function (c) {
-      return this.lighten(c, -10).setAlpha(0xee)
+      return this.lighten(c, -10).setAlpha(0xee / 0xff)
     },
     "secondary-bg": function (c) {
       return this.lighten(c, -20)
@@ -285,9 +285,14 @@ export const THEME_GENERATOR_LINKS: {
       return this.lighten(c, -60)
     },
   },
+  "window-bg": {
+    "navbar-bg": function (c) {
+      return new Color(c)
+    },
+  },
   "secondary-bg": {
     "secondary-border": function (c) {
-      return this.lighten(c, 10).setAlpha(0xbb)
+      return this.lighten(c, 10).setAlpha(0xbb / 0xff)
     },
     "secondary-bg-active": function (c) {
       return this.lighten(c, 50)
@@ -299,9 +304,6 @@ export const THEME_GENERATOR_LINKS: {
   "navbar-bg": {
     "navbar-bg-inactive": function (c) {
       return this.lighten(c, -33)
-    },
-    "window-bg": function (c) {
-      return new Color(c)
     },
   },
   "text-color": {
@@ -317,7 +319,7 @@ export const THEME_GENERATOR_LINKS: {
   },
   "input-bg": {
     "input-border": function (c) {
-      return this.lighten(c, 10).setAlpha(0xbb)
+      return this.lighten(c, 10).setAlpha(0xbb / 0xff)
     },
     "input-bg-active": function (c) {
       return this.lighten(c, 50)
@@ -357,33 +359,33 @@ export const DEFAULT_THEMES: Record<string, Theme> = {
     "tooltip-bg": new Color("rgba(20, 20, 20, 0.95)"),
     "editor-bg": new Color("#18191c"),
   },
-  amethyst: {
-    "accent-color": new Color("rgb(23, 131, 208)"),
-    "text-color": new Color("#e4b3ffff"),
-    "text-color-secondary": new Color("#e4b3ff78"),
-    "text-color-detail": new Color("#e4b3ff45"),
-    "text-color-disabled": new Color("#e4b3ff87"),
-    "primary-bg": new Color("#3a1a75ff"),
-    "primary-border": new Color("#3f1c80ba"),
-    "primary-bg-active": new Color("#3f1c80ff"),
-    "primary-bg-hover": new Color("#4b2198ff"),
-    "navbar-bg": new Color("#341769ff"),
-    "navbar-bg-inactive": new Color("#220f46ff"),
-    "window-bg": new Color("#341769ff"),
+  dusk: {
+    "accent-color": new Color("#b34e97ff"),
+    "text-color": new Color("#ffffffff"),
+    "text-color-secondary": new Color("#ffffff77"),
+    "text-color-detail": new Color("#ffffff44"),
+    "text-color-disabled": new Color("#ffffff88"),
+    "primary-bg": new Color("#1b0131ff"),
+    "primary-border": new Color("#1e0136bb"),
+    "primary-bg-active": new Color("#2f0057ff"),
+    "primary-bg-hover": new Color("#230140ff"),
+    "navbar-bg": new Color("#18012cff"),
+    "navbar-bg-inactive": new Color("#10011dff"),
+    "window-bg": new Color("#18012cff"),
     "window-border": new Color("#00000000"),
-    "secondary-bg": new Color("#2e145dff"),
-    "secondary-border": new Color("#321666ba"),
-    "secondary-bg-active": new Color("#321666ff"),
-    "secondary-bg-hover": new Color("#3b1a78ff"),
-    "editable-overlay-hover": new Color("rgb(255, 255, 255, 0.1)"),
-    "editable-overlay-active": new Color("rgb(255, 255, 255, 0.2)"),
-    "input-bg": new Color("rgba(35, 35, 35, 0.309)"),
-    "input-bg-active": new Color("rgba(50, 50, 50, 0.309)"),
-    "input-bg-hover": new Color("rgba(79, 79, 79, 0.309)"),
-    "input-border": new Color("#58389378"),
-    "widget-bg": new Color("#08004387"),
-    "tooltip-bg": new Color("#341769ed"),
-    "editor-bg": new Color("#170a2e"),
+    "secondary-bg": new Color("#160127ff"),
+    "secondary-border": new Color("#18012bbb"),
+    "secondary-bg-active": new Color("#310a52ff"),
+    "secondary-bg-hover": new Color("#25033fff"),
+    "editable-overlay-hover": new Color("#e79dff1a"),
+    "editable-overlay-active": new Color("#e79dff33"),
+    "input-bg": new Color("#000000ff"),
+    "input-bg-active": new Color("#000000ff"),
+    "input-bg-hover": new Color("#000000ff"),
+    "input-border": new Color("#391f4f77"),
+    "widget-bg": new Color("#00000088"),
+    "tooltip-bg": new Color("#18012cee"),
+    "editor-bg": new Color("#0b0014ff"),
   },
   nord: {
     "accent-color": new Color("#1783d0ff"),

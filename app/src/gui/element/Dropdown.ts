@@ -38,6 +38,7 @@ export class Dropdown<T> {
       }
       this.createDropdown()
       if (itemList.style.height == "") {
+        itemList.classList.remove("collapsed")
         itemList.style.width =
           Math.max(itemList.scrollWidth, itemDisplay.clientWidth) + "px"
         itemList.style.height = itemList.scrollHeight + "px"
@@ -46,6 +47,7 @@ export class Dropdown<T> {
         })
       } else {
         itemList.style.height = ""
+        itemList.classList.add("collapsed")
       }
     }
     window.addEventListener("click", e => {
