@@ -594,7 +594,6 @@ export class ColorPicker extends TransparentPreview {
     const popupY = point.top + point.height + 10
     const leftRestriction = 15
     const rightRestriction = window.innerWidth - this.popup!.clientWidth - 15
-    console.log(popupX, leftRestriction, rightRestriction)
     this.popup!.style.left = `${clamp(
       popupX,
       leftRestriction,
@@ -602,7 +601,6 @@ export class ColorPicker extends TransparentPreview {
     )}px`
     this.popup!.style.top = `${popupY}px`
     if (popupY + this.popup!.clientHeight > window.innerHeight - 15) {
-      console.log("too low")
       this.popup!.style.transformOrigin = `bottom center`
       this.popup!.style.top = `${point.top - this.popup!.clientHeight - 10}px`
     }
