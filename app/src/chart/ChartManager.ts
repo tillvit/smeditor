@@ -71,6 +71,7 @@ interface PartialHold {
     oldNote: PartialHoldNotedataEntry
     newNote: PartialNotedataEntry
   }[]
+  direction: "up" | "down" | null
 }
 
 interface Selection {
@@ -1259,6 +1260,7 @@ export class ChartManager {
       type,
       removedNotes: conflictingNotes,
       truncatedHolds: truncatedHolds,
+      direction: null,
     }
     this.holdEditing[col] = holdEdit
 
@@ -1313,7 +1315,23 @@ export class ChartManager {
     if (hold == undefined) return
     if (beat == hold.startBeat && beat == hold.endBeat) return
 
-    hold.endBeat = Math.max(hold.startBeat, Math.round(beat * 48) / 48)
+    if (hold.direction === null) {
+      if (beat < hold.startBeat) {
+        hold.direction = "up"
+      } else {
+        hold.direction = "down"
+      }
+    }
+    if (Options.chart.defaultHoldPlacement) {
+      if (hold.direction == "up") {
+        hold.startBeat = Math.min(hold.endBeat, Math.round(beat * 48) / 48)
+      } else {
+        hold.endBeat = Math.max(hold.startBeat, Math.round(beat * 48) / 48)
+      }
+    } else {
+      hold.startBeat = Math.min(hold.startBeat, Math.round(beat * 48) / 48)
+      hold.endBeat = Math.max(hold.endBeat, Math.round(beat * 48) / 48)
+    }
     hold.roll ||= roll
     if (!hold.originalNote) {
       const note: PartialNotedataEntry = {

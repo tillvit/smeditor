@@ -24,6 +24,7 @@ export class DefaultOptions {
     CMod: false,
     reverse: false,
     mousePlacement: false,
+    defaultHoldPlacement: true,
     zoom: 1,
     speed: 250,
     snap: 1,

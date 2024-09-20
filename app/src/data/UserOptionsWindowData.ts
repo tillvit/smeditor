@@ -243,6 +243,16 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                   type: "checkbox",
                 },
               },
+              {
+                type: "item",
+                label: "Directional hold placement behavior",
+                id: "chart.defaultHoldPlacement",
+                input: {
+                  type: "checkbox",
+                },
+                tooltip:
+                  "Changes the hold placement behavior. By default, holds can only be extended in one direction when placed. Turn this off to mimic the behavior of AV/Stepmania.",
+              },
             ],
           },
           {
