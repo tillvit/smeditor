@@ -24,6 +24,7 @@ export class ThemeEditorWindow extends Window {
   private pickers: Record<string, HTMLDivElement> = {}
   private handlers: ((...args: any[]) => void)[] = []
   private linkBlacklist = new Set<ThemeProperty>()
+  static isOpen = false
 
   constructor(app: App) {
     super({
@@ -35,6 +36,7 @@ export class ThemeEditorWindow extends Window {
     })
     this.app = app
     this.initView()
+    ThemeEditorWindow.isOpen = true
   }
 
   initView() {
@@ -76,6 +78,7 @@ export class ThemeEditorWindow extends Window {
       Themes.setUserTheme(Options.general.theme, Themes.getCurrentTheme())
       Themes.loadTheme(Options.general.theme)
       this.app.windowManager.openWindow(new ThemeSelectionWindow(this.app))
+      this.closeWindow()
     }
     menu_options_right.appendChild(create_btn)
 
@@ -254,5 +257,9 @@ export class ThemeEditorWindow extends Window {
       }
     }
     return theme
+  }
+
+  onClose(): void {
+    ThemeEditorWindow.isOpen = false
   }
 }
