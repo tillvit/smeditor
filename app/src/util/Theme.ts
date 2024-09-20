@@ -3,6 +3,7 @@ import {
   DEFAULT_THEMES,
   Theme,
   THEME_VAR_WHITELIST,
+  ThemeProperty,
   ThemeString,
 } from "../data/ThemeData"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
@@ -185,5 +186,9 @@ export class Themes {
       return null
     }
     return this.validateTheme(theme)
+  }
+
+  static getColor(id: ThemeProperty) {
+    return this.currentTheme?.[id] ?? DEFAULT_THEMES["default"][id]
   }
 }

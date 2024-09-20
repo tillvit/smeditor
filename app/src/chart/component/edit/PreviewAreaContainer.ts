@@ -27,7 +27,7 @@ export class PreviewAreaContainer
     })
     this.previewText.x = -this.previewArea.width / 2 + 5
     this.previewArea.anchor.x = 0.5
-    assignTint(this.previewText, "--text-color")
+    assignTint(this.previewText, "text-color")
     this.addChild(this.previewArea, this.previewText)
   }
 

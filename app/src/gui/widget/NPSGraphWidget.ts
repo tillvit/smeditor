@@ -28,7 +28,7 @@ export class NPSGraphWidget extends BaseTimelineWidget {
     this.npsText.visible = false
     this.npsText.anchor.x = 1
     this.npsText.anchor.y = 0.5
-    assignTint(this.npsText, "--text-color")
+    assignTint(this.npsText, "text-color")
     this.addChild(this.npsText)
 
     EventHandler.on("userOptionUpdated", optionId => {
