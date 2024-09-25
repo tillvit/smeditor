@@ -35,6 +35,7 @@ export class BaseTimelineWidget extends Widget {
     super(manager)
     this.backingWidth = backingWidth
     this.xOffset = xOffset
+    this.sortableChildren = true
 
     this.addChild(this.backing)
     this.addChild(this.container)
@@ -45,6 +46,7 @@ export class BaseTimelineWidget extends Widget {
     this.overlay.anchor.x = 0.5
     this.overlay.anchor.y = 0
     this.overlay.alpha = 0.3
+    this.overlay.zIndex = 10
 
     this.lastCMod = Options.chart.CMod
     this.addChild(this.overlay)
