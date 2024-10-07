@@ -99,7 +99,7 @@ export class NodeFileHandler implements BaseFileHandler {
       if (!dir) {
         throw new DOMException(...GONE)
       }
-      return dir.getFileHandle(fileName)
+      return await dir.getFileHandle(fileName)
     } catch (err) {
       console.error("Failed to get relative file " + fileName + ": " + err)
       return undefined
