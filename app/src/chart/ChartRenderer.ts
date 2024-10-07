@@ -289,6 +289,10 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   update() {
     if (this.destroyed) return
 
+    this.x =
+      this.chartManager.app.renderer.screen.width / 2 +
+      Options.chart.receptorXPos
+
     this.speedMult = Options.chart.doSpeedChanges
       ? this.getCurrentSpeedMult()
       : 1

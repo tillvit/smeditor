@@ -289,6 +289,28 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             children: [
               {
                 type: "item",
+                label: "Allow receptor dragging",
+                id: "chart.allowReceptorDrag",
+                input: {
+                  type: "checkbox",
+                },
+                tooltip:
+                  "Allows the receptors to be dragged to move the playfield.",
+              },
+              {
+                type: "item",
+                label: "X position",
+                id: "chart.receptorXPos",
+                input: {
+                  type: "slider",
+                  min: -400,
+                  max: 400,
+                  hardMin: -(2 ** 31 - 1),
+                  hardMax: 2 ** 31 - 1,
+                },
+              },
+              {
+                type: "item",
                 label: "Y position",
                 id: "chart.receptorYPos",
                 input: {
@@ -299,6 +321,11 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                   hardMax: 2 ** 31 - 1,
                 },
               },
+            ],
+          },
+          {
+            type: "subgroup",
+            children: [
               {
                 type: "item",
                 label: "Draw length",
