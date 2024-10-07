@@ -289,6 +289,10 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   update() {
     if (this.destroyed) return
 
+    this.x =
+      this.chartManager.app.renderer.screen.width / 2 +
+      Options.chart.receptorXPos
+
     this.speedMult = Options.chart.doSpeedChanges
       ? this.getCurrentSpeedMult()
       : 1
@@ -704,12 +708,10 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       const scroll = this.findFirstOnScreenScroll()
 
       const pixelsToEffectiveBeats =
-        (1 / Math.abs(this.getEffectiveBeatsToPixelsRatio())) *
-        Options.chart.zoom
+        1 / Math.abs(this.getEffectiveBeatsToPixelsRatio())
 
       const scrollStartY = this.getYPosFromBeat(scroll.beat)
-      const pixelsToBeats =
-        (pixelsToEffectiveBeats / Math.abs(scroll.value)) * Options.chart.zoom
+      const pixelsToBeats = pixelsToEffectiveBeats / Math.abs(scroll.value)
 
       const direction = this.getScrollDirection(scroll.value)
       const bound = direction == 1 ? this.getUpperBound() : this.getLowerBound()
@@ -738,17 +740,11 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     ) {
       const scroll = this.findLastOnScreenScroll()
 
-      const speedMult = this.getCurrentSpeedMult()
       const pixelsToEffectiveBeats =
-        100 /
-        Options.chart.speed /
-        Math.abs(speedMult) /
-        64 /
-        Options.chart.zoom
+        1 / Math.abs(this.getEffectiveBeatsToPixelsRatio())
 
       const scrollStartY = this.getYPosFromBeat(scroll.beat)
-      const pixelsToBeats =
-        (pixelsToEffectiveBeats / Math.abs(scroll.value)) * Options.chart.zoom
+      const pixelsToBeats = pixelsToEffectiveBeats / Math.abs(scroll.value)
 
       const direction = this.getScrollDirection(scroll.value)
       const bound = direction == 1 ? this.getLowerBound() : this.getUpperBound()

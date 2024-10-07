@@ -99,7 +99,7 @@ export class NodeFileHandler implements BaseFileHandler {
       if (!dir) {
         throw new DOMException(...GONE)
       }
-      return dir.getFileHandle(fileName)
+      return await dir.getFileHandle(fileName)
     } catch (err) {
       console.error("Failed to get relative file " + fileName + ": " + err)
       return undefined
@@ -169,8 +169,10 @@ export class NodeFileHandler implements BaseFileHandler {
   }
 
   private async writeHandle(handle: FileSystemFileHandle, data: Blob | string) {
+    const length = data instanceof Blob ? data.size : data.length
     const writable = await handle.createWritable()
     await writable.write(data)
+    await writable.truncate(length)
     await writable.close()
   }
 
