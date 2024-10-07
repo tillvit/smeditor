@@ -69,6 +69,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
 
     this.trackVariable(() => this.renderer.getVisualBeat())
     this.trackVariable(() => this.renderer.getVisualTime())
+    this.trackVariable(() => Options.chart.speed)
     this.trackVariable(
       () => this.getSpeed(),
       value => {
