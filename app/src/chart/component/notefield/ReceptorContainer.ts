@@ -40,7 +40,7 @@ export class ReceptorContainer extends Container {
       )
     }
 
-    const releaseHandler = (e: FederatedPointerEvent) => {
+    const releaseHandler = () => {
       this.notefield.renderer.off("pointermove", moveHandler)
       this.notefield.renderer.off("pointerup", releaseHandler)
     }
