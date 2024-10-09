@@ -1869,7 +1869,10 @@ export class ChartManager {
     }
   }
 
-  modifySelection(modify: (note: NotedataEntry) => PartialNotedataEntry) {
+  modifySelection(
+    modify: (note: NotedataEntry) => PartialNotedataEntry,
+    clear = false
+  ) {
     if (!this.loadedChart) return
     const selectionNotes = this.selection.notes
     const newNotes = structuredClone(this.selection.notes)
@@ -1897,6 +1900,84 @@ export class ChartManager {
       uniqueNotes,
       selectionNotes
     )
+
+    if (clear) {
+      // Remove all notes in the range that would be replaced
+      const endBeats = uniqueNotes.map(note => getNoteEnd(note))
+      let maxBeat = 0
+      for (const endBeat of endBeats) {
+        if (endBeat > maxBeat) {
+          maxBeat = endBeat
+        }
+      }
+
+      // We can treat this as just all holds from start to end
+      const clearNotes: PartialHoldNotedataEntry[] = new Array(
+        this.loadedChart.gameType.numCols
+      )
+        .fill(0)
+        .map((_, i) => {
+          return {
+            type: "Hold",
+            hold: maxBeat - uniqueNotes[0].beat,
+            col: i,
+            beat: uniqueNotes[0].beat,
+          }
+        })
+      const {
+        removedNotes: removedNotesCleared,
+        truncatedHolds: truncatedHoldsCleared,
+      } = this.checkConflicts(clearNotes, selectionNotes)
+
+      // Merge both conflicts together
+      removedNotesCleared.forEach(note => {
+        if (!removedNotes.includes(note)) removedNotes.push(note)
+      })
+
+      truncatedHoldsCleared.forEach(note => {
+        // Find a match with the same old note
+        const match = truncatedHolds.find(
+          truncated => truncated.oldNote == note.oldNote
+        )
+        if (match) {
+          // Take the shorter of the two
+          const oldHoldLength = isHoldNote(match.newNote)
+            ? match.newNote.hold
+            : 0
+          const newHoldLength = isHoldNote(match.newNote)
+            ? match.newNote.hold
+            : 0
+          const newLength = Math.min(oldHoldLength, newHoldLength)
+          if (newLength == 0) {
+            match.newNote = {
+              beat: match.newNote.beat,
+              col: match.newNote.col,
+              type: "Tap",
+            }
+          } else {
+            match.newNote = {
+              beat: match.newNote.beat,
+              col: match.newNote.col,
+              type: match.newNote.type,
+              hold: newLength,
+            }
+          }
+        }
+      })
+
+      // Sort both arrays
+
+      removedNotes.sort((a, b) => {
+        if (a.beat == b.beat) return a.col - b.col
+        return a.beat - b.beat
+      })
+
+      truncatedHolds.sort((a, b) => {
+        if (a.newNote.beat == b.newNote.beat)
+          return a.newNote.col - b.newNote.col
+        return a.newNote.beat - b.newNote.beat
+      })
+    }
 
     this.app.actionHistory.run({
       action: () => {

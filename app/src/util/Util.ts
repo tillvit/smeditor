@@ -9,7 +9,7 @@ import {
 import { PartialNotedataEntry, isHoldNote } from "../chart/sm/NoteTypes"
 import { IS_OSX } from "../data/KeybindData"
 
-const QUANTS = [
+export const QUANTS = [
   1,
   1 / 2,
   1 / 3,
@@ -21,6 +21,20 @@ const QUANTS = [
   1 / 24,
   1 / 48,
 ]
+export const QUANT_NAMES = [
+  "4th",
+  "8th",
+  "12th",
+  "16th",
+  "24th",
+  "32nd",
+  "48th",
+  "64th",
+  "96th",
+  "192nd",
+]
+export const QUANT_NUM = [4, 8, 12, 16, 24, 32, 48, 64, 96, 192]
+
 export function getQuantIndex(beat: number) {
   for (let i = 0; i < QUANTS.length; i++) {
     if (Math.abs(beat - Math.round(beat / QUANTS[i]) * QUANTS[i]) < 0.01) {
