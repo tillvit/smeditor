@@ -21,6 +21,7 @@ import { ActionHistory } from "../util/ActionHistory"
 import { Flags } from "../util/Flags"
 import { roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
+import { QUANT_NAMES, QUANT_NUM, QUANTS } from "../util/Util"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 
@@ -784,7 +785,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   convertTapsMines: {
     label: "Taps to mines",
-    bindLabel: "Convert ntapsotes to mines",
+    bindLabel: "Convert taps to mines",
     combos: [],
     disabled: app =>
       app.chartManager.selection.notes.length == 0 ||
@@ -1057,126 +1058,6 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       })
     },
   },
-  quantize4th: {
-    label: "4ths",
-    bindLabel: "Quantize to 4ths",
-    combos: [],
-    disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
-    callback: app => {
-      app.chartManager.modifySelection(note => {
-        note.beat = app.chartManager.getClosestTick(note.beat, 4)
-        note.beat = Math.round(note.beat * 48) / 48
-        return note
-      })
-    },
-  },
-  quantize8th: {
-    label: "8ths",
-    bindLabel: "Quantize to 8ths",
-    combos: [],
-    disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
-    callback: app => {
-      app.chartManager.modifySelection(note => {
-        note.beat = app.chartManager.getClosestTick(note.beat, 8)
-        note.beat = Math.round(note.beat * 48) / 48
-        return note
-      })
-    },
-  },
-  quantize12th: {
-    label: "12ths",
-    bindLabel: "Quantize to 12ths",
-    combos: [],
-    disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
-    callback: app => {
-      app.chartManager.modifySelection(note => {
-        note.beat = app.chartManager.getClosestTick(note.beat, 12)
-        note.beat = Math.round(note.beat * 48) / 48
-        return note
-      })
-    },
-  },
-  quantize16th: {
-    label: "16ths",
-    bindLabel: "Quantize to 16ths",
-    combos: [],
-    disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
-    callback: app => {
-      app.chartManager.modifySelection(note => {
-        note.beat = app.chartManager.getClosestTick(note.beat, 16)
-        note.beat = Math.round(note.beat * 48) / 48
-        return note
-      })
-    },
-  },
-  quantize24th: {
-    label: "24ths",
-    bindLabel: "Quantize to 24ths",
-    combos: [],
-    disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
-    callback: app => {
-      app.chartManager.modifySelection(note => {
-        note.beat = app.chartManager.getClosestTick(note.beat, 24)
-        note.beat = Math.round(note.beat * 48) / 48
-        return note
-      })
-    },
-  },
-  quantize32nd: {
-    label: "32nds",
-    bindLabel: "Quantize to 32nds",
-    combos: [],
-    disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
-    callback: app => {
-      app.chartManager.modifySelection(note => {
-        note.beat = app.chartManager.getClosestTick(note.beat, 32)
-        note.beat = Math.round(note.beat * 48) / 48
-        return note
-      })
-    },
-  },
-  quantize48th: {
-    label: "48ths",
-    bindLabel: "Quantize to 48ths",
-    combos: [],
-    disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
-    callback: app => {
-      app.chartManager.modifySelection(note => {
-        note.beat = app.chartManager.getClosestTick(note.beat, 48)
-        note.beat = Math.round(note.beat * 48) / 48
-        return note
-      })
-    },
-  },
-  quantize96th: {
-    label: "96ths",
-    bindLabel: "Quantize to 96ths",
-    combos: [],
-    disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
-    callback: app => {
-      app.chartManager.modifySelection(note => {
-        note.beat = app.chartManager.getClosestTick(note.beat, 96)
-        note.beat = Math.round(note.beat * 48) / 48
-        return note
-      })
-    },
-  },
   delete: {
     label: "Delete",
     combos: [
@@ -1346,79 +1227,6 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.setEditingNoteType("Fake")
     },
   },
-  quant4: {
-    label: "Switch to 4ths",
-    combos: [],
-    disabled: app => !app.chartManager.chartView,
-    callback: () => {
-      Options.chart.snap = 1
-    },
-  },
-  quant8: {
-    label: "Switch to 8ths",
-    combos: [],
-    disabled: app => !app.chartManager.chartView,
-    callback: () => {
-      Options.chart.snap = 1 / 2
-    },
-  },
-  quant12: {
-    label: "Switch to 12ths",
-    combos: [],
-    disabled: app => !app.chartManager.chartView,
-    callback: () => {
-      Options.chart.snap = 1 / 3
-    },
-  },
-  quant16: {
-    label: "Switch to 16ths",
-    combos: [],
-    disabled: app => !app.chartManager.chartView,
-    callback: () => {
-      Options.chart.snap = 1 / 4
-    },
-  },
-  quant24: {
-    label: "Switch to 24ths",
-    combos: [],
-    disabled: app => !app.chartManager.chartView,
-    callback: () => {
-      Options.chart.snap = 1 / 6
-    },
-  },
-  quant32: {
-    label: "Switch to 32ths",
-    combos: [],
-    disabled: app => !app.chartManager.chartView,
-    callback: () => {
-      Options.chart.snap = 1 / 8
-    },
-  },
-  quant48: {
-    label: "Switch to 48ths",
-    combos: [],
-    disabled: app => !app.chartManager.chartView,
-    callback: () => {
-      Options.chart.snap = 1 / 12
-    },
-  },
-  quant96: {
-    label: "Switch to 96ths",
-    combos: [],
-    disabled: app => !app.chartManager.chartView,
-    callback: () => {
-      Options.chart.snap = 1 / 24
-    },
-  },
-  quant192: {
-    label: "Switch to 192nds",
-    combos: [],
-    disabled: app => !app.chartManager.chartView,
-    callback: () => {
-      Options.chart.snap = 1 / 48
-    },
-  },
-
   openGuide: {
     label: "Open Help Guide",
     combos: [],
@@ -1469,4 +1277,117 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       }
     },
   },
+  toggleEditTiming: {
+    label: "Toggle Edit Timing",
+    combos: [{ key: "T", mods: [] }],
+    disabled: app => !app.chartManager.chartView,
+    callback: app => {
+      if (app.chartManager.editTimingMode != EditTimingMode.Off) {
+        app.chartManager.editTimingMode = EditTimingMode.Off
+      } else {
+        app.chartManager.editTimingMode = EditTimingMode.Edit
+      }
+    },
+  },
+  toggleAddTiming: {
+    label: "Toggle Add Timing",
+    combos: [{ key: "T", mods: [Modifier.ALT] }],
+    disabled: app => !app.chartManager.chartView,
+    callback: app => {
+      if (app.chartManager.editTimingMode != EditTimingMode.Add) {
+        app.chartManager.editTimingMode = EditTimingMode.Add
+      } else {
+        app.chartManager.editTimingMode = EditTimingMode.Edit
+      }
+    },
+  },
+}
+
+// Dynamically add keybinds
+
+for (const numMeasures of [4, 2, 1]) {
+  KEYBIND_DATA[`shiftUp${numMeasures}m`] = {
+    label: `${numMeasures} measure` + (numMeasures == 1 ? "" : ""),
+    bindLabel:
+      `Shift up by ${numMeasures} measure` + (numMeasures == 1 ? "" : ""),
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: app => {
+      const firstBeat = app.chartManager.selection.notes[0].beat
+      const mLength =
+        app.chartManager.loadedChart!.timingData.getMeasureLength(firstBeat)
+      app.chartManager.modifySelection(note => {
+        note.beat -= mLength * numMeasures
+        return note
+      }, true)
+    },
+  }
+  KEYBIND_DATA[`shiftDown${numMeasures}m`] = {
+    label: `${numMeasures} measure` + (numMeasures == 1 ? "" : ""),
+    bindLabel:
+      `Shift down by ${numMeasures} measure` + (numMeasures == 1 ? "" : ""),
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: app => {
+      const firstBeat = app.chartManager.selection.notes[0].beat
+      const mLength =
+        app.chartManager.loadedChart!.timingData.getMeasureLength(firstBeat)
+      app.chartManager.modifySelection(note => {
+        note.beat += mLength * numMeasures
+        return note
+      }, true)
+    },
+  }
+}
+
+for (let i = 0; i < QUANTS.length; i++) {
+  KEYBIND_DATA[`quant` + QUANT_NUM[i]] = {
+    label: `Switch to ${QUANT_NAMES[i]}s`,
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: () => {
+      Options.chart.snap = QUANTS[i]
+    },
+  }
+
+  KEYBIND_DATA[`shiftUp${QUANT_NAMES[i]}`] = {
+    label: `${QUANT_NAMES[i]}`,
+    bindLabel: `Shift up by ${QUANT_NAMES[i]}`,
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: app =>
+      app.chartManager.modifySelection(note => {
+        note.beat -= QUANTS[i]
+        return note
+      }, true),
+  }
+  KEYBIND_DATA[`shiftDown${QUANT_NAMES[i]}`] = {
+    label: `${QUANT_NAMES[i]}`,
+    bindLabel: `Shift down by ${QUANT_NAMES[i]}`,
+    combos: [],
+    disabled: app => !app.chartManager.chartView,
+    callback: app =>
+      app.chartManager.modifySelection(note => {
+        note.beat += QUANTS[i]
+        return note
+      }, true),
+  }
+
+  if (i != QUANTS.length - 1) {
+    KEYBIND_DATA[`quantize` + QUANT_NAMES[i]] = {
+      label: `${QUANT_NAMES[i]}s`,
+      bindLabel: `Quantize to ${QUANT_NAMES[i]}s`,
+      combos: [],
+      disabled: app =>
+        app.chartManager.selection.notes.length == 0 ||
+        app.chartManager.getMode() != EditMode.Edit,
+      callback: app => {
+        app.chartManager.modifySelection(note => {
+          note.beat = app.chartManager.getClosestTick(note.beat, QUANT_NUM[i])
+          note.beat = Math.round(note.beat * 48) / 48
+          return note
+        })
+      },
+    }
+  }
 }

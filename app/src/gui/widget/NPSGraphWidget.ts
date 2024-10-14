@@ -140,15 +140,16 @@ export class NPSGraphWidget extends BaseTimelineWidget {
 
     const height = this.manager.app.renderer.screen.height - 40
 
-    if (chart.getNotedata().length == 0) {
-      return
-    }
-
     const maxNps = chart.getMaxNPS()
     const npsGraphData = chart.getNPSGraph()
     const lastBeat = chart.getLastBeat()
 
     this.npsGraph.clear()
+
+    if (chart.getNotedata().length == 0) {
+      return
+    }
+
     if (this.graphGradient) {
       this.npsGraph.beginTextureFill({ texture: this.graphGradient })
     } else {

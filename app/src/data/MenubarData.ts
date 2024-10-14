@@ -403,6 +403,128 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "dropdown",
+        title: "Shift",
+        options: [
+          {
+            type: "dropdown",
+            title: "Up",
+            options: [
+              {
+                type: "selection",
+                id: "shiftUp4m",
+              },
+              {
+                type: "selection",
+                id: "shiftUp2m",
+              },
+              {
+                type: "selection",
+                id: "shiftUp1m",
+              },
+              {
+                type: "selection",
+                id: "shiftUp4th",
+              },
+              {
+                type: "selection",
+                id: "shiftUp8th",
+              },
+              {
+                type: "selection",
+                id: "shiftUp12th",
+              },
+              {
+                type: "selection",
+                id: "shiftUp16th",
+              },
+              {
+                type: "selection",
+                id: "shiftUp24th",
+              },
+              {
+                type: "selection",
+                id: "shiftUp32nd",
+              },
+              {
+                type: "selection",
+                id: "shiftUp48th",
+              },
+              {
+                type: "selection",
+                id: "shiftUp64th",
+              },
+              {
+                type: "selection",
+                id: "shiftUp96th",
+              },
+              {
+                type: "selection",
+                id: "shiftUp192nd",
+              },
+            ],
+          },
+          {
+            type: "dropdown",
+            title: "Down",
+            options: [
+              {
+                type: "selection",
+                id: "shiftDown4m",
+              },
+              {
+                type: "selection",
+                id: "shiftDown2m",
+              },
+              {
+                type: "selection",
+                id: "shiftDown1m",
+              },
+              {
+                type: "selection",
+                id: "shiftDown4th",
+              },
+              {
+                type: "selection",
+                id: "shiftDown8th",
+              },
+              {
+                type: "selection",
+                id: "shiftDown12th",
+              },
+              {
+                type: "selection",
+                id: "shiftDown16th",
+              },
+              {
+                type: "selection",
+                id: "shiftDown24th",
+              },
+              {
+                type: "selection",
+                id: "shiftDown32nd",
+              },
+              {
+                type: "selection",
+                id: "shiftDown48th",
+              },
+              {
+                type: "selection",
+                id: "shiftDown64th",
+              },
+              {
+                type: "selection",
+                id: "shiftDown96th",
+              },
+              {
+                type: "selection",
+                id: "shiftDown192nd",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        type: "dropdown",
         title: "Quantize",
         options: [
           {
@@ -432,6 +554,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
           {
             type: "selection",
             id: "quantize48th",
+          },
+          {
+            type: "selection",
+            id: "quantize64th",
           },
           {
             type: "selection",

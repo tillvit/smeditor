@@ -39,6 +39,7 @@ const KEYBIND_INSERTS: Record<string, KeybindInserts[]> = {
         "quant24",
         "quant32",
         "quant48",
+        "quant64",
         "quant96",
         "quant192",
       ],

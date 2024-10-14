@@ -467,7 +467,7 @@ export const DEFAULT_THEMES: Record<string, Theme> = {
     "input-bg-active": new Color("#271717ff"),
     "input-bg-hover": new Color("#2e1b1bff"),
     "input-border": new Color("#4b413fff"),
-    "widget-bg": new Color("#311e1cff"),
+    "widget-bg": new Color("#311e1cdd"),
     "tooltip-bg": new Color("#362926ff"),
     "editor-bg": new Color("#181211ff"),
   },
