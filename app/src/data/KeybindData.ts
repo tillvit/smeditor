@@ -785,7 +785,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   convertTapsMines: {
     label: "Taps to mines",
-    bindLabel: "Convert ntapsotes to mines",
+    bindLabel: "Convert taps to mines",
     combos: [],
     disabled: app =>
       app.chartManager.selection.notes.length == 0 ||
