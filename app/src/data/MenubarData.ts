@@ -451,6 +451,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
               },
               {
                 type: "selection",
+                id: "shiftUp64th",
+              },
+              {
+                type: "selection",
                 id: "shiftUp96th",
               },
               {
@@ -505,6 +509,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
               },
               {
                 type: "selection",
+                id: "shiftDown64th",
+              },
+              {
+                type: "selection",
                 id: "shiftDown96th",
               },
               {
@@ -546,6 +554,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
           {
             type: "selection",
             id: "quantize48th",
+          },
+          {
+            type: "selection",
+            id: "quantize64th",
           },
           {
             type: "selection",
