@@ -455,7 +455,10 @@ export class ChartManager {
         ) {
           if (
             assistRows.has(notedata[this.assistTickIndex].second) ||
-            time > notedata[this.assistTickIndex].second
+            notedata[this.assistTickIndex].second +
+              Options.play.effectOffset -
+              time <
+              0
           ) {
             this.assistTickIndex++
             continue
@@ -470,7 +473,7 @@ export class ChartManager {
               this.assistTick.play(
                 notedata[this.assistTickIndex].second +
                   Options.play.effectOffset -
-                  this.time
+                  time
               )
             }
             assistRows.add(notedata[this.assistTickIndex].second)
