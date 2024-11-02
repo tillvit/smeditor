@@ -127,7 +127,7 @@ export class ScrollDebug extends Container implements ChartRendererComponent {
       this.addChild(cont)
     }
 
-    const beat = this.renderer.chartManager.getBeat()
+    const beat = this.renderer.chartManager.beat
 
     for (let i = 0; i < scrolls.length - 1; i++) {
       let scrollStartY = this.renderer.getYPosFromBeat(scrolls[i].beat)

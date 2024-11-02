@@ -134,10 +134,11 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
         return
       // Scroll the notefield if the cursor is near the edge of the screen
       const pos = this.getYPosFromBeat(
-        Math.max(0, this.chartManager.getBeat() + selectionSpeed)
+        Math.max(0, this.chartManager.beat + selectionSpeed)
       )
-      this.chartManager.setBeat(
-        Math.max(0, this.chartManager.getBeat() + selectionSpeed)
+      this.chartManager.beat = Math.max(
+        0,
+        this.chartManager.beat + selectionSpeed
       )
       if (this.selectionBounds) {
         if (Options.chart.reverse) {
@@ -377,7 +378,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @memberof ChartRenderer
    */
   getTimeWithOffset(): number {
-    let time = this.chartManager.getTime()
+    let time = this.chartManager.time
     if (
       this.chartManager.getMode() == EditMode.Play ||
       this.chartManager.getMode() == EditMode.Record
@@ -394,7 +395,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @memberof ChartRenderer
    */
   getBeatWithOffset(): number {
-    let beat = this.chartManager.getBeat()
+    let beat = this.chartManager.beat
     if (
       this.chartManager.getMode() == EditMode.Play ||
       this.chartManager.getMode() == EditMode.Record
@@ -411,7 +412,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @memberof ChartRenderer
    */
   getVisualTime(): number {
-    let time = this.chartManager.getTime()
+    let time = this.chartManager.time
     if (
       this.chartManager.getMode() == EditMode.Play ||
       this.chartManager.getMode() == EditMode.Record
@@ -429,7 +430,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @memberof ChartRenderer
    */
   getVisualBeat(): number {
-    let beat = this.chartManager.getBeat()
+    let beat = this.chartManager.beat
     if (
       this.chartManager.getMode() == EditMode.Play ||
       this.chartManager.getMode() == EditMode.Record

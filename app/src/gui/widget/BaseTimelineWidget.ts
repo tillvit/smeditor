@@ -98,15 +98,13 @@ export class BaseTimelineWidget extends Widget {
     const lastNote = this.getChart().getNotedata().at(-1)
     if (!lastNote) return
     if (Options.chart.CMod) {
-      this.manager.chartManager.setTime(
-        lerp(
-          -this.getChart().timingData.getOffset(),
-          this.getChart().getLastSecond(),
-          t
-        )
+      this.manager.chartManager.time = lerp(
+        -this.getChart().timingData.getOffset(),
+        this.getChart().getLastSecond(),
+        t
       )
     } else {
-      this.manager.chartManager.setBeat(this.getChart().getLastBeat() * t)
+      this.manager.chartManager.beat = this.getChart().getLastBeat() * t
     }
   }
 

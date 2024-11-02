@@ -146,9 +146,6 @@ export class ChartManager {
 
   editTimingMode = EditTimingMode.Off
 
-  private beat = 0
-  private time = 0
-
   private holdEditing: (PartialHold | undefined)[] = []
   private editNoteTypeIndex = 0
 
@@ -302,7 +299,7 @@ export class ChartManager {
           }
         }
         newbeat = Math.max(0, newbeat)
-        if (newbeat != this.beat) this.setBeat(newbeat)
+        if (newbeat != this.beat) this.beat = newbeat
         if (!this.holdEditing.every(x => x == undefined)) {
           for (let col = 0; col < this.holdEditing.length; col++) {
             if (
@@ -387,9 +384,6 @@ export class ChartManager {
       const updateStart = performance.now()
       const time = this.chartAudio.seek()
       if (this.chartAudio.isPlaying()) {
-        // Set the current beat from time
-        this.setTime(time, true)
-
         // If digit keys are pressed, modify the current chart
         if (!this.holdEditing.every(x => !x)) {
           for (let col = 0; col < this.holdEditing.length; col++) {
@@ -543,6 +537,12 @@ export class ChartManager {
       }
     })
 
+    EventHandler.on("chartModified", () => {
+      if (this.loadedChart) {
+        this.setNoteIndex()
+      }
+    })
+
     window.addEventListener(
       "keyup",
       (event: KeyboardEvent) => {
@@ -643,55 +643,25 @@ export class ChartManager {
     )
   }
 
-  /**
-   * Returns the current beat.
-   *
-   * @return {*}  {number}
-   * @memberof ChartManager
-   */
-  getBeat(): number {
-    return this.beat
+  get beat() {
+    if (!this.loadedChart) return 0
+    return this.loadedChart.getBeatFromSeconds(this.time)
   }
 
-  /**
-   * Returns the current time.
-   *
-   * @return {*}  {number}
-   * @memberof ChartManager
-   */
-  getTime(): number {
-    return this.time
-  }
-
-  /**
-   * Sets the current beat to the specified value. Also updates the current time.
-   *
-   * @param {number} beat
-   * @memberof ChartManager
-   */
-  setBeat(beat: number) {
+  set beat(beat: number) {
     if (!this.loadedChart) return
-    this.beat = beat
-    this.time = this.loadedChart.getSecondsFromBeat(this.beat)
-    this.chartAudio.seek(this.time)
+    this.chartAudio.seek(this.loadedChart.getSecondsFromBeat(beat))
     this.setNoteIndex()
   }
 
-  /**
-   * Sets the current time to the specified value. Also updates the current beat.
-   *
-   * @param {number} time
-   * @param {boolean} [ignoreSetSongTime] - If set to true, does not update the audio position.
-   * @memberof ChartManager
-   */
-  setTime(time: number, ignoreSetSongTime?: boolean) {
+  get time() {
+    return this.chartAudio.seek()
+  }
+
+  set time(time: number) {
     if (!this.loadedChart) return
-    this.time = time
-    this.beat = this.loadedChart.getBeatFromSeconds(this.time)
-    if (!ignoreSetSongTime) {
-      this.chartAudio.seek(this.time)
-      this.setNoteIndex()
-    }
+    this.chartAudio.seek(time)
+    this.setNoteIndex()
   }
 
   /**
@@ -741,9 +711,9 @@ export class ChartManager {
     }
 
     this.chartAudio.stop()
+    this.chartAudio.seek(0)
     this.lastSong = null
     this.smPath = path
-    this.time = 0
     this.beat = 0
 
     this.loadingText.visible = true
@@ -773,7 +743,7 @@ export class ChartManager {
     EventHandler.emit("smLoaded")
     await this.loadChart()
     EventHandler.emit("smLoadedAfter")
-    if (this.time == 0) this.setBeat(0)
+    if (this.time == 0) this.beat = 0
 
     RecentFileHandler.addSM(this.smPath, this.loadedSM)
   }
@@ -809,7 +779,6 @@ export class ChartManager {
         this.chartView?.destroy({ children: true })
         this.chartView?.removeChildren()
         this.beat = 0
-        this.time = 0
         this.loadedChart = undefined
         this.chartView = undefined
         this.noChartTextA.visible = true
@@ -1065,7 +1034,7 @@ export class ChartManager {
   }
 
   snapToNearestTick(beat: number) {
-    this.setBeat(Math.max(0, this.getClosestTick(beat, 4 / Options.chart.snap)))
+    this.beat = Math.max(0, this.getClosestTick(beat, 4 / Options.chart.snap))
   }
 
   snapToPreviousTick() {
@@ -1091,11 +1060,11 @@ export class ChartManager {
         this.loadedChart.timingData.getBeatFromMeasure(currentMeasure - 1)
       const closestMeasureTick =
         Math.round((newBeat - previousMeasureBeat) / snap) * snap
-      this.setBeat(Math.max(0, previousMeasureBeat + closestMeasureTick))
+      this.beat = Math.max(0, previousMeasureBeat + closestMeasureTick)
       return
     }
 
-    this.setBeat(Math.max(0, newBeat))
+    this.beat = Math.max(0, newBeat)
   }
 
   snapToNextTick() {
@@ -1119,11 +1088,11 @@ export class ChartManager {
     )
 
     if (newBeat > nextMeasureBeat) {
-      this.setBeat(nextMeasureBeat)
+      this.beat = nextMeasureBeat
       return
     }
 
-    this.setBeat(newBeat)
+    this.beat = newBeat
   }
 
   previousSnap() {
@@ -1192,7 +1161,7 @@ export class ChartManager {
     if (rows.length == 0) return
     let index = bsearch(rows, this.beat)
     if (this.beat == rows[index]) index--
-    this.setBeat(rows[Math.max(0, index)])
+    this.beat = rows[Math.max(0, index)]
   }
 
   /**
@@ -1205,7 +1174,7 @@ export class ChartManager {
     if (rows.length == 0) return
     let index = bsearch(rows, this.beat)
     if (this.beat >= rows[index]) index++
-    this.setBeat(rows[Math.min(rows.length - 1, index)])
+    this.beat = rows[Math.min(rows.length - 1, index)]
   }
 
   /**
@@ -1222,7 +1191,7 @@ export class ChartManager {
       return
     const notedata = this.loadedChart.getNotedata()
     if (notedata.length == 0) return
-    this.setBeat(notedata[0].beat)
+    this.beat = notedata[0].beat
   }
 
   /**
@@ -1240,7 +1209,7 @@ export class ChartManager {
     const notedata = this.loadedChart.getNotedata()
     if (notedata.length == 0) return
     const note = notedata[notedata.length - 1]
-    this.setBeat(getNoteEnd(note))
+    this.beat = getNoteEnd(note)
   }
 
   private truncateHold(

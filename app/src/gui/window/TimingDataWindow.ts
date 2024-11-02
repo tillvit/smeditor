@@ -22,17 +22,16 @@ export class TimingDataWindow extends Window {
       blocking: false,
     })
     this.app = app
-    this.lastBeat = Math.round(this.app.chartManager.getBeat() * 1000) / 1000
+    this.lastBeat = Math.round(this.app.chartManager.beat * 1000) / 1000
     this.chartTiming =
       this.app.chartManager.loadedChart!.timingData.usesChartTiming()
     this.initView()
     this.interval = setInterval(() => {
       if (
-        Math.round(this.app.chartManager.getBeat() * 1000) / 1000 !=
+        Math.round(this.app.chartManager.beat * 1000) / 1000 !=
         this.lastBeat
       ) {
-        this.lastBeat =
-          Math.round(this.app.chartManager.getBeat() * 1000) / 1000
+        this.lastBeat = Math.round(this.app.chartManager.beat * 1000) / 1000
         this.setData()
       }
     }, 17)

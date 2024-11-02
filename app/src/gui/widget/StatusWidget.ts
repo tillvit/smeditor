@@ -99,7 +99,7 @@ export class StatusWidget extends Widget {
     const skipStartIcon = Icons.getIcon("SKIP_START", 36)
     this.skipStart.appendChild(skipStartIcon)
     this.skipStart.onclick = () => {
-      this.manager.chartManager.setBeat(0)
+      this.manager.chartManager.beat = 0
       this.skipStart.blur()
     }
 
@@ -112,11 +112,10 @@ export class StatusWidget extends Widget {
     const skipEndIcon = Icons.getIcon("SKIP_END", 36)
     this.skipEnd.appendChild(skipEndIcon)
     this.skipEnd.onclick = () => {
-      this.manager.chartManager.setBeat(
+      this.manager.chartManager.beat =
         this.manager.chartManager.loadedChart!.getBeatFromSeconds(
           this.manager.chartManager.chartAudio.getSongLength()
         )
-      )
       this.skipEnd.blur()
     }
 
@@ -191,7 +190,7 @@ export class StatusWidget extends Widget {
       if (ev.key == "Enter") min.blur()
       if (ev.key == "Escape") {
         min.innerText = Math.floor(
-          Math.abs(this.manager.chartManager.getTime()) / 60
+          Math.abs(this.manager.chartManager.time) / 60
         )
           .toString()
           .padStart(2, "0")
@@ -211,7 +210,7 @@ export class StatusWidget extends Widget {
       if (ev.key == "Enter") sec.blur()
       if (ev.key == "Escape") {
         sec.innerText = Math.floor(
-          Math.abs(this.manager.chartManager.getTime()) % 60
+          Math.abs(this.manager.chartManager.time) % 60
         )
           .toString()
           .padStart(2, "0")
@@ -231,8 +230,7 @@ export class StatusWidget extends Widget {
       if (ev.key == "Enter") millis.blur()
       if (ev.key == "Escape") {
         millis.innerText = (
-          roundDigit(Math.abs(this.manager.chartManager.getTime()) % 1, 3) *
-          1000
+          roundDigit(Math.abs(this.manager.chartManager.time) % 1, 3) * 1000
         )
           .toString()
           .padStart(3, "0")
@@ -273,12 +271,12 @@ export class StatusWidget extends Widget {
         if (this.beatDropdown.value == "Measure") {
           const measure =
             this.manager.chartManager.loadedChart?.timingData?.getMeasure(
-              this.manager.chartManager.getBeat()
-            ) ?? this.manager.chartManager.getBeat() / 4
+              this.manager.chartManager.beat
+            ) ?? this.manager.chartManager.beat / 4
           beat.innerText = roundDigit(measure, 3).toFixed(3)
         } else {
           beat.innerText = roundDigit(
-            this.manager.chartManager.getBeat(),
+            this.manager.chartManager.beat,
             3
           ).toFixed(3)
         }
@@ -301,14 +299,13 @@ export class StatusWidget extends Widget {
       if (this.beatDropdown.value == "Measure") {
         const measure =
           this.manager.chartManager.loadedChart?.timingData?.getMeasure(
-            this.manager.chartManager.getBeat()
-          ) ?? this.manager.chartManager.getBeat() / 4
+            this.manager.chartManager.beat
+          ) ?? this.manager.chartManager.beat / 4
         beat.innerText = roundDigit(measure, 3).toFixed(3)
       } else {
-        beat.innerText = roundDigit(
-          this.manager.chartManager.getBeat(),
+        beat.innerText = roundDigit(this.manager.chartManager.beat, 3).toFixed(
           3
-        ).toFixed(3)
+        )
       }
     })
 
@@ -578,7 +575,7 @@ export class StatusWidget extends Widget {
   update(): void {
     this.view.style.display =
       this.manager.chartManager.loadedSM && Flags.status ? "" : "none"
-    const time = this.manager.chartManager.getTime()
+    const time = this.manager.chartManager.time
     if (this.lastTime != time) {
       if (document.activeElement != this.min)
         this.min.innerText =
@@ -597,7 +594,7 @@ export class StatusWidget extends Widget {
       this.lastTime = time
     }
 
-    const beat = this.manager.chartManager.getBeat()
+    const beat = this.manager.chartManager.beat
     if (this.lastBeat != beat) {
       if (document.activeElement != this.beat) {
         if (this.beatDropdown.value == "Measure") {
@@ -850,7 +847,7 @@ export class StatusWidget extends Widget {
     let time = min * 60 + sec + millis / 1000
     if (time > 9999999) time = 9999999
     if (time < 0) time = 0
-    this.manager.chartManager.setTime(time)
+    this.manager.chartManager.time = time
     // force update
     this.lastTime = null
   }
@@ -867,7 +864,7 @@ export class StatusWidget extends Widget {
     }
     if (beat > 9999999) beat = 9999999
     if (beat < 0) beat = 0
-    this.manager.chartManager.setBeat(beat)
+    this.manager.chartManager.beat = beat
     // force update
     this.lastBeat = null
   }
@@ -893,7 +890,6 @@ export class StatusWidget extends Widget {
       ? this.manager.chartManager.loadedChart.timingData
       : this.manager.chartManager.loadedSM.timingData
     ).setOffset(offset)
-    this.manager.chartManager.setBeat(this.manager.chartManager.getBeat())
   }
 
   private parseString(el: HTMLDivElement) {

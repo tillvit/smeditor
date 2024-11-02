@@ -671,11 +671,11 @@ export class SyncWindow extends Window {
       const zoom = Options.chart.speed / 40
 
       const leftBoundBlockNum =
-        (this.app.chartManager.getTime() * this.sampleRate) / this.windowStep -
+        (this.app.chartManager.time * this.sampleRate) / this.windowStep -
         (graphWidth * 0.2) / zoom
 
       const rightBoundBlockNum =
-        (this.app.chartManager.getTime() * this.sampleRate) / this.windowStep +
+        (this.app.chartManager.time * this.sampleRate) / this.windowStep +
         (graphWidth * 0.8) / zoom
 
       for (
@@ -687,8 +687,7 @@ export class SyncWindow extends Window {
         if (!canvas) continue
         ctx.drawImage(
           canvas,
-          (this.app.chartManager.getTime() * this.sampleRate) /
-            this.windowStep -
+          (this.app.chartManager.time * this.sampleRate) / this.windowStep -
             (graphWidth * 0.2) / zoom -
             MAX_CANVAS_LENGTH * i,
           0,
@@ -773,7 +772,7 @@ export class SyncWindow extends Window {
       )
 
       const currentTempoBlock = Math.round(
-        (this.app.chartManager.getTime() * this.sampleRate) /
+        (this.app.chartManager.time * this.sampleRate) /
           this.windowStep /
           this.tempoStep
       )
@@ -842,8 +841,8 @@ export class SyncWindow extends Window {
         }
 
         // Update tables
-        if (this.lastSecond != this.app.chartManager.getTime()) {
-          this.lastSecond = this.app.chartManager.getTime()
+        if (this.lastSecond != this.app.chartManager.time) {
+          this.lastSecond = this.app.chartManager.time
 
           const totalConfidence = aggregateTempos
             .slice(0, 5)
