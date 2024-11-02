@@ -23,7 +23,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   offset: {
     title: "Offset",
     element: createElement({
-      create: (app, getTarget) => {
+      create: (_, getTarget) => {
         const input = NumberSpinner.create(
           0,
           Options.general.spinnerStep / 100,
@@ -32,7 +32,6 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         input.onChange = value => {
           if (value == undefined) return
           getTarget().setOffset(value)
-          app.chartManager.setBeat(app.chartManager.getBeat())
         }
         return input.view
       },
@@ -53,12 +52,12 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const input = NumberSpinner.create(120, undefined, 3)
         input.onChange = value => {
           if (value == undefined) {
-            const beat = app.chartManager.getBeat()
+            const beat = app.chartManager.beat
             getTarget().delete([{ type: "BPMS", beat }])
             return
           }
           getTarget().insert([
-            { type: "BPMS", beat: app.chartManager.getBeat(), value },
+            { type: "BPMS", beat: app.chartManager.beat, value },
           ])
         }
         return input.view
@@ -80,12 +79,12 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const input = NumberSpinner.create(0, undefined, 3)
         input.onChange = value => {
           if (value == undefined || value == 0) {
-            const beat = app.chartManager.getBeat()
+            const beat = app.chartManager.beat
             getTarget().delete([{ type: "STOPS", beat }])
             return
           }
           getTarget().insert([
-            { type: "STOPS", beat: app.chartManager.getBeat(), value },
+            { type: "STOPS", beat: app.chartManager.beat, value },
           ])
         }
         return input.view
@@ -109,12 +108,12 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const input = NumberSpinner.create(0, undefined, 3)
         input.onChange = value => {
           if (value == undefined || value == 0) {
-            const beat = app.chartManager.getBeat()
+            const beat = app.chartManager.beat
             getTarget().delete([{ type: "DELAYS", beat }])
             return
           }
           getTarget().insert([
-            { type: "DELAYS", beat: app.chartManager.getBeat(), value },
+            { type: "DELAYS", beat: app.chartManager.beat, value },
           ])
         }
         return input.view
@@ -138,13 +137,13 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const input = NumberSpinner.create(0, undefined, 3, 0)
         input.onChange = value => {
           if (value == undefined || value == 0) {
-            const beat = app.chartManager.getBeat()
+            const beat = app.chartManager.beat
             getTarget().delete([{ type: "WARPS", beat }])
             return
           }
           if (value < 0) return
           getTarget().insert([
-            { type: "WARPS", beat: app.chartManager.getBeat(), value },
+            { type: "WARPS", beat: app.chartManager.beat, value },
           ])
         }
         return input.view
@@ -171,7 +170,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const upperInput = NumberSpinner.create(4, 1, 0, 1)
         upperInput.onChange = value => {
           if (value == undefined) {
-            const beat = app.chartManager.getBeat()
+            const beat = app.chartManager.beat
             getTarget().delete([{ type: "TIMESIGNATURES", beat }])
             return
           }
@@ -179,7 +178,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           getTarget().insert([
             {
               type: "TIMESIGNATURES",
-              beat: app.chartManager.getBeat(),
+              beat: app.chartManager.beat,
               upper: value,
               lower: lowerInput.value,
             },
@@ -188,7 +187,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const lowerInput = NumberSpinner.create(4, 1, 0, 1)
         lowerInput.onChange = value => {
           if (value == undefined) {
-            const beat = app.chartManager.getBeat()
+            const beat = app.chartManager.beat
             getTarget().delete([{ type: "TIMESIGNATURES", beat }])
             return
           }
@@ -196,7 +195,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           getTarget().insert([
             {
               type: "TIMESIGNATURES",
-              beat: app.chartManager.getBeat(),
+              beat: app.chartManager.beat,
               upper: upperInput.value,
               lower: value,
             },
@@ -237,13 +236,13 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const input = NumberSpinner.create(4, 1, 0, 0)
         input.onChange = value => {
           if (value == undefined) {
-            const beat = app.chartManager.getBeat()
+            const beat = app.chartManager.beat
             getTarget().delete([{ type: "TICKCOUNTS", beat }])
             return
           }
           if (value < 0) return
           getTarget().insert([
-            { type: "TICKCOUNTS", beat: app.chartManager.getBeat(), value },
+            { type: "TICKCOUNTS", beat: app.chartManager.beat, value },
           ])
         }
         return input.view
@@ -267,7 +266,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const upperInput = NumberSpinner.create(1, 1, 0, 0)
         upperInput.onChange = value => {
           if (value == undefined) {
-            const beat = app.chartManager.getBeat()
+            const beat = app.chartManager.beat
             getTarget().delete([{ type: "COMBOS", beat }])
             return
           }
@@ -275,7 +274,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           getTarget().insert([
             {
               type: "COMBOS",
-              beat: app.chartManager.getBeat(),
+              beat: app.chartManager.beat,
               hitMult: value,
               missMult: lowerInput.value,
             },
@@ -284,7 +283,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const lowerInput = NumberSpinner.create(1, 1, 0, 0)
         lowerInput.onChange = value => {
           if (value == undefined) {
-            const beat = app.chartManager.getBeat()
+            const beat = app.chartManager.beat
             lowerInput.setValue(
               app.chartManager.loadedChart?.timingData.getEventAtBeat(
                 "COMBOS",
@@ -297,7 +296,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           getTarget().insert([
             {
               type: "COMBOS",
-              beat: app.chartManager.getBeat(),
+              beat: app.chartManager.beat,
               hitMult: upperInput.value,
               missMult: value,
             },
@@ -342,7 +341,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           getTarget().insert([
             {
               type: "SPEEDS",
-              beat: app.chartManager.getBeat(),
+              beat: app.chartManager.beat,
               value: valueInput.value,
               delay: delayInput.value,
               unit: unitDropdown.value == "Beats" ? "B" : "T",
@@ -353,7 +352,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const valueInput = NumberSpinner.create(1, 0.1, 0)
         valueInput.onChange = value => {
           if (value == undefined) {
-            const beat = app.chartManager.getBeat()
+            const beat = app.chartManager.beat
             getTarget().delete([{ type: "SPEEDS", beat }])
             return
           }
@@ -416,12 +415,12 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const input = NumberSpinner.create(1, undefined, 3)
         input.onChange = value => {
           if (value == undefined) {
-            const beat = app.chartManager.getBeat()
+            const beat = app.chartManager.beat
             getTarget().delete([{ type: "SCROLLS", beat }])
             return
           }
           getTarget().insert([
-            { type: "SCROLLS", beat: app.chartManager.getBeat(), value },
+            { type: "SCROLLS", beat: app.chartManager.beat, value },
           ])
         }
         return input.view
@@ -443,13 +442,13 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const input = NumberSpinner.create(1, undefined, 3, 0)
         input.onChange = value => {
           if (value == undefined) {
-            const beat = app.chartManager.getBeat()
+            const beat = app.chartManager.beat
             getTarget().delete([{ type: "FAKES", beat }])
             return
           }
           if (value < 0) return
           getTarget().insert([
-            { type: "FAKES", beat: app.chartManager.getBeat(), value },
+            { type: "FAKES", beat: app.chartManager.beat, value },
           ])
         }
         return input.view
@@ -479,14 +478,14 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         }
         input.onblur = () => {
           if (input.value == "") {
-            const beat = app.chartManager.getBeat()
+            const beat = app.chartManager.beat
             getTarget().delete([{ type: "LABELS", beat }])
             return
           }
           getTarget().insert([
             {
               type: "LABELS",
-              beat: app.chartManager.getBeat(),
+              beat: app.chartManager.beat,
               value: input.value,
             },
           ])

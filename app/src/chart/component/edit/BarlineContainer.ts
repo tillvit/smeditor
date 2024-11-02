@@ -2,7 +2,6 @@ import { BitmapText, Container, Sprite, Texture } from "pixi.js"
 import { assignTint } from "../../../util/Color"
 import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { EventHandler } from "../../../util/EventHandler"
-import { Options } from "../../../util/Options"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 
 const measureNumbers = {
@@ -51,10 +50,10 @@ export class BarlineContainer
   update(firstBeat: number, lastBeat: number) {
     this.visible = this.renderer.shouldDisplayBarlines()
 
-    for (const [barBeat, isMeasure] of this.getBarlineBeats(
-      firstBeat,
-      lastBeat
-    )) {
+    for (const [
+      barBeat,
+      isMeasure,
+    ] of this.renderer.chart.timingData.getMeasureBeats(firstBeat, lastBeat)) {
       // Create missing barlines
       if (!this.barlineMap.has(barBeat)) {
         const barline = this.barlinePool.createChild()
@@ -98,49 +97,6 @@ export class BarlineContainer
         continue
       }
       child.y = this.renderer.getYPosFromBeat(beat)
-    }
-  }
-
-  private *getBarlineBeats(
-    firstBeat: number,
-    lastBeat: number
-  ): Generator<[number, boolean], void> {
-    firstBeat = Math.max(0, firstBeat)
-    const td = this.renderer.chart.timingData
-    const timeSigs = td.getTimingData("TIMESIGNATURES")
-    let currentTimeSig = td.getEventAtBeat("TIMESIGNATURES", firstBeat)
-    let timeSigIndex = currentTimeSig
-      ? timeSigs.findIndex(t => t.beat == currentTimeSig!.beat)
-      : -1
-    let divisionLength = td.getDivisionLength(firstBeat)
-    const beatsToNearestDivision =
-      (td.getDivisionOfMeasure(firstBeat) % 1) * divisionLength
-
-    // Find the nearest beat division
-    let beat = Math.max(0, firstBeat - beatsToNearestDivision)
-    if (beat < firstBeat) beat += divisionLength
-    let divisionNumber = Math.round(td.getDivisionOfMeasure(beat))
-
-    let divisionsPerMeasure = currentTimeSig?.upper ?? 4
-    while (beat < lastBeat) {
-      // Don't display warped beats
-      if (!Options.chart.CMod || !this.renderer.chart.isBeatWarped(beat)) {
-        yield [beat, divisionNumber % divisionsPerMeasure == 0]
-      }
-      divisionNumber++
-      divisionNumber %= divisionsPerMeasure
-      // Go to the next division
-      beat += divisionLength
-      // Check if we have reached the next time signature
-      if (beat >= timeSigs[timeSigIndex + 1]?.beat) {
-        timeSigIndex++
-        // Go to start of the new time signature
-        currentTimeSig = timeSigs[timeSigIndex]
-        beat = currentTimeSig.beat
-        divisionLength = td.getDivisionLength(beat)
-        divisionNumber = 0
-        divisionsPerMeasure = currentTimeSig.upper
-      }
     }
   }
 }

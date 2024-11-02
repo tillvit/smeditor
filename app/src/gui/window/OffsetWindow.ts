@@ -4,8 +4,8 @@ import { lerp, median, stdDev } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { Window } from "./Window"
 
-import metronomeHigh from "../../../assets/sound/metronome_high.ogg"
-import metronomeLow from "../../../assets/sound/metronome_low.ogg"
+import metronomeHigh from "../../../assets/sound/metronome_high.wav"
+import metronomeLow from "../../../assets/sound/metronome_low.wav"
 
 interface TickLine {
   time: number

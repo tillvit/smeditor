@@ -61,7 +61,7 @@ async function generateNoteskinPreview(gameType, skinName, notes) {
   if (playing) {
     cm.playPause()
   }
-  cm.setBeat(0)
+  cm.beat = (0)
 
   Object.keys(newChart.sm.timingData.columns).forEach(key => {
     newChart.timingData.columns[key] = {type: key, events: []}

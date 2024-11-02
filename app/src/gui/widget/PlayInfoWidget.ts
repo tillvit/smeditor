@@ -640,8 +640,5 @@ export class PlayInfoWidget extends Widget {
         3
       )} to ${roundDigit(oldOffset - offset, 3).toFixed(3)}`
     )
-    this.manager.app.chartManager.setBeat(
-      this.manager.app.chartManager.getBeat()
-    )
   }
 }

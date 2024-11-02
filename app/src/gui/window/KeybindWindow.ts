@@ -198,9 +198,11 @@ export class KeybindWindow extends Window {
     Object.keys(KEYBIND_INSERTS).forEach(id => {
       if (GROUPS[id] === undefined) GROUPS[id] = []
       KEYBIND_INSERTS[id].forEach(insert => {
-        const insertIndex = !insert.after
-          ? 0
-          : (GROUPS[id].findIndex(id => insert.after == id) + 1 ?? 0)
+        let insertIndex = 0
+        if (insert.after) {
+          const pos = GROUPS[id].findIndex(id => insert.after == id) + 1
+          if (pos != 0) insertIndex = pos
+        }
         GROUPS[id].splice(insertIndex, 0, ...insert.ids)
         insert.ids.forEach(option => {
           const idx = missingKeybindTest.indexOf(option)

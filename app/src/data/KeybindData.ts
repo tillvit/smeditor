@@ -420,7 +420,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
-      const beat = app.chartManager.getBeat()
+      const beat = app.chartManager.beat
       const measureLength =
         app.chartManager.loadedChart!.timingData.getMeasureLength(beat - 0.001)
       app.chartManager.snapToNearestTick(Math.max(0, beat - measureLength))
@@ -437,7 +437,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
-      const beat = app.chartManager.getBeat()
+      const beat = app.chartManager.beat
       const measureLength =
         app.chartManager.loadedChart!.timingData.getMeasureLength(beat)
       app.chartManager.snapToNearestTick(Math.max(0, beat + measureLength))
@@ -487,9 +487,10 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
     callback: app =>
-      app.chartManager.setBeat(
-        Math.max(0, app.chartManager.loadedChart!.getBeatFromSeconds(0))
-      ),
+      (app.chartManager.beat = Math.max(
+        0,
+        app.chartManager.loadedChart!.getBeatFromSeconds(0)
+      )),
   },
   jumpSongEnd: {
     label: "Jump to song end",
@@ -499,11 +500,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
     callback: app =>
-      app.chartManager.setBeat(
-        app.chartManager.loadedChart!.getBeatFromSeconds(
-          app.chartManager.chartAudio.getSongLength()
-        )
-      ),
+      (app.chartManager.beat = app.chartManager.loadedChart!.getBeatFromSeconds(
+        app.chartManager.chartAudio.getSongLength()
+      )),
   },
   assistTick: {
     label: "Assist tick",
@@ -676,7 +675,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Record ||
       !Flags.playMode,
     callback: app => {
-      app.chartManager.setBeat(0)
+      app.chartManager.beat = 0
       app.chartManager.setMode(EditMode.Play)
     },
   },
@@ -885,13 +884,13 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
         app.chartManager.setNoteSelection(
           app.chartManager
             .loadedChart!.getNotedata()
-            .filter(note => note.beat < app.chartManager.getBeat())
+            .filter(note => note.beat < app.chartManager.beat)
         )
       } else {
         app.chartManager.setEventSelection(
           app.chartManager
             .loadedChart!.timingData.getTimingData()
-            .filter(event => event.beat < app.chartManager.getBeat())
+            .filter(event => event.beat < app.chartManager.beat)
         )
       }
     },
@@ -905,13 +904,13 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
         app.chartManager.setNoteSelection(
           app.chartManager
             .loadedChart!.getNotedata()
-            .filter(note => note.beat > app.chartManager.getBeat())
+            .filter(note => note.beat > app.chartManager.beat)
         )
       } else {
         app.chartManager.setEventSelection(
           app.chartManager
             .loadedChart!.timingData.getTimingData()
-            .filter(event => event.beat > app.chartManager.getBeat())
+            .filter(event => event.beat > app.chartManager.beat)
         )
       }
     },
