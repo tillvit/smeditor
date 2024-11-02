@@ -427,8 +427,7 @@ export class ChartManager {
         // Play note flash
         while (
           this.noteFlashIndex < notedata.length &&
-          time >
-            notedata[this.noteFlashIndex].second + Options.play.effectOffset
+          time > notedata[this.noteFlashIndex].second
         ) {
           if (
             this.mode != EditMode.Record &&
