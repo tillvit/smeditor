@@ -31,6 +31,7 @@ import { ParityGenerator } from "../util/ParityGenerator"
 import { basename, dirname, extname } from "../util/Path"
 import { tpsUpdate } from "../util/Performance"
 import { RecentFileHandler } from "../util/RecentFileHandler"
+import { SchedulableSoundEffect } from "../util/SchedulableSoundEffect"
 import {
   bsearch,
   bsearchEarliest,
@@ -59,6 +60,7 @@ import { Simfile } from "./sm/Simfile"
 import { Cached, TIMING_EVENT_NAMES, TimingEvent } from "./sm/TimingTypes"
 
 const SNAPS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 48, -1]
+const EFFECT_BUFFER = 0.2
 
 interface PartialHold {
   startBeat: number
@@ -111,15 +113,15 @@ export class ChartManager {
   chartView?: ChartRenderer
   widgetManager: WidgetManager
 
-  assistTick: Howl = new Howl({
+  assistTick = new SchedulableSoundEffect({
     src: assistTick,
     volume: 0.5,
   })
-  me_high: Howl = new Howl({
+  me_high = new SchedulableSoundEffect({
     src: metronomeHigh,
     volume: 0.5,
   })
-  me_low: Howl = new Howl({
+  me_low = new SchedulableSoundEffect({
     src: metronomeLow,
     volume: 0.5,
   })
@@ -151,7 +153,8 @@ export class ChartManager {
   private editNoteTypeIndex = 0
 
   private partialScroll = 0
-  private noteIndex = 0
+  private noteFlashIndex = 0
+  private assistTickIndex = 0
   private lastMetronomeDivision = -1
   private lastMetronomeMeasure = -1
 
@@ -426,64 +429,96 @@ export class ChartManager {
       }
 
       const notedata = this.loadedChart.getNotedata()
-      // Play assist tick
-      let hasPlayedAssistTick = false
-      while (
-        this.noteIndex < notedata.length &&
-        time > notedata[this.noteIndex].second + Options.play.effectOffset
-      ) {
-        if (
-          this.mode != EditMode.Record &&
-          this.chartAudio.isPlaying() &&
-          this.loadedChart.gameType.gameLogic.shouldAssistTick(
-            notedata[this.noteIndex]
-          )
+      if (this.chartAudio.isPlaying()) {
+        // Play note flash
+        while (
+          this.noteFlashIndex < notedata.length &&
+          time >
+            notedata[this.noteFlashIndex].second + Options.play.effectOffset
         ) {
-          if (this.mode != EditMode.Play)
-            this.chartView.doJudgement(
-              notedata[this.noteIndex],
-              0,
-              TIMING_WINDOW_AUTOPLAY
-            )
           if (
-            !hasPlayedAssistTick &&
-            Options.audio.assistTick &&
-            Flags.assist
+            this.mode != EditMode.Record &&
+            this.loadedChart.gameType.gameLogic.shouldAssistTick(
+              notedata[this.noteFlashIndex]
+            )
           ) {
-            this.assistTick.play()
-            hasPlayedAssistTick = true
+            if (this.mode != EditMode.Play)
+              this.chartView.doJudgement(
+                notedata[this.noteFlashIndex],
+                0,
+                TIMING_WINDOW_AUTOPLAY
+              )
           }
+          this.noteFlashIndex++
         }
-        this.noteIndex++
+        // Play assist tick
+        const assistRows = new Set()
+        while (
+          this.assistTickIndex < notedata.length &&
+          time >
+            notedata[this.assistTickIndex].second +
+              Options.play.effectOffset -
+              EFFECT_BUFFER
+        ) {
+          if (
+            assistRows.has(notedata[this.assistTickIndex].second) ||
+            time > notedata[this.assistTickIndex].second
+          ) {
+            this.assistTickIndex++
+            continue
+          }
+          if (
+            this.mode != EditMode.Record &&
+            this.loadedChart.gameType.gameLogic.shouldAssistTick(
+              notedata[this.assistTickIndex]
+            )
+          ) {
+            if (Options.audio.assistTick && Flags.assist) {
+              this.assistTick.play(
+                notedata[this.assistTickIndex].second +
+                  Options.play.effectOffset -
+                  this.time
+              )
+            }
+            assistRows.add(notedata[this.assistTickIndex].second)
+          }
+          this.assistTickIndex++
+        }
       }
       // Play metronome
-      const offsetBeat = this.loadedChart.getBeatFromSeconds(
-        this.time + Options.play.effectOffset
-      )
-
-      const offsetDivision = Math.floor(
-        this.loadedChart.timingData.getDivisionOfMeasure(offsetBeat)
-      )
-
-      const offsetMeasure = Math.floor(
-        this.loadedChart.timingData.getMeasure(offsetBeat)
-      )
-
       if (
-        offsetMeasure != this.lastMetronomeMeasure ||
-        offsetDivision != this.lastMetronomeDivision
+        this.chartAudio.isPlaying() &&
+        Options.audio.metronome &&
+        Flags.assist
       ) {
-        this.lastMetronomeDivision = offsetDivision
-        this.lastMetronomeMeasure = offsetMeasure
-        if (
-          this.chartAudio.isPlaying() &&
-          Options.audio.metronome &&
-          Flags.assist
-        ) {
-          if (offsetDivision == 0) this.me_high.play()
-          else this.me_low.play()
+        const td = this.loadedChart.timingData
+        const offsetBeat = this.loadedChart.getBeatFromSeconds(
+          this.time + Options.play.effectOffset + EFFECT_BUFFER
+        )
+
+        const startMeasure = td.getBeatFromMeasure(this.lastMetronomeMeasure)
+        const divLength = td.getDivisionLength(startMeasure)
+        const startBeat = startMeasure + divLength * this.lastMetronomeDivision
+
+        const measureBeats = [
+          ...td.getMeasureBeats(startBeat, offsetBeat),
+        ].slice(1)
+        for (const [barBeat, isMeasure] of measureBeats) {
+          if (this.beat > barBeat) continue
+          const barSecond = td.getSecondsFromBeat(barBeat)
+          const offset = barSecond + Options.play.effectOffset - this.time
+          if (isMeasure) this.me_high.play(offset)
+          else this.me_low.play(offset)
+        }
+        if (measureBeats.length > 0) {
+          const lastBeat = measureBeats.at(-1)![0]
+          this.lastMetronomeMeasure = Math.floor(td.getMeasure(lastBeat))
+          this.lastMetronomeDivision = Math.round(
+            td.getDivisionOfMeasure(lastBeat)
+          )
         }
       }
+
       // Update the game logic
       if (this.mode == EditMode.Play) {
         this.loadedChart.gameType.gameLogic.update(this)
@@ -639,7 +674,7 @@ export class ChartManager {
     this.beat = beat
     this.time = this.loadedChart.getSecondsFromBeat(this.beat)
     this.chartAudio.seek(this.time)
-    this.getAssistTickIndex()
+    this.setNoteIndex()
   }
 
   /**
@@ -655,7 +690,7 @@ export class ChartManager {
     this.beat = this.loadedChart.getBeatFromSeconds(this.time)
     if (!ignoreSetSongTime) {
       this.chartAudio.seek(this.time)
-      this.getAssistTickIndex()
+      this.setNoteIndex()
     }
   }
 
@@ -817,7 +852,7 @@ export class ChartManager {
     Options.chart.noteskin = newNoteskin
     Options.chart.lastNoteskins[chart.gameType.id] = newNoteskin.name
 
-    this.getAssistTickIndex()
+    this.setNoteIndex()
     this.chartView = new ChartRenderer(this)
     this.chartView.x = this.app.renderer.screen.width / 2
     this.chartView.y = this.app.renderer.screen.height / 2
@@ -895,7 +930,12 @@ export class ChartManager {
       extname(audioFile.name)
     )
     this.chartAudio.seek(this.time)
-    this.getAssistTickIndex()
+    this.chartAudio.onStop = () => {
+      this.assistTick.stop()
+      this.me_high.stop()
+      this.me_low.stop()
+    }
+    this.setNoteIndex()
   }
 
   /**
@@ -974,29 +1014,40 @@ export class ChartManager {
   }
 
   setEffectVolume(volume: number) {
-    if (this.assistTick.volume() != volume) this.assistTick.volume(volume)
-    if (this.me_high.volume() != volume) this.me_high.volume(volume)
-    if (this.me_low.volume() != volume) this.me_low.volume(volume)
+    this.assistTick.volume(volume)
+    this.me_high.volume(volume)
+    this.me_low.volume(volume)
     if (this.mine.volume() != volume) this.mine.volume(volume)
   }
 
-  private getAssistTickIndex() {
+  private setNoteIndex() {
     if (
       this.loadedSM == undefined ||
       this.loadedChart == undefined ||
       this.chartView == undefined ||
       this.loadedChart.getNotedata().length == 0
     ) {
-      this.noteIndex = 0
+      this.noteFlashIndex = 0
+      this.assistTickIndex = 0
       return
     }
-    this.noteIndex =
+    this.noteFlashIndex =
       bsearch(this.loadedChart.getNotedata(), this.time, a => a.second) + 1
     if (
-      this.noteIndex >= 1 &&
-      this.time <= this.loadedChart.getNotedata()[this.noteIndex - 1].second
+      this.noteFlashIndex >= 1 &&
+      this.time <=
+        this.loadedChart.getNotedata()[this.noteFlashIndex - 1].second
     )
-      this.noteIndex--
+      this.noteFlashIndex--
+
+    this.assistTickIndex = this.noteFlashIndex
+
+    this.lastMetronomeMeasure = Math.floor(
+      this.loadedChart.timingData.getMeasure(this.beat)
+    )
+    this.lastMetronomeDivision = Math.floor(
+      this.loadedChart.timingData.getDivisionOfMeasure(this.beat)
+    )
   }
 
   playPause() {
@@ -1271,7 +1322,7 @@ export class ChartManager {
         type: this.getEditingNoteType()!,
       }
     }
-    this.getAssistTickIndex()
+    this.setNoteIndex()
     this.app.actionHistory.run({
       action: () => {
         holdEdit.removedNotes.forEach(note => {
@@ -1394,7 +1445,7 @@ export class ChartManager {
     })
     hold.removedNotes = hold.removedNotes.concat(conflictingNotes)
     conflictingNotes.forEach(note => this.loadedChart!.removeNote(note))
-    this.getAssistTickIndex()
+    this.setNoteIndex()
   }
 
   /**
@@ -1454,7 +1505,7 @@ export class ChartManager {
     if (this.mode == mode) {
       if (mode == EditMode.Play || mode == EditMode.Record) {
         this.setMode(this.lastMode)
-        this.getAssistTickIndex()
+        this.setNoteIndex()
         this.chartAudio.pause()
       }
       return

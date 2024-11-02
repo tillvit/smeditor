@@ -1,6 +1,7 @@
 import { ActionHistory } from "../../util/ActionHistory"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, roundDigit } from "../../util/Math"
+import { Options } from "../../util/Options"
 import { bsearch } from "../../util/Util"
 import { ChartTimingData } from "./ChartTimingData"
 import {
@@ -1350,6 +1351,48 @@ export abstract class TimingData {
   getDivisionOfMeasure(beat: number): number {
     if (!isFinite(beat)) return 0
     return this.getBeatOfMeasure(beat) / this.getDivisionLength(beat)
+  }
+
+  *getMeasureBeats(
+    firstBeat: number,
+    lastBeat: number
+  ): Generator<[number, boolean], void> {
+    firstBeat = Math.max(0, firstBeat)
+    const timeSigs = this.getTimingData("TIMESIGNATURES")
+    let currentTimeSig = this.getEventAtBeat("TIMESIGNATURES", firstBeat)
+    let timeSigIndex = currentTimeSig
+      ? timeSigs.findIndex(t => t.beat == currentTimeSig!.beat)
+      : -1
+    let divisionLength = this.getDivisionLength(firstBeat)
+    const beatsToNearestDivision =
+      (this.getDivisionOfMeasure(firstBeat) % 1) * divisionLength
+
+    // Find the nearest beat division
+    let beat = Math.max(0, firstBeat - beatsToNearestDivision)
+    if (beat < firstBeat) beat += divisionLength
+    let divisionNumber = Math.round(this.getDivisionOfMeasure(beat))
+
+    let divisionsPerMeasure = currentTimeSig?.upper ?? 4
+    while (beat < lastBeat) {
+      // Don't display warped beats
+      if (!Options.chart.CMod || !this.isBeatWarped(beat)) {
+        yield [beat, divisionNumber % divisionsPerMeasure == 0]
+      }
+      divisionNumber++
+      divisionNumber %= divisionsPerMeasure
+      // Go to the next division
+      beat += divisionLength
+      // Check if we have reached the next time signature
+      if (beat >= timeSigs[timeSigIndex + 1]?.beat) {
+        timeSigIndex++
+        // Go to start of the new time signature
+        currentTimeSig = timeSigs[timeSigIndex]
+        beat = currentTimeSig.beat
+        divisionLength = this.getDivisionLength(beat)
+        divisionNumber = 0
+        divisionsPerMeasure = currentTimeSig.upper
+      }
+    }
   }
 
   getEffectiveBeat(beat: number): number {

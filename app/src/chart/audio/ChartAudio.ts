@@ -63,6 +63,8 @@ export class ChartAudio {
   ]
   private _filtersEnabled = false
 
+  onStop?: () => void
+
   loaded: Promise<void>
 
   constructor(data?: ArrayBuffer, type?: string) {
@@ -566,18 +568,10 @@ export class ChartAudio {
     if (this._isPlaying) return
     this.initSource()
     if (this._playbackTime <= this._buffer.duration) {
-      if (this._playbackTime < 0) {
-        // Stall until the playback time is positive
-        clearTimeout(this._delay)
-        this._delay = setInterval(() => {
-          if (this.seek() > 0) {
-            clearInterval(this._delay)
-            this._source?.start(0, 0)
-          }
-        })
-      } else {
-        this._source.start(0, this._playbackTime)
-      }
+      this._source.start(
+        Math.max(0, this._audioContext.currentTime - this._playbackTime),
+        Math.max(0, this._playbackTime)
+      )
     }
 
     this._startTimestamp = this._audioContext.currentTime
@@ -631,6 +625,7 @@ export class ChartAudio {
     if (this._destroyed) return
     if (!this._source) return
     if (!this._isPlaying) return
+    this.onStop?.()
     clearTimeout(this._delay)
     this._isPlaying = false
     if (this._playbackTime <= this._buffer.duration) {

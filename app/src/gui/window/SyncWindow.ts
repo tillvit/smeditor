@@ -721,7 +721,10 @@ export class SyncWindow extends Window {
 
         ctx.fillStyle = "rgba(255, 255, 255, 0.2)"
 
-        for (const [barBeat, isMeasure] of this.getBarlineBeats(
+        for (const [
+          barBeat,
+          isMeasure,
+        ] of this.app.chartManager.loadedChart.timingData.getMeasureBeats(
           leftBoundBeat,
           rightBoundBeat
         )) {
@@ -1166,49 +1169,6 @@ export class SyncWindow extends Window {
       })
 
     this.app.chartManager.insertNotes(notes)
-  }
-
-  private *getBarlineBeats(
-    firstBeat: number,
-    lastBeat: number
-  ): Generator<[number, boolean], void> {
-    firstBeat = Math.max(0, firstBeat)
-    const td = this.app.chartManager.loadedChart!.timingData
-    const timeSigs = td.getTimingData("TIMESIGNATURES")
-    let currentTimeSig = td.getEventAtBeat("TIMESIGNATURES", firstBeat)
-    let timeSigIndex = currentTimeSig
-      ? timeSigs.findIndex(t => t.beat == currentTimeSig!.beat)
-      : -1
-    let divisionLength = td.getDivisionLength(firstBeat)
-    const beatsToNearestDivision =
-      (td.getDivisionOfMeasure(firstBeat) % 1) * divisionLength
-
-    // Find the nearest beat division
-    let beat = Math.max(0, firstBeat - beatsToNearestDivision)
-    if (beat < firstBeat) beat += divisionLength
-    let divisionNumber = Math.round(td.getDivisionOfMeasure(beat))
-
-    let divisionsPerMeasure = currentTimeSig?.upper ?? 4
-    while (beat < lastBeat) {
-      // Don't display warped beats
-      if (!Options.chart.CMod || !td.isBeatWarped(beat)) {
-        yield [beat, divisionNumber % divisionsPerMeasure == 0]
-      }
-      divisionNumber++
-      divisionNumber %= divisionsPerMeasure
-      // Go to the next division
-      beat += divisionLength
-      // Check if we have reached the next time signature
-      if (beat >= timeSigs[timeSigIndex + 1]?.beat) {
-        timeSigIndex++
-        // Go to start of the new time signature
-        currentTimeSig = timeSigs[timeSigIndex]
-        beat = currentTimeSig.beat
-        divisionLength = td.getDivisionLength(beat)
-        divisionNumber = 0
-        divisionsPerMeasure = currentTimeSig.upper
-      }
-    }
   }
 
   calcTempogram() {
