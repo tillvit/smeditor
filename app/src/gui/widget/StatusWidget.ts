@@ -378,9 +378,9 @@ export class StatusWidget extends Widget {
     }
     this.timingContainer.appendChild(this.addTimingEvent)
 
-    tippy(this.addTimingEvent, {
-      content: "Add timing events",
-    })
+    Keybinds.createKeybindTooltip(
+      this.addTimingEvent
+    )`Add timing events ${"toggleAddTiming"}`
 
     this.toggleTimingTracks = document.createElement("button")
     this.toggleTimingTracks.tabIndex = -1
