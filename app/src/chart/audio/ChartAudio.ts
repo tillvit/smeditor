@@ -586,8 +586,8 @@ export class ChartAudio {
   seek(): number
   seek(playbackTime: number): void
   seek(playbackTime?: number) {
-    if (this._destroyed) return
-    if (!this._source) return
+    if (this._destroyed) return 0
+    if (!this._source) return 0
     if (playbackTime === undefined) {
       if (!this._isPlaying) return this._playbackTime
       return (
