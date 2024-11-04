@@ -1022,6 +1022,7 @@ export class ChartManager {
   }
 
   playPause() {
+    this.setNoteIndex()
     if (this.chartAudio.isPlaying()) this.chartAudio.pause()
     else this.chartAudio.play()
   }
