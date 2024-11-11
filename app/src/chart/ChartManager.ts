@@ -471,9 +471,10 @@ export class ChartManager {
           ) {
             if (Options.audio.assistTick && Flags.assist) {
               this.assistTick.play(
-                notedata[this.assistTickIndex].second +
+                (notedata[this.assistTickIndex].second +
                   Options.play.effectOffset -
-                  time
+                  time) /
+                  Options.audio.rate
               )
             }
             assistRows.add(notedata[this.assistTickIndex].second)
@@ -502,7 +503,9 @@ export class ChartManager {
         for (const [barBeat, isMeasure] of measureBeats) {
           if (this.beat > barBeat) continue
           const barSecond = td.getSecondsFromBeat(barBeat)
-          const offset = barSecond + Options.play.effectOffset - this.time
+          const offset =
+            (barSecond + Options.play.effectOffset - this.time) /
+            Options.audio.rate
           if (isMeasure) this.me_high.play(offset)
           else this.me_low.play(offset)
         }
