@@ -138,7 +138,6 @@ export class UserOptionsWindow extends Window {
         const callback: ((app: App, value: any) => void) | undefined =
           option.input.onChange
         callback?.(this.app, Options.getDefaultOption(option.id))
-        EventHandler.emit("userOptionUpdated", option.id)
         // Reload the option
         item.replaceWith(this.makeOption(option))
       })
@@ -163,7 +162,6 @@ export class UserOptionsWindow extends Window {
           checkbox.onblur = null
           checkbox.onchange = () => {
             Options.applyOption([option.id, checkbox.checked])
-            EventHandler.emit("userOptionUpdated", option.id)
             revert.style.display =
               Options.getDefaultOption(option.id) ===
               Options.getOption(option.id)
@@ -189,7 +187,6 @@ export class UserOptionsWindow extends Window {
             )
             dropdown.onChange(value => {
               Options.applyOption([option.id, deserializer(value)])
-              EventHandler.emit("userOptionUpdated", option.id)
               revert.style.display =
                 Options.getDefaultOption(option.id) ===
                 Options.getOption(option.id)
@@ -204,7 +201,6 @@ export class UserOptionsWindow extends Window {
             const dropdown = Dropdown.create(option.input.items, optionValue)
             dropdown.onChange(value => {
               Options.applyOption([option.id, value])
-              EventHandler.emit("userOptionUpdated", option.id)
               revert.style.display =
                 Options.getDefaultOption(option.id) ===
                 Options.getOption(option.id)
@@ -236,7 +232,6 @@ export class UserOptionsWindow extends Window {
               return
             }
             Options.applyOption([option.id, deserializer(value)])
-            EventHandler.emit("userOptionUpdated", option.id)
             revert.style.display =
               Options.getDefaultOption(option.id) ===
               Options.getOption(option.id)
@@ -286,7 +281,6 @@ export class UserOptionsWindow extends Window {
               numberInput.value = serializer(value).toString()
             } else {
               Options.applyOption([option.id, deserializer(value)])
-              EventHandler.emit("userOptionUpdated", option.id)
             }
             slider.value = value.toString()
             revert.style.display =
@@ -322,7 +316,6 @@ export class UserOptionsWindow extends Window {
           textInput.value = optionValue.toString()
           textInput.onblur = () => {
             Options.applyOption([option.id, textInput.value])
-            EventHandler.emit("userOptionUpdated", option.id)
             revert.style.display =
               Options.getDefaultOption(option.id) ===
               Options.getOption(option.id)
@@ -344,7 +337,6 @@ export class UserOptionsWindow extends Window {
           // 'change' event is fired when the user closes the color picker
           colorInput.onColorChange = c => {
             Options.applyOption([option.id, c.toHexa()])
-            EventHandler.emit("userOptionUpdated", option.id)
             revert.style.display =
               Options.getDefaultOption(option.id) ===
               Options.getOption(option.id)
