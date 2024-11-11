@@ -647,7 +647,10 @@ export class ChartManager {
 
   get beat() {
     if (!this.loadedChart) return 0
-    return this.loadedChart.getBeatFromSeconds(this.time)
+    return (
+      Math.round(this.loadedChart.getBeatFromSeconds(this.time) * 100000) /
+      100000
+    )
   }
 
   set beat(beat: number) {
@@ -830,6 +833,10 @@ export class ChartManager {
     if (this.mode == EditMode.Play || this.mode == EditMode.Record)
       this.setMode(this.lastMode)
     if (Flags.viewMode) this.setMode(EditMode.View)
+
+    this.noChartTextA.visible = false
+    this.noChartTextB.visible = false
+
     if (this.loadedChart.getMusicPath() != this.lastSong) {
       this.lastSong = this.loadedChart.getMusicPath()
       const audioPlaying = this.chartAudio.isPlaying()
@@ -837,9 +844,6 @@ export class ChartManager {
       EventHandler.emit("audioLoaded")
       if (audioPlaying) this.chartAudio.play()
     }
-
-    this.noChartTextA.visible = false
-    this.noChartTextB.visible = false
 
     WaterfallManager.create(
       "Loaded chart " +
@@ -878,12 +882,15 @@ export class ChartManager {
     this.chartAudio.stop()
     this.chartAudio?.destroy()
     const musicPath = this.loadedChart.getMusicPath()
+    WaterfallManager.create("Loading audio...")
     if (musicPath == "") {
       WaterfallManager.createFormatted(
         "Failed to load audio: no audio file",
         "error"
       )
+      const prevBeat = Math.max(0, this.beat)
       this.chartAudio = new ChartAudio(undefined)
+      this.beat = prevBeat
       return
     }
     const audioHandle = await this.getAudioHandle(musicPath)
@@ -892,15 +899,21 @@ export class ChartManager {
         "Failed to load audio: couldn't find audio file " + musicPath,
         "error"
       )
+      const prevBeat = Math.max(0, this.beat)
       this.chartAudio = new ChartAudio(undefined)
+      this.beat = prevBeat
       return
     }
     const audioFile = await audioHandle.getFile()
+    const prevBeat = Math.max(0, this.beat)
     this.chartAudio = new ChartAudio(
       await audioFile.arrayBuffer(),
       extname(audioFile.name)
     )
-    this.chartAudio.seek(this.time)
+    this.chartAudio.onLoad(() => {
+      WaterfallManager.create("Loaded audio")
+    })
+    this.beat = prevBeat
     this.chartAudio.onStop = () => {
       this.assistTick.stop()
       this.me_high.stop()
