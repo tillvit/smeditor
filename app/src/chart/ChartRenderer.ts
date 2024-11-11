@@ -50,6 +50,10 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   private lastNoteType: NoteType | null = null
   private editingCol = -1
 
+  // Only update beat and time every frame to maintain the same time for each draw call
+  private cachedBeat = 0
+  private cachedTime = 0
+
   private readonly waveform: Waveform
   private readonly barlines: BarlineContainer
   private readonly timingAreas: TimingAreaContainer
@@ -290,6 +294,9 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   update() {
     if (this.destroyed) return
 
+    this.cachedBeat = this.chartManager.beat
+    this.cachedTime = this.chartManager.time
+
     this.x =
       this.chartManager.app.renderer.screen.width / 2 +
       Options.chart.receptorXPos
@@ -378,7 +385,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @memberof ChartRenderer
    */
   getTimeWithOffset(): number {
-    let time = this.chartManager.time
+    let time = this.cachedTime
     if (
       this.chartManager.getMode() == EditMode.Play ||
       this.chartManager.getMode() == EditMode.Record
@@ -395,7 +402,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @memberof ChartRenderer
    */
   getBeatWithOffset(): number {
-    let beat = this.chartManager.beat
+    let beat = this.cachedBeat
     if (
       this.chartManager.getMode() == EditMode.Play ||
       this.chartManager.getMode() == EditMode.Record
@@ -412,7 +419,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @memberof ChartRenderer
    */
   getVisualTime(): number {
-    let time = this.chartManager.time
+    let time = this.cachedTime
     if (
       this.chartManager.getMode() == EditMode.Play ||
       this.chartManager.getMode() == EditMode.Record
@@ -430,7 +437,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @memberof ChartRenderer
    */
   getVisualBeat(): number {
-    let beat = this.chartManager.beat
+    let beat = this.cachedBeat
     if (
       this.chartManager.getMode() == EditMode.Play ||
       this.chartManager.getMode() == EditMode.Record
