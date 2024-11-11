@@ -548,6 +548,20 @@ export class ChartManager {
       }
     })
 
+    EventHandler.on("userOptionUpdated", (option: string) => {
+      if (
+        option != "audio.rate" &&
+        option != "play.effectOffset" &&
+        option != "audio.assistTick" &&
+        option != "audio.metronome"
+      )
+        return
+      this.assistTick.stop()
+      this.me_low.stop()
+      this.me_high.stop()
+      this.setNoteIndex()
+    })
+
     window.addEventListener(
       "keyup",
       (event: KeyboardEvent) => {
