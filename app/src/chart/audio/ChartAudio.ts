@@ -86,14 +86,10 @@ export class ChartAudio {
     this._loadedBuffer = this._audioContext.createBuffer(2, 1, 44100)
     this.initSource()
     this.loaded = new Promise(resolve => {
-      if (data) {
-        WaterfallManager.create("Loading audio...")
-      }
       this.decodeData(data)
         .then(buffer => {
           if (!buffer) return
           this._loadedBuffer = buffer
-          WaterfallManager.create("Loaded audio")
           return buffer
         })
         .then(async buffer => {
@@ -586,9 +582,9 @@ export class ChartAudio {
   seek(): number
   seek(playbackTime: number): void
   seek(playbackTime?: number) {
-    if (this._destroyed) return 0
-    if (!this._source) return 0
     if (playbackTime === undefined) {
+      if (this._destroyed) return this._playbackTime
+      if (!this._source) return this._playbackTime
       if (!this._isPlaying) return this._playbackTime
       return (
         (this._audioContext.currentTime - this._startTimestamp) *
