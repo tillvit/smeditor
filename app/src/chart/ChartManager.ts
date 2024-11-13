@@ -736,7 +736,6 @@ export class ChartManager {
     this.chartAudio.seek(0)
     this.lastSong = null
     this.smPath = path
-    this.beat = 0
 
     this.loadingText.visible = true
 
@@ -765,7 +764,7 @@ export class ChartManager {
     EventHandler.emit("smLoaded")
     await this.loadChart()
     EventHandler.emit("smLoadedAfter")
-    if (this.time == 0) this.beat = 0
+    this.beat = 0
 
     RecentFileHandler.addSM(this.smPath, this.loadedSM)
   }
