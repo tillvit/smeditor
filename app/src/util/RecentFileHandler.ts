@@ -61,7 +61,7 @@ export class RecentFileHandler {
   private static async saveEntries() {
     this.limitEntries()
     const results = await Promise.all(
-      this._model!.map(async entry => await FileHandler.hasFile(entry.path))
+      this._model!.map(entry => FileHandler.hasFile(entry.path))
     )
     this._model = this._model!.filter((_v, index) => results[index])
     localStorage.setItem("recentFiles", JSON.stringify(this._model))

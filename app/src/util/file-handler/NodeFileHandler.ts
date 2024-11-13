@@ -58,12 +58,7 @@ export class NodeFileHandler implements BaseFileHandler {
   }
 
   async hasFile(path: string): Promise<boolean> {
-    try {
-      await this.getFileHandle(path)
-      return true
-    } catch (err) {
-      return false
-    }
+    return (await this.getFileHandle(path)) !== undefined
   }
 
   async getFileHandle(
