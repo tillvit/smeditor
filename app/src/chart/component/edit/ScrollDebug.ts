@@ -32,6 +32,7 @@ export class ScrollDebug extends Container implements ChartRendererComponent {
 
   constructor(renderer: ChartRenderer) {
     super()
+    this.visible = false
     this.renderer = renderer
     this.receptors = this.createBar(0x7777ff)
     this.receptors.width = 300
