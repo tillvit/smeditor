@@ -471,9 +471,10 @@ export class ChartManager {
           ) {
             if (Options.audio.assistTick && Flags.assist) {
               this.assistTick.play(
-                notedata[this.assistTickIndex].second +
+                (notedata[this.assistTickIndex].second +
                   Options.play.effectOffset -
-                  time
+                  time) /
+                  Options.audio.rate
               )
             }
             assistRows.add(notedata[this.assistTickIndex].second)
@@ -502,7 +503,9 @@ export class ChartManager {
         for (const [barBeat, isMeasure] of measureBeats) {
           if (this.beat > barBeat) continue
           const barSecond = td.getSecondsFromBeat(barBeat)
-          const offset = barSecond + Options.play.effectOffset - this.time
+          const offset =
+            (barSecond + Options.play.effectOffset - this.time) /
+            Options.audio.rate
           if (isMeasure) this.me_high.play(offset)
           else this.me_low.play(offset)
         }
@@ -543,6 +546,20 @@ export class ChartManager {
       if (this.loadedChart) {
         this.setNoteIndex()
       }
+    })
+
+    EventHandler.on("userOptionUpdated", (option: string) => {
+      if (
+        option != "audio.rate" &&
+        option != "play.effectOffset" &&
+        option != "audio.assistTick" &&
+        option != "audio.metronome"
+      )
+        return
+      this.assistTick.stop()
+      this.me_low.stop()
+      this.me_high.stop()
+      this.setNoteIndex()
     })
 
     window.addEventListener(
@@ -719,7 +736,6 @@ export class ChartManager {
     this.chartAudio.seek(0)
     this.lastSong = null
     this.smPath = path
-    this.beat = 0
 
     this.loadingText.visible = true
 
@@ -748,7 +764,7 @@ export class ChartManager {
     EventHandler.emit("smLoaded")
     await this.loadChart()
     EventHandler.emit("smLoadedAfter")
-    if (this.time == 0) this.beat = 0
+    this.beat = 0
 
     RecentFileHandler.addSM(this.smPath, this.loadedSM)
   }

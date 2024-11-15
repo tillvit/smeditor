@@ -1,4 +1,5 @@
 import { TimingEventType } from "../chart/sm/TimingTypes"
+import { EventHandler } from "./EventHandler"
 
 const SAVE_BLACKLIST = [
   "audio.rate",
@@ -275,8 +276,29 @@ export class Options extends DefaultOptions {
   }
 }
 
-const obj: { [key: string]: any } = {}
-for (const e of Object.entries(DefaultOptions)) {
-  obj[e[0]] = JSON.parse(JSON.stringify(e[1]))
+function hookObject(object: any, copy: any, key = "") {
+  for (const [k, v] of Object.entries(copy)) {
+    if (typeof v == "object") {
+      if (Array.isArray(v)) {
+        object[k] = v
+      } else {
+        object[k] = {}
+        hookObject(object[k], v, key == "" ? k : key + "." + k)
+      }
+    } else {
+      let internalValue = v
+      const id = key + "." + k
+      Object.defineProperty(object, k, {
+        get: function () {
+          return internalValue
+        },
+        set: function (value) {
+          EventHandler.emit("userOptionUpdated", id)
+          internalValue = value
+        },
+        enumerable: true,
+      })
+    }
+  }
 }
-Object.assign(Options, obj)
+hookObject(Options, DefaultOptions)
