@@ -11,6 +11,7 @@ import semver from "semver"
 import tippy from "tippy.js"
 import "tippy.js/animations/scale-subtle.css"
 import "tippy.js/dist/tippy.css"
+import { registerSW } from "virtual:pwa-register"
 import WebFont from "webfontloader"
 import { ChartManager } from "./chart/ChartManager"
 import { GameTypeRegistry } from "./chart/gameTypes/GameTypeRegistry"
@@ -142,6 +143,8 @@ export class App {
       })
       this.checkAppVersion()
     }
+
+    this.checkCoreVersion()
 
     Options.loadOptions()
     loadFlags()
@@ -477,6 +480,17 @@ export class App {
           )
         }
       })
+  }
+
+  checkCoreVersion() {
+    registerSW({
+      onNeedRefresh() {
+        console.log("need refresh")
+      },
+      onOfflineReady() {
+        console.log("offline ready")
+      },
+    })
   }
 }
 
