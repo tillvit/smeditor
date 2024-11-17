@@ -20,7 +20,9 @@ import { Chart } from "./chart/sm/Chart"
 import { ContextMenuPopup } from "./gui/element/ContextMenu"
 import { MenubarManager } from "./gui/element/MenubarManager"
 import { WaterfallManager } from "./gui/element/WaterfallManager"
-import { UpdatePopup } from "./gui/popup/UpdatePopup"
+import { AppUpdatePopup } from "./gui/popup/update/AppUpdatePopup"
+import { CoreUpdatePopup } from "./gui/popup/update/CoreUpdatePopup"
+import { OfflineUpdatePopup } from "./gui/popup/update/OfflineUpdatePopup"
 import { DebugWidget } from "./gui/widget/DebugWidget"
 import { DirectoryWindow } from "./gui/window/DirectoryWindow"
 import { InitialWindow } from "./gui/window/InitialWindow"
@@ -474,7 +476,7 @@ export class App {
           semver.lt(gui.App.manifest.version, version.version) &&
           localStorage.getItem("downloadedVersion") !== version.version
         ) {
-          UpdatePopup.open(
+          AppUpdatePopup.open(
             version.version,
             version.downloads[os as keyof Version["downloads"]]
           )
@@ -483,12 +485,14 @@ export class App {
   }
 
   checkCoreVersion() {
-    registerSW({
+    const update = registerSW({
       onNeedRefresh() {
-        console.log("need refresh")
+        CoreUpdatePopup.open(update)
+        console.log("Found new version")
       },
       onOfflineReady() {
-        console.log("offline ready")
+        OfflineUpdatePopup.open()
+        console.log("Offline use ready")
       },
     })
   }
