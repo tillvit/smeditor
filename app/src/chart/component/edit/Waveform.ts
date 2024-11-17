@@ -120,8 +120,10 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     )
     this.trackVariable(() => this.renderer.chartManager.chartAudio.hasFilters())
 
+    const onUpdate = () => this.getData()
+
     this.anchor.set(0.5)
-    this.renderer.chartManager.chartAudio.onUpdate(() => this.getData())
+    this.renderer.chartManager.chartAudio.onUpdate(onUpdate)
     this.getData()
     this.resizeWaveform()
 
@@ -131,7 +133,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     const audioChanged = () => {
       this.getData()
       this.resizeWaveform()
-      this.renderer.chartManager.chartAudio.onUpdate(() => this.getData())
+      this.renderer.chartManager.chartAudio.onUpdate(onUpdate)
     }
     EventHandler.on("timingModified", timingHandler)
     this.on("destroyed", () => {
@@ -140,6 +142,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
     EventHandler.on("audioLoaded", audioChanged)
     this.on("destroyed", () => {
       EventHandler.off("audioLoaded", audioChanged)
+      this.renderer.chartManager.chartAudio.offUpdate(onUpdate)
     })
   }
 
