@@ -835,14 +835,6 @@ textarea {
   margin-bottom: 12px;
 }
 
-.chart-properties ul .label {
-  font-weight: bold;
-}
-
-.chart-properties ul > *:last-child {
-  flex: 1;
-}
-
 div.inlineEdit[contenteditable="true"] {
   min-width: 8px;
   text-align: right;
@@ -2355,21 +2347,50 @@ input[type="color"] {
   right: 15px;
   bottom: 15px;
   z-index: 10;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--primary-bg);
   border-radius: 10px;
   padding: 10px;
   transition: 0.3s ease-out;
   user-select: none;
   cursor: pointer;
   transform-origin: bottom right;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.update-popup.exiting {
+  transform: translateX(50px);
+  opacity: 0;
+}
+
+.update-popup .title {
+  font-weight: bold;
+  text-align: center;
+}
+
+.update-options {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  margin-top: 5px;
+}
+
+.update-options button {
+  max-width: 100px;
+  flex: 1;
 }
 
 .animated .update-popup {
   transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.875);
 }
 .animated .update-popup:hover {
-  scale: 1.03;
-  background-color: rgba(66, 66, 66, 0.5);
+  scale: 1.01;
+  background-color: var(--primary-bg-active);
 }
 
 .sync-container {
@@ -3118,4 +3139,25 @@ input[type="color"] {
   border: 1px solid rgb(0, 0, 0, 0.5);
   border-radius: 5px;
   overflow: hidden;
+}
+
+.markdown-container {
+  background-color: var(--secondary-bg);
+  border: 1px solid var(--secondary-border);
+  border-radius: 5px 5px 0 0;
+  flex: 1;
+  height: 100%;
+  overflow: auto;
+  padding: 15px;
+}
+
+.markdown-container hr {
+  border: 1px solid var(--secondary-border);
+  margin: 5px 0px;
+}
+
+.markdown-container ul {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-left: 30px;
 }

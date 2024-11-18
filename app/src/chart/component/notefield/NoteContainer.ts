@@ -42,7 +42,7 @@ export class NoteContainer extends Container {
     EventHandler.on("chartModified", purgeNotes)
     this.on("destroyed", () => {
       EventHandler.off("timeSigChanged", timeSig)
-      EventHandler.on("chartModified", purgeNotes)
+      EventHandler.off("chartModified", purgeNotes)
     })
   }
 
