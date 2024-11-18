@@ -1,0 +1,7 @@
+[
+  {
+    "version": "1.0.0",
+    "date": 1731940757839,
+    "changelog": "## Changes\n- Changelog System\n    - *we'll just start the versions from 1.0.0*\n - Update Popups\n    - You will be notified when a new version is available (just refresh the page) \n ## Fixes \n - Fixed two memory leaks when loading a new chart"
+  }
+]

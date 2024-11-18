@@ -24,6 +24,7 @@ import { AppUpdatePopup } from "./gui/popup/update/AppUpdatePopup"
 import { CoreUpdatePopup } from "./gui/popup/update/CoreUpdatePopup"
 import { OfflineUpdatePopup } from "./gui/popup/update/OfflineUpdatePopup"
 import { DebugWidget } from "./gui/widget/DebugWidget"
+import { ChangelogWindow } from "./gui/window/ChangelogWindow"
 import { DirectoryWindow } from "./gui/window/DirectoryWindow"
 import { InitialWindow } from "./gui/window/InitialWindow"
 import { WindowManager } from "./gui/window/WindowManager"
@@ -55,7 +56,7 @@ declare global {
   }
 }
 
-interface Version {
+interface AppVersion {
   version: string
   type: string
   date: number
@@ -66,6 +67,12 @@ interface Version {
     linux: string
   }
   changelog: string[]
+}
+
+interface CoreVersion {
+  version: string
+  date: number
+  changelog: string
 }
 
 export class App {
@@ -465,7 +472,7 @@ export class App {
     } else if (process.platform == "linux") os = "linux"
     fetch("/smeditor/assets/app/versions.json")
       .then(data => data.json())
-      .then((versions: Version[]) => {
+      .then((versions: AppVersion[]) => {
         versions = versions.sort((a, b) => {
           if (BUILD_TYPES[a.type] != BUILD_TYPES[b.type])
             return BUILD_TYPES[b.type] - BUILD_TYPES[a.type]
@@ -478,7 +485,7 @@ export class App {
         ) {
           AppUpdatePopup.open(
             version.version,
-            version.downloads[os as keyof Version["downloads"]]
+            version.downloads[os as keyof AppVersion["downloads"]]
           )
         }
       })
@@ -495,6 +502,21 @@ export class App {
         console.log("Offline use ready")
       },
     })
+    fetch("/smeditor/assets/app/changelog.json")
+      .then(data => data.json())
+      .then((versions: CoreVersion[]) => {
+        const version = versions[0]
+        const localVersion = localStorage.getItem("coreVersion")
+        if (localVersion !== null && semver.lt(localVersion, version.version)) {
+          this.windowManager.openWindow(
+            new ChangelogWindow(this, {
+              version: version.version,
+              markdown: version.changelog,
+            })
+          )
+        }
+        localStorage.setItem("coreVersion", version.version)
+      })
   }
 }
 
