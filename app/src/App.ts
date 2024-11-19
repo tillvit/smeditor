@@ -24,7 +24,7 @@ import { AppUpdatePopup } from "./gui/popup/update/AppUpdatePopup"
 import { CoreUpdatePopup } from "./gui/popup/update/CoreUpdatePopup"
 import { OfflineUpdatePopup } from "./gui/popup/update/OfflineUpdatePopup"
 import { DebugWidget } from "./gui/widget/DebugWidget"
-import { ChangelogWindow } from "./gui/window/ChangelogWindow"
+import { ChangelogWindow, CoreVersion } from "./gui/window/ChangelogWindow"
 import { DirectoryWindow } from "./gui/window/DirectoryWindow"
 import { InitialWindow } from "./gui/window/InitialWindow"
 import { WindowManager } from "./gui/window/WindowManager"
@@ -67,12 +67,6 @@ interface AppVersion {
     linux: string
   }
   changelog: string[]
-}
-
-interface CoreVersion {
-  version: string
-  date: number
-  changelog: string
 }
 
 export class App {
@@ -508,12 +502,7 @@ export class App {
         const version = versions[0]
         const localVersion = localStorage.getItem("coreVersion")
         if (localVersion !== null && semver.lt(localVersion, version.version)) {
-          this.windowManager.openWindow(
-            new ChangelogWindow(this, {
-              version: version.version,
-              markdown: version.changelog,
-            })
-          )
+          this.windowManager.openWindow(new ChangelogWindow(this))
         }
         localStorage.setItem("coreVersion", version.version)
       })

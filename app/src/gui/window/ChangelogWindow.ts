@@ -2,16 +2,16 @@ import markdownit from "markdown-it"
 import { App } from "../../App"
 import { Window } from "./Window"
 
-interface ChangelogOptions {
+export interface CoreVersion {
   version: string
-  markdown: string
+  date: number
+  changelog: string
 }
 
 export class ChangelogWindow extends Window {
   app: App
-  opt: ChangelogOptions
 
-  constructor(app: App, options: ChangelogOptions) {
+  constructor(app: App) {
     super({
       title: "Changelog",
       width: 600,
@@ -19,7 +19,6 @@ export class ChangelogWindow extends Window {
       win_id: "changelog",
     })
     this.app = app
-    this.opt = options
     this.initView()
   }
 
@@ -31,11 +30,17 @@ export class ChangelogWindow extends Window {
     const mdContainer = document.createElement("div")
     mdContainer.classList.add("markdown-container")
 
-    const result = markdownit().render(
-      `# ${this.opt.version}\n---\n` + this.opt.markdown
-    )
-
-    mdContainer.innerHTML = result
+    fetch("/smeditor/assets/app/changelog.json")
+      .then(data => data.json())
+      .then((versions: CoreVersion[]) => {
+        const markdown = versions
+          .map(version => {
+            return `# ${version.version}\n---\n` + version.changelog
+          })
+          .join("\n---\n")
+        const result = markdownit().render(markdown)
+        mdContainer.innerHTML = result
+      })
 
     padding.appendChild(mdContainer)
 
