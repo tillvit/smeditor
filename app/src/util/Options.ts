@@ -278,15 +278,11 @@ export class Options extends DefaultOptions {
 
 function hookObject(object: any, copy: any, key = "") {
   for (const [k, v] of Object.entries(copy)) {
-    if (typeof v == "object") {
-      if (Array.isArray(v)) {
-        object[k] = v
-      } else {
-        object[k] = {}
-        hookObject(object[k], v, key == "" ? k : key + "." + k)
-      }
+    if (typeof v == "object" && !Array.isArray(v)) {
+      object[k] = {}
+      hookObject(object[k], v, key == "" ? k : key + "." + k)
     } else {
-      let internalValue = v
+      let internalValue = structuredClone(v)
       const id = key + "." + k
       Object.defineProperty(object, k, {
         get: function () {
