@@ -8,9 +8,10 @@ import {
   Texture,
 } from "pixi.js"
 import { TimingEventPopup } from "../../../gui/popup/TimingEventPopup"
+import { TimingTypePopup } from "../../../gui/popup/TimingTypePopup"
 import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
 import { BezierAnimator } from "../../../util/BezierEasing"
-import { lighten } from "../../../util/Color"
+import { assignTint, lighten } from "../../../util/Color"
 import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { EventHandler } from "../../../util/EventHandler"
 import { roundDigit } from "../../../util/Math"
@@ -33,10 +34,11 @@ export interface TimingBox extends Container {
   popup?: TimingEventPopup
 }
 
-interface TimingTrack extends Sprite {
-  lastX: number
-  targetAlpha: number
+interface TimingTrack extends Container {
   type: string
+  timingMode: "chart" | "song"
+  background: Sprite
+  btns: Container
 }
 
 interface TimingRow {
@@ -97,6 +99,7 @@ export class TimingTrackContainer
   private ghostBox?: TimingBox
 
   private timingDirty = false
+  private tracksDirty = true
 
   constructor(renderer: ChartRenderer) {
     super()
@@ -105,12 +108,23 @@ export class TimingTrackContainer
     this.sortableChildren = true
     this.addChild(this.tracks, this.boxPool)
 
-    const timingEventListener = () => (this.timingDirty = true)
+    const timingEventListener = () => {
+      this.timingDirty = true
+      this.tracksDirty = true
+    }
+
+    const userOptionListener = (option: string) => {
+      if (option.startsWith("chart.timingEventOrder")) {
+        this.tracksDirty = true
+      }
+    }
 
     EventHandler.on("timingModified", timingEventListener)
-    this.on("destroyed", () =>
+    EventHandler.on("userOptionUpdated", userOptionListener)
+    this.on("destroyed", () => {
       EventHandler.off("timingModified", timingEventListener)
-    )
+      EventHandler.off("userOptionUpdated", userOptionListener)
+    })
   }
 
   update(firstBeat: number, lastBeat: number) {
@@ -125,18 +139,58 @@ export class TimingTrackContainer
   }
 
   private createTrack(type: string, x: number) {
-    const track: TimingTrack = Object.assign(new Sprite(Texture.WHITE), {
+    const track: TimingTrack = Object.assign(new Container(), {
       alpha: 0,
-      width: TIMING_TRACK_WIDTHS[type],
       name: type,
-      height: 5000,
       x,
       type,
-      lastX: 0,
-      tint: 0x263252,
-      targetAlpha: 0,
+      timingMode: "song" as const,
+      background: new Sprite(Texture.WHITE),
+      btns: new Container(),
     })
-    track.anchor.y = 0.5
+    track.background = new Sprite(Texture.WHITE)
+    track.background.width = TIMING_TRACK_WIDTHS[type]
+    track.background.height = 5000
+    track.background.tint = 0x263252
+    track.background.anchor.y = 0.5
+    track.background.alpha = 0
+    track.btns.y =
+      this.renderer.getActualReceptorYPos() + (Options.chart.reverse ? 50 : -50)
+
+    const timingTypeBtn = new Container()
+    const timingTypeBtnBg = new BetterRoundedRect()
+    const timingTypeBtnText = new BitmapText(type, timingNumbers)
+
+    timingTypeBtnBg.width = 20
+    timingTypeBtnBg.height = 20
+    assignTint(timingTypeBtnBg, "widget-bg")
+    timingTypeBtnBg.pivot.set(10, 10)
+
+    timingTypeBtnText.anchor.set(0.5, 0.55)
+    timingTypeBtnText.text = "S"
+    assignTint(timingTypeBtnText, "text-color")
+
+    timingTypeBtn.alpha = 0.4
+    timingTypeBtn.name = "timingTypeBtn"
+    timingTypeBtn.eventMode = "static"
+
+    timingTypeBtn.on("mouseenter", () => {
+      new TimingTypePopup(
+        timingTypeBtn,
+        type as TimingEventType,
+        this.renderer.chart.timingData
+      )
+    })
+    timingTypeBtn.on("mouseleave", () => {
+      TimingTypePopup.activePopup?.close()
+    })
+
+    timingTypeBtn.addChild(timingTypeBtnBg, timingTypeBtnText)
+
+    track.btns.addChild(timingTypeBtn)
+
+    track.addChild(track.background, track.btns)
+
     this.tracks.addChild(track)
     return track
   }
@@ -318,47 +372,75 @@ export class TimingTrackContainer
   }
 
   private updateTracks() {
-    const leftTypes = Options.chart.timingEventOrder.left
-    const rightTypes = Options.chart.timingEventOrder.right
     const editingTiming =
       this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
       this.renderer.chartManager.getMode() == EditMode.Edit
 
-    this.tracks.children.forEach(child => (child.visible = false))
+    if (editingTiming) {
+      this.tracks.children.forEach(track => {
+        track.btns.y =
+          this.renderer.getActualReceptorYPos() +
+          (Options.chart.reverse ? 50 : -50)
+      })
+    }
+
+    if (!this.tracksDirty && this.wasEditingTiming == editingTiming) {
+      return
+    }
+    this.wasEditingTiming = editingTiming
+    this.tracksDirty = false
+
+    const leftTypes = Options.chart.timingEventOrder.left
+    const rightTypes = Options.chart.timingEventOrder.right
+    this.tracks.children.forEach(track => {
+      track.visible = false
+    })
 
     let x = -this.renderer.chart.gameType.notefieldWidth * 0.5 - 128
+
+    const animate = (
+      obj: Container,
+      prop: string,
+      value: number,
+      time: number,
+      id: string
+    ) => {
+      BezierAnimator.animate(
+        obj,
+        {
+          0: { [prop]: "inherit" },
+          1: { [prop]: value },
+        },
+        time,
+        bezier(0, 0, 0.16, 1.01),
+        () => {},
+        id
+      )
+    }
     for (let i = leftTypes.length - 1; i >= 0; i--) {
       const type = leftTypes[i]
       const track =
         this.tracks.getChildByName<TimingTrack>(type) ??
         this.createTrack(type, x)
       track.visible = true
-      if (track.lastX != x) {
-        track.lastX = x
-        track.targetAlpha = i % 2 == 0 ? 0.1 : 0
-        BezierAnimator.animate(
-          track,
-          {
-            0: { x: "inherit", "anchor.x": "inherit" },
-            1: { x, "anchor.x": 1 },
-          },
-          0.3,
-          bezier(0, 0, 0.16, 1.01),
-          () => {},
-          `track-${type}-x`
-        )
-        BezierAnimator.animate(
-          track,
-          {
-            0: { alpha: "inherit" },
-            1: { alpha: editingTiming ? track.targetAlpha : 0 },
-          },
-          0.3,
-          bezier(0, 0, 0.16, 1.01),
-          () => {},
-          `track-${type}-alpha`
-        )
-      }
+      const alpha = i % 2 == 0 ? 0.1 : 0
+      animate(track, "x", x, 0.3, `track-${type}-x`)
+      animate(
+        track.btns,
+        "x",
+        -TIMING_TRACK_WIDTHS[type] / 2,
+        0.3,
+        `track-${type}-btn-x`
+      )
+      animate(track.background, "anchor.x", 1, 0.3, `track-${type}-anchor-x`)
+      animate(
+        track.background,
+        "alpha",
+        editingTiming ? alpha : 0,
+        0.3,
+        `track-${type}-bg-alpha`
+      )
+
       x -= TIMING_TRACK_WIDTHS[type]
     }
 
@@ -369,50 +451,49 @@ export class TimingTrackContainer
         this.tracks.getChildByName<TimingTrack>(type) ??
         this.createTrack(type, x)
       track.visible = true
-      if (track.lastX != x) {
-        track.lastX = x
-        track.targetAlpha = i % 2 == 0 ? 0.1 : 0
-        BezierAnimator.animate(
-          track,
-          {
-            0: { x: "inherit", "anchor.x": "inherit" },
-            1: { x, "anchor.x": 0 },
-          },
-          0.3,
-          bezier(0, 0, 0.16, 1.01),
-          () => {},
-          `track-${type}-x`
-        )
-        BezierAnimator.animate(
-          track,
-          {
-            0: { alpha: "inherit" },
-            1: { alpha: editingTiming ? track.targetAlpha : 0 },
-          },
-          0.3,
-          bezier(0, 0, 0.16, 1.01),
-          () => {},
-          `track-${type}-alpha`
-        )
-      }
+      const alpha = i % 2 == 0 ? 0.1 : 0
+      animate(track, "x", x, 0.3, `track-${type}-x`)
+      animate(
+        track.btns,
+        "x",
+        TIMING_TRACK_WIDTHS[type] / 2,
+        0.3,
+        `track-${type}-btn-x`
+      )
+      animate(track.background, "anchor.x", 0, 0.3, `track-${type}-anchor-x`)
+      animate(
+        track.background,
+        "alpha",
+        editingTiming ? alpha : 0,
+        0.3,
+        `track-${type}-bg-alpha`
+      )
       x += TIMING_TRACK_WIDTHS[type]
     }
-    if (this.wasEditingTiming != editingTiming) {
-      this.wasEditingTiming = editingTiming
-      for (const track of this.tracks.children) {
-        BezierAnimator.animate(
-          track,
-          {
-            0: { alpha: "inherit" },
-            1: { alpha: editingTiming ? track.targetAlpha : 0 },
-          },
-          0.3,
-          bezier(0, 0, 0.16, 1.01),
-          () => {},
-          `track-${track.type}-alpha`
-        )
-      }
+
+    for (const track of this.tracks.children) {
+      animate(
+        track,
+        "alpha",
+        editingTiming ? 1 : 0,
+        0.3,
+        `track-${track.type}-alpha`
+      )
     }
+
+    this.tracks.children.forEach(track => {
+      const timingBtnText = track.btns.getChildByName<Container>(
+        "timingTypeBtn"
+      )?.children[1] as BitmapText
+      if (timingBtnText) {
+        timingBtnText.text =
+          this.renderer.chart.timingData.isPropertyChartSpecific(
+            track.type as TimingEventType
+          )
+            ? "C"
+            : "S"
+      }
+    })
   }
 
   private updateBoxes(firstBeat: number, lastBeat: number) {
@@ -685,7 +766,9 @@ export class TimingTrackContainer
     let leastDist = Number.MAX_SAFE_INTEGER
     let best = this.tracks.children[0]
     for (const track of this.tracks.children) {
-      const dist = Math.abs(track.x + (0.5 - track.anchor.x) * track.width - x)
+      const dist = Math.abs(
+        track.x + (0.5 - track.background.anchor.x) * track.width - x
+      )
       if (dist < leastDist) {
         best = track
         leastDist = dist
