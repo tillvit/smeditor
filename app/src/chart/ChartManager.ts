@@ -162,6 +162,8 @@ export class ChartManager {
   private mode: EditMode = EditMode.Edit
   private lastMode: EditMode = EditMode.Edit
 
+  private _beat = 0
+
   private readonly noChartTextA: BitmapText
   private readonly noChartTextB: BitmapText
   private readonly loadingText: BitmapText
@@ -666,15 +668,16 @@ export class ChartManager {
 
   get beat() {
     if (!this.loadedChart) return 0
-    return (
-      Math.round(this.loadedChart.getBeatFromSeconds(this.time) * 100000) /
-      100000
-    )
+    if (!this.chartAudio.isPlaying()) {
+      return this._beat
+    }
+    return this.loadedChart.getBeatFromSeconds(this.time)
   }
 
   set beat(beat: number) {
     if (!this.loadedChart) return
     this.chartAudio.seek(this.loadedChart.getSecondsFromBeat(beat))
+    this._beat = beat
     this.setNoteIndex()
   }
 
@@ -1056,8 +1059,10 @@ export class ChartManager {
 
   playPause() {
     this.setNoteIndex()
-    if (this.chartAudio.isPlaying()) this.chartAudio.pause()
-    else this.chartAudio.play()
+    if (this.chartAudio.isPlaying()) {
+      this.chartAudio.pause()
+      this._beat = this.loadedChart?.getBeatFromSeconds(this.time) ?? 0
+    } else this.chartAudio.play()
   }
 
   getClosestTick(beat: number, quant: number) {
