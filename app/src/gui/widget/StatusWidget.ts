@@ -59,6 +59,7 @@ export class StatusWidget extends Widget {
   private readonly editChoiceContainer: HTMLDivElement
 
   private readonly addTimingEvent: HTMLButtonElement
+  private readonly splitTiming: HTMLButtonElement
   private readonly toggleTimingTracks: HTMLButtonElement
   private readonly detectSync: HTMLButtonElement
   private readonly offsetCounter: HTMLDivElement
@@ -384,6 +385,23 @@ export class StatusWidget extends Widget {
     Keybinds.createKeybindTooltip(
       this.addTimingEvent
     )`Add timing events ${"toggleAddTiming"}`
+
+    this.splitTiming = document.createElement("button")
+    this.splitTiming.tabIndex = -1
+    const splitTimingIcon = Icons.getIcon("SPLIT_TIMING", 32)
+    this.splitTiming.appendChild(splitTimingIcon)
+    this.splitTiming.onclick = () => {
+      TimingTrackOrderPopup.active
+        ? TimingTrackOrderPopup.close()
+        : TimingTrackOrderPopup.open()
+      this.splitTiming.blur()
+    }
+    this.splitTiming.id = "split-timing"
+    this.timingContainer.appendChild(this.splitTiming)
+
+    Keybinds.createKeybindTooltip(
+      this.splitTiming
+    )`Manage split timing  ${"toggleAddTiming"}`
 
     this.toggleTimingTracks = document.createElement("button")
     this.toggleTimingTracks.tabIndex = -1
