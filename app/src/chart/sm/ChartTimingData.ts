@@ -24,38 +24,76 @@ export class ChartTimingData extends TimingData {
     return this.columns[type] ?? this.simfileTimingData.getColumn(type)
   }
 
-  private splitSM<Event extends DeletableEvent>(events: Event[]) {
-    const smEvents: Event[] = []
-    const chartEvents: Event[] = []
-    for (const event of events) {
-      if (event.isChartTiming) chartEvents.push(event)
-      else smEvents.push(event)
-    }
-    return [smEvents, chartEvents]
+  getOffset(): number {
+    return this.offset ?? this.simfileTimingData.getOffset()
   }
 
-  private splitSMPairs<Event extends DeletableEvent>(pairs: [Event, Event][]) {
-    const smPairs: [Event, Event][] = []
-    const chartPairs: [Event, Event][] = []
-    for (const pair of pairs) {
-      if (pair[0].isChartTiming) chartPairs.push(pair)
-      else smPairs.push(pair)
-    }
-    return [smPairs, chartPairs]
+  usesChartTiming(): boolean {
+    return this.offset !== undefined || Object.values(this.columns).length > 0
   }
 
-  insert(events: TimingEvent[]): void {
+  hasChartOffset() {
+    return this.offset !== undefined
+  }
+
+  isPropertyChartSpecific(type: TimingEventType): boolean {
+    return type in this.columns
+  }
+
+  removeChartSpecificEvents<Type extends TimingEventType>(
+    type: Type
+  ): Extract<TimingEvent, { type: Type }>[] {
+    return []
+  }
+
+  reloadCache(types: TimingType[] = []) {
+    super.reloadCache(types)
+    this.chart.recalculateNotes()
+  }
+
+  private splitSM<Type extends { type: TimingEventType }>(events: Type[]) {
+    const smEvents: Type[] = []
+    const chartEvents: Type[] = []
+    events.forEach(event => {
+      if (this.isPropertyChartSpecific(event.type)) {
+        chartEvents.push(event)
+      } else {
+        smEvents.push(event)
+      }
+    })
+    return { chartEvents, smEvents }
+  }
+
+  private splitSMPairs(events: [TimingEvent, TimingEvent][]) {
+    const smEvents: [TimingEvent, TimingEvent][] = []
+    const chartEvents: [TimingEvent, TimingEvent][] = []
+    events.forEach(pair => {
+      if (this.isPropertyChartSpecific(pair[0].type)) {
+        chartEvents.push(pair)
+      } else {
+        smEvents.push(pair)
+      }
+    })
+    return { chartEvents, smEvents }
+  }
+
+  insertMulti(events: TimingEvent[]): void {
+    const { smEvents, chartEvents } = this.splitSM(events)
+
     let smResults: ReturnType<TimingData["_insert"]>
     let chartResults: ReturnType<TimingData["_insert"]>
     const hasTimeSig = events.find(event => event.type == "TIMESIGNATURES")
-    const [sm, chart] = this.splitSM(events)
     ActionHistory.instance.run({
       action: app => {
-        smResults = this.simfileTimingData._insert(sm)
-        this.simfileTimingData._delete(smResults.errors)
-        chartResults = this._insert(chart)
+        chartResults = this._insert(chartEvents)
         this._delete(chartResults.errors)
+
+        smResults = this.simfileTimingData._insert(smEvents)
+        this.simfileTimingData._delete(smResults.errors)
+
+        this.reloadCache()
         this.simfileTimingData.reloadCache()
+
         app.chartManager.clearSelections()
         app.chartManager.setEventSelection(
           this.findEvents(chartResults.events).concat(
@@ -70,9 +108,12 @@ export class ChartTimingData extends TimingData {
         this.simfileTimingData._insert(smResults.errors)
         this.simfileTimingData._delete(smResults.events)
         this.simfileTimingData._insert(smResults.insertConflicts)
+
         this._insert(chartResults.errors)
         this._delete(chartResults.events)
         this._insert(chartResults.insertConflicts)
+
+        this.reloadCache()
         this.simfileTimingData.reloadCache()
         app.chartManager.clearSelections()
         EventHandler.emit("timingModified")
@@ -82,18 +123,24 @@ export class ChartTimingData extends TimingData {
     })
   }
 
-  modify(events: [TimingEvent, TimingEvent][]): void {
+  modifyMulti(events: [TimingEvent, TimingEvent][]): void {
+    const { smEvents, chartEvents } = this.splitSMPairs(events)
+
     let smResults: ReturnType<TimingData["_modify"]>
     let chartResults: ReturnType<TimingData["_modify"]>
+
     const hasTimeSig = events.find(pair => pair[0].type == "TIMESIGNATURES")
-    const [sm, chart] = this.splitSMPairs(events)
     ActionHistory.instance.run({
       action: app => {
-        smResults = this.simfileTimingData._modify(sm)
-        this.simfileTimingData._delete(smResults.errors)
-        chartResults = this._modify(chart)
+        chartResults = this._modify(chartEvents)
         this._delete(chartResults.errors)
+
+        smResults = this.simfileTimingData._modify(smEvents)
+        this.simfileTimingData._delete(smResults.errors)
+
+        this.reloadCache()
         this.simfileTimingData.reloadCache()
+
         app.chartManager.clearSelections()
         app.chartManager.setEventSelection(
           this.findEvents(chartResults.newEvents).concat(
@@ -115,7 +162,8 @@ export class ChartTimingData extends TimingData {
         this._insert(chartResults.insertConflicts)
         this._insert(chartResults.oldEvents)
 
-        this.simfileTimingData.reloadCache()
+        this.reloadCache()
+
         app.chartManager.clearSelections()
         app.chartManager.setEventSelection(
           this.findEvents(chartResults.oldEvents).concat(
@@ -129,18 +177,23 @@ export class ChartTimingData extends TimingData {
     })
   }
 
-  delete(events: DeletableEvent[]): void {
-    let smResults: ReturnType<TimingData["_delete"]>
+  deleteMulti(events: DeletableEvent[]): void {
+    const { smEvents, chartEvents } = this.splitSM(events)
+
     let chartResults: ReturnType<TimingData["_delete"]>
+    let smResults: ReturnType<TimingData["_delete"]>
     const hasTimeSig = events.find(event => event.type == "TIMESIGNATURES")
-    const [sm, chart] = this.splitSM(events)
     ActionHistory.instance.run({
       action: app => {
-        smResults = this.simfileTimingData._delete(sm)
-        this.simfileTimingData._delete(smResults.errors)
-        chartResults = this._delete(chart)
+        chartResults = this._delete(chartEvents)
         this._delete(chartResults.errors)
+
+        smResults = this.simfileTimingData._delete(smEvents)
+        this.simfileTimingData._delete(smResults.errors)
+
+        this.reloadCache()
         this.simfileTimingData.reloadCache()
+
         app.chartManager.clearSelections()
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
@@ -149,9 +202,13 @@ export class ChartTimingData extends TimingData {
       undo: app => {
         this.simfileTimingData._insert(smResults.errors)
         this.simfileTimingData._insert(smResults.removedEvents)
+
         this._insert(chartResults.errors)
         this._insert(chartResults.removedEvents)
+
+        this.reloadCache()
         this.simfileTimingData.reloadCache()
+
         app.chartManager.clearSelections()
         app.chartManager.setEventSelection(
           this.findEvents(chartResults.removedEvents).concat(
@@ -163,26 +220,5 @@ export class ChartTimingData extends TimingData {
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
       },
     })
-  }
-
-  getOffset(): number {
-    return this.offset ?? this.simfileTimingData.getOffset()
-  }
-
-  usesChartTiming(): boolean {
-    return this.offset !== undefined || Object.values(this.columns).length > 0
-  }
-
-  hasChartOffset() {
-    return this.offset !== undefined
-  }
-
-  isPropertyChartSpecific(type: TimingEventType): boolean {
-    return type in this.columns
-  }
-
-  reloadCache(types: TimingType[] = []) {
-    super.reloadCache(types)
-    this.chart.recalculateNotes()
   }
 }

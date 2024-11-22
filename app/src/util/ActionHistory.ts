@@ -66,4 +66,19 @@ export class ActionHistory {
   isDirty(): boolean {
     return this.itemIndex != this.limit
   }
+
+  merge(n: number) {
+    const items = this.items.splice(-n)
+    const reversed = items.reverse()
+    this.itemIndex -= n
+    this.run({
+      action: () => {},
+      redo: app => {
+        items.forEach(item => item.action(app))
+      },
+      undo: app => {
+        reversed.forEach(item => item.undo(app))
+      },
+    })
+  }
 }

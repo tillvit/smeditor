@@ -7,8 +7,8 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
+import { TimingColumnPopup } from "../../../gui/popup/TimingColumnPopup"
 import { TimingEventPopup } from "../../../gui/popup/TimingEventPopup"
-import { TimingTypePopup } from "../../../gui/popup/TimingTypePopup"
 import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
 import { BezierAnimator } from "../../../util/BezierEasing"
 import { assignTint, lighten } from "../../../util/Color"
@@ -175,14 +175,29 @@ export class TimingTrackContainer
     timingTypeBtn.eventMode = "static"
 
     timingTypeBtn.on("mouseenter", () => {
-      new TimingTypePopup(
-        timingTypeBtn,
-        type as TimingEventType,
-        this.renderer.chart.timingData
-      )
+      if (!TimingColumnPopup.activePopup?.persistent)
+        new TimingColumnPopup(
+          timingTypeBtn,
+          type as TimingEventType,
+          this.renderer.chart.timingData
+        )
     })
     timingTypeBtn.on("mouseleave", () => {
-      TimingTypePopup.activePopup?.close()
+      if (!TimingColumnPopup.activePopup?.persistent)
+        TimingColumnPopup.activePopup?.close()
+    })
+
+    timingTypeBtn.on("pointerdown", () => {
+      if (!TimingColumnPopup.activePopup?.persistent) {
+        TimingColumnPopup.activePopup?.select()
+      } else {
+        new TimingColumnPopup(
+          timingTypeBtn,
+          type as TimingEventType,
+          this.renderer.chart.timingData
+        )
+        TimingColumnPopup.activePopup?.select()
+      }
     })
 
     timingTypeBtn.addChild(timingTypeBtnBg, timingTypeBtnText)
@@ -199,9 +214,6 @@ export class TimingTrackContainer
     BezierAnimator.stop(box.animationId)
     Object.assign(box, {
       event,
-      isChartTiming: this.renderer.chart.timingData.isPropertyChartSpecific(
-        event.type
-      ),
       lastX: undefined,
       lastAnchor: undefined,
       animationId: undefined,
@@ -252,10 +264,7 @@ export class TimingTrackContainer
 
       box.popup?.close()
       if (this.renderer.chartManager.getMode() == EditMode.Edit) {
-        new TimingEventPopup(
-          box,
-          this.getTargetTimingData(box.event.isChartTiming)
-        )
+        new TimingEventPopup(box, this.getTargetTimingData(box.event))
         if (box.popup)
           box.popup.onConfirm = () => {
             this.renderer.chartManager.removeEventFromSelection(event)
@@ -326,10 +335,7 @@ export class TimingTrackContainer
       ) {
         if (!box?.popup) {
           TimingEventPopup.activePopup?.close()
-          new TimingEventPopup(
-            box,
-            this.getTargetTimingData(box.event.isChartTiming)
-          )
+          new TimingEventPopup(box, this.getTargetTimingData(box.event))
           box.popup!.onConfirm = () => {
             this.renderer.chartManager.removeEventFromSelection(event)
           }
@@ -481,10 +487,16 @@ export class TimingTrackContainer
       )
     }
 
+    if (!editingTiming) {
+      TimingColumnPopup.activePopup?.close()
+    }
+
     this.tracks.children.forEach(track => {
-      const timingBtnText = track.btns.getChildByName<Container>(
-        "timingTypeBtn"
-      )?.children[1] as BitmapText
+      const timingBtn = track.btns.getChildByName<Container>("timingTypeBtn")
+      const timingBtnText = timingBtn?.children[1] as BitmapText
+      if (timingBtn) {
+        timingBtn.eventMode = editingTiming ? "static" : "none"
+      }
       if (timingBtnText) {
         timingBtnText.text =
           this.renderer.chart.timingData.isPropertyChartSpecific(
@@ -745,20 +757,14 @@ export class TimingTrackContainer
       return
     }
     this.renderer.chartManager.clearSelections()
-    this.ghostBox.event.isChartTiming =
-      this.renderer.chart.timingData.isPropertyChartSpecific(
-        this.ghostBox.event.type
-      )
     new TimingEventPopup(
       this.ghostBox,
-      this.getTargetTimingData(this.ghostBox.event.isChartTiming),
+      this.getTargetTimingData(this.ghostBox.event),
       true
     )
     this.ghostBox.popup?.select()
     this.ghostBox.popup!.onConfirm = event => {
-      this.getTargetTimingData(this.ghostBox!.event.isChartTiming).insert([
-        event,
-      ])
+      this.getTargetTimingData(this.ghostBox!.event).insert([event])
     }
   }
 
@@ -817,7 +823,9 @@ export class TimingTrackContainer
     return label
   }
 
-  private getTargetTimingData(isChartTiming: boolean) {
+  private getTargetTimingData(event: TimingEvent) {
+    const isChartTiming =
+      this.renderer.chart.timingData.isPropertyChartSpecific(event.type)
     return isChartTiming
       ? this.renderer.chart.timingData
       : this.renderer.chart.timingData.simfileTimingData

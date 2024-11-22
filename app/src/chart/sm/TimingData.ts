@@ -3,7 +3,6 @@ import { EventHandler } from "../../util/EventHandler"
 import { clamp, roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { bsearch } from "../../util/Util"
-import { ChartTimingData } from "./ChartTimingData"
 import {
   BGChangeTimingEvent,
   BeatTimingCache,
@@ -23,12 +22,6 @@ import {
   TimingType,
   WarpTimingEvent,
 } from "./TimingTypes"
-
-export function isChartTimingData(
-  timingData: TimingData
-): timingData is ChartTimingData {
-  return !!(timingData as ChartTimingData).simfileTimingData
-}
 
 export abstract class TimingData {
   protected readonly _cache: TimingCache = {
@@ -882,7 +875,6 @@ export abstract class TimingData {
           beat,
           value: 120,
           second: this.getSecondsFromBeat(beat),
-          isChartTiming: isChartTimingData(this),
         }
       case "STOPS":
       case "WARPS":
@@ -892,7 +884,6 @@ export abstract class TimingData {
           beat,
           value: 0,
           second: this.getSecondsFromBeat(beat),
-          isChartTiming: isChartTimingData(this),
         }
       case "DELAYS":
         return {
@@ -900,7 +891,6 @@ export abstract class TimingData {
           beat,
           value: 0,
           second: this.getSecondsFromBeat(beat, "before"),
-          isChartTiming: isChartTimingData(this),
         }
       case "LABELS":
         return {
@@ -908,7 +898,6 @@ export abstract class TimingData {
           beat,
           value: "",
           second: this.getSecondsFromBeat(beat),
-          isChartTiming: isChartTimingData(this),
         }
       case "SPEEDS":
         return {
@@ -918,7 +907,6 @@ export abstract class TimingData {
           delay: 0,
           unit: "B",
           second: this.getSecondsFromBeat(beat),
-          isChartTiming: isChartTimingData(this),
         }
       case "SCROLLS":
         return {
@@ -926,7 +914,6 @@ export abstract class TimingData {
           beat,
           value: 1,
           second: this.getSecondsFromBeat(beat),
-          isChartTiming: isChartTimingData(this),
         }
       case "TICKCOUNTS":
         return {
@@ -934,7 +921,6 @@ export abstract class TimingData {
           beat,
           value: 4,
           second: this.getSecondsFromBeat(beat),
-          isChartTiming: isChartTimingData(this),
         }
       case "TIMESIGNATURES":
         return {
@@ -943,7 +929,6 @@ export abstract class TimingData {
           upper: 4,
           lower: 4,
           second: this.getSecondsFromBeat(beat),
-          isChartTiming: isChartTimingData(this),
         }
       case "COMBOS":
         return {
@@ -952,7 +937,6 @@ export abstract class TimingData {
           hitMult: 1,
           missMult: 1,
           second: this.getSecondsFromBeat(beat),
-          isChartTiming: isChartTimingData(this),
         }
       case "ATTACKS":
         return {
@@ -962,7 +946,6 @@ export abstract class TimingData {
           endType: "LEN",
           value: 1,
           mods: "",
-          isChartTiming: isChartTimingData(this),
         }
       case "BGCHANGES":
       case "FGCHANGES":
@@ -980,7 +963,6 @@ export abstract class TimingData {
           color1: "",
           color2: "",
           second: this.getSecondsFromBeat(beat),
-          isChartTiming: isChartTimingData(this),
         }
     }
   }
@@ -1038,9 +1020,6 @@ export abstract class TimingData {
           event => (event.second = this.getSecondsFromBeat(event.beat))
         )
     }
-    column.events.forEach(
-      event => (event.isChartTiming = isChartTimingData(this))
-    )
   }
 
   // 1. insert the events
@@ -1174,6 +1153,91 @@ export abstract class TimingData {
     }
   }
 
+  insert(events: TimingEvent[]): void {
+    let results: ReturnType<TimingData["_insert"]>
+    const hasTimeSig = events.find(event => event.type == "TIMESIGNATURES")
+    ActionHistory.instance.run({
+      action: app => {
+        results = this._insert(events)
+        this._delete(results.errors)
+        this.reloadCache()
+        app.chartManager.clearSelections()
+        app.chartManager.setEventSelection(this.findEvents(results.events))
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+      undo: app => {
+        this._insert(results.errors)
+        this._delete(results.events)
+        this._insert(results.insertConflicts)
+        this.reloadCache()
+        app.chartManager.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+    })
+  }
+
+  modify(events: [TimingEvent, TimingEvent][]): void {
+    let results: ReturnType<TimingData["_modify"]>
+    const hasTimeSig = events.find(pair => pair[0].type == "TIMESIGNATURES")
+    ActionHistory.instance.run({
+      action: app => {
+        results = this._modify(events)
+        this._delete(results.errors)
+        this.reloadCache()
+        app.chartManager.clearSelections()
+        app.chartManager.setEventSelection(this.findEvents(results.newEvents))
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+      undo: app => {
+        this._insert(results.errors)
+        this._delete(results.newEvents)
+        this._insert(results.insertConflicts)
+        this._insert(results.oldEvents)
+        this.reloadCache()
+
+        app.chartManager.clearSelections()
+        app.chartManager.setEventSelection(this.findEvents(results.oldEvents))
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+    })
+  }
+
+  delete(events: DeletableEvent[]): void {
+    let results: ReturnType<TimingData["_delete"]>
+    const hasTimeSig = events.find(event => event.type == "TIMESIGNATURES")
+    ActionHistory.instance.run({
+      action: app => {
+        results = this._delete(events)
+        this._delete(results.errors)
+        this.reloadCache()
+        app.chartManager.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+      undo: app => {
+        this._insert(results.errors)
+        this._insert(results.removedEvents)
+        this.reloadCache()
+        app.chartManager.clearSelections()
+        app.chartManager.setEventSelection(
+          this.findEvents(results.removedEvents)
+        )
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+    })
+  }
+
   findEvents(events: TimingEvent[]): Cached<TimingEvent>[] {
     const splitEvent = this.splitEvents(events)
     const foundEvents: Cached<TimingEvent>[] = []
@@ -1195,12 +1259,6 @@ export abstract class TimingData {
     }
     return foundEvents
   }
-
-  abstract insert(events: TimingEvent[], doCache?: boolean): void
-
-  abstract modify(events: [TimingEvent, TimingEvent][], doCache?: boolean): void
-
-  abstract delete(events: DeletableEvent[], doCache?: boolean): void
 
   getBeatFromSeconds(seconds: number): number {
     if (!isFinite(seconds)) return 0

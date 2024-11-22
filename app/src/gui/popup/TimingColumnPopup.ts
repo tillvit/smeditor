@@ -1,11 +1,12 @@
 import { Container } from "pixi.js"
+import tippy from "tippy.js"
 import { ChartTimingData } from "../../chart/sm/ChartTimingData"
 import { TimingEvent, TimingEventType } from "../../chart/sm/TimingTypes"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp } from "../../util/Math"
 
-export class TimingTypePopup {
-  static activePopup?: TimingTypePopup
+export class TimingColumnPopup {
+  static activePopup?: TimingColumnPopup
   private button
   private type
   private timingData: ChartTimingData
@@ -13,6 +14,10 @@ export class TimingTypePopup {
   private zoomer!: HTMLDivElement
   private editText!: HTMLDivElement
   private title!: HTMLDivElement
+  private desc!: HTMLDivElement
+  private convertText!: HTMLDivElement
+  private convertBtnOne!: HTMLButtonElement
+  private convertBtnTwo!: HTMLButtonElement
   private readonly onTimingChange = this.updateValues.bind(this)
   private readonly clickOutside
   private moveInterval
@@ -41,14 +46,14 @@ export class TimingTypePopup {
     EventHandler.on("timingModified", this.onTimingChange)
     document.getElementById("popups")?.appendChild(this.popup)
     this.moveInterval = setInterval(() => this.movePosition(), 150)
-    TimingTypePopup.activePopup?.close()
-    TimingTypePopup.activePopup = this
+    TimingColumnPopup.activePopup?.close()
+    TimingColumnPopup.activePopup = this
   }
   private movePosition() {
     const point = this.button.getBounds()
     // will the box stay in bounds?
     const centerx = point.left + point.width / 2
-    const width = 150
+    const width = 250
     const leftRestriction = width / 2 + 15
     const rightRestriction = window.innerWidth - width / 2 - 15
     this.popup.style.left = `${clamp(
@@ -72,15 +77,41 @@ export class TimingTypePopup {
     popup.classList.add("popup")
     const popupZoomer = document.createElement("div")
     popupZoomer.classList.add("popup-zoomer")
-    popupZoomer.style.width = "150px"
+    popupZoomer.style.width = "250px"
     popupZoomer.style.backgroundColor = "#333333"
     this.zoomer = popupZoomer
     popup.appendChild(popupZoomer)
+
     const title = document.createElement("div")
     title.innerText = "Song Column"
     title.classList.add("popup-title")
     this.title = title
     popupZoomer.appendChild(title)
+
+    const desc = document.createElement("div")
+    desc.classList.add("popup-desc")
+    this.desc = desc
+    popupZoomer.appendChild(desc)
+
+    const popupOptions = document.createElement("div")
+    popupOptions.style.display = "flex"
+    popupOptions.style.gap = "4px"
+    popupOptions.style.alignItems = "center"
+    popupOptions.style.flexDirection = "column"
+    popupOptions.style.marginTop = "10px"
+    popupOptions.style.fontSize = "12px"
+
+    const convertText = document.createElement("div")
+    const convertBtnOne = document.createElement("button")
+    const convertBtnTwo = document.createElement("button")
+
+    this.convertBtnOne = convertBtnOne
+    this.convertBtnTwo = convertBtnTwo
+    this.convertText = convertText
+
+    popupOptions.replaceChildren(convertText, convertBtnOne, convertBtnTwo)
+
+    popupZoomer.appendChild(popupOptions)
 
     const editText = document.createElement("div")
     editText.innerText = "click to edit"
@@ -100,7 +131,7 @@ export class TimingTypePopup {
     clearInterval(this.moveInterval)
     this.popup.classList.add("exiting")
     setTimeout(() => this.popup.remove(), 200)
-    TimingTypePopup.activePopup = undefined
+    TimingColumnPopup.activePopup = undefined
   }
 
   select() {
@@ -112,8 +143,37 @@ export class TimingTypePopup {
   }
 
   updateValues() {
-    this.title.innerText = this.timingData.isPropertyChartSpecific(this.type)
-      ? "Chart Column"
-      : "Song Column"
+    const isChart = this.timingData.isPropertyChartSpecific(this.type)
+    this.title.innerText = isChart
+      ? "Chart Timing Column"
+      : "Song Timing Column"
+    this.desc.innerText = isChart
+      ? "Events in this column are only used by this difficulty"
+      : "Events in this column are used by all difficulties (unless overridden)"
+    this.convertText.innerText = isChart
+      ? "Convert to song timing"
+      : "Convert to chart timing"
+    this.convertBtnOne.innerText = isChart
+      ? "Copy chart events"
+      : "Copy song events"
+    this.convertBtnTwo.innerText = isChart
+      ? "Delete chart events"
+      : "Don't copy song events"
+    this.convertBtnTwo.classList.toggle("delete", isChart)
+
+    tippy(this.convertBtnOne, {
+      content: isChart
+        ? "Copies chart events from this column to song timing"
+        : "Copies song events from this column to chart timing",
+    })
+    tippy(this.convertBtnTwo, {
+      content: isChart
+        ? "Reverts this column to the events in song timing, deleting any difficulty-specific events"
+        : "Converts this column to chart timing without copying any song events",
+    })
+
+    // this.convertBtnOne.onclick = () => {
+    //   this.timingData.getColumn(this.type).copyEvents(isChart)
+    // }
   }
 }

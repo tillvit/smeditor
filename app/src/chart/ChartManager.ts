@@ -2146,15 +2146,16 @@ export class ChartManager {
     return { removedNotes, truncatedHolds }
   }
 
-  modifyEventSelection(modify: (note: Cached<TimingEvent>) => TimingEvent) {
+  modifyEventSelection(modify: (event: Cached<TimingEvent>) => TimingEvent) {
     if (!this.loadedChart || !this.loadedSM) return
 
-    this.loadedChart.timingData.modify(
+    const events: [TimingEvent, TimingEvent][] =
       this.eventSelection.timingEvents.map(event => [
         event,
         modify(structuredClone(event)),
       ])
-    )
+
+    this.loadedChart.timingData.modifyMulti(events)
   }
 
   deleteSelection() {
@@ -2174,7 +2175,7 @@ export class ChartManager {
   deleteEventSelection() {
     if (this.eventSelection.timingEvents.length == 0) return
     if (!this.loadedChart || !this.loadedSM) return
-    this.loadedChart.timingData.delete(this.eventSelection.timingEvents)
+    this.loadedChart.timingData.deleteMulti(this.eventSelection.timingEvents)
   }
 
   paste(data: string, clear = false) {
@@ -2320,18 +2321,13 @@ export class ChartManager {
     if (!events) return false
     if (events.length == 0) return false
 
-    const chartTiming = this.loadedChart.timingData
     events.forEach(event => {
       if (event.type == "ATTACKS") event.second += this.time
       else event.beat += this.beat
     })
-    events.forEach(
-      event =>
-        ((event as Cached<TimingEvent>).isChartTiming =
-          chartTiming.isPropertyChartSpecific(event.type))
-    )
 
-    chartTiming.insert(events)
+    this.loadedChart.timingData.insertMulti(events)
+
     return true
   }
 
