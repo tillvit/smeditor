@@ -1,14 +1,12 @@
 import { App } from "../../App"
 import { TIMING_WINDOW_DATA } from "../../data/TimingDataWindowData"
 import { EventHandler } from "../../util/EventHandler"
-import { Dropdown } from "../element/Dropdown"
 import { Window } from "./Window"
 
 export class TimingDataWindow extends Window {
   app: App
 
   private lastBeat: number
-  private chartTiming = false
   private readonly interval
   private changeHandler = () => this.setData()
 
@@ -23,8 +21,6 @@ export class TimingDataWindow extends Window {
     })
     this.app = app
     this.lastBeat = Math.round(this.app.chartManager.beat * 1000) / 1000
-    this.chartTiming =
-      this.app.chartManager.loadedChart!.timingData.usesChartTiming()
     this.initView()
     this.interval = setInterval(() => {
       if (
@@ -49,29 +45,13 @@ export class TimingDataWindow extends Window {
     this.viewElement.classList.add("timing-data")
     const padding = document.createElement("div")
     padding.classList.add("padding")
-    const songLabel = document.createElement("div")
-    songLabel.classList.add("label")
-    songLabel.innerText = "Apply to"
 
-    const item = Dropdown.create(
-      ["All charts", "This chart"],
-      this.chartTiming ? "This chart" : "All charts"
-    )
-    item.onChange(value => {
-      this.chartTiming = value == "This chart"
-    })
-    padding.appendChild(songLabel)
-    padding.appendChild(item.view)
     Object.values(TIMING_WINDOW_DATA).forEach(entry => {
       const label = document.createElement("div")
       label.classList.add("label")
       label.innerText = entry.title
 
-      const item = entry.element.create(this.app, () =>
-        this.chartTiming
-          ? this.app.chartManager.loadedChart!.timingData
-          : this.app.chartManager.loadedSM!.timingData
-      )
+      const item = entry.element.create(this.app)
 
       padding.appendChild(label)
       padding.appendChild(item)
@@ -83,7 +63,7 @@ export class TimingDataWindow extends Window {
   setData() {
     if (!this.app.chartManager.loadedChart) return
     Object.values(TIMING_WINDOW_DATA).forEach((entry, index) => {
-      const item = this.viewElement.children[0].children[index * 2 + 3]
+      const item = this.viewElement.children[0].children[index * 2 + 1]
       entry.element.update(
         item,
         this.app.chartManager.loadedChart!.timingData,

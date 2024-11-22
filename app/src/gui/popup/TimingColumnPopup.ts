@@ -175,17 +175,21 @@ export class TimingColumnPopup {
     this.convertBtnOne.onclick = isChart
       ? () => {
           this.timingData.moveColumnsToSimfile([this.type])
+          this.close()
         }
       : () => {
           this.timingData.moveColumnsFromSimfile([this.type])
+          this.close()
         }
 
     this.convertBtnTwo.onclick = isChart
       ? () => {
           this.timingData.deleteColumns([this.type])
+          this.close()
         }
       : () => {
           this.timingData.createChartColumns([this.type])
+          this.close()
         }
   }
 }
