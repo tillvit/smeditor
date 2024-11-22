@@ -1,6 +1,6 @@
-import { UpdatePopup } from "./UpdatePopup"
+import { UpdateNotification } from "./UpdateNotification"
 
-export class AppUpdatePopup extends UpdatePopup {
+export class AppUpdateNotification extends UpdateNotification {
   static open(versionName: string, downloadLink: string) {
     super.build({
       title: `A new version of the desktop app is available! (${versionName})`,

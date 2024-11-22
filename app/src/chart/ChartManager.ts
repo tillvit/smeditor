@@ -9,9 +9,9 @@ import { App } from "../App"
 import { AUDIO_EXT } from "../data/FileData"
 import { IS_OSX, KEYBIND_DATA } from "../data/KeybindData"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
-import { AppUpdatePopup } from "../gui/popup/update/AppUpdatePopup"
-import { CoreUpdatePopup } from "../gui/popup/update/CoreUpdatePopup"
-import { OfflineUpdatePopup } from "../gui/popup/update/OfflineUpdatePopup"
+import { AppUpdateNotification } from "../gui/notification/AppUpdateNotification"
+import { CoreUpdateNotification } from "../gui/notification/CoreUpdateNotification"
+import { OfflineUpdateNotification } from "../gui/notification/OfflineUpdateNotification"
 import { DebugWidget } from "../gui/widget/DebugWidget"
 import { WidgetManager } from "../gui/widget/WidgetManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
@@ -698,9 +698,9 @@ export class ChartManager {
    * @memberof ChartManager
    */
   async loadSM(path?: string) {
-    AppUpdatePopup.close()
-    CoreUpdatePopup.close()
-    OfflineUpdatePopup.close()
+    AppUpdateNotification.close()
+    CoreUpdateNotification.close()
+    OfflineUpdateNotification.close()
     // Save confirmation
     if (ActionHistory.instance.isDirty()) {
       const window = new ConfirmationWindow(

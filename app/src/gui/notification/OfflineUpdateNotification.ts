@@ -1,6 +1,6 @@
-import { UpdatePopup } from "./UpdatePopup"
+import { UpdateNotification } from "./UpdateNotification"
 
-export class OfflineUpdatePopup extends UpdatePopup {
+export class OfflineUpdateNotification extends UpdateNotification {
   static open() {
     super.build({
       title: `SMEditor was loaded offline!`,
