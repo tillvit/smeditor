@@ -99,7 +99,10 @@ export class StatusWidget extends Widget {
     const skipStartIcon = Icons.getIcon("SKIP_START", 36)
     this.skipStart.appendChild(skipStartIcon)
     this.skipStart.onclick = () => {
-      this.manager.chartManager.beat = 0
+      this.manager.chartManager.beat = Math.max(
+        0,
+        this.manager.chartManager.loadedChart!.getBeatFromSeconds(0)
+      )
       this.skipStart.blur()
     }
 
