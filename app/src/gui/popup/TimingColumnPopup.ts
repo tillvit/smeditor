@@ -154,8 +154,8 @@ export class TimingColumnPopup {
       ? "Convert to song timing"
       : "Convert to chart timing"
     this.convertBtnOne.innerText = isChart
-      ? "Copy chart events"
-      : "Copy song events"
+      ? "Move chart events"
+      : "Move song events"
     this.convertBtnTwo.innerText = isChart
       ? "Delete chart events"
       : "Don't copy song events"
@@ -163,8 +163,8 @@ export class TimingColumnPopup {
 
     tippy(this.convertBtnOne, {
       content: isChart
-        ? "Copies chart events from this column to song timing"
-        : "Copies song events from this column to chart timing",
+        ? "Moves chart events from this column to song timing"
+        : "Moves song events from this column to chart timing",
     })
     tippy(this.convertBtnTwo, {
       content: isChart
@@ -172,8 +172,20 @@ export class TimingColumnPopup {
         : "Converts this column to chart timing without copying any song events",
     })
 
-    // this.convertBtnOne.onclick = () => {
-    //   this.timingData.getColumn(this.type).copyEvents(isChart)
-    // }
+    this.convertBtnOne.onclick = isChart
+      ? () => {
+          this.timingData.moveColumnsToSimfile([this.type])
+        }
+      : () => {
+          this.timingData.moveColumnsFromSimfile([this.type])
+        }
+
+    this.convertBtnTwo.onclick = isChart
+      ? () => {
+          this.timingData.deleteColumns([this.type])
+        }
+      : () => {
+          this.timingData.createChartColumns([this.type])
+        }
   }
 }

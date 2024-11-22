@@ -28,7 +28,7 @@ export abstract class TimingData {
     warpedBeats: new Map(),
     beatsToSeconds: new Map(),
   }
-  protected readonly columns: {
+  protected columns: {
     [Type in TimingEventType]?: TimingColumn<
       Extract<TimingEvent, { type: Type }>
     >
@@ -440,7 +440,7 @@ export abstract class TimingData {
     return "#" + eventType + ":" + str + ";\n"
   }
 
-  createColumn(type: TimingEventType) {
+  protected createColumn(type: TimingEventType) {
     this.columns[type] = {
       type,
       events: [],

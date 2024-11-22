@@ -40,10 +40,149 @@ export class ChartTimingData extends TimingData {
     return type in this.columns
   }
 
-  removeChartSpecificEvents<Type extends TimingEventType>(
-    type: Type
-  ): Extract<TimingEvent, { type: Type }>[] {
-    return []
+  moveColumnsToSimfile(columns: TimingEventType[]) {
+    const cachedColumns = Object.fromEntries(
+      columns
+        .map(type => this.columns[type])
+        .filter(col => col !== undefined)
+        .map(col => [col.type, col])
+    )
+    const events = Object.values(cachedColumns)
+      .map(c => c.events)
+      .flat()
+
+    let results: ReturnType<TimingData["_insert"]>
+    const hasTimeSig = columns.includes("TIMESIGNATURES")
+    ActionHistory.instance.run({
+      action: app => {
+        columns.forEach(type => {
+          delete this.columns[type]
+        })
+
+        results = this.simfileTimingData._insert(events)
+        this.simfileTimingData._delete(results.errors)
+
+        this.simfileTimingData.reloadCache()
+
+        app.chartManager.clearSelections()
+
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+      undo: app => {
+        this.simfileTimingData._insert(results.errors)
+        this.simfileTimingData._delete(results.events)
+        this.simfileTimingData._insert(results.insertConflicts)
+
+        Object.assign(this.columns, cachedColumns)
+
+        this.simfileTimingData.reloadCache()
+        app.chartManager.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+    })
+  }
+
+  moveColumnsFromSimfile(columns: TimingEventType[]) {
+    const hasTimeSig = columns.includes("TIMESIGNATURES")
+    ActionHistory.instance.run({
+      action: app => {
+        columns.forEach(type => {
+          this.createColumn(type)
+          Object.assign(
+            this.columns[type]!,
+            structuredClone(this.simfileTimingData.getColumn(type))
+          )
+        })
+
+        this.simfileTimingData.reloadCache()
+
+        app.chartManager.clearSelections()
+
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+      undo: app => {
+        columns.forEach(type => {
+          delete this.columns[type]
+        })
+
+        this.simfileTimingData.reloadCache()
+        app.chartManager.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+    })
+  }
+
+  createChartColumns(columns: TimingEventType[]) {
+    const hasTimeSig = columns.includes("TIMESIGNATURES")
+    ActionHistory.instance.run({
+      action: app => {
+        columns.forEach(type => {
+          this.createColumn(type)
+        })
+
+        this.simfileTimingData.reloadCache()
+
+        app.chartManager.clearSelections()
+
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+      undo: app => {
+        columns.forEach(type => {
+          delete this.columns[type]
+        })
+
+        this.simfileTimingData.reloadCache()
+        app.chartManager.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+    })
+  }
+
+  deleteColumns(columns: TimingEventType[]) {
+    const cachedColumns = Object.fromEntries(
+      columns
+        .map(type => this.columns[type])
+        .filter(col => col !== undefined)
+        .map(col => [col.type, col])
+    )
+
+    const hasTimeSig = columns.includes("TIMESIGNATURES")
+    ActionHistory.instance.run({
+      action: app => {
+        columns.forEach(type => {
+          delete this.columns[type]
+        })
+
+        this.simfileTimingData.reloadCache()
+
+        app.chartManager.clearSelections()
+
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+      undo: app => {
+        Object.assign(this.columns, cachedColumns)
+
+        this.simfileTimingData.reloadCache()
+        app.chartManager.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+    })
   }
 
   reloadCache(types: TimingType[] = []) {
@@ -91,7 +230,6 @@ export class ChartTimingData extends TimingData {
         smResults = this.simfileTimingData._insert(smEvents)
         this.simfileTimingData._delete(smResults.errors)
 
-        this.reloadCache()
         this.simfileTimingData.reloadCache()
 
         app.chartManager.clearSelections()
@@ -113,7 +251,6 @@ export class ChartTimingData extends TimingData {
         this._delete(chartResults.events)
         this._insert(chartResults.insertConflicts)
 
-        this.reloadCache()
         this.simfileTimingData.reloadCache()
         app.chartManager.clearSelections()
         EventHandler.emit("timingModified")
@@ -138,7 +275,6 @@ export class ChartTimingData extends TimingData {
         smResults = this.simfileTimingData._modify(smEvents)
         this.simfileTimingData._delete(smResults.errors)
 
-        this.reloadCache()
         this.simfileTimingData.reloadCache()
 
         app.chartManager.clearSelections()
@@ -162,7 +298,7 @@ export class ChartTimingData extends TimingData {
         this._insert(chartResults.insertConflicts)
         this._insert(chartResults.oldEvents)
 
-        this.reloadCache()
+        this.simfileTimingData.reloadCache()
 
         app.chartManager.clearSelections()
         app.chartManager.setEventSelection(
@@ -191,7 +327,6 @@ export class ChartTimingData extends TimingData {
         smResults = this.simfileTimingData._delete(smEvents)
         this.simfileTimingData._delete(smResults.errors)
 
-        this.reloadCache()
         this.simfileTimingData.reloadCache()
 
         app.chartManager.clearSelections()
@@ -206,7 +341,6 @@ export class ChartTimingData extends TimingData {
         this._insert(chartResults.errors)
         this._insert(chartResults.removedEvents)
 
-        this.reloadCache()
         this.simfileTimingData.reloadCache()
 
         app.chartManager.clearSelections()
