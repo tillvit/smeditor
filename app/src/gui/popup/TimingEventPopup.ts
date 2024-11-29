@@ -182,6 +182,7 @@ export class TimingEventPopup extends Popup {
         ],
       ])
     }
+    this.cachedEvent = structuredClone(this.options.box.event)
   }
 
   private static updateValues() {
