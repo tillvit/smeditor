@@ -31,7 +31,6 @@ export interface TimingBox extends Container {
   lastX?: number
   lastAnchor?: number
   animationId?: string
-  popup?: TimingEventPopup
 }
 
 interface TimingTrack extends Container {
@@ -231,17 +230,15 @@ export class TimingTrackContainer
     box.selection.height = 25
     box.selection.position = box.backgroundObj.position
 
-    box.popup = undefined
-
-    if (TimingEventPopup.activePopup) {
-      const currentEvent = TimingEventPopup.activePopup.getEvent()
+    if (TimingEventPopup.active) {
+      // check if the event is the same as the one in the popup
+      const currentEvent = TimingEventPopup.getEvent()
       if (
         currentEvent.type == "ATTACKS" &&
         event.type == "ATTACKS" &&
         currentEvent.second == event.second
       ) {
-        TimingEventPopup.activePopup.attach(box)
-        box.popup = TimingEventPopup.activePopup
+        TimingEventPopup.attach(box)
       }
       if (
         currentEvent.type != "ATTACKS" &&
@@ -249,31 +246,32 @@ export class TimingTrackContainer
         currentEvent.type == event.type &&
         currentEvent.beat == event.beat
       ) {
-        TimingEventPopup.activePopup.attach(box)
-        box.popup = TimingEventPopup.activePopup
+        TimingEventPopup.attach(box)
       }
     }
   }
 
   private addDragListeners(box: TimingBox, event: Cached<TimingEvent>) {
     box.on("mouseenter", () => {
-      if (box?.popup?.persistent === true) return
+      if (TimingEventPopup.persistent) return
       if (this.renderer.chartManager.eventSelection.timingEvents.length > 0)
         return
       if (this.renderer.isDragSelecting()) return
 
-      box.popup?.close()
+      if (TimingEventPopup.active) TimingEventPopup.close()
       if (this.renderer.chartManager.getMode() == EditMode.Edit) {
-        new TimingEventPopup(box, this.getTargetTimingData(box.event))
-        if (box.popup)
-          box.popup.onConfirm = () => {
+        TimingEventPopup.open({
+          attach: box,
+          timingData: this.getTargetTimingData(box.event),
+          modifyBox: false,
+          onConfirm: () => {
             this.renderer.chartManager.removeEventFromSelection(event)
-          }
+          },
+        })
       }
     })
     box.on("mouseleave", () => {
-      if (box?.popup?.persistent === true) return
-      box.popup?.close()
+      if (!TimingEventPopup.persistent) TimingEventPopup.close()
     })
 
     let initialPosY = 0
@@ -290,7 +288,7 @@ export class TimingTrackContainer
         }
         return
       }
-      box.popup?.close()
+      TimingEventPopup.close()
       const newBeat = this.renderer.getBeatFromYPos(position.y)
       const snap = Options.chart.snap == 0 ? 1 / 1000 : Options.chart.snap
       let snapBeat = Math.round(newBeat / snap) * snap
@@ -313,7 +311,7 @@ export class TimingTrackContainer
       if (isRightClick(e)) {
         this.renderer.chartManager.clearSelections()
         this.renderer.chartManager.addEventToSelection(event)
-        TimingEventPopup.activePopup?.close()
+        TimingEventPopup.close()
         return
       }
       e.stopImmediatePropagation()
@@ -333,22 +331,26 @@ export class TimingTrackContainer
         this.renderer.chartManager.getMode() == EditMode.Edit &&
         this.renderer.chartManager.eventSelection.timingEvents.length == 1
       ) {
-        if (!box?.popup) {
-          TimingEventPopup.activePopup?.close()
-          new TimingEventPopup(box, this.getTargetTimingData(box.event))
-          box.popup!.onConfirm = () => {
-            this.renderer.chartManager.removeEventFromSelection(event)
-          }
+        if (TimingEventPopup.options?.attach != box) {
+          TimingEventPopup.close()
+          TimingEventPopup.open({
+            attach: box,
+            timingData: this.getTargetTimingData(box.event),
+            modifyBox: false,
+            onConfirm: () => {
+              this.renderer.chartManager.removeEventFromSelection(event)
+            },
+          })
         }
       }
       if (
-        box.popup &&
+        TimingEventPopup.active &&
         !e.getModifierState("Control") &&
         !e.getModifierState("Meta") &&
         !e.getModifierState("Shift")
       )
-        box.popup.select()
-      else box.popup?.close()
+        TimingEventPopup.select()
+      else TimingEventPopup.close()
       initialPosY = box.y!
       movedEvent = event
       if (this.renderer.chartManager.editTimingMode == EditTimingMode.Add)
@@ -561,8 +563,11 @@ export class TimingTrackContainer
           !Options.chart.timingEventOrder.right.includes(event.type))
       ) {
         this.timingBoxMap.delete(event)
-        if (box.popup?.persistent) box.popup?.detach()
-        else box.popup?.close()
+        if (TimingEventPopup.options?.attach == box) {
+          TimingEventPopup.detach()
+        } else if (!TimingEventPopup.persistent) {
+          TimingEventPopup.close()
+        }
         this.boxPool.destroyChild(box)
         continue
       }
@@ -654,8 +659,11 @@ export class TimingTrackContainer
     const snap = Options.chart.snap == 0 ? 1 / 1000 : Options.chart.snap
     const snapBeat =
       Math.round(this.renderer.getBeatFromYPos(pos.y) / snap) * snap
-    const eventType = this.ghostBox?.popup
-      ? this.ghostBox.event.type
+    const hasGhostPopup =
+      TimingEventPopup.active &&
+      TimingEventPopup.options?.attach == this.ghostBox
+    const eventType = hasGhostPopup
+      ? this.ghostBox!.event.type
       : this.getClosestTrack(pos.x)?.name
     if (!eventType) {
       this.ghostBox?.removeFromParent()
@@ -686,8 +694,9 @@ export class TimingTrackContainer
       ghostBox.guideLine.anchor.y = 0.5
       this.ghostBox = ghostBox
     }
+
     if (
-      !this.ghostBox?.popup &&
+      hasGhostPopup &&
       (this.ghostBox.event?.beat != snapBeat ||
         this.ghostBox.event?.type != eventType)
     ) {
@@ -711,13 +720,13 @@ export class TimingTrackContainer
       this.ghostBox.backgroundObj.width = this.ghostBox.textObj.width + 10
       this.ghostBox.selection.width = this.ghostBox.textObj.width + 10
     }
-    this.ghostBox.alpha = this.ghostBox?.popup ? 1 : 0.4
-    this.ghostBox.selection.alpha = this.ghostBox?.popup ? 1 : 0
+    this.ghostBox.alpha = hasGhostPopup ? 1 : 0.4
+    this.ghostBox.selection.alpha = hasGhostPopup ? 1 : 0
 
     this.ghostBox.name = eventType
 
     const yPos = this.renderer.getYPosFromBeat(
-      this.ghostBox?.popup ? this.ghostBox.event.beat : snapBeat
+      hasGhostPopup ? this.ghostBox.event.beat : snapBeat
     )
 
     let targetX = this.tracks.getChildByName<TimingTrack>(eventType)!.x
@@ -757,15 +766,14 @@ export class TimingTrackContainer
       return
     }
     this.renderer.chartManager.clearSelections()
-    new TimingEventPopup(
-      this.ghostBox,
-      this.getTargetTimingData(this.ghostBox.event),
-      true
-    )
-    this.ghostBox.popup?.select()
-    this.ghostBox.popup!.onConfirm = event => {
-      this.getTargetTimingData(this.ghostBox!.event).insert([event])
-    }
+    TimingEventPopup.open({
+      attach: this.ghostBox,
+      timingData: this.getTargetTimingData(this.ghostBox.event),
+      modifyBox: true,
+      onConfirm: event => {
+        this.getTargetTimingData(this.ghostBox!.event).insert([event])
+      },
+    })
   }
 
   getClosestTrack(x: number) {
