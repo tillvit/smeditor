@@ -123,6 +123,7 @@ export class Dropdown<T> {
       itemEl.innerText = item + ""
       itemEl.onclick = () => {
         itemList.style.height = ""
+        itemList.classList.add("collapsed")
         if (this.selectedItem != item) {
           this.setSelected(item)
           this.onChangeHandlers.forEach(handler => handler(item, index))

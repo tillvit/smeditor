@@ -998,6 +998,7 @@ input.right {
 }
 
 .dropdown-selected {
+  color: var(--text-color);
   background-color: var(--input-bg);
   border: 1px solid var(--input-border);
   border-radius: 3px;
@@ -1036,6 +1037,7 @@ input.right {
 
 .dropdown-items {
   position: absolute;
+  color: var(--text-color);
   background: var(--primary-bg);
   max-height: 200px;
   overflow: auto;
@@ -1151,6 +1153,7 @@ input.right {
   flex-direction: row;
   height: 100%;
   flex: 1;
+  color: var(--text-color);
 }
 
 .spinner-input[type="text"] {
