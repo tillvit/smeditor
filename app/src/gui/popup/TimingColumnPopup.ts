@@ -2,97 +2,41 @@ import { Container } from "pixi.js"
 import tippy from "tippy.js"
 import { ChartTimingData } from "../../chart/sm/ChartTimingData"
 import { TimingEvent, TimingEventType } from "../../chart/sm/TimingTypes"
+import { SPLIT_TIMING_DATA } from "../../data/SplitTimingData"
 import { EventHandler } from "../../util/EventHandler"
-import { clamp } from "../../util/Math"
+import { Popup, PopupOptions } from "./Popup"
 
-export class TimingColumnPopup {
-  static activePopup?: TimingColumnPopup
-  private button
-  private type
-  private timingData: ChartTimingData
-  private readonly popup: HTMLDivElement
-  private zoomer!: HTMLDivElement
-  private editText!: HTMLDivElement
-  private title!: HTMLDivElement
-  private desc!: HTMLDivElement
-  private convertText!: HTMLDivElement
-  private convertBtnOne!: HTMLButtonElement
-  private convertBtnTwo!: HTMLButtonElement
-  private readonly onTimingChange = this.updateValues.bind(this)
-  private readonly clickOutside
-  private moveInterval
+interface TimingColumnPopupOptions {
+  attach: Container
+  type: TimingEventType
+  timingData: ChartTimingData
+}
+
+export class TimingColumnPopup extends Popup {
+  static options: TimingColumnPopupOptions & PopupOptions
+
+  private static convertText: HTMLDivElement
+  private static convertBtnOne: HTMLButtonElement
+  private static convertBtnTwo: HTMLButtonElement
+  private static readonly onTimingChange = this.updateValues.bind(this)
 
   onConfirm: (event: TimingEvent) => void = () => {}
   persistent = false
-  constructor(
-    button: Container,
-    type: TimingEventType,
-    timingData: ChartTimingData
-  ) {
-    this.button = button
-    this.type = type
-    this.timingData = timingData
 
-    this.popup = this.build()
-    this.updateValues()
-
-    // instantly snap to position when first showing
-    this.popup.style.transitionDuration = `0s`
-    setTimeout(() => this.movePosition())
-
-    this.clickOutside = (event: MouseEvent) => {
-      if (!this.popup.contains(event.target as Node | null)) this.close()
-    }
+  static open(options: TimingColumnPopupOptions) {
+    super._open({
+      ...options,
+      title: "Column",
+      description: "",
+      width: 255,
+      editable: true,
+      cancelableOnOpen: false,
+    })
     EventHandler.on("timingModified", this.onTimingChange)
-    document.getElementById("popups")?.appendChild(this.popup)
-    this.moveInterval = setInterval(() => this.movePosition(), 150)
-    TimingColumnPopup.activePopup?.close()
-    TimingColumnPopup.activePopup = this
+    this.updateValues()
   }
-  private movePosition() {
-    const point = this.button.getBounds()
-    // will the box stay in bounds?
-    const centerx = point.left + point.width / 2
-    const width = 250
-    const leftRestriction = width / 2 + 15
-    const rightRestriction = window.innerWidth - width / 2 - 15
-    this.popup.style.left = `${clamp(
-      centerx,
-      leftRestriction,
-      rightRestriction
-    )}px`
-    const canvasTop = document.getElementById("pixi")!.offsetTop + 9
-    const centery = point.top + canvasTop + point.height / 2
-    this.popup.style.top = `${point.top + point.height + canvasTop}px`
-    if (centery + this.popup.clientHeight > window.innerHeight - 15) {
-      this.popup.style.transform = `translate(-50%, -100%)`
-      this.popup.style.top = `${point.top - point.height / 2 + canvasTop}px`
-    }
 
-    // allow smooth movement after initial one
-    setTimeout(() => (this.popup.style.transitionDuration = ``), 10)
-  }
-  private build() {
-    const popup = document.createElement("div")
-    popup.classList.add("popup")
-    const popupZoomer = document.createElement("div")
-    popupZoomer.classList.add("popup-zoomer")
-    popupZoomer.style.width = "250px"
-    popupZoomer.style.backgroundColor = "#333333"
-    this.zoomer = popupZoomer
-    popup.appendChild(popupZoomer)
-
-    const title = document.createElement("div")
-    title.innerText = "Song Column"
-    title.classList.add("popup-title")
-    this.title = title
-    popupZoomer.appendChild(title)
-
-    const desc = document.createElement("div")
-    desc.classList.add("popup-desc")
-    this.desc = desc
-    popupZoomer.appendChild(desc)
-
+  static buildContent() {
     const popupOptions = document.createElement("div")
     popupOptions.style.display = "flex"
     popupOptions.style.gap = "4px"
@@ -111,85 +55,48 @@ export class TimingColumnPopup {
 
     popupOptions.replaceChildren(convertText, convertBtnOne, convertBtnTwo)
 
-    popupZoomer.appendChild(popupOptions)
-
-    const editText = document.createElement("div")
-    editText.innerText = "click to edit"
-    editText.style.marginTop = "4px"
-    editText.style.height = "10px"
-    popupZoomer.appendChild(editText)
-    editText.classList.add("popup-desc")
-    this.editText = editText
-
-    return popup
+    this.view!.appendChild(popupOptions)
   }
 
-  close() {
-    this.persistent = false
+  static close() {
+    if (!this.popup || !this.active) return
+    super.close()
     EventHandler.off("timingModified", this.onTimingChange)
-    window.removeEventListener("click", this.clickOutside)
-    clearInterval(this.moveInterval)
-    this.popup.classList.add("exiting")
-    setTimeout(() => this.popup.remove(), 200)
-    TimingColumnPopup.activePopup = undefined
   }
 
-  select() {
-    this.persistent = true
-    this.zoomer.classList.add("selected")
-    this.editText.style.transform = "scale(0)"
-    this.editText.style.height = "0px"
-    setTimeout(() => window.addEventListener("click", this.clickOutside), 200)
-  }
-
-  updateValues() {
-    const isChart = this.timingData.isPropertyChartSpecific(this.type)
-    this.title.innerText = isChart
-      ? "Chart Timing Column"
-      : "Song Timing Column"
-    this.desc.innerText = isChart
-      ? "Events in this column are only used by this difficulty"
-      : "Events in this column are used by all difficulties (unless overridden)"
-    this.convertText.innerText = isChart
-      ? "Convert to song timing"
-      : "Convert to chart timing"
-    this.convertBtnOne.innerText = isChart
-      ? "Move chart events"
-      : "Move song events"
-    this.convertBtnTwo.innerText = isChart
-      ? "Delete chart events"
-      : "Don't copy song events"
+  static updateValues() {
+    const isChart = this.options.timingData.isPropertyChartSpecific(
+      this.options.type
+    )
+    const type = isChart ? "chart" : "song"
+    this.title!.innerText = SPLIT_TIMING_DATA[type].title
+    this.desc!.innerText = SPLIT_TIMING_DATA[type].desc
+    this.convertText.innerText = SPLIT_TIMING_DATA[type].convertText
+    this.convertBtnOne.innerText = SPLIT_TIMING_DATA[type].buttonOne.text
+    this.convertBtnTwo.innerText = SPLIT_TIMING_DATA[type].buttonTwo.text
     this.convertBtnTwo.classList.toggle("delete", isChart)
 
     tippy(this.convertBtnOne, {
-      content: isChart
-        ? "Moves chart events from this column to song timing"
-        : "Moves song events from this column to chart timing",
+      content: SPLIT_TIMING_DATA[type].buttonOne.tooltip,
     })
     tippy(this.convertBtnTwo, {
-      content: isChart
-        ? "Reverts this column to the events in song timing, deleting any difficulty-specific events"
-        : "Converts this column to chart timing without copying any song events",
+      content: SPLIT_TIMING_DATA[type].buttonTwo.tooltip,
     })
 
-    this.convertBtnOne.onclick = isChart
-      ? () => {
-          this.timingData.moveColumnsToSimfile([this.type])
-          this.close()
-        }
-      : () => {
-          this.timingData.moveColumnsFromSimfile([this.type])
-          this.close()
-        }
+    this.convertBtnOne.onclick = () => {
+      SPLIT_TIMING_DATA[type].buttonOne.action(
+        this.options.timingData,
+        this.options.type
+      )
+      this.close()
+    }
 
-    this.convertBtnTwo.onclick = isChart
-      ? () => {
-          this.timingData.deleteColumns([this.type])
-          this.close()
-        }
-      : () => {
-          this.timingData.createChartColumns([this.type])
-          this.close()
-        }
+    this.convertBtnTwo.onclick = () => {
+      SPLIT_TIMING_DATA[type].buttonTwo.action(
+        this.options.timingData,
+        this.options.type
+      )
+      this.close()
+    }
   }
 }

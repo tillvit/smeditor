@@ -174,28 +174,27 @@ export class TimingTrackContainer
     timingTypeBtn.eventMode = "static"
 
     timingTypeBtn.on("mouseenter", () => {
-      if (!TimingColumnPopup.activePopup?.persistent)
-        new TimingColumnPopup(
-          timingTypeBtn,
-          type as TimingEventType,
-          this.renderer.chart.timingData
-        )
+      if (!TimingColumnPopup.persistent)
+        TimingColumnPopup.open({
+          attach: timingTypeBtn,
+          type: type as TimingEventType,
+          timingData: this.renderer.chart.timingData,
+        })
     })
     timingTypeBtn.on("mouseleave", () => {
-      if (!TimingColumnPopup.activePopup?.persistent)
-        TimingColumnPopup.activePopup?.close()
+      if (!TimingColumnPopup.persistent) TimingColumnPopup.close()
     })
 
     timingTypeBtn.on("pointerdown", () => {
-      if (!TimingColumnPopup.activePopup?.persistent) {
-        TimingColumnPopup.activePopup?.select()
+      if (!TimingColumnPopup.persistent) {
+        TimingColumnPopup.select()
       } else {
-        new TimingColumnPopup(
-          timingTypeBtn,
-          type as TimingEventType,
-          this.renderer.chart.timingData
-        )
-        TimingColumnPopup.activePopup?.select()
+        TimingColumnPopup.open({
+          attach: timingTypeBtn,
+          type: type as TimingEventType,
+          timingData: this.renderer.chart.timingData,
+        })
+        TimingColumnPopup.select()
       }
     })
 
@@ -261,7 +260,7 @@ export class TimingTrackContainer
       if (TimingEventPopup.active) TimingEventPopup.close()
       if (this.renderer.chartManager.getMode() == EditMode.Edit) {
         TimingEventPopup.open({
-          attach: box,
+          box: box,
           timingData: this.getTargetTimingData(box.event),
           modifyBox: false,
           onConfirm: () => {
@@ -331,10 +330,10 @@ export class TimingTrackContainer
         this.renderer.chartManager.getMode() == EditMode.Edit &&
         this.renderer.chartManager.eventSelection.timingEvents.length == 1
       ) {
-        if (TimingEventPopup.options?.attach != box) {
+        if (TimingEventPopup.options?.box != box) {
           TimingEventPopup.close()
           TimingEventPopup.open({
-            attach: box,
+            box: box,
             timingData: this.getTargetTimingData(box.event),
             modifyBox: false,
             onConfirm: () => {
@@ -490,7 +489,7 @@ export class TimingTrackContainer
     }
 
     if (!editingTiming) {
-      TimingColumnPopup.activePopup?.close()
+      TimingColumnPopup.close()
     }
 
     this.tracks.children.forEach(track => {
@@ -563,7 +562,7 @@ export class TimingTrackContainer
           !Options.chart.timingEventOrder.right.includes(event.type))
       ) {
         this.timingBoxMap.delete(event)
-        if (TimingEventPopup.options?.attach == box) {
+        if (TimingEventPopup.options?.box == box) {
           TimingEventPopup.detach()
         } else if (!TimingEventPopup.persistent) {
           TimingEventPopup.close()
@@ -660,8 +659,7 @@ export class TimingTrackContainer
     const snapBeat =
       Math.round(this.renderer.getBeatFromYPos(pos.y) / snap) * snap
     const hasGhostPopup =
-      TimingEventPopup.active &&
-      TimingEventPopup.options?.attach == this.ghostBox
+      TimingEventPopup.active && TimingEventPopup.options?.box == this.ghostBox
     const eventType = hasGhostPopup
       ? this.ghostBox!.event.type
       : this.getClosestTrack(pos.x)?.name
@@ -696,7 +694,7 @@ export class TimingTrackContainer
     }
 
     if (
-      hasGhostPopup &&
+      !hasGhostPopup &&
       (this.ghostBox.event?.beat != snapBeat ||
         this.ghostBox.event?.type != eventType)
     ) {
@@ -767,13 +765,14 @@ export class TimingTrackContainer
     }
     this.renderer.chartManager.clearSelections()
     TimingEventPopup.open({
-      attach: this.ghostBox,
+      box: this.ghostBox,
       timingData: this.getTargetTimingData(this.ghostBox.event),
       modifyBox: true,
       onConfirm: event => {
         this.getTargetTimingData(this.ghostBox!.event).insert([event])
       },
     })
+    TimingEventPopup.select()
   }
 
   getClosestTrack(x: number) {

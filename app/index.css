@@ -1488,7 +1488,7 @@ input[type="range"] {
   border: 1px solid black;
   animation: 0.001s popup-enter cubic-bezier(0.47, 0.02, 0, 0.95) forwards;
   box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.6);
-  color: white;
+  color: var(--text-color);
 }
 
 .popup-zoomer input {
@@ -1635,6 +1635,7 @@ input[type="range"] {
     0 0.5px rgba(0, 0, 0, 0.9),
     0 3px 5px -3px rgba(0, 0, 0, 0.6);
   cursor: grab;
+  color: white;
 }
 
 .draggable-track.left .draggable-track-text {
@@ -1788,6 +1789,7 @@ input[type="range"] {
     0 3px 5px -3px rgba(0, 0, 0, 0.6);
   font-size: 13px;
   cursor: grab;
+  color: white;
 }
 
 .leftover-track img {
@@ -3161,4 +3163,45 @@ input[type="color"] {
   padding-top: 5px;
   padding-bottom: 5px;
   padding-left: 30px;
+}
+
+.split-timing-grid {
+  border: 1px solid var(--secondary-border);
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.split-timing-row {
+  display: grid;
+  grid-template-columns: 130px 20px 120px 150px;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+}
+
+.split-timing-row * {
+  overflow: hidden;
+}
+
+.split-timing-row *:nth-child(2) {
+  background-color: rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.split-timing-row div,
+.split-timing-modify-row div {
+  color: white;
+}
+
+.split-timing-modify-row {
+  display: grid;
+  grid-template-columns: 150px 120px 150px;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+}
+
+.split-timing-modify-row *:first-child {
+  font-size: 13px;
 }

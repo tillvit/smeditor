@@ -15,7 +15,7 @@ interface FinalRow {
 }
 
 interface TimingEventPopupOptions {
-  attach: TimingBox
+  box: TimingBox
   timingData: TimingData
   modifyBox: boolean
   onConfirm: (event: TimingEvent) => void
@@ -32,18 +32,20 @@ export class TimingEventPopup extends Popup {
     if (this.active) return
     super._open({
       ...options,
-      title: POPUP_ROWS[options.attach.event.type].title,
-      description: POPUP_ROWS[options.attach.event.type].description,
-      width: POPUP_ROWS[options.attach.event.type].width ?? 150,
+      attach: options.box.backgroundObj,
+      title: POPUP_ROWS[options.box.event.type].title,
+      description: POPUP_ROWS[options.box.event.type].description,
+      width: POPUP_ROWS[options.box.event.type].width ?? 150,
       editable: true,
       cancelableOnOpen: false,
       background: blendColors(
-        TIMING_EVENT_COLORS[options.attach.event.type]
+        TIMING_EVENT_COLORS[options.box.event.type]
           .toString(16)
           .padStart(6, "0"),
         "#333333",
         0.75
       ),
+      textColor: "#ffffff",
       options: [
         {
           label: "Ok",
@@ -72,7 +74,7 @@ export class TimingEventPopup extends Popup {
         },
       ],
     })
-    this.cachedEvent = options.attach.event
+    this.cachedEvent = options.box.event
 
     this.onTimingChange = this.updateValues.bind(this)
     EventHandler.on("timingModified", this.onTimingChange)
@@ -84,7 +86,7 @@ export class TimingEventPopup extends Popup {
     // }
   }
   static buildContent() {
-    const data = POPUP_ROWS[this.options.attach.event.type]
+    const data = POPUP_ROWS[this.options.box.event.type]
     const grid = document.createElement("div")
     grid.classList.add("popup-grid")
     this.view!.appendChild(grid)
@@ -93,7 +95,7 @@ export class TimingEventPopup extends Popup {
 
   private static buildRow(data: PopupRow) {
     const event = structuredClone(
-      this.options.attach.event as { [key: string]: any }
+      this.options.box.event as { [key: string]: any }
     )
     const label = document.createElement("div")
     label.innerText = data.label
@@ -173,14 +175,14 @@ export class TimingEventPopup extends Popup {
 
   private static modifyEvent(key: string, value: any) {
     if (this.options.modifyBox) {
-      Object.assign(this.options.attach.event, {
+      Object.assign(this.options.box.event, {
         [key]: value,
       })
     } else {
       this.options.timingData.modify([
         [
-          structuredClone(this.options.attach.event),
-          Object.assign(this.options.attach.event, {
+          structuredClone(this.options.box.event),
+          Object.assign(this.options.box.event, {
             [key]: value,
           }),
         ],
@@ -190,14 +192,14 @@ export class TimingEventPopup extends Popup {
 
   private static updateValues() {
     const event = this.options.timingData.getEventAtBeat(
-      this.options.attach.event.type,
-      this.options.attach.event.beat,
+      this.options.box.event.type,
+      this.options.box.event.beat,
       false
     ) as { [key: string]: any }
     if (
-      !this.options.attach ||
+      !this.options.box ||
       !event ||
-      event.beat != this.options.attach.event.beat
+      event.beat != this.options.box.event.beat
     ) {
       this.close()
       return

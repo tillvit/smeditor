@@ -18,6 +18,7 @@ import { Options } from "../../util/Options"
 import { Themes } from "../../util/Theme"
 import { Icons } from "../Icons"
 import { Dropdown } from "../element/Dropdown"
+import { SplitTimingPopup } from "../popup/SplitTimingPopup"
 import { TimingTrackOrderPopup } from "../popup/TimingTrackOrderPopup"
 import { SyncWindow } from "../window/SyncWindow"
 import { Widget } from "./Widget"
@@ -391,9 +392,9 @@ export class StatusWidget extends Widget {
     const splitTimingIcon = Icons.getIcon("SPLIT_TIMING", 32)
     this.splitTiming.appendChild(splitTimingIcon)
     this.splitTiming.onclick = () => {
-      TimingTrackOrderPopup.active
-        ? TimingTrackOrderPopup.close()
-        : TimingTrackOrderPopup.open()
+      SplitTimingPopup.active
+        ? SplitTimingPopup.close()
+        : SplitTimingPopup.open(this.manager.app)
       this.splitTiming.blur()
     }
     this.splitTiming.id = "split-timing"

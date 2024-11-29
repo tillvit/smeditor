@@ -9,6 +9,7 @@ export interface PopupOptions {
   height?: number
   options?: PopupOption[]
   background?: string
+  textColor?: string
   editable: boolean
   cancelableOnOpen: boolean
   clickHandler?: (event: MouseEvent) => void
@@ -58,6 +59,8 @@ export abstract class Popup {
     }
     document.getElementById("popups")?.appendChild(this.popup!)
 
+    if (this.clickOutside)
+      window.removeEventListener("click", this.clickOutside, true)
     this.clickOutside =
       this.options.clickHandler ??
       ((event: MouseEvent) => {
@@ -132,6 +135,7 @@ export abstract class Popup {
     popupView.classList.add("popup-zoomer")
     if (this.options.width) popupView.style.width = `${this.options.width}px`
     popupView.style.backgroundColor = this.options.background ?? ""
+    popupView.style.color = this.options.textColor ?? ""
     popup.appendChild(popupView)
     this.view = popupView
 

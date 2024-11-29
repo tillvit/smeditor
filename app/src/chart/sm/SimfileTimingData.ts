@@ -30,4 +30,8 @@ export class SimfileTimingData extends TimingData {
     super.reloadCache(types)
     this.chartTimingDatas.forEach(data => data.reloadCache(types))
   }
+
+  _setOffset(offset: number) {
+    this.offset = offset
+  }
 }

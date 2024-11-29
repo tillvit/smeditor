@@ -378,6 +378,8 @@ export class TimingTrackOrderPopup extends Popup {
     const rightIndex = Options.chart.timingEventOrder.right.indexOf(type)
     if (rightIndex != -1)
       Options.chart.timingEventOrder.right.splice(rightIndex, 1)
+
+    // splice doesn't trigger option listeners
     Options.chart.timingEventOrder.left = [
       ...Options.chart.timingEventOrder.left,
     ]
@@ -385,32 +387,6 @@ export class TimingTrackOrderPopup extends Popup {
       ...Options.chart.timingEventOrder.right,
     ]
   }
-
-  // private static movePosition() {
-  //   if (!this.popup) return
-  //   const button = document.getElementById("toggle-tracks")
-  //   if (!button) return
-  //   this.popup.style.display = ``
-  //   const point = button.getBoundingClientRect()
-  //   // will the box stay in bounds?
-  //   const centerx = point.left + point.width / 2
-  //   const width = this.popup.clientWidth
-  //   const leftRestriction = width / 2 + 15
-  //   const rightRestriction = window.innerWidth - width / 2 - 15
-  //   this.popup.style.left = `${clamp(
-  //     centerx,
-  //     leftRestriction,
-  //     rightRestriction
-  //   )}px`
-  //   const centery = point.top + point.height / 2
-  //   this.popup.style.top = `${point.top + point.height}px`
-  //   if (centery + this.popup.clientHeight > window.innerHeight - 15) {
-  //     this.popup.style.transform = `translate(-50%, -100%)`
-  //     this.popup.style.top = `${point.top - point.height / 2}px`
-  //   }
-
-  //   setTimeout(() => (this.popup!.style.transitionDuration = ``), 10)
-  // }
 
   private static getClosestSlot(x: number) {
     if (this.boundaryCache.length == 0) this.getBoundaries()

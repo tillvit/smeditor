@@ -5,6 +5,7 @@ import { SimfileTimingData } from "./SimfileTimingData"
 import { TimingData } from "./TimingData"
 import {
   DeletableEvent,
+  TIMING_EVENT_NAMES,
   TimingEvent,
   TimingEventType,
   TimingType,
@@ -40,7 +41,108 @@ export class ChartTimingData extends TimingData {
     return type in this.columns
   }
 
-  moveColumnsToSimfile(columns: TimingEventType[]) {
+  copyOffsetToSimfile() {
+    if (this.offset === undefined) return
+    const cachedOffset = this.offset
+    const cachedSimfileOffset = this.simfileTimingData.getOffset()
+
+    ActionHistory.instance.run({
+      action: () => {
+        this.simfileTimingData._setOffset(cachedOffset)
+        this.offset = undefined
+
+        this.simfileTimingData.reloadCache()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+      },
+      undo: () => {
+        this.offset = cachedOffset
+        this.simfileTimingData._setOffset(cachedSimfileOffset)
+
+        this.simfileTimingData.reloadCache()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+      },
+    })
+  }
+
+  removeChartOffset() {
+    if (this.offset === undefined) return
+    const cachedOffset = this.offset
+    ActionHistory.instance.run({
+      action: () => {
+        this.offset = undefined
+
+        this.simfileTimingData.reloadCache()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+      },
+      undo: () => {
+        this.offset = cachedOffset
+
+        this.simfileTimingData.reloadCache()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+      },
+    })
+  }
+
+  copyAllToSimfile() {
+    const cachedColumns = Object.fromEntries(
+      Object.values(this.columns).map(col => [col.type, col])
+    )
+    const events = Object.values(cachedColumns)
+      .map(c => c.events)
+      .flat()
+
+    const cachedOffset = this.offset
+    const cachedSimfileOffset = this.simfileTimingData.getOffset()
+
+    let results: ReturnType<TimingData["_insert"]>
+    ActionHistory.instance.run({
+      action: app => {
+        TIMING_EVENT_NAMES.forEach(type => {
+          delete this.columns[type]
+        })
+
+        results = this.simfileTimingData._insert(events)
+        this.simfileTimingData._delete(results.errors)
+
+        if (cachedOffset !== undefined) {
+          this.simfileTimingData._setOffset(cachedOffset)
+          this.offset = undefined
+        }
+
+        this.simfileTimingData.reloadCache()
+
+        app.chartManager.clearSelections()
+
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        EventHandler.emit("timeSigChanged")
+      },
+      undo: app => {
+        this.simfileTimingData._insert(results.errors)
+        this.simfileTimingData._delete(results.events)
+        this.simfileTimingData._insert(results.insertConflicts)
+
+        Object.assign(this.columns, cachedColumns)
+
+        if (cachedOffset !== undefined) {
+          this.offset = cachedOffset
+          this.simfileTimingData._setOffset(cachedSimfileOffset)
+        }
+
+        this.simfileTimingData.reloadCache()
+        app.chartManager.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        EventHandler.emit("timeSigChanged")
+      },
+    })
+  }
+
+  copyColumnsToSimfile(columns: TimingEventType[]) {
     const cachedColumns = Object.fromEntries(
       columns
         .map(type => this.columns[type])
@@ -86,7 +188,7 @@ export class ChartTimingData extends TimingData {
     })
   }
 
-  moveColumnsFromSimfile(columns: TimingEventType[]) {
+  copyColumnsFromSimfile(columns: TimingEventType[]) {
     const hasTimeSig = columns.includes("TIMESIGNATURES")
     ActionHistory.instance.run({
       action: app => {
@@ -120,6 +222,50 @@ export class ChartTimingData extends TimingData {
     })
   }
 
+  copyAllFromSimfile() {
+    const cachedColumns = Object.fromEntries(
+      TIMING_EVENT_NAMES.map(type => [type, this.columns[type]])
+    )
+    const cachedOffset = this.offset
+    ActionHistory.instance.run({
+      action: app => {
+        TIMING_EVENT_NAMES.forEach(type => {
+          this.createColumn(type)
+          Object.assign(
+            this.columns[type]!,
+            structuredClone(this.simfileTimingData.getColumn(type))
+          )
+        })
+
+        this.simfileTimingData.reloadCache()
+        this.offset = this.getOffset()
+
+        app.chartManager.clearSelections()
+
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        EventHandler.emit("timeSigChanged")
+      },
+      undo: app => {
+        TIMING_EVENT_NAMES.forEach(type => {
+          if (cachedColumns[type] && this.columns[type]) {
+            Object.assign(this.columns[type], cachedColumns[type])
+          } else {
+            delete this.columns[type]
+          }
+        })
+
+        this.offset = cachedOffset
+
+        this.simfileTimingData.reloadCache()
+        app.chartManager.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        EventHandler.emit("timeSigChanged")
+      },
+    })
+  }
+
   createChartColumns(columns: TimingEventType[]) {
     const hasTimeSig = columns.includes("TIMESIGNATURES")
     ActionHistory.instance.run({
@@ -146,6 +292,41 @@ export class ChartTimingData extends TimingData {
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+    })
+  }
+
+  createEmptyData() {
+    const missingColumns = TIMING_EVENT_NAMES.filter(
+      type => !this.columns[type]
+    )
+    const missingOffset = !this.hasChartOffset()
+    ActionHistory.instance.run({
+      action: app => {
+        missingColumns.forEach(type => {
+          this.createColumn(type)
+        })
+        if (missingOffset) this.offset = 0
+
+        this.simfileTimingData.reloadCache()
+
+        app.chartManager.clearSelections()
+
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        EventHandler.emit("timeSigChanged")
+      },
+      undo: app => {
+        missingColumns.forEach(type => {
+          delete this.columns[type]
+        })
+        if (missingOffset) this.offset = undefined
+
+        this.simfileTimingData.reloadCache()
+        app.chartManager.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        EventHandler.emit("timeSigChanged")
       },
     })
   }
@@ -181,6 +362,40 @@ export class ChartTimingData extends TimingData {
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
+      },
+    })
+  }
+
+  deleteAllChartSpecific() {
+    const cachedColumns = Object.fromEntries(
+      Object.values(this.columns).map(col => [col.type, col])
+    )
+    const cachedOffset = this.offset
+
+    ActionHistory.instance.run({
+      action: app => {
+        TIMING_EVENT_NAMES.forEach(type => {
+          delete this.columns[type]
+        })
+        this.offset = undefined
+
+        this.simfileTimingData.reloadCache()
+
+        app.chartManager.clearSelections()
+
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        EventHandler.emit("timeSigChanged")
+      },
+      undo: app => {
+        Object.assign(this.columns, cachedColumns)
+        this.offset = cachedOffset
+
+        this.simfileTimingData.reloadCache()
+        app.chartManager.clearSelections()
+        EventHandler.emit("timingModified")
+        EventHandler.emit("chartModified")
+        EventHandler.emit("timeSigChanged")
       },
     })
   }
