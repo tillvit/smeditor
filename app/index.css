@@ -3190,6 +3190,7 @@ input[type="color"] {
 .split-timing-row *:nth-child(2) {
   background-color: rgba(0, 0, 0, 0.3);
   text-align: center;
+  border-radius: 2px;
 }
 
 .split-timing-row div,
