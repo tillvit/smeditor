@@ -404,9 +404,9 @@ export class StatusWidget extends Widget {
     this.splitTiming.id = "split-timing"
     this.timingContainer.appendChild(this.splitTiming)
 
-    Keybinds.createKeybindTooltip(
-      this.splitTiming
-    )`Manage split timing ${"toggleAddTiming"}`
+    tippy(this.splitTiming, {
+      content: "Manage split timing",
+    })
 
     this.toggleTimingTracks = document.createElement("button")
     this.toggleTimingTracks.tabIndex = -1
