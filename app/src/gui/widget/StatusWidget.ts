@@ -387,6 +387,10 @@ export class StatusWidget extends Widget {
       this.addTimingEvent
     )`Add timing events ${"toggleAddTiming"}`
 
+    const line5 = document.createElement("div")
+    line5.classList.add("playback-separator")
+    this.timingContainer.appendChild(line5)
+
     this.splitTiming = document.createElement("button")
     this.splitTiming.tabIndex = -1
     const splitTimingIcon = Icons.getIcon("SPLIT_TIMING", 32)
@@ -402,7 +406,7 @@ export class StatusWidget extends Widget {
 
     Keybinds.createKeybindTooltip(
       this.splitTiming
-    )`Manage split timing  ${"toggleAddTiming"}`
+    )`Manage split timing ${"toggleAddTiming"}`
 
     this.toggleTimingTracks = document.createElement("button")
     this.toggleTimingTracks.tabIndex = -1
@@ -438,9 +442,9 @@ export class StatusWidget extends Widget {
       this.detectSync
     )`Detect audio sync ${"detectSync"}`
 
-    const line5 = document.createElement("div")
-    line5.classList.add("playback-separator")
-    this.timingContainer.appendChild(line5)
+    const line6 = document.createElement("div")
+    line6.classList.add("playback-separator")
+    this.timingContainer.appendChild(line6)
 
     this.offsetCounter = document.createElement("div")
     this.offsetCounter.classList.add("playback-counter")
