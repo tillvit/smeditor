@@ -35,6 +35,8 @@ export class TimingEventPopup extends Popup {
       title: POPUP_ROWS[options.attach.event.type].title,
       description: POPUP_ROWS[options.attach.event.type].description,
       width: POPUP_ROWS[options.attach.event.type].width ?? 150,
+      editable: true,
+      cancelableOnOpen: false,
       background: blendColors(
         TIMING_EVENT_COLORS[options.attach.event.type]
           .toString(16)

@@ -1759,6 +1759,7 @@ input[type="range"] {
   flex-direction: row;
   column-gap: 8px;
   padding: 4px 0;
+  width: 100%;
 }
 
 .track-selector {
@@ -1771,7 +1772,7 @@ input[type="range"] {
   padding: 4px;
   border-radius: 3px;
   gap: 4px;
-  /* width: 468.08px; */
+  width: 414.75px;
   overflow-x: auto;
 }
 

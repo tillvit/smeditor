@@ -1,20 +1,32 @@
-import { DisplayObject } from "pixi.js"
+import { DisplayObject, Rectangle } from "pixi.js"
 import { clamp } from "../../util/Math"
 
 export interface PopupOptions {
-  attach: DisplayObject
+  attach: DisplayObject | HTMLElement
   title: string
   description?: string
   width?: number
   height?: number
   options?: PopupOption[]
   background?: string
+  editable: boolean
+  cancelableOnOpen: boolean
+  clickHandler?: (event: MouseEvent) => void
 }
 
 interface PopupOption {
   label: string
   callback?: () => void
   type: "delete" | "confirm" | "default"
+}
+
+interface ObjectBounds {
+  top: number
+  bottom: number
+  left: number
+  right: number
+  width: number
+  height: number
 }
 
 const MOVE_INTERVAL = 150
@@ -38,30 +50,56 @@ export abstract class Popup {
   static _open(options: PopupOptions) {
     if (this.active) return
     this.options = options
-    this.popup = this._build()
+    this._build()
 
     if (!document.getElementById("popups")) {
       console.error("Failed to open popup!", "error")
       return
     }
-    document.getElementById("popups")?.appendChild(this.popup)
+    document.getElementById("popups")?.appendChild(this.popup!)
 
-    this.clickOutside = (event: MouseEvent) => {
-      if (!this.popup?.contains(event.target as Node | null)) {
-        this.close()
-      }
-    }
+    this.clickOutside =
+      this.options.clickHandler ??
+      ((event: MouseEvent) => {
+        if (!this.popup?.contains(event.target as Node | null)) {
+          this.close()
+        }
+      })
 
-    // don't show until the position has been set
-    this.popup.style.display = `none`
-    requestAnimationFrame(() => this.movePosition())
+    this.popup!.style.transitionDuration = "0s"
+    this.movePosition()
     this.moveInterval = setInterval(() => this.movePosition(), MOVE_INTERVAL)
     this.active = true
+
+    if (this.options.cancelableOnOpen) {
+      setTimeout(
+        () => window.addEventListener("click", this.clickOutside!, true),
+        200
+      )
+    }
+  }
+
+  private static cloneRect(rect: Rectangle) {
+    return {
+      top: rect.top,
+      bottom: rect.bottom,
+      left: rect.left,
+      right: rect.right,
+      width: rect.width,
+      height: rect.height,
+    }
   }
 
   private static movePosition() {
-    this.popup!.style.display = ""
-    const point = this.options.attach.getBounds()
+    const point: ObjectBounds =
+      this.options.attach instanceof HTMLElement
+        ? this.options.attach.getBoundingClientRect()
+        : this.cloneRect(this.options.attach.getBounds())
+    if (!(this.options.attach instanceof HTMLElement)) {
+      // Shift the top if it is a pixi object
+      point.top += document.getElementById("pixi")!.offsetTop + 9
+    }
+
     // will the box stay in bounds?
     const centerx = point.left + point.width / 2
     const width = this.popup!.clientWidth
@@ -72,23 +110,28 @@ export abstract class Popup {
       leftRestriction,
       rightRestriction
     )}px`
-    const canvasTop = document.getElementById("pixi")!.offsetTop + 9
-    const topY = point.top + point.height / 2 + canvasTop + 15
+    const topY = point.top + point.height / 2 + 15
     this.popup!.style.top = `${topY}px`
     if (topY + this.popup!.clientHeight > window.innerHeight - 15) {
-      this.popup!.style.transform = `translate(-50%, -100%)`
-      this.popup!.style.top = `${point.top + canvasTop - 15}px`
+      this.popup!.style.transform = "translate(-50%, -100%)"
+      this.view!.style.transformOrigin = "bottom"
+      this.popup!.style.top = `${point.top - 15}px`
     } else {
-      this.popup!.style.transform = ``
+      this.popup!.style.transform = ""
+      this.view!.style.transformOrigin = ""
     }
+    requestAnimationFrame(() => (this.popup!.style.transitionDuration = ""))
   }
+
   private static _build() {
     const popup = document.createElement("div")
     popup.classList.add("popup")
+    this.popup = popup
+
     const popupView = document.createElement("div")
     popupView.classList.add("popup-zoomer")
-    popupView.style.width = `${this.options.width ?? 200}px`
-    popupView.style.backgroundColor = this.options.background ?? "#333333"
+    if (this.options.width) popupView.style.width = `${this.options.width}px`
+    popupView.style.backgroundColor = this.options.background ?? ""
     popup.appendChild(popupView)
     this.view = popupView
 
@@ -108,13 +151,15 @@ export abstract class Popup {
 
     this.buildContent()
 
-    const editText = document.createElement("div")
-    editText.innerText = "click to edit"
-    editText.style.marginTop = "4px"
-    editText.style.height = "10px"
-    popupView.appendChild(editText)
-    editText.classList.add("popup-desc")
-    this.editText = editText
+    if (this.options.editable) {
+      const editText = document.createElement("div")
+      editText.innerText = "click to edit"
+      editText.style.marginTop = "4px"
+      editText.style.height = "10px"
+      popupView.appendChild(editText)
+      editText.classList.add("popup-desc")
+      this.editText = editText
+    }
 
     if (this.options.options) {
       const popupOptions = document.createElement("div")
@@ -132,8 +177,6 @@ export abstract class Popup {
 
       this.view.append(popupOptions)
     }
-
-    return popup
   }
 
   static buildContent() {}
@@ -151,15 +194,17 @@ export abstract class Popup {
   }
 
   static select() {
-    if (!this.popup) return
+    if (!this.popup || !this.options.editable) return
     this.persistent = true
     this.view!.classList.add("selected")
     this.editText!.style.transform = "scale(0)"
     this.editText!.style.height = "0px"
-    setTimeout(
-      () => window.addEventListener("click", this.clickOutside!, true),
-      200
-    )
+    if (!this.options.cancelableOnOpen) {
+      setTimeout(
+        () => window.addEventListener("click", this.clickOutside!, true),
+        200
+      )
+    }
   }
 
   static detach() {

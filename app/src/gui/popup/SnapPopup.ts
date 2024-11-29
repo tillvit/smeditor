@@ -16,6 +16,8 @@ export class SnapPopup extends Popup {
       attach: snapSprite,
       title: "Snap Options",
       width: 200,
+      editable: true,
+      cancelableOnOpen: false,
     })
     EventHandler.on("snapChanged", this.onSnapChange)
   }
