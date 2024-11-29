@@ -74,16 +74,10 @@ export class TimingEventPopup extends Popup {
         },
       ],
     })
-    this.cachedEvent = options.box.event
+    this.cachedEvent = structuredClone(options.box.event)
 
     this.onTimingChange = this.updateValues.bind(this)
     EventHandler.on("timingModified", this.onTimingChange)
-    // if (TimingEventPopup.activePopup?.persistent) {
-    //   timingBox.popup = undefined
-    // } else {
-    //   TimingEventPopup.activePopup?.close()
-    //   TimingEventPopup.activePopup = this
-    // }
   }
   static buildContent() {
     const data = POPUP_ROWS[this.options.box.event.type]
@@ -243,7 +237,8 @@ export class TimingEventPopup extends Popup {
   }
 
   static attach(target: TimingBox) {
-    super.attach(target)
+    super.attach(target.backgroundObj)
+    this.options.box = target
     this.cachedEvent = target.event
   }
 }
