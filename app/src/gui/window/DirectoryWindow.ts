@@ -116,7 +116,7 @@ export class DirectoryWindow extends Window {
     add_file.onclick = async () => {
       const dropPath = this.fileDropPath
       const fileHandlers = await showOpenFilePicker({
-        _preferPolyfill: false,
+        _preferPolyfill: true,
         excludeAcceptAllOption: false,
         multiple: true,
       })
@@ -150,7 +150,7 @@ export class DirectoryWindow extends Window {
     add_dir.onclick = async () => {
       const dropPath = this.fileDropPath
       const directoryHandle = await showDirectoryPicker({
-        _preferPolyfill: false,
+        _preferPolyfill: true,
       })
 
       const selected: HTMLElement | null =
