@@ -302,7 +302,7 @@ export class App {
       }
     }
 
-    window.onunload = () => {
+    window.onpagehide = () => {
       Options.saveOptions()
     }
 

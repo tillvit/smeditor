@@ -99,7 +99,7 @@ export class SnapPopup extends Popup {
   }
 
   static close() {
-    if (!this.popup || !this.active || this.persistent) return
+    if (!this.popup || !this.active) return
     super.close()
     EventHandler.off("timingModified", this.onSnapChange)
   }

@@ -260,6 +260,7 @@ export class Options extends DefaultOptions {
   }
   static loadOptions() {
     const data = localStorage.getItem("options")
+    console.log(data)
     if (!data) return
     const items = JSON.parse(data) as {
       [key: string]: any
