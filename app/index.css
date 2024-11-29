@@ -1753,6 +1753,7 @@ input[type="range"] {
   background-color: var(--secondary-bg);
   border: 1px solid var(--secondary-border);
   padding: 4px;
+  margin-top: 5px;
   border-radius: 3px;
   width: 468.08px;
   justify-content: center;

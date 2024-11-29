@@ -1,7 +1,7 @@
 import { ActionHistory } from "../../util/ActionHistory"
 import { EventHandler } from "../../util/EventHandler"
 import { Chart } from "./Chart"
-import { SimfileTimingData } from "./SimfileTimingData"
+import { SongTimingData } from "./SongTimingData"
 import { TimingData } from "./TimingData"
 import {
   DeletableEvent,
@@ -12,21 +12,21 @@ import {
 } from "./TimingTypes"
 
 export class ChartTimingData extends TimingData {
-  readonly simfileTimingData: SimfileTimingData
+  readonly songTimingData: SongTimingData
   private readonly chart: Chart
 
-  constructor(simfileTimingData: SimfileTimingData, chart: Chart) {
+  constructor(simfileTimingData: SongTimingData, chart: Chart) {
     super()
-    this.simfileTimingData = simfileTimingData
+    this.songTimingData = simfileTimingData
     this.chart = chart
   }
 
   getColumn<Type extends TimingEventType>(type: Type) {
-    return this.columns[type] ?? this.simfileTimingData.getColumn(type)
+    return this.columns[type] ?? this.songTimingData.getColumn(type)
   }
 
   getOffset(): number {
-    return this.offset ?? this.simfileTimingData.getOffset()
+    return this.offset ?? this.songTimingData.getOffset()
   }
 
   usesChartTiming(): boolean {
@@ -44,22 +44,22 @@ export class ChartTimingData extends TimingData {
   copyOffsetToSimfile() {
     if (this.offset === undefined) return
     const cachedOffset = this.offset
-    const cachedSimfileOffset = this.simfileTimingData.getOffset()
+    const cachedSimfileOffset = this.songTimingData.getOffset()
 
     ActionHistory.instance.run({
       action: () => {
-        this.simfileTimingData._setOffset(cachedOffset)
+        this.songTimingData._setOffset(cachedOffset)
         this.offset = undefined
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
       },
       undo: () => {
         this.offset = cachedOffset
-        this.simfileTimingData._setOffset(cachedSimfileOffset)
+        this.songTimingData._setOffset(cachedSimfileOffset)
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
       },
@@ -73,14 +73,14 @@ export class ChartTimingData extends TimingData {
       action: () => {
         this.offset = undefined
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
       },
       undo: () => {
         this.offset = cachedOffset
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
       },
@@ -96,7 +96,7 @@ export class ChartTimingData extends TimingData {
       .flat()
 
     const cachedOffset = this.offset
-    const cachedSimfileOffset = this.simfileTimingData.getOffset()
+    const cachedSimfileOffset = this.songTimingData.getOffset()
 
     let results: ReturnType<TimingData["_insert"]>
     ActionHistory.instance.run({
@@ -105,15 +105,15 @@ export class ChartTimingData extends TimingData {
           delete this.columns[type]
         })
 
-        results = this.simfileTimingData._insert(events)
-        this.simfileTimingData._delete(results.errors)
+        results = this.songTimingData._insert(events)
+        this.songTimingData._delete(results.errors)
 
         if (cachedOffset !== undefined) {
-          this.simfileTimingData._setOffset(cachedOffset)
+          this.songTimingData._setOffset(cachedOffset)
           this.offset = undefined
         }
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
 
         app.chartManager.clearSelections()
 
@@ -122,18 +122,18 @@ export class ChartTimingData extends TimingData {
         EventHandler.emit("timeSigChanged")
       },
       undo: app => {
-        this.simfileTimingData._insert(results.errors)
-        this.simfileTimingData._delete(results.events)
-        this.simfileTimingData._insert(results.insertConflicts)
+        this.songTimingData._insert(results.errors)
+        this.songTimingData._delete(results.events)
+        this.songTimingData._insert(results.insertConflicts)
 
         Object.assign(this.columns, cachedColumns)
 
         if (cachedOffset !== undefined) {
           this.offset = cachedOffset
-          this.simfileTimingData._setOffset(cachedSimfileOffset)
+          this.songTimingData._setOffset(cachedSimfileOffset)
         }
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
@@ -161,10 +161,10 @@ export class ChartTimingData extends TimingData {
           delete this.columns[type]
         })
 
-        results = this.simfileTimingData._insert(events)
-        this.simfileTimingData._delete(results.errors)
+        results = this.songTimingData._insert(events)
+        this.songTimingData._delete(results.errors)
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
 
         app.chartManager.clearSelections()
 
@@ -173,13 +173,13 @@ export class ChartTimingData extends TimingData {
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
       },
       undo: app => {
-        this.simfileTimingData._insert(results.errors)
-        this.simfileTimingData._delete(results.events)
-        this.simfileTimingData._insert(results.insertConflicts)
+        this.songTimingData._insert(results.errors)
+        this.songTimingData._delete(results.events)
+        this.songTimingData._insert(results.insertConflicts)
 
         Object.assign(this.columns, cachedColumns)
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
@@ -196,11 +196,11 @@ export class ChartTimingData extends TimingData {
           this.createColumn(type)
           Object.assign(
             this.columns[type]!,
-            structuredClone(this.simfileTimingData.getColumn(type))
+            structuredClone(this.songTimingData.getColumn(type))
           )
         })
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
 
         app.chartManager.clearSelections()
 
@@ -213,7 +213,7 @@ export class ChartTimingData extends TimingData {
           delete this.columns[type]
         })
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
@@ -233,11 +233,11 @@ export class ChartTimingData extends TimingData {
           this.createColumn(type)
           Object.assign(
             this.columns[type]!,
-            structuredClone(this.simfileTimingData.getColumn(type))
+            structuredClone(this.songTimingData.getColumn(type))
           )
         })
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
         this.offset = this.getOffset()
 
         app.chartManager.clearSelections()
@@ -257,7 +257,7 @@ export class ChartTimingData extends TimingData {
 
         this.offset = cachedOffset
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
@@ -274,7 +274,7 @@ export class ChartTimingData extends TimingData {
           this.createColumn(type)
         })
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
 
         app.chartManager.clearSelections()
 
@@ -287,7 +287,7 @@ export class ChartTimingData extends TimingData {
           delete this.columns[type]
         })
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
@@ -308,7 +308,7 @@ export class ChartTimingData extends TimingData {
         })
         if (missingOffset) this.offset = 0
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
 
         app.chartManager.clearSelections()
 
@@ -322,7 +322,7 @@ export class ChartTimingData extends TimingData {
         })
         if (missingOffset) this.offset = undefined
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
@@ -346,7 +346,7 @@ export class ChartTimingData extends TimingData {
           delete this.columns[type]
         })
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
 
         app.chartManager.clearSelections()
 
@@ -357,7 +357,7 @@ export class ChartTimingData extends TimingData {
       undo: app => {
         Object.assign(this.columns, cachedColumns)
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
@@ -379,7 +379,7 @@ export class ChartTimingData extends TimingData {
         })
         this.offset = undefined
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
 
         app.chartManager.clearSelections()
 
@@ -391,7 +391,7 @@ export class ChartTimingData extends TimingData {
         Object.assign(this.columns, cachedColumns)
         this.offset = cachedOffset
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
@@ -442,15 +442,15 @@ export class ChartTimingData extends TimingData {
         chartResults = this._insert(chartEvents)
         this._delete(chartResults.errors)
 
-        smResults = this.simfileTimingData._insert(smEvents)
-        this.simfileTimingData._delete(smResults.errors)
+        smResults = this.songTimingData._insert(smEvents)
+        this.songTimingData._delete(smResults.errors)
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
 
         app.chartManager.clearSelections()
         app.chartManager.setEventSelection(
           this.findEvents(chartResults.events).concat(
-            this.simfileTimingData.findEvents(smResults.events)
+            this.songTimingData.findEvents(smResults.events)
           )
         )
         EventHandler.emit("timingModified")
@@ -458,15 +458,15 @@ export class ChartTimingData extends TimingData {
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
       },
       undo: app => {
-        this.simfileTimingData._insert(smResults.errors)
-        this.simfileTimingData._delete(smResults.events)
-        this.simfileTimingData._insert(smResults.insertConflicts)
+        this.songTimingData._insert(smResults.errors)
+        this.songTimingData._delete(smResults.events)
+        this.songTimingData._insert(smResults.insertConflicts)
 
         this._insert(chartResults.errors)
         this._delete(chartResults.events)
         this._insert(chartResults.insertConflicts)
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
         EventHandler.emit("timingModified")
         EventHandler.emit("chartModified")
@@ -487,15 +487,15 @@ export class ChartTimingData extends TimingData {
         chartResults = this._modify(chartEvents)
         this._delete(chartResults.errors)
 
-        smResults = this.simfileTimingData._modify(smEvents)
-        this.simfileTimingData._delete(smResults.errors)
+        smResults = this.songTimingData._modify(smEvents)
+        this.songTimingData._delete(smResults.errors)
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
 
         app.chartManager.clearSelections()
         app.chartManager.setEventSelection(
           this.findEvents(chartResults.newEvents).concat(
-            this.simfileTimingData.findEvents(smResults.newEvents)
+            this.songTimingData.findEvents(smResults.newEvents)
           )
         )
         EventHandler.emit("timingModified")
@@ -503,22 +503,22 @@ export class ChartTimingData extends TimingData {
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
       },
       undo: app => {
-        this.simfileTimingData._insert(smResults.errors)
-        this.simfileTimingData._delete(smResults.newEvents)
-        this.simfileTimingData._insert(smResults.insertConflicts)
-        this.simfileTimingData._insert(smResults.oldEvents)
+        this.songTimingData._insert(smResults.errors)
+        this.songTimingData._delete(smResults.newEvents)
+        this.songTimingData._insert(smResults.insertConflicts)
+        this.songTimingData._insert(smResults.oldEvents)
 
         this._insert(chartResults.errors)
         this._delete(chartResults.newEvents)
         this._insert(chartResults.insertConflicts)
         this._insert(chartResults.oldEvents)
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
 
         app.chartManager.clearSelections()
         app.chartManager.setEventSelection(
           this.findEvents(chartResults.oldEvents).concat(
-            this.simfileTimingData.findEvents(smResults.oldEvents)
+            this.songTimingData.findEvents(smResults.oldEvents)
           )
         )
         EventHandler.emit("timingModified")
@@ -539,10 +539,10 @@ export class ChartTimingData extends TimingData {
         chartResults = this._delete(chartEvents)
         this._delete(chartResults.errors)
 
-        smResults = this.simfileTimingData._delete(smEvents)
-        this.simfileTimingData._delete(smResults.errors)
+        smResults = this.songTimingData._delete(smEvents)
+        this.songTimingData._delete(smResults.errors)
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
 
         app.chartManager.clearSelections()
         EventHandler.emit("timingModified")
@@ -550,18 +550,18 @@ export class ChartTimingData extends TimingData {
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
       },
       undo: app => {
-        this.simfileTimingData._insert(smResults.errors)
-        this.simfileTimingData._insert(smResults.removedEvents)
+        this.songTimingData._insert(smResults.errors)
+        this.songTimingData._insert(smResults.removedEvents)
 
         this._insert(chartResults.errors)
         this._insert(chartResults.removedEvents)
 
-        this.simfileTimingData.reloadCache()
+        this.songTimingData.reloadCache()
 
         app.chartManager.clearSelections()
         app.chartManager.setEventSelection(
           this.findEvents(chartResults.removedEvents).concat(
-            this.simfileTimingData.findEvents(smResults.removedEvents)
+            this.songTimingData.findEvents(smResults.removedEvents)
           )
         )
         EventHandler.emit("timingModified")

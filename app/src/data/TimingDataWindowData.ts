@@ -35,7 +35,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           if (timingData.hasChartOffset()) {
             timingData.setOffset(value)
           } else {
-            timingData.simfileTimingData.setOffset(value)
+            timingData.songTimingData.setOffset(value)
           }
         }
         return input.view

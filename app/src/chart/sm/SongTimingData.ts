@@ -3,7 +3,7 @@ import { ChartTimingData } from "./ChartTimingData"
 import { TimingData } from "./TimingData"
 import { TIMING_EVENT_NAMES, TimingEventType, TimingType } from "./TimingTypes"
 
-export class SimfileTimingData extends TimingData {
+export class SongTimingData extends TimingData {
   protected offset: number = 0
   protected chartTimingDatas: ChartTimingData[] = []
 

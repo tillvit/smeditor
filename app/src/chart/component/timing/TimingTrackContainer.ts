@@ -835,6 +835,6 @@ export class TimingTrackContainer
       this.renderer.chart.timingData.isPropertyChartSpecific(event.type)
     return isChartTiming
       ? this.renderer.chart.timingData
-      : this.renderer.chart.timingData.simfileTimingData
+      : this.renderer.chart.timingData.songTimingData
   }
 }
