@@ -565,7 +565,11 @@ export class ChartAudio {
     this.initSource()
     if (this._playbackTime <= this._buffer.duration) {
       this._source.start(
-        Math.max(0, this._audioContext.currentTime - this._playbackTime),
+        Math.max(
+          0,
+          this._audioContext.currentTime -
+            this._playbackTime / Options.audio.rate
+        ),
         Math.max(0, this._playbackTime)
       )
     }
