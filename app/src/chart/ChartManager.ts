@@ -428,6 +428,8 @@ export class ChartManager {
 
       const notedata = this.loadedChart.getNotedata()
       if (this.chartAudio.isPlaying()) {
+        this._beat = this.loadedChart?.getBeatFromSeconds(this.time) ?? 0
+
         // Play note flash
         while (
           this.noteFlashIndex < notedata.length &&
