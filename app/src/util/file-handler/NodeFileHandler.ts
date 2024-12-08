@@ -164,10 +164,9 @@ export class NodeFileHandler implements BaseFileHandler {
   }
 
   private async writeHandle(handle: FileSystemFileHandle, data: Blob | string) {
-    const length = data instanceof Blob ? data.size : data.length
     const writable = await handle.createWritable()
+    await writable.truncate(0)
     await writable.write(data)
-    await writable.truncate(length)
     await writable.close()
   }
 
