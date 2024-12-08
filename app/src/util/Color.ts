@@ -28,6 +28,10 @@ export function add(col: number, gamma: number): number {
   return rgbtoHex(r, g, b)
 }
 
+export function average(c: Color) {
+  return (c.red + c.green + c.blue) / 3
+}
+
 export function blendColors(colorA: string, colorB: string, amount: number) {
   const [rA, gA, bA] = colorA.match(/\w\w/g)!.map(c => parseInt(c, 16))
   const [rB, gB, bB] = colorB.match(/\w\w/g)!.map(c => parseInt(c, 16))
@@ -49,12 +53,6 @@ export function blendPixiColors(colorA: Color, colorB: Color, amount: number) {
   const b = lerp(colorA.blue, colorB.blue, amount)
   const a = lerp(colorA.alpha, colorB.alpha, amount)
   return new Color([r, g, b, a])
-}
-
-export function getCSSColor(id: string) {
-  return new Color(
-    document.body.computedStyleMap().get(id)?.toString() ?? "rgba(0, 0, 0, 1)"
-  )
 }
 
 type TintableObject = { tint: ColorSource; alpha: number; destroyed: boolean }

@@ -2214,16 +2214,9 @@ input[type="range"] {
   display: flex;
   align-items: center;
   justify-content: space-evenly;
-  background-color: rgb(11, 14, 26);
   padding-top: 2px;
   border-bottom: 1px solid;
   border-image-slice: 1;
-  border-image-source: linear-gradient(
-    to right,
-    rgb(11, 14, 26),
-    rgb(49, 57, 88),
-    rgb(11, 14, 26)
-  );
 }
 
 .eq-icon {
@@ -2245,13 +2238,6 @@ input[type="range"] {
 .eq-info-container {
   border-top: 1px solid;
   border-image-slice: 1;
-  border-image-source: linear-gradient(
-    to right,
-    rgb(11, 14, 26),
-    rgb(49, 57, 88),
-    rgb(11, 14, 26)
-  );
-  background-color: rgb(11, 14, 26);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -2282,10 +2268,6 @@ input[type="range"] {
   flex-direction: row;
   align-items: center;
   gap: 5px;
-}
-
-.eq-info-label {
-  color: rgba(0, 135, 203, 0.8);
 }
 
 .eq-info-value {

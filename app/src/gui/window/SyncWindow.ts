@@ -1,10 +1,13 @@
 import ft from "fourier-transform/asm"
+import { Color } from "pixi.js"
 import tippy from "tippy.js"
 import { App } from "../../App"
 import { PartialTapNotedataEntry } from "../../chart/sm/NoteTypes"
+import { blendPixiColors, average as rgbAverage } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, lerp, roundDigit, unlerp } from "../../util/Math"
 import { Options } from "../../util/Options"
+import { Themes } from "../../util/Theme"
 import { NumberSlider } from "../element/NumberSlider"
 import { WaterfallManager } from "../element/WaterfallManager"
 import { Window } from "./Window"
@@ -580,10 +583,6 @@ export class SyncWindow extends Window {
         Math.min(MAX_CANVAS_LENGTH, canvasLength - i * MAX_CANVAS_LENGTH),
         graphHeight * 2
       )
-      const ctx = canvas.getContext("2d")!
-      ctx.fillStyle = `rgba(0, 0, 0, 0.6)`
-      ctx.fillRect(0, 0, canvas.width, graphHeight)
-      ctx.fillRect(0, graphHeight * 1.5, canvas.width, graphHeight * 0.5)
       this.spectrogramCanvases.push(canvas)
     }
 
@@ -664,9 +663,7 @@ export class SyncWindow extends Window {
         }
       }
 
-      // Draw
-      ctx.fillStyle = "rgb(11, 14, 26)"
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       const zoom = Options.chart.speed / 40
 
@@ -699,6 +696,33 @@ export class SyncWindow extends Window {
           graphHeight * 2
         )
       }
+
+      ctx.globalCompositeOperation = "source-atop"
+
+      let targetColor
+      if (rgbAverage(Themes.getColor("primary-bg")) > 0.5) {
+        targetColor = new Color("white")
+      } else {
+        targetColor = new Color("black")
+      }
+
+      ctx.fillStyle = blendPixiColors(
+        Themes.getColor("accent-color"),
+        targetColor,
+        0.1
+      ).toHexa()
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      ctx.globalCompositeOperation = "destination-over"
+
+      ctx.fillStyle = blendPixiColors(
+        Themes.getColor("accent-color"),
+        targetColor,
+        0.9
+      ).toHexa()
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      ctx.globalCompositeOperation = "source-over"
 
       // draw current measure lines
 
@@ -777,7 +801,7 @@ export class SyncWindow extends Window {
           this.tempoStep
       )
 
-      ctx.fillStyle = "rgba(0, 150, 255, 1)"
+      ctx.fillStyle = Themes.getColor("accent-color").toHex()
       ctx.textAlign = "right"
       ctx.textBaseline = "top"
       ctx.font = "22px Assistant"
@@ -788,7 +812,6 @@ export class SyncWindow extends Window {
       )
 
       ctx.textAlign = "right"
-      ctx.fillStyle = "rgba(0, 150, 255, 1)"
       ctx.textBaseline = "middle"
       if (this.tempogramGroups[currentTempoBlock]) {
         const aggregateTempos = []
@@ -917,7 +940,7 @@ export class SyncWindow extends Window {
         Math.floor(blockNum / MAX_CANVAS_LENGTH)
       ].getContext("2d")!
 
-    ctx.fillStyle = `rgba(0, 166, 255, 1)`
+    ctx.fillStyle = "white"
     response.forEach((value, index) => {
       const loc = this.spectroHeights[index]
       const col = clamp(value * 2000, 0, 255)
@@ -979,14 +1002,13 @@ export class SyncWindow extends Window {
         Math.floor(blockNum / MAX_CANVAS_LENGTH)
       ].getContext("2d")!
     const height = Math.min(1, Math.log(1 + sum)) * graphHeight * 0.5
-    ctx.fillStyle = "rgb(11, 14, 26)"
-    ctx.fillRect(
-      blockNum % MAX_CANVAS_LENGTH,
-      graphHeight,
-      1,
-      graphHeight * 0.5
-    )
-    ctx.fillStyle = `rgba(0, 100, 150, 0.5)`
+    // ctx.fillRect(
+    //   blockNum % MAX_CANVAS_LENGTH,
+    //   graphHeight,
+    //   1,
+    //   graphHeight * 0.5
+    // )
+    ctx.fillStyle = "white"
     ctx.fillRect(
       blockNum % MAX_CANVAS_LENGTH,
       graphHeight * 1.5 - height,
@@ -1289,7 +1311,7 @@ export class SyncWindow extends Window {
         Math.floor((blockNum * this.tempoStep) / MAX_CANVAS_LENGTH)
       ].getContext("2d")!
 
-    ctx.fillStyle = `rgba(0, 166, 255, 1)`
+    ctx.fillStyle = "white"
     this.tempogram[blockNum].forEach(data => {
       const col = clamp(data.value * 8000, 0, 255)
       ctx.globalAlpha = col / 255
