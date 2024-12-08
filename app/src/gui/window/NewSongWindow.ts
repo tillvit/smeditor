@@ -190,7 +190,6 @@ export class NewSongWindow extends Window {
     input.autocomplete = "off"
     input.spellcheck = false
     input.placeholder = "click to upload a file"
-    input.style.color = "white"
     input.readOnly = true
     input.onclick = ev => {
       ev.preventDefault()
