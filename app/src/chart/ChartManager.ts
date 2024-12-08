@@ -544,13 +544,8 @@ export class ChartManager {
     EventHandler.on("chartModified", () => {
       if (this.loadedChart) {
         this.loadedChart.recalculateStats()
-        EventHandler.emit("chartModifiedAfter")
-      }
-    })
-
-    EventHandler.on("chartModified", () => {
-      if (this.loadedChart) {
         this.setNoteIndex()
+        EventHandler.emit("chartModifiedAfter")
       }
     })
 
@@ -680,7 +675,15 @@ export class ChartManager {
     if (!this.loadedChart) return
     this.chartAudio.seek(this.loadedChart.getSecondsFromBeat(beat))
     this._beat = beat
+
     this.setNoteIndex()
+
+    this.lastMetronomeMeasure = Math.floor(
+      this.loadedChart.timingData.getMeasure(this.beat)
+    )
+    this.lastMetronomeDivision = Math.floor(
+      this.loadedChart.timingData.getDivisionOfMeasure(this.beat)
+    )
   }
 
   get time() {
@@ -1040,6 +1043,8 @@ export class ChartManager {
       this.assistTickIndex = 0
       return
     }
+
+    this.assistTick.stop()
     this.noteFlashIndex =
       bsearch(this.loadedChart.getNotedata(), this.time, a => a.second) + 1
     if (
@@ -1050,13 +1055,6 @@ export class ChartManager {
       this.noteFlashIndex--
 
     this.assistTickIndex = this.noteFlashIndex
-
-    this.lastMetronomeMeasure = Math.floor(
-      this.loadedChart.timingData.getMeasure(this.beat)
-    )
-    this.lastMetronomeDivision = Math.floor(
-      this.loadedChart.timingData.getDivisionOfMeasure(this.beat)
-    )
   }
 
   playPause() {

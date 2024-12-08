@@ -153,6 +153,7 @@ export class DefaultOptions {
     showTimers: false,
     showScroll: false,
     showNoteskinErrors: false,
+    showDebugVariables: false,
   }
   static experimental = {}
 }

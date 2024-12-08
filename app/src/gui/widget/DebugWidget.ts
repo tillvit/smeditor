@@ -76,6 +76,7 @@ export class DebugWidget extends Widget {
     fontSize: 12,
   })
   private lastFrameTime = 0
+  private properties = new Map<string, any>()
 
   constructor(manager: WidgetManager) {
     super(manager)
@@ -104,6 +105,7 @@ export class DebugWidget extends Widget {
 
     this.addChild(this.graphs, this.fpsCounter)
   }
+
   update() {
     this.x = -this.manager.app.renderer.screen.width / 2 + 20
     this.y = -this.manager.app.renderer.screen.height / 2 + 20
@@ -116,6 +118,13 @@ export class DebugWidget extends Widget {
     this.fpsText.text = `${getFPS()} FPS\n${getTPS()} TPS\n${this.lastFrameTime.toFixed(
       2
     )} ms\n`
+
+    if (Options.debug.showDebugVariables) {
+      this.properties.forEach((value, key) => {
+        this.fpsText.text += `${key}: ${value}\n`
+      })
+    }
+
     this.fpsBg.width = this.fpsText.width + 10
     this.fpsBg.height = this.fpsText.height + 10
     if (Options.debug.showTimers) {
@@ -142,6 +151,18 @@ export class DebugWidget extends Widget {
 
   addDrawUpdateTimeValue(value: number) {
     this.drawUpdateTimeGraph.addValue(value)
+  }
+
+  setProperty(key: string, value: any) {
+    this.properties.set(key, value)
+  }
+
+  clearProperty(key: string) {
+    this.properties.delete(key)
+  }
+
+  clearProperties() {
+    this.properties.clear()
   }
 }
 
@@ -220,7 +241,7 @@ class DebugGraph extends Container {
     bg.width = this.graphWidth
     bg.height = this.graphHeight
 
-    assignTint(bg, "text-color")
+    assignTint(bg, "widget-bg")
 
     this.labelText = new BitmapText(label, {
       fontName: "Main",
