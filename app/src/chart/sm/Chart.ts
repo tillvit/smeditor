@@ -336,7 +336,7 @@ export class Chart {
       for (const key in this.other_properties) {
         str += `#${key}:${this.other_properties[key]};\n`
       }
-      if (!this.timingData.usesChartTiming())
+      if (this.timingData.usesChartTiming())
         str += this.timingData.serialize("ssc")
       str += `#NOTES:\n`
     }
