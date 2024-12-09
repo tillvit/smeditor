@@ -1304,7 +1304,7 @@ export class ChartManager {
           isHoldNote(note) &&
           note.col == col &&
           beat > note.beat &&
-          beat <= note.beat + note.hold
+          beat <= Math.round((note.beat + note.hold) * 48) / 48
       )
       .map(hold => {
         return {
