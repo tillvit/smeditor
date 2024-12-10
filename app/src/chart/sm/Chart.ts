@@ -49,8 +49,10 @@ export class Chart {
         if (
           property == "OFFSET" ||
           TIMING_EVENT_NAMES.includes(property as TimingEventType)
-        )
+        ) {
           this.timingData.parse(property as TimingType, dict[property])
+          delete dict[property]
+        }
       }
       this.timingData.reloadCache()
       const gameType = GameTypeRegistry.getGameType(dict["STEPSTYPE"])
