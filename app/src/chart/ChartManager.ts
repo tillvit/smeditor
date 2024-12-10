@@ -499,6 +499,8 @@ export class ChartManager {
           this.time + Options.play.effectOffset + EFFECT_BUFFER
         )
 
+        const scheduledBeats = new Set()
+
         const startMeasure = td.getBeatFromMeasure(this.lastMetronomeMeasure)
         const divLength = td.getDivisionLength(startMeasure)
         const startBeat = startMeasure + divLength * this.lastMetronomeDivision
@@ -509,6 +511,8 @@ export class ChartManager {
         for (const [barBeat, isMeasure] of measureBeats) {
           if (this.beat > barBeat) continue
           const barSecond = td.getSecondsFromBeat(barBeat)
+          if (scheduledBeats.has(barSecond)) continue
+          scheduledBeats.add(barSecond)
           const offset =
             (barSecond + Options.play.effectOffset - this.time) /
             Options.audio.rate
