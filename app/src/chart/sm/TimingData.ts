@@ -307,6 +307,9 @@ export abstract class TimingData {
         "BGCHANGES",
         "FGCHANGES",
         "ATTACKS",
+        // NotITG SM
+        "SPEEDS",
+        "SCROLLS",
       ]
     }
     for (const eventType of types) {
@@ -853,12 +856,12 @@ export abstract class TimingData {
       case "ATTACKS":
       case "BGCHANGES":
       case "FGCHANGES":
+      case "SPEEDS":
+      case "SCROLLS":
         return false
       case "WARPS":
       case "DELAYS":
       case "LABELS":
-      case "SPEEDS":
-      case "SCROLLS":
       case "TICKCOUNTS":
       case "TIMESIGNATURES":
       case "COMBOS":
