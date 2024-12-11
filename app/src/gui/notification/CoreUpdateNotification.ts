@@ -16,6 +16,7 @@ export class CoreUpdateNotification extends UpdateNotification {
           type: "confirm",
           callback: () => {
             callback()
+            window.location.reload()
           },
         },
       ],
