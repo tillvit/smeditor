@@ -12,7 +12,7 @@ export class KeyComboWindow extends Window {
   private readonly conflictCheck: (combo: KeyCombo) => string[] | "self"
   private listener?: (event: KeyboardEvent) => void
 
-  static active = true
+  static active = false
 
   constructor(
     app: App,
