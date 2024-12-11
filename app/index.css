@@ -3154,6 +3154,10 @@ input[type="color"] {
   padding-left: 30px;
 }
 
+.markdown-container li {
+  padding: 2px 0;
+}
+
 .split-timing-grid {
   border: 1px solid var(--secondary-border);
   margin-top: 10px;
