@@ -17,7 +17,7 @@ import { WidgetManager } from "../gui/widget/WidgetManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
 import { ConfirmationWindow } from "../gui/window/ConfirmationWindow"
 import { InitialWindow } from "../gui/window/InitialWindow"
-import { KeybindWindow } from "../gui/window/KeybindWindow"
+import { KeyComboWindow } from "../gui/window/KeyComboWindow"
 import { ActionHistory } from "../util/ActionHistory"
 import {
   decodeNotes,
@@ -602,7 +602,7 @@ export class ChartManager {
         if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
         if (event.target instanceof HTMLTextAreaElement) return
         if (event.target instanceof HTMLInputElement) return
-        if (KeybindWindow.active) return
+        if (KeyComboWindow.active) return
         // Start editing note
         if (
           event.code.startsWith("Digit") &&

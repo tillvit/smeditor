@@ -12,6 +12,8 @@ export class KeyComboWindow extends Window {
   private readonly conflictCheck: (combo: KeyCombo) => string[] | "self"
   private listener?: (event: KeyboardEvent) => void
 
+  static active = true
+
   constructor(
     app: App,
     allowMods: boolean,
@@ -31,6 +33,8 @@ export class KeyComboWindow extends Window {
     this.callback = callback
     this.conflictCheck = conflictCheck ?? (() => [])
     this.initView()
+
+    KeyComboWindow.active = true
   }
 
   initView(): void {
@@ -123,5 +127,6 @@ export class KeyComboWindow extends Window {
 
   onClose(): void {
     window.removeEventListener("keydown", this.listener!, true)
+    KeyComboWindow.active = false
   }
 }
