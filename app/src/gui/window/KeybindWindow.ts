@@ -26,6 +26,8 @@ const KEYBIND_INSERTS: Record<string, KeybindInserts[]> = {
     },
     {
       ids: [
+        "toggleEditTiming",
+        "toggleAddTiming",
         "previousNoteType",
         "nextNoteType",
         "noteTypeTap",
