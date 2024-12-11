@@ -24,7 +24,7 @@ import { AppUpdateNotification } from "./gui/notification/AppUpdateNotification"
 import { CoreUpdateNotification } from "./gui/notification/CoreUpdateNotification"
 import { OfflineUpdateNotification } from "./gui/notification/OfflineUpdateNotification"
 import { DebugWidget } from "./gui/widget/DebugWidget"
-import { ChangelogWindow, CoreVersion } from "./gui/window/ChangelogWindow"
+import { ChangelogWindow } from "./gui/window/ChangelogWindow"
 import { DirectoryWindow } from "./gui/window/DirectoryWindow"
 import { InitialWindow } from "./gui/window/InitialWindow"
 import { WindowManager } from "./gui/window/WindowManager"
@@ -69,6 +69,8 @@ interface AppVersion {
   changelog: string[]
 }
 
+const VERSION = "1.1.0"
+
 export class App {
   options = Options
   events = EventHandler
@@ -88,66 +90,6 @@ export class App {
 
   constructor() {
     tippy.setDefaultProps({ duration: [200, 100], theme: "sm" })
-
-    if (window.nw) {
-      const win = nw.Window.get()
-
-      nw.App.on("open", args => {
-        if (!args || args?.length === 0) {
-          nw.Window.open(window.location.href)
-          return
-        }
-        let foundSM = ""
-        for (let file of args) {
-          if (file.startsWith("file://")) file = file.substring(7)
-          if (extname(file) == ".ssc") {
-            foundSM = file
-            break
-          } else if (foundSM == "" && extname(file) == ".sm") {
-            foundSM = file
-          }
-        }
-        if (foundSM != "") {
-          this.chartManager.loadSM(foundSM)
-          this.windowManager.getWindowById("select_sm_initial")?.closeWindow()
-        }
-      })
-
-      window.addEventListener("keydown", e => {
-        if (e.key == "r" && (e.metaKey || e.ctrlKey)) {
-          e.preventDefault()
-          win.reload()
-        }
-        if (e.code == "KeyW" && (e.metaKey || e.ctrlKey)) {
-          e.preventDefault()
-          win.close()
-        }
-        if (
-          process.versions["nw-flavor"] == "sdk" &&
-          e.code == "KeyI" &&
-          e.metaKey &&
-          e.altKey
-        ) {
-          e.preventDefault()
-          win.showDevTools()
-        }
-      })
-      win.on("enter-fullscreen", () => {
-        Options.app.fullscreen = win.isFullscreen
-      })
-      win.on("resize", (w, h) => {
-        if (!win.isFullscreen) {
-          Options.app.width = w!
-          Options.app.height = h!
-        }
-      })
-      win.on("restore", () => {
-        Options.app.fullscreen = win.isFullscreen
-      })
-      this.checkAppVersion()
-    }
-
-    this.checkCoreVersion()
 
     Options.loadOptions()
     loadFlags()
@@ -293,6 +235,66 @@ export class App {
         return
       }
       this.windowManager.openWindow(new InitialWindow(this))
+
+      if (window.nw) {
+        const win = nw.Window.get()
+
+        nw.App.on("open", args => {
+          if (!args || args?.length === 0) {
+            nw.Window.open(window.location.href)
+            return
+          }
+          let foundSM = ""
+          for (let file of args) {
+            if (file.startsWith("file://")) file = file.substring(7)
+            if (extname(file) == ".ssc") {
+              foundSM = file
+              break
+            } else if (foundSM == "" && extname(file) == ".sm") {
+              foundSM = file
+            }
+          }
+          if (foundSM != "") {
+            this.chartManager.loadSM(foundSM)
+            this.windowManager.getWindowById("select_sm_initial")?.closeWindow()
+          }
+        })
+
+        window.addEventListener("keydown", e => {
+          if (e.key == "r" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault()
+            win.reload()
+          }
+          if (e.code == "KeyW" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault()
+            win.close()
+          }
+          if (
+            process.versions["nw-flavor"] == "sdk" &&
+            e.code == "KeyI" &&
+            e.metaKey &&
+            e.altKey
+          ) {
+            e.preventDefault()
+            win.showDevTools()
+          }
+        })
+        win.on("enter-fullscreen", () => {
+          Options.app.fullscreen = win.isFullscreen
+        })
+        win.on("resize", (w, h) => {
+          if (!win.isFullscreen) {
+            Options.app.width = w!
+            Options.app.height = h!
+          }
+        })
+        win.on("restore", () => {
+          Options.app.fullscreen = win.isFullscreen
+        })
+        this.checkAppVersion()
+      }
+
+      this.checkCoreVersion()
     })
 
     window.onbeforeunload = event => {
@@ -496,16 +498,11 @@ export class App {
         console.log("Offline use ready")
       },
     })
-    fetch("/smeditor/assets/app/changelog.json")
-      .then(data => data.json())
-      .then((versions: CoreVersion[]) => {
-        const version = versions[0]
-        const localVersion = localStorage.getItem("coreVersion")
-        if (localVersion !== null && semver.lt(localVersion, version.version)) {
-          this.windowManager.openWindow(new ChangelogWindow(this))
-        }
-        localStorage.setItem("coreVersion", version.version)
-      })
+    const localVersion = localStorage.getItem("coreVersion")
+    if (localVersion !== null && semver.lt(localVersion, VERSION)) {
+      this.windowManager.openWindow(new ChangelogWindow(this))
+    }
+    localStorage.setItem("coreVersion", VERSION)
   }
 }
 
