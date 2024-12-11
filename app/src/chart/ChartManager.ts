@@ -171,6 +171,7 @@ export class ChartManager {
   private shiftPressed = 0
 
   private virtualClipboard = ""
+  private lastAutoSave = 0
 
   startRegion?: number
   endRegion?: number
@@ -532,6 +533,18 @@ export class ChartManager {
       if (this.mode == EditMode.Play) {
         this.loadedChart.gameType.gameLogic.update(this)
       }
+
+      // Autosave
+      if (
+        this.lastAutoSave + Options.general.autosaveInterval * 1000 <
+        Date.now()
+      ) {
+        this.lastAutoSave = Date.now()
+        if (ActionHistory.instance.isDirty()) {
+          this.autosave()
+        }
+      }
+
       this.updateSoundProperties()
       tpsUpdate()
       DebugWidget.instance?.addUpdateTimeValue(performance.now() - updateStart)
@@ -735,6 +748,7 @@ export class ChartManager {
       const option = await window.resolved
       if (option == "Cancel") return
       if (option == "Yes") this.save()
+      if (option == "No") await this.removeAutosaves()
     }
 
     // Destroy everything if no path specified
@@ -755,11 +769,39 @@ export class ChartManager {
 
     this.loadingText.visible = true
 
+    // Check for an autosave
+
+    let loadPath = this.smPath
+
+    const autosavePath = this.getSMPath(".smebak")
+    if (await FileHandler.hasFile(autosavePath)) {
+      const window = new ConfirmationWindow(
+        this.app,
+        "Autosave",
+        "An autosave was found. Do you wish to load the autosave?",
+        [
+          {
+            label: "No",
+            type: "default",
+          },
+          {
+            label: "Yes",
+            type: "confirm",
+          },
+        ]
+      )
+      this.app.windowManager.openWindow(window)
+      const option = await window.resolved
+      if (option == "Yes") {
+        loadPath = autosavePath
+      }
+    }
+
     // Load the SM file
-    const smHandle = await FileHandler.getFileHandle(this.smPath)
+    const smHandle = await FileHandler.getFileHandle(loadPath)
     if (!smHandle) {
       WaterfallManager.createFormatted(
-        "Couldn't load the file at " + this.smPath,
+        "Couldn't load the file at " + loadPath,
         "error"
       )
       this.app.windowManager.openWindow(new InitialWindow(this.app))
@@ -1596,28 +1638,16 @@ export class ChartManager {
    */
   async save() {
     if (!this.loadedSM) return
+    if (this.smPath.startsWith("https://") || this.smPath.startsWith("http://"))
+      return
 
-    let smPath
-    let sscPath
-    if (window.nw) {
-      const path = window.nw.require("path")
-      const pathData = path.parse(this.smPath)
-      smPath = path.resolve(pathData.dir, pathData.name + ".sm")
-      sscPath = path.resolve(pathData.dir, pathData.name + ".ssc")
-    } else {
-      const dir = dirname(this.smPath)
-      const baseName = basename(this.smPath)
-      const fileName = baseName.includes(".")
-        ? baseName.split(".").slice(0, -1).join(".")
-        : baseName
-      smPath = dir + "/" + fileName + ".sm"
-      sscPath = dir + "/" + fileName + ".ssc"
-    }
+    const smPath = this.getSMPath(".sm")
+    const sscPath = this.getSMPath(".ssc")
 
     let error: string | null = null
     if (
       !this.loadedSM.usesChartTiming() &&
-      (await FileHandler.getFileHandle(smPath))
+      (await FileHandler.getFileHandle(this.getSMPath(".smebak")))
     ) {
       await FileHandler.writeFile(smPath, this.loadedSM.serialize("sm")).catch(
         err => {
@@ -1650,10 +1680,64 @@ export class ChartManager {
       } else {
         WaterfallManager.create("Saved")
       }
+      await this.removeAutosaves()
     } else {
       WaterfallManager.createFormatted("Failed to save file: " + error, "error")
     }
     ActionHistory.instance.setLimit()
+    return
+  }
+
+  getSMPath(ext: string) {
+    if (window.nw) {
+      const path = window.nw.require("path")
+      const pathData = path.parse(this.smPath)
+      return path.resolve(pathData.dir, pathData.name + ext) as string
+    } else {
+      const dir = dirname(this.smPath)
+      const baseName = basename(this.smPath)
+      const fileName = baseName.includes(".")
+        ? baseName.split(".").slice(0, -1).join(".")
+        : baseName
+      return dir + "/" + fileName + ext
+    }
+  }
+
+  async removeAutosaves() {
+    await FileHandler.removeFile(this.getSMPath(".smebak")).catch(() => {})
+  }
+
+  /**
+   * Autosaves the current chart to disk.
+   *
+   * @memberof ChartManager
+   */
+  async autosave() {
+    if (!this.loadedSM) return
+
+    if (this.smPath.startsWith("https://") || this.smPath.startsWith("http://"))
+      return
+
+    // save as ssc
+
+    let error: string | null = null
+    await FileHandler.writeFile(
+      this.getSMPath(".smebak"),
+      this.loadedSM.serialize("ssc")
+    ).catch(err => {
+      const message = err.message
+      if (!message.includes(errors.GONE[0])) {
+        error = message
+      }
+    })
+    if (error == null) {
+      WaterfallManager.create("Autosaved")
+    } else {
+      WaterfallManager.createFormatted(
+        "Failed to autosave file: " + error,
+        "error"
+      )
+    }
     return
   }
 

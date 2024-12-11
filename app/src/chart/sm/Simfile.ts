@@ -18,7 +18,8 @@ export class Simfile {
 
   constructor(file: File) {
     this.loaded = new Promise(resolve => {
-      const type = file.name.split(".").pop()
+      let type = file.name.split(".").pop()
+      if (type == "smebak") type = "ssc"
       if (type == "sm" || type == "ssc") this._type = type
       else resolve()
 

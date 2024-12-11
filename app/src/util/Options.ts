@@ -17,6 +17,7 @@ export class DefaultOptions {
   static general = {
     spinnerStep: 1,
     smoothAnimations: true,
+    autosaveInterval: 120,
     warnBeforeExit: true,
     showPlaybackOptions: true,
     theme: "default",
@@ -261,7 +262,6 @@ export class Options extends DefaultOptions {
   }
   static loadOptions() {
     const data = localStorage.getItem("options")
-    console.log(data)
     if (!data) return
     const items = JSON.parse(data) as {
       [key: string]: any

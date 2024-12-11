@@ -110,6 +110,10 @@ export class URLFileHandler implements BaseFileHandler {
     throw Error("Cannot save to a URL file!")
   }
 
+  async removeFile(_: string) {
+    throw Error("Cannot remove a URL file!")
+  }
+
   getRelativePath(_: string, _2: string): string {
     throw Error("Cannot call getRelativePath from a URLFileHandler")
   }

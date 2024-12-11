@@ -163,6 +163,10 @@ export class NodeFileHandler implements BaseFileHandler {
     return
   }
 
+  async removeFile(path: string): Promise<void> {
+    await fs.unlink(path)
+  }
+
   private async writeHandle(handle: FileSystemFileHandle, data: Blob | string) {
     const writable = await handle.createWritable()
     await writable.truncate(0)
