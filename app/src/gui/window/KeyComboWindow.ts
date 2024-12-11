@@ -118,10 +118,10 @@ export class KeyComboWindow extends Window {
       event.preventDefault()
     }
 
-    window.addEventListener("keydown", this.listener)
+    window.addEventListener("keydown", this.listener, true)
   }
 
   onClose(): void {
-    window.removeEventListener("keydown", this.listener!)
+    window.removeEventListener("keydown", this.listener!, true)
   }
 }

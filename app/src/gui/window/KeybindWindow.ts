@@ -67,6 +67,8 @@ export class KeybindWindow extends Window {
 
   private conflictMap = this.calculateConflicts()
 
+  static active = false
+
   constructor(app: App) {
     super({
       title: "Keybind Options",
@@ -82,6 +84,7 @@ export class KeybindWindow extends Window {
       KeybindWindow.GROUPS = KeybindWindow.createGroups()
 
     this.initView()
+    KeybindWindow.active = true
   }
 
   initView(): void {
@@ -432,5 +435,6 @@ export class KeybindWindow extends Window {
 
   onClose(): void {
     this.observer?.disconnect()
+    KeybindWindow.active = false
   }
 }
