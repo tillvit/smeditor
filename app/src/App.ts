@@ -22,7 +22,6 @@ import { MenubarManager } from "./gui/element/MenubarManager"
 import { WaterfallManager } from "./gui/element/WaterfallManager"
 import { AppUpdateNotification } from "./gui/notification/AppUpdateNotification"
 import { CoreUpdateNotification } from "./gui/notification/CoreUpdateNotification"
-import { OfflineUpdateNotification } from "./gui/notification/OfflineUpdateNotification"
 import { DebugWidget } from "./gui/widget/DebugWidget"
 import { ChangelogWindow } from "./gui/window/ChangelogWindow"
 import { DirectoryWindow } from "./gui/window/DirectoryWindow"
@@ -488,12 +487,7 @@ export class App {
   }
 
   checkCoreVersion() {
-    const update = registerSW({
-      onOfflineReady() {
-        OfflineUpdateNotification.open()
-        console.log("Offline use ready")
-      },
-    })
+    const update = registerSW({})
     navigator.serviceWorker.addEventListener("controllerchange", () => {
       CoreUpdateNotification.open(update)
       console.log("Found new version")
