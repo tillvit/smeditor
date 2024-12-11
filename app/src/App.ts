@@ -489,15 +489,16 @@ export class App {
 
   checkCoreVersion() {
     const update = registerSW({
-      onNeedRefresh() {
-        CoreUpdateNotification.open(update)
-        console.log("Found new version")
-      },
       onOfflineReady() {
         OfflineUpdateNotification.open()
         console.log("Offline use ready")
       },
     })
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      CoreUpdateNotification.open(update)
+      console.log("Found new version")
+    })
+
     const localVersion = localStorage.getItem("coreVersion")
     if (localVersion !== null && semver.lt(localVersion, VERSION)) {
       this.windowManager.openWindow(new ChangelogWindow(this))

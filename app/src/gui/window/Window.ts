@@ -31,7 +31,7 @@ export abstract class Window {
     windowElement.style.width = options.width + "px"
     windowElement.style.left = window.innerWidth / 2 - options.width / 2 + "px"
     windowElement.style.top = window.innerHeight / 2 - options.height / 2 + "px"
-    windowElement.classList.add("unselectable", "window")
+    windowElement.classList.add("window")
     if (options.win_id) windowElement.dataset.win_id = options.win_id
 
     viewElement.classList.add("view")
