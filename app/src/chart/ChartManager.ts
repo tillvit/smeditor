@@ -279,7 +279,11 @@ export class ChartManager {
           newbeat = this.beat + delta
         } else {
           if (Options.chart.scroll.scrollSnapEveryScroll) {
-            if (event.deltaY < 0 != Options.chart.scroll.invertReverseScroll) {
+            if (
+              event.deltaY < 0 !=
+              (Options.chart.scroll.invertReverseScroll &&
+                Options.chart.reverse)
+            ) {
               newbeat = Math.round((this.beat - snap) / snap) * snap
             } else {
               newbeat = Math.round((this.beat + snap) / snap) * snap
