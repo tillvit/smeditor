@@ -33,13 +33,12 @@ export class ChangelogWindow extends Window {
     fetch("/smeditor/assets/app/changelog.json")
       .then(data => data.json())
       .then((versions: CoreVersion[]) => {
-        const markdown = versions
+        mdContainer.innerHTML = versions
           .map(version => {
             return `# ${version.version}\n---\n` + version.changelog
           })
-          .join("\n---\n")
-        const result = markdownit().render(markdown)
-        mdContainer.innerHTML = result
+          .map(text => `<div>${markdownit().render(text)}</div>`)
+          .join("")
       })
 
     padding.appendChild(mdContainer)

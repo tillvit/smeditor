@@ -3138,6 +3138,9 @@ input[type="color"] {
   height: 100%;
   overflow: auto;
   padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
 }
 
 .markdown-container hr {
