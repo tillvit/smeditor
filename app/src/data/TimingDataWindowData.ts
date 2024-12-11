@@ -6,7 +6,7 @@ import { roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
 
 type TimingDataWindowElement<T extends HTMLElement> = {
-  create: (app: App, getTarget: () => TimingData) => T
+  create: (app: App) => T
   update: (element: T, timingData: TimingData, beat: number) => void
 }
 
@@ -23,15 +23,20 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   offset: {
     title: "Offset",
     element: createElement({
-      create: (_, getTarget) => {
+      create: app => {
         const input = NumberSpinner.create(
           0,
           Options.general.spinnerStep / 100,
           3
         )
         input.onChange = value => {
+          const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined) return
-          getTarget().setOffset(value)
+          if (timingData.hasChartOffset()) {
+            timingData.setOffset(value)
+          } else {
+            timingData.songTimingData.setOffset(value)
+          }
         }
         return input.view
       },
@@ -48,15 +53,16 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   bpm: {
     title: "BPM",
     element: createElement({
-      create: (app, getTarget) => {
+      create: app => {
         const input = NumberSpinner.create(120, undefined, 3)
         input.onChange = value => {
+          const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined) {
             const beat = app.chartManager.beat
-            getTarget().delete([{ type: "BPMS", beat }])
+            timingData.deleteMulti([{ type: "BPMS", beat }])
             return
           }
-          getTarget().insert([
+          timingData.insertMulti([
             { type: "BPMS", beat: app.chartManager.beat, value },
           ])
         }
@@ -75,15 +81,16 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   stop: {
     title: "Stop",
     element: createElement({
-      create: (app, getTarget) => {
+      create: app => {
         const input = NumberSpinner.create(0, undefined, 3)
         input.onChange = value => {
+          const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined || value == 0) {
             const beat = app.chartManager.beat
-            getTarget().delete([{ type: "STOPS", beat }])
+            timingData.deleteMulti([{ type: "STOPS", beat }])
             return
           }
-          getTarget().insert([
+          timingData.insertMulti([
             { type: "STOPS", beat: app.chartManager.beat, value },
           ])
         }
@@ -104,15 +111,16 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   delay: {
     title: "Delay",
     element: createElement({
-      create: (app, getTarget) => {
+      create: app => {
         const input = NumberSpinner.create(0, undefined, 3)
         input.onChange = value => {
+          const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined || value == 0) {
             const beat = app.chartManager.beat
-            getTarget().delete([{ type: "DELAYS", beat }])
+            timingData.deleteMulti([{ type: "DELAYS", beat }])
             return
           }
-          getTarget().insert([
+          timingData.insertMulti([
             { type: "DELAYS", beat: app.chartManager.beat, value },
           ])
         }
@@ -133,16 +141,17 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   warp: {
     title: "Warp",
     element: createElement({
-      create: (app, getTarget) => {
+      create: app => {
         const input = NumberSpinner.create(0, undefined, 3, 0)
         input.onChange = value => {
+          const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined || value == 0) {
             const beat = app.chartManager.beat
-            getTarget().delete([{ type: "WARPS", beat }])
+            timingData.deleteMulti([{ type: "WARPS", beat }])
             return
           }
           if (value < 0) return
-          getTarget().insert([
+          timingData.insertMulti([
             { type: "WARPS", beat: app.chartManager.beat, value },
           ])
         }
@@ -164,18 +173,19 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   timeSig: {
     title: "Time Sig.",
     element: createElement({
-      create: (app, getTarget) => {
+      create: app => {
         const container = document.createElement("div")
         container.classList.add("flex-column-gap")
         const upperInput = NumberSpinner.create(4, 1, 0, 1)
         upperInput.onChange = value => {
+          const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined) {
             const beat = app.chartManager.beat
-            getTarget().delete([{ type: "TIMESIGNATURES", beat }])
+            timingData.deleteMulti([{ type: "TIMESIGNATURES", beat }])
             return
           }
           if (value < 1) return
-          getTarget().insert([
+          timingData.insertMulti([
             {
               type: "TIMESIGNATURES",
               beat: app.chartManager.beat,
@@ -186,13 +196,14 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         }
         const lowerInput = NumberSpinner.create(4, 1, 0, 1)
         lowerInput.onChange = value => {
+          const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined) {
             const beat = app.chartManager.beat
-            getTarget().delete([{ type: "TIMESIGNATURES", beat }])
+            timingData.deleteMulti([{ type: "TIMESIGNATURES", beat }])
             return
           }
           if (value < 1) return
-          getTarget().insert([
+          timingData.insertMulti([
             {
               type: "TIMESIGNATURES",
               beat: app.chartManager.beat,
@@ -232,16 +243,17 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   tick: {
     title: "Tickcount",
     element: createElement({
-      create: (app, getTarget) => {
+      create: app => {
         const input = NumberSpinner.create(4, 1, 0, 0)
         input.onChange = value => {
+          const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined) {
             const beat = app.chartManager.beat
-            getTarget().delete([{ type: "TICKCOUNTS", beat }])
+            timingData.deleteMulti([{ type: "TICKCOUNTS", beat }])
             return
           }
           if (value < 0) return
-          getTarget().insert([
+          timingData.insertMulti([
             { type: "TICKCOUNTS", beat: app.chartManager.beat, value },
           ])
         }
@@ -260,18 +272,19 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   combo: {
     title: "Combo",
     element: createElement({
-      create: (app, getTarget) => {
+      create: app => {
         const container = document.createElement("div")
         container.classList.add("flex-column-gap")
         const upperInput = NumberSpinner.create(1, 1, 0, 0)
         upperInput.onChange = value => {
+          const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined) {
             const beat = app.chartManager.beat
-            getTarget().delete([{ type: "COMBOS", beat }])
+            timingData.deleteMulti([{ type: "COMBOS", beat }])
             return
           }
           if (value < 0) return
-          getTarget().insert([
+          timingData.insertMulti([
             {
               type: "COMBOS",
               beat: app.chartManager.beat,
@@ -282,6 +295,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         }
         const lowerInput = NumberSpinner.create(1, 1, 0, 0)
         lowerInput.onChange = value => {
+          const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined) {
             const beat = app.chartManager.beat
             lowerInput.setValue(
@@ -293,7 +307,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             return
           }
           if (value < 0) return
-          getTarget().insert([
+          timingData.insertMulti([
             {
               type: "COMBOS",
               beat: app.chartManager.beat,
@@ -333,12 +347,13 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   speed: {
     title: "Speed",
     element: createElement({
-      create: (app, getTarget) => {
+      create: app => {
         const container = document.createElement("div")
         container.classList.add("flex-column-gap")
 
         const update = () => {
-          getTarget().insert([
+          const timingData = app.chartManager.loadedChart!.timingData
+          timingData.insertMulti([
             {
               type: "SPEEDS",
               beat: app.chartManager.beat,
@@ -351,9 +366,10 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
 
         const valueInput = NumberSpinner.create(1, 0.1, 0)
         valueInput.onChange = value => {
+          const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined) {
             const beat = app.chartManager.beat
-            getTarget().delete([{ type: "SPEEDS", beat }])
+            timingData.deleteMulti([{ type: "SPEEDS", beat }])
             return
           }
           update()
@@ -411,15 +427,16 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   scroll: {
     title: "Scroll",
     element: createElement({
-      create: (app, getTarget) => {
+      create: app => {
         const input = NumberSpinner.create(1, undefined, 3)
         input.onChange = value => {
+          const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined) {
             const beat = app.chartManager.beat
-            getTarget().delete([{ type: "SCROLLS", beat }])
+            timingData.deleteMulti([{ type: "SCROLLS", beat }])
             return
           }
-          getTarget().insert([
+          timingData.insertMulti([
             { type: "SCROLLS", beat: app.chartManager.beat, value },
           ])
         }
@@ -438,16 +455,17 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   fake: {
     title: "Fake",
     element: createElement({
-      create: (app, getTarget) => {
+      create: app => {
         const input = NumberSpinner.create(1, undefined, 3, 0)
         input.onChange = value => {
+          const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined) {
             const beat = app.chartManager.beat
-            getTarget().delete([{ type: "FAKES", beat }])
+            timingData.deleteMulti([{ type: "FAKES", beat }])
             return
           }
           if (value < 0) return
-          getTarget().insert([
+          timingData.insertMulti([
             { type: "FAKES", beat: app.chartManager.beat, value },
           ])
         }
@@ -468,7 +486,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   label: {
     title: "Label",
     element: createElement({
-      create: (app, getTarget) => {
+      create: app => {
         const input = document.createElement("input")
         input.type = "text"
         input.autocomplete = "off"
@@ -477,12 +495,13 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           if (ev.key == "Enter") input.blur()
         }
         input.onblur = () => {
+          const timingData = app.chartManager.loadedChart!.timingData
           if (input.value == "") {
             const beat = app.chartManager.beat
-            getTarget().delete([{ type: "LABELS", beat }])
+            timingData.deleteMulti([{ type: "LABELS", beat }])
             return
           }
-          getTarget().insert([
+          timingData.insertMulti([
             {
               type: "LABELS",
               beat: app.chartManager.beat,

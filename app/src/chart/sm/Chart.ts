@@ -49,8 +49,10 @@ export class Chart {
         if (
           property == "OFFSET" ||
           TIMING_EVENT_NAMES.includes(property as TimingEventType)
-        )
+        ) {
           this.timingData.parse(property as TimingType, dict[property])
+          delete dict[property]
+        }
       }
       this.timingData.reloadCache()
       const gameType = GameTypeRegistry.getGameType(dict["STEPSTYPE"])
@@ -336,7 +338,7 @@ export class Chart {
       for (const key in this.other_properties) {
         str += `#${key}:${this.other_properties[key]};\n`
       }
-      if (!this.timingData.usesChartTiming())
+      if (this.timingData.usesChartTiming())
         str += this.timingData.serialize("ssc")
       str += `#NOTES:\n`
     }

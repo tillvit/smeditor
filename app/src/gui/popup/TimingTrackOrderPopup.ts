@@ -1,17 +1,11 @@
 import { TIMING_EVENT_COLORS } from "../../chart/component/timing/TimingAreaContainer"
 import { TIMING_EVENT_NAMES } from "../../chart/sm/TimingTypes"
 import { blendColors } from "../../util/Color"
-import { clamp } from "../../util/Math"
 import { DefaultOptions, Options } from "../../util/Options"
 import { Icons } from "../Icons"
+import { Popup } from "./Popup"
 
-export class TimingTrackOrderPopup {
-  static active = false
-  static popup?: HTMLDivElement
-
-  private static clickOutside?: (e: MouseEvent) => void
-  private static moveInterval: NodeJS.Timeout
-  private static exitTimeout: NodeJS.Timeout
+export class TimingTrackOrderPopup extends Popup {
   private static draggedElement?: HTMLDivElement
   private static dragOffsetX = 0
   private static dragOffsetY = 0
@@ -22,48 +16,37 @@ export class TimingTrackOrderPopup {
 
   static open() {
     if (this.active) return
-    this.popup = this.build()
-    document.getElementById("popups")?.appendChild(this.popup)
-
-    this.clickOutside = (event: MouseEvent) => {
-      if (
-        !this.popup?.contains(event.target as Node | null) &&
-        !this.draggedElement?.contains(event.target as Node | null) &&
-        !document
-          .getElementById("toggle-tracks")
-          ?.contains(event.target as Node | null)
-      )
-        this.close()
-    }
-    setTimeout(() => window.addEventListener("click", this.clickOutside!, true))
-
-    // instantly snap to position when first showing
-    this.popup.style.transitionDuration = `0s`
-    setTimeout(() => this.movePosition())
-
-    clearTimeout(this.exitTimeout)
-    this.moveInterval = setInterval(() => this.movePosition(), 150)
-    this.active = true
+    super._open({
+      title: "Reorder Timing Tracks",
+      editable: false,
+      attach: document.getElementById("toggle-tracks")!,
+      cancelableOnOpen: true,
+      clickHandler: (event: MouseEvent) => {
+        if (
+          !this.popup?.contains(event.target as Node | null) &&
+          !this.draggedElement?.contains(event.target as Node | null) &&
+          !document
+            .getElementById("toggle-tracks")
+            ?.contains(event.target as Node | null)
+        )
+          this.close()
+      },
+    })
   }
 
-  private static build() {
-    const popup = document.createElement("div")
-    popup.classList.add("popup")
-    popup.id = "timing-track-order"
-    const popupZoomer = document.createElement("div")
-    popupZoomer.classList.add("popup-zoomer")
-    popup.appendChild(popupZoomer)
-    const container = document.createElement("div")
-    container.classList.add("container")
-    popupZoomer.appendChild(container)
+  static buildContent() {
+    this.popup!.id = "timing-track-order"
     const gridOptions = document.createElement("div")
     gridOptions.classList.add("track-grid-options")
     const reset = document.createElement("button")
     reset.classList.add("delete")
     reset.innerText = "Reset"
     reset.onclick = () => {
-      Options.chart.timingEventOrder = structuredClone(
-        DefaultOptions.chart.timingEventOrder
+      Options.chart.timingEventOrder.left = structuredClone(
+        DefaultOptions.chart.timingEventOrder.left
+      )
+      Options.chart.timingEventOrder.right = structuredClone(
+        DefaultOptions.chart.timingEventOrder.right
       )
       this.clearBoundaries()
       this.grid?.replaceChildren()
@@ -100,8 +83,8 @@ export class TimingTrackOrderPopup {
     }
     this.grid = document.createElement("div")
     this.grid.classList.add("track-grid")
-    container.appendChild(this.grid)
-    container.appendChild(gridOptions)
+    this.view!.appendChild(this.grid)
+    this.view!.appendChild(gridOptions)
 
     const leftoverTypes: string[] = [...TIMING_EVENT_NAMES]
 
@@ -137,7 +120,6 @@ export class TimingTrackOrderPopup {
     for (const type of leftoverTypes) {
       this.leftovers.appendChild(this.makeLeftoverTrack(type))
     }
-    return popup
   }
 
   private static makeDraggableTrack(type: string) {
@@ -396,32 +378,14 @@ export class TimingTrackOrderPopup {
     const rightIndex = Options.chart.timingEventOrder.right.indexOf(type)
     if (rightIndex != -1)
       Options.chart.timingEventOrder.right.splice(rightIndex, 1)
-  }
 
-  private static movePosition() {
-    if (!this.popup) return
-    const button = document.getElementById("toggle-tracks")
-    if (!button) return
-    this.popup.style.display = ``
-    const point = button.getBoundingClientRect()
-    // will the box stay in bounds?
-    const centerx = point.left + point.width / 2
-    const width = this.popup.clientWidth
-    const leftRestriction = width / 2 + 15
-    const rightRestriction = window.innerWidth - width / 2 - 15
-    this.popup.style.left = `${clamp(
-      centerx,
-      leftRestriction,
-      rightRestriction
-    )}px`
-    const centery = point.top + point.height / 2
-    this.popup.style.top = `${point.top + point.height}px`
-    if (centery + this.popup.clientHeight > window.innerHeight - 15) {
-      this.popup.style.transform = `translate(-50%, -100%)`
-      this.popup.style.top = `${point.top - point.height / 2}px`
-    }
-
-    setTimeout(() => (this.popup!.style.transitionDuration = ``), 10)
+    // splice doesn't trigger option listeners
+    Options.chart.timingEventOrder.left = [
+      ...Options.chart.timingEventOrder.left,
+    ]
+    Options.chart.timingEventOrder.right = [
+      ...Options.chart.timingEventOrder.right,
+    ]
   }
 
   private static getClosestSlot(x: number) {
@@ -455,11 +419,7 @@ export class TimingTrackOrderPopup {
 
   static close() {
     if (!this.popup || !this.active) return
-    window.removeEventListener("click", this.clickOutside!, true)
-    this.popup.classList.add("exiting")
-    this.exitTimeout = setTimeout(() => this.popup!.remove(), 200)
-    this.active = false
-    clearInterval(this.moveInterval)
+    super.close()
     this.clearBoundaries()
   }
 }

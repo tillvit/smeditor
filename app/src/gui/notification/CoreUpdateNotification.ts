@@ -1,6 +1,6 @@
-import { UpdatePopup } from "./UpdatePopup"
+import { UpdateNotification } from "./UpdateNotification"
 
-export class CoreUpdatePopup extends UpdatePopup {
+export class CoreUpdateNotification extends UpdateNotification {
   static open(callback: () => void) {
     super.build({
       title: `A new version of the app is available!`,

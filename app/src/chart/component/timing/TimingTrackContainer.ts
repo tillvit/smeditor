@@ -7,10 +7,11 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
+import { TimingColumnPopup } from "../../../gui/popup/TimingColumnPopup"
 import { TimingEventPopup } from "../../../gui/popup/TimingEventPopup"
 import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
 import { BezierAnimator } from "../../../util/BezierEasing"
-import { lighten } from "../../../util/Color"
+import { assignTint, lighten } from "../../../util/Color"
 import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { EventHandler } from "../../../util/EventHandler"
 import { roundDigit } from "../../../util/Math"
@@ -30,13 +31,13 @@ export interface TimingBox extends Container {
   lastX?: number
   lastAnchor?: number
   animationId?: string
-  popup?: TimingEventPopup
 }
 
-interface TimingTrack extends Sprite {
-  lastX: number
-  targetAlpha: number
+interface TimingTrack extends Container {
   type: string
+  timingMode: "chart" | "song"
+  background: Sprite
+  btns: Container
 }
 
 interface TimingRow {
@@ -97,6 +98,7 @@ export class TimingTrackContainer
   private ghostBox?: TimingBox
 
   private timingDirty = false
+  private tracksDirty = true
 
   constructor(renderer: ChartRenderer) {
     super()
@@ -105,12 +107,23 @@ export class TimingTrackContainer
     this.sortableChildren = true
     this.addChild(this.tracks, this.boxPool)
 
-    const timingEventListener = () => (this.timingDirty = true)
+    const timingEventListener = () => {
+      this.timingDirty = true
+      this.tracksDirty = true
+    }
+
+    const userOptionListener = (option: string) => {
+      if (option.startsWith("chart.timingEventOrder")) {
+        this.tracksDirty = true
+      }
+    }
 
     EventHandler.on("timingModified", timingEventListener)
-    this.on("destroyed", () =>
+    EventHandler.on("userOptionUpdated", userOptionListener)
+    this.on("destroyed", () => {
       EventHandler.off("timingModified", timingEventListener)
-    )
+      EventHandler.off("userOptionUpdated", userOptionListener)
+    })
   }
 
   update(firstBeat: number, lastBeat: number) {
@@ -125,18 +138,72 @@ export class TimingTrackContainer
   }
 
   private createTrack(type: string, x: number) {
-    const track: TimingTrack = Object.assign(new Sprite(Texture.WHITE), {
+    const track: TimingTrack = Object.assign(new Container(), {
       alpha: 0,
-      width: TIMING_TRACK_WIDTHS[type],
       name: type,
-      height: 5000,
       x,
       type,
-      lastX: 0,
-      tint: 0x263252,
-      targetAlpha: 0,
+      timingMode: "song" as const,
+      background: new Sprite(Texture.WHITE),
+      btns: new Container(),
     })
-    track.anchor.y = 0.5
+    track.background = new Sprite(Texture.WHITE)
+    track.background.width = TIMING_TRACK_WIDTHS[type]
+    track.background.height = 5000
+    track.background.tint = 0x263252
+    track.background.anchor.y = 0.5
+    track.background.alpha = 0
+    track.btns.y =
+      this.renderer.getActualReceptorYPos() + (Options.chart.reverse ? 50 : -50)
+
+    const timingTypeBtn = new Container()
+    const timingTypeBtnBg = new BetterRoundedRect()
+    const timingTypeBtnText = new BitmapText(type, timingNumbers)
+
+    timingTypeBtnBg.width = 20
+    timingTypeBtnBg.height = 20
+    assignTint(timingTypeBtnBg, "widget-bg")
+    timingTypeBtnBg.pivot.set(10, 10)
+
+    timingTypeBtnText.anchor.set(0.5, 0.55)
+    timingTypeBtnText.text = "S"
+    assignTint(timingTypeBtnText, "text-color")
+
+    timingTypeBtn.alpha = 0.4
+    timingTypeBtn.name = "timingTypeBtn"
+    timingTypeBtn.eventMode = "static"
+
+    timingTypeBtn.on("mouseenter", () => {
+      if (!TimingColumnPopup.persistent)
+        TimingColumnPopup.open({
+          attach: timingTypeBtn,
+          type: type as TimingEventType,
+          timingData: this.renderer.chart.timingData,
+        })
+    })
+    timingTypeBtn.on("mouseleave", () => {
+      if (!TimingColumnPopup.persistent) TimingColumnPopup.close()
+    })
+
+    timingTypeBtn.on("pointerdown", () => {
+      if (!TimingColumnPopup.persistent) {
+        TimingColumnPopup.select()
+      } else {
+        TimingColumnPopup.open({
+          attach: timingTypeBtn,
+          type: type as TimingEventType,
+          timingData: this.renderer.chart.timingData,
+        })
+        TimingColumnPopup.select()
+      }
+    })
+
+    timingTypeBtn.addChild(timingTypeBtnBg, timingTypeBtnText)
+
+    track.btns.addChild(timingTypeBtn)
+
+    track.addChild(track.background, track.btns)
+
     this.tracks.addChild(track)
     return track
   }
@@ -145,9 +212,6 @@ export class TimingTrackContainer
     BezierAnimator.stop(box.animationId)
     Object.assign(box, {
       event,
-      isChartTiming: this.renderer.chart.timingData.isPropertyChartSpecific(
-        event.type
-      ),
       lastX: undefined,
       lastAnchor: undefined,
       animationId: undefined,
@@ -165,17 +229,15 @@ export class TimingTrackContainer
     box.selection.height = 25
     box.selection.position = box.backgroundObj.position
 
-    box.popup = undefined
-
-    if (TimingEventPopup.activePopup) {
-      const currentEvent = TimingEventPopup.activePopup.getEvent()
+    if (TimingEventPopup.active) {
+      // check if the event is the same as the one in the popup
+      const currentEvent = TimingEventPopup.getEvent()
       if (
         currentEvent.type == "ATTACKS" &&
         event.type == "ATTACKS" &&
         currentEvent.second == event.second
       ) {
-        TimingEventPopup.activePopup.attach(box)
-        box.popup = TimingEventPopup.activePopup
+        TimingEventPopup.attach(box)
       }
       if (
         currentEvent.type != "ATTACKS" &&
@@ -183,34 +245,32 @@ export class TimingTrackContainer
         currentEvent.type == event.type &&
         currentEvent.beat == event.beat
       ) {
-        TimingEventPopup.activePopup.attach(box)
-        box.popup = TimingEventPopup.activePopup
+        TimingEventPopup.attach(box)
       }
     }
   }
 
   private addDragListeners(box: TimingBox, event: Cached<TimingEvent>) {
     box.on("mouseenter", () => {
-      if (box?.popup?.persistent === true) return
+      if (TimingEventPopup.persistent) return
       if (this.renderer.chartManager.eventSelection.timingEvents.length > 0)
         return
       if (this.renderer.isDragSelecting()) return
 
-      box.popup?.close()
+      if (TimingEventPopup.active) TimingEventPopup.close()
       if (this.renderer.chartManager.getMode() == EditMode.Edit) {
-        new TimingEventPopup(
-          box,
-          this.getTargetTimingData(box.event.isChartTiming)
-        )
-        if (box.popup)
-          box.popup.onConfirm = () => {
+        TimingEventPopup.open({
+          box: box,
+          timingData: this.getTargetTimingData(box.event),
+          modifyBox: false,
+          onConfirm: () => {
             this.renderer.chartManager.removeEventFromSelection(event)
-          }
+          },
+        })
       }
     })
     box.on("mouseleave", () => {
-      if (box?.popup?.persistent === true) return
-      box.popup?.close()
+      if (!TimingEventPopup.persistent) TimingEventPopup.close()
     })
 
     let initialPosY = 0
@@ -227,7 +287,7 @@ export class TimingTrackContainer
         }
         return
       }
-      box.popup?.close()
+      TimingEventPopup.close()
       const newBeat = this.renderer.getBeatFromYPos(position.y)
       const snap = Options.chart.snap == 0 ? 1 / 1000 : Options.chart.snap
       let snapBeat = Math.round(newBeat / snap) * snap
@@ -250,7 +310,7 @@ export class TimingTrackContainer
       if (isRightClick(e)) {
         this.renderer.chartManager.clearSelections()
         this.renderer.chartManager.addEventToSelection(event)
-        TimingEventPopup.activePopup?.close()
+        TimingEventPopup.close()
         return
       }
       e.stopImmediatePropagation()
@@ -270,25 +330,26 @@ export class TimingTrackContainer
         this.renderer.chartManager.getMode() == EditMode.Edit &&
         this.renderer.chartManager.eventSelection.timingEvents.length == 1
       ) {
-        if (!box?.popup) {
-          TimingEventPopup.activePopup?.close()
-          new TimingEventPopup(
-            box,
-            this.getTargetTimingData(box.event.isChartTiming)
-          )
-          box.popup!.onConfirm = () => {
-            this.renderer.chartManager.removeEventFromSelection(event)
-          }
+        if (TimingEventPopup.options?.box != box) {
+          TimingEventPopup.close()
+          TimingEventPopup.open({
+            box: box,
+            timingData: this.getTargetTimingData(box.event),
+            modifyBox: false,
+            onConfirm: () => {
+              this.renderer.chartManager.removeEventFromSelection(event)
+            },
+          })
         }
       }
       if (
-        box.popup &&
+        TimingEventPopup.active &&
         !e.getModifierState("Control") &&
         !e.getModifierState("Meta") &&
         !e.getModifierState("Shift")
       )
-        box.popup.select()
-      else box.popup?.close()
+        TimingEventPopup.select()
+      else TimingEventPopup.close()
       initialPosY = box.y!
       movedEvent = event
       if (this.renderer.chartManager.editTimingMode == EditTimingMode.Add)
@@ -318,47 +379,75 @@ export class TimingTrackContainer
   }
 
   private updateTracks() {
-    const leftTypes = Options.chart.timingEventOrder.left
-    const rightTypes = Options.chart.timingEventOrder.right
     const editingTiming =
       this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
       this.renderer.chartManager.getMode() == EditMode.Edit
 
-    this.tracks.children.forEach(child => (child.visible = false))
+    if (editingTiming) {
+      this.tracks.children.forEach(track => {
+        track.btns.y =
+          this.renderer.getActualReceptorYPos() +
+          (Options.chart.reverse ? 50 : -50)
+      })
+    }
+
+    if (!this.tracksDirty && this.wasEditingTiming == editingTiming) {
+      return
+    }
+    this.wasEditingTiming = editingTiming
+    this.tracksDirty = false
+
+    const leftTypes = Options.chart.timingEventOrder.left
+    const rightTypes = Options.chart.timingEventOrder.right
+    this.tracks.children.forEach(track => {
+      track.visible = false
+    })
 
     let x = -this.renderer.chart.gameType.notefieldWidth * 0.5 - 128
+
+    const animate = (
+      obj: Container,
+      prop: string,
+      value: number,
+      time: number,
+      id: string
+    ) => {
+      BezierAnimator.animate(
+        obj,
+        {
+          0: { [prop]: "inherit" },
+          1: { [prop]: value },
+        },
+        time,
+        bezier(0, 0, 0.16, 1.01),
+        () => {},
+        id
+      )
+    }
     for (let i = leftTypes.length - 1; i >= 0; i--) {
       const type = leftTypes[i]
       const track =
         this.tracks.getChildByName<TimingTrack>(type) ??
         this.createTrack(type, x)
       track.visible = true
-      if (track.lastX != x) {
-        track.lastX = x
-        track.targetAlpha = i % 2 == 0 ? 0.1 : 0
-        BezierAnimator.animate(
-          track,
-          {
-            0: { x: "inherit", "anchor.x": "inherit" },
-            1: { x, "anchor.x": 1 },
-          },
-          0.3,
-          bezier(0, 0, 0.16, 1.01),
-          () => {},
-          `track-${type}-x`
-        )
-        BezierAnimator.animate(
-          track,
-          {
-            0: { alpha: "inherit" },
-            1: { alpha: editingTiming ? track.targetAlpha : 0 },
-          },
-          0.3,
-          bezier(0, 0, 0.16, 1.01),
-          () => {},
-          `track-${type}-alpha`
-        )
-      }
+      const alpha = i % 2 == 0 ? 0.1 : 0
+      animate(track, "x", x, 0.3, `track-${type}-x`)
+      animate(
+        track.btns,
+        "x",
+        -TIMING_TRACK_WIDTHS[type] / 2,
+        0.3,
+        `track-${type}-btn-x`
+      )
+      animate(track.background, "anchor.x", 1, 0.3, `track-${type}-anchor-x`)
+      animate(
+        track.background,
+        "alpha",
+        editingTiming ? alpha : 0,
+        0.3,
+        `track-${type}-bg-alpha`
+      )
+
       x -= TIMING_TRACK_WIDTHS[type]
     }
 
@@ -369,50 +458,55 @@ export class TimingTrackContainer
         this.tracks.getChildByName<TimingTrack>(type) ??
         this.createTrack(type, x)
       track.visible = true
-      if (track.lastX != x) {
-        track.lastX = x
-        track.targetAlpha = i % 2 == 0 ? 0.1 : 0
-        BezierAnimator.animate(
-          track,
-          {
-            0: { x: "inherit", "anchor.x": "inherit" },
-            1: { x, "anchor.x": 0 },
-          },
-          0.3,
-          bezier(0, 0, 0.16, 1.01),
-          () => {},
-          `track-${type}-x`
-        )
-        BezierAnimator.animate(
-          track,
-          {
-            0: { alpha: "inherit" },
-            1: { alpha: editingTiming ? track.targetAlpha : 0 },
-          },
-          0.3,
-          bezier(0, 0, 0.16, 1.01),
-          () => {},
-          `track-${type}-alpha`
-        )
-      }
+      const alpha = i % 2 == 0 ? 0.1 : 0
+      animate(track, "x", x, 0.3, `track-${type}-x`)
+      animate(
+        track.btns,
+        "x",
+        TIMING_TRACK_WIDTHS[type] / 2,
+        0.3,
+        `track-${type}-btn-x`
+      )
+      animate(track.background, "anchor.x", 0, 0.3, `track-${type}-anchor-x`)
+      animate(
+        track.background,
+        "alpha",
+        editingTiming ? alpha : 0,
+        0.3,
+        `track-${type}-bg-alpha`
+      )
       x += TIMING_TRACK_WIDTHS[type]
     }
-    if (this.wasEditingTiming != editingTiming) {
-      this.wasEditingTiming = editingTiming
-      for (const track of this.tracks.children) {
-        BezierAnimator.animate(
-          track,
-          {
-            0: { alpha: "inherit" },
-            1: { alpha: editingTiming ? track.targetAlpha : 0 },
-          },
-          0.3,
-          bezier(0, 0, 0.16, 1.01),
-          () => {},
-          `track-${track.type}-alpha`
-        )
-      }
+
+    for (const track of this.tracks.children) {
+      animate(
+        track,
+        "alpha",
+        editingTiming ? 1 : 0,
+        0.3,
+        `track-${track.type}-alpha`
+      )
     }
+
+    if (!editingTiming) {
+      TimingColumnPopup.close()
+    }
+
+    this.tracks.children.forEach(track => {
+      const timingBtn = track.btns.getChildByName<Container>("timingTypeBtn")
+      const timingBtnText = timingBtn?.children[1] as BitmapText
+      if (timingBtn) {
+        timingBtn.eventMode = editingTiming ? "static" : "none"
+      }
+      if (timingBtnText) {
+        timingBtnText.text =
+          this.renderer.chart.timingData.isPropertyChartSpecific(
+            track.type as TimingEventType
+          )
+            ? "C"
+            : "S"
+      }
+    })
   }
 
   private updateBoxes(firstBeat: number, lastBeat: number) {
@@ -468,8 +562,11 @@ export class TimingTrackContainer
           !Options.chart.timingEventOrder.right.includes(event.type))
       ) {
         this.timingBoxMap.delete(event)
-        if (box.popup?.persistent) box.popup?.detach()
-        else box.popup?.close()
+        if (TimingEventPopup.options?.box == box) {
+          TimingEventPopup.detach()
+        } else if (!TimingEventPopup.persistent) {
+          TimingEventPopup.close()
+        }
         this.boxPool.destroyChild(box)
         continue
       }
@@ -561,8 +658,10 @@ export class TimingTrackContainer
     const snap = Options.chart.snap == 0 ? 1 / 1000 : Options.chart.snap
     const snapBeat =
       Math.round(this.renderer.getBeatFromYPos(pos.y) / snap) * snap
-    const eventType = this.ghostBox?.popup
-      ? this.ghostBox.event.type
+    const hasGhostPopup =
+      TimingEventPopup.active && TimingEventPopup.options?.box == this.ghostBox
+    const eventType = hasGhostPopup
+      ? this.ghostBox!.event.type
       : this.getClosestTrack(pos.x)?.name
     if (!eventType) {
       this.ghostBox?.removeFromParent()
@@ -593,8 +692,9 @@ export class TimingTrackContainer
       ghostBox.guideLine.anchor.y = 0.5
       this.ghostBox = ghostBox
     }
+
     if (
-      !this.ghostBox?.popup &&
+      !hasGhostPopup &&
       (this.ghostBox.event?.beat != snapBeat ||
         this.ghostBox.event?.type != eventType)
     ) {
@@ -618,13 +718,13 @@ export class TimingTrackContainer
       this.ghostBox.backgroundObj.width = this.ghostBox.textObj.width + 10
       this.ghostBox.selection.width = this.ghostBox.textObj.width + 10
     }
-    this.ghostBox.alpha = this.ghostBox?.popup ? 1 : 0.4
-    this.ghostBox.selection.alpha = this.ghostBox?.popup ? 1 : 0
+    this.ghostBox.alpha = hasGhostPopup ? 1 : 0.4
+    this.ghostBox.selection.alpha = hasGhostPopup ? 1 : 0
 
     this.ghostBox.name = eventType
 
     const yPos = this.renderer.getYPosFromBeat(
-      this.ghostBox?.popup ? this.ghostBox.event.beat : snapBeat
+      hasGhostPopup ? this.ghostBox.event.beat : snapBeat
     )
 
     let targetX = this.tracks.getChildByName<TimingTrack>(eventType)!.x
@@ -664,28 +764,24 @@ export class TimingTrackContainer
       return
     }
     this.renderer.chartManager.clearSelections()
-    this.ghostBox.event.isChartTiming =
-      this.renderer.chart.timingData.isPropertyChartSpecific(
-        this.ghostBox.event.type
-      )
-    new TimingEventPopup(
-      this.ghostBox,
-      this.getTargetTimingData(this.ghostBox.event.isChartTiming),
-      true
-    )
-    this.ghostBox.popup?.select()
-    this.ghostBox.popup!.onConfirm = event => {
-      this.getTargetTimingData(this.ghostBox!.event.isChartTiming).insert([
-        event,
-      ])
-    }
+    TimingEventPopup.open({
+      box: this.ghostBox,
+      timingData: this.getTargetTimingData(this.ghostBox.event),
+      modifyBox: true,
+      onConfirm: event => {
+        this.getTargetTimingData(this.ghostBox!.event).insert([event])
+      },
+    })
+    TimingEventPopup.select()
   }
 
   getClosestTrack(x: number) {
     let leastDist = Number.MAX_SAFE_INTEGER
     let best = this.tracks.children[0]
     for (const track of this.tracks.children) {
-      const dist = Math.abs(track.x + (0.5 - track.anchor.x) * track.width - x)
+      const dist = Math.abs(
+        track.x + (0.5 - track.background.anchor.x) * track.width - x
+      )
       if (dist < leastDist) {
         best = track
         leastDist = dist
@@ -734,9 +830,11 @@ export class TimingTrackContainer
     return label
   }
 
-  private getTargetTimingData(isChartTiming: boolean) {
+  private getTargetTimingData(event: TimingEvent) {
+    const isChartTiming =
+      this.renderer.chart.timingData.isPropertyChartSpecific(event.type)
     return isChartTiming
       ? this.renderer.chart.timingData
-      : this.renderer.chart.timingData.simfileTimingData
+      : this.renderer.chart.timingData.songTimingData
   }
 }

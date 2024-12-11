@@ -168,7 +168,6 @@ export type TimingEvent =
 export type Cached<T extends TimingEvent> = T & {
   beat: number
   second: number
-  isChartTiming: boolean
 }
 
 export type BeatTimingEvent =

@@ -734,6 +734,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         type: "selection",
         id: "openGuide",
       },
+      {
+        type: "selection",
+        id: "openChangelog",
+      },
     ],
   },
 }

@@ -53,7 +53,9 @@ export class SnapContainer extends Container implements ChartRendererComponent {
       container.eventMode = "static"
       container.on("mouseenter", () => SnapPopup.open(graphic))
       container.on("mousedown", () => SnapPopup.select())
-      container.on("mouseleave", () => SnapPopup.close())
+      container.on("mouseleave", () => {
+        if (!SnapPopup.persistent) SnapPopup.close()
+      })
     }
   }
 

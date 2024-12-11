@@ -38,13 +38,16 @@ function simplePropertyEditor(
     element: chart => {
       const inlineDiv = createContentEditableDiv()
       inlineDiv.onblur = () => {
+        const val = inlineDiv.innerText
         const lastVal = chart[property]
         ActionHistory.instance.run({
           action: () => {
-            chart[property] = inlineDiv.innerText as any
+            chart[property] = val as any
+            inlineDiv.innerText = val
           },
           undo: () => {
             chart[property] = lastVal as any
+            inlineDiv.innerText = lastVal
           },
         })
         inlineDiv.scrollLeft = 0
@@ -90,17 +93,27 @@ export const CHART_PROPERTIES_DATA: {
           if (playing) app.chartManager.chartAudio.play()
           return
         }
+        const val =
+          input.innerText == app.chartManager.loadedSM!.properties.MUSIC
+            ? undefined
+            : input.innerText
         const lastVal = chart.music
         ActionHistory.instance.run({
-          action: () =>
-            (chart.music =
-              input.innerText == app.chartManager.loadedSM!.properties.MUSIC
-                ? undefined
-                : input.innerText),
-          undo: () => (chart.music = lastVal),
+          action: () => {
+            chart.music = val
+            input.innerText =
+              val ?? app.chartManager.loadedSM!.properties.MUSIC ?? ""
+            app.chartManager.loadAudio()
+            if (playing) app.chartManager.chartAudio.play()
+          },
+          undo: () => {
+            chart.music = lastVal
+            input.innerText =
+              lastVal ?? app.chartManager.loadedSM!.properties.MUSIC ?? ""
+            app.chartManager.loadAudio()
+            if (playing) app.chartManager.chartAudio.play()
+          },
         })
-        app.chartManager.loadAudio()
-        if (playing) app.chartManager.chartAudio.play()
       }
       const input = createContentEditableDiv()
       input.style.flex = "1"

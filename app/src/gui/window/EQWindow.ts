@@ -1,8 +1,11 @@
 import bezier from "bezier-easing"
+import { Color } from "pixi.js"
 import { App } from "../../App"
 import { BezierAnimator } from "../../util/BezierEasing"
+import { average, blendPixiColors } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, roundDigit } from "../../util/Math"
+import { Themes } from "../../util/Theme"
 import { parseString as numericParse } from "../../util/Util"
 import { Icons } from "../Icons"
 import { Window } from "./Window"
@@ -77,6 +80,7 @@ export class EQWindow extends Window {
   app: App
   private cachedReponse = new Array(graphWidth).fill(0)
   private onAudioLoad = this.onAudio.bind(this)
+  private onThemeChange = this.changeHTMLColors.bind(this)
   private points: EQPoint[] = []
   private icons!: HTMLDivElement
   private info!: HTMLDivElement
@@ -94,10 +98,12 @@ export class EQWindow extends Window {
     this.onAudioLoad()
 
     EventHandler.on("audioLoaded", this.onAudioLoad)
+    EventHandler.on("themeChanged", this.onThemeChange)
   }
 
   destroy() {
     EventHandler.off("audioLoaded", this.onAudioLoad)
+    EventHandler.off("themeChanged", this.onThemeChange)
   }
 
   initView() {
@@ -224,6 +230,7 @@ export class EQWindow extends Window {
     this.viewElement.appendChild(container)
     const frameDraw = this.drawEQ(canvas)
     requestAnimationFrame(frameDraw)
+    this.changeHTMLColors()
   }
 
   private selectText(element: HTMLElement) {
@@ -341,21 +348,36 @@ export class EQWindow extends Window {
         canvas.width / 2
       )
 
-      // Add three color stops
-      gradient.addColorStop(0, "rgb(11, 14, 26)")
-      gradient.addColorStop(1, "rgb(5, 7, 13)")
+      let targetColor
+      let reverseColor
+      const accentColor = Themes.getColor("accent-color")
+      if (average(Themes.getColor("primary-bg")) > 0.5) {
+        targetColor = new Color("white")
+        reverseColor = new Color("black")
+      } else {
+        targetColor = new Color("black")
+        reverseColor = new Color("white")
+      }
+      const bgColor = blendPixiColors(accentColor, targetColor, 0.95)
+
+      gradient.addColorStop(
+        0,
+        blendPixiColors(accentColor, targetColor, 0.9).toHexa()
+      )
+      gradient.addColorStop(1, bgColor.toHexa())
 
       // Set the fill style and draw a rectangle
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-      ctx.fillStyle = "rgb(0, 50, 150)"
+      ctx.fillStyle = blendPixiColors(accentColor, targetColor, 0.2).toHex()
       this.drawFrequencies(
         ctx,
         this.app.chartManager.chartAudio.getFrequencyData()
       )
       if (this.app.chartManager.chartAudio.hasFilters()) {
-        ctx.fillStyle = "rgba(200, 200, 200, 0.2)"
+        ctx.fillStyle =
+          blendPixiColors(accentColor, reverseColor, 0.2).toHex() + "50"
         this.drawFrequencies(
           ctx,
           this.app.chartManager.chartAudio.getFilteredFrequencyData()
@@ -364,7 +386,8 @@ export class EQWindow extends Window {
 
       ctx.fillStyle = "rgba(200, 200, 200, 0.5)"
       this.drawResponse(ctx)
-      ctx.fillStyle = "rgba(0, 100, 150, 0.5)"
+      ctx.fillStyle =
+        blendPixiColors(accentColor, reverseColor, 0.2).toHex() + "80"
       ctx.font = "22px Assistant"
       this.drawGrid(ctx)
       this.points.forEach(point => point.draw(ctx))
@@ -418,6 +441,24 @@ export class EQWindow extends Window {
       ctx.fillRect(0, y, 1200, 1)
       if (i != 0) ctx.fillText(i + "", graphLeft, y)
     }
+  }
+
+  changeHTMLColors() {
+    let targetColor
+    const accentColor = Themes.getColor("accent-color")
+    if (average(Themes.getColor("primary-bg")) > 0.5) {
+      targetColor = new Color("white")
+    } else {
+      targetColor = new Color("black")
+    }
+    const bgColor = blendPixiColors(accentColor, targetColor, 0.95)
+    const borderHighlight = blendPixiColors(accentColor, targetColor, 0.5)
+
+    this.icons.style.backgroundColor = bgColor.toHexa()
+    this.icons.style.borderImageSource = `linear-gradient(to right, ${bgColor.toHexa()}, ${borderHighlight.toHexa()}, ${bgColor.toHexa()})`
+    this.info.style.backgroundColor = bgColor.toHexa()
+    this.info.style.borderImageSource = `linear-gradient(to right, ${bgColor.toHexa()}, ${borderHighlight.toHexa()}, ${bgColor.toHexa()})`
+    this.info.style.color = accentColor.toHexa()
   }
 
   updateIcons() {
@@ -524,8 +565,8 @@ class EQPoint {
   getY() {
     if (this.type.endsWith("shelf")) {
       this.y = gainToY(
-        this.window.app.chartManager.chartAudio.getFilter(this.filterIndex).gain
-          .value / 2 ?? 0
+        (this.window.app.chartManager.chartAudio.getFilter(this.filterIndex)
+          .gain.value ?? 0) / 2
       )
     } else if (this.canChangeGain()) {
       this.y = gainToY(

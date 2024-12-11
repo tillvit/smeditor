@@ -2,6 +2,7 @@ import { App } from "../App"
 import { EditMode, EditTimingMode } from "../chart/ChartManager"
 import { isHoldNote } from "../chart/sm/NoteTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
+import { ChangelogWindow } from "../gui/window/ChangelogWindow"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
 import { EQWindow } from "../gui/window/EQWindow"
 import { ExportNotedataWindow } from "../gui/window/ExportNotedataWindow"
@@ -1232,6 +1233,14 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     disabled: false,
     callback: () => {
       window.open("/smeditor/guide/")
+    },
+  },
+  openChangelog: {
+    label: "Open Changelog",
+    combos: [],
+    disabled: false,
+    callback: app => {
+      app.windowManager.openWindow(new ChangelogWindow(app))
     },
   },
 

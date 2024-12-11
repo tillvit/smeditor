@@ -246,7 +246,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
         this.data.timing = data.getBeatTiming()
         this.data.offset = data.getOffset()
         if (this.data.bpms[0]?.beat !== 0) {
-          const firstEvent = this.data.bpms[0] ?? {
+          const firstEvent = structuredClone(this.data.bpms[0]) ?? {
             value: 120,
             type: "BPMS",
             beat: 0,

@@ -20,9 +20,9 @@ import { Chart } from "./chart/sm/Chart"
 import { ContextMenuPopup } from "./gui/element/ContextMenu"
 import { MenubarManager } from "./gui/element/MenubarManager"
 import { WaterfallManager } from "./gui/element/WaterfallManager"
-import { AppUpdatePopup } from "./gui/popup/update/AppUpdatePopup"
-import { CoreUpdatePopup } from "./gui/popup/update/CoreUpdatePopup"
-import { OfflineUpdatePopup } from "./gui/popup/update/OfflineUpdatePopup"
+import { AppUpdateNotification } from "./gui/notification/AppUpdateNotification"
+import { CoreUpdateNotification } from "./gui/notification/CoreUpdateNotification"
+import { OfflineUpdateNotification } from "./gui/notification/OfflineUpdateNotification"
 import { DebugWidget } from "./gui/widget/DebugWidget"
 import { ChangelogWindow } from "./gui/window/ChangelogWindow"
 import { DirectoryWindow } from "./gui/window/DirectoryWindow"
@@ -69,11 +69,7 @@ interface AppVersion {
   changelog: string[]
 }
 
-interface CoreVersion {
-  version: string
-  date: number
-  changelog: string
-}
+const VERSION = "1.1.0"
 
 export class App {
   options = Options
@@ -94,66 +90,6 @@ export class App {
 
   constructor() {
     tippy.setDefaultProps({ duration: [200, 100], theme: "sm" })
-
-    if (window.nw) {
-      const win = nw.Window.get()
-
-      nw.App.on("open", args => {
-        if (!args || args?.length === 0) {
-          nw.Window.open(window.location.href)
-          return
-        }
-        let foundSM = ""
-        for (let file of args) {
-          if (file.startsWith("file://")) file = file.substring(7)
-          if (extname(file) == ".ssc") {
-            foundSM = file
-            break
-          } else if (foundSM == "" && extname(file) == ".sm") {
-            foundSM = file
-          }
-        }
-        if (foundSM != "") {
-          this.chartManager.loadSM(foundSM)
-          this.windowManager.getWindowById("select_sm_initial")?.closeWindow()
-        }
-      })
-
-      window.addEventListener("keydown", e => {
-        if (e.key == "r" && (e.metaKey || e.ctrlKey)) {
-          e.preventDefault()
-          win.reload()
-        }
-        if (e.code == "KeyW" && (e.metaKey || e.ctrlKey)) {
-          e.preventDefault()
-          win.close()
-        }
-        if (
-          process.versions["nw-flavor"] == "sdk" &&
-          e.code == "KeyI" &&
-          e.metaKey &&
-          e.altKey
-        ) {
-          e.preventDefault()
-          win.showDevTools()
-        }
-      })
-      win.on("enter-fullscreen", () => {
-        Options.app.fullscreen = win.isFullscreen
-      })
-      win.on("resize", (w, h) => {
-        if (!win.isFullscreen) {
-          Options.app.width = w!
-          Options.app.height = h!
-        }
-      })
-      win.on("restore", () => {
-        Options.app.fullscreen = win.isFullscreen
-      })
-      this.checkAppVersion()
-    }
-
-    this.checkCoreVersion()
 
     Options.loadOptions()
     loadFlags()
@@ -299,6 +235,66 @@ export class App {
         return
       }
       this.windowManager.openWindow(new InitialWindow(this))
+
+      if (window.nw) {
+        const win = nw.Window.get()
+
+        nw.App.on("open", args => {
+          if (!args || args?.length === 0) {
+            nw.Window.open(window.location.href)
+            return
+          }
+          let foundSM = ""
+          for (let file of args) {
+            if (file.startsWith("file://")) file = file.substring(7)
+            if (extname(file) == ".ssc") {
+              foundSM = file
+              break
+            } else if (foundSM == "" && extname(file) == ".sm") {
+              foundSM = file
+            }
+          }
+          if (foundSM != "") {
+            this.chartManager.loadSM(foundSM)
+            this.windowManager.getWindowById("select_sm_initial")?.closeWindow()
+          }
+        })
+
+        window.addEventListener("keydown", e => {
+          if (e.key == "r" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault()
+            win.reload()
+          }
+          if (e.code == "KeyW" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault()
+            win.close()
+          }
+          if (
+            process.versions["nw-flavor"] == "sdk" &&
+            e.code == "KeyI" &&
+            e.metaKey &&
+            e.altKey
+          ) {
+            e.preventDefault()
+            win.showDevTools()
+          }
+        })
+        win.on("enter-fullscreen", () => {
+          Options.app.fullscreen = win.isFullscreen
+        })
+        win.on("resize", (w, h) => {
+          if (!win.isFullscreen) {
+            Options.app.width = w!
+            Options.app.height = h!
+          }
+        })
+        win.on("restore", () => {
+          Options.app.fullscreen = win.isFullscreen
+        })
+        this.checkAppVersion()
+      }
+
+      this.checkCoreVersion()
     })
 
     window.onbeforeunload = event => {
@@ -308,7 +304,7 @@ export class App {
       }
     }
 
-    window.onunload = () => {
+    window.onpagehide = () => {
       Options.saveOptions()
     }
 
@@ -483,7 +479,7 @@ export class App {
           semver.lt(gui.App.manifest.version, version.version) &&
           localStorage.getItem("downloadedVersion") !== version.version
         ) {
-          AppUpdatePopup.open(
+          AppUpdateNotification.open(
             version.version,
             version.downloads[os as keyof AppVersion["downloads"]]
           )
@@ -494,29 +490,19 @@ export class App {
   checkCoreVersion() {
     const update = registerSW({
       onNeedRefresh() {
-        CoreUpdatePopup.open(update)
+        CoreUpdateNotification.open(update)
         console.log("Found new version")
       },
       onOfflineReady() {
-        OfflineUpdatePopup.open()
+        OfflineUpdateNotification.open()
         console.log("Offline use ready")
       },
     })
-    fetch("/smeditor/assets/app/changelog.json")
-      .then(data => data.json())
-      .then((versions: CoreVersion[]) => {
-        const version = versions[0]
-        const localVersion = localStorage.getItem("coreVersion")
-        if (localVersion !== null && semver.lt(localVersion, version.version)) {
-          this.windowManager.openWindow(
-            new ChangelogWindow(this, {
-              version: version.version,
-              markdown: version.changelog,
-            })
-          )
-        }
-        localStorage.setItem("coreVersion", version.version)
-      })
+    const localVersion = localStorage.getItem("coreVersion")
+    if (localVersion !== null && semver.lt(localVersion, VERSION)) {
+      this.windowManager.openWindow(new ChangelogWindow(this))
+    }
+    localStorage.setItem("coreVersion", VERSION)
   }
 }
 

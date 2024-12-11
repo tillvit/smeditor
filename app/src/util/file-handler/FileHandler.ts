@@ -37,6 +37,8 @@ export interface BaseFileHandler {
     data: File | string
   ): Promise<void>
 
+  removeFile(path: FileSystemFileHandle | string): Promise<void>
+
   getRelativePath(from: string, to: string): string
 }
 
@@ -121,6 +123,10 @@ export class FileHandler {
     return FileHandler.getHandler(
       typeof path == "string" ? path : undefined
     ).writeFile(path, data)
+  }
+
+  static removeFile(path: string): Promise<void> {
+    return FileHandler.getHandler(path).removeFile(path)
   }
 
   static getRelativePath(from: string, to: string): string {

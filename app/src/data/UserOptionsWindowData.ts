@@ -197,6 +197,20 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           },
           {
             type: "item",
+            label: "Autosave interval",
+            id: "general.autosaveInterval",
+            input: {
+              type: "slider",
+              min: 30,
+              step: 5,
+              max: 600,
+              hardMin: 15,
+              hardMax: 2 ** 31 - 1,
+            },
+            tooltip: "Interval in seconds between autosaves",
+          },
+          {
+            type: "item",
             label: "Warn before exit",
             id: "general.warnBeforeExit",
             input: {

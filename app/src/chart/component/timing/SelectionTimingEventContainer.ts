@@ -12,7 +12,6 @@ import { TIMING_TRACK_WIDTHS, timingNumbers } from "./TimingTrackContainer"
 interface TimingBox extends Container {
   event: TimingEvent
   guideLine: Sprite
-  isChartTiming: boolean
   deactivated: boolean
   marked: boolean
   dirtyTime: number
@@ -112,9 +111,6 @@ export class SelectionTimingEventContainer
 
         Object.assign(box, {
           alpha: 0.4,
-          isChartTiming: this.renderer.chart.timingData.isPropertyChartSpecific(
-            event.type
-          ),
           zIndex: event.beat,
         })
         box.textObj.text = label

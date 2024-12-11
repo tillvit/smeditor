@@ -1,8 +1,8 @@
 import { WaterfallManager } from "../../gui/element/WaterfallManager"
 import { Chart } from "./Chart"
 import { CHART_DIFFICULTIES } from "./ChartTypes"
-import { SimfileTimingData } from "./SimfileTimingData"
 import { SIMFILE_PROPERTIES, SimfileProperty } from "./SimfileTypes"
+import { SongTimingData } from "./SongTimingData"
 import { TIMING_EVENT_NAMES, TimingEventType, TimingType } from "./TimingTypes"
 
 export class Simfile {
@@ -10,7 +10,7 @@ export class Simfile {
   _type?: "sm" | "ssc"
   other_properties: { [key: string]: string } = {}
   properties: { [key in SimfileProperty]?: string } = {}
-  timingData: SimfileTimingData = new SimfileTimingData()
+  timingData: SongTimingData = new SongTimingData()
 
   unloadedCharts: (string | { [key: string]: string })[] = []
 
@@ -18,7 +18,8 @@ export class Simfile {
 
   constructor(file: File) {
     this.loaded = new Promise(resolve => {
-      const type = file.name.split(".").pop()
+      let type = file.name.split(".").pop()
+      if (type == "smebak") type = "ssc"
       if (type == "sm" || type == "ssc") this._type = type
       else resolve()
 

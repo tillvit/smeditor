@@ -9,14 +9,15 @@ import { App } from "../App"
 import { AUDIO_EXT } from "../data/FileData"
 import { IS_OSX, KEYBIND_DATA } from "../data/KeybindData"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
-import { AppUpdatePopup } from "../gui/popup/update/AppUpdatePopup"
-import { CoreUpdatePopup } from "../gui/popup/update/CoreUpdatePopup"
-import { OfflineUpdatePopup } from "../gui/popup/update/OfflineUpdatePopup"
+import { AppUpdateNotification } from "../gui/notification/AppUpdateNotification"
+import { CoreUpdateNotification } from "../gui/notification/CoreUpdateNotification"
+import { OfflineUpdateNotification } from "../gui/notification/OfflineUpdateNotification"
 import { DebugWidget } from "../gui/widget/DebugWidget"
 import { WidgetManager } from "../gui/widget/WidgetManager"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
 import { ConfirmationWindow } from "../gui/window/ConfirmationWindow"
 import { InitialWindow } from "../gui/window/InitialWindow"
+import { KeyComboWindow } from "../gui/window/KeyComboWindow"
 import { ActionHistory } from "../util/ActionHistory"
 import {
   decodeNotes,
@@ -162,6 +163,8 @@ export class ChartManager {
   private mode: EditMode = EditMode.Edit
   private lastMode: EditMode = EditMode.Edit
 
+  private _beat = 0
+
   private readonly noChartTextA: BitmapText
   private readonly noChartTextB: BitmapText
   private readonly loadingText: BitmapText
@@ -169,6 +172,7 @@ export class ChartManager {
   private shiftPressed = 0
 
   private virtualClipboard = ""
+  private lastAutoSave = 0
 
   startRegion?: number
   endRegion?: number
@@ -275,7 +279,7 @@ export class ChartManager {
           newbeat = this.beat + delta
         } else {
           if (Options.chart.scroll.scrollSnapEveryScroll) {
-            if (event.deltaY < 0) {
+            if (event.deltaY < 0 != Options.chart.scroll.invertReverseScroll) {
               newbeat = Math.round((this.beat - snap) / snap) * snap
             } else {
               newbeat = Math.round((this.beat + snap) / snap) * snap
@@ -426,6 +430,8 @@ export class ChartManager {
 
       const notedata = this.loadedChart.getNotedata()
       if (this.chartAudio.isPlaying()) {
+        this._beat = this.loadedChart?.getBeatFromSeconds(this.time) ?? 0
+
         // Play note flash
         while (
           this.noteFlashIndex < notedata.length &&
@@ -495,6 +501,8 @@ export class ChartManager {
           this.time + Options.play.effectOffset + EFFECT_BUFFER
         )
 
+        const scheduledBeats = new Set()
+
         const startMeasure = td.getBeatFromMeasure(this.lastMetronomeMeasure)
         const divLength = td.getDivisionLength(startMeasure)
         const startBeat = startMeasure + divLength * this.lastMetronomeDivision
@@ -505,6 +513,8 @@ export class ChartManager {
         for (const [barBeat, isMeasure] of measureBeats) {
           if (this.beat > barBeat) continue
           const barSecond = td.getSecondsFromBeat(barBeat)
+          if (scheduledBeats.has(barSecond)) continue
+          scheduledBeats.add(barSecond)
           const offset =
             (barSecond + Options.play.effectOffset - this.time) /
             Options.audio.rate
@@ -524,6 +534,18 @@ export class ChartManager {
       if (this.mode == EditMode.Play) {
         this.loadedChart.gameType.gameLogic.update(this)
       }
+
+      // Autosave
+      if (
+        this.lastAutoSave + Options.general.autosaveInterval * 1000 <
+        Date.now()
+      ) {
+        this.lastAutoSave = Date.now()
+        if (ActionHistory.instance.isDirty()) {
+          this.autosave()
+        }
+      }
+
       this.updateSoundProperties()
       tpsUpdate()
       DebugWidget.instance?.addUpdateTimeValue(performance.now() - updateStart)
@@ -540,13 +562,8 @@ export class ChartManager {
     EventHandler.on("chartModified", () => {
       if (this.loadedChart) {
         this.loadedChart.recalculateStats()
-        EventHandler.emit("chartModifiedAfter")
-      }
-    })
-
-    EventHandler.on("chartModified", () => {
-      if (this.loadedChart) {
         this.setNoteIndex()
+        EventHandler.emit("chartModifiedAfter")
       }
     })
 
@@ -585,6 +602,7 @@ export class ChartManager {
         if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
         if (event.target instanceof HTMLTextAreaElement) return
         if (event.target instanceof HTMLInputElement) return
+        if (KeyComboWindow.active) return
         // Start editing note
         if (
           event.code.startsWith("Digit") &&
@@ -666,16 +684,25 @@ export class ChartManager {
 
   get beat() {
     if (!this.loadedChart) return 0
-    return (
-      Math.round(this.loadedChart.getBeatFromSeconds(this.time) * 100000) /
-      100000
-    )
+    if (!this.chartAudio.isPlaying()) {
+      return this._beat
+    }
+    return this.loadedChart.getBeatFromSeconds(this.time)
   }
 
   set beat(beat: number) {
     if (!this.loadedChart) return
     this.chartAudio.seek(this.loadedChart.getSecondsFromBeat(beat))
+    this._beat = beat
+
     this.setNoteIndex()
+
+    this.lastMetronomeMeasure = Math.floor(
+      this.loadedChart.timingData.getMeasure(this.beat)
+    )
+    this.lastMetronomeDivision = Math.floor(
+      this.loadedChart.timingData.getDivisionOfMeasure(this.beat)
+    )
   }
 
   get time() {
@@ -695,9 +722,9 @@ export class ChartManager {
    * @memberof ChartManager
    */
   async loadSM(path?: string) {
-    AppUpdatePopup.close()
-    CoreUpdatePopup.close()
-    OfflineUpdatePopup.close()
+    AppUpdateNotification.close()
+    CoreUpdateNotification.close()
+    OfflineUpdateNotification.close()
     // Save confirmation
     if (ActionHistory.instance.isDirty()) {
       const window = new ConfirmationWindow(
@@ -723,6 +750,7 @@ export class ChartManager {
       const option = await window.resolved
       if (option == "Cancel") return
       if (option == "Yes") this.save()
+      if (option == "No") await this.removeAutosaves()
     }
 
     // Destroy everything if no path specified
@@ -743,11 +771,39 @@ export class ChartManager {
 
     this.loadingText.visible = true
 
+    // Check for an autosave
+
+    let loadPath = this.smPath
+
+    const autosavePath = this.getSMPath(".smebak")
+    if (await FileHandler.hasFile(autosavePath)) {
+      const window = new ConfirmationWindow(
+        this.app,
+        "Autosave",
+        "An autosave was found. Do you wish to load the autosave?",
+        [
+          {
+            label: "No",
+            type: "default",
+          },
+          {
+            label: "Yes",
+            type: "confirm",
+          },
+        ]
+      )
+      this.app.windowManager.openWindow(window)
+      const option = await window.resolved
+      if (option == "Yes") {
+        loadPath = autosavePath
+      }
+    }
+
     // Load the SM file
-    const smHandle = await FileHandler.getFileHandle(this.smPath)
+    const smHandle = await FileHandler.getFileHandle(loadPath)
     if (!smHandle) {
       WaterfallManager.createFormatted(
-        "Couldn't load the file at " + this.smPath,
+        "Couldn't load the file at " + loadPath,
         "error"
       )
       this.app.windowManager.openWindow(new InitialWindow(this.app))
@@ -1035,6 +1091,8 @@ export class ChartManager {
       this.assistTickIndex = 0
       return
     }
+
+    this.assistTick.stop()
     this.noteFlashIndex =
       bsearch(this.loadedChart.getNotedata(), this.time, a => a.second) + 1
     if (
@@ -1045,19 +1103,14 @@ export class ChartManager {
       this.noteFlashIndex--
 
     this.assistTickIndex = this.noteFlashIndex
-
-    this.lastMetronomeMeasure = Math.floor(
-      this.loadedChart.timingData.getMeasure(this.beat)
-    )
-    this.lastMetronomeDivision = Math.floor(
-      this.loadedChart.timingData.getDivisionOfMeasure(this.beat)
-    )
   }
 
   playPause() {
     this.setNoteIndex()
-    if (this.chartAudio.isPlaying()) this.chartAudio.pause()
-    else this.chartAudio.play()
+    if (this.chartAudio.isPlaying()) {
+      this.chartAudio.pause()
+      this._beat = this.loadedChart?.getBeatFromSeconds(this.time) ?? 0
+    } else this.chartAudio.play()
   }
 
   getClosestTick(beat: number, quant: number) {
@@ -1299,7 +1352,7 @@ export class ChartManager {
           isHoldNote(note) &&
           note.col == col &&
           beat > note.beat &&
-          beat <= note.beat + note.hold
+          beat <= Math.round((note.beat + note.hold) * 48) / 48
       )
       .map(hold => {
         return {
@@ -1587,28 +1640,16 @@ export class ChartManager {
    */
   async save() {
     if (!this.loadedSM) return
+    if (this.smPath.startsWith("https://") || this.smPath.startsWith("http://"))
+      return
 
-    let smPath
-    let sscPath
-    if (window.nw) {
-      const path = window.nw.require("path")
-      const pathData = path.parse(this.smPath)
-      smPath = path.resolve(pathData.dir, pathData.name + ".sm")
-      sscPath = path.resolve(pathData.dir, pathData.name + ".ssc")
-    } else {
-      const dir = dirname(this.smPath)
-      const baseName = basename(this.smPath)
-      const fileName = baseName.includes(".")
-        ? baseName.split(".").slice(0, -1).join(".")
-        : baseName
-      smPath = dir + "/" + fileName + ".sm"
-      sscPath = dir + "/" + fileName + ".ssc"
-    }
+    const smPath = this.getSMPath(".sm")
+    const sscPath = this.getSMPath(".ssc")
 
     let error: string | null = null
     if (
       !this.loadedSM.usesChartTiming() &&
-      (await FileHandler.getFileHandle(smPath))
+      (await FileHandler.getFileHandle(this.getSMPath(".smebak")))
     ) {
       await FileHandler.writeFile(smPath, this.loadedSM.serialize("sm")).catch(
         err => {
@@ -1641,10 +1682,64 @@ export class ChartManager {
       } else {
         WaterfallManager.create("Saved")
       }
+      await this.removeAutosaves()
     } else {
       WaterfallManager.createFormatted("Failed to save file: " + error, "error")
     }
     ActionHistory.instance.setLimit()
+    return
+  }
+
+  getSMPath(ext: string) {
+    if (window.nw) {
+      const path = window.nw.require("path")
+      const pathData = path.parse(this.smPath)
+      return path.resolve(pathData.dir, pathData.name + ext) as string
+    } else {
+      const dir = dirname(this.smPath)
+      const baseName = basename(this.smPath)
+      const fileName = baseName.includes(".")
+        ? baseName.split(".").slice(0, -1).join(".")
+        : baseName
+      return dir + "/" + fileName + ext
+    }
+  }
+
+  async removeAutosaves() {
+    await FileHandler.removeFile(this.getSMPath(".smebak")).catch(() => {})
+  }
+
+  /**
+   * Autosaves the current chart to disk.
+   *
+   * @memberof ChartManager
+   */
+  async autosave() {
+    if (!this.loadedSM) return
+
+    if (this.smPath.startsWith("https://") || this.smPath.startsWith("http://"))
+      return
+
+    // save as ssc
+
+    let error: string | null = null
+    await FileHandler.writeFile(
+      this.getSMPath(".smebak"),
+      this.loadedSM.serialize("ssc")
+    ).catch(err => {
+      const message = err.message
+      if (!message.includes(errors.GONE[0])) {
+        error = message
+      }
+    })
+    if (error == null) {
+      WaterfallManager.create("Autosaved")
+    } else {
+      WaterfallManager.createFormatted(
+        "Failed to autosave file: " + error,
+        "error"
+      )
+    }
     return
   }
 
@@ -2146,15 +2241,16 @@ export class ChartManager {
     return { removedNotes, truncatedHolds }
   }
 
-  modifyEventSelection(modify: (note: Cached<TimingEvent>) => TimingEvent) {
+  modifyEventSelection(modify: (event: Cached<TimingEvent>) => TimingEvent) {
     if (!this.loadedChart || !this.loadedSM) return
 
-    this.loadedChart.timingData.modify(
+    const events: [TimingEvent, TimingEvent][] =
       this.eventSelection.timingEvents.map(event => [
         event,
         modify(structuredClone(event)),
       ])
-    )
+
+    this.loadedChart.timingData.modifyMulti(events)
   }
 
   deleteSelection() {
@@ -2174,7 +2270,7 @@ export class ChartManager {
   deleteEventSelection() {
     if (this.eventSelection.timingEvents.length == 0) return
     if (!this.loadedChart || !this.loadedSM) return
-    this.loadedChart.timingData.delete(this.eventSelection.timingEvents)
+    this.loadedChart.timingData.deleteMulti(this.eventSelection.timingEvents)
   }
 
   paste(data: string, clear = false) {
@@ -2320,18 +2416,13 @@ export class ChartManager {
     if (!events) return false
     if (events.length == 0) return false
 
-    const chartTiming = this.loadedChart.timingData
     events.forEach(event => {
       if (event.type == "ATTACKS") event.second += this.time
       else event.beat += this.beat
     })
-    events.forEach(
-      event =>
-        ((event as Cached<TimingEvent>).isChartTiming =
-          chartTiming.isPropertyChartSpecific(event.type))
-    )
 
-    chartTiming.insert(events)
+    this.loadedChart.timingData.insertMulti(events)
+
     return true
   }
 

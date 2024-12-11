@@ -1,4 +1,4 @@
-interface UpdatePopupOptions {
+interface UpdateNotificationOptions {
   title: string
   desc: string
   options: UpdateOption[]
@@ -6,14 +6,14 @@ interface UpdatePopupOptions {
 
 interface UpdateOption {
   label: string
-  callback?: (popup: UpdatePopup) => void
+  callback?: (popup: UpdateNotification) => void
   type: "delete" | "confirm" | "default"
 }
 
-export abstract class UpdatePopup {
+export abstract class UpdateNotification {
   static popup?: HTMLDivElement
 
-  protected static build(opt: UpdatePopupOptions) {
+  protected static build(opt: UpdateNotificationOptions) {
     const popup = document.createElement("div")
     popup.classList.add("update-popup")
 
