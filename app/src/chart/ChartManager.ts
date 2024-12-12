@@ -267,23 +267,19 @@ export class ChartManager {
         if (this.mode == EditMode.Play || this.mode == EditMode.Record) return
         let newbeat = this.beat
         const snap = Options.chart.snap
-        const speed =
-          Options.chart.speed *
-          (Options.chart.reverse && Options.chart.scroll.invertReverseScroll
-            ? -1
-            : 1)
-        const delta =
-          (event.deltaY / speed) * Options.chart.scroll.scrollSensitivity
+        let delta =
+          (event.deltaY / Options.chart.speed) *
+          Options.chart.scroll.scrollSensitivity
+        if (Options.chart.reverse && Options.chart.scroll.invertReverseScroll)
+          delta *= -1
+        if (Options.chart.scroll.invertScroll) delta *= -1
+
         if (snap == 0) {
           this.partialScroll = 0
           newbeat = this.beat + delta
         } else {
           if (Options.chart.scroll.scrollSnapEveryScroll) {
-            if (
-              event.deltaY < 0 !=
-              (Options.chart.scroll.invertReverseScroll &&
-                Options.chart.reverse)
-            ) {
+            if (delta < 0) {
               newbeat = Math.round((this.beat - snap) / snap) * snap
             } else {
               newbeat = Math.round((this.beat + snap) / snap) * snap
