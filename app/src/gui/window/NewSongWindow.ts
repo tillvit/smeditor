@@ -6,6 +6,7 @@ import {
   SM_PROPERTIES_DATA,
   createInputElement,
 } from "../../data/SMPropertiesData"
+import { ActionHistory } from "../../util/ActionHistory"
 import { FileHandler } from "../../util/file-handler/FileHandler"
 import { Icons } from "../Icons"
 import { ConfirmationWindow } from "./ConfirmationWindow"
@@ -15,6 +16,7 @@ export class NewSongWindow extends Window {
   app: App
 
   private readonly sm: Simfile
+  private readonly history
   private fileTable: { [key: string]: File } = {}
 
   constructor(app: App) {
@@ -31,6 +33,7 @@ export class NewSongWindow extends Window {
     const blob = new Blob([DEFAULT_SM], { type: "text/plain" })
     const file = new File([blob], "song.sm", { type: "text/plain" })
     this.sm = new Simfile(file)
+    this.history = new ActionHistory(app)
     this.app = app
     this.initView()
   }
@@ -66,7 +69,10 @@ export class NewSongWindow extends Window {
           grid.appendChild(
             this.createFileElement(item.propName, item.input.typeName)
           )
-        else grid.appendChild(createInputElement(this.app, this.sm, item))
+        else
+          grid.appendChild(
+            createInputElement(this.app, this.sm, this.history, item)
+          )
       })
       groupContainer.appendChild(title)
       groupContainer.appendChild(grid)

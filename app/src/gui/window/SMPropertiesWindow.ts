@@ -3,6 +3,7 @@ import {
   SM_PROPERTIES_DATA,
   createInputElement,
 } from "../../data/SMPropertiesData"
+import { ActionHistory } from "../../util/ActionHistory"
 import { EventHandler } from "../../util/EventHandler"
 import { Window } from "./Window"
 
@@ -61,7 +62,12 @@ export class SMPropertiesWindow extends Window {
 
         grid.appendChild(label)
         grid.appendChild(
-          createInputElement(this.app, this.app.chartManager.loadedSM!, item)
+          createInputElement(
+            this.app,
+            this.app.chartManager.loadedSM!,
+            ActionHistory.instance,
+            item
+          )
         )
       })
       groupContainer.appendChild(title)

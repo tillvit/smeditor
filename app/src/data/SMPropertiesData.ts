@@ -13,10 +13,10 @@ type SMPropertyGroupData = {
   title: string
   items: SMPropertyData[]
 }
-
+// we have an extra history since we don't want new song prompt to interfere with the current one
 type SMPropertyCustomInput = {
   type: "custom"
-  create: (app: App, sm: Simfile) => HTMLElement
+  create: (app: App, sm: Simfile, history: ActionHistory) => HTMLElement
 }
 type SMPropertyStringInput = {
   type: "string"
@@ -148,7 +148,7 @@ export const SM_PROPERTIES_DATA: SMPropertyGroupData[] = [
         propName: "SAMPLESTART",
         input: {
           type: "custom",
-          create: (_, sm) => {
+          create: (_, sm, history) => {
             const updateValues = () => {
               if (toSpinner.value < fromSpinner.value) {
                 toSpinner.setValue(fromSpinner.value)
@@ -157,7 +157,7 @@ export const SM_PROPERTIES_DATA: SMPropertyGroupData[] = [
               const lastLength = sm.properties.SAMPLELENGTH ?? "10"
               const newStart = fromSpinner.value.toString()
               const newLength = (toSpinner.value - fromSpinner.value).toString()
-              ActionHistory.instance.run({
+              history.run({
                 action: () => {
                   sm.properties.SAMPLESTART = newStart
                   sm.properties.SAMPLELENGTH = newLength
@@ -225,11 +225,12 @@ export const SM_PROPERTIES_DATA: SMPropertyGroupData[] = [
 export function createInputElement(
   app: App,
   sm: Simfile,
+  history: ActionHistory,
   data: SMPropertyData
 ) {
   switch (data.input.type) {
     case "custom":
-      return data.input.create(app, sm)
+      return data.input.create(app, sm, history)
     case "string": {
       const input = document.createElement("input")
       input.type = "text"
@@ -241,7 +242,7 @@ export function createInputElement(
       input.onblur = () => {
         const lastValue = sm.properties[data.propName]
         const newValue = input.value
-        ActionHistory.instance.run({
+        history.run({
           action: () => {
             sm.properties[data.propName] = newValue
             input.value = newValue
@@ -271,7 +272,7 @@ export function createInputElement(
         }
         const lastValue = sm.properties[data.propName]
         const newValue = value.toString()
-        ActionHistory.instance.run({
+        history.run({
           action: () => {
             sm.properties[data.propName] = newValue
             spinner.setValue(parseFloat(newValue))
@@ -349,7 +350,7 @@ export function createInputElement(
 
       const setValue = (value: string | undefined) => {
         const lastValue = sm.properties[data.propName] ?? ""
-        ActionHistory.instance.run({
+        history.run({
           action: () => {
             sm.properties[data.propName] = value
             input.value = value ?? ""
