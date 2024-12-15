@@ -52,6 +52,7 @@ declare global {
   }
   interface HTMLInputElement {
     nwsaveas?: string
+    nwworkingdir?: string
   }
 }
 

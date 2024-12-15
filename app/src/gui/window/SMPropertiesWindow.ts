@@ -60,7 +60,9 @@ export class SMPropertiesWindow extends Window {
         label.innerText = item.title
 
         grid.appendChild(label)
-        grid.appendChild(createInputElement(this.app, item))
+        grid.appendChild(
+          createInputElement(this.app, this.app.chartManager.loadedSM!, item)
+        )
       })
       groupContainer.appendChild(title)
       groupContainer.appendChild(grid)

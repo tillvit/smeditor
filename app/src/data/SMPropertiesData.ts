@@ -16,7 +16,7 @@ type SMPropertyGroupData = {
 
 type SMPropertyCustomInput = {
   type: "custom"
-  create: (app: App, sm?: Simfile, actionHist?: ActionHistory) => HTMLElement
+  create: (app: App, sm: Simfile) => HTMLElement
 }
 type SMPropertyStringInput = {
   type: "string"
@@ -148,35 +148,27 @@ export const SM_PROPERTIES_DATA: SMPropertyGroupData[] = [
         propName: "SAMPLESTART",
         input: {
           type: "custom",
-          create: (app, sm, actionHist) => {
-            const history = actionHist ?? ActionHistory.instance
+          create: (_, sm) => {
             const updateValues = () => {
               if (toSpinner.value < fromSpinner.value) {
                 toSpinner.setValue(fromSpinner.value)
               }
-              const lastStart =
-                (sm ?? app.chartManager.loadedSM!).properties.SAMPLESTART ?? "0"
-              const lastLength =
-                (sm ?? app.chartManager.loadedSM!).properties.SAMPLELENGTH ??
-                "10"
+              const lastStart = sm.properties.SAMPLESTART ?? "0"
+              const lastLength = sm.properties.SAMPLELENGTH ?? "10"
               const newStart = fromSpinner.value.toString()
               const newLength = (toSpinner.value - fromSpinner.value).toString()
-              history.run({
-                action: app => {
-                  ;(sm ?? app.chartManager.loadedSM!).properties.SAMPLESTART =
-                    newStart
-                  ;(sm ?? app.chartManager.loadedSM!).properties.SAMPLELENGTH =
-                    newLength
+              ActionHistory.instance.run({
+                action: () => {
+                  sm.properties.SAMPLESTART = newStart
+                  sm.properties.SAMPLELENGTH = newLength
                   fromSpinner.setValue(parseFloat(newStart))
                   toSpinner.setValue(
                     parseFloat(newStart) + parseFloat(newLength)
                   )
                 },
                 undo: () => {
-                  ;(sm ?? app.chartManager.loadedSM!).properties.SAMPLESTART =
-                    lastStart
-                  ;(sm ?? app.chartManager.loadedSM!).properties.SAMPLELENGTH =
-                    lastLength
+                  sm.properties.SAMPLESTART = lastStart
+                  sm.properties.SAMPLELENGTH = lastLength
                   fromSpinner.setValue(parseFloat(lastStart))
                   toSpinner.setValue(
                     parseFloat(lastStart) + parseFloat(lastLength)
@@ -185,9 +177,7 @@ export const SM_PROPERTIES_DATA: SMPropertyGroupData[] = [
               })
             }
             const fromSpinner = NumberSpinner.create(
-              parseFloat(
-                (sm ?? app.chartManager.loadedSM!).properties.SAMPLESTART ?? "0"
-              ),
+              parseFloat(sm.properties.SAMPLESTART ?? "0"),
               undefined,
               3,
               0
@@ -195,23 +185,15 @@ export const SM_PROPERTIES_DATA: SMPropertyGroupData[] = [
             fromSpinner.onChange = value => {
               if (value === undefined) {
                 fromSpinner.setValue(
-                  parseFloat(
-                    (sm ?? app.chartManager.loadedSM!).properties.SAMPLESTART ??
-                      "0"
-                  )
+                  parseFloat(sm.properties.SAMPLESTART ?? "0")
                 )
                 return
               }
               updateValues()
             }
             const toSpinner = NumberSpinner.create(
-              parseFloat(
-                (sm ?? app.chartManager.loadedSM!).properties.SAMPLESTART ?? "0"
-              ) +
-                parseFloat(
-                  (sm ?? app.chartManager.loadedSM!).properties.SAMPLELENGTH ??
-                    "10"
-                ),
+              parseFloat(sm.properties.SAMPLESTART ?? "0") +
+                parseFloat(sm.properties.SAMPLELENGTH ?? "10"),
               undefined,
               3,
               0
@@ -219,14 +201,8 @@ export const SM_PROPERTIES_DATA: SMPropertyGroupData[] = [
             toSpinner.onChange = value => {
               if (value === undefined) {
                 toSpinner.setValue(
-                  parseFloat(
-                    (sm ?? app.chartManager.loadedSM!).properties.SAMPLESTART ??
-                      "0"
-                  ) +
-                    parseFloat(
-                      (sm ?? app.chartManager.loadedSM!).properties
-                        .SAMPLELENGTH ?? "10"
-                    )
+                  parseFloat(sm.properties.SAMPLESTART ?? "0") +
+                    parseFloat(sm.properties.SAMPLELENGTH ?? "10")
                 )
                 return
               }
@@ -248,14 +224,12 @@ export const SM_PROPERTIES_DATA: SMPropertyGroupData[] = [
 
 export function createInputElement(
   app: App,
-  data: SMPropertyData,
-  sm?: Simfile,
-  actionHist?: ActionHistory
+  sm: Simfile,
+  data: SMPropertyData
 ) {
-  const history = actionHist ?? ActionHistory.instance
   switch (data.input.type) {
     case "custom":
-      return data.input.create(app, sm, actionHist)
+      return data.input.create(app, sm)
     case "string": {
       const input = document.createElement("input")
       input.type = "text"
@@ -265,33 +239,26 @@ export function createInputElement(
         if (ev.key == "Enter") input.blur()
       }
       input.onblur = () => {
-        const lastValue = (sm ?? app.chartManager.loadedSM!).properties[
-          data.propName
-        ]
+        const lastValue = sm.properties[data.propName]
         const newValue = input.value
-        history.run({
-          action: app => {
-            ;(sm ?? app.chartManager.loadedSM!).properties[data.propName] =
-              newValue
+        ActionHistory.instance.run({
+          action: () => {
+            sm.properties[data.propName] = newValue
             input.value = newValue
           },
           undo: () => {
-            ;(sm ?? app.chartManager.loadedSM!).properties[data.propName] =
-              lastValue
+            sm.properties[data.propName] = lastValue
             input.value = lastValue ?? ""
           },
         })
       }
-      input.value =
-        (sm ?? app.chartManager.loadedSM!).properties[data.propName] ?? ""
+      input.value = sm.properties[data.propName] ?? ""
       return input
     }
     case "number": {
       const inputData = data.input
       const spinner = NumberSpinner.create(
-        parseFloat(
-          (sm ?? app.chartManager.loadedSM!).properties[data.propName]!
-        ) ?? 15,
+        parseFloat(sm.properties[data.propName] ?? "15"),
         inputData.step,
         inputData.precision,
         inputData.min,
@@ -299,27 +266,18 @@ export function createInputElement(
       )
       spinner.onChange = value => {
         if (value === undefined) {
-          spinner.setValue(
-            parseFloat(
-              (sm ?? app.chartManager.loadedSM!).properties[data.propName] ??
-                "0"
-            )
-          )
+          spinner.setValue(parseFloat(sm.properties[data.propName] ?? "0"))
           return
         }
-        const lastValue = (sm ?? app.chartManager.loadedSM!).properties[
-          data.propName
-        ]
+        const lastValue = sm.properties[data.propName]
         const newValue = value.toString()
-        history.run({
-          action: app => {
-            ;(sm ?? app.chartManager.loadedSM!).properties[data.propName] =
-              newValue
+        ActionHistory.instance.run({
+          action: () => {
+            sm.properties[data.propName] = newValue
             spinner.setValue(parseFloat(newValue))
           },
           undo: () => {
-            ;(sm ?? app.chartManager.loadedSM!).properties[data.propName] =
-              lastValue
+            sm.properties[data.propName] = lastValue
             spinner.setValue(parseFloat(lastValue ?? "0"))
           },
         })
@@ -344,26 +302,13 @@ export function createInputElement(
           const fileSelector = document.createElement("input")
           fileSelector.type = "file"
           fileSelector.accept = inputData.accept.join(",")
+          fileSelector.nwworkingdir = dir
           fileSelector.onchange = () => {
             const newValue = FileHandler.getRelativePath(
               dir,
               fileSelector.value
             )
-            const lastValue =
-              (sm ?? app.chartManager.loadedSM!).properties[data.propName] ?? ""
-            history.run({
-              action: app => {
-                ;(sm ?? app.chartManager.loadedSM!).properties[data.propName] =
-                  newValue
-                input.value = newValue
-              },
-              undo: () => {
-                ;(sm ?? app.chartManager.loadedSM!).properties[data.propName] =
-                  lastValue
-                input.value = lastValue
-              },
-            })
-            callback?.(app)
+            setValue(newValue)
           }
           fileSelector.click()
         } else {
@@ -378,52 +323,46 @@ export function createInputElement(
                 disableClose: true,
                 callback: (path: string) => {
                   const newValue = FileHandler.getRelativePath(dir, path)
-                  const lastValue =
-                    (sm ?? app.chartManager.loadedSM!).properties[
-                      data.propName
-                    ] ?? ""
-                  history.run({
-                    action: app => {
-                      ;(sm ?? app.chartManager.loadedSM!).properties[
-                        data.propName
-                      ] = newValue
-                      input.value = newValue
-                    },
-                    undo: () => {
-                      ;(sm ?? app.chartManager.loadedSM!).properties[
-                        data.propName
-                      ] = lastValue
-                      input.value = lastValue
-                    },
-                  })
-                  callback?.(app)
+                  setValue(newValue)
                 },
               },
-              (sm ?? app.chartManager.loadedSM!).properties[data.propName]
-                ? dir +
-                  "/" +
-                  (sm ?? app.chartManager.loadedSM!).properties[data.propName]
+              sm.properties[data.propName]
+                ? dir + "/" + sm.properties[data.propName]
                 : app.chartManager.smPath
             )
           )
         }
       }
-      input.value =
-        (sm ?? app.chartManager.loadedSM!).properties[data.propName] ?? ""
+      input.value = sm.properties[data.propName] ?? ""
       container.appendChild(input)
       const deleteButton = document.createElement("button")
       deleteButton.style.height = "100%"
       deleteButton.classList.add("delete")
-      deleteButton.disabled = !(sm ?? app.chartManager.loadedSM!).properties[
-        data.propName
-      ]
+      deleteButton.disabled = !sm.properties[data.propName]
       deleteButton.onclick = () => {
-        input.value = ""
+        setValue(undefined)
         deleteButton.disabled = true
       }
       const icon = Icons.getIcon("TRASH", 12)
       deleteButton.appendChild(icon)
       container.appendChild(deleteButton)
+
+      const setValue = (value: string | undefined) => {
+        const lastValue = sm.properties[data.propName] ?? ""
+        ActionHistory.instance.run({
+          action: () => {
+            sm.properties[data.propName] = value
+            input.value = value ?? ""
+            deleteButton.disabled = input.value == ""
+          },
+          undo: () => {
+            sm.properties[data.propName] = lastValue
+            input.value = lastValue
+            deleteButton.disabled = input.value == ""
+          },
+        })
+        callback?.(app)
+      }
       return container
     }
   }
