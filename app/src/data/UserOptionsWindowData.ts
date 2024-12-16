@@ -428,6 +428,14 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           },
           {
             type: "item",
+            label: "Invert scroll direction",
+            id: "chart.scroll.invertScroll",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "item",
             label: "Invert zoom in/out",
             id: "chart.scroll.invertZoomScroll",
             input: {

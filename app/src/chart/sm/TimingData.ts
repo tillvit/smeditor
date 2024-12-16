@@ -4,16 +4,25 @@ import { clamp, roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
 import { bsearch } from "../../util/Util"
 import {
+  AttackTimingEvent,
   BGChangeTimingEvent,
+  BPMTimingEvent,
   BeatTimingCache,
   BeatTimingEvent,
   Cached,
   ColumnType,
+  ComboTimingEvent,
+  DelayTimingEvent,
   DeletableEvent,
   FGChangeTimingEvent,
+  FakeTimingEvent,
+  LabelTimingEvent,
   ScrollCacheTimingEvent,
+  ScrollTimingEvent,
+  SpeedTimingEvent,
   StopTimingEvent,
   TIMING_EVENT_NAMES,
+  TickCountTimingEvent,
   TimeSignatureTimingEvent,
   TimingCache,
   TimingColumn,
@@ -719,27 +728,36 @@ export abstract class TimingData {
       case "FAKES":
         this.insertEvents(
           type,
-          Array.from(data.matchAll(/(-?[\d.]+)=(-?[\d.]+)/g)).map<TimingEvent>(
-            match => {
+          Array.from(data.matchAll(/(-?[\d.]+)=(-?[\d.]+)/g))
+            .map<
+              | BPMTimingEvent
+              | StopTimingEvent
+              | WarpTimingEvent
+              | DelayTimingEvent
+              | ScrollTimingEvent
+              | FakeTimingEvent
+            >(match => {
               return {
                 type,
                 beat: parseFloat(match[1]),
                 value: parseFloat(match[2]),
               }
-            }
-          )
+            })
+            .sort((a, b) => a.beat - b.beat)
         )
         return
       case "TICKCOUNTS":
         this.insertEvents(
           type,
-          Array.from(data.matchAll(/(-?[\d.]+)=(-?\d+)/g)).map(match => {
-            return {
-              type: "TICKCOUNTS",
-              beat: parseFloat(match[1]),
-              value: parseInt(match[2]),
-            }
-          })
+          Array.from(data.matchAll(/(-?[\d.]+)=(-?\d+)/g))
+            .map<TickCountTimingEvent>(match => {
+              return {
+                type: "TICKCOUNTS",
+                beat: parseFloat(match[1]),
+                value: parseInt(match[2]),
+              }
+            })
+            .sort((a, b) => a.beat - b.beat)
         )
         return
       case "LABELS":
@@ -747,62 +765,68 @@ export abstract class TimingData {
           type,
           Array.from(
             data.matchAll(/((-?[\d.]+)=([^\n]+)=\d)|((-?[\d.]+)=([^\n,]+))/g)
-          ).map(match => {
-            if (match[1] === undefined) {
+          )
+            .map<LabelTimingEvent>(match => {
+              if (match[1] === undefined) {
+                return {
+                  type: "LABELS",
+                  beat: parseFloat(match[5]),
+                  value: match[6].trim(),
+                }
+              }
               return {
                 type: "LABELS",
-                beat: parseFloat(match[5]),
-                value: match[6].trim(),
+                beat: parseFloat(match[2]),
+                value: match[3].trim(),
               }
-            }
-            return {
-              type: "LABELS",
-              beat: parseFloat(match[2]),
-              value: match[3].trim(),
-            }
-          })
+            })
+            .sort((a, b) => a.beat - b.beat)
         )
         return
       case "SPEEDS":
         this.insertEvents(
           type,
-          Array.from(
-            data.matchAll(/(-?[\d.]+)=(-?[\d.]+)=([\d.]+)=([01])/g)
-          ).map(match => {
-            return {
-              type: "SPEEDS",
-              beat: parseFloat(match[1]),
-              value: parseFloat(match[2]),
-              delay: parseFloat(match[3]),
-              unit: match[4].trim() == "0" ? "B" : "T",
-            }
-          })
+          Array.from(data.matchAll(/(-?[\d.]+)=(-?[\d.]+)=([\d.]+)=([01])/g))
+            .map<SpeedTimingEvent>(match => {
+              return {
+                type: "SPEEDS",
+                beat: parseFloat(match[1]),
+                value: parseFloat(match[2]),
+                delay: parseFloat(match[3]),
+                unit: match[4].trim() == "0" ? "B" : "T",
+              }
+            })
+            .sort((a, b) => a.beat - b.beat)
         )
         return
       case "TIMESIGNATURES":
         this.insertEvents(
           type,
-          Array.from(data.matchAll(/(-?[\d.]+)=(\d+)=(\d+)/g)).map(match => {
-            return {
-              type: "TIMESIGNATURES",
-              beat: parseFloat(match[1]),
-              upper: parseInt(match[2]),
-              lower: parseInt(match[3]),
-            }
-          })
+          Array.from(data.matchAll(/(-?[\d.]+)=(\d+)=(\d+)/g))
+            .map<TimeSignatureTimingEvent>(match => {
+              return {
+                type: "TIMESIGNATURES",
+                beat: parseFloat(match[1]),
+                upper: parseInt(match[2]),
+                lower: parseInt(match[3]),
+              }
+            })
+            .sort((a, b) => a.beat - b.beat)
         )
         return
       case "COMBOS":
         this.insertEvents(
           type,
-          Array.from(data.matchAll(/(-?[\d.]+)=(\d+)=*(\d+)*/g)).map(match => {
-            return {
-              type: "COMBOS",
-              beat: parseFloat(match[1]),
-              hitMult: parseInt(match[2]),
-              missMult: parseInt(match[3] ?? match[2]),
-            }
-          })
+          Array.from(data.matchAll(/(-?[\d.]+)=(\d+)=*(\d+)*/g))
+            .map<ComboTimingEvent>(match => {
+              return {
+                type: "COMBOS",
+                beat: parseFloat(match[1]),
+                hitMult: parseInt(match[2]),
+                missMult: parseInt(match[3] ?? match[2]),
+              }
+            })
+            .sort((a, b) => a.beat - b.beat)
         )
         return
       case "ATTACKS":
@@ -810,15 +834,17 @@ export abstract class TimingData {
           type,
           Array.from(
             data.matchAll(/TIME=(-?[\d.]+):(END|LEN)=(-?[\d.]+):MODS=([^:]+)/g)
-          ).map(match => {
-            return {
-              type: "ATTACKS",
-              second: parseFloat(match[1]),
-              endType: match[2].trim() as "END" | "LEN",
-              value: parseFloat(match[3]),
-              mods: match[4].trim(),
-            }
-          })
+          )
+            .map<AttackTimingEvent>(match => {
+              return {
+                type: "ATTACKS",
+                second: parseFloat(match[1]),
+                endType: match[2].trim() as "END" | "LEN",
+                value: parseFloat(match[3]),
+                mods: match[4].trim(),
+              }
+            })
+            .sort((a, b) => a.second - b.second)
         )
         return
       case "BGCHANGES":
@@ -829,22 +855,24 @@ export abstract class TimingData {
             data.matchAll(
               /(-?[\d.]+)=([^\n]+?)=(-?[\d.]+)=([01])=([01])=([01])=?([^\n=,]*)=?([^\n=,]*)=?([^\n=,]*)=?([^\n=,]*)=?([^\n=,]*)/g
             )
-          ).map<BGChangeTimingEvent | FGChangeTimingEvent>(match => {
-            return {
-              type,
-              beat: parseFloat(match[1]),
-              file: match[2].trim(),
-              updateRate: parseFloat(match[3]),
-              crossFade: match[4].trim() == "1",
-              stretchRewind: match[5].trim() == "1",
-              stretchNoLoop: match[6].trim() == "1",
-              effect: match[7].trim() ?? "",
-              file2: match[8].trim() ?? "",
-              transition: match[9].trim() ?? "",
-              color1: match[10].trim() ?? "",
-              color2: match[11].trim() ?? "",
-            }
-          })
+          )
+            .map<BGChangeTimingEvent | FGChangeTimingEvent>(match => {
+              return {
+                type,
+                beat: parseFloat(match[1]),
+                file: match[2].trim(),
+                updateRate: parseFloat(match[3]),
+                crossFade: match[4].trim() == "1",
+                stretchRewind: match[5].trim() == "1",
+                stretchNoLoop: match[6].trim() == "1",
+                effect: match[7].trim() ?? "",
+                file2: match[8].trim() ?? "",
+                transition: match[9].trim() ?? "",
+                color1: match[10].trim() ?? "",
+                color2: match[11].trim() ?? "",
+              }
+            })
+            .sort((a, b) => a.beat - b.beat)
         )
     }
   }

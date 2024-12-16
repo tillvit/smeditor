@@ -29,7 +29,9 @@ export class SafariFileWriter {
     )
     const encode = new TextEncoder()
     const buffer =
-      typeof data == "string" ? encode.encode(data) : await data.arrayBuffer()
+      typeof data == "string"
+        ? encode.encode(data).buffer
+        : await data.arrayBuffer()
     this.worker.postMessage([id, path, buffer], [buffer])
     return promise
   }

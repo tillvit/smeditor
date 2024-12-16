@@ -16,7 +16,7 @@ export class NewSongWindow extends Window {
   app: App
 
   private readonly sm: Simfile
-  private readonly actionHistory: ActionHistory
+  private readonly history
   private fileTable: { [key: string]: File } = {}
 
   constructor(app: App) {
@@ -33,8 +33,8 @@ export class NewSongWindow extends Window {
     const blob = new Blob([DEFAULT_SM], { type: "text/plain" })
     const file = new File([blob], "song.sm", { type: "text/plain" })
     this.sm = new Simfile(file)
+    this.history = new ActionHistory(app)
     this.app = app
-    this.actionHistory = new ActionHistory(this.app)
     this.initView()
   }
 
@@ -71,7 +71,7 @@ export class NewSongWindow extends Window {
           )
         else
           grid.appendChild(
-            createInputElement(this.app, item, this.sm, this.actionHistory)
+            createInputElement(this.app, this.sm, this.history, item)
           )
       })
       groupContainer.appendChild(title)

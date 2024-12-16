@@ -43,6 +43,7 @@ export class DefaultOptions {
     scroll: {
       scrollSensitivity: 1,
       scrollSnapEveryScroll: !navigator.userAgent.includes("Mac"),
+      invertScroll: false,
       invertZoomScroll: false,
       invertReverseScroll: true,
     },

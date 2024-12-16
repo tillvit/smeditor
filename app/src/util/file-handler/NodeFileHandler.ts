@@ -3,15 +3,15 @@ import { BaseFileHandler } from "./FileHandler"
 import { FileHandle, FolderHandle } from "./NodeAdapter"
 
 const {
-  join,
   dirname,
   extname,
   basename,
+  relative,
 }: {
-  join: (...paths: string[]) => string
   dirname: (path: string) => string
   extname: (path: string) => string
   basename: (path: string) => string
+  relative: (path1: string, path2: string) => string
 } = window.nw.require("path")
 
 const fs = window.nw.require("fs").promises
@@ -175,6 +175,6 @@ export class NodeFileHandler implements BaseFileHandler {
   }
 
   getRelativePath(from: string, to: string) {
-    return join(from, to)
+    return relative(from, to)
   }
 }
