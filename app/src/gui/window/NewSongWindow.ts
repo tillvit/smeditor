@@ -140,6 +140,7 @@ export class NewSongWindow extends Window {
     let folder = this.sm.properties.TITLE!
     if (window.nw) {
       const path = nw.require("path")
+      const process = nw.require("process")
       const fileSelector = document.createElement("input")
       fileSelector.type = "file"
       fileSelector.nwsaveas = folder + ".sm"
@@ -153,9 +154,18 @@ export class NewSongWindow extends Window {
         await FileHandler.writeFile(smPath, this.sm.serialize("sm"))
         // Add the rest of the files
         await Promise.all(
-          Object.entries(this.fileTable).map(entry =>
-            FileHandler.writeFile(folder + `/${entry[0]}`, entry[1])
-          )
+          Object.entries(this.fileTable).map(entry => {
+            const newPath = path.resolve(path.join(folder, entry[0]))
+            const filePath = path.resolve(entry[1].path!)
+            // Don't copy if they are the same path
+            if (
+              process.platform == "win32" &&
+              newPath.toLowerCase() === filePath.toLowerCase()
+            )
+              return
+            if (newPath === filePath) return
+            return FileHandler.writeFile(newPath, entry[1])
+          })
         )
         await this.app.chartManager.loadSM(smPath)
         this.app.windowManager
