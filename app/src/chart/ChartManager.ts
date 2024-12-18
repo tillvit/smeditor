@@ -1649,7 +1649,7 @@ export class ChartManager {
     let error: string | null = null
     if (
       !this.loadedSM.usesChartTiming() &&
-      (await FileHandler.getFileHandle(this.getSMPath(".smebak")))
+      (await FileHandler.getFileHandle(this.getSMPath(".sm")))
     ) {
       await FileHandler.writeFile(smPath, this.loadedSM.serialize("sm")).catch(
         err => {

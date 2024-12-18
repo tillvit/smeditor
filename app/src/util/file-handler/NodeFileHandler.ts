@@ -168,9 +168,15 @@ export class NodeFileHandler implements BaseFileHandler {
   }
 
   private async writeHandle(handle: FileSystemFileHandle, data: Blob | string) {
+    let buf: ArrayBuffer
+    if (data instanceof Blob) {
+      buf = await data.arrayBuffer()
+    } else {
+      buf = new TextEncoder().encode(data).buffer
+    }
     const writable = await handle.createWritable()
     await writable.truncate(0)
-    await writable.write(data)
+    await writable.write(buf)
     await writable.close()
   }
 
