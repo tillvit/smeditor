@@ -1422,8 +1422,8 @@ export class ChartManager {
       return
     const hold = this.holdEditing[col]
     if (hold == undefined) return
+    beat = Math.round(beat * 48) / 48
     if (beat == hold.startBeat && beat == hold.endBeat) return
-
     if (hold.direction === null) {
       if (beat < hold.startBeat) {
         hold.direction = "up"

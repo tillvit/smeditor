@@ -48,6 +48,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   private lastMouseBeat = -1
   private lastMouseCol = -1
   private lastNoteType: NoteType | null = null
+  private lastHoldBeat: number | null = null
   private editingCol = -1
 
   // Only update beat and time every frame to maintain the same time for each draw call
@@ -187,6 +188,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
         // Place a note
         this.chartManager.clearSelections()
         this.editingCol = this.lastMouseCol
+        this.lastHoldBeat = null
         this.chartManager.setNote(
           this.lastMouseCol,
           "mouse",
@@ -221,11 +223,14 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
         const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
         const snapBeat =
           Math.round(this.getBeatFromYPos(this.lastMousePos.y) / snap) * snap
-        this.chartManager.editHoldBeat(
-          this.editingCol,
-          snapBeat,
-          event.shiftKey
-        )
+        if (this.lastHoldBeat != snapBeat) {
+          this.lastHoldBeat = snapBeat
+          this.chartManager.editHoldBeat(
+            this.editingCol,
+            snapBeat,
+            event.shiftKey
+          )
+        }
       }
       if (this.selectionBounds) {
         this.selectionBounds.end = this.toLocal(event.global)
