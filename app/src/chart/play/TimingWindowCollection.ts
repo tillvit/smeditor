@@ -239,6 +239,58 @@ export class TimingWindowCollection {
       ],
       100
     ),
+    PUMP: new TimingWindowCollection(
+      [
+        new StandardTimingWindow(
+          "w0",
+          "Perfect",
+          0x21cce8,
+          102.167,
+          10,
+          0.008,
+          JudgementTexture.PUMP
+        ),
+        new StandardTimingWindow(
+          "w3",
+          "Great",
+          0x66c955,
+          143.833,
+          6,
+          0.008,
+          JudgementTexture.PUMP
+        ),
+        new StandardTimingWindow(
+          "w4",
+          "Good",
+          0xfac32a,
+          185.5,
+          3,
+          0.004,
+          JudgementTexture.PUMP
+        ),
+        new StandardTimingWindow(
+          "w5",
+          "Bad",
+          0xb45cff,
+          227.166,
+          0,
+          0,
+          JudgementTexture.PUMP
+        ),
+        new StandardMissTimingWindow(
+          "Miss",
+          0xff3030,
+          0,
+          -0.1,
+          JudgementTexture.PUMP
+        ),
+        new HoldTimingWindow("Hold", 102.167, 6, -0.008),
+        new HoldTimingWindow("Roll", 350, 6, -0.008),
+        new HoldDroppedTimingWindow(0, -0.08),
+        new MineTimingWindow(71.5, -3, -0.05),
+      ],
+      185.5
+    ),
   }
 
   private windows: StandardTimingWindow[] = []
