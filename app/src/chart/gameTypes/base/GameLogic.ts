@@ -54,4 +54,6 @@ export abstract class GameLogic {
   abstract calculateMaxDP(notedata: Notedata, timingData: TimingData): number
 
   abstract usesHoldTicks: boolean
+  abstract comboIsPerRow: boolean
+  abstract missComboIsPerRow: boolean
 }

@@ -109,8 +109,11 @@ export class GameplayStats {
             )
           }, 0)
       }
+      // todo calculate max dp for holds on miss
       this.combo = 0
-      this.missCombo += missMult
+      if (this.chartManager.loadedChart!.gameType.gameLogic.missComboIsPerRow)
+        this.missCombo += notes.length * missMult
+      else this.missCombo += missMult
       this.bestJudge = undefined
     } else if (isStandardTimingWindow(judge)) {
       if (
@@ -118,7 +121,9 @@ export class GameplayStats {
           Options.play.timingCollection
         ).shouldHideNote(judge)
       ) {
-        this.combo += notes.length * hitMult
+        if (this.chartManager.loadedChart!.gameType.gameLogic.comboIsPerRow)
+          this.combo += notes.length * hitMult
+        else this.combo += hitMult
         if (this.combo > this.maxCombo) this.maxCombo = this.combo
         this.missCombo = 0
         if (
