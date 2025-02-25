@@ -81,8 +81,8 @@ export const SPECIAL_KEYS: { [key: string]: string } = {
 export const KEY_DISPLAY_OVERRIDES: { [key: string]: string } = {
   Home: IS_OSX ? "fn Left" : "Home",
   End: IS_OSX ? "fn Right" : "End",
-  PageUp: IS_OSX ? "fn Up" : "End",
-  PageDown: IS_OSX ? "fn Down" : "End",
+  PageUp: IS_OSX ? "fn Up" : "PageUp",
+  PageDown: IS_OSX ? "fn Down" : "PageDown",
 }
 
 export const MODPROPS: ["ctrlKey", "altKey", "shiftKey", "metaKey"] = [
