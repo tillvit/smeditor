@@ -137,13 +137,9 @@ export class DefaultOptions {
     timingCollection: "ITG",
     timingWindowScale: 1,
     timingWindowAdd: 0,
-    defaultTimingCollection: {
-      "dance-single": "ITG",
-      "dance-double": "ITG",
-      "dance-threepanel": "ITG",
-      "dance-threedouble": "ITG",
-      "dance-solo": "ITG",
-      "dance-solodouble": "ITG",
+    defaultTimingCollections: {
+      "dance-": "ITG",
+      "pump-": "PUMP",
     } as { [key: string]: string },
   }
   static performance = {

@@ -1,6 +1,7 @@
 import { Color } from "pixi.js"
 import { App } from "../App"
 import { TimingWindowCollection } from "../chart/play/TimingWindowCollection"
+import { Options } from "../util/Options"
 
 export type UserOption = UserOptionGroup | UserOptionSubgroup | UserOptionItem
 
@@ -781,6 +782,18 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               advanced: false,
               get items(): string[] {
                 return Object.keys(TimingWindowCollection.getCollections())
+              },
+              onChange(app, value) {
+                // change the default timing collection for all matching gameTypes
+                const gameType = app.chartManager.loadedChart?.gameType.id
+                if (!gameType) return
+                for (const key of Object.keys(
+                  Options.play.defaultTimingCollections
+                )) {
+                  if (gameType.startsWith(key)) {
+                    Options.play.defaultTimingCollections[key] = value as string
+                  }
+                }
               },
             },
           },

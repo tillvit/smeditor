@@ -880,8 +880,15 @@ export class ChartManager {
     this.beat = this.loadedChart.getBeatFromSeconds(this.time)
     ActionHistory.instance.reset()
 
-    Options.play.timingCollection =
-      Options.play.defaultTimingCollection[chart.gameType.id] ?? "ITG"
+    Options.play.timingCollection = "ITG"
+    for (const [key, collection] of Object.entries(
+      Options.play.defaultTimingCollections
+    )) {
+      if (chart.gameType.id.startsWith(key)) {
+        Options.play.timingCollection = collection
+        break
+      }
+    }
 
     // Check if the same noteskin is compatible with the current chart
     const oldType = GameTypeRegistry.getGameType(Options.chart.noteskin.type)
@@ -1584,10 +1591,10 @@ export class ChartManager {
         if (note.second < this.time) note.gameplay!.hasHit = true
         else break
       }
-      this.loadedChart.gameType.gameLogic.startPlay(this)
       this.gameStats = new GameplayStats(this)
       this.widgetManager.startPlay()
       this.chartAudio.seek(Math.max(0, this.time) - 1)
+      this.loadedChart.gameType.gameLogic.startPlay(this)
       this.chartAudio.play()
       this.chartView.startPlay()
     } else if (this.mode == EditMode.Record) {
