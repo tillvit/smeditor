@@ -108,25 +108,23 @@ export class PumpGameLogic extends BasicGameLogic {
     }
 
     // Do Holds/Rolls
-    const holdGrace =
-      (this.collection.getStandardWindows()[0].getTimingWindowMS() / 1000) *
-      Options.audio.rate
 
     for (const [hold, data] of this.tickProgress.entries()) {
+      const grace =
+        (this.collection.getHeldJudgement(hold).getTimingWindowMS() / 1000) *
+        Options.audio.rate
       // Hit ticks if pressed
-      if (this.heldCols.isPressed(hold.col)) {
+      if (this.heldCols.isPressed(hold.col) && hold.type == "Hold") {
         while (
           data.ticks[data.hitIndex] &&
-          data.ticks[data.hitIndex].second - holdGrace <= time
+          data.ticks[data.hitIndex].second - grace <= time
         ) {
           data.ticks[data.hitIndex].hit = true
           data.hitIndex++
         }
         if (beat < hold.beat + hold.hold) {
           if (hold.gameplay?.droppedHoldBeat !== undefined) {
-            if (hold.type == "Hold")
-              chartManager.chartView.getNotefield().activateHold(hold.col)
-            else chartManager.chartView.getNotefield().activateRoll(hold.col)
+            chartManager.chartView.getNotefield().activateHold(hold.col)
           }
           hold.gameplay!.lastHoldActivation = Date.now()
           hold.gameplay!.droppedHoldBeat = undefined
@@ -138,9 +136,7 @@ export class PumpGameLogic extends BasicGameLogic {
           hold.gameplay?.droppedHoldBeat == undefined
         ) {
           hold.gameplay!.droppedHoldBeat = beat
-          if (hold.type == "Hold")
-            chartManager.chartView.getNotefield().releaseHold(hold.col)
-          else chartManager.chartView.getNotefield().releaseRoll(hold.col)
+          chartManager.chartView.getNotefield().releaseHold(hold.col)
         }
       }
 
@@ -153,13 +149,14 @@ export class PumpGameLogic extends BasicGameLogic {
         if (
           beat > hold.beat + hold.hold &&
           (data.ticks.at(-1)?.hitAll ||
-            hold.gameplay!.droppedHoldBeat === undefined)
+            (hold.gameplay!.droppedHoldBeat === undefined &&
+              hold.gameplay?.lastHoldActivation !== undefined))
         ) {
           hold.gameplay!.hideNote = true
         }
         if (
           beat > hold.beat + hold.hold &&
-          data.ticks.at(-1)!.second + holdGrace < time
+          data.ticks.at(-1)!.second + grace < time
         ) {
           this.tickProgress.delete(hold)
         }
@@ -174,6 +171,14 @@ export class PumpGameLogic extends BasicGameLogic {
       // Miss ticks that were not hit
       const hitAllTicks =
         ticks.filter(tick => tick.hit).length == this.tickCohesion.get(tickBeat)
+      const minGrace = Math.min(
+        ...ticks.map(
+          tick =>
+            (this.collection.getHeldJudgement(tick.note).getTimingWindowMS() /
+              1000) *
+            Options.audio.rate
+        )
+      )
       if (hitAllTicks && tickBeat <= beat) {
         ticks.forEach(tick => {
           chartManager.chartView!.doJudgement(
@@ -191,7 +196,7 @@ export class PumpGameLogic extends BasicGameLogic {
         )
         this.pendingTicks.delete(tickBeat)
         continue
-      } else if (ticks[0].second + holdGrace < time) {
+      } else if (ticks[0].second + minGrace < time) {
         ticks.forEach(tick => {
           chartManager.chartView!.doJudgement(
             tick.note,
@@ -313,6 +318,7 @@ export class PumpGameLogic extends BasicGameLogic {
 
   keyDown(chartManager: ChartManager, col: number): void {
     if (!chartManager.loadedChart || !chartManager.chartView) return
+    const hitBeat = chartManager.chartView.getBeatWithOffset()
     const hitTime = chartManager.chartView.getTimeWithOffset()
     const closestNote = this.getClosestNote(
       chartManager.loadedChart.getNotedata(),
@@ -322,13 +328,30 @@ export class PumpGameLogic extends BasicGameLogic {
     )
     this.heldCols.keyDown(col)
     chartManager.chartView.getNotefield().press(col)
-    // for (const { hold } of this.tickProgress) {
-    //   if (hold.type == "Roll" && hold.col == col) {
-    //     hold.gameplay!.lastHoldActivation = Date.now()
-    //     hold.gameplay!.droppedHoldBeat = undefined
-    //     chartManager.chartView.getNotefield().activateRoll(hold.col)
-    //   }
-    // }
+    for (const [hold, data] of this.tickProgress.entries()) {
+      const rollGrace =
+        (this.collection.getHeldJudgement(hold).getTimingWindowMS() / 1000) *
+        Options.audio.rate
+      if (hold.type == "Roll" && hold.col == col) {
+        while (
+          data.ticks[data.hitIndex] &&
+          data.ticks[data.hitIndex].second - rollGrace <= hitTime
+        ) {
+          data.ticks[data.hitIndex].hit = true
+          data.hitIndex++
+        }
+        if (hitBeat < hold.beat + hold.hold) {
+          if (hold.gameplay?.droppedHoldBeat !== undefined) {
+            chartManager.chartView.getNotefield().activateRoll(hold.col)
+          }
+          hold.gameplay!.lastHoldActivation = Date.now()
+          hold.gameplay!.droppedHoldBeat = undefined
+        }
+        hold.gameplay!.lastHoldActivation = Date.now()
+        hold.gameplay!.droppedHoldBeat = undefined
+        chartManager.chartView.getNotefield().activateRoll(hold.col)
+      }
+    }
     if (closestNote) this.hitNote(chartManager, closestNote, hitTime)
     else chartManager.chartView.getNotefield().ghostTap(col)
   }
