@@ -22,7 +22,7 @@ import { ActionHistory } from "../util/ActionHistory"
 import { Flags } from "../util/Flags"
 import { roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
-import { QUANT_NAMES, QUANT_NUM, QUANTS } from "../util/Util"
+import { bsearch, QUANT_NAMES, QUANT_NUM, QUANTS } from "../util/Util"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 
@@ -150,7 +150,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   increaseScrollSpeed: {
     label: "Increase scroll speed",
-    combos: [{ key: "Up", mods: [DEF_MOD] }],
+    combos: [{ key: "Up", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartView,
     callback: () =>
       (Options.chart.speed = Math.max(
@@ -160,7 +160,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   decreaseScrollSpeed: {
     label: "Decrease scroll speed",
-    combos: [{ key: "Down", mods: [DEF_MOD] }],
+    combos: [{ key: "Down", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartView,
     callback: () =>
       (Options.chart.speed = Math.max(
@@ -408,6 +408,60 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       WaterfallManager.create(
         "Playback Rate: " + Math.round(Options.audio.rate) + "%"
       )
+    },
+  },
+  previousStream: {
+    label: "Previous stream",
+    combos: [{ key: "Up", mods: [DEF_MOD] }],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.Record,
+    callback: app => {
+      const streamPoints: number[] = []
+      for (const stream of app.chartManager.loadedChart!.getStreams()) {
+        if (streamPoints.at(-1) == stream.start) {
+          streamPoints.pop()
+        }
+        streamPoints.push(stream.start)
+        streamPoints.push(stream.end)
+      }
+      if (streamPoints.length == 0) return
+      const idx = bsearch(streamPoints, app.chartManager.beat)
+      if (Math.abs(app.chartManager.beat - streamPoints[idx]) < 0.001) {
+        if (idx - 1 >= 0) {
+          app.chartManager.beat = streamPoints[idx - 1]
+        } else {
+          app.chartManager.beat = streamPoints[0]
+        }
+      } else app.chartManager.beat = streamPoints[idx]
+    },
+  },
+  nextStream: {
+    label: "Next stream",
+    combos: [{ key: "Down", mods: [DEF_MOD] }],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.Record,
+    callback: app => {
+      const streamPoints: number[] = []
+      for (const stream of app.chartManager.loadedChart!.getStreams()) {
+        if (streamPoints.at(-1) == stream.start) {
+          streamPoints.pop()
+        }
+        streamPoints.push(stream.start)
+        streamPoints.push(stream.end)
+      }
+      if (streamPoints.length == 0) return
+      const idx = bsearch(streamPoints, app.chartManager.beat)
+      if (Math.abs(app.chartManager.beat - streamPoints[idx]) < 0.001) {
+        if (idx + 1 < streamPoints.length) {
+          app.chartManager.beat = streamPoints[idx + 1]
+        } else {
+          app.chartManager.beat = streamPoints[idx]
+        }
+      } else app.chartManager.beat = streamPoints[idx + 1]
     },
   },
   previousMeasure: {

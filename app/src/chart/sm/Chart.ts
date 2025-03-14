@@ -138,6 +138,10 @@ export class Chart {
     return this._npsGraph
   }
 
+  getStreams() {
+    return this._streams
+  }
+
   getMaxNPS() {
     let max = 0
     for (const measure of this._npsGraph) {
@@ -306,40 +310,58 @@ export class Chart {
       this.timingData
     )
     this._streams = []
-    let currentStream: Stream | null = null
-    for (const note of this.notedata) {
-      if (currentStream == null) {
-        currentStream = {
-          start: note.beat,
-          end: note.beat,
-          beatSpacing: null,
-        }
-        this._streams.push(currentStream)
-        continue
+    const differences = this.notedata
+      .slice(0, -1)
+      .map((note, idx) =>
+        Math.round((this.notedata[idx + 1].beat - note.beat) * 48)
+      )
+    // consolidate differences into streams
+    for (let i = 0; i < differences.length; i++) {
+      const diff = differences[i]
+      const startIdx = i
+      while (differences[i + 1] == diff) {
+        i++
       }
-      if (currentStream.beatSpacing == null) {
-        currentStream.beatSpacing = note.beat - currentStream.start
-        currentStream.end = note.beat
-      } else {
-        if (
-          Math.abs(
-            currentStream.beatSpacing - (note.beat - currentStream.end)
-          ) > 0.001
-        ) {
-          currentStream = {
-            start: note.beat,
-            end: note.beat,
-            beatSpacing: null,
-          }
-          this._streams.push(currentStream)
-        } else {
-          currentStream.end = note.beat
-        }
-      }
+      this._streams.push({
+        start: this.notedata[startIdx].beat,
+        end: this.notedata[i + 1].beat,
+        beatSpacing: diff / 48,
+      })
     }
-    if (this._streams.at(-1) != currentStream && currentStream != null) {
-      this._streams.push(currentStream)
-    }
+
+    // for (const note of this.notedata) {
+    //   if (currentStream == null) {
+    //     currentStream = {
+    //       start: note.beat,
+    //       end: note.beat,
+    //       beatSpacing: null,
+    //     }
+    //     this._streams.push(currentStream)
+    //     continue
+    //   }
+    //   if (currentStream.beatSpacing == null) {
+    //     currentStream.beatSpacing = note.beat - currentStream.start
+    //     currentStream.end = note.beat
+    //   } else {
+    //     if (
+    //       Math.abs(
+    //         currentStream.beatSpacing - (note.beat - currentStream.end)
+    //       ) > 0.001
+    //     ) {
+    //       currentStream = {
+    //         start: note.beat,
+    //         end: note.beat,
+    //         beatSpacing: null,
+    //       }
+    //       this._streams.push(currentStream)
+    //     } else {
+    //       currentStream.end = note.beat
+    //     }
+    //   }
+    // }
+    // if (this._streams.at(-1) != currentStream && currentStream != null) {
+    //   this._streams.push(currentStream)
+    // }
     this.recalculateLastNote()
   }
 

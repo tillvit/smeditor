@@ -146,6 +146,17 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
           },
           {
             type: "selection",
+            id: "previousStream",
+          },
+          {
+            type: "selection",
+            id: "nextStream",
+          },
+          {
+            type: "separator",
+          },
+          {
+            type: "selection",
             id: "jumpChartStart",
           },
           {
