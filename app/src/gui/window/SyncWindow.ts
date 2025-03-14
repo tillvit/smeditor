@@ -275,6 +275,7 @@ export class SyncWindow extends Window {
       container.style.justifyContent = "space-between"
       container.style.alignItems = "center"
       const label = document.createElement("div")
+      label.classList.add("label")
       label.innerText = text
       container.replaceChildren(label, element)
 

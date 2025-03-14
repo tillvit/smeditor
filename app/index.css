@@ -576,6 +576,7 @@ textarea {
   white-space: nowrap;
   gap: 8px;
   font-size: 14px;
+  cursor: pointer;
 }
 .recent-item.selected {
   background-color: var(--secondary-bg-active);
@@ -898,6 +899,7 @@ div.inlineEdit[contenteditable="true"]:focus {
 }
 .chart-info-grid-item {
   display: flex;
+  user-select: all;
 }
 .chart-info-grid {
   display: grid;
@@ -905,8 +907,8 @@ div.inlineEdit[contenteditable="true"]:focus {
   row-gap: 2px;
   column-gap: 15px;
   margin-top: 5px;
+  user-select: all;
 }
-
 .timing-data > .padding {
   display: grid;
   row-gap: 3px;
@@ -1262,6 +1264,10 @@ input.right {
 .waterfall-exiting {
   opacity: 0;
   transform: translateX(200px);
+}
+
+.label {
+  user-select: none;
 }
 
 .confirmation .padding .label {

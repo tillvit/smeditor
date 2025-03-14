@@ -123,7 +123,7 @@ export class UserOptionsWindow extends Window {
       item.dataset.id = option.id
 
     const label = document.createElement("div")
-    label.classList.add(`pref-${option.type}-label`)
+    label.classList.add(`pref-${option.type}-label`, "label")
 
     if (option.label !== undefined) {
       label.innerText = option.label
