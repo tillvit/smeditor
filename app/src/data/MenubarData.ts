@@ -54,6 +54,17 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "selection",
+        id: "previousSong",
+      },
+      {
+        type: "selection",
+        id: "nextSong",
+      },
+      {
+        type: "separator",
+      },
+      {
+        type: "selection",
         id: "save",
       },
       {

@@ -159,8 +159,9 @@ export class WebFileHandler implements BaseFileHandler {
     dir?: FileSystemDirectoryHandle
   ): Promise<FileSystemDirectoryHandle | undefined> {
     dir ||= await this.getRoot()
+    path = this.resolvePath(...path.split("/"))
     if (path == "" || path == ".") return dir
-    const pathParts = this.resolvePath(path).split("/")
+    const pathParts = path.split("/")
     const dirname = pathParts.shift()!
     try {
       const dirHandle = await dir.getDirectoryHandle(dirname, options)
@@ -186,7 +187,7 @@ export class WebFileHandler implements BaseFileHandler {
     options?: FileSystemGetFileOptions
   ): Promise<FileSystemFileHandle | undefined> {
     try {
-      const pathParts = this.resolvePath(path).split("/")
+      const pathParts = this.resolvePath(...path.split("/")).split("/")
       const filename = pathParts.pop()!
       const dirHandle = await this.getDirectoryHandle(
         pathParts.join("/"),
@@ -206,7 +207,7 @@ export class WebFileHandler implements BaseFileHandler {
   ): Promise<FileSystemFileHandle | undefined> {
     try {
       if (extname(songPath) != "") songPath = dirname(songPath)
-      return this.getFileHandle(this.resolvePath(songPath + "/" + fileName))
+      return this.getFileHandle(this.resolvePath(songPath, "/", fileName))
     } catch (err) {
       console.error("Failed to get relative file " + fileName + ": " + err)
       return undefined
@@ -299,13 +300,13 @@ export class WebFileHandler implements BaseFileHandler {
     }
   }
 
-  resolvePath(path: string): string {
-    let pathParts = path.split("/")
+  resolvePath(...path: string[]): string {
+    let pathParts = path
     pathParts = pathParts.filter(item => item != "." && item != "")
     while (pathParts.indexOf("..") > -1) {
       const ind = pathParts.indexOf("..")
       if (ind == 0) {
-        throw Error("Path" + pathParts.join("/") + "is invalid!")
+        throw Error("Path " + pathParts.join("/") + " is invalid!")
       }
       pathParts.splice(ind - 1, 2)
     }

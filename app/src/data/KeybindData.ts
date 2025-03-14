@@ -22,6 +22,7 @@ import { ActionHistory } from "../util/ActionHistory"
 import { Flags } from "../util/Flags"
 import { roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
+import { basename, dirname } from "../util/Path"
 import { bsearch, QUANT_NAMES, QUANT_NUM, QUANTS } from "../util/Util"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { WebFileHandler } from "../util/file-handler/WebFileHandler"
@@ -269,6 +270,134 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.windowManager.openWindow(
         new ExportNotedataWindow(app, app.chartManager.selection.notes)
       ),
+  },
+  previousSong: {
+    label: "Previous song in pack",
+    combos: [{ key: "F5", mods: [Modifier.SHIFT] }],
+    disabled: app =>
+      !app.chartManager.loadedSM ||
+      app.chartManager.smPath.startsWith("https://") ||
+      app.chartManager.smPath.startsWith("http://"),
+    callback: app => {
+      const handle = FileHandler.getStandardHandler()
+      if (!handle) return
+      const packFolder = handle.resolvePath(
+        dirname(app.chartManager.smPath),
+        ".."
+      )
+      async function run() {
+        const folders = await handle!.getDirectoryFolders(packFolder)
+        folders.sort((a, b) => {
+          return a.name.localeCompare(b.name)
+        })
+        let idx = folders.findIndex(
+          a => a.name == basename(dirname(app.chartManager.smPath))
+        )
+
+        if (idx == -1) {
+          WaterfallManager.createFormatted(
+            "An error occured while finding the song pack!",
+            "error"
+          )
+          console.error(
+            `Couldn't find the current song idx in parent folder! Path: ${basename(dirname(app.chartManager.smPath))}, Folders`,
+            folders
+          )
+          return
+        }
+        idx--
+        while (idx >= 0) {
+          const folder = folders[idx]
+          console.log("Checking ", folder.name)
+          const files = await handle!.getDirectoryFiles(folder)
+          console.log(files)
+          const candidate =
+            files.find(f => f.name.endsWith(".ssc")) ??
+            files.find(f => f.name.endsWith(".sm"))
+          if (candidate) {
+            const path = handle!.resolvePath(
+              packFolder,
+              folder.name,
+              candidate.name
+            )
+            WaterfallManager.create(`Loading ${folder.name}/${candidate.name}`)
+            app.chartManager.loadSM(path)
+            return
+          }
+          idx--
+        }
+        WaterfallManager.create("No previous song in pack")
+      }
+      try {
+        run()
+      } catch (err) {
+        WaterfallManager.createFormatted("No songs found!", "error")
+        console.error(err)
+      }
+    },
+  },
+  nextSong: {
+    label: "Next song in pack",
+    combos: [{ key: "F6", mods: [Modifier.SHIFT] }],
+    disabled: app =>
+      !app.chartManager.loadedSM ||
+      app.chartManager.smPath.startsWith("https://") ||
+      app.chartManager.smPath.startsWith("http://"),
+    callback: app => {
+      const handle = FileHandler.getStandardHandler()
+      if (!handle) return
+      const packFolder = handle.resolvePath(
+        dirname(app.chartManager.smPath),
+        ".."
+      )
+      async function run() {
+        const folders = await handle!.getDirectoryFolders(packFolder)
+        folders.sort((a, b) => {
+          return a.name.localeCompare(b.name)
+        })
+        let idx = folders.findIndex(
+          a => a.name == basename(dirname(app.chartManager.smPath))
+        )
+
+        if (idx == -1) {
+          WaterfallManager.createFormatted(
+            "An error occured while finding the song pack!",
+            "error"
+          )
+          console.error(
+            `Couldn't find the current song idx in parent folder! Path: ${basename(dirname(app.chartManager.smPath))}, Folders`,
+            folders
+          )
+          return
+        }
+        idx++
+        while (idx < folders.length) {
+          const folder = folders[idx]
+          const files = await handle!.getDirectoryFiles(folder)
+          const candidate =
+            files.find(f => f.name.endsWith(".ssc")) ??
+            files.find(f => f.name.endsWith(".sm"))
+          if (candidate) {
+            const path = handle!.resolvePath(
+              packFolder,
+              folder.name,
+              candidate.name
+            )
+            WaterfallManager.create(`Loading ${folder.name}/${candidate.name}`)
+            app.chartManager.loadSM(path)
+            return
+          }
+          idx++
+        }
+        WaterfallManager.create("No next song in pack")
+      }
+      try {
+        run()
+      } catch (err) {
+        WaterfallManager.createFormatted("No songs found!", "error")
+        console.error(err)
+      }
+    },
   },
   openChart: {
     label: "Chart list",
@@ -1319,6 +1448,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       const curIndex = charts.indexOf(app.chartManager.loadedChart)
       if (charts[curIndex - 1]) {
         app.chartManager.loadChart(charts[curIndex - 1])
+      } else {
+        WaterfallManager.create("No previous chart")
       }
     },
   },
@@ -1336,6 +1467,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       const curIndex = charts.indexOf(app.chartManager.loadedChart)
       if (charts[curIndex + 1]) {
         app.chartManager.loadChart(charts[curIndex + 1])
+      } else {
+        WaterfallManager.create("No next chart")
       }
     },
   },
