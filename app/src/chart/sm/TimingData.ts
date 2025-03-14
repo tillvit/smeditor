@@ -10,7 +10,6 @@ import {
   BeatTimingCache,
   BeatTimingEvent,
   Cached,
-  ColumnType,
   ComboTimingEvent,
   DelayTimingEvent,
   DeletableEvent,
@@ -26,6 +25,7 @@ import {
   TimeSignatureTimingEvent,
   TimingCache,
   TimingColumn,
+  ColumnType as TimingColumnType,
   TimingEvent,
   TimingEventType,
   TimingType,
@@ -663,7 +663,7 @@ export abstract class TimingData {
     return removedEvents
   }
 
-  private getColumnType(type: TimingEventType): ColumnType {
+  static getColumnType(type: TimingEventType): TimingColumnType {
     switch (type) {
       case "BPMS":
       case "LABELS":
@@ -687,7 +687,7 @@ export abstract class TimingData {
   protected findConflictingEvents(type: TimingEventType): TimingEvent[] {
     const column = this.columns[type]
     if (!column) return []
-    switch (this.getColumnType(column.type)) {
+    switch (TimingData.getColumnType(column.type)) {
       case "continuing": {
         const conflicts = []
 
@@ -1009,7 +1009,7 @@ export abstract class TimingData {
     const column = this.getColumn(type)
     const event = column.events[bsearch(column.events, beat, a => a.beat)]
     if (!event) {
-      switch (this.getColumnType(column.type)) {
+      switch (TimingData.getColumnType(column.type)) {
         case "continuing":
           if (useDefault)
             return this.getDefaultEvent(column.type, 0) as Cached<

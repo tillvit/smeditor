@@ -19,6 +19,7 @@ import { Options } from "../../../util/Options"
 import { isRightClick } from "../../../util/Util"
 import { EditMode, EditTimingMode } from "../../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
+import { TIMING_DATA_DISPLAY_PRECISION } from "../../sm/TimingData"
 import { Cached, TimingEvent, TimingEventType } from "../../sm/TimingTypes"
 import { TIMING_EVENT_COLORS } from "./TimingAreaContainer"
 
@@ -801,10 +802,13 @@ export class TimingTrackContainer
       case "TICKCOUNTS":
       case "FAKES":
       case "SCROLLS":
-        label = roundDigit(event.value, 3).toString()
+        label = roundDigit(
+          event.value,
+          TIMING_DATA_DISPLAY_PRECISION
+        ).toString()
         break
       case "SPEEDS":
-        label = `${roundDigit(event.value, 3)}/${roundDigit(event.delay, 3)}/${
+        label = `${roundDigit(event.value, TIMING_DATA_DISPLAY_PRECISION)}/${roundDigit(event.delay, TIMING_DATA_DISPLAY_PRECISION)}/${
           event.unit
         }`
         break
@@ -812,10 +816,10 @@ export class TimingTrackContainer
         label = event.value
         break
       case "TIMESIGNATURES":
-        label = `${roundDigit(event.upper, 3)}/${roundDigit(event.lower, 3)}`
+        label = `${roundDigit(event.upper, TIMING_DATA_DISPLAY_PRECISION)}/${roundDigit(event.lower, TIMING_DATA_DISPLAY_PRECISION)}`
         break
       case "COMBOS":
-        label = `${roundDigit(event.hitMult, 3)}/${roundDigit(
+        label = `${roundDigit(event.hitMult, TIMING_DATA_DISPLAY_PRECISION)}/${roundDigit(
           event.missMult,
           3
         )}`

@@ -219,26 +219,23 @@ export class UserOptionsWindow extends Window {
           const serializer =
             option.input.transformers?.serialize ?? ((value: number) => value)
           const callback = option.input.onChange
-          const spinner = NumberSpinner.create(
-            serializer(optionValue as number),
-            option.input.step,
-            option.input.precision,
-            option.input.min,
-            option.input.max
-          )
-          spinner.onChange = value => {
-            if (!value) {
-              spinner.setValue(serializer(value as number))
-              return
-            }
-            Options.applyOption([option.id, deserializer(value)])
-            revert.style.display =
-              Options.getDefaultOption(option.id) ===
-              Options.getOption(option.id)
-                ? "none"
-                : "block"
-            callback?.(this.app, deserializer(value))
-          }
+          const spinner = NumberSpinner.create({
+            value: serializer(optionValue as number),
+            ...option.input,
+            onchange: value => {
+              if (!value) {
+                spinner.value = serializer(value as number)
+                return
+              }
+              Options.applyOption([option.id, deserializer(value)])
+              revert.style.display =
+                Options.getDefaultOption(option.id) ===
+                Options.getOption(option.id)
+                  ? "none"
+                  : "block"
+              callback?.(this.app, deserializer(value))
+            },
+          })
           input = spinner.view
           break
         }

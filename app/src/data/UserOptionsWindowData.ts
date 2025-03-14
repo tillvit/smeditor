@@ -66,6 +66,7 @@ interface UserOptionNumberInput {
   type: "number"
   step: number
   precision?: number
+  minPrecision?: number
   min?: number
   max?: number
   transformers?: {
@@ -125,6 +126,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               type: "number",
               step: 50,
               min: 300,
+              precision: 0,
               onChange: (_, value) => {
                 const win = nw.Window.get()
                 if (!win.isFullscreen) {
@@ -141,6 +143,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               type: "number",
               step: 50,
               min: 300,
+              precision: 0,
               onChange: (_, value) => {
                 const win = nw.Window.get()
                 if (!win.isFullscreen) {

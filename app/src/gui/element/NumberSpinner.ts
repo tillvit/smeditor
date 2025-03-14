@@ -3,26 +3,34 @@ import { Options } from "../../util/Options"
 import { parseString } from "../../util/Util"
 import { Icons } from "../Icons"
 
-export class NumberSpinner {
-  view: HTMLDivElement
-  input: HTMLInputElement
-  onChange?: (value: number | undefined) => void
-  min = -Number.MAX_VALUE
-  max = Number.MAX_VALUE
-  precision?: number
-  step? = 1
-  lastVal = ""
+interface NumberSpinnerOptions {
+  value: number
+  step: number | null
+  precision: number
+  minPrecision: number | null
+  min: number
+  max: number
+  onchange?: (value: number | undefined) => void
+}
 
-  constructor(
-    view: HTMLDivElement,
-    value: number,
-    step?: number,
-    precision?: number,
-    min?: number,
-    max?: number
-  ) {
+export class NumberSpinner {
+  readonly view: HTMLDivElement
+  readonly input: HTMLInputElement
+  private options: NumberSpinnerOptions
+  private lastVal = ""
+
+  constructor(view: HTMLDivElement, options: Partial<NumberSpinnerOptions>) {
     this.view = view
     this.view.classList.add("spinner")
+    this.options = {
+      value: 0,
+      precision: 3,
+      step: null,
+      minPrecision: null,
+      min: -Number.MAX_VALUE,
+      max: Number.MAX_VALUE,
+      ...options,
+    }
 
     this.view.onfocus = () => {
       input.focus()
@@ -36,7 +44,7 @@ export class NumberSpinner {
     input.onblur = () => {
       if (input.value === this.lastVal) return
       if (input.value === "") {
-        this.onChange?.(undefined)
+        this.options.onchange?.(undefined)
         return
       }
       const val = parseString(input.value)
@@ -44,10 +52,12 @@ export class NumberSpinner {
         input.value = this.lastVal
         return
       }
-      let value = roundDigit(val, this.precision ?? 3)
-      value = clamp(value, this.min, this.max)
+      const value = roundDigit(
+        clamp(val, this.options.min, this.options.max),
+        this.options.precision
+      )
       input.value = this.formatValue(value)
-      this.onChange?.(value)
+      this.options.onchange?.(value)
     }
     input.onkeydown = ev => {
       if (ev.key == "Enter") input.blur()
@@ -60,11 +70,7 @@ export class NumberSpinner {
       this.lastVal = input.value
     }
     this.input = input
-    this.min = min ?? this.min
-    this.max = max ?? this.max
-    this.step = step
-    this.precision = precision
-    this.setValue(value)
+    this.value = this.options.value
     view.appendChild(input)
 
     const spinner = document.createElement("div")
@@ -76,14 +82,17 @@ export class NumberSpinner {
     upButton.appendChild(Icons.getIcon("CHEVRON", 10))
     upButton.tabIndex = -1
     upButton.onclick = e => {
-      let changeStep = step ?? Options.general.spinnerStep
+      let changeStep = this.options.step ?? Options.general.spinnerStep
       if (e.getModifierState("Shift")) {
         changeStep /= 10
       }
-      if (max !== undefined && parseFloat(input.value) + changeStep > max)
+      if (parseFloat(input.value) + changeStep > this.options.max) {
+        input.value = this.formatValue(this.options.max)
+        this.options.onchange?.(this.options.max)
         return
+      }
       input.value = this.formatValue(parseFloat(input.value) + changeStep)
-      this.onChange?.(parseFloat(input.value))
+      this.options.onchange?.(parseFloat(input.value))
     }
     spinner.appendChild(upButton)
 
@@ -92,46 +101,110 @@ export class NumberSpinner {
     downButton.appendChild(Icons.getIcon("CHEVRON", 10))
     downButton.tabIndex = -1
     downButton.onclick = e => {
-      let changeStep = step ?? Options.general.spinnerStep
+      let changeStep = this.options.step ?? Options.general.spinnerStep
       if (e.getModifierState("Shift")) {
         changeStep /= 10
       }
-      if (min !== undefined && parseFloat(input.value) - changeStep < min)
+      if (parseFloat(input.value) - changeStep < this.options.min) {
+        input.value = this.formatValue(this.options.min)
+        this.options.onchange?.(this.options.min)
         return
+      }
       input.value = this.formatValue(parseFloat(input.value) - changeStep)
-      this.onChange?.(parseFloat(input.value))
+      this.options.onchange?.(parseFloat(input.value))
     }
     spinner.appendChild(downButton)
+  }
+
+  static create(options: Partial<NumberSpinnerOptions>) {
+    return new NumberSpinner(document.createElement("div"), options)
+  }
+
+  private formatValue(value: number) {
+    const decimalLength = value.toString().split(".")[1]?.length ?? 0
+    if (
+      this.options.minPrecision !== null &&
+      this.options.minPrecision >= decimalLength
+    ) {
+      return roundDigit(value, this.options.minPrecision).toFixed(
+        this.options.minPrecision
+      )
+    }
+    if (
+      this.options.minPrecision !== null &&
+      this.options.precision >= decimalLength
+    ) {
+      return value.toString()
+    }
+    return roundDigit(value, this.options.precision).toFixed(
+      this.options.precision
+    )
   }
 
   get value(): number {
     return parseFloat(this.input.value)
   }
 
-  static create(
-    value: number,
-    step?: number,
-    precision?: number,
-    min?: number,
-    max?: number
-  ) {
-    return new NumberSpinner(
-      document.createElement("div"),
-      value,
-      step,
-      precision,
-      min,
-      max
+  set value(value: number) {
+    if (
+      parseFloat(this.input.value) != roundDigit(value, this.options.precision)
     )
-  }
-
-  setValue(value: number) {
-    if (parseFloat(this.input.value) != roundDigit(value, this.precision ?? 3))
       this.input.value = this.formatValue(value)
   }
 
-  private formatValue(value: number) {
-    if (this.precision === undefined) return roundDigit(value, 3).toString()
-    return roundDigit(value, this.precision).toFixed(this.precision)
+  get step(): number | null {
+    return this.options.step
+  }
+
+  set step(value: number | null) {
+    this.options.step = value
+  }
+
+  get min(): number {
+    return this.options.min
+  }
+
+  set min(value: number) {
+    this.options.min = value
+  }
+
+  get max(): number {
+    return this.options.max
+  }
+
+  set max(value: number) {
+    this.options.max = value
+  }
+
+  get precision(): number {
+    return this.options.precision
+  }
+
+  set precision(value: number) {
+    this.options.precision = value
+  }
+
+  get minPrecision(): number | null {
+    return this.options.minPrecision
+  }
+
+  set minPrecision(value: number | null) {
+    this.options.minPrecision = value
+  }
+
+  get onchange(): ((value: number | undefined) => void) | undefined {
+    return this.options.onchange
+  }
+
+  set onchange(value: ((value: number | undefined) => void) | undefined) {
+    this.options.onchange = value
+  }
+
+  get disabled(): boolean {
+    return this.input.disabled
+  }
+
+  set disabled(value: boolean) {
+    this.input.disabled = value
   }
 }

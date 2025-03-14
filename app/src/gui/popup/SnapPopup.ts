@@ -31,14 +31,14 @@ export class SnapPopup extends Popup {
     divRow.classList.add("popup-row")
     const divRowLeft = document.createElement("div")
     divRowLeft.innerText = "Snap to nearest "
-    const divRowInput = NumberSpinner.create(
-      Options.chart.snap == 0 ? 0 : Math.round(4 / Options.chart.snap),
-      1,
-      0,
-      0,
-      1000
-    )
-    divRowInput.onChange = value => {
+    const divRowInput = NumberSpinner.create({
+      value: Options.chart.snap == 0 ? 0 : Math.round(4 / Options.chart.snap),
+      step: 1,
+      precision: 0,
+      min: 0,
+      max: 1000,
+    })
+    divRowInput.onchange = value => {
       if (value === undefined) {
         this.updateValues()
         return
@@ -55,8 +55,13 @@ export class SnapPopup extends Popup {
     beatRow.classList.add("popup-row")
     const beatRowLeft = document.createElement("div")
     beatRowLeft.innerText = "Snap every"
-    const beatRowInput = NumberSpinner.create(Options.chart.snap, 0.001, 3, 0)
-    beatRowInput.onChange = value => {
+    const beatRowInput = NumberSpinner.create({
+      value: Options.chart.snap,
+      step: 0.001,
+      precision: 3,
+      min: 0,
+    })
+    beatRowInput.onchange = value => {
       if (value === undefined) {
         this.updateValues()
         return
@@ -82,12 +87,11 @@ export class SnapPopup extends Popup {
       document.activeElement == this.beatInput.input
     )
       return
-    this.divInput.setValue(
+    this.divInput.value =
       Options.chart.snap == 0 ? 0 : Math.round(4 / Options.chart.snap)
-    )
     this.divLabel.innerText = this.suffixSnap() + " note"
 
-    this.beatInput.setValue(Options.chart.snap)
+    this.beatInput.value = Options.chart.snap
   }
 
   private static suffixSnap() {
