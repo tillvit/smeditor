@@ -431,6 +431,7 @@ export class SyncWindow extends Window {
     // Fill with empty rows
     for (let i = 0; i < 5; i++) {
       const row = document.createElement("tr")
+      row.classList.add("empty")
       const a = document.createElement("td")
       a.innerText = "-"
       const b = document.createElement("td")
@@ -438,9 +439,40 @@ export class SyncWindow extends Window {
       row.replaceChildren(a, b)
       offsetTable.appendChild(row)
       this.offsetRows.push(row)
-      const clonedRow = row.cloneNode(true) as HTMLDivElement
-      bpmTable.appendChild(clonedRow)
-      this.bpmRows.push(clonedRow)
+      const bpmRow = row.cloneNode(true) as HTMLDivElement
+      bpmTable.appendChild(bpmRow)
+      this.bpmRows.push(bpmRow)
+
+      // Register clicks
+      row.onclick = () => {
+        let offset
+        try {
+          offset = parseFloat(a.innerText)
+        } catch (e) {
+          // empty row
+          return
+        }
+        const timingData = this.app.chartManager.loadedChart!.timingData
+        if (timingData.hasChartOffset()) {
+          timingData.setOffset(offset)
+        } else {
+          timingData.songTimingData.setOffset(offset)
+        }
+      }
+      bpmRow.onclick = () => {
+        let bpm
+        try {
+          bpm = parseFloat(
+            (bpmRow.firstElementChild! as HTMLDivElement).innerText
+          )
+        } catch (e) {
+          // empty row
+          return
+        }
+        const timingData = this.app.chartManager.loadedChart!.timingData
+        const beat = Math.round(this.app.chartManager.beat * 48) / 48
+        timingData.insertMulti([{ type: "BPMS", beat, value: bpm }])
+      }
     }
 
     bpmDetectionColumn.replaceChildren(bpmLabel, bpmTable)
@@ -600,10 +632,12 @@ export class SyncWindow extends Window {
     this.offsetRows.forEach(row => {
       ;(row.firstChild! as HTMLDivElement).innerText = "-"
       ;(row.lastChild! as HTMLDivElement).innerText = "-"
+      row.classList.add("empty")
     })
     this.bpmRows.forEach(row => {
       ;(row.firstChild! as HTMLDivElement).innerText = "-"
       ;(row.lastChild! as HTMLDivElement).innerText = "-"
+      row.classList.add("empty")
     })
   }
 
@@ -875,6 +909,7 @@ export class SyncWindow extends Window {
             const row = this.bpmRows[i]
             const bpm = aggregateTempos[i]?.bpm
             const confidence = aggregateTempos[i]?.weight
+            row.classList.toggle("empty", bpm === undefined)
             ;(row.firstChild as HTMLDivElement).innerText =
               bpm === undefined ? "-" : Math.round(bpm).toString()
             ;(row.lastChild as HTMLDivElement).innerText =
@@ -1156,6 +1191,7 @@ export class SyncWindow extends Window {
 
     for (let i = 0; i < Math.min(options.length, 5); i++) {
       const row = this.offsetRows[i]
+      row.classList.remove("empty")
       ;(row.firstChild as HTMLDivElement).innerText = roundDigit(
         options[i].offset,
         3

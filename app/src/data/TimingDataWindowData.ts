@@ -43,12 +43,12 @@ function createSimpleData(
         min: type == "WARPS" ? 0 : -Number.MAX_VALUE,
         onchange: value => {
           const timingData = app.chartManager.loadedChart!.timingData
+          const beat = Math.round(app.chartManager.beat * 48) / 48
           if (value == undefined) {
-            const beat = app.chartManager.beat
             timingData.deleteMulti([{ type: type, beat }])
             return
           }
-          timingData.insertMulti([{ type, beat: app.chartManager.beat, value }])
+          timingData.insertMulti([{ type, beat, value }])
         },
       })
       this.data = [input]
@@ -129,8 +129,8 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           min: 1,
           onchange: value => {
             const timingData = app.chartManager.loadedChart!.timingData
+            const beat = Math.round(app.chartManager.beat * 48) / 48
             if (value == undefined) {
-              const beat = app.chartManager.beat
               timingData.deleteMulti([{ type: "TIMESIGNATURES", beat }])
               return
             }
@@ -138,7 +138,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             timingData.insertMulti([
               {
                 type: "TIMESIGNATURES",
-                beat: app.chartManager.beat,
+                beat,
                 upper: value,
                 lower: lowerInput.value,
               },
@@ -152,8 +152,8 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           min: 1,
           onchange: value => {
             const timingData = app.chartManager.loadedChart!.timingData
+            const beat = Math.round(app.chartManager.beat * 48) / 48
             if (value == undefined) {
-              const beat = app.chartManager.beat
               timingData.deleteMulti([{ type: "TIMESIGNATURES", beat }])
               return
             }
@@ -161,7 +161,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             timingData.insertMulti([
               {
                 type: "TIMESIGNATURES",
-                beat: app.chartManager.beat,
+                beat,
                 upper: upperInput.value,
                 lower: value,
               },
@@ -197,15 +197,13 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           min: 0,
           onchange: value => {
             const timingData = app.chartManager.loadedChart!.timingData
+            const beat = Math.round(app.chartManager.beat * 48) / 48
             if (value == undefined) {
-              const beat = app.chartManager.beat
               timingData.deleteMulti([{ type: "TICKCOUNTS", beat }])
               return
             }
             if (value < 0) return
-            timingData.insertMulti([
-              { type: "TICKCOUNTS", beat: app.chartManager.beat, value },
-            ])
+            timingData.insertMulti([{ type: "TICKCOUNTS", beat, value }])
           },
         })
         this.data = [input]
@@ -232,8 +230,8 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           min: 0,
           onchange: value => {
             const timingData = app.chartManager.loadedChart!.timingData
+            const beat = Math.round(app.chartManager.beat * 48) / 48
             if (value == undefined) {
-              const beat = app.chartManager.beat
               timingData.deleteMulti([{ type: "COMBOS", beat }])
               return
             }
@@ -241,7 +239,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             timingData.insertMulti([
               {
                 type: "COMBOS",
-                beat: app.chartManager.beat,
+                beat: beat,
                 hitMult: value,
                 missMult: lowerInput.value,
               },
@@ -255,8 +253,8 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           min: 0,
           onchange: value => {
             const timingData = app.chartManager.loadedChart!.timingData
+            const beat = Math.round(app.chartManager.beat * 48) / 48
             if (value == undefined) {
-              const beat = app.chartManager.beat
               lowerInput.value =
                 app.chartManager.loadedChart?.timingData.getEventAtBeat(
                   "COMBOS",
@@ -268,7 +266,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
             timingData.insertMulti([
               {
                 type: "COMBOS",
-                beat: app.chartManager.beat,
+                beat,
                 hitMult: upperInput.value,
                 missMult: value,
               },
@@ -304,10 +302,11 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
 
         const update = () => {
           const timingData = app.chartManager.loadedChart!.timingData
+          const beat = Math.round(app.chartManager.beat * 48) / 48
           timingData.insertMulti([
             {
               type: "SPEEDS",
-              beat: app.chartManager.beat,
+              beat,
               value: valueInput.value,
               delay: delayInput.value,
               unit: unitDropdown.value == "Beats" ? "B" : "T",
@@ -321,8 +320,8 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           step: 0.1,
           onchange: value => {
             const timingData = app.chartManager.loadedChart!.timingData
+            const beat = Math.round(app.chartManager.beat * 48) / 48
             if (value == undefined) {
-              const beat = app.chartManager.beat
               timingData.deleteMulti([{ type: "SPEEDS", beat }])
               return
             }
@@ -397,15 +396,15 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         }
         input.onblur = () => {
           const timingData = app.chartManager.loadedChart!.timingData
+          const beat = Math.round(app.chartManager.beat * 48) / 48
           if (input.value == "") {
-            const beat = app.chartManager.beat
             timingData.deleteMulti([{ type: "LABELS", beat }])
             return
           }
           timingData.insertMulti([
             {
               type: "LABELS",
-              beat: app.chartManager.beat,
+              beat,
               value: input.value,
             },
           ])

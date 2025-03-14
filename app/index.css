@@ -2423,6 +2423,7 @@ input[type="color"] {
   flex: 1;
   text-align: center;
   border-radius: 5px;
+  cursor: pointer;
 }
 
 .sync-tab-option:hover {
@@ -2497,12 +2498,36 @@ input[type="color"] {
 .sync-table-label {
   text-align: center;
   font-weight: bold;
+  pointer-events: none;
 }
 
 .sync-table {
   width: 100%;
   table-layout: fixed;
   font-size: 13px;
+}
+
+.sync-table tr {
+  cursor: pointer;
+}
+
+.sync-table tr:first-child {
+  cursor: default;
+}
+.sync-table tr:first-child:hover {
+  background: none;
+}
+
+.sync-table tr.empty {
+  cursor: default;
+  background: none !important;
+}
+
+.sync-table tr:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.sync-table tr:nth-child(even):hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .sync-table th {
