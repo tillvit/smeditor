@@ -588,6 +588,28 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         ],
       },
       {
+        type: "dropdown",
+        title: "Timing",
+        options: [
+          {
+            type: "selection",
+            id: "convertSTOPS",
+          },
+          {
+            type: "selection",
+            id: "convertWARPS",
+          },
+          {
+            type: "selection",
+            id: "convertFAKES",
+          },
+          {
+            type: "selection",
+            id: "convertDELAYS",
+          },
+        ],
+      },
+      {
         type: "separator",
       },
       {

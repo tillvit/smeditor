@@ -20,7 +20,7 @@ import { TimingDataWindow } from "../gui/window/TimingDataWindow"
 import { UserOptionsWindow } from "../gui/window/UserOptionsWindow"
 import { ActionHistory } from "../util/ActionHistory"
 import { Flags } from "../util/Flags"
-import { roundDigit } from "../util/Math"
+import { maxArr, minArr, roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
 import { basename, dirname } from "../util/Path"
 import { bsearch, QUANT_NAMES, QUANT_NUM, QUANTS } from "../util/Util"
@@ -1345,8 +1345,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
             ? app.chartManager.selection.notes
             : app.chartManager.eventSelection.timingEvents
         const beats = selected.map(item => item.beat)
-        const startSec = chart.getSecondsFromBeat(Math.min(...beats))
-        const endSec = chart.getSecondsFromBeat(Math.max(...beats))
+        const startSec = chart.getSecondsFromBeat(minArr(beats))
+        const endSec = chart.getSecondsFromBeat(maxArr(beats))
         newStart = roundDigit(startSec, 3).toString()
         newLength = roundDigit(endSec - startSec, 3).toString()
       }
@@ -1381,7 +1381,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   noteTypeTap: {
     label: "Switch to Taps",
     combos: [],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.setEditingNoteType("Tap")
     },
@@ -1389,7 +1391,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   noteTypeLift: {
     label: "Switch to Lifts",
     combos: [],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.setEditingNoteType("Lift")
     },
@@ -1397,7 +1401,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   noteTypeMine: {
     label: "Switch to Mines",
     combos: [],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.setEditingNoteType("Mine")
     },
@@ -1405,7 +1411,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   noteTypeFake: {
     label: "Switch to Fakes",
     combos: [],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.setEditingNoteType("Fake")
     },
@@ -1475,7 +1483,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   toggleEditTiming: {
     label: "Toggle Edit Timing",
     combos: [{ key: "T", mods: [] }],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       if (app.chartManager.editTimingMode != EditTimingMode.Off) {
         app.chartManager.editTimingMode = EditTimingMode.Off
@@ -1487,7 +1497,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   toggleAddTiming: {
     label: "Toggle Add Timing",
     combos: [{ key: "T", mods: [Modifier.ALT] }],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       if (app.chartManager.editTimingMode != EditTimingMode.Add) {
         app.chartManager.editTimingMode = EditTimingMode.Add
@@ -1584,5 +1596,82 @@ for (let i = 0; i < QUANTS.length; i++) {
         })
       },
     }
+  }
+}
+
+for (const type of ["STOPS", "DELAYS"] as const) {
+  KEYBIND_DATA[`convert${type}`] = {
+    label: `Convert to ${type[0]}${type.slice(1).toLowerCase()}`,
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasRange(),
+    callback: app => {
+      const chart = app.chartManager.loadedChart!
+      let startBeat = 0
+      let length = 0
+
+      //Try using the region
+      if (
+        app.chartManager.startRegion !== undefined &&
+        app.chartManager.endRegion !== undefined
+      ) {
+        const startSec = chart.getSecondsFromBeat(app.chartManager.startRegion)
+        const endSec = chart.getSecondsFromBeat(app.chartManager.endRegion)
+        startBeat = app.chartManager.startRegion
+        length = endSec - startSec
+      } else {
+        //Use notes/events
+        const selected =
+          app.chartManager.selection.notes.length > 0
+            ? app.chartManager.selection.notes
+            : app.chartManager.eventSelection.timingEvents
+        const beats = selected.map(item => item.beat)
+        const startSec = chart.getSecondsFromBeat(minArr(beats))
+        const endSec = chart.getSecondsFromBeat(maxArr(beats))
+        startBeat = minArr(beats)
+        length = endSec - startSec
+      }
+      app.chartManager.loadedChart!.timingData.insertMulti([
+        { type, beat: startBeat, value: length },
+      ])
+    },
+  }
+}
+
+for (const type of ["WARPS", "FAKES"] as const) {
+  KEYBIND_DATA[`convert${type}`] = {
+    label: `Convert to ${type[0]}${type.slice(1).toLowerCase()}`,
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasRange(),
+    callback: app => {
+      let startBeat = 0
+      let length = 0
+
+      //Try using the region
+      if (
+        app.chartManager.startRegion !== undefined &&
+        app.chartManager.endRegion !== undefined
+      ) {
+        startBeat = app.chartManager.startRegion
+        length = app.chartManager.endRegion - app.chartManager.startRegion
+      } else {
+        //Use notes/events
+        const selected =
+          app.chartManager.selection.notes.length > 0
+            ? app.chartManager.selection.notes
+            : app.chartManager.eventSelection.timingEvents
+        const beats = selected.map(item => item.beat)
+        startBeat = minArr(beats)
+        length = maxArr(beats) - minArr(beats)
+      }
+      app.chartManager.loadedChart!.timingData.insertMulti([
+        { type, beat: startBeat, value: length },
+      ])
+    },
   }
 }

@@ -45,7 +45,7 @@ function createSimpleData(
           const timingData = app.chartManager.loadedChart!.timingData
           const beat = Math.round(app.chartManager.beat * 48) / 48
           if (value == undefined) {
-            timingData.deleteMulti([{ type: type, beat }])
+            timingData.deleteMulti([{ type, beat }])
             return
           }
           timingData.insertMulti([{ type, beat, value }])
