@@ -12,6 +12,12 @@ import {
 import { Simfile } from "./Simfile"
 import { TIMING_EVENT_NAMES, TimingEventType, TimingType } from "./TimingTypes"
 
+interface Stream {
+  start: number
+  end: number
+  beatSpacing: number | null
+}
+
 export class Chart {
   gameType: GameType = GameTypeRegistry.getPriority()[0]
   description = ""
@@ -31,6 +37,7 @@ export class Chart {
 
   private _notedataStats!: Record<string, number>
   private _npsGraph!: number[]
+  private _streams: Stream[] = []
 
   private _lastBeat = 0
   private _lastSecond = 0
@@ -298,6 +305,41 @@ export class Chart {
       this.notedata,
       this.timingData
     )
+    this._streams = []
+    let currentStream: Stream | null = null
+    for (const note of this.notedata) {
+      if (currentStream == null) {
+        currentStream = {
+          start: note.beat,
+          end: note.beat,
+          beatSpacing: null,
+        }
+        this._streams.push(currentStream)
+        continue
+      }
+      if (currentStream.beatSpacing == null) {
+        currentStream.beatSpacing = note.beat - currentStream.start
+        currentStream.end = note.beat
+      } else {
+        if (
+          Math.abs(
+            currentStream.beatSpacing - (note.beat - currentStream.end)
+          ) > 0.001
+        ) {
+          currentStream = {
+            start: note.beat,
+            end: note.beat,
+            beatSpacing: null,
+          }
+          this._streams.push(currentStream)
+        } else {
+          currentStream.end = note.beat
+        }
+      }
+    }
+    if (this._streams.at(-1) != currentStream && currentStream != null) {
+      this._streams.push(currentStream)
+    }
     this.recalculateLastNote()
   }
 
