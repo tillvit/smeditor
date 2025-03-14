@@ -289,7 +289,7 @@ export class TimingTrackContainer
       }
       TimingEventPopup.close()
       const newBeat = this.renderer.getBeatFromYPos(position.y)
-      const snap = Options.chart.snap == 0 ? 1 / 1000 : Options.chart.snap
+      const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
       let snapBeat = Math.round(newBeat / snap) * snap
       if (Math.abs(snapBeat - newBeat) > Math.abs(newBeat - timingEvent.beat)) {
         snapBeat = timingEvent.beat!
@@ -655,7 +655,7 @@ export class TimingTrackContainer
   }
 
   updateGhostEvent(pos: Point) {
-    const snap = Options.chart.snap == 0 ? 1 / 1000 : Options.chart.snap
+    const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
     const snapBeat =
       Math.round(this.renderer.getBeatFromYPos(pos.y) / snap) * snap
     const hasGhostPopup =

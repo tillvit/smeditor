@@ -1,5 +1,5 @@
 import { App } from "../App"
-import { TimingData } from "../chart/sm/TimingData"
+import { TIMING_DATA_PRECISION, TimingData } from "../chart/sm/TimingData"
 import { Dropdown } from "../gui/element/Dropdown"
 import { NumberSpinner } from "../gui/element/NumberSpinner"
 import { roundDigit } from "../util/Math"
@@ -19,6 +19,10 @@ const createElement = <T extends HTMLElement>(
   element: TimingDataWindowElement<T>
 ) => element
 
+const truncateValue = (value: number) => {
+  return roundDigit(value, TIMING_DATA_PRECISION).toFixed(TIMING_DATA_PRECISION)
+}
+
 export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   offset: {
     title: "Offset",
@@ -27,7 +31,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const input = NumberSpinner.create(
           0,
           Options.general.spinnerStep / 100,
-          3
+          TIMING_DATA_PRECISION
         )
         input.onChange = value => {
           const timingData = app.chartManager.loadedChart!.timingData
@@ -44,8 +48,8 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const input: HTMLInputElement = element.querySelector(".spinner-input")!
         if (document.activeElement == input) return
         const value = timingData.getOffset()
-        if (input.value != roundDigit(value, 3).toFixed(3)) {
-          input.value = roundDigit(value, 3).toFixed(3)
+        if (input.value != truncateValue(value)) {
+          input.value = truncateValue(value)
         }
       },
     }),
@@ -54,7 +58,11 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "BPM",
     element: createElement({
       create: app => {
-        const input = NumberSpinner.create(120, undefined, 3)
+        const input = NumberSpinner.create(
+          120,
+          undefined,
+          TIMING_DATA_PRECISION
+        )
         input.onChange = value => {
           const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined) {
@@ -72,8 +80,8 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const input: HTMLInputElement = element.querySelector(".spinner-input")!
         if (document.activeElement == input) return
         const value = timingData.getEventAtBeat("BPMS", beat)?.value ?? 120
-        if (input.value != roundDigit(value, 3).toFixed(3)) {
-          input.value = roundDigit(value, 3).toFixed(3)
+        if (input.value != truncateValue(value)) {
+          input.value = truncateValue(value)
         }
       },
     }),
@@ -82,7 +90,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "Stop",
     element: createElement({
       create: app => {
-        const input = NumberSpinner.create(0, undefined, 3)
+        const input = NumberSpinner.create(0, undefined, TIMING_DATA_PRECISION)
         input.onChange = value => {
           const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined || value == 0) {
@@ -102,8 +110,8 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const event = timingData.getEventAtBeat("STOPS", beat)
         let value = event?.value ?? 0
         if (beat != event?.beat) value = 0
-        if (input.value != roundDigit(value, 3).toFixed(3)) {
-          input.value = roundDigit(value, 3).toFixed(3)
+        if (input.value != truncateValue(value)) {
+          input.value = truncateValue(value)
         }
       },
     }),
@@ -112,7 +120,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "Delay",
     element: createElement({
       create: app => {
-        const input = NumberSpinner.create(0, undefined, 3)
+        const input = NumberSpinner.create(0, undefined, TIMING_DATA_PRECISION)
         input.onChange = value => {
           const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined || value == 0) {
@@ -132,8 +140,8 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const event = timingData.getEventAtBeat("DELAYS", beat)
         let value = event?.value ?? 0
         if (beat != event?.beat) value = 0
-        if (input.value != roundDigit(value, 3).toFixed(3)) {
-          input.value = roundDigit(value, 3).toFixed(3)
+        if (input.value != truncateValue(value)) {
+          truncateValue(value)
         }
       },
     }),
@@ -142,7 +150,12 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "Warp",
     element: createElement({
       create: app => {
-        const input = NumberSpinner.create(0, undefined, 3, 0)
+        const input = NumberSpinner.create(
+          0,
+          undefined,
+          TIMING_DATA_PRECISION,
+          0
+        )
         input.onChange = value => {
           const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined || value == 0) {
@@ -163,8 +176,8 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const event = timingData.getEventAtBeat("WARPS", beat)
         let value = event?.value ?? 0
         if (beat != event?.beat) value = 0
-        if (input.value != roundDigit(value, 3).toFixed(3)) {
-          input.value = roundDigit(value, 3).toFixed(3)
+        if (input.value != truncateValue(value)) {
+          input.value = truncateValue(value)
         }
       },
     }),
@@ -364,7 +377,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           ])
         }
 
-        const valueInput = NumberSpinner.create(1, 0.1, 0)
+        const valueInput = NumberSpinner.create(1, 0.1, TIMING_DATA_PRECISION)
         valueInput.onChange = value => {
           const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined) {
@@ -375,7 +388,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           update()
         }
 
-        const delayInput = NumberSpinner.create(1, 0.1, 0)
+        const delayInput = NumberSpinner.create(1, 0.1, TIMING_DATA_PRECISION)
         delayInput.onChange = value => {
           if (value == undefined || value < 0) return
           update()
@@ -401,15 +414,15 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const unit = event?.unit == "B" ? "Beat" : "Time"
         if (
           document.activeElement != valueInput &&
-          valueInput.value != roundDigit(value, 3).toFixed(3)
+          valueInput.value != truncateValue(value)
         ) {
-          valueInput.value = roundDigit(value, 3).toFixed(3)
+          valueInput.value = truncateValue(value)
         }
         if (
           document.activeElement != delayInput &&
-          delayInput.value != roundDigit(delay, 3).toFixed(3)
+          delayInput.value != truncateValue(delay)
         ) {
-          delayInput.value = roundDigit(delay, 3).toFixed(3)
+          delayInput.value = truncateValue(delay)
         }
         delayInput.disabled = event?.beat != beat
 
@@ -428,7 +441,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "Scroll",
     element: createElement({
       create: app => {
-        const input = NumberSpinner.create(1, undefined, 3)
+        const input = NumberSpinner.create(1, undefined, TIMING_DATA_PRECISION)
         input.onChange = value => {
           const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined) {
@@ -446,8 +459,8 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const input: HTMLInputElement = element.querySelector(".spinner-input")!
         if (document.activeElement == input) return
         const value = timingData.getEventAtBeat("SCROLLS", beat)?.value ?? 1
-        if (input.value != roundDigit(value, 3).toFixed(3)) {
-          input.value = roundDigit(value, 3).toFixed(3)
+        if (input.value != truncateValue(value)) {
+          input.value = truncateValue(value)
         }
       },
     }),
@@ -456,7 +469,12 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
     title: "Fake",
     element: createElement({
       create: app => {
-        const input = NumberSpinner.create(1, undefined, 3, 0)
+        const input = NumberSpinner.create(
+          1,
+          undefined,
+          TIMING_DATA_PRECISION,
+          0
+        )
         input.onChange = value => {
           const timingData = app.chartManager.loadedChart!.timingData
           if (value == undefined) {
@@ -477,8 +495,8 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const event = timingData.getEventAtBeat("FAKES", beat)
         let value = event?.value ?? 1
         if (beat != event?.beat) value = 0
-        if (input.value != roundDigit(value, 3).toFixed(3)) {
-          input.value = roundDigit(value, 3).toFixed(3)
+        if (input.value != truncateValue(value)) {
+          input.value = truncateValue(value)
         }
       },
     }),
