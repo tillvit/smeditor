@@ -288,8 +288,8 @@ function hookObject(object: any, copy: any, key = "") {
           return internalValue
         },
         set: function (value) {
-          EventHandler.emit("userOptionUpdated", id)
           internalValue = value
+          EventHandler.emit("userOptionUpdated", id)
         },
         enumerable: true,
       })
