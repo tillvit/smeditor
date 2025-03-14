@@ -2,6 +2,7 @@ import { App } from "../App"
 import { EditMode, EditTimingMode } from "../chart/ChartManager"
 import { isHoldNote } from "../chart/sm/NoteTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
+import { AboutWindow } from "../gui/window/AboutWindow"
 import { ChangelogWindow } from "../gui/window/ChangelogWindow"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
 import { EQWindow } from "../gui/window/EQWindow"
@@ -1506,6 +1507,14 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       } else {
         app.chartManager.editTimingMode = EditTimingMode.Edit
       }
+    },
+  },
+  about: {
+    label: "About",
+    combos: [],
+    disabled: false,
+    callback: app => {
+      app.windowManager.openWindow(new AboutWindow(app))
     },
   },
 }

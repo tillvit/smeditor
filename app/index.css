@@ -3230,3 +3230,23 @@ input[type="color"] {
 .split-timing-modify-row *:first-child {
   font-size: 13px;
 }
+
+.about-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: center;
+}
+
+.logo-container {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.logo-container img {
+  width: 50px;
+}
