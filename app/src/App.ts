@@ -70,7 +70,7 @@ interface AppVersion {
 }
 
 export class App {
-  VERSION = "1.1.1"
+  VERSION = "1.2.0"
 
   options = Options
   events = EventHandler
