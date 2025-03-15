@@ -117,4 +117,8 @@ export class URLFileHandler implements BaseFileHandler {
   getRelativePath(_: string, _2: string): string {
     throw Error("Cannot call getRelativePath from a URLFileHandler")
   }
+
+  resolvePath(): string {
+    throw Error("Cannot call resolvePath from a URLFileHandler")
+  }
 }

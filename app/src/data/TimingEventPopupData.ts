@@ -20,8 +20,9 @@ type PopupInput =
 
 interface PopupInputSpinner {
   type: "spinner"
-  step?: number
+  step?: number | null
   precision?: number
+  minPrecision?: number | null
   min?: number
   max?: number
 }
@@ -48,7 +49,6 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          precision: 3,
         },
       },
     ],
@@ -63,7 +63,6 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          precision: 3,
         },
       },
     ],
@@ -78,7 +77,6 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          precision: 3,
           min: 0,
         },
       },
@@ -94,7 +92,6 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          precision: 3,
         },
       },
     ],
@@ -108,7 +105,6 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          precision: 3,
         },
       },
     ],
@@ -125,6 +121,7 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
           type: "spinner",
           step: 1,
           precision: 0,
+          minPrecision: null,
           min: 0,
         },
       },
@@ -140,7 +137,6 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          precision: 3,
           min: 0,
         },
       },
@@ -169,7 +165,6 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          precision: 3,
         },
       },
       {
@@ -177,7 +172,6 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         key: "delay",
         input: {
           type: "spinner",
-          precision: 3,
           min: 0,
         },
       },
@@ -206,6 +200,7 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
           type: "spinner",
           step: 1,
           precision: 0,
+          minPrecision: null,
           min: 1,
         },
       },
@@ -216,6 +211,7 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
           type: "spinner",
           step: 1,
           precision: 0,
+          minPrecision: null,
           min: 1,
         },
       },
@@ -234,6 +230,7 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
           type: "spinner",
           step: 1,
           precision: 0,
+          minPrecision: null,
           min: 0,
         },
       },
@@ -244,6 +241,7 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
           type: "spinner",
           step: 1,
           precision: 0,
+          minPrecision: null,
           min: 0,
         },
       },
@@ -272,7 +270,6 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         key: "value",
         input: {
           type: "spinner",
-          precision: 3,
         },
       },
       {

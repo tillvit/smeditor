@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.2.0",
+    "date": 1742002339395,
+    "changelog": "## Changes\n - **Pump fixes**\n   - **Reworked hold logic in pump game modes**\n   - Added pump timing windows\n - **New Keybinds**\n   - Ctrl-Up/Down: Previous/next stream\n     - This replaces the previous keybind of changing scroll speed (rebound to Shift-Up/Down)\n   - Shift-F5/F6: Previous/next song in pack\n - Increase timing event value precision to 6 decimals (you can enter more than 3 decimals now)\n - Make timing events snap to a minimum of 192nds to match game behavior\n    - Previously you could place them at 1000ths, but this will not load in game correctly\n - Changing timing windows now save for all similar modes (dance, pump)\n - Sync Window offset/bpm results can be clicked to apply at the current beat\n - Add options to convert a selection to a timing event (\"Selection -> Timing\")\n - Added an about window to check your current version (\"Help -> About\")\n## Fixes \n - Fix receptor dragging while in reverse\n - Fix switching ease unit for SPEEDS in Edit Timing Data window not working\n - Fixed \"PageUp\"/\"PageDown\" displaying as \"Home\"/\"End\" on non-Mac systems in keybinds\n\n"
+  },
+  {
     "version": "1.1.1",
     "date": 1734389306256,
     "changelog": "## Fixes\n- Fixed files not saving on Safari (thanks safari)\n- Fixed timing data parsing when events appear out of order in the sm file\n- Fixed Song Properties file pickers not working correctly on desktop app"

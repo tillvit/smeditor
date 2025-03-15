@@ -10,7 +10,6 @@ import {
   BeatTimingCache,
   BeatTimingEvent,
   Cached,
-  ColumnType,
   ComboTimingEvent,
   DelayTimingEvent,
   DeletableEvent,
@@ -26,11 +25,15 @@ import {
   TimeSignatureTimingEvent,
   TimingCache,
   TimingColumn,
+  ColumnType as TimingColumnType,
   TimingEvent,
   TimingEventType,
   TimingType,
   WarpTimingEvent,
 } from "./TimingTypes"
+
+export const TIMING_DATA_PRECISION = 6
+export const TIMING_DATA_DISPLAY_PRECISION = 3
 
 export abstract class TimingData {
   protected readonly _cache: TimingCache = {
@@ -332,9 +335,9 @@ export abstract class TimingData {
     fileType: "sm" | "ssc",
     eventType: TimingEventType
   ): string {
-    const precision = 3
     let str = ""
-    const roundProp = (x: number) => roundDigit(x, precision).toFixed(precision)
+    const roundProp = (x: number) =>
+      roundDigit(x, TIMING_DATA_PRECISION).toFixed(TIMING_DATA_PRECISION)
     switch (eventType) {
       case "ATTACKS": {
         const events = this.columns[eventType]!.events
@@ -660,7 +663,7 @@ export abstract class TimingData {
     return removedEvents
   }
 
-  private getColumnType(type: TimingEventType): ColumnType {
+  static getColumnType(type: TimingEventType): TimingColumnType {
     switch (type) {
       case "BPMS":
       case "LABELS":
@@ -684,7 +687,7 @@ export abstract class TimingData {
   protected findConflictingEvents(type: TimingEventType): TimingEvent[] {
     const column = this.columns[type]
     if (!column) return []
-    switch (this.getColumnType(column.type)) {
+    switch (TimingData.getColumnType(column.type)) {
       case "continuing": {
         const conflicts = []
 
@@ -739,7 +742,7 @@ export abstract class TimingData {
             >(match => {
               return {
                 type,
-                beat: parseFloat(match[1]),
+                beat: Math.round(parseFloat(match[1]) * 48) / 48,
                 value: parseFloat(match[2]),
               }
             })
@@ -753,7 +756,7 @@ export abstract class TimingData {
             .map<TickCountTimingEvent>(match => {
               return {
                 type: "TICKCOUNTS",
-                beat: parseFloat(match[1]),
+                beat: Math.round(parseFloat(match[1]) * 48) / 48,
                 value: parseInt(match[2]),
               }
             })
@@ -770,13 +773,13 @@ export abstract class TimingData {
               if (match[1] === undefined) {
                 return {
                   type: "LABELS",
-                  beat: parseFloat(match[5]),
+                  beat: Math.round(parseFloat(match[5]) * 48) / 48,
                   value: match[6].trim(),
                 }
               }
               return {
                 type: "LABELS",
-                beat: parseFloat(match[2]),
+                beat: Math.round(parseFloat(match[2]) * 48) / 48,
                 value: match[3].trim(),
               }
             })
@@ -790,7 +793,7 @@ export abstract class TimingData {
             .map<SpeedTimingEvent>(match => {
               return {
                 type: "SPEEDS",
-                beat: parseFloat(match[1]),
+                beat: Math.round(parseFloat(match[1]) * 48) / 48,
                 value: parseFloat(match[2]),
                 delay: parseFloat(match[3]),
                 unit: match[4].trim() == "0" ? "B" : "T",
@@ -806,7 +809,7 @@ export abstract class TimingData {
             .map<TimeSignatureTimingEvent>(match => {
               return {
                 type: "TIMESIGNATURES",
-                beat: parseFloat(match[1]),
+                beat: Math.round(parseFloat(match[1]) * 48) / 48,
                 upper: parseInt(match[2]),
                 lower: parseInt(match[3]),
               }
@@ -821,7 +824,7 @@ export abstract class TimingData {
             .map<ComboTimingEvent>(match => {
               return {
                 type: "COMBOS",
-                beat: parseFloat(match[1]),
+                beat: Math.round(parseFloat(match[1]) * 48) / 48,
                 hitMult: parseInt(match[2]),
                 missMult: parseInt(match[3] ?? match[2]),
               }
@@ -838,7 +841,7 @@ export abstract class TimingData {
             .map<AttackTimingEvent>(match => {
               return {
                 type: "ATTACKS",
-                second: parseFloat(match[1]),
+                second: Math.round(parseFloat(match[1]) * 48) / 48,
                 endType: match[2].trim() as "END" | "LEN",
                 value: parseFloat(match[3]),
                 mods: match[4].trim(),
@@ -859,7 +862,7 @@ export abstract class TimingData {
             .map<BGChangeTimingEvent | FGChangeTimingEvent>(match => {
               return {
                 type,
-                beat: parseFloat(match[1]),
+                beat: Math.round(parseFloat(match[1]) * 48) / 48,
                 file: match[2].trim(),
                 updateRate: parseFloat(match[3]),
                 crossFade: match[4].trim() == "1",
@@ -1006,7 +1009,7 @@ export abstract class TimingData {
     const column = this.getColumn(type)
     const event = column.events[bsearch(column.events, beat, a => a.beat)]
     if (!event) {
-      switch (this.getColumnType(column.type)) {
+      switch (TimingData.getColumnType(column.type)) {
         case "continuing":
           if (useDefault)
             return this.getDefaultEvent(column.type, 0) as Cached<
@@ -1312,7 +1315,7 @@ export abstract class TimingData {
     option ||= ""
     if (!isFinite(beat)) return 0
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
-    const flooredBeat = Math.floor(beat * 1000) / 1000
+    const flooredBeat = Math.floor(beat * 48) / 48
     if (beat <= 0) {
       const curbpm = this._cache.beatTiming![0].bpm
       return -this.getOffset() + (beat * 60) / curbpm
@@ -1352,7 +1355,7 @@ export abstract class TimingData {
 
   isBeatWarped(beat: number): boolean {
     if (!isFinite(beat)) return false
-    const flooredBeat = Math.floor(beat * 1000) / 1000
+    const flooredBeat = Math.floor(beat * 48) / 48
     if (this._cache.warpedBeats.has(flooredBeat))
       return this._cache.warpedBeats.get(flooredBeat)!
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
@@ -1379,7 +1382,7 @@ export abstract class TimingData {
 
   isBeatFaked(beat: number): boolean {
     if (!isFinite(beat)) return false
-    const flooredBeat = Math.floor(beat * 1000) / 1000
+    const flooredBeat = Math.floor(beat * 48) / 48
     const fakes = this.getTimingData("FAKES")
     if (fakes == undefined) return false
     for (const event of fakes) {

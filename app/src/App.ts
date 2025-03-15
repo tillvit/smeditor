@@ -69,9 +69,9 @@ interface AppVersion {
   changelog: string[]
 }
 
-const VERSION = "1.1.1"
-
 export class App {
+  VERSION = "1.2.0"
+
   options = Options
   events = EventHandler
   themes = Themes
@@ -495,10 +495,10 @@ export class App {
     })
 
     const localVersion = localStorage.getItem("coreVersion")
-    if (localVersion !== null && semver.lt(localVersion, VERSION)) {
+    if (localVersion !== null && semver.lt(localVersion, this.VERSION)) {
       this.windowManager.openWindow(new ChangelogWindow(this))
     }
-    localStorage.setItem("coreVersion", VERSION)
+    localStorage.setItem("coreVersion", this.VERSION)
   }
 }
 

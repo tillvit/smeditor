@@ -9,6 +9,7 @@ export class TimingDataWindow extends Window {
   private lastBeat: number
   private readonly interval
   private changeHandler = () => this.setData()
+  private data: Record<string, { data: any[] }> = {}
 
   constructor(app: App) {
     super({
@@ -51,7 +52,10 @@ export class TimingDataWindow extends Window {
       label.classList.add("label")
       label.innerText = entry.title
 
-      const item = entry.element.create(this.app)
+      this.data[entry.title] = {
+        data: [],
+      }
+      const item = entry.element.create.bind(this.data[entry.title])(this.app)
 
       padding.appendChild(label)
       padding.appendChild(item)
@@ -62,10 +66,8 @@ export class TimingDataWindow extends Window {
 
   setData() {
     if (!this.app.chartManager.loadedChart) return
-    Object.values(TIMING_WINDOW_DATA).forEach((entry, index) => {
-      const item = this.viewElement.children[0].children[index * 2 + 1]
-      entry.element.update(
-        item,
+    Object.values(TIMING_WINDOW_DATA).forEach(entry => {
+      entry.element.update.bind(this.data[entry.title])(
         this.app.chartManager.loadedChart!.timingData,
         this.lastBeat
       )

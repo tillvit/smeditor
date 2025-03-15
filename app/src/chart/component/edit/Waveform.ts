@@ -274,7 +274,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
         return this.data.bpms[this.data.bpmIndex].value
       },
       getSecond(beat: number) {
-        const flooredBeat = Math.floor(beat * 1000) / 1000
+        const flooredBeat = Math.floor(beat * 48) / 48
         if (beat <= 0)
           return -this.data.offset + (beat * 60) / this.getBPM(beat)
         else if (

@@ -2,6 +2,7 @@ import { Assets, Rectangle, Texture } from "pixi.js"
 import { StandardTimingWindow } from "./StandardTimingWindow"
 
 import judgementITGUrl from "../../../assets/judgement/judgementITG.png"
+import judgementPumpUrl from "../../../assets/judgement/judgementPump.png"
 import judgementWaterfallUrl from "../../../assets/judgement/judgementWaterfall.png"
 
 export class JudgementTexture {
@@ -23,14 +24,21 @@ export class JudgementTexture {
     "w5",
     "miss",
   ])
+  static PUMP = new JudgementTexture(
+    judgementPumpUrl,
+    ["w0", "w3", "w4", "w5", "miss"],
+    false
+  )
 
   private texHeight = 0
   private texWidth = 0
   private texture?: Texture
   private judgeNames: string[] = []
+  private earlyLate: boolean
 
-  constructor(path: string, judgeNames: string[]) {
+  constructor(path: string, judgeNames: string[], earlyLate = true) {
     this.judgeNames = judgeNames
+    this.earlyLate = earlyLate
     this.loadTex(path)
   }
 
@@ -51,13 +59,22 @@ export class JudgementTexture {
     const tex_coord_y =
       (this.judgeNames.indexOf(judgment.id) * this.texHeight) /
       this.judgeNames.length
-    if (error >= 0) tex_coord_x += this.texWidth / 2
-    this.texture.frame = new Rectangle(
-      tex_coord_x,
-      tex_coord_y,
-      this.texWidth / 2,
-      this.texHeight / this.judgeNames.length
-    )
+    if (this.earlyLate) {
+      if (error >= 0) tex_coord_x += this.texWidth / 2
+      this.texture.frame = new Rectangle(
+        tex_coord_x,
+        tex_coord_y,
+        this.texWidth / 2,
+        this.texHeight / this.judgeNames.length
+      )
+    } else {
+      this.texture.frame = new Rectangle(
+        tex_coord_x,
+        tex_coord_y,
+        this.texWidth,
+        this.texHeight / this.judgeNames.length
+      )
+    }
     return this.texture
   }
 }

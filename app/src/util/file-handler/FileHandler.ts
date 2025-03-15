@@ -40,6 +40,8 @@ export interface BaseFileHandler {
   removeFile(path: FileSystemFileHandle | string): Promise<void>
 
   getRelativePath(from: string, to: string): string
+
+  resolvePath(...parts: string[]): string
 }
 
 export class FileHandler {

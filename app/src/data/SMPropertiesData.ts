@@ -151,7 +151,7 @@ export const SM_PROPERTIES_DATA: SMPropertyGroupData[] = [
           create: (_, sm, history) => {
             const updateValues = () => {
               if (toSpinner.value < fromSpinner.value) {
-                toSpinner.setValue(fromSpinner.value)
+                toSpinner.value = fromSpinner.value
               }
               const lastStart = sm.properties.SAMPLESTART ?? "0"
               const lastLength = sm.properties.SAMPLELENGTH ?? "10"
@@ -161,49 +161,42 @@ export const SM_PROPERTIES_DATA: SMPropertyGroupData[] = [
                 action: () => {
                   sm.properties.SAMPLESTART = newStart
                   sm.properties.SAMPLELENGTH = newLength
-                  fromSpinner.setValue(parseFloat(newStart))
-                  toSpinner.setValue(
-                    parseFloat(newStart) + parseFloat(newLength)
-                  )
+                  fromSpinner.value = parseFloat(newStart)
+                  toSpinner.value = parseFloat(newStart) + parseFloat(newLength)
                 },
                 undo: () => {
                   sm.properties.SAMPLESTART = lastStart
                   sm.properties.SAMPLELENGTH = lastLength
-                  fromSpinner.setValue(parseFloat(lastStart))
-                  toSpinner.setValue(
+                  fromSpinner.value = parseFloat(lastStart)
+                  toSpinner.value =
                     parseFloat(lastStart) + parseFloat(lastLength)
-                  )
                 },
               })
             }
-            const fromSpinner = NumberSpinner.create(
-              parseFloat(sm.properties.SAMPLESTART ?? "0"),
-              undefined,
-              3,
-              0
-            )
-            fromSpinner.onChange = value => {
+            const fromSpinner = NumberSpinner.create({
+              value: parseFloat(sm.properties.SAMPLESTART ?? "0"),
+              precision: 3,
+              min: 0,
+            })
+            fromSpinner.onchange = value => {
               if (value === undefined) {
-                fromSpinner.setValue(
-                  parseFloat(sm.properties.SAMPLESTART ?? "0")
-                )
+                fromSpinner.value = parseFloat(sm.properties.SAMPLESTART ?? "0")
                 return
               }
               updateValues()
             }
-            const toSpinner = NumberSpinner.create(
-              parseFloat(sm.properties.SAMPLESTART ?? "0") +
+            const toSpinner = NumberSpinner.create({
+              value:
+                parseFloat(sm.properties.SAMPLESTART ?? "0") +
                 parseFloat(sm.properties.SAMPLELENGTH ?? "10"),
-              undefined,
-              3,
-              0
-            )
-            toSpinner.onChange = value => {
+              precision: 3,
+              min: 0,
+            })
+            toSpinner.onchange = value => {
               if (value === undefined) {
-                toSpinner.setValue(
+                toSpinner.value =
                   parseFloat(sm.properties.SAMPLESTART ?? "0") +
-                    parseFloat(sm.properties.SAMPLELENGTH ?? "10")
-                )
+                  parseFloat(sm.properties.SAMPLELENGTH ?? "10")
                 return
               }
               updateValues()
@@ -258,16 +251,13 @@ export function createInputElement(
     }
     case "number": {
       const inputData = data.input
-      const spinner = NumberSpinner.create(
-        parseFloat(sm.properties[data.propName] ?? "15"),
-        inputData.step,
-        inputData.precision,
-        inputData.min,
-        inputData.max
-      )
-      spinner.onChange = value => {
+      const spinner = NumberSpinner.create({
+        value: parseFloat(sm.properties[data.propName] ?? "15"),
+        ...inputData,
+      })
+      spinner.onchange = value => {
         if (value === undefined) {
-          spinner.setValue(parseFloat(sm.properties[data.propName] ?? "0"))
+          spinner.value = parseFloat(sm.properties[data.propName] ?? "0")
           return
         }
         const lastValue = sm.properties[data.propName]
@@ -275,11 +265,11 @@ export function createInputElement(
         history.run({
           action: () => {
             sm.properties[data.propName] = newValue
-            spinner.setValue(parseFloat(newValue))
+            spinner.value = parseFloat(newValue)
           },
           undo: () => {
             sm.properties[data.propName] = lastValue
-            spinner.setValue(parseFloat(lastValue ?? "0"))
+            spinner.value = parseFloat(lastValue ?? "0")
           },
         })
       }

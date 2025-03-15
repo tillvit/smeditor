@@ -2,6 +2,7 @@ import { App } from "../App"
 import { EditMode, EditTimingMode } from "../chart/ChartManager"
 import { isHoldNote } from "../chart/sm/NoteTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
+import { AboutWindow } from "../gui/window/AboutWindow"
 import { ChangelogWindow } from "../gui/window/ChangelogWindow"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
 import { EQWindow } from "../gui/window/EQWindow"
@@ -20,9 +21,10 @@ import { TimingDataWindow } from "../gui/window/TimingDataWindow"
 import { UserOptionsWindow } from "../gui/window/UserOptionsWindow"
 import { ActionHistory } from "../util/ActionHistory"
 import { Flags } from "../util/Flags"
-import { roundDigit } from "../util/Math"
+import { maxArr, minArr, roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
-import { QUANT_NAMES, QUANT_NUM, QUANTS } from "../util/Util"
+import { basename, dirname } from "../util/Path"
+import { bsearch, QUANT_NAMES, QUANT_NUM, QUANTS } from "../util/Util"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 
@@ -81,8 +83,8 @@ export const SPECIAL_KEYS: { [key: string]: string } = {
 export const KEY_DISPLAY_OVERRIDES: { [key: string]: string } = {
   Home: IS_OSX ? "fn Left" : "Home",
   End: IS_OSX ? "fn Right" : "End",
-  PageUp: IS_OSX ? "fn Up" : "End",
-  PageDown: IS_OSX ? "fn Down" : "End",
+  PageUp: IS_OSX ? "fn Up" : "PageUp",
+  PageDown: IS_OSX ? "fn Down" : "PageDown",
 }
 
 export const MODPROPS: ["ctrlKey", "altKey", "shiftKey", "metaKey"] = [
@@ -150,7 +152,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   increaseScrollSpeed: {
     label: "Increase scroll speed",
-    combos: [{ key: "Up", mods: [DEF_MOD] }],
+    combos: [{ key: "Up", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartView,
     callback: () =>
       (Options.chart.speed = Math.max(
@@ -160,7 +162,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   decreaseScrollSpeed: {
     label: "Decrease scroll speed",
-    combos: [{ key: "Down", mods: [DEF_MOD] }],
+    combos: [{ key: "Down", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartView,
     callback: () =>
       (Options.chart.speed = Math.max(
@@ -269,6 +271,134 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.windowManager.openWindow(
         new ExportNotedataWindow(app, app.chartManager.selection.notes)
       ),
+  },
+  previousSong: {
+    label: "Previous song in pack",
+    combos: [{ key: "F5", mods: [Modifier.SHIFT] }],
+    disabled: app =>
+      !app.chartManager.loadedSM ||
+      app.chartManager.smPath.startsWith("https://") ||
+      app.chartManager.smPath.startsWith("http://"),
+    callback: app => {
+      const handle = FileHandler.getStandardHandler()
+      if (!handle) return
+      const packFolder = handle.resolvePath(
+        dirname(app.chartManager.smPath),
+        ".."
+      )
+      async function run() {
+        const folders = await handle!.getDirectoryFolders(packFolder)
+        folders.sort((a, b) => {
+          return a.name.localeCompare(b.name)
+        })
+        let idx = folders.findIndex(
+          a => a.name == basename(dirname(app.chartManager.smPath))
+        )
+
+        if (idx == -1) {
+          WaterfallManager.createFormatted(
+            "An error occured while finding the song pack!",
+            "error"
+          )
+          console.error(
+            `Couldn't find the current song idx in parent folder! Path: ${basename(dirname(app.chartManager.smPath))}, Folders`,
+            folders
+          )
+          return
+        }
+        idx--
+        while (idx >= 0) {
+          const folder = folders[idx]
+          console.log("Checking ", folder.name)
+          const files = await handle!.getDirectoryFiles(folder)
+          console.log(files)
+          const candidate =
+            files.find(f => f.name.endsWith(".ssc")) ??
+            files.find(f => f.name.endsWith(".sm"))
+          if (candidate) {
+            const path = handle!.resolvePath(
+              packFolder,
+              folder.name,
+              candidate.name
+            )
+            WaterfallManager.create(`Loading ${folder.name}/${candidate.name}`)
+            app.chartManager.loadSM(path)
+            return
+          }
+          idx--
+        }
+        WaterfallManager.create("No previous song in pack")
+      }
+      try {
+        run()
+      } catch (err) {
+        WaterfallManager.createFormatted("No songs found!", "error")
+        console.error(err)
+      }
+    },
+  },
+  nextSong: {
+    label: "Next song in pack",
+    combos: [{ key: "F6", mods: [Modifier.SHIFT] }],
+    disabled: app =>
+      !app.chartManager.loadedSM ||
+      app.chartManager.smPath.startsWith("https://") ||
+      app.chartManager.smPath.startsWith("http://"),
+    callback: app => {
+      const handle = FileHandler.getStandardHandler()
+      if (!handle) return
+      const packFolder = handle.resolvePath(
+        dirname(app.chartManager.smPath),
+        ".."
+      )
+      async function run() {
+        const folders = await handle!.getDirectoryFolders(packFolder)
+        folders.sort((a, b) => {
+          return a.name.localeCompare(b.name)
+        })
+        let idx = folders.findIndex(
+          a => a.name == basename(dirname(app.chartManager.smPath))
+        )
+
+        if (idx == -1) {
+          WaterfallManager.createFormatted(
+            "An error occured while finding the song pack!",
+            "error"
+          )
+          console.error(
+            `Couldn't find the current song idx in parent folder! Path: ${basename(dirname(app.chartManager.smPath))}, Folders`,
+            folders
+          )
+          return
+        }
+        idx++
+        while (idx < folders.length) {
+          const folder = folders[idx]
+          const files = await handle!.getDirectoryFiles(folder)
+          const candidate =
+            files.find(f => f.name.endsWith(".ssc")) ??
+            files.find(f => f.name.endsWith(".sm"))
+          if (candidate) {
+            const path = handle!.resolvePath(
+              packFolder,
+              folder.name,
+              candidate.name
+            )
+            WaterfallManager.create(`Loading ${folder.name}/${candidate.name}`)
+            app.chartManager.loadSM(path)
+            return
+          }
+          idx++
+        }
+        WaterfallManager.create("No next song in pack")
+      }
+      try {
+        run()
+      } catch (err) {
+        WaterfallManager.createFormatted("No songs found!", "error")
+        console.error(err)
+      }
+    },
   },
   openChart: {
     label: "Chart list",
@@ -408,6 +538,60 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       WaterfallManager.create(
         "Playback Rate: " + Math.round(Options.audio.rate) + "%"
       )
+    },
+  },
+  previousStream: {
+    label: "Previous stream",
+    combos: [{ key: "Up", mods: [DEF_MOD] }],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.Record,
+    callback: app => {
+      const streamPoints: number[] = []
+      for (const stream of app.chartManager.loadedChart!.getStreams()) {
+        if (streamPoints.at(-1) == stream.start) {
+          streamPoints.pop()
+        }
+        streamPoints.push(stream.start)
+        streamPoints.push(stream.end)
+      }
+      if (streamPoints.length == 0) return
+      const idx = bsearch(streamPoints, app.chartManager.beat)
+      if (Math.abs(app.chartManager.beat - streamPoints[idx]) < 0.001) {
+        if (idx - 1 >= 0) {
+          app.chartManager.beat = streamPoints[idx - 1]
+        } else {
+          app.chartManager.beat = streamPoints[0]
+        }
+      } else app.chartManager.beat = streamPoints[idx]
+    },
+  },
+  nextStream: {
+    label: "Next stream",
+    combos: [{ key: "Down", mods: [DEF_MOD] }],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.Record,
+    callback: app => {
+      const streamPoints: number[] = []
+      for (const stream of app.chartManager.loadedChart!.getStreams()) {
+        if (streamPoints.at(-1) == stream.start) {
+          streamPoints.pop()
+        }
+        streamPoints.push(stream.start)
+        streamPoints.push(stream.end)
+      }
+      if (streamPoints.length == 0) return
+      const idx = bsearch(streamPoints, app.chartManager.beat)
+      if (Math.abs(app.chartManager.beat - streamPoints[idx]) < 0.001) {
+        if (idx + 1 < streamPoints.length) {
+          app.chartManager.beat = streamPoints[idx + 1]
+        } else {
+          app.chartManager.beat = streamPoints[idx]
+        }
+      } else app.chartManager.beat = streamPoints[idx + 1]
     },
   },
   previousMeasure: {
@@ -1162,8 +1346,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
             ? app.chartManager.selection.notes
             : app.chartManager.eventSelection.timingEvents
         const beats = selected.map(item => item.beat)
-        const startSec = chart.getSecondsFromBeat(Math.min(...beats))
-        const endSec = chart.getSecondsFromBeat(Math.max(...beats))
+        const startSec = chart.getSecondsFromBeat(minArr(beats))
+        const endSec = chart.getSecondsFromBeat(maxArr(beats))
         newStart = roundDigit(startSec, 3).toString()
         newLength = roundDigit(endSec - startSec, 3).toString()
       }
@@ -1198,7 +1382,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   noteTypeTap: {
     label: "Switch to Taps",
     combos: [],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.setEditingNoteType("Tap")
     },
@@ -1206,7 +1392,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   noteTypeLift: {
     label: "Switch to Lifts",
     combos: [],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.setEditingNoteType("Lift")
     },
@@ -1214,7 +1402,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   noteTypeMine: {
     label: "Switch to Mines",
     combos: [],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.setEditingNoteType("Mine")
     },
@@ -1222,7 +1412,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   noteTypeFake: {
     label: "Switch to Fakes",
     combos: [],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.setEditingNoteType("Fake")
     },
@@ -1265,6 +1457,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       const curIndex = charts.indexOf(app.chartManager.loadedChart)
       if (charts[curIndex - 1]) {
         app.chartManager.loadChart(charts[curIndex - 1])
+      } else {
+        WaterfallManager.create("No previous chart")
       }
     },
   },
@@ -1282,13 +1476,17 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       const curIndex = charts.indexOf(app.chartManager.loadedChart)
       if (charts[curIndex + 1]) {
         app.chartManager.loadChart(charts[curIndex + 1])
+      } else {
+        WaterfallManager.create("No next chart")
       }
     },
   },
   toggleEditTiming: {
     label: "Toggle Edit Timing",
     combos: [{ key: "T", mods: [] }],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       if (app.chartManager.editTimingMode != EditTimingMode.Off) {
         app.chartManager.editTimingMode = EditTimingMode.Off
@@ -1300,13 +1498,23 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   toggleAddTiming: {
     label: "Toggle Add Timing",
     combos: [{ key: "T", mods: [Modifier.ALT] }],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       if (app.chartManager.editTimingMode != EditTimingMode.Add) {
         app.chartManager.editTimingMode = EditTimingMode.Add
       } else {
         app.chartManager.editTimingMode = EditTimingMode.Edit
       }
+    },
+  },
+  about: {
+    label: "About",
+    combos: [],
+    disabled: false,
+    callback: app => {
+      app.windowManager.openWindow(new AboutWindow(app))
     },
   },
 }
@@ -1397,5 +1605,82 @@ for (let i = 0; i < QUANTS.length; i++) {
         })
       },
     }
+  }
+}
+
+for (const type of ["STOPS", "DELAYS"] as const) {
+  KEYBIND_DATA[`convert${type}`] = {
+    label: `Convert to ${type[0]}${type.slice(1).toLowerCase()}`,
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasRange(),
+    callback: app => {
+      const chart = app.chartManager.loadedChart!
+      let startBeat = 0
+      let length = 0
+
+      //Try using the region
+      if (
+        app.chartManager.startRegion !== undefined &&
+        app.chartManager.endRegion !== undefined
+      ) {
+        const startSec = chart.getSecondsFromBeat(app.chartManager.startRegion)
+        const endSec = chart.getSecondsFromBeat(app.chartManager.endRegion)
+        startBeat = app.chartManager.startRegion
+        length = endSec - startSec
+      } else {
+        //Use notes/events
+        const selected =
+          app.chartManager.selection.notes.length > 0
+            ? app.chartManager.selection.notes
+            : app.chartManager.eventSelection.timingEvents
+        const beats = selected.map(item => item.beat)
+        const startSec = chart.getSecondsFromBeat(minArr(beats))
+        const endSec = chart.getSecondsFromBeat(maxArr(beats))
+        startBeat = minArr(beats)
+        length = endSec - startSec
+      }
+      app.chartManager.loadedChart!.timingData.insertMulti([
+        { type, beat: startBeat, value: length },
+      ])
+    },
+  }
+}
+
+for (const type of ["WARPS", "FAKES"] as const) {
+  KEYBIND_DATA[`convert${type}`] = {
+    label: `Convert to ${type[0]}${type.slice(1).toLowerCase()}`,
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasRange(),
+    callback: app => {
+      let startBeat = 0
+      let length = 0
+
+      //Try using the region
+      if (
+        app.chartManager.startRegion !== undefined &&
+        app.chartManager.endRegion !== undefined
+      ) {
+        startBeat = app.chartManager.startRegion
+        length = app.chartManager.endRegion - app.chartManager.startRegion
+      } else {
+        //Use notes/events
+        const selected =
+          app.chartManager.selection.notes.length > 0
+            ? app.chartManager.selection.notes
+            : app.chartManager.eventSelection.timingEvents
+        const beats = selected.map(item => item.beat)
+        startBeat = minArr(beats)
+        length = maxArr(beats) - minArr(beats)
+      }
+      app.chartManager.loadedChart!.timingData.insertMulti([
+        { type, beat: startBeat, value: length },
+      ])
+    },
   }
 }

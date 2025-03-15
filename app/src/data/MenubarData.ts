@@ -54,6 +54,17 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
       {
         type: "selection",
+        id: "previousSong",
+      },
+      {
+        type: "selection",
+        id: "nextSong",
+      },
+      {
+        type: "separator",
+      },
+      {
+        type: "selection",
         id: "save",
       },
       {
@@ -140,6 +151,17 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
           {
             type: "selection",
             id: "nextMeasure",
+          },
+          {
+            type: "separator",
+          },
+          {
+            type: "selection",
+            id: "previousStream",
+          },
+          {
+            type: "selection",
+            id: "nextStream",
           },
           {
             type: "separator",
@@ -566,6 +588,28 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         ],
       },
       {
+        type: "dropdown",
+        title: "Timing",
+        options: [
+          {
+            type: "selection",
+            id: "convertSTOPS",
+          },
+          {
+            type: "selection",
+            id: "convertWARPS",
+          },
+          {
+            type: "selection",
+            id: "convertFAKES",
+          },
+          {
+            type: "selection",
+            id: "convertDELAYS",
+          },
+        ],
+      },
+      {
         type: "separator",
       },
       {
@@ -730,6 +774,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
     type: "menu",
     title: "Help",
     options: [
+      {
+        type: "selection",
+        id: "about",
+      },
       {
         type: "selection",
         id: "openGuide",

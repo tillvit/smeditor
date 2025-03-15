@@ -36,13 +36,14 @@ export class ReceptorContainer extends Container {
         this.dragOptionsStart[0] + e.global.x - this.dragStart.x
       )
       Options.chart.receptorYPos = Math.round(
-        this.dragOptionsStart[1] + e.global.y - this.dragStart.y
+        this.dragOptionsStart[1] +
+          (e.global.y - this.dragStart.y) * (Options.chart.reverse ? -1 : 1)
       )
     }
 
     const releaseHandler = () => {
       this.notefield.renderer.off("pointermove", moveHandler)
-      this.notefield.renderer.off("pointerup", releaseHandler)
+      window.removeEventListener("pointerup", releaseHandler)
     }
 
     this.on("pointerdown", e => {
@@ -55,7 +56,7 @@ export class ReceptorContainer extends Container {
       e.stopImmediatePropagation()
 
       this.notefield.renderer.on("pointermove", moveHandler)
-      this.notefield.renderer.on("pointerup", releaseHandler)
+      window.addEventListener("pointerup", releaseHandler)
     })
 
     EventHandler.on("userOptionUpdated", this.optionUpdate)

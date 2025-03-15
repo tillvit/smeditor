@@ -1,362 +1,312 @@
 import { App } from "../App"
-import { TimingData } from "../chart/sm/TimingData"
+import {
+  TIMING_DATA_DISPLAY_PRECISION,
+  TIMING_DATA_PRECISION,
+  TimingData,
+} from "../chart/sm/TimingData"
 import { Dropdown } from "../gui/element/Dropdown"
 import { NumberSpinner } from "../gui/element/NumberSpinner"
-import { roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
 
-type TimingDataWindowElement<T extends HTMLElement> = {
-  create: (app: App) => T
-  update: (element: T, timingData: TimingData, beat: number) => void
+type TimingDataWindowInputs = {
+  data: any[]
+}
+
+type TimingDataWindowElement = {
+  create: (this: TimingDataWindowInputs, app: App) => HTMLElement
+  update: (
+    this: TimingDataWindowInputs,
+    timingData: TimingData,
+    beat: number
+  ) => void
 }
 
 type TimingDataWindowData = {
   title: string
-  element: TimingDataWindowElement<any>
+  element: TimingDataWindowElement
 }
 
-const createElement = <T extends HTMLElement>(
-  element: TimingDataWindowElement<T>
-) => element
+const precisionSettings = {
+  precision: TIMING_DATA_PRECISION,
+  minPrecision: TIMING_DATA_DISPLAY_PRECISION,
+  value: 0,
+}
+
+function createSimpleData(
+  type: "BPMS" | "STOPS" | "WARPS" | "DELAYS" | "SCROLLS" | "FAKES"
+) {
+  return {
+    create: function (app: App) {
+      const input = NumberSpinner.create({
+        ...precisionSettings,
+        value: 0,
+        min: type == "WARPS" ? 0 : -Number.MAX_VALUE,
+        onchange: value => {
+          const timingData = app.chartManager.loadedChart!.timingData
+          const beat = Math.round(app.chartManager.beat * 48) / 48
+          if (value == undefined) {
+            timingData.deleteMulti([{ type, beat }])
+            return
+          }
+          timingData.insertMulti([{ type, beat, value }])
+        },
+      })
+      this.data = [input]
+      return input.view
+    },
+    update: function (timingData: TimingData, beat: number) {
+      const spinner: NumberSpinner = this.data[0]
+      if (document.activeElement == spinner.input) return
+      spinner.value = timingData.getOffset()
+      const event = timingData.getEventAtBeat(type, beat)
+      let value = event?.value ?? 0
+      if (
+        TimingData.getColumnType(type) == "instant" &&
+        (!event || Math.abs(event.beat - beat) > 1 / 48)
+      ) {
+        value = 0
+      }
+      spinner.value = value
+    },
+  } satisfies TimingDataWindowElement
+}
 
 export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
   offset: {
     title: "Offset",
-    element: createElement({
-      create: app => {
-        const input = NumberSpinner.create(
-          0,
-          Options.general.spinnerStep / 100,
-          3
-        )
-        input.onChange = value => {
-          const timingData = app.chartManager.loadedChart!.timingData
-          if (value == undefined) return
-          if (timingData.hasChartOffset()) {
-            timingData.setOffset(value)
-          } else {
-            timingData.songTimingData.setOffset(value)
-          }
-        }
+    element: {
+      create: function (app: App) {
+        const input = NumberSpinner.create({
+          ...precisionSettings,
+          step: Options.general.spinnerStep / 100,
+          onchange: value => {
+            const timingData = app.chartManager.loadedChart!.timingData
+            if (value == undefined) return
+            if (timingData.hasChartOffset()) {
+              timingData.setOffset(value)
+            } else {
+              timingData.songTimingData.setOffset(value)
+            }
+          },
+        })
+        this.data.push(input)
         return input.view
       },
-      update: (element, timingData) => {
-        const input: HTMLInputElement = element.querySelector(".spinner-input")!
-        if (document.activeElement == input) return
-        const value = timingData.getOffset()
-        if (input.value != roundDigit(value, 3).toFixed(3)) {
-          input.value = roundDigit(value, 3).toFixed(3)
-        }
+      update: function (timingData: TimingData) {
+        const offsetSpinner: NumberSpinner = this.data[0]
+        if (document.activeElement == offsetSpinner.input) return
+        offsetSpinner.value = timingData.getOffset()
       },
-    }),
+    },
   },
   bpm: {
     title: "BPM",
-    element: createElement({
-      create: app => {
-        const input = NumberSpinner.create(120, undefined, 3)
-        input.onChange = value => {
-          const timingData = app.chartManager.loadedChart!.timingData
-          if (value == undefined) {
-            const beat = app.chartManager.beat
-            timingData.deleteMulti([{ type: "BPMS", beat }])
-            return
-          }
-          timingData.insertMulti([
-            { type: "BPMS", beat: app.chartManager.beat, value },
-          ])
-        }
-        return input.view
-      },
-      update: (element, timingData, beat) => {
-        const input: HTMLInputElement = element.querySelector(".spinner-input")!
-        if (document.activeElement == input) return
-        const value = timingData.getEventAtBeat("BPMS", beat)?.value ?? 120
-        if (input.value != roundDigit(value, 3).toFixed(3)) {
-          input.value = roundDigit(value, 3).toFixed(3)
-        }
-      },
-    }),
+    element: createSimpleData("BPMS"),
   },
   stop: {
     title: "Stop",
-    element: createElement({
-      create: app => {
-        const input = NumberSpinner.create(0, undefined, 3)
-        input.onChange = value => {
-          const timingData = app.chartManager.loadedChart!.timingData
-          if (value == undefined || value == 0) {
-            const beat = app.chartManager.beat
-            timingData.deleteMulti([{ type: "STOPS", beat }])
-            return
-          }
-          timingData.insertMulti([
-            { type: "STOPS", beat: app.chartManager.beat, value },
-          ])
-        }
-        return input.view
-      },
-      update: (element, timingData, beat) => {
-        const input: HTMLInputElement = element.querySelector(".spinner-input")!
-        if (document.activeElement == input) return
-        const event = timingData.getEventAtBeat("STOPS", beat)
-        let value = event?.value ?? 0
-        if (beat != event?.beat) value = 0
-        if (input.value != roundDigit(value, 3).toFixed(3)) {
-          input.value = roundDigit(value, 3).toFixed(3)
-        }
-      },
-    }),
+    element: createSimpleData("STOPS"),
   },
   delay: {
     title: "Delay",
-    element: createElement({
-      create: app => {
-        const input = NumberSpinner.create(0, undefined, 3)
-        input.onChange = value => {
-          const timingData = app.chartManager.loadedChart!.timingData
-          if (value == undefined || value == 0) {
-            const beat = app.chartManager.beat
-            timingData.deleteMulti([{ type: "DELAYS", beat }])
-            return
-          }
-          timingData.insertMulti([
-            { type: "DELAYS", beat: app.chartManager.beat, value },
-          ])
-        }
-        return input.view
-      },
-      update: (element, timingData, beat) => {
-        const input: HTMLInputElement = element.querySelector(".spinner-input")!
-        if (document.activeElement == input) return
-        const event = timingData.getEventAtBeat("DELAYS", beat)
-        let value = event?.value ?? 0
-        if (beat != event?.beat) value = 0
-        if (input.value != roundDigit(value, 3).toFixed(3)) {
-          input.value = roundDigit(value, 3).toFixed(3)
-        }
-      },
-    }),
+    element: createSimpleData("DELAYS"),
   },
   warp: {
     title: "Warp",
-    element: createElement({
-      create: app => {
-        const input = NumberSpinner.create(0, undefined, 3, 0)
-        input.onChange = value => {
-          const timingData = app.chartManager.loadedChart!.timingData
-          if (value == undefined || value == 0) {
-            const beat = app.chartManager.beat
-            timingData.deleteMulti([{ type: "WARPS", beat }])
-            return
-          }
-          if (value < 0) return
-          timingData.insertMulti([
-            { type: "WARPS", beat: app.chartManager.beat, value },
-          ])
-        }
-        return input.view
-      },
-      update: (element, timingData, beat) => {
-        const input: HTMLInputElement = element.querySelector(".spinner-input")!
-        if (document.activeElement == input) return
-        const event = timingData.getEventAtBeat("WARPS", beat)
-        let value = event?.value ?? 0
-        if (beat != event?.beat) value = 0
-        if (input.value != roundDigit(value, 3).toFixed(3)) {
-          input.value = roundDigit(value, 3).toFixed(3)
-        }
-      },
-    }),
+    element: createSimpleData("WARPS"),
   },
 
   timeSig: {
     title: "Time Sig.",
-    element: createElement({
-      create: app => {
+    element: {
+      create: function (app: App) {
         const container = document.createElement("div")
         container.classList.add("flex-column-gap")
-        const upperInput = NumberSpinner.create(4, 1, 0, 1)
-        upperInput.onChange = value => {
-          const timingData = app.chartManager.loadedChart!.timingData
-          if (value == undefined) {
-            const beat = app.chartManager.beat
-            timingData.deleteMulti([{ type: "TIMESIGNATURES", beat }])
-            return
-          }
-          if (value < 1) return
-          timingData.insertMulti([
-            {
-              type: "TIMESIGNATURES",
-              beat: app.chartManager.beat,
-              upper: value,
-              lower: lowerInput.value,
-            },
-          ])
-        }
-        const lowerInput = NumberSpinner.create(4, 1, 0, 1)
-        lowerInput.onChange = value => {
-          const timingData = app.chartManager.loadedChart!.timingData
-          if (value == undefined) {
-            const beat = app.chartManager.beat
-            timingData.deleteMulti([{ type: "TIMESIGNATURES", beat }])
-            return
-          }
-          if (value < 1) return
-          timingData.insertMulti([
-            {
-              type: "TIMESIGNATURES",
-              beat: app.chartManager.beat,
-              upper: upperInput.value,
-              lower: value,
-            },
-          ])
-        }
-
+        const upperInput = NumberSpinner.create({
+          value: 4,
+          step: 1,
+          precision: 0,
+          min: 1,
+          onchange: value => {
+            const timingData = app.chartManager.loadedChart!.timingData
+            const beat = Math.round(app.chartManager.beat * 48) / 48
+            if (value == undefined) {
+              timingData.deleteMulti([{ type: "TIMESIGNATURES", beat }])
+              return
+            }
+            if (value < 1) return
+            timingData.insertMulti([
+              {
+                type: "TIMESIGNATURES",
+                beat,
+                upper: value,
+                lower: lowerInput.value,
+              },
+            ])
+          },
+        })
+        const lowerInput = NumberSpinner.create({
+          value: 4,
+          step: 1,
+          precision: 0,
+          min: 1,
+          onchange: value => {
+            const timingData = app.chartManager.loadedChart!.timingData
+            const beat = Math.round(app.chartManager.beat * 48) / 48
+            if (value == undefined) {
+              timingData.deleteMulti([{ type: "TIMESIGNATURES", beat }])
+              return
+            }
+            if (value < 1) return
+            timingData.insertMulti([
+              {
+                type: "TIMESIGNATURES",
+                beat,
+                upper: upperInput.value,
+                lower: value,
+              },
+            ])
+          },
+        })
         container.appendChild(upperInput.view)
         container.appendChild(lowerInput.view)
+        this.data = [upperInput, lowerInput]
         return container
       },
-      update: (element, timingData, beat) => {
-        const upperInput: HTMLInputElement =
-          element.firstElementChild!.querySelector(".spinner-input")!
-        const lowerInput: HTMLInputElement =
-          element.lastElementChild!.querySelector(".spinner-input")!
+      update: function (timingData: TimingData, beat: number) {
+        const upperInput: NumberSpinner = this.data[0]
+        const lowerInput: NumberSpinner = this.data[1]
         const event = timingData.getEventAtBeat("TIMESIGNATURES", beat)
         const upper = event?.upper ?? 4
         const lower = event?.lower ?? 4
-        if (
-          document.activeElement != upperInput &&
-          upperInput.value != Math.round(upper).toString()
-        ) {
-          upperInput.value = Math.round(upper).toString()
-        }
-        if (
-          document.activeElement != lowerInput &&
-          lowerInput.value != Math.round(lower).toString()
-        ) {
-          lowerInput.value = Math.round(lower).toString()
-        }
+        if (document.activeElement != upperInput.input)
+          upperInput.value = Math.round(upper)
+        if (document.activeElement != lowerInput.input)
+          lowerInput.value = Math.round(lower)
       },
-    }),
+    },
   },
   tick: {
     title: "Tickcount",
-    element: createElement({
-      create: app => {
-        const input = NumberSpinner.create(4, 1, 0, 0)
-        input.onChange = value => {
-          const timingData = app.chartManager.loadedChart!.timingData
-          if (value == undefined) {
-            const beat = app.chartManager.beat
-            timingData.deleteMulti([{ type: "TICKCOUNTS", beat }])
-            return
-          }
-          if (value < 0) return
-          timingData.insertMulti([
-            { type: "TICKCOUNTS", beat: app.chartManager.beat, value },
-          ])
-        }
+    element: {
+      create: function (app: App) {
+        const input = NumberSpinner.create({
+          value: 4,
+          step: 1,
+          precision: 0,
+          min: 0,
+          onchange: value => {
+            const timingData = app.chartManager.loadedChart!.timingData
+            const beat = Math.round(app.chartManager.beat * 48) / 48
+            if (value == undefined) {
+              timingData.deleteMulti([{ type: "TICKCOUNTS", beat }])
+              return
+            }
+            if (value < 0) return
+            timingData.insertMulti([{ type: "TICKCOUNTS", beat, value }])
+          },
+        })
+        this.data = [input]
         return input.view
       },
-      update: (element, timingData, beat) => {
-        const input: HTMLInputElement = element.querySelector(".spinner-input")!
-        if (document.activeElement == input) return
+      update: function (timingData: TimingData, beat: number) {
+        const spinner: NumberSpinner = this.data[0]
+        if (document.activeElement == spinner.input) return
         const value = timingData.getEventAtBeat("TICKCOUNTS", beat)?.value ?? 4
-        if (input.value != Math.round(value).toString()) {
-          input.value = Math.round(value).toString()
-        }
+        spinner.value = Math.round(value)
       },
-    }),
+    },
   },
   combo: {
     title: "Combo",
-    element: createElement({
-      create: app => {
+    element: {
+      create: function (app: App) {
         const container = document.createElement("div")
         container.classList.add("flex-column-gap")
-        const upperInput = NumberSpinner.create(1, 1, 0, 0)
-        upperInput.onChange = value => {
-          const timingData = app.chartManager.loadedChart!.timingData
-          if (value == undefined) {
-            const beat = app.chartManager.beat
-            timingData.deleteMulti([{ type: "COMBOS", beat }])
-            return
-          }
-          if (value < 0) return
-          timingData.insertMulti([
-            {
-              type: "COMBOS",
-              beat: app.chartManager.beat,
-              hitMult: value,
-              missMult: lowerInput.value,
-            },
-          ])
-        }
-        const lowerInput = NumberSpinner.create(1, 1, 0, 0)
-        lowerInput.onChange = value => {
-          const timingData = app.chartManager.loadedChart!.timingData
-          if (value == undefined) {
-            const beat = app.chartManager.beat
-            lowerInput.setValue(
-              app.chartManager.loadedChart?.timingData.getEventAtBeat(
-                "COMBOS",
-                beat
-              )?.missMult ?? 1
-            )
-            return
-          }
-          if (value < 0) return
-          timingData.insertMulti([
-            {
-              type: "COMBOS",
-              beat: app.chartManager.beat,
-              hitMult: upperInput.value,
-              missMult: value,
-            },
-          ])
-        }
-
+        const upperInput = NumberSpinner.create({
+          value: 1,
+          step: 1,
+          precision: 0,
+          min: 0,
+          onchange: value => {
+            const timingData = app.chartManager.loadedChart!.timingData
+            const beat = Math.round(app.chartManager.beat * 48) / 48
+            if (value == undefined) {
+              timingData.deleteMulti([{ type: "COMBOS", beat }])
+              return
+            }
+            if (value < 0) return
+            timingData.insertMulti([
+              {
+                type: "COMBOS",
+                beat: beat,
+                hitMult: value,
+                missMult: lowerInput.value,
+              },
+            ])
+          },
+        })
+        const lowerInput = NumberSpinner.create({
+          value: 1,
+          step: 1,
+          precision: 0,
+          min: 0,
+          onchange: value => {
+            const timingData = app.chartManager.loadedChart!.timingData
+            const beat = Math.round(app.chartManager.beat * 48) / 48
+            if (value == undefined) {
+              lowerInput.value =
+                app.chartManager.loadedChart?.timingData.getEventAtBeat(
+                  "COMBOS",
+                  beat
+                )?.missMult ?? 1
+              return
+            }
+            if (value < 0) return
+            timingData.insertMulti([
+              {
+                type: "COMBOS",
+                beat,
+                hitMult: upperInput.value,
+                missMult: value,
+              },
+            ])
+          },
+        })
         container.appendChild(upperInput.view)
         container.appendChild(lowerInput.view)
+        this.data = [upperInput, lowerInput]
         return container
       },
-      update: (element, timingData, beat) => {
-        const upperInput: HTMLInputElement =
-          element.firstElementChild!.querySelector(".spinner-input")!
-        const lowerInput: HTMLInputElement =
-          element.lastElementChild!.querySelector(".spinner-input")!
+      update: function (timingData: TimingData, beat: number) {
+        const upperInput: NumberSpinner = this.data[0]
+        const lowerInput: NumberSpinner = this.data[1]
         const event = timingData.getEventAtBeat("COMBOS", beat)
         const hitMult = event?.hitMult ?? 1
         const missMult = event?.missMult ?? 1
-        if (
-          document.activeElement != upperInput &&
-          upperInput.value != Math.round(hitMult).toString()
-        ) {
-          upperInput.value = Math.round(hitMult).toString()
+        if (document.activeElement != upperInput.input) {
+          upperInput.value = Math.round(hitMult)
         }
-        if (
-          document.activeElement != lowerInput &&
-          lowerInput.value != Math.round(missMult).toString()
-        ) {
-          lowerInput.value = Math.round(missMult).toString()
+        if (document.activeElement != lowerInput.input) {
+          lowerInput.value = Math.round(missMult)
         }
       },
-    }),
+    },
   },
   speed: {
     title: "Speed",
-    element: createElement({
-      create: app => {
+    element: {
+      create: function (app: App) {
         const container = document.createElement("div")
         container.classList.add("flex-column-gap")
 
         const update = () => {
           const timingData = app.chartManager.loadedChart!.timingData
+          const beat = Math.round(app.chartManager.beat * 48) / 48
           timingData.insertMulti([
             {
               type: "SPEEDS",
-              beat: app.chartManager.beat,
+              beat,
               value: valueInput.value,
               delay: delayInput.value,
               unit: unitDropdown.value == "Beats" ? "B" : "T",
@@ -364,129 +314,79 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           ])
         }
 
-        const valueInput = NumberSpinner.create(1, 0.1, 0)
-        valueInput.onChange = value => {
-          const timingData = app.chartManager.loadedChart!.timingData
-          if (value == undefined) {
-            const beat = app.chartManager.beat
-            timingData.deleteMulti([{ type: "SPEEDS", beat }])
-            return
-          }
-          update()
-        }
+        const valueInput = NumberSpinner.create({
+          ...precisionSettings,
+          value: 1,
+          step: 0.1,
+          onchange: value => {
+            const timingData = app.chartManager.loadedChart!.timingData
+            const beat = Math.round(app.chartManager.beat * 48) / 48
+            if (value == undefined) {
+              timingData.deleteMulti([{ type: "SPEEDS", beat }])
+              return
+            }
+            update()
+          },
+        })
 
-        const delayInput = NumberSpinner.create(1, 0.1, 0)
-        delayInput.onChange = value => {
-          if (value == undefined || value < 0) return
-          update()
-        }
+        const delayInput = NumberSpinner.create({
+          ...precisionSettings,
+          value: 1,
+          step: 0.1,
+          min: 0,
+          onchange: value => {
+            if (value == undefined || value < 0) return
+            update()
+          },
+        })
 
-        const unitDropdown = Dropdown.create(["Beat", "Time"], "Beats")
-        unitDropdown.onChange = update
+        const unitDropdown = Dropdown.create(["Beats", "Time"], "Beats")
+        unitDropdown.onChange(update)
 
         container.appendChild(valueInput.view)
         container.appendChild(delayInput.view)
         container.appendChild(unitDropdown.view)
+
+        this.data = [valueInput, delayInput, unitDropdown]
         return container
       },
-      update: (element, timingData, beat) => {
-        const valueInput: HTMLInputElement =
-          element.firstElementChild!.querySelector(".spinner-input")!
-        const delayInput: HTMLInputElement =
-          element.children[1].querySelector(".spinner-input")!
+      update: function (timingData: TimingData, beat: number) {
+        const valueInput: NumberSpinner = this.data[0]
+        const delayInput: NumberSpinner = this.data[1]
+        const unitDropdown: Dropdown<string> = this.data[2]
 
         const event = timingData.getEventAtBeat("SPEEDS", beat)
         const value = event?.value ?? 1
         const delay = event?.delay ?? 0
-        const unit = event?.unit == "B" ? "Beat" : "Time"
-        if (
-          document.activeElement != valueInput &&
-          valueInput.value != roundDigit(value, 3).toFixed(3)
-        ) {
-          valueInput.value = roundDigit(value, 3).toFixed(3)
+        const unit = event?.unit == "B" ? "Beats" : "Time"
+        if (document.activeElement != valueInput.input) {
+          valueInput.value = value
         }
-        if (
-          document.activeElement != delayInput &&
-          delayInput.value != roundDigit(delay, 3).toFixed(3)
-        ) {
-          delayInput.value = roundDigit(delay, 3).toFixed(3)
+        if (document.activeElement != delayInput.input) {
+          delayInput.value = delay
         }
-        delayInput.disabled = event?.beat != beat
+        const occuringSameBeat = event && Math.abs(event.beat - beat) < 1 / 48
+        delayInput.disabled = !occuringSameBeat
 
-        const unitInput: HTMLDivElement =
-          element.lastElementChild!.querySelector(".dropdown-selected-text")!
-        if (unitInput.innerText != unit) {
-          unitInput.innerText = unit
+        if (unitDropdown.value != unit) {
+          unitDropdown.setSelected(unit)
         }
-
-        if (event?.beat != beat) unitInput.classList.add("disabled")
-        else unitInput.classList.remove("disabled")
+        unitDropdown.disabled = !occuringSameBeat
       },
-    }),
+    },
   },
   scroll: {
     title: "Scroll",
-    element: createElement({
-      create: app => {
-        const input = NumberSpinner.create(1, undefined, 3)
-        input.onChange = value => {
-          const timingData = app.chartManager.loadedChart!.timingData
-          if (value == undefined) {
-            const beat = app.chartManager.beat
-            timingData.deleteMulti([{ type: "SCROLLS", beat }])
-            return
-          }
-          timingData.insertMulti([
-            { type: "SCROLLS", beat: app.chartManager.beat, value },
-          ])
-        }
-        return input.view
-      },
-      update: (element, timingData, beat) => {
-        const input: HTMLInputElement = element.querySelector(".spinner-input")!
-        if (document.activeElement == input) return
-        const value = timingData.getEventAtBeat("SCROLLS", beat)?.value ?? 1
-        if (input.value != roundDigit(value, 3).toFixed(3)) {
-          input.value = roundDigit(value, 3).toFixed(3)
-        }
-      },
-    }),
+    element: createSimpleData("SCROLLS"),
   },
   fake: {
     title: "Fake",
-    element: createElement({
-      create: app => {
-        const input = NumberSpinner.create(1, undefined, 3, 0)
-        input.onChange = value => {
-          const timingData = app.chartManager.loadedChart!.timingData
-          if (value == undefined) {
-            const beat = app.chartManager.beat
-            timingData.deleteMulti([{ type: "FAKES", beat }])
-            return
-          }
-          if (value < 0) return
-          timingData.insertMulti([
-            { type: "FAKES", beat: app.chartManager.beat, value },
-          ])
-        }
-        return input.view
-      },
-      update: (element, timingData, beat) => {
-        const input: HTMLInputElement = element.querySelector(".spinner-input")!
-        if (document.activeElement == input) return
-        const event = timingData.getEventAtBeat("FAKES", beat)
-        let value = event?.value ?? 1
-        if (beat != event?.beat) value = 0
-        if (input.value != roundDigit(value, 3).toFixed(3)) {
-          input.value = roundDigit(value, 3).toFixed(3)
-        }
-      },
-    }),
+    element: createSimpleData("FAKES"),
   },
   label: {
     title: "Label",
-    element: createElement({
-      create: app => {
+    element: {
+      create: function (app: App) {
         const input = document.createElement("input")
         input.type = "text"
         input.autocomplete = "off"
@@ -496,23 +396,24 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         }
         input.onblur = () => {
           const timingData = app.chartManager.loadedChart!.timingData
+          const beat = Math.round(app.chartManager.beat * 48) / 48
           if (input.value == "") {
-            const beat = app.chartManager.beat
             timingData.deleteMulti([{ type: "LABELS", beat }])
             return
           }
           timingData.insertMulti([
             {
               type: "LABELS",
-              beat: app.chartManager.beat,
+              beat,
               value: input.value,
             },
           ])
         }
+        this.data = [input]
         return input
       },
-      update: (element, timingData, beat) => {
-        const input: HTMLInputElement = element
+      update: function (timingData: TimingData, beat: number) {
+        const input: HTMLInputElement = this.data[0]
         if (document.activeElement == input) return
         const event = timingData.getEventAtBeat("LABELS", beat)
         const value = event?.value ?? ""
@@ -520,6 +421,6 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           input.value = value
         }
       },
-    }),
+    },
   },
 }

@@ -21,6 +21,8 @@ export class BasicGameLogic extends GameLogic {
   protected collection: TimingWindowCollection =
     TimingWindowCollection.getCollection("ITG")
   usesHoldTicks = false
+  comboIsPerRow = true
+  missComboIsPerRow = false
 
   update(chartManager: ChartManager): void {
     if (!chartManager.loadedChart || !chartManager.chartView) return

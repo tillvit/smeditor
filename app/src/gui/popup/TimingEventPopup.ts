@@ -1,6 +1,10 @@
 import { TIMING_EVENT_COLORS } from "../../chart/component/timing/TimingAreaContainer"
 import { TimingBox } from "../../chart/component/timing/TimingTrackContainer"
-import { TimingData } from "../../chart/sm/TimingData"
+import {
+  TIMING_DATA_DISPLAY_PRECISION,
+  TIMING_DATA_PRECISION,
+  TimingData,
+} from "../../chart/sm/TimingData"
 import { TimingEvent } from "../../chart/sm/TimingTypes"
 import { POPUP_ROWS, PopupRow } from "../../data/TimingEventPopupData"
 import { blendColors } from "../../util/Color"
@@ -98,14 +102,13 @@ export class TimingEventPopup extends Popup {
     ret.push(label)
     switch (data.input.type) {
       case "spinner": {
-        const spinner = NumberSpinner.create(
-          event[data.key],
-          data.input.step,
-          data.input.precision,
-          data.input.min,
-          data.input.max
-        )
-        spinner.onChange = value => {
+        const spinner = NumberSpinner.create({
+          value: event[data.key],
+          precision: TIMING_DATA_PRECISION,
+          minPrecision: TIMING_DATA_DISPLAY_PRECISION,
+          ...data.input,
+        })
+        spinner.onchange = value => {
           if (value === undefined) return
           this.modifyEvent(data.key, value)
         }
@@ -202,7 +205,7 @@ export class TimingEventPopup extends Popup {
     this.rows.forEach(row => {
       switch (row.data.input.type) {
         case "spinner": {
-          ;(row.el as NumberSpinner).setValue(event[row.data.key])
+          ;(row.el as NumberSpinner).value = event[row.data.key]
           break
         }
         case "text": {

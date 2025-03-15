@@ -12,25 +12,40 @@ import {
 import { TimingData } from "../../sm/TimingData"
 import { BasicGameLogic } from "../common/BasicGameLogic"
 
+interface Tick {
+  beat: number
+  note: HoldNotedataEntry
+  second: number
+  hit: boolean
+  hitAll: boolean
+}
+
+interface HoldTickData {
+  ticks: Tick[]
+  missIndex: number // index to check for miss
+  hitIndex: number // index to check for pressed + grace window
+  activeIndex: number // index to check for activating hold flash
+}
+
 export class PumpGameLogic extends BasicGameLogic {
-  protected tickProgress: Set<{
-    ticks: number[]
-    hold: HoldNotedataEntry
-    nextTick: number
-    hitLast: boolean
-  }> = new Set()
+  protected tickProgress = new Map<HoldNotedataEntry, HoldTickData>()
+  protected tickCohesion: Map<number, number> = new Map()
+  protected pendingTicks = new Map<number, Tick[]>()
   protected collection: TimingWindowCollection =
     TimingWindowCollection.getCollection("ITG")
 
   protected holdIndex = 0
   usesHoldTicks = true
+  comboIsPerRow = false
+  missComboIsPerRow = false
 
   update(chartManager: ChartManager): void {
     if (!chartManager.loadedChart || !chartManager.chartView) return
+    const timingData = chartManager.loadedChart.timingData
     const beat = chartManager.chartView.getBeatWithOffset()
-    const hitTime = chartManager.chartView.getTimeWithOffset()
+    const time = chartManager.chartView.getTimeWithOffset()
     const hitWindowStart =
-      hitTime - (this.collection.maxWindowMS() / 1000) * Options.audio.rate
+      time - (this.collection.maxWindowMS() / 1000) * Options.audio.rate
     let lastChord = -1
     // Do Misses
     while (
@@ -42,6 +57,7 @@ export class PumpGameLogic extends BasicGameLogic {
       if (
         note.beat != lastChord &&
         note.type != "Mine" &&
+        !isHoldNote(note) &&
         !note.fake &&
         !note.warped &&
         !note.gameplay!.hasHit
@@ -68,118 +84,132 @@ export class PumpGameLogic extends BasicGameLogic {
     ) {
       const note = chartManager.loadedChart.getNotedata()[this.holdIndex]
       if (isHoldNote(note) && !note.fake) {
-        this.tickProgress.add({
-          ticks: this.generateHoldTicks(
-            chartManager.loadedChart.timingData,
-            note
-          ),
-          hold: note,
-          nextTick: 0,
-          hitLast: false,
+        const tickBeats = this.generateHoldTicks(timingData, note)
+        const ticks = tickBeats.map(beat => ({
+          beat,
+          second: timingData.getSecondsFromBeat(beat),
+          hit: false,
+          hitAll: false,
+          note,
+        }))
+        for (const tick of ticks) {
+          if (!this.pendingTicks.has(tick.beat))
+            this.pendingTicks.set(tick.beat, [])
+          this.pendingTicks.get(tick.beat)?.push(tick)
+        }
+        this.tickProgress.set(note, {
+          ticks,
+          hitIndex: 0,
+          missIndex: 0,
+          activeIndex: 0,
         })
       }
       this.holdIndex++
     }
 
     // Do Holds/Rolls
-    for (const dat of this.tickProgress) {
-      const hold = dat.hold
-      const ticks = dat.ticks
-      if (hold.type == "Hold") {
-        if (this.heldCols.isPressed(hold.col)) {
-          hold.gameplay!.lastHoldActivation = Date.now()
-          hold.gameplay!.droppedHoldBeat = undefined
+
+    for (const [hold, data] of this.tickProgress.entries()) {
+      const grace =
+        (this.collection.getHeldJudgement(hold).getTimingWindowMS() / 1000) *
+        Options.audio.rate
+      // Hit ticks if pressed
+      if (this.heldCols.isPressed(hold.col) && hold.type == "Hold") {
+        while (
+          data.ticks[data.hitIndex] &&
+          data.ticks[data.hitIndex].second - grace <= time
+        ) {
+          data.ticks[data.hitIndex].hit = true
+          data.hitIndex++
+        }
+        if (beat < hold.beat + hold.hold) {
           if (hold.gameplay?.droppedHoldBeat !== undefined) {
             chartManager.chartView.getNotefield().activateHold(hold.col)
           }
-        } else if (hold.gameplay!.droppedHoldBeat === undefined) {
-          hold.gameplay!.droppedHoldBeat =
-            chartManager.chartView.getBeatWithOffset()
+          hold.gameplay!.lastHoldActivation = Date.now()
+          hold.gameplay!.droppedHoldBeat = undefined
+        }
+      } else {
+        if (
+          this.shouldDropHold(hold, Date.now()) &&
+          beat < hold.beat + hold.hold &&
+          hold.gameplay?.droppedHoldBeat == undefined
+        ) {
+          hold.gameplay!.droppedHoldBeat = beat
           chartManager.chartView.getNotefield().releaseHold(hold.col)
         }
       }
-      if (hold.type == "Roll") {
-        if (
-          this.shouldDropHold(hold, Date.now()) &&
-          hold.gameplay!.droppedHoldBeat === undefined
-        ) {
-          hold.gameplay!.droppedHoldBeat =
-            chartManager.chartView.getBeatWithOffset()
-          chartManager.chartView.getNotefield().releaseRoll(hold.col)
-        }
-      }
-      while (ticks[dat.nextTick] !== undefined && ticks[dat.nextTick] < beat) {
-        if (hold.type == "Hold") {
-          if (this.heldCols.isPressed(hold.col)) {
-            chartManager.chartView.doJudgement(
-              hold,
-              null,
-              this.collection.getStandardWindows()[0]
-            )
-            chartManager.gameStats?.addDataPoint(
-              [hold],
-              this.collection.getStandardWindows()[0],
-              null
-            )
-            if (dat.nextTick == ticks.length - 1) {
-              dat.hitLast = true
-            }
-          } else {
-            chartManager.chartView.doJudgement(
-              hold,
-              null,
-              this.collection.getMissJudgement()
-            )
-            chartManager.gameStats?.addDataPoint(
-              [hold],
-              this.collection.getMissJudgement(),
-              null
-            )
-          }
-        }
-        if (hold.type == "Roll") {
-          if (
-            hold.gameplay?.droppedHoldBeat === undefined &&
-            hold.gameplay?.lastHoldActivation !== undefined
-          ) {
-            chartManager.chartView.doJudgement(
-              hold,
-              null,
-              this.collection.getStandardWindows()[0]
-            )
-            chartManager.gameStats?.addDataPoint(
-              [hold],
-              this.collection.getStandardWindows()[0],
-              null
-            )
-            if (dat.nextTick == ticks.length - 1) {
-              dat.hitLast = true
-            }
-          } else {
-            chartManager.chartView.doJudgement(
-              hold,
-              null,
-              this.collection.getMissJudgement()
-            )
-            chartManager.gameStats?.addDataPoint(
-              [hold],
-              this.collection.getMissJudgement(),
-              null
-            )
-          }
-        }
-        dat.nextTick++
-      }
 
-      if (
-        chartManager.chartView.getTimeWithOffset() >=
-        chartManager.chartView.chart.getSecondsFromBeat(hold.beat + hold.hold)
-      ) {
-        hold.gameplay!.hideNote =
-          dat.hitLast ||
-          ticks.length == 0 ||
-          hold.gameplay?.droppedHoldBeat === undefined
-        this.tickProgress.delete(dat)
+      if (data.ticks.length == 0) {
+        if (beat > hold.beat + hold.hold) {
+          hold.gameplay!.hideNote = true
+          this.tickProgress.delete(hold)
+        }
+      } else {
+        if (
+          beat > hold.beat + hold.hold &&
+          (data.ticks.at(-1)?.hitAll ||
+            (hold.gameplay!.droppedHoldBeat === undefined &&
+              hold.gameplay?.lastHoldActivation !== undefined))
+        ) {
+          hold.gameplay!.hideNote = true
+        }
+        if (
+          beat > hold.beat + hold.hold &&
+          data.ticks.at(-1)!.second + grace < time
+        ) {
+          this.tickProgress.delete(hold)
+        }
+      }
+    }
+
+    // Check ticks
+    const tickList = Array.from(this.pendingTicks.entries()).sort(
+      (a, b) => a[0] - b[0]
+    )
+    for (const [tickBeat, ticks] of tickList) {
+      // Miss ticks that were not hit
+      const hitAllTicks =
+        ticks.filter(tick => tick.hit).length == this.tickCohesion.get(tickBeat)
+      const minGrace = Math.min(
+        ...ticks.map(
+          tick =>
+            (this.collection.getHeldJudgement(tick.note).getTimingWindowMS() /
+              1000) *
+            Options.audio.rate
+        )
+      )
+      if (hitAllTicks && tickBeat <= beat) {
+        ticks.forEach(tick => {
+          chartManager.chartView!.doJudgement(
+            tick.note,
+            null,
+            this.collection.getStandardWindows()[0]
+          )
+          tick.hitAll = true
+        })
+
+        chartManager.gameStats?.addDataPoint(
+          ticks.map(tick => tick.note),
+          this.collection.getStandardWindows()[0],
+          null
+        )
+        this.pendingTicks.delete(tickBeat)
+        continue
+      } else if (ticks[0].second + minGrace < time) {
+        ticks.forEach(tick => {
+          chartManager.chartView!.doJudgement(
+            tick.note,
+            null,
+            this.collection.getMissJudgement()
+          )
+        })
+        chartManager.gameStats?.addDataPoint(
+          ticks.map(tick => tick.note),
+          this.collection.getMissJudgement(),
+          null
+        )
+        this.pendingTicks.delete(tickBeat)
       }
     }
 
@@ -245,8 +275,23 @@ export class PumpGameLogic extends BasicGameLogic {
       Options.play.timingCollection
     )
     this.chordCohesion.clear()
+    this.tickCohesion.clear()
+    this.pendingTicks.clear()
+    this.tickProgress.clear()
     for (const note of chartManager.loadedChart.getNotedata()) {
-      if (note.type == "Mine" || note.fake || note.warped) continue
+      if (note.type == "Mine" || note.fake) continue
+      if (isHoldNote(note)) {
+        const ticks = this.generateHoldTicks(
+          chartManager.loadedChart.timingData,
+          note
+        )
+        for (const tick of ticks) {
+          if (!this.tickCohesion.has(tick)) this.tickCohesion.set(tick, 0)
+          this.tickCohesion.set(tick, this.tickCohesion.get(tick)! + 1)
+        }
+        continue
+      }
+      if (note.warped) continue
       if (!this.chordCohesion.has(note.beat))
         this.chordCohesion.set(note.beat, [])
       this.chordCohesion.get(note.beat)!.push(note)
@@ -268,23 +313,40 @@ export class PumpGameLogic extends BasicGameLogic {
       firstHittableNote--
     this.missNoteIndex = firstHittableNote
     this.holdIndex = firstHittableNote
-    this.tickProgress = new Set()
     this.heldCols.reset()
   }
 
   keyDown(chartManager: ChartManager, col: number): void {
     if (!chartManager.loadedChart || !chartManager.chartView) return
+    const hitBeat = chartManager.chartView.getBeatWithOffset()
     const hitTime = chartManager.chartView.getTimeWithOffset()
     const closestNote = this.getClosestNote(
       chartManager.loadedChart.getNotedata(),
       hitTime,
       col,
-      ["Tap", "Hold", "Roll"]
+      ["Tap"]
     )
     this.heldCols.keyDown(col)
     chartManager.chartView.getNotefield().press(col)
-    for (const { hold } of this.tickProgress) {
+    for (const [hold, data] of this.tickProgress.entries()) {
+      const rollGrace =
+        (this.collection.getHeldJudgement(hold).getTimingWindowMS() / 1000) *
+        Options.audio.rate
       if (hold.type == "Roll" && hold.col == col) {
+        while (
+          data.ticks[data.hitIndex] &&
+          data.ticks[data.hitIndex].second - rollGrace <= hitTime
+        ) {
+          data.ticks[data.hitIndex].hit = true
+          data.hitIndex++
+        }
+        if (hitBeat < hold.beat + hold.hold) {
+          if (hold.gameplay?.droppedHoldBeat !== undefined) {
+            chartManager.chartView.getNotefield().activateRoll(hold.col)
+          }
+          hold.gameplay!.lastHoldActivation = Date.now()
+          hold.gameplay!.droppedHoldBeat = undefined
+        }
         hold.gameplay!.lastHoldActivation = Date.now()
         hold.gameplay!.droppedHoldBeat = undefined
         chartManager.chartView.getNotefield().activateRoll(hold.col)
@@ -313,14 +375,13 @@ export class PumpGameLogic extends BasicGameLogic {
     }
     let tickLength = 1 / latestEvent.value
     let currentTick = Math.round(hold.beat / tickLength) * tickLength
-    if (currentTick == hold.beat) currentTick += tickLength
     const ticks = []
     if ((tickCounts[tickIndex]?.value ?? 4) != 0) ticks.push(currentTick)
     else currentTick = hold.beat
     while (currentTick < getNoteEnd(hold)) {
       if (
         (tickCounts[tickIndex]?.value ?? 4) == 0 ||
-        tickCounts[tickIndex + 1]?.beat <= currentTick
+        tickCounts[tickIndex + 1]?.beat <= currentTick + tickLength
       ) {
         tickIndex += 1
         currentTick = tickCounts[tickIndex].beat
@@ -346,15 +407,17 @@ export class PumpGameLogic extends BasicGameLogic {
 
   calculateMaxDP(notedata: Notedata, timingData: TimingData): number {
     const chordCohesion: Map<number, NotedataEntry[]> = new Map()
+    const tickCohesion: Map<number, number> = new Map()
     let maxDancePoints = 0
     for (const note of notedata) {
       if (note.type == "Mine" || note.fake) continue
       if (isHoldNote(note)) {
-        maxDancePoints +=
-          TimingWindowCollection.getCollection(
-            Options.play.timingCollection
-          ).getMaxDancePoints() *
-          this.generateHoldTicks(timingData, note).length
+        const holdTicks = this.generateHoldTicks(timingData, note)
+        for (const tick of holdTicks) {
+          if (!tickCohesion.has(tick)) tickCohesion.set(tick, 0)
+          tickCohesion.set(tick, tickCohesion.get(tick)! + 1)
+        }
+        continue
       }
       if (note.warped) continue
       if (!chordCohesion.has(note.beat)) chordCohesion.set(note.beat, [])
@@ -362,6 +425,11 @@ export class PumpGameLogic extends BasicGameLogic {
     }
     maxDancePoints +=
       chordCohesion.size *
+      TimingWindowCollection.getCollection(
+        Options.play.timingCollection
+      ).getMaxDancePoints()
+    maxDancePoints +=
+      tickCohesion.size *
       TimingWindowCollection.getCollection(
         Options.play.timingCollection
       ).getMaxDancePoints()

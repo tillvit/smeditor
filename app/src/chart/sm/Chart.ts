@@ -12,6 +12,12 @@ import {
 import { Simfile } from "./Simfile"
 import { TIMING_EVENT_NAMES, TimingEventType, TimingType } from "./TimingTypes"
 
+interface Stream {
+  start: number
+  end: number
+  beatSpacing: number | null
+}
+
 export class Chart {
   gameType: GameType = GameTypeRegistry.getPriority()[0]
   description = ""
@@ -31,6 +37,7 @@ export class Chart {
 
   private _notedataStats!: Record<string, number>
   private _npsGraph!: number[]
+  private _streams: Stream[] = []
 
   private _lastBeat = 0
   private _lastSecond = 0
@@ -129,6 +136,10 @@ export class Chart {
 
   getNPSGraph() {
     return this._npsGraph
+  }
+
+  getStreams() {
+    return this._streams
   }
 
   getMaxNPS() {
@@ -298,6 +309,59 @@ export class Chart {
       this.notedata,
       this.timingData
     )
+    this._streams = []
+    const differences = this.notedata
+      .slice(0, -1)
+      .map((note, idx) =>
+        Math.round((this.notedata[idx + 1].beat - note.beat) * 48)
+      )
+    // consolidate differences into streams
+    for (let i = 0; i < differences.length; i++) {
+      const diff = differences[i]
+      const startIdx = i
+      while (differences[i + 1] == diff) {
+        i++
+      }
+      this._streams.push({
+        start: this.notedata[startIdx].beat,
+        end: this.notedata[i + 1].beat,
+        beatSpacing: diff / 48,
+      })
+    }
+
+    // for (const note of this.notedata) {
+    //   if (currentStream == null) {
+    //     currentStream = {
+    //       start: note.beat,
+    //       end: note.beat,
+    //       beatSpacing: null,
+    //     }
+    //     this._streams.push(currentStream)
+    //     continue
+    //   }
+    //   if (currentStream.beatSpacing == null) {
+    //     currentStream.beatSpacing = note.beat - currentStream.start
+    //     currentStream.end = note.beat
+    //   } else {
+    //     if (
+    //       Math.abs(
+    //         currentStream.beatSpacing - (note.beat - currentStream.end)
+    //       ) > 0.001
+    //     ) {
+    //       currentStream = {
+    //         start: note.beat,
+    //         end: note.beat,
+    //         beatSpacing: null,
+    //       }
+    //       this._streams.push(currentStream)
+    //     } else {
+    //       currentStream.end = note.beat
+    //     }
+    //   }
+    // }
+    // if (this._streams.at(-1) != currentStream && currentStream != null) {
+    //   this._streams.push(currentStream)
+    // }
     this.recalculateLastNote()
   }
 

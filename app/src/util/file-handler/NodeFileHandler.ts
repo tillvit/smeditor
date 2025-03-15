@@ -7,11 +7,13 @@ const {
   extname,
   basename,
   relative,
+  resolve,
 }: {
   dirname: (path: string) => string
   extname: (path: string) => string
   basename: (path: string) => string
   relative: (path1: string, path2: string) => string
+  resolve: (...parts: string[]) => string
 } = window.nw.require("path")
 
 const fs = window.nw.require("fs").promises
@@ -182,5 +184,9 @@ export class NodeFileHandler implements BaseFileHandler {
 
   getRelativePath(from: string, to: string) {
     return relative(from, to)
+  }
+
+  resolvePath(...parts: string[]) {
+    return resolve(...parts)
   }
 }
