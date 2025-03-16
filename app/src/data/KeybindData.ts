@@ -24,7 +24,13 @@ import { Flags } from "../util/Flags"
 import { maxArr, minArr, roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
 import { basename, dirname } from "../util/Path"
-import { bsearch, QUANT_NAMES, QUANT_NUM, QUANTS } from "../util/Util"
+import {
+  bsearch,
+  isSameRow,
+  QUANT_NAMES,
+  QUANT_NUM,
+  QUANTS,
+} from "../util/Util"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 
@@ -549,12 +555,12 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
       const streamPoints: number[] = []
-      for (const stream of app.chartManager.loadedChart!.getStreams()) {
-        if (streamPoints.at(-1) == stream.start) {
+      for (const stream of app.chartManager.loadedChart!.stats.streams) {
+        if (streamPoints.at(-1) == stream.startBeat) {
           streamPoints.pop()
         }
-        streamPoints.push(stream.start)
-        streamPoints.push(stream.end)
+        streamPoints.push(stream.startBeat)
+        streamPoints.push(stream.endBeat)
       }
       if (streamPoints.length == 0) return
       const idx = bsearch(streamPoints, app.chartManager.beat)
@@ -576,16 +582,20 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
       const streamPoints: number[] = []
-      for (const stream of app.chartManager.loadedChart!.getStreams()) {
-        if (streamPoints.at(-1) == stream.start) {
+      for (const stream of app.chartManager.loadedChart!.stats.streams) {
+        if (streamPoints.at(-1) == stream.startBeat) {
           streamPoints.pop()
         }
-        streamPoints.push(stream.start)
-        streamPoints.push(stream.end)
+        streamPoints.push(stream.startBeat)
+        streamPoints.push(stream.endBeat)
       }
       if (streamPoints.length == 0) return
       const idx = bsearch(streamPoints, app.chartManager.beat)
-      if (Math.abs(app.chartManager.beat - streamPoints[idx]) < 0.001) {
+      if (idx == 0 && app.chartManager.beat < streamPoints[idx]) {
+        app.chartManager.beat = streamPoints[idx]
+        return
+      }
+      if (isSameRow(app.chartManager.beat, streamPoints[idx])) {
         if (idx + 1 < streamPoints.length) {
           app.chartManager.beat = streamPoints[idx + 1]
         } else {

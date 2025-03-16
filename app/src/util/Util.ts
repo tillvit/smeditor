@@ -48,6 +48,14 @@ export function getNoteEnd(note: PartialNotedataEntry) {
   return note.beat + (isHoldNote(note) ? note.hold : 0)
 }
 
+export function isSameRow(beat1: number, beat2: number) {
+  return Math.abs(beat1 - beat2) < 1 / 96
+}
+
+export function toRowIndex(beat: number) {
+  return Math.round(beat * 48)
+}
+
 export function getDivision(beat: number) {
   return 4 / QUANTS[getQuantIndex(beat)]
 }

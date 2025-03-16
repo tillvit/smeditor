@@ -21,6 +21,13 @@ export class ChartTimingData extends TimingData {
     this.chart = chart
   }
 
+  protected callListeners(
+    modifiedEvents: { type: TimingEventType }[] = []
+  ): void {
+    this.chart.sm.recalculateAllStats()
+    super.callListeners(modifiedEvents)
+  }
+
   getColumn<Type extends TimingEventType>(type: Type) {
     return this.columns[type] ?? this.songTimingData.getColumn(type)
   }
@@ -52,16 +59,14 @@ export class ChartTimingData extends TimingData {
         this.offset = undefined
 
         this.songTimingData.reloadCache()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
       },
       undo: () => {
         this.offset = cachedOffset
         this.songTimingData._setOffset(cachedSimfileOffset)
 
         this.songTimingData.reloadCache()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
       },
     })
   }
@@ -74,15 +79,13 @@ export class ChartTimingData extends TimingData {
         this.offset = undefined
 
         this.songTimingData.reloadCache()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
       },
       undo: () => {
         this.offset = cachedOffset
 
         this.songTimingData.reloadCache()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
       },
     })
   }
@@ -117,9 +120,7 @@ export class ChartTimingData extends TimingData {
 
         app.chartManager.clearSelections()
 
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        EventHandler.emit("timeSigChanged")
+        this.callListeners(events)
       },
       undo: app => {
         this.songTimingData._insert(results.errors)
@@ -135,9 +136,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        EventHandler.emit("timeSigChanged")
+        this.callListeners(events)
       },
     })
   }
@@ -154,7 +153,6 @@ export class ChartTimingData extends TimingData {
       .flat()
 
     let results: ReturnType<TimingData["_insert"]>
-    const hasTimeSig = columns.includes("TIMESIGNATURES")
     ActionHistory.instance.run({
       action: app => {
         columns.forEach(type => {
@@ -168,9 +166,7 @@ export class ChartTimingData extends TimingData {
 
         app.chartManager.clearSelections()
 
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+        this.callListeners(events)
       },
       undo: app => {
         this.songTimingData._insert(results.errors)
@@ -181,9 +177,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+        this.callListeners(events)
       },
     })
   }
@@ -204,8 +198,7 @@ export class ChartTimingData extends TimingData {
 
         app.chartManager.clearSelections()
 
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
       },
       undo: app => {
@@ -215,8 +208,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
       },
     })
@@ -242,8 +234,7 @@ export class ChartTimingData extends TimingData {
 
         app.chartManager.clearSelections()
 
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
         EventHandler.emit("timeSigChanged")
       },
       undo: app => {
@@ -259,8 +250,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
         EventHandler.emit("timeSigChanged")
       },
     })
@@ -278,8 +268,7 @@ export class ChartTimingData extends TimingData {
 
         app.chartManager.clearSelections()
 
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
       },
       undo: app => {
@@ -289,8 +278,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
       },
     })
@@ -312,8 +300,7 @@ export class ChartTimingData extends TimingData {
 
         app.chartManager.clearSelections()
 
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
         EventHandler.emit("timeSigChanged")
       },
       undo: app => {
@@ -324,8 +311,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
         EventHandler.emit("timeSigChanged")
       },
     })
@@ -350,8 +336,7 @@ export class ChartTimingData extends TimingData {
 
         app.chartManager.clearSelections()
 
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
       },
       undo: app => {
@@ -359,8 +344,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
       },
     })
@@ -383,8 +367,7 @@ export class ChartTimingData extends TimingData {
 
         app.chartManager.clearSelections()
 
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
         EventHandler.emit("timeSigChanged")
       },
       undo: app => {
@@ -393,8 +376,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
         EventHandler.emit("timeSigChanged")
       },
     })
@@ -436,7 +418,6 @@ export class ChartTimingData extends TimingData {
 
     let smResults: ReturnType<TimingData["_insert"]>
     let chartResults: ReturnType<TimingData["_insert"]>
-    const hasTimeSig = events.find(event => event.type == "TIMESIGNATURES")
     ActionHistory.instance.run({
       action: app => {
         chartResults = this._insert(chartEvents)
@@ -453,9 +434,7 @@ export class ChartTimingData extends TimingData {
             this.songTimingData.findEvents(smResults.events)
           )
         )
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+        this.callListeners(events)
       },
       undo: app => {
         this.songTimingData._insert(smResults.errors)
@@ -468,9 +447,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
         app.chartManager.clearSelections()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+        this.callListeners(events)
       },
     })
   }
@@ -481,7 +458,6 @@ export class ChartTimingData extends TimingData {
     let smResults: ReturnType<TimingData["_modify"]>
     let chartResults: ReturnType<TimingData["_modify"]>
 
-    const hasTimeSig = events.find(pair => pair[0].type == "TIMESIGNATURES")
     ActionHistory.instance.run({
       action: app => {
         chartResults = this._modify(chartEvents)
@@ -498,9 +474,7 @@ export class ChartTimingData extends TimingData {
             this.songTimingData.findEvents(smResults.newEvents)
           )
         )
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+        this.callListeners(events.map(pair => pair[0]))
       },
       undo: app => {
         this.songTimingData._insert(smResults.errors)
@@ -521,9 +495,7 @@ export class ChartTimingData extends TimingData {
             this.songTimingData.findEvents(smResults.oldEvents)
           )
         )
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+        this.callListeners(events.map(pair => pair[0]))
       },
     })
   }
@@ -533,7 +505,6 @@ export class ChartTimingData extends TimingData {
 
     let chartResults: ReturnType<TimingData["_delete"]>
     let smResults: ReturnType<TimingData["_delete"]>
-    const hasTimeSig = events.find(event => event.type == "TIMESIGNATURES")
     ActionHistory.instance.run({
       action: app => {
         chartResults = this._delete(chartEvents)
@@ -545,9 +516,7 @@ export class ChartTimingData extends TimingData {
         this.songTimingData.reloadCache()
 
         app.chartManager.clearSelections()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+        this.callListeners(events)
       },
       undo: app => {
         this.songTimingData._insert(smResults.errors)
@@ -564,9 +533,7 @@ export class ChartTimingData extends TimingData {
             this.songTimingData.findEvents(smResults.removedEvents)
           )
         )
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+        this.callListeners(events)
       },
     })
   }

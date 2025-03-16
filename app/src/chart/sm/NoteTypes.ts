@@ -1,5 +1,13 @@
 export type Notedata = NotedataEntry[]
 
+export type RowData = {
+  notes: NotedataEntry[]
+  beat: number
+  second: number
+  warped: boolean
+  faked: boolean
+}
+
 export type PartialNotedata = PartialNotedataEntry[]
 
 export const HOLD_NOTE_TYPES = ["Hold", "Roll"] as const

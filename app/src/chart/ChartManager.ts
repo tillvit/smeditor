@@ -561,7 +561,6 @@ export class ChartManager {
 
     EventHandler.on("chartModified", () => {
       if (this.loadedChart) {
-        this.loadedChart.recalculateStats()
         this.setNoteIndex()
         EventHandler.emit("chartModifiedAfter")
       }
@@ -2007,12 +2006,7 @@ export class ChartManager {
     }
     if (this.editTimingMode == EditTimingMode.Off) {
       this.setNoteSelection(
-        this.loadedChart
-          .getNotedata()
-          .filter(
-            note =>
-              note.beat >= this.startRegion! && note.beat <= this.endRegion!
-          )
+        this.loadedChart.getNotedataInRange(this.startRegion, this.endRegion)
       )
     } else {
       this.setEventSelection(
@@ -2021,7 +2015,8 @@ export class ChartManager {
             this.loadedChart!.timingData.getColumn(event)
               .events as Cached<TimingEvent>[]
         ).filter(
-          note => note.beat >= this.startRegion! && note.beat <= this.endRegion!
+          event =>
+            event.beat >= this.startRegion! && event.beat <= this.endRegion!
         )
       )
     }

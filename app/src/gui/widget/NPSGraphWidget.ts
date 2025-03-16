@@ -67,7 +67,7 @@ export class NPSGraphWidget extends BaseTimelineWidget {
       this.npsText.visible = false
       return
     }
-    const npsGraphData = chart.getNPSGraph()
+    const npsGraphData = chart.stats.npsGraph
 
     let t = this.npsGraph.toLocal(event.global).y / this.npsGraph.height
     t = clamp(t, 0, 1)
@@ -140,8 +140,8 @@ export class NPSGraphWidget extends BaseTimelineWidget {
 
     const height = this.manager.app.renderer.screen.height - 40
 
-    const maxNps = chart.getMaxNPS()
-    const npsGraphData = chart.getNPSGraph()
+    const maxNps = chart.stats.getMaxNPS()
+    const npsGraphData = chart.stats.npsGraph
     const lastBeat = chart.getLastBeat()
 
     this.npsGraph.clear()

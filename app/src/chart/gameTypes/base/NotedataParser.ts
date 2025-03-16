@@ -1,5 +1,4 @@
-import { Notedata, PartialNotedata } from "../../sm/NoteTypes"
-import { TimingData } from "../../sm/TimingData"
+import { PartialNotedata } from "../../sm/NoteTypes"
 import { GameType } from "../GameTypeRegistry"
 
 export abstract class NotedataParser {
@@ -24,25 +23,4 @@ export abstract class NotedataParser {
    * @memberof NotedataParser
    */
   abstract serialize(notedata: PartialNotedata, gameType: GameType): string
-
-  /**
-   * Returns the stats associated with the notedata.
-   *
-   * @abstract
-   * @param {Notedata} notedata
-   * @return {*}  {Record<string, number>}
-   * @memberof NotedataParser
-   */
-  abstract getStats(notedata: Notedata): Record<string, number>
-
-  /**
-   * Returns the note density per measure.
-   *
-   * @abstract
-   * @param {Notedata} notedata
-   * @param {TimingData} timingData
-   * @return {*}  {number[]}
-   * @memberof NotedataParser
-   */
-  abstract getNPSGraph(notedata: Notedata, timingData: TimingData): number[]
 }
