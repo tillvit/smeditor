@@ -159,13 +159,16 @@ export class NPSGraphWidget extends BaseTimelineWidget {
     this.npsGraph.pivot.x = this.backing.width / 2
     this.npsGraph.pivot.y = height / 2
 
-    const lastMeasure = npsGraphData.length
+    const lastMeasure = Math.floor(
+      this.getChart().timingData.getMeasure(lastBeat)
+    )
 
     const startY = this.getYFromBeat(0)
     this.npsGraph.moveTo(0, startY)
 
-    for (let measureIndex = 0; measureIndex < lastMeasure; measureIndex++) {
+    for (let measureIndex = 0; measureIndex <= lastMeasure; measureIndex++) {
       const nps = npsGraphData[measureIndex] ?? 0
+      console.log(measureIndex, nps)
       const beat = chart.timingData.getBeatFromMeasure(measureIndex)
       const endOfMeasureBeat = Math.min(
         lastBeat,
