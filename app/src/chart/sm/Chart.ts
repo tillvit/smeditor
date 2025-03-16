@@ -378,7 +378,6 @@ export class Chart {
     startBeat: number | null = null,
     endBeat: number | null = null
   ) {
-    console.log("Recalculating rows with start", startBeat, "end", endBeat)
     if (startBeat === null || endBeat === null) {
       // Recalculate all rows
       const rows: RowData[] = []
