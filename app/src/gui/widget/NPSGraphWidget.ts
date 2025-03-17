@@ -168,7 +168,6 @@ export class NPSGraphWidget extends BaseTimelineWidget {
 
     for (let measureIndex = 0; measureIndex <= lastMeasure; measureIndex++) {
       const nps = npsGraphData[measureIndex] ?? 0
-      console.log(measureIndex, nps)
       const beat = chart.timingData.getBeatFromMeasure(measureIndex)
       const endOfMeasureBeat = Math.min(
         lastBeat,
