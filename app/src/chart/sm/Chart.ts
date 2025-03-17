@@ -213,7 +213,7 @@ export class Chart {
     if (this._startModify == null) this._startModify = from
     else this._startModify = Math.min(this._startModify, from)
     if (this._endModify == null) this._endModify = to
-    else this._endModify = Math.min(this._endModify, to)
+    else this._endModify = Math.max(this._endModify, to)
   }
 
   private callEventListeners() {
