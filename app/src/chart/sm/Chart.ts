@@ -296,6 +296,7 @@ export class Chart {
     notes: PartialNotedataEntry[],
     callListeners = true
   ): NotedataEntry[] {
+    if (notes.length == 0) return []
     const computedNotes = notes
       .map(note => {
         const i = this.getNoteIndex(note)
@@ -336,6 +337,7 @@ export class Chart {
    * @memberof Chart
    */
   getNotedataInRange(startBeat: number, endBeat: number): Notedata {
+    if (this.notedata.length == 0) return []
     let startIdx = bsearch(this.notedata, startBeat, a => a.beat)
     if (this.notedata[startIdx].beat < startBeat) startIdx++
     while (
