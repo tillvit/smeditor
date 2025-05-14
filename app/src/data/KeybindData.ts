@@ -142,7 +142,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
-      app.chartManager.snapToPreviousTick()
+      if (Options.chart.scroll.invertReverseScroll && Options.chart.reverse)
+        app.chartManager.snapToNextTick()
+      else app.chartManager.snapToPreviousTick()
     },
   },
   cursorDown: {
@@ -153,7 +155,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
-      app.chartManager.snapToNextTick()
+      if (Options.chart.scroll.invertReverseScroll && Options.chart.reverse)
+        app.chartManager.snapToPreviousTick()
+      else app.chartManager.snapToNextTick()
     },
   },
   increaseScrollSpeed: {
@@ -616,9 +620,17 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
       const beat = app.chartManager.beat
-      const measureLength =
-        app.chartManager.loadedChart!.timingData.getMeasureLength(beat - 0.001)
-      app.chartManager.snapToNearestTick(Math.max(0, beat - measureLength))
+      if (Options.chart.scroll.invertReverseScroll && Options.chart.reverse) {
+        const measureLength =
+          app.chartManager.loadedChart!.timingData.getMeasureLength(beat)
+        app.chartManager.snapToNearestTick(Math.max(0, beat + measureLength))
+      } else {
+        const measureLength =
+          app.chartManager.loadedChart!.timingData.getMeasureLength(
+            beat - 0.001
+          )
+        app.chartManager.snapToNearestTick(Math.max(0, beat - measureLength))
+      }
     },
   },
   nextMeasure: {
@@ -633,9 +645,17 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
       const beat = app.chartManager.beat
-      const measureLength =
-        app.chartManager.loadedChart!.timingData.getMeasureLength(beat)
-      app.chartManager.snapToNearestTick(Math.max(0, beat + measureLength))
+      if (Options.chart.scroll.invertReverseScroll && Options.chart.reverse) {
+        const measureLength =
+          app.chartManager.loadedChart!.timingData.getMeasureLength(
+            beat - 0.001
+          )
+        app.chartManager.snapToNearestTick(Math.max(0, beat - measureLength))
+      } else {
+        const measureLength =
+          app.chartManager.loadedChart!.timingData.getMeasureLength(beat)
+        app.chartManager.snapToNearestTick(Math.max(0, beat + measureLength))
+      }
     },
   },
   previousNote: {
