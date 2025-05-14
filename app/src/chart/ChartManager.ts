@@ -596,7 +596,7 @@ export class ChartManager {
     window.addEventListener(
       "keydown",
       (event: KeyboardEvent) => {
-        const keyName = Keybinds.getKeyNameFromCode(event.code)
+        const keyName = Keybinds.getKeyNameFromEvent(event)
         if (this.mode != EditMode.Edit) return
         if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
         if (event.target instanceof HTMLTextAreaElement) return

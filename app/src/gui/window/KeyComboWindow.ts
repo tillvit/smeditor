@@ -94,7 +94,7 @@ export class KeyComboWindow extends Window {
     this.listener = event => {
       if (["Meta", "Control", "Shift", "Alt", "Escape"].includes(event.key))
         return
-      this.combo.key = Keybinds.getKeyNameFromCode(event.code)
+      this.combo.key = Keybinds.getKeyNameFromEvent(event)
       if (this.allowMods) {
         const mods: Modifier[] = []
         for (let i = 0; i < MODPROPS.length; i++) {
