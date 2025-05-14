@@ -9,6 +9,7 @@ const ANALYZERS: (new (chart: Chart) => ChartAnalyzer)[] = [
   StreamAnalyzer,
   NPSAnalyzer,
   NoteTypeAnalyzer,
+  // ParityAnalyzer,
 ]
 
 const UPDATE_INTERVAL = 250
@@ -73,6 +74,8 @@ export class ChartStats {
   }
 
   getMaxNPS() {
-    return maxArr(this.npsGraph)
+    const maxNPS = maxArr(this.npsGraph)
+    if (maxNPS == 0) return 0
+    return maxNPS
   }
 }
