@@ -238,7 +238,11 @@ export class Chart {
     notes: PartialNotedataEntry[],
     callListeners = true
   ): NotedataEntry[] {
-    if (notes.length == 0) return []
+    if (notes.length == 0) {
+      if (callListeners) this.callEventListeners()
+      return []
+    }
+
     const computedNotes = notes.map(note => this.insertNote(note))
     this.addEditRange(
       computedNotes[0].beat,
