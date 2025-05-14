@@ -17,11 +17,14 @@ export class SelectionBoundary
   update() {
     const bounds = this.renderer.getSelectionBounds()
     this.visible = !!bounds
+
     if (bounds) {
-      this.position.x = Math.min(bounds.start.x, bounds.end.x)
-      this.position.y = Math.min(bounds.start.y, bounds.end.y)
-      this.width = Math.abs(bounds.end.x - bounds.start.x)
-      this.height = Math.abs(bounds.end.y - bounds.start.y)
+      const startY = this.renderer.getYPosFromBeat(bounds?.startBeat)
+      const endY = this.renderer.getYPosFromBeat(bounds?.endBeat)
+      this.position.x = Math.min(bounds.startX, bounds.endX)
+      this.position.y = Math.min(startY, endY)
+      this.width = Math.abs(bounds.endX - bounds.startX)
+      this.height = Math.abs(endY - startY)
     }
   }
 }
