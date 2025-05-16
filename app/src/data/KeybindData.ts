@@ -1672,7 +1672,7 @@ for (const type of ["STOPS", "DELAYS"] as const) {
         startBeat = minArr(beats)
         length = endSec - startSec
       }
-      app.chartManager.loadedChart!.timingData.insertMulti([
+      app.chartManager.loadedChart!.timingData.insertColumnEvents([
         { type, beat: startBeat, value: length },
       ])
     },
@@ -1708,7 +1708,7 @@ for (const type of ["WARPS", "FAKES"] as const) {
         startBeat = minArr(beats)
         length = maxArr(beats) - minArr(beats)
       }
-      app.chartManager.loadedChart!.timingData.insertMulti([
+      app.chartManager.loadedChart!.timingData.insertColumnEvents([
         { type, beat: startBeat, value: length },
       ])
     },

@@ -2252,7 +2252,7 @@ export class ChartManager {
         modify(structuredClone(event)),
       ])
 
-    this.loadedChart.timingData.modifyMulti(events)
+    this.loadedChart.timingData.modifyColumnEvents(events)
   }
 
   deleteSelection() {
@@ -2272,7 +2272,9 @@ export class ChartManager {
   deleteEventSelection() {
     if (this.eventSelection.timingEvents.length == 0) return
     if (!this.loadedChart || !this.loadedSM) return
-    this.loadedChart.timingData.deleteMulti(this.eventSelection.timingEvents)
+    this.loadedChart.timingData.deleteColumnEvents(
+      this.eventSelection.timingEvents
+    )
   }
 
   paste(data: string, clear = false) {
@@ -2423,7 +2425,7 @@ export class ChartManager {
       else event.beat += this.beat
     })
 
-    this.loadedChart.timingData.insertMulti(events)
+    this.loadedChart.timingData.insertColumnEvents(events)
 
     return true
   }

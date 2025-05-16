@@ -472,7 +472,7 @@ export class SyncWindow extends Window {
         }
         const timingData = this.app.chartManager.loadedChart!.timingData
         const beat = Math.round(this.app.chartManager.beat * 48) / 48
-        timingData.insertMulti([{ type: "BPMS", beat, value: bpm }])
+        timingData.insertColumnEvents([{ type: "BPMS", beat, value: bpm }])
       }
     }
 

@@ -413,7 +413,7 @@ export class ChartTimingData extends TimingData {
     return { chartEvents, smEvents }
   }
 
-  insertMulti(events: TimingEvent[]): void {
+  insertColumnEvents(events: TimingEvent[]): void {
     const { smEvents, chartEvents } = this.splitSM(events)
 
     let smResults: ReturnType<TimingData["_insert"]>
@@ -452,7 +452,7 @@ export class ChartTimingData extends TimingData {
     })
   }
 
-  modifyMulti(events: [TimingEvent, TimingEvent][]): void {
+  modifyColumnEvents(events: [TimingEvent, TimingEvent][]): void {
     const { smEvents, chartEvents } = this.splitSMPairs(events)
 
     let smResults: ReturnType<TimingData["_modify"]>
@@ -500,7 +500,7 @@ export class ChartTimingData extends TimingData {
     })
   }
 
-  deleteMulti(events: DeletableEvent[]): void {
+  deleteColumnEvents(events: DeletableEvent[]): void {
     const { smEvents, chartEvents } = this.splitSM(events)
 
     let chartResults: ReturnType<TimingData["_delete"]>
