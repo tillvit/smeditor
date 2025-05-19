@@ -138,6 +138,20 @@ export class App {
     this.ticker = new Ticker()
     this.ticker.maxFPS = 0
     this.ticker.add(() => {
+      // Update ChartRenderer every frame
+      const updateStart = performance.now()
+      this.chartManager.widgetManager.update()
+      if (
+        this.chartManager.loadedSM &&
+        this.chartManager.loadedChart &&
+        this.chartManager.chartView
+      ) {
+        this.chartManager.chartView.update()
+      }
+      DebugWidget.instance?.addDrawUpdateTimeValue(
+        performance.now() - updateStart
+      )
+
       const startTime = performance.now()
       this.renderer.render(this.stage)
       DebugWidget.instance?.addFrameTimeValue(performance.now() - startTime)
@@ -146,7 +160,8 @@ export class App {
           performance.memory.usedJSHeapSize
         )
       fpsUpdate()
-    }, UPDATE_PRIORITY.LOW)
+    }, UPDATE_PRIORITY.HIGH)
+
     this.ticker.start()
 
     BetterRoundedRect.init(this.renderer)

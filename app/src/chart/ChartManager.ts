@@ -372,18 +372,6 @@ export class ChartManager {
     }
     moveCenterText()
 
-    // Update ChartRenderer every frame
-    this.app.ticker.add(() => {
-      const updateStart = performance.now()
-      this.widgetManager.update()
-      if (this.loadedSM && this.loadedChart && this.chartView) {
-        this.chartView.update()
-      }
-      DebugWidget.instance?.addDrawUpdateTimeValue(
-        performance.now() - updateStart
-      )
-    })
-
     // Faster update loop, more precision
     setInterval(() => {
       if (!this.loadedSM || !this.loadedChart || !this.chartView) return
