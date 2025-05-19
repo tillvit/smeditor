@@ -52,7 +52,7 @@ export class Keybinds {
     for (let i = 0; i < MODPROPS.length; i++) {
       if (event[MODPROPS[i]]) mods.push(MODORDER[i])
     }
-    const key = Keybinds.getKeyNameFromCode(event.code)
+    const key = Keybinds.getKeyNameFromEvent(event)
 
     // Check for gameplay keybinds
     if (
@@ -119,8 +119,12 @@ export class Keybinds {
     }
   }
 
-  static getKeyNameFromCode(code: string): string {
-    let key = code
+  static getKeyNameFromEvent(event: KeyboardEvent): string {
+    if (event.which >= 65 && event.which <= 90) {
+      // handle letters separately for azerty keyboards
+      return String.fromCharCode(event.which).toUpperCase()
+    }
+    let key = event.code
     if (key.startsWith("Digit")) key = key.slice(5)
     if (key.startsWith("Key")) key = key.slice(3)
     if (key in SPECIAL_KEYS) key = SPECIAL_KEYS[key]

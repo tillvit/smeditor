@@ -372,18 +372,6 @@ export class ChartManager {
     }
     moveCenterText()
 
-    // Update ChartRenderer every frame
-    this.app.ticker.add(() => {
-      const updateStart = performance.now()
-      this.widgetManager.update()
-      if (this.loadedSM && this.loadedChart && this.chartView) {
-        this.chartView.update()
-      }
-      DebugWidget.instance?.addDrawUpdateTimeValue(
-        performance.now() - updateStart
-      )
-    })
-
     // Faster update loop, more precision
     setInterval(() => {
       if (!this.loadedSM || !this.loadedChart || !this.chartView) return
@@ -561,7 +549,6 @@ export class ChartManager {
 
     EventHandler.on("chartModified", () => {
       if (this.loadedChart) {
-        this.loadedChart.recalculateStats()
         this.setNoteIndex()
         EventHandler.emit("chartModifiedAfter")
       }
@@ -597,7 +584,7 @@ export class ChartManager {
     window.addEventListener(
       "keydown",
       (event: KeyboardEvent) => {
-        const keyName = Keybinds.getKeyNameFromCode(event.code)
+        const keyName = Keybinds.getKeyNameFromEvent(event)
         if (this.mode != EditMode.Edit) return
         if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
         if (event.target instanceof HTMLTextAreaElement) return
@@ -712,6 +699,7 @@ export class ChartManager {
   set time(time: number) {
     if (!this.loadedChart) return
     this.chartAudio.seek(time)
+    this._beat = this.loadedChart.getBeatFromSeconds(time)
     this.setNoteIndex()
   }
 
@@ -2007,12 +1995,7 @@ export class ChartManager {
     }
     if (this.editTimingMode == EditTimingMode.Off) {
       this.setNoteSelection(
-        this.loadedChart
-          .getNotedata()
-          .filter(
-            note =>
-              note.beat >= this.startRegion! && note.beat <= this.endRegion!
-          )
+        this.loadedChart.getNotedataInRange(this.startRegion, this.endRegion)
       )
     } else {
       this.setEventSelection(
@@ -2021,7 +2004,8 @@ export class ChartManager {
             this.loadedChart!.timingData.getColumn(event)
               .events as Cached<TimingEvent>[]
         ).filter(
-          note => note.beat >= this.startRegion! && note.beat <= this.endRegion!
+          event =>
+            event.beat >= this.startRegion! && event.beat <= this.endRegion!
         )
       )
     }
@@ -2257,7 +2241,7 @@ export class ChartManager {
         modify(structuredClone(event)),
       ])
 
-    this.loadedChart.timingData.modifyMulti(events)
+    this.loadedChart.timingData.modifyColumnEvents(events)
   }
 
   deleteSelection() {
@@ -2277,7 +2261,9 @@ export class ChartManager {
   deleteEventSelection() {
     if (this.eventSelection.timingEvents.length == 0) return
     if (!this.loadedChart || !this.loadedSM) return
-    this.loadedChart.timingData.deleteMulti(this.eventSelection.timingEvents)
+    this.loadedChart.timingData.deleteColumnEvents(
+      this.eventSelection.timingEvents
+    )
   }
 
   paste(data: string, clear = false) {
@@ -2428,7 +2414,7 @@ export class ChartManager {
       else event.beat += this.beat
     })
 
-    this.loadedChart.timingData.insertMulti(events)
+    this.loadedChart.timingData.insertColumnEvents(events)
 
     return true
   }

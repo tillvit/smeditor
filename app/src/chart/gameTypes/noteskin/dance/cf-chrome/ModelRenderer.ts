@@ -244,7 +244,7 @@ export class ModelRenderer {
         note?.quant ?? 4
       )
       arrow.texture = new Texture(
-        note?.type == "Lift" ?? "Tap"
+        (note?.type ?? "Tap") == "Lift"
           ? ModelRenderer.liftTex.baseTexture
           : ModelRenderer.arrowTex.baseTexture,
         new Rectangle((i % 3) * 64, Math.floor(i / 3) * 64, 64, 64)

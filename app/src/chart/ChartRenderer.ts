@@ -30,8 +30,11 @@ import { NoteType, NotedataEntry } from "./sm/NoteTypes"
 import { ScrollTimingEvent } from "./sm/TimingTypes"
 
 interface SelectionBounds {
-  start: Point
-  end: Point
+  startX: number
+  startBeat: number
+  endBeat: number
+  endX: number
+  lastKnownBeat: number
 }
 
 export interface ChartRendererComponent extends DisplayObject {
@@ -132,29 +135,21 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
 
     let selectionSpeed = 0
     const tickHandler = () => {
-      if (
-        (!this.chartManager.selection.shift && !this.selectionBounds) ||
-        selectionSpeed == 0
-      )
-        return
+      if (!this.selectionBounds) return
+      if (this.selectionBounds.lastKnownBeat != this.cachedBeat) {
+        this.selectionBounds.endBeat +=
+          this.cachedBeat - this.selectionBounds.lastKnownBeat
+        this.selectionBounds.lastKnownBeat = this.cachedBeat
+        this.selectionBoundary.update()
+      }
+      if (selectionSpeed == 0) return
       // Scroll the notefield if the cursor is near the edge of the screen
-      const pos = this.getYPosFromBeat(
-        Math.max(0, this.chartManager.beat + selectionSpeed)
-      )
       this.chartManager.beat = Math.max(
         0,
         this.chartManager.beat + selectionSpeed
       )
-      if (this.selectionBounds) {
-        if (Options.chart.reverse) {
-          this.selectionBounds.start.y -=
-            Options.chart.receptorYPos / Options.chart.zoom + pos
-        } else {
-          this.selectionBounds.start.y +=
-            Options.chart.receptorYPos / Options.chart.zoom - pos
-        }
-        this.selectionBoundary.update()
-      }
+      this.selectionBounds.endBeat += selectionSpeed
+      this.selectionBoundary.update()
     }
 
     this.chartManager.app.ticker.add(tickHandler)
@@ -209,8 +204,11 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
             : "startDragEventSelection"
         ]()
         this.selectionBounds = {
-          start: this.toLocal(event.global),
-          end: this.toLocal(event.global),
+          startX: this.toLocal(event.global).x,
+          startBeat: this.getBeatFromYPos(this.toLocal(event.global).y),
+          endX: this.toLocal(event.global).x,
+          endBeat: this.getBeatFromYPos(this.toLocal(event.global).y),
+          lastKnownBeat: this.cachedBeat,
         }
         this.selectionBoundary.update()
       }
@@ -233,7 +231,11 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
         }
       }
       if (this.selectionBounds) {
-        this.selectionBounds.end = this.toLocal(event.global)
+        this.selectionBounds.endBeat = this.getBeatFromYPos(
+          this.toLocal(event.global).y
+        )
+        this.selectionBounds.endX = this.toLocal(event.global).x
+        this.selectionBounds.lastKnownBeat = this.cachedBeat
         this.selectionBoundary.update()
       }
       selectionSpeed =

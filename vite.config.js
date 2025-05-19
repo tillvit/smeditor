@@ -31,6 +31,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html}', 'assets/**/*'],
         ignoreURLParametersMatching: [/^flags/, /^url/, /^chartIndex/, /^chartType/],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallback: null,
       }
     }),

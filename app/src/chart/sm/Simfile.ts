@@ -10,7 +10,7 @@ export class Simfile {
   _type?: "sm" | "ssc"
   other_properties: { [key: string]: string } = {}
   properties: { [key in SimfileProperty]?: string } = {}
-  timingData: SongTimingData = new SongTimingData()
+  timingData: SongTimingData = new SongTimingData(this)
 
   unloadedCharts: (string | { [key: string]: string })[] = []
 
@@ -229,6 +229,14 @@ export class Simfile {
       }
     }
     return false
+  }
+
+  recalculateAllStats() {
+    for (const type in this.charts) {
+      for (const chart of this.charts[type]) {
+        chart.recalculateStats()
+      }
+    }
   }
 
   private formatProperty(name: string, item: string | number | undefined) {

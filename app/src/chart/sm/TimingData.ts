@@ -47,6 +47,15 @@ export abstract class TimingData {
   } = {}
   protected offset?: number
 
+  protected callListeners(modifiedEvents: { type: TimingEventType }[] = []) {
+    const hasTimeSig = modifiedEvents.some(
+      event => event.type == "TIMESIGNATURES"
+    )
+    EventHandler.emit("timingModified")
+    EventHandler.emit("chartModified")
+    if (hasTimeSig) EventHandler.emit("timeSigChanged")
+  }
+
   private buildBeatTimingDataCache() {
     const cache: BeatTimingCache[] = []
     let events: BeatTimingEvent[] = this.getTimingData(
@@ -279,14 +288,12 @@ export abstract class TimingData {
       action: () => {
         this.offset = offset
         this.reloadCache(["OFFSET"])
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
       },
       undo: () => {
         this.offset = oldOffset
         this.reloadCache(["OFFSET"])
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
+        this.callListeners()
       },
     })
   }
@@ -1189,7 +1196,6 @@ export abstract class TimingData {
 
   insert(events: TimingEvent[]): void {
     let results: ReturnType<TimingData["_insert"]>
-    const hasTimeSig = events.find(event => event.type == "TIMESIGNATURES")
     ActionHistory.instance.run({
       action: app => {
         results = this._insert(events)
@@ -1197,9 +1203,7 @@ export abstract class TimingData {
         this.reloadCache()
         app.chartManager.clearSelections()
         app.chartManager.setEventSelection(this.findEvents(results.events))
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+        this.callListeners(events)
       },
       undo: app => {
         this._insert(results.errors)
@@ -1207,16 +1211,13 @@ export abstract class TimingData {
         this._insert(results.insertConflicts)
         this.reloadCache()
         app.chartManager.clearSelections()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+        this.callListeners(events)
       },
     })
   }
 
   modify(events: [TimingEvent, TimingEvent][]): void {
     let results: ReturnType<TimingData["_modify"]>
-    const hasTimeSig = events.find(pair => pair[0].type == "TIMESIGNATURES")
     ActionHistory.instance.run({
       action: app => {
         results = this._modify(events)
@@ -1224,9 +1225,7 @@ export abstract class TimingData {
         this.reloadCache()
         app.chartManager.clearSelections()
         app.chartManager.setEventSelection(this.findEvents(results.newEvents))
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+        this.callListeners(events.map(pair => pair[0]))
       },
       undo: app => {
         this._insert(results.errors)
@@ -1237,25 +1236,20 @@ export abstract class TimingData {
 
         app.chartManager.clearSelections()
         app.chartManager.setEventSelection(this.findEvents(results.oldEvents))
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+        this.callListeners(events.map(pair => pair[0]))
       },
     })
   }
 
   delete(events: DeletableEvent[]): void {
     let results: ReturnType<TimingData["_delete"]>
-    const hasTimeSig = events.find(event => event.type == "TIMESIGNATURES")
     ActionHistory.instance.run({
       action: app => {
         results = this._delete(events)
         this._delete(results.errors)
         this.reloadCache()
         app.chartManager.clearSelections()
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+        this.callListeners(events)
       },
       undo: app => {
         this._insert(results.errors)
@@ -1265,9 +1259,7 @@ export abstract class TimingData {
         app.chartManager.setEventSelection(
           this.findEvents(results.removedEvents)
         )
-        EventHandler.emit("timingModified")
-        EventHandler.emit("chartModified")
-        if (hasTimeSig) EventHandler.emit("timeSigChanged")
+        this.callListeners(events)
       },
     })
   }

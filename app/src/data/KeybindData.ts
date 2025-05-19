@@ -24,7 +24,13 @@ import { Flags } from "../util/Flags"
 import { maxArr, minArr, roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
 import { basename, dirname } from "../util/Path"
-import { bsearch, QUANT_NAMES, QUANT_NUM, QUANTS } from "../util/Util"
+import {
+  bsearch,
+  isSameRow,
+  QUANT_NAMES,
+  QUANT_NUM,
+  QUANTS,
+} from "../util/Util"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 
@@ -136,7 +142,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
-      app.chartManager.snapToPreviousTick()
+      if (Options.chart.scroll.invertReverseScroll && Options.chart.reverse)
+        app.chartManager.snapToNextTick()
+      else app.chartManager.snapToPreviousTick()
     },
   },
   cursorDown: {
@@ -147,7 +155,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
-      app.chartManager.snapToNextTick()
+      if (Options.chart.scroll.invertReverseScroll && Options.chart.reverse)
+        app.chartManager.snapToPreviousTick()
+      else app.chartManager.snapToNextTick()
     },
   },
   increaseScrollSpeed: {
@@ -549,12 +559,12 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
       const streamPoints: number[] = []
-      for (const stream of app.chartManager.loadedChart!.getStreams()) {
-        if (streamPoints.at(-1) == stream.start) {
+      for (const stream of app.chartManager.loadedChart!.stats.streams) {
+        if (streamPoints.at(-1) == stream.startBeat) {
           streamPoints.pop()
         }
-        streamPoints.push(stream.start)
-        streamPoints.push(stream.end)
+        streamPoints.push(stream.startBeat)
+        streamPoints.push(stream.endBeat)
       }
       if (streamPoints.length == 0) return
       const idx = bsearch(streamPoints, app.chartManager.beat)
@@ -576,16 +586,20 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
       const streamPoints: number[] = []
-      for (const stream of app.chartManager.loadedChart!.getStreams()) {
-        if (streamPoints.at(-1) == stream.start) {
+      for (const stream of app.chartManager.loadedChart!.stats.streams) {
+        if (streamPoints.at(-1) == stream.startBeat) {
           streamPoints.pop()
         }
-        streamPoints.push(stream.start)
-        streamPoints.push(stream.end)
+        streamPoints.push(stream.startBeat)
+        streamPoints.push(stream.endBeat)
       }
       if (streamPoints.length == 0) return
       const idx = bsearch(streamPoints, app.chartManager.beat)
-      if (Math.abs(app.chartManager.beat - streamPoints[idx]) < 0.001) {
+      if (idx == 0 && app.chartManager.beat < streamPoints[idx]) {
+        app.chartManager.beat = streamPoints[idx]
+        return
+      }
+      if (isSameRow(app.chartManager.beat, streamPoints[idx])) {
         if (idx + 1 < streamPoints.length) {
           app.chartManager.beat = streamPoints[idx + 1]
         } else {
@@ -606,9 +620,17 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
       const beat = app.chartManager.beat
-      const measureLength =
-        app.chartManager.loadedChart!.timingData.getMeasureLength(beat - 0.001)
-      app.chartManager.snapToNearestTick(Math.max(0, beat - measureLength))
+      if (Options.chart.scroll.invertReverseScroll && Options.chart.reverse) {
+        const measureLength =
+          app.chartManager.loadedChart!.timingData.getMeasureLength(beat)
+        app.chartManager.snapToNearestTick(Math.max(0, beat + measureLength))
+      } else {
+        const measureLength =
+          app.chartManager.loadedChart!.timingData.getMeasureLength(
+            beat - 0.001
+          )
+        app.chartManager.snapToNearestTick(Math.max(0, beat - measureLength))
+      }
     },
   },
   nextMeasure: {
@@ -623,9 +645,17 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() == EditMode.Record,
     callback: app => {
       const beat = app.chartManager.beat
-      const measureLength =
-        app.chartManager.loadedChart!.timingData.getMeasureLength(beat)
-      app.chartManager.snapToNearestTick(Math.max(0, beat + measureLength))
+      if (Options.chart.scroll.invertReverseScroll && Options.chart.reverse) {
+        const measureLength =
+          app.chartManager.loadedChart!.timingData.getMeasureLength(
+            beat - 0.001
+          )
+        app.chartManager.snapToNearestTick(Math.max(0, beat - measureLength))
+      } else {
+        const measureLength =
+          app.chartManager.loadedChart!.timingData.getMeasureLength(beat)
+        app.chartManager.snapToNearestTick(Math.max(0, beat + measureLength))
+      }
     },
   },
   previousNote: {
@@ -1642,7 +1672,7 @@ for (const type of ["STOPS", "DELAYS"] as const) {
         startBeat = minArr(beats)
         length = endSec - startSec
       }
-      app.chartManager.loadedChart!.timingData.insertMulti([
+      app.chartManager.loadedChart!.timingData.insertColumnEvents([
         { type, beat: startBeat, value: length },
       ])
     },
@@ -1678,7 +1708,7 @@ for (const type of ["WARPS", "FAKES"] as const) {
         startBeat = minArr(beats)
         length = maxArr(beats) - minArr(beats)
       }
-      app.chartManager.loadedChart!.timingData.insertMulti([
+      app.chartManager.loadedChart!.timingData.insertColumnEvents([
         { type, beat: startBeat, value: length },
       ])
     },

@@ -17,6 +17,7 @@
     "noImplicitAny": true,
     "types": [
       "vite/client",
+      "@types/dom-webcodecs",
       "@types/nw.js",
       "vite-plugin-pwa/info.d.ts",
       "vite-plugin-pwa/client.d.ts"

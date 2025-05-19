@@ -1,22 +1,26 @@
 import { EventHandler } from "../../util/EventHandler"
-import { bsearch, getDivision } from "../../util/Util"
+import { maxArr } from "../../util/Math"
+import {
+  bsearch,
+  getDivision,
+  getNoteEnd,
+  isSameRow,
+  toRowIndex,
+} from "../../util/Util"
 import { GameType, GameTypeRegistry } from "../gameTypes/GameTypeRegistry"
+import { ChartStats } from "../stats/ChartStats"
 import { ChartTimingData } from "./ChartTimingData"
 import { CHART_DIFFICULTIES, ChartDifficulty } from "./ChartTypes"
 import {
   Notedata,
   NotedataEntry,
+  PartialNotedata,
   PartialNotedataEntry,
+  RowData,
   isHoldNote,
 } from "./NoteTypes"
 import { Simfile } from "./Simfile"
 import { TIMING_EVENT_NAMES, TimingEventType, TimingType } from "./TimingTypes"
-
-interface Stream {
-  start: number
-  end: number
-  beatSpacing: number | null
-}
 
 export class Chart {
   gameType: GameType = GameTypeRegistry.getPriority()[0]
@@ -34,13 +38,16 @@ export class Chart {
   other_properties: { [key: string]: string } = {}
 
   private notedata: Notedata = []
+  private notedataRows: RowData[] = []
 
-  private _notedataStats!: Record<string, number>
-  private _npsGraph!: number[]
-  private _streams: Stream[] = []
+  stats = new ChartStats(this)
 
   private _lastBeat = 0
   private _lastSecond = 0
+
+  // range of notes modified before last event listener
+  private _startModify: number | null = null
+  private _endModify: number | null = null
 
   constructor(sm: Simfile, data?: string | { [key: string]: string }) {
     this.timingData = sm.timingData.createChartTimingData(this)
@@ -127,27 +134,8 @@ export class Chart {
         throw Error("Failed to load sm chart!")
       }
     }
+    this.recalculateRows()
     this.recalculateStats()
-  }
-
-  getNotedataStats() {
-    return this._notedataStats
-  }
-
-  getNPSGraph() {
-    return this._npsGraph
-  }
-
-  getStreams() {
-    return this._streams
-  }
-
-  getMaxNPS() {
-    let max = 0
-    for (const measure of this._npsGraph) {
-      if (measure > max) max = measure
-    }
-    return max
   }
 
   getLastBeat() {
@@ -221,9 +209,28 @@ export class Chart {
     return computedNote
   }
 
+  private addEditRange(from: number, to: number) {
+    if (this._startModify == null) this._startModify = from
+    else this._startModify = Math.min(this._startModify, from)
+    if (this._endModify == null) this._endModify = to
+    else this._endModify = Math.max(this._endModify, to)
+  }
+
+  private callEventListeners() {
+    this.recalculateRows(this._startModify, this._endModify)
+    this.recalculateStats(this._startModify, this._endModify)
+    EventHandler.emit("chartModified")
+  }
+
+  private markRecalculateAll() {
+    this._startModify = null
+    this._endModify = null
+  }
+
   addNote(note: PartialNotedataEntry, callListeners = true): NotedataEntry {
     const computedNote = this.insertNote(note)
-    if (callListeners) EventHandler.emit("chartModified")
+    this.addEditRange(note.beat, getNoteEnd(note))
+    if (callListeners) this.callEventListeners()
     return computedNote
   }
 
@@ -231,8 +238,17 @@ export class Chart {
     notes: PartialNotedataEntry[],
     callListeners = true
   ): NotedataEntry[] {
+    if (notes.length == 0) {
+      if (callListeners) this.callEventListeners()
+      return []
+    }
+
     const computedNotes = notes.map(note => this.insertNote(note))
-    if (callListeners) EventHandler.emit("chartModified")
+    this.addEditRange(
+      computedNotes[0].beat,
+      maxArr(computedNotes.map(note => getNoteEnd(note)))
+    )
+    if (callListeners) this.callEventListeners()
     return computedNotes
   }
 
@@ -252,15 +268,20 @@ export class Chart {
     properties: Partial<NotedataEntry>,
     callListeners = true
   ) {
+    const originalNote = structuredClone(note)
     const i = this.getNoteIndex(note)
     if (i == -1) return
-    const noteToModify = Object.assign({}, this.notedata[i])
+    const newNote = Object.assign({}, this.notedata[i])
     this.notedata.splice(i, 1)
     if (!isHoldNote(properties as PartialNotedataEntry))
       (properties as Record<string, any>).hold = undefined
-    Object.assign(noteToModify, properties)
-    this.addNote(noteToModify)
-    if (callListeners) EventHandler.emit("chartModified")
+    Object.assign(newNote, properties)
+    this.addNote(newNote, false)
+    this.addEditRange(
+      Math.min(originalNote.beat, newNote.beat),
+      Math.max(getNoteEnd(originalNote), getNoteEnd(newNote))
+    )
+    if (callListeners) this.callEventListeners()
   }
 
   removeNote(
@@ -270,7 +291,8 @@ export class Chart {
     const i = this.getNoteIndex(note)
     if (i == -1) return
     const removedNote = this.notedata.splice(i, 1)
-    if (callListeners) EventHandler.emit("chartModified")
+    this.addEditRange(note.beat, getNoteEnd(note))
+    if (callListeners) this.callEventListeners()
     return removedNote[0]
   }
 
@@ -278,6 +300,7 @@ export class Chart {
     notes: PartialNotedataEntry[],
     callListeners = true
   ): NotedataEntry[] {
+    if (notes.length == 0) return []
     const computedNotes = notes
       .map(note => {
         const i = this.getNoteIndex(note)
@@ -286,83 +309,156 @@ export class Chart {
         return removedNote[0]
       })
       .filter(note => note != undefined)
-    if (callListeners) EventHandler.emit("chartModified")
+    this.addEditRange(
+      computedNotes[0].beat,
+      maxArr(computedNotes.map(note => getNoteEnd(note)))
+    )
+    if (callListeners) this.callEventListeners()
     return computedNotes as NotedataEntry[]
   }
 
-  setNotedata(notedata: Notedata) {
-    this.notedata = notedata
-    EventHandler.emit("chartModified")
+  setNotedata(notedata: PartialNotedata) {
+    this.notedata = notedata.map(note => this.computeNote(note))
+    // Recalculate everything
+    this.markRecalculateAll()
+    this.callEventListeners()
   }
 
   getNotedata(): Notedata {
     return this.notedata
   }
 
+  getRows(): RowData[] {
+    return this.notedataRows
+  }
+
+  /**
+   * Returns all notes within the given range (inclusive)
+   *
+   * @param {number} startBeat
+   * @param {number} endBeat
+   * @return {*}  {Notedata}
+   * @memberof Chart
+   */
+  getNotedataInRange(startBeat: number, endBeat: number): Notedata {
+    if (this.notedata.length == 0) return []
+    let startIdx = bsearch(this.notedata, startBeat, a => a.beat)
+    if (this.notedata[startIdx].beat < startBeat) startIdx++
+    while (
+      this.notedata[startIdx - 1] &&
+      isSameRow(this.notedata[startIdx - 1].beat, startBeat)
+    ) {
+      startIdx--
+    }
+    let lastIdx = bsearch(this.notedata, endBeat, a => a.beat)
+
+    if (this.notedata[lastIdx].beat > endBeat) lastIdx--
+    while (
+      this.notedata[lastIdx + 1] &&
+      isSameRow(this.notedata[lastIdx + 1].beat, endBeat)
+    ) {
+      lastIdx++
+    }
+    return this.notedata.slice(startIdx, lastIdx + 1)
+  }
+
+  /**
+   * Returns all rows within the given range (inclusive)
+   *
+   * @param {number} startBeat
+   * @param {number} endBeat
+   * @return {*}  {RowData[]}
+   * @memberof Chart
+   */
+  getRowsInRange(startBeat: number, endBeat: number): RowData[] {
+    return this.notedataRows.filter(
+      row => row.beat >= startBeat && row.beat <= endBeat
+    )
+  }
+
   recalculateNotes() {
     this.notedata = this.notedata.map(note => this.computeNote(note))
   }
 
-  recalculateStats() {
-    this._notedataStats = this.gameType.parser.getStats(this.notedata)
-    this._npsGraph = this.gameType.parser.getNPSGraph(
-      this.notedata,
-      this.timingData
-    )
-    this._streams = []
-    const differences = this.notedata
-      .slice(0, -1)
-      .map((note, idx) =>
-        Math.round((this.notedata[idx + 1].beat - note.beat) * 48)
-      )
-    // consolidate differences into streams
-    for (let i = 0; i < differences.length; i++) {
-      const diff = differences[i]
-      const startIdx = i
-      while (differences[i + 1] == diff) {
-        i++
+  recalculateRows(
+    startBeat: number | null = null,
+    endBeat: number | null = null
+  ) {
+    if (startBeat === null || endBeat === null) {
+      // Recalculate all rows
+      const rows: RowData[] = []
+      for (const note of this.notedata) {
+        let previousRow = rows.at(-1)
+        if (!previousRow || !isSameRow(previousRow.beat, note.beat)) {
+          previousRow = {
+            beat: note.beat,
+            second: note.second,
+            notes: [],
+            faked: this.timingData.isBeatFaked(note.beat),
+            warped: this.timingData.isBeatWarped(note.beat),
+          }
+          rows.push(previousRow)
+        }
+        previousRow.notes.push(note)
       }
-      this._streams.push({
-        start: this.notedata[startIdx].beat,
-        end: this.notedata[i + 1].beat,
-        beatSpacing: diff / 48,
-      })
-    }
+      this.notedataRows = rows
+    } else {
+      // create new rows
+      const newRows: RowData[] = []
+      let notedataIdx = bsearch(this.notedata, startBeat, note => note.beat)
+      while (
+        this.notedata[notedataIdx] &&
+        toRowIndex(this.notedata[notedataIdx].beat) < toRowIndex(startBeat)
+      ) {
+        notedataIdx++
+      }
 
-    // for (const note of this.notedata) {
-    //   if (currentStream == null) {
-    //     currentStream = {
-    //       start: note.beat,
-    //       end: note.beat,
-    //       beatSpacing: null,
-    //     }
-    //     this._streams.push(currentStream)
-    //     continue
-    //   }
-    //   if (currentStream.beatSpacing == null) {
-    //     currentStream.beatSpacing = note.beat - currentStream.start
-    //     currentStream.end = note.beat
-    //   } else {
-    //     if (
-    //       Math.abs(
-    //         currentStream.beatSpacing - (note.beat - currentStream.end)
-    //       ) > 0.001
-    //     ) {
-    //       currentStream = {
-    //         start: note.beat,
-    //         end: note.beat,
-    //         beatSpacing: null,
-    //       }
-    //       this._streams.push(currentStream)
-    //     } else {
-    //       currentStream.end = note.beat
-    //     }
-    //   }
-    // }
-    // if (this._streams.at(-1) != currentStream && currentStream != null) {
-    //   this._streams.push(currentStream)
-    // }
+      while (this.notedata[notedataIdx]?.beat <= endBeat) {
+        const note = this.notedata[notedataIdx]
+        let previousRow = newRows.at(-1)
+        if (!previousRow || !isSameRow(previousRow.beat, note.beat)) {
+          previousRow = {
+            beat: note.beat,
+            second: note.second,
+            notes: [],
+            faked: this.timingData.isBeatFaked(note.beat),
+            warped: this.timingData.isBeatWarped(note.beat),
+          }
+          newRows.push(previousRow)
+        }
+        previousRow.notes.push(note)
+        notedataIdx++
+      }
+
+      // splice out the modified rows
+      let rowIdx = bsearch(this.notedataRows, startBeat, row => row.beat)
+      while (
+        this.notedataRows[rowIdx] &&
+        toRowIndex(this.notedataRows[rowIdx].beat) < toRowIndex(startBeat)
+      ) {
+        rowIdx++
+      }
+      let endRowIdx = rowIdx
+      while (this.notedataRows[endRowIdx]?.beat <= endBeat) {
+        endRowIdx++
+      }
+      // insert new rows
+      this.notedataRows = this.notedataRows
+        .slice(0, rowIdx)
+        .concat(newRows, this.notedataRows.slice(endRowIdx))
+    }
+  }
+
+  recalculateStats(start: number | null = null, end: number | null = null) {
     this.recalculateLastNote()
+    if (start == null || end == null) {
+      this.stats.reset()
+      this.stats.calculate()
+    } else {
+      this.stats.recalculate(start, end)
+    }
+    this._startModify = null
+    this._endModify = null
   }
 
   getMusicPath(): string {
