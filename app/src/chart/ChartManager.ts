@@ -699,6 +699,7 @@ export class ChartManager {
   set time(time: number) {
     if (!this.loadedChart) return
     this.chartAudio.seek(time)
+    this._beat = this.loadedChart.getBeatFromSeconds(time)
     this.setNoteIndex()
   }
 
