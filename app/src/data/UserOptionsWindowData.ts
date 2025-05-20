@@ -189,6 +189,26 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
         children: [
           {
             type: "item",
+            label: "UI Scale",
+            id: "general.uiScale",
+            input: {
+              type: "number",
+              min: 20,
+              step: 10,
+              precision: 0,
+              max: 200,
+              transformers: {
+                serialize: value => value * 100,
+                deserialize: value => value / 100,
+              },
+              onChange: (_, value: number) => {
+                console.log("value")
+                document.body.parentElement!.style.fontSize = value * 100 + "%"
+              },
+            },
+          },
+          {
+            type: "item",
             label: "Smooth Animations",
             id: "general.smoothAnimations",
             input: {

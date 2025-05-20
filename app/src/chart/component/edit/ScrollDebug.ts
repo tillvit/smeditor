@@ -98,7 +98,7 @@ export class ScrollDebug extends Container implements ChartRendererComponent {
 
     const scrolls = this.renderer.chart.timingData.getTimingData("SCROLLS")
 
-    this.x = this.renderer.chartManager.app.renderer.screen.width / 4
+    this.x = this.renderer.chartManager.app.STAGE_WIDTH / 4
 
     for (const box of this.scrollMap.values()) {
       box.marked = false
@@ -234,8 +234,7 @@ export class ScrollDebug extends Container implements ChartRendererComponent {
   }
 
   inBounds(y: number) {
-    const h =
-      this.renderer.chartManager.app.renderer.screen.height / this.scale.y
+    const h = this.renderer.chartManager.app.STAGE_HEIGHT / this.scale.y
     return Math.abs(y) < h
   }
 }

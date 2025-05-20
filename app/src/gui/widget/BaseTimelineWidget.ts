@@ -51,7 +51,7 @@ export class BaseTimelineWidget extends Widget {
     this.lastCMod = Options.chart.CMod
     this.addChild(this.overlay)
 
-    this.x = this.manager.app.renderer.screen.width / 2 - this.xOffset
+    this.x = this.manager.app.STAGE_WIDTH / 2 - this.xOffset
 
     EventHandler.on("chartLoaded", () => {
       this.queued = false
@@ -110,11 +110,11 @@ export class BaseTimelineWidget extends Widget {
 
   update() {
     this.scale.y = Options.chart.reverse ? -1 : 1
-    const width = this.manager.app.renderer.screen.height - this.verticalMargin
+    const width = this.manager.app.STAGE_HEIGHT - this.verticalMargin
     this.backing.height = width + this.backingVerticalPadding
     this.backing.position.y = -this.backing.height / 2
     this.backing.position.x = -this.backing.width / 2
-    this.x = this.manager.app.renderer.screen.width / 2 - this.xOffset
+    this.x = this.manager.app.STAGE_WIDTH / 2 - this.xOffset
     const chart = this.getChart()
     const chartView = this.manager.chartManager.chartView!
     if (!chart || !chartView || !Flags.layout) {
@@ -129,19 +129,11 @@ export class BaseTimelineWidget extends Widget {
     }
 
     const overlayStart = Options.chart.CMod
-      ? chartView.getSecondFromYPos(
-          -this.manager.app.renderer.screen.height / 2
-        )
-      : chartView.getBeatFromYPos(
-          -this.manager.app.renderer.screen.height / 2,
-          true
-        )
+      ? chartView.getSecondFromYPos(-this.manager.app.STAGE_HEIGHT / 2)
+      : chartView.getBeatFromYPos(-this.manager.app.STAGE_HEIGHT / 2, true)
     const overlayEnd = Options.chart.CMod
-      ? chartView.getSecondFromYPos(this.manager.app.renderer.screen.height / 2)
-      : chartView.getBeatFromYPos(
-          this.manager.app.renderer.screen.height / 2,
-          true
-        )
+      ? chartView.getSecondFromYPos(this.manager.app.STAGE_HEIGHT / 2)
+      : chartView.getBeatFromYPos(this.manager.app.STAGE_HEIGHT / 2, true)
     const overlayRange = this.getYFromRange(chart, overlayStart, overlayEnd)
     this.overlay.y = overlayRange.startY
     this.overlay.height = overlayRange.endY - overlayRange.startY
@@ -173,11 +165,11 @@ export class BaseTimelineWidget extends Widget {
     }
 
     if (
-      this.manager.app.renderer.screen.height != this.lastHeight ||
+      this.manager.app.STAGE_HEIGHT != this.lastHeight ||
       this.lastCMod != Options.chart.CMod
     ) {
       this.lastCMod = Options.chart.CMod
-      this.lastHeight = this.manager.app.renderer.screen.height
+      this.lastHeight = this.manager.app.STAGE_HEIGHT
       this.updateDimensions()
       this.populate()
     }
@@ -209,7 +201,7 @@ export class BaseTimelineWidget extends Widget {
       return
     }
 
-    const height = this.manager.app.renderer.screen.height - this.verticalMargin
+    const height = this.manager.app.STAGE_HEIGHT - this.verticalMargin
     this.backing.height = height + this.backingVerticalPadding
     this.backing.width = this.backingWidth
     this.overlay.width = this.backingWidth

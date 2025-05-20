@@ -138,7 +138,7 @@ export class NPSGraphWidget extends BaseTimelineWidget {
       return
     }
 
-    const height = this.manager.app.renderer.screen.height - 40
+    const height = this.manager.app.STAGE_HEIGHT - 40
 
     const maxNps = chart.stats.getMaxNPS()
     const npsGraphData = chart.stats.npsGraph

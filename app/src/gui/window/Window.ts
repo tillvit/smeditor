@@ -1,4 +1,5 @@
 import { clamp } from "../../util/Math"
+import { Options } from "../../util/Options"
 import { Icons } from "../Icons"
 import { WindowManager } from "./WindowManager"
 
@@ -28,15 +29,21 @@ export abstract class Window {
 
     windowElement.appendChild(navbarElement)
     windowElement.appendChild(viewElement)
-    windowElement.style.width = options.width + "px"
-    windowElement.style.left = window.innerWidth / 2 - options.width / 2 + "px"
-    windowElement.style.top = window.innerHeight / 2 - options.height / 2 + "px"
+    windowElement.style.width = options.width / 16 + "rem"
+    windowElement.style.left =
+      window.innerWidth / 2 -
+      (options.width / 2) * Options.general.uiScale +
+      "px"
+    windowElement.style.top =
+      window.innerHeight / 2 -
+      (options.height / 2) * Options.general.uiScale +
+      "px"
     windowElement.classList.add("window")
     if (options.win_id) windowElement.dataset.win_id = options.win_id
 
     viewElement.classList.add("view")
-    viewElement.style.height = options.height + "px"
-    viewElement.style.width = options.width + "px"
+    viewElement.style.height = options.height / 16 + "rem"
+    viewElement.style.width = options.width / 16 + "rem"
 
     navbarElement.classList.add("navbar")
     if (options.title !== "") {
@@ -97,7 +104,6 @@ export abstract class Window {
     this.focus()
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   onClose(): void {}
 
   closeWindow() {

@@ -1,6 +1,7 @@
 import { Parser } from "expr-eval"
 import tippy from "tippy.js"
 import { EditMode } from "../../chart/ChartManager"
+import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
 import { Keybinds } from "../../util/Keybinds"
 import { Options } from "../../util/Options"
@@ -85,6 +86,12 @@ export class PlaybackOptionsWidget extends Widget {
 
     view.style.height = "0px"
 
+    EventHandler.on("resize", () => {
+      this.registeredToggles.forEach(toggle => {
+        toggle.update(false)
+      })
+    })
+
     document.getElementById("menubar")?.insertAdjacentElement("afterend", view)
 
     this.view = view
@@ -166,7 +173,7 @@ export class PlaybackOptionsWidget extends Widget {
     )`Adjust audio playback rate  ${"rateDown"}/${"rateUp"}`
 
     const assistContainer = document.createElement("div")
-    assistContainer.style.gap = "5px"
+    assistContainer.style.gap = "0.25rem"
     assistContainer.style.display = "flex"
     assistContainer.style.alignItems = "center"
     const assistCheckbox = this.createCheckbox({
@@ -201,10 +208,10 @@ export class PlaybackOptionsWidget extends Widget {
     const scrollRow = this.createRow("Scroll")
 
     const upIcon = Icons.getIcon("DBL_CHEVRON", 16)
-    upIcon.style.padding = "2px"
+    upIcon.style.padding = "0.125rem"
 
     const downIcon = Icons.getIcon("DBL_CHEVRON", 16)
-    downIcon.style.padding = "2px"
+    downIcon.style.padding = "0.125rem"
     downIcon.style.transform = "rotate(180deg)"
     const directionToggle = this.createToggle({
       values: [upIcon, downIcon],
@@ -304,9 +311,9 @@ export class PlaybackOptionsWidget extends Widget {
 
     const audioIcon = Icons.getIcon("VOLUME", 22)
     audioIcon.style.marginLeft = "auto"
-    audioIcon.style.marginRight = "-16px"
-    audioIcon.style.height = "22px"
-    audioIcon.style.width = "22px"
+    audioIcon.style.marginRight = "-1rem"
+    audioIcon.style.height = "1.375rem"
+    audioIcon.style.width = "1.375rem"
     audioIcon.style.alignSelf = "center"
     view.appendChild(audioIcon)
 
@@ -358,9 +365,12 @@ export class PlaybackOptionsWidget extends Widget {
     fxRow.appendChild(fxSpinner)
     view.appendChild(fxRow)
 
-    this.changeRow.style.setProperty("--w", this.changeRow.offsetWidth + "px")
-    this.warpRow.style.setProperty("--w", this.warpRow.offsetWidth + "px")
-    this.fakeRow.style.setProperty("--w", this.fakeRow.offsetWidth + "px")
+    this.changeRow.style.setProperty(
+      "--w",
+      this.changeRow.offsetWidth / 16 + "rem"
+    )
+    this.warpRow.style.setProperty("--w", this.warpRow.offsetWidth / 16 + "rem")
+    this.fakeRow.style.setProperty("--w", this.fakeRow.offsetWidth / 16 + "rem")
 
     this.changeRow.classList.toggle("hidden", Options.chart.CMod)
     this.warpRow.classList.toggle("hidden", !Options.chart.CMod)

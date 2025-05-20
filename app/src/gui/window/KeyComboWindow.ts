@@ -42,7 +42,7 @@ export class KeyComboWindow extends Window {
     this.viewElement.classList.add("confirmation")
     const padding = document.createElement("div")
     padding.classList.add("padding")
-    padding.style.gap = "8px"
+    padding.style.gap = "0.5rem"
 
     const message = document.createElement("div")
     message.classList.add("label")
@@ -53,8 +53,8 @@ export class KeyComboWindow extends Window {
     const keyComboDisplay = document.createElement("input")
     keyComboDisplay.type = "text"
     keyComboDisplay.disabled = true
-    keyComboDisplay.style.fontSize = "18px"
-    keyComboDisplay.style.height = "24px"
+    keyComboDisplay.style.fontSize = "1.25rem"
+    keyComboDisplay.style.height = "1.5rem"
     keyComboDisplay.style.flex = "0"
     keyComboDisplay.style.textAlign = "center"
 

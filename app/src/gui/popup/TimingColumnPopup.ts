@@ -39,11 +39,11 @@ export class TimingColumnPopup extends Popup {
   static buildContent() {
     const popupOptions = document.createElement("div")
     popupOptions.style.display = "flex"
-    popupOptions.style.gap = "4px"
+    popupOptions.style.gap = "0.25rem"
     popupOptions.style.alignItems = "center"
     popupOptions.style.flexDirection = "column"
-    popupOptions.style.marginTop = "10px"
-    popupOptions.style.fontSize = "12px"
+    popupOptions.style.marginTop = "0.6rem"
+    popupOptions.style.fontSize = "0.75rem"
 
     const convertText = document.createElement("div")
     const convertBtnOne = document.createElement("button")

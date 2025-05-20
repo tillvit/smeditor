@@ -2,6 +2,7 @@ import scrollIntoView from "scroll-into-view-if-needed"
 import { App } from "../../App"
 
 import { EventHandler } from "../../util/EventHandler"
+import { Options } from "../../util/Options"
 import { RecentFileHandler } from "../../util/RecentFileHandler"
 import { Icons } from "../Icons"
 import { DirectoryWindow } from "./DirectoryWindow"
@@ -28,8 +29,10 @@ export class InitialWindow extends Window {
 
     EventHandler.on("resize", () => {
       this.move(
-        window.innerWidth / 2 - this.options.width / 2,
-        window.innerHeight / 2 - this.options.height / 2
+        window.innerWidth / 2 -
+          (this.options.width / 2) * Options.general.uiScale,
+        window.innerHeight / 2 -
+          (this.options.height / 2) * Options.general.uiScale
       )
     })
   }
@@ -51,7 +54,7 @@ export class InitialWindow extends Window {
     topContainer.classList.add("top-container")
     const separator = document.createElement("div")
     separator.classList.add("separator")
-    separator.style.margin = "10px"
+    separator.style.margin = "0.5rem"
     const bottomContainer = document.createElement("div")
     bottomContainer.classList.add("bottom-container")
     openContainer.appendChild(topContainer)
@@ -61,7 +64,7 @@ export class InitialWindow extends Window {
     const openButton = document.createElement("button")
     openButton.style.display = "flex"
     openButton.style.flexDirection = "column"
-    openButton.style.padding = "10px"
+    openButton.style.padding = "0.5rem"
     openButton.style.backgroundColor = "#414352"
     openButton.style.color = "white"
     topContainer.appendChild(openButton)
@@ -102,7 +105,7 @@ export class InitialWindow extends Window {
     const newButton = document.createElement("button")
     newButton.style.display = "flex"
     newButton.style.flexDirection = "column"
-    newButton.style.padding = "10px"
+    newButton.style.padding = "0.5rem"
     newButton.style.backgroundColor = "#506352"
     newButton.style.color = "white"
     topContainer.appendChild(newButton)

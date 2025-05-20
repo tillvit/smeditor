@@ -63,7 +63,7 @@ export class TimingTrackOrderPopup extends Popup {
       playfield.classList.add("draggable-track")
       playfield.innerText = "PLAYFIELD"
       playfield.style.backgroundColor = "#2D2D2D"
-      playfield.style.padding = "20px 10px"
+      playfield.style.padding = "1.25rem 0.625rem"
       playfield.style.writingMode = "horizontal-tb"
       playfield.addEventListener("mousedown", ev =>
         this.startDragging(ev, playfield)
@@ -98,7 +98,7 @@ export class TimingTrackOrderPopup extends Popup {
     playfield.classList.add("draggable-track")
     playfield.innerText = "PLAYFIELD"
     playfield.style.backgroundColor = "#2D2D2D"
-    playfield.style.padding = "20px 10px"
+    playfield.style.padding = "1.25rem 0.625rem"
     playfield.style.writingMode = "horizontal-tb"
     playfield.addEventListener("mousedown", ev =>
       this.startDragging(ev, playfield)

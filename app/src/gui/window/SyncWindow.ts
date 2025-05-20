@@ -69,6 +69,7 @@ const WEIGHT_DATA = [
 export class SyncWindow extends Window {
   app: App
   private onAudioLoad = this.reset.bind(this)
+  private onResize = this.resize.bind(this)
 
   private windowStep = 512
   private fftSize = 1024
@@ -130,10 +131,12 @@ export class SyncWindow extends Window {
 
     this.reset()
     EventHandler.on("audioLoaded", this.onAudioLoad)
+    EventHandler.on("resize", this.onResize)
   }
 
   onClose() {
     EventHandler.off("audioLoaded", this.onAudioLoad)
+    EventHandler.off("resize", this.onResize)
     this.app.chartManager.chartAudio.offLoad(this.onAudioLoad)
   }
 
@@ -149,8 +152,8 @@ export class SyncWindow extends Window {
     // Main canvas
 
     const canvas = document.createElement("canvas")
-    canvas.style.width = `${graphWidth / 2}px`
-    canvas.style.height = `${graphHeight}px`
+    canvas.style.width = `${graphWidth / 2 / 16}rem`
+    canvas.style.height = `${graphHeight / 16}rem`
 
     // Create tabs
 
@@ -172,7 +175,10 @@ export class SyncWindow extends Window {
     tabContainer.replaceChildren(optionsTab, tempoTab, onsetsTab)
     ;[...tabContainer.children].forEach((element, index) => {
       ;(element as HTMLDivElement).onclick = () => {
-        tabScroller.scrollLeft = 370 * index
+        const fontSize = parseFloat(
+          getComputedStyle(document.body.parentElement!).fontSize
+        )
+        tabScroller.scrollLeft = ((370 * fontSize) / 16) * index
         tabContainer
           .querySelectorAll(".active")
           .forEach(e => e.classList.remove("active"))
@@ -196,7 +202,7 @@ export class SyncWindow extends Window {
       const container = document.createElement("div")
       container.classList.add("sync-cover")
       container.innerText = text
-      container.style.left = `${left * 370}px`
+      container.style.left = `${(left * 370) / 16}rem`
       return container
     }
 
@@ -224,7 +230,7 @@ export class SyncWindow extends Window {
     this.resetButton = document.createElement("button")
     this.resetButton.classList.add("delete")
     this.resetButton.innerText = "Clear results"
-    this.resetButton.style.width = "120px"
+    this.resetButton.style.width = "7.5rem"
     this.resetButton.disabled = true
     this.resetButton.onclick = () => {
       this.resetButton.disabled = true
@@ -234,7 +240,7 @@ export class SyncWindow extends Window {
 
     this.toggleButton = document.createElement("button")
     this.toggleButton.innerText = "Start analyzing"
-    this.toggleButton.style.width = "200px"
+    this.toggleButton.style.width = "12.5rem"
     this.toggleButton.onclick = () => {
       if (!this.doAnalysis) {
         tempoTab.click()
@@ -256,12 +262,24 @@ export class SyncWindow extends Window {
     requestAnimationFrame(loop)
   }
 
+  resize() {
+    const activeTab = this.viewElement.querySelector(".sync-tab-option.active")
+    if (!activeTab) return
+    const index = [...activeTab.parentElement!.children].indexOf(activeTab)
+    if (index < 0) return
+    const fontSize = parseFloat(
+      getComputedStyle(document.body.parentElement!).fontSize
+    )
+    this.viewElement.querySelector(".sync-tab-scroller")!.scrollLeft =
+      ((370 * fontSize) / 16) * index
+  }
+
   createOptionsView() {
     const optionsView = document.createElement("div")
     optionsView.style.display = "flex"
     optionsView.style.position = "relative"
     optionsView.style.flexDirection = "column"
-    optionsView.style.gap = "3px"
+    optionsView.style.gap = "0.2rem"
     optionsView.style.height = "100%"
 
     const createLabel = (
@@ -322,7 +340,7 @@ export class SyncWindow extends Window {
     const optionsTempoLabel = document.createElement("div")
     optionsTempoLabel.innerText = "Tempo"
     optionsTempoLabel.style.fontWeight = "600"
-    optionsTempoLabel.style.marginTop = "15px"
+    optionsTempoLabel.style.marginTop = "1rem"
 
     const optionsTempoFFTSlider = NumberSlider.create({
       min: Math.log2(128),
@@ -387,7 +405,7 @@ export class SyncWindow extends Window {
     const container = document.createElement("div")
     container.style.display = "flex"
     container.style.position = "relative"
-    container.style.gap = "10px"
+    container.style.gap = "0.625m"
 
     const offsetDetectionColumn = document.createElement("div")
     offsetDetectionColumn.style.flex = "1"
@@ -487,7 +505,7 @@ export class SyncWindow extends Window {
     const container = document.createElement("div")
     container.style.display = "flex"
     container.style.flexDirection = "column"
-    container.style.gap = "10px"
+    container.style.gap = "0.625rem"
     container.style.justifyContent = "center"
     container.style.alignItems = "center"
     container.style.position = "relative"
@@ -519,9 +537,9 @@ export class SyncWindow extends Window {
     const onsetResults = document.createElement("div")
     onsetResults.style.color = "#888888"
     onsetResults.style.fontStyle = "italic"
-    onsetResults.style.fontSize = "11px"
-    onsetResults.style.marginBottom = "15px"
-    onsetResults.style.marginTop = "-6px"
+    onsetResults.style.fontSize = "0.75rem"
+    onsetResults.style.marginBottom = "1rem"
+    onsetResults.style.marginTop = "-0.375rem"
     onsetResults.innerText = "Found 0 onsets"
     this.onsetResults = onsetResults
 

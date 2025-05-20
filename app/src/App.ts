@@ -70,21 +70,26 @@ interface AppVersion {
   changelog: string[]
 }
 
+const BASE_STAGE_HEIGHT = 960
+
 export class App {
-  VERSION = "1.2.1"
+  readonly VERSION = "1.2.1"
 
-  options = Options
-  events = EventHandler
-  themes = Themes
+  readonly options = Options
+  readonly events = EventHandler
+  readonly themes = Themes
 
-  renderer: Renderer
-  stage: Container
-  view: HTMLCanvasElement
-  chartManager: ChartManager
-  windowManager: WindowManager
-  menubarManager: MenubarManager
-  actionHistory: ActionHistory
+  readonly renderer: Renderer
+  readonly stage: Container
+  readonly view: HTMLCanvasElement
+  readonly chartManager: ChartManager
+  readonly windowManager: WindowManager
+  readonly menubarManager: MenubarManager
+  readonly actionHistory: ActionHistory
   capturing = false
+
+  STAGE_HEIGHT = BASE_STAGE_HEIGHT
+  STAGE_WIDTH = BASE_STAGE_HEIGHT
 
   private lastWidth = window.innerWidth
   private lastHeight = window.innerHeight
@@ -111,6 +116,7 @@ export class App {
     }, 10000)
     if (Options.general.smoothAnimations)
       document.body.classList.add("animated")
+    document.body.parentElement!.style.fontSize = `${Options.general.uiScale * 100}%`
     this.registerFonts()
 
     this.view = document.getElementById("pixi") as HTMLCanvasElement
@@ -385,6 +391,12 @@ export class App {
       ).toNumber()
     })
 
+    EventHandler.on("userOptionUpdated", option => {
+      if (option == "general.uiScale") {
+        this.updateSize()
+      }
+    })
+
     window.addEventListener("keydown", function (e) {
       if (e.code == "Enter") {
         if (e.target instanceof HTMLButtonElement) {
@@ -469,6 +481,11 @@ export class App {
     this.view.height = screenHeight * this.renderer.resolution
     this.view.style.width = `${screenWidth}px`
     this.view.style.height = `${screenHeight}px`
+    this.STAGE_HEIGHT = BASE_STAGE_HEIGHT / Options.general.uiScale
+    const zoomRatio = screenHeight / this.STAGE_HEIGHT
+    this.stage.scale.set(zoomRatio)
+    this.stage.position.set(screenWidth / 2, screenHeight / 2)
+    this.STAGE_WIDTH = screenWidth / zoomRatio
   }
 
   updateSize() {

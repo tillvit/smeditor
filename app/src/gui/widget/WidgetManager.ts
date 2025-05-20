@@ -28,8 +28,6 @@ export class WidgetManager extends Container {
   }
 
   update() {
-    this.x = this.app.renderer.screen.width / 2
-    this.y = this.app.renderer.screen.height / 2
     this.children.forEach(child => child.update())
   }
 

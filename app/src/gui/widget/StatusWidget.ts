@@ -190,7 +190,7 @@ export class StatusWidget extends Widget {
     min.innerText = "00"
     min.spellcheck = false
     min.contentEditable = "true"
-    min.style.maxWidth = "27px"
+    min.style.maxWidth = `${27 / 16}rem`
     min.onkeydown = ev => {
       if (ev.key == "Enter") min.blur()
       if (ev.key == "Escape") {
@@ -210,7 +210,7 @@ export class StatusWidget extends Widget {
     sec.innerText = "00"
     sec.spellcheck = false
     sec.contentEditable = "true"
-    sec.style.maxWidth = "18px"
+    sec.style.maxWidth = `${18 / 16}rem`
     sec.onkeydown = ev => {
       if (ev.key == "Enter") sec.blur()
       if (ev.key == "Escape") {
@@ -230,7 +230,7 @@ export class StatusWidget extends Widget {
     millis.innerText = "000"
     millis.spellcheck = false
     millis.contentEditable = "true"
-    millis.style.maxWidth = "27px"
+    millis.style.maxWidth = `${27 / 16}rem`
     millis.onkeydown = ev => {
       if (ev.key == "Enter") millis.blur()
       if (ev.key == "Escape") {
@@ -328,7 +328,7 @@ export class StatusWidget extends Widget {
     this.editSteps.tabIndex = -1
     this.editSteps.classList.add("edit-fancy-button")
     const editStepsIcon = Icons.getIcon("FEET", 24)
-    editStepsIcon.style.marginBottom = "2px"
+    editStepsIcon.style.marginBottom = `${2 / 16}rem`
     this.editSteps.appendChild(editStepsIcon)
     this.editSteps.appendChild(document.createTextNode("Edit Steps"))
     this.editSteps.onclick = () => {
@@ -341,7 +341,7 @@ export class StatusWidget extends Widget {
     this.editTiming.tabIndex = -1
     this.editTiming.classList.add("edit-fancy-button")
     const editTimingIcon = Icons.getIcon("METRONOME", 24)
-    editTimingIcon.style.marginBottom = "2px"
+    editTimingIcon.style.marginBottom = `${2 / 16}rem`
     this.editTiming.appendChild(editTimingIcon)
     this.editTiming.appendChild(document.createTextNode("Edit Timing"))
     this.editTiming.onclick = () => {
@@ -530,8 +530,8 @@ export class StatusWidget extends Widget {
         highlight.pivot.y = 24
         const element = document.createElement("button")
         element.tabIndex = -1
-        element.style.height = "48px"
-        element.style.width = "48px"
+        element.style.height = `3rem`
+        element.style.width = `3rem`
         element.classList.add("note-placeholder")
         element.onclick = () => {
           this.manager.chartManager.setEditingNoteType(type)
@@ -605,6 +605,7 @@ export class StatusWidget extends Widget {
       !this.manager.app.capturing
         ? ""
         : "none"
+    this.scale.set(1 / this.manager.chartManager.app.stage.scale.x)
     const time = this.manager.chartManager.time
     if (this.lastTime != time) {
       if (document.activeElement != this.min)
@@ -758,9 +759,9 @@ export class StatusWidget extends Widget {
       this.idleFrames = 5
       this.lastTimingMode = timingMode
       this.stepsContainer.style.transform =
-        timingMode == EditTimingMode.Off ? "" : "translateY(-48px)"
+        timingMode == EditTimingMode.Off ? "" : "translateY(-3rem)"
       this.timingContainer.style.transform =
-        timingMode == EditTimingMode.Off ? "" : "translateY(-48px)"
+        timingMode == EditTimingMode.Off ? "" : "translateY(-3rem)"
       this.editSteps.classList.toggle(
         "active",
         timingMode == EditTimingMode.Off
@@ -790,22 +791,32 @@ export class StatusWidget extends Widget {
     }
 
     if (this.trackingMovement) {
+      let placeholderSize = 48
+
       const firstArrow = this.noteArrows[0]
       if (firstArrow) {
         const bounds = firstArrow.element.getBoundingClientRect()
+        placeholderSize = bounds.width
         this.noteArrows.forEach((noteArrow, index) => {
           noteArrow.sprite.position.y =
             bounds.top -
             this.manager.app.view.clientHeight / 2 -
             this.manager.app.view.getBoundingClientRect().top +
-            24
+            placeholderSize / 2
           noteArrow.sprite.position.x =
             bounds.left -
             this.manager.app.view.clientWidth / 2 +
-            24 +
-            index * 48
+            placeholderSize / 2 +
+            index * placeholderSize
+          noteArrow.sprite.scale.set(placeholderSize / 96)
+          noteArrow.bg.width = placeholderSize
+          noteArrow.bg.height = placeholderSize
+          // noteArrow.bg.pivot.set(placeholderSize / 2)
           noteArrow.bg.position = noteArrow.sprite.position
+          noteArrow.highlight.width = placeholderSize
+          noteArrow.highlight.height = placeholderSize
           noteArrow.highlight.position = noteArrow.sprite.position
+          noteArrow.highlight.pivot.set(placeholderSize / 2)
         })
         if (this.lastBounds) {
           const delta =
@@ -829,6 +840,7 @@ export class StatusWidget extends Widget {
         viewbounds.bottom -
         this.manager.app.view.clientHeight / 2 -
         this.manager.app.view.getBoundingClientRect().top
+      this.noteArrowMask.height = placeholderSize
     }
 
     const noteType = this.manager.chartManager.getEditingNoteType()

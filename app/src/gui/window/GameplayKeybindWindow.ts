@@ -162,7 +162,7 @@ export class GameplayKeybindWindow extends Window {
     label.innerText = GAMEPLAY_KEYBINDS[id]?.[col].label ?? "Column " + col
 
     const revert = Icons.getIcon("REVERT")
-    revert.style.width = "12px"
+    revert.style.width = "0.75rem"
     revert.addEventListener("click", () => {
       Keybinds.revertGameplayKeybind(id, col)
       this.conflictMap = this.calculateConflicts()

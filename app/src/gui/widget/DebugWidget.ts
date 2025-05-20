@@ -107,8 +107,8 @@ export class DebugWidget extends Widget {
   }
 
   update() {
-    this.x = -this.manager.app.renderer.screen.width / 2 + 20
-    this.y = -this.manager.app.renderer.screen.height / 2 + 20
+    this.x = -this.manager.app.STAGE_WIDTH / 2 + 20
+    this.y = -this.manager.app.STAGE_HEIGHT / 2 + 20
 
     this.graphs.children.forEach(graph => graph.update())
 

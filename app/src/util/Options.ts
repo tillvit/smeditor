@@ -15,6 +15,7 @@ export class DefaultOptions {
     fullscreen: false,
   }
   static general = {
+    uiScale: 1,
     spinnerStep: 1,
     smoothAnimations: true,
     autosaveInterval: 120,

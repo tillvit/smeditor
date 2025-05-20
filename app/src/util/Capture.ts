@@ -30,7 +30,7 @@ export class Capture {
       aspectRatio: 4 / 3,
       videoHeight: 1080,
       fps: 60,
-      bitrate: 3e7,
+      bitrate: 4e7,
       ...options,
     }
     this.app = app
@@ -166,9 +166,8 @@ export class Capture {
 
     let frame = 0
     let lastFrameTime = performance.now()
-    this.app.renderer.screen.width =
-      this.options.videoHeight * this.options.aspectRatio
-    this.app.renderer.screen.height = this.options.videoHeight
+    this.app.STAGE_WIDTH = this.options.videoHeight * this.options.aspectRatio
+    this.app.STAGE_HEIGHT = this.options.videoHeight
     this.app.view.width =
       this.options.videoHeight *
       this.options.aspectRatio *
@@ -177,10 +176,9 @@ export class Capture {
       this.options.videoHeight * this.app.renderer.resolution
 
     // fix later
-    Options.chart.zoom =
-      (this.app.renderer.screen.height / 720) * this.cachedZoom
+    Options.chart.zoom = (this.app.STAGE_HEIGHT / 720) * this.cachedZoom
     Options.chart.receptorYPos =
-      (this.app.renderer.screen.height / 720) * this.cachedYPosition
+      (this.app.STAGE_HEIGHT / 720) * this.cachedYPosition
     EventHandler.emit("resize")
     Ticker.shared.stop()
 

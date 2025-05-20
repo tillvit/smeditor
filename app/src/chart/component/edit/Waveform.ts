@@ -94,11 +94,11 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       }
     )
     this.trackVariable(
-      () => this.renderer.chartManager.app.renderer.screen.width,
+      () => this.renderer.chartManager.app.STAGE_WIDTH,
       () => this.resizeWaveform()
     )
     this.trackVariable(
-      () => this.renderer.chartManager.app.renderer.screen.height,
+      () => this.renderer.chartManager.app.STAGE_HEIGHT,
       () => this.resizeWaveform()
     )
     this.trackVariable(() => Options.chart.waveform.filteredColor)
@@ -160,9 +160,9 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       clamp(
         (this.rawData?.length ?? 0) * 288 * Options.chart.zoom,
         1,
-        this.renderer.chartManager.app.renderer.screen.width
+        this.renderer.chartManager.app.STAGE_WIDTH
       ),
-      this.renderer.chartManager.app.renderer.screen.height
+      this.renderer.chartManager.app.STAGE_HEIGHT
     )
   }
 
@@ -297,6 +297,8 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       },
     }
 
+    const screenHeight = this.renderer.chartManager.app.STAGE_HEIGHT
+
     if (
       Options.chart.waveform.speedChanges &&
       !Options.chart.CMod &&
@@ -334,12 +336,11 @@ export class Waveform extends Sprite implements ChartRendererComponent {
 
       const pixelsToEffectiveBeats =
         100 / chartSpeed / Math.abs(speedMult) / 64 / Options.chart.zoom
-      const screenHeight = this.renderer.chartManager.app.renderer.screen.height
 
       let currentBeat = startBeat
       let currentYPos = Math.round(
         this.renderer.getYPosFromBeat(currentBeat) * Options.chart.zoom +
-          this.parent.y
+          screenHeight / 2
       )
       let curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
 
@@ -360,7 +361,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
         }
         currentYPos = Math.round(
           this.renderer.getYPosFromBeat(currentBeat) * Options.chart.zoom +
-            this.parent.y
+            screenHeight / 2
         )
         curSec = this.renderer.chart.getSecondsFromBeat(currentBeat)
         const scrollDirection = this.renderer.getScrollDirection(scroll.value)
@@ -404,9 +405,9 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       // XMod no speed changes
 
       let currentBeat = this.renderer.getBeatFromYPos(
-        (-this.parent.y +
+        (-screenHeight / 2 +
           (Options.chart.reverse
-            ? this.renderer.chartManager.app.renderer.screen.height
+            ? this.renderer.chartManager.app.STAGE_HEIGHT
             : 0)) /
           Options.chart.zoom
       )
@@ -427,7 +428,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       }
       if (Options.chart.reverse) {
         for (
-          let y = this.renderer.chartManager.app.renderer.screen.height;
+          let y = this.renderer.chartManager.app.STAGE_HEIGHT;
           y >= 0;
           y -= Options.chart.waveform.lineHeight
         )
@@ -435,7 +436,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       } else {
         for (
           let y = 0;
-          y <= this.renderer.chartManager.app.renderer.screen.height;
+          y <= this.renderer.chartManager.app.STAGE_HEIGHT;
           y += Options.chart.waveform.lineHeight
         )
           drawLine(y)
@@ -444,9 +445,9 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       // CMod
 
       let calcTime = this.renderer.getSecondFromYPos(
-        (-this.parent.y +
+        (-screenHeight / 2 +
           (Options.chart.reverse
-            ? this.renderer.chartManager.app.renderer.screen.height
+            ? this.renderer.chartManager.app.STAGE_HEIGHT
             : 0)) /
           Options.chart.zoom
       )
@@ -461,7 +462,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       }
       if (Options.chart.reverse) {
         for (
-          let y = this.renderer.chartManager.app.renderer.screen.height;
+          let y = this.renderer.chartManager.app.STAGE_HEIGHT;
           y >= 0;
           y -= Options.chart.waveform.lineHeight
         )
@@ -469,7 +470,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
       } else {
         for (
           let y = 0;
-          y <= this.renderer.chartManager.app.renderer.screen.height;
+          y <= this.renderer.chartManager.app.STAGE_HEIGHT;
           y += Options.chart.waveform.lineHeight
         )
           drawLine(y)

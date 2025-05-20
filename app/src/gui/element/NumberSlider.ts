@@ -39,7 +39,7 @@ export class NumberSlider<T = number> {
 
     const text = document.createElement("div")
     text.innerText = this.formatValue(parseFloat(input.value)) + ""
-    text.style.width = "30px"
+    text.style.width = "2rem"
     this.text = text
     view.appendChild(text)
   }

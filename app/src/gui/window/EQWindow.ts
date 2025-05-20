@@ -139,8 +139,8 @@ export class EQWindow extends Window {
     this.updateIcons()
 
     const canvas = document.createElement("canvas")
-    canvas.style.width = "600px"
-    canvas.style.height = "200px"
+    canvas.style.width = "37.5rem"
+    canvas.style.height = "12.5rem"
     canvas.onmousedown = event => {
       const hitPoint = this.points
         .filter(point => point.hitTest(event.offsetX * 2, event.offsetY * 2))

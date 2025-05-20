@@ -61,7 +61,7 @@ export class NoteLayoutWidget extends BaseTimelineWidget {
     const numCols = chart.gameType.numCols
     const lastNote = chart.getNotedata().at(-1)
 
-    const height = this.manager.app.renderer.screen.height - 40
+    const height = this.manager.app.STAGE_HEIGHT - 40
     this.barTexture.resize(numCols * 6, height)
     this.backingWidth = numCols * 6 + 8
     this.updateDimensions()

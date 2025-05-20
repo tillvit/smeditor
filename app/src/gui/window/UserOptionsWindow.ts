@@ -35,8 +35,10 @@ export class UserOptionsWindow extends Window {
 
     EventHandler.on("resize", () => {
       this.move(
-        window.innerWidth / 2 - this.options.width / 2,
-        window.innerHeight / 2 - this.options.height / 2
+        window.innerWidth / 2 -
+          (this.options.width / 2) * Options.general.uiScale,
+        window.innerHeight / 2 -
+          (this.options.height / 2) * Options.general.uiScale
       )
     })
   }
@@ -130,9 +132,8 @@ export class UserOptionsWindow extends Window {
       item.appendChild(label)
     }
 
-    const revert = Icons.getIcon("REVERT")
+    const revert = Icons.getIcon("REVERT", 12)
     if (option.type == "item") {
-      revert.style.width = "12px"
       revert.addEventListener("click", () => {
         Options.applyOption([option.id, Options.getDefaultOption(option.id)])
         const callback: ((app: App, value: any) => void) | undefined =
@@ -260,9 +261,9 @@ export class UserOptionsWindow extends Window {
             Math.round(serializer(optionValue as number) * 1000) / 1000
           ).toString()
           const hardMin =
-            option.input.min ?? option.input.hardMin ?? -Number.MAX_VALUE
+            option.input.hardMin ?? option.input.min ?? -Number.MAX_VALUE
           const hardMax =
-            option.input.max ?? option.input.hardMax ?? Number.MAX_VALUE
+            option.input.hardMax ?? option.input.max ?? Number.MAX_VALUE
           numberInput.onblur = () => {
             let value = parseString(numberInput.value)
             if (value === null) {
@@ -296,8 +297,9 @@ export class UserOptionsWindow extends Window {
               Options.getOption(option.id)
                 ? "none"
                 : "block"
+            callback?.(this.app, deserializer(value))
           }
-          numberInput.style.width = "50px"
+          numberInput.style.width = "3rem"
           numberInput.onkeydown = ev => {
             if (ev.key == "Enter") numberInput.blur()
           }

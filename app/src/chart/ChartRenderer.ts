@@ -115,9 +115,6 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
 
     this.chartManager.app.stage.addChild(this)
 
-    this.x = this.chartManager.app.renderer.screen.width / 2
-    this.y = this.chartManager.app.renderer.screen.height / 2
-
     this.eventMode = "static"
     this.hitArea = new Rectangle(-1e5, -1e5, 2e5, 2e5)
 
@@ -305,9 +302,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     this.cachedBeat = this.chartManager.beat
     this.cachedTime = this.chartManager.time
 
-    this.x =
-      this.chartManager.app.renderer.screen.width / 2 +
-      Options.chart.receptorXPos
+    this.x = Options.chart.receptorXPos
 
     this.speedMult = Options.chart.doSpeedChanges
       ? this.getCurrentSpeedMult()
@@ -615,7 +610,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @memberof ChartRenderer
    */
   getUpperBound(): number {
-    return -this.y / Options.chart.zoom - 64
+    return -this.chartManager.app.STAGE_HEIGHT / 2 / Options.chart.zoom - 64
   }
 
   /**
@@ -625,11 +620,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @memberof ChartRenderer
    */
   getLowerBound(): number {
-    return (
-      (this.chartManager.app.renderer.screen.height - this.y) /
-        Options.chart.zoom +
-      64
-    )
+    return this.chartManager.app.STAGE_HEIGHT / 2 / Options.chart.zoom + 64
   }
 
   findFirstOnScreenScroll(): ScrollTimingEvent {

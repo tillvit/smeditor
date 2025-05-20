@@ -361,16 +361,13 @@ export class ChartManager {
     this.app.stage.addChild(this.loadingText)
     this.loadingText.visible = false
 
-    const moveCenterText = () => {
-      this.noChartTextA.x = this.app.renderer.screen.width / 2
-      this.noChartTextA.y = this.app.renderer.screen.height / 2 - 20
-      this.noChartTextB.x = this.app.renderer.screen.width / 2
-      this.noChartTextB.y = this.app.renderer.screen.height / 2 + 10
+    this.noChartTextA.x = 0
+    this.noChartTextA.y = -20
+    this.noChartTextB.x = 0
+    this.noChartTextB.y = 10
 
-      this.loadingText.x = this.app.renderer.screen.width / 2
-      this.loadingText.y = this.app.renderer.screen.height / 2
-    }
-    moveCenterText()
+    this.loadingText.x = 0
+    this.loadingText.y = 0
 
     // Faster update loop, more precision
     setInterval(() => {
@@ -538,14 +535,6 @@ export class ChartManager {
       tpsUpdate()
       DebugWidget.instance?.addUpdateTimeValue(performance.now() - updateStart)
     }, 5)
-
-    EventHandler.on("resize", () => {
-      if (this.chartView) {
-        this.chartView.x = this.app.renderer.screen.width / 2
-        this.chartView.y = this.app.renderer.screen.height / 2
-      }
-      moveCenterText()
-    })
 
     EventHandler.on("chartModified", () => {
       if (this.loadedChart) {
@@ -899,8 +888,6 @@ export class ChartManager {
 
     this.setNoteIndex()
     this.chartView = new ChartRenderer(this)
-    this.chartView.x = this.app.renderer.screen.width / 2
-    this.chartView.y = this.app.renderer.screen.height / 2
     if (this.mode == EditMode.Play || this.mode == EditMode.Record)
       this.setMode(this.lastMode)
     if (Flags.viewMode) this.setMode(EditMode.View)

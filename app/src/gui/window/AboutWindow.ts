@@ -32,7 +32,7 @@ export class AboutWindow extends Window {
     description.innerText = `Open source online web tool to view and edit StepMania charts (.sm/.ssc files). Maintained by tillvit`
 
     const versionText = document.createElement("div")
-    versionText.style.fontSize = "14px"
+    versionText.style.fontSize = "0.875rem"
     versionText.style.color = "var(--text-color-secondary)"
     versionText.innerText = `Core v${window.app.VERSION}` // why does using App break pixi
     if (window.nw) {
