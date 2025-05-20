@@ -2299,6 +2299,10 @@ input[type="color"] {
   width: 1.8rem;
 }
 
+input[type="checkbox"] {
+  height: 0.8125rem;
+}
+
 ::-webkit-color-swatch-wrapper {
   padding: 0;
 }
