@@ -193,7 +193,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             id: "general.uiScale",
             input: {
               type: "number",
-              min: 20,
+              min: 30,
               step: 10,
               precision: 0,
               max: 200,
@@ -202,7 +202,6 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                 deserialize: value => value / 100,
               },
               onChange: (_, value: number) => {
-                console.log("value")
                 document.body.parentElement!.style.fontSize = value * 100 + "%"
               },
             },
