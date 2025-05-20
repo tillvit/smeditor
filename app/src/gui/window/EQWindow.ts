@@ -5,6 +5,7 @@ import { BezierAnimator } from "../../util/BezierEasing"
 import { average, blendPixiColors } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, roundDigit } from "../../util/Math"
+import { Options } from "../../util/Options"
 import { Themes } from "../../util/Theme"
 import { parseString as numericParse } from "../../util/Util"
 import { Icons } from "../Icons"
@@ -143,7 +144,12 @@ export class EQWindow extends Window {
     canvas.style.height = "12.5rem"
     canvas.onmousedown = event => {
       const hitPoint = this.points
-        .filter(point => point.hitTest(event.offsetX * 2, event.offsetY * 2))
+        .filter(point =>
+          point.hitTest(
+            (event.offsetX * 2) / Options.general.uiScale,
+            (event.offsetY * 2) / Options.general.uiScale
+          )
+        )
         .at(-1)
       this.endTrack()
       hitPoint?.mouseDown(event)
