@@ -48,6 +48,7 @@ import { GameTypeRegistry } from "./gameTypes/GameTypeRegistry"
 import { NoteskinRegistry } from "./gameTypes/noteskin/NoteskinRegistry"
 import { GameplayStats } from "./play/GameplayStats"
 import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
+import { TimingWindowCollection } from "./play/TimingWindowCollection"
 import { Chart } from "./sm/Chart"
 import {
   HoldNotedataEntry,
@@ -157,6 +158,7 @@ export class ChartManager {
   private assistTickIndex = 0
   private lastMetronomeDivision = -1
   private lastMetronomeMeasure = -1
+  private holdFlashes: HoldNotedataEntry[] = []
 
   private lastSong: string | null = null
 
@@ -416,27 +418,51 @@ export class ChartManager {
       const notedata = this.loadedChart.getNotedata()
       if (this.chartAudio.isPlaying()) {
         this._beat = this.loadedChart?.getBeatFromSeconds(this.time) ?? 0
-
+        let note = notedata[this.noteFlashIndex]
         // Play note flash
-        while (
-          this.noteFlashIndex < notedata.length &&
-          time > notedata[this.noteFlashIndex].second
-        ) {
+        while (this.noteFlashIndex < notedata.length && time > note.second) {
           if (
             this.mode != EditMode.Record &&
-            this.loadedChart.gameType.gameLogic.shouldAssistTick(
-              notedata[this.noteFlashIndex]
-            )
+            this.loadedChart.gameType.gameLogic.shouldAssistTick(note)
           ) {
-            if (this.mode != EditMode.Play)
-              this.chartView.doJudgement(
-                notedata[this.noteFlashIndex],
-                0,
-                TIMING_WINDOW_AUTOPLAY
-              )
+            if (this.mode != EditMode.Play) {
+              this.chartView.doJudgement(note, 0, TIMING_WINDOW_AUTOPLAY)
+              if (isHoldNote(note)) {
+                if (note.type == "Hold") {
+                  this.chartView.getNotefield().activateHold(note.col)
+                }
+                if (note.type == "Roll") {
+                  this.chartView.getNotefield().activateRoll(note.col)
+                }
+                this.holdFlashes.push(note)
+              }
+            }
           }
           this.noteFlashIndex++
+          note = notedata[this.noteFlashIndex]
         }
+
+        // Deactivate hold flashes
+        this.holdFlashes = this.holdFlashes.filter(hold => {
+          if (this._beat < hold.beat + hold.hold) return true
+          if (this.chartView) {
+            if (hold.type == "Hold") {
+              this.chartView.getNotefield().releaseHold(hold.col)
+            }
+            if (hold.type == "Roll") {
+              this.chartView.getNotefield().releaseRoll(hold.col)
+            }
+            this.chartView.doJudgement(
+              hold,
+              null,
+              TimingWindowCollection.getCollection(
+                Options.play.timingCollection
+              ).getHeldJudgement(hold)
+            )
+          }
+          return false
+        })
+
         // Play assist tick
         const assistRows = new Set()
         while (
@@ -1085,6 +1111,13 @@ export class ChartManager {
       this.noteFlashIndex--
 
     this.assistTickIndex = this.noteFlashIndex
+    for (const hold of this.holdFlashes) {
+      if (hold.type == "Hold") {
+        this.chartView.getNotefield().releaseHold(hold.col)
+      } else if (hold.type == "Roll") {
+        this.chartView.getNotefield().releaseRoll(hold.col)
+      }
+    }
   }
 
   playPause() {
