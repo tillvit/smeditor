@@ -3,7 +3,6 @@ import { Ticker } from "pixi.js"
 import { App } from "../App"
 import { EditMode } from "../chart/ChartManager"
 import { TIMING_WINDOW_AUTOPLAY } from "../chart/play/StandardTimingWindow"
-import { EventHandler } from "./EventHandler"
 import { Options } from "./Options"
 import { bsearch } from "./Util"
 
@@ -166,20 +165,12 @@ export class Capture {
 
     let frame = 0
     let lastFrameTime = performance.now()
-    this.app.STAGE_WIDTH = this.options.videoHeight * this.options.aspectRatio
-    this.app.STAGE_HEIGHT = this.options.videoHeight
-    this.app.view.width =
-      this.options.videoHeight *
-      this.options.aspectRatio *
-      this.app.renderer.resolution
-    this.app.view.height =
-      this.options.videoHeight * this.app.renderer.resolution
-
-    // fix later
-    Options.chart.zoom = (this.app.STAGE_HEIGHT / 720) * this.cachedZoom
-    Options.chart.receptorYPos =
-      (this.app.STAGE_HEIGHT / 720) * this.cachedYPosition
-    EventHandler.emit("resize")
+    this.app.onResize(
+      this.options.videoHeight * this.options.aspectRatio,
+      this.options.videoHeight
+    )
+    this.app.view.style.width = window.innerWidth + "px"
+    this.app.view.style.height = window.innerHeight + "px"
     Ticker.shared.stop()
 
     let audioBuf = this.app.chartManager.chartAudio.getBuffer()
