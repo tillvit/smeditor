@@ -157,4 +157,8 @@ export class SchedulableSoundEffect {
     }
     this._sources = []
   }
+
+  getBuffer() {
+    return this._buffer
+  }
 }

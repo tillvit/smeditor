@@ -4,6 +4,7 @@ import {
   FederatedMouseEvent,
   Point,
   Rectangle,
+  Ticker,
 } from "pixi.js"
 import { ContextMenuPopup } from "../gui/element/ContextMenu"
 import { Flags } from "../util/Flags"
@@ -152,13 +153,13 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       this.selectionBoundary.update()
     }
 
-    this.chartManager.app.ticker.add(tickHandler)
+    Ticker.shared.add(tickHandler)
 
     window.addEventListener("keydown", keyHandler)
     this.on("destroyed", () => {
       window.removeEventListener("keydown", keyHandler)
       this.removeAllListeners()
-      this.chartManager.app.ticker.remove(tickHandler)
+      Ticker.shared.remove(tickHandler)
     })
 
     this.on("pointerdown", event => {

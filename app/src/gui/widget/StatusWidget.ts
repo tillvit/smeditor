@@ -600,7 +600,11 @@ export class StatusWidget extends Widget {
 
   update(): void {
     this.view.style.display =
-      this.manager.chartManager.loadedSM && Flags.status ? "" : "none"
+      this.manager.chartManager.loadedSM &&
+      Flags.status &&
+      !this.manager.app.capturing
+        ? ""
+        : "none"
     const time = this.manager.chartManager.time
     if (this.lastTime != time) {
       if (document.activeElement != this.min)

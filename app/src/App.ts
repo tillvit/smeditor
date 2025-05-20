@@ -29,6 +29,7 @@ import { InitialWindow } from "./gui/window/InitialWindow"
 import { WindowManager } from "./gui/window/WindowManager"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
+import { Capture } from "./util/Capture"
 import { EventHandler } from "./util/EventHandler"
 import { FileHandler } from "./util/file-handler/FileHandler"
 import { Flags, loadFlags } from "./util/Flags"
@@ -77,13 +78,13 @@ export class App {
   themes = Themes
 
   renderer: Renderer
-  ticker: Ticker
   stage: Container
   view: HTMLCanvasElement
   chartManager: ChartManager
   windowManager: WindowManager
   menubarManager: MenubarManager
   actionHistory: ActionHistory
+  capturing = false
 
   private lastWidth = window.innerWidth
   private lastHeight = window.innerHeight
@@ -104,7 +105,10 @@ export class App {
       }
     }
 
-    setInterval(() => Options.saveOptions(), 10000)
+    setInterval(() => {
+      if (this.capturing) return
+      Options.saveOptions()
+    }, 10000)
     if (Options.general.smoothAnimations)
       document.body.classList.add("animated")
     this.registerFonts()
@@ -135,9 +139,8 @@ export class App {
       powerPreference: "low-power",
     })
 
-    this.ticker = new Ticker()
-    this.ticker.maxFPS = 0
-    this.ticker.add(() => {
+    Ticker.shared.maxFPS = 0
+    Ticker.shared.add(() => {
       // Update ChartRenderer every frame
       const updateStart = performance.now()
       this.chartManager.widgetManager.update()
@@ -162,7 +165,7 @@ export class App {
       fpsUpdate()
     }, UPDATE_PRIORITY.HIGH)
 
-    this.ticker.start()
+    Ticker.shared.start()
 
     BetterRoundedRect.init(this.renderer)
 
@@ -320,6 +323,7 @@ export class App {
     }
 
     window.onpagehide = () => {
+      if (this.capturing) return
       Options.saveOptions()
     }
 
@@ -467,6 +471,18 @@ export class App {
     this.view.style.height = `${screenHeight}px`
   }
 
+  updateSize() {
+    const screenWidth = window.innerWidth
+    const screenHeight =
+      window.innerHeight -
+      document.getElementById("menubar")!.clientHeight -
+      document.getElementById("playback-options")!.clientHeight
+    this.lastHeight = screenHeight
+    this.lastWidth = screenWidth
+    this.onResize(screenWidth, screenHeight)
+    EventHandler.emit("resize")
+  }
+
   checkAppVersion() {
     if (!window.nw) return
     const gui = nw.require("nw.gui")
@@ -558,3 +574,5 @@ function init() {
     window.NoteskinRegistry = NoteskinRegistry
   }
 }
+
+window.Capture = Capture
