@@ -459,21 +459,18 @@ export class PlaybackOptionsWidget extends Widget {
       input.value = spinner.currentValue.toFixed()
     }
 
-    input.addEventListener(
-      "wheel",
-      ev => {
-        spinner.currentValue +=
-          ((getStep(ev) * ev.deltaY) / 100) *
-          (Options.chart.scroll.invertZoomScroll ? -1 : 1) *
-          Options.chart.scroll.scrollSensitivity
-        if (options.max !== undefined && spinner.currentValue > options.max)
-          spinner.currentValue = options.max
-        if (options.min !== undefined && spinner.currentValue < options.min)
-          spinner.currentValue = options.min
-        update(true)
-      },
-      { passive: true }
-    )
+    input.addEventListener("wheel", ev => {
+      ev.preventDefault()
+      spinner.currentValue +=
+        ((getStep(ev) * ev.deltaY) / 100) *
+        (Options.chart.scroll.invertZoomScroll ? -1 : 1) *
+        Options.chart.scroll.scrollSensitivity
+      if (options.max !== undefined && spinner.currentValue > options.max)
+        spinner.currentValue = options.max
+      if (options.min !== undefined && spinner.currentValue < options.min)
+        spinner.currentValue = options.min
+      update(true)
+    })
 
     const spinner = {
       btnMinus,
