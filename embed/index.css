@@ -483,17 +483,6 @@ button:active:enabled {
   filter: invert();
 }
 
-.dropdown-selected::after {
-  content: "";
-  background: right center no-repeat
-    url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAAbklEQVRIie2PMQqAMAxFXwfP6qJVPIjYzcOKdUkhQ0BaCoLkLS3k818CjuN8ztApYzIDl7xvmalFsAIZuIFozKPMMrC0CAJwKIkuGVX5KdkmLEm3ci1JSlLKU49yLSmXVG1es0EANvnvInKcP/AA784fpjlWwNQAAAAASUVORK5CYII=");
-  background-size: contain;
-  width: 12px;
-  height: 12px;
-  flex: 1;
-  filter: invert();
-}
-
 .dropdown-selected:hover:not(.disabled):not(:active) {
   background: rgb(55, 61, 68);
 }
