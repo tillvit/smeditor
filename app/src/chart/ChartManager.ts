@@ -7,7 +7,7 @@ import metronomeLow from "../../assets/sound/metronome_low.wav"
 import mine from "../../assets/sound/mine.wav"
 import { App } from "../App"
 import { AUDIO_EXT } from "../data/FileData"
-import { IS_OSX, KEYBIND_DATA } from "../data/KeybindData"
+import { KEYBIND_DATA } from "../data/KeybindData"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { AppUpdateNotification } from "../gui/notification/AppUpdateNotification"
 import { CoreUpdateNotification } from "../gui/notification/CoreUpdateNotification"
@@ -36,6 +36,7 @@ import { tpsUpdate } from "../util/Performance"
 import { RecentFileHandler } from "../util/RecentFileHandler"
 import { SchedulableSoundEffect } from "../util/SchedulableSoundEffect"
 import {
+  IS_OSX,
   bsearch,
   bsearchEarliest,
   compareObjects,

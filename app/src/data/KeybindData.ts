@@ -26,6 +26,7 @@ import { Options } from "../util/Options"
 import { basename, dirname } from "../util/Path"
 import {
   bsearch,
+  IS_OSX,
   isSameRow,
   QUANT_NAMES,
   QUANT_NUM,
@@ -57,7 +58,6 @@ export enum Modifier {
   META = "Command",
 }
 
-export const IS_OSX: boolean = navigator.userAgent.indexOf("Mac OS X") > -1
 export const DEF_MOD: Modifier = IS_OSX ? Modifier.META : Modifier.CTRL
 
 export const MODIFIER_ASCII: { [key: string]: string } = {

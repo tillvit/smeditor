@@ -7,7 +7,8 @@ import {
   Texture,
 } from "pixi.js"
 import { PartialNotedataEntry, isHoldNote } from "../chart/sm/NoteTypes"
-import { IS_OSX } from "../data/KeybindData"
+
+export const IS_OSX: boolean = navigator.userAgent.indexOf("Mac OS X") > -1
 
 export const QUANTS = [
   1,
