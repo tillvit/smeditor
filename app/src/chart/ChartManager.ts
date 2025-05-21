@@ -1118,6 +1118,7 @@ export class ChartManager {
         this.chartView.getNotefield().releaseRoll(hold.col)
       }
     }
+    this.holdFlashes = []
   }
 
   playPause() {
@@ -1595,6 +1596,11 @@ export class ChartManager {
           hasHit: false,
         }
       })
+      this.holdFlashes = []
+      for (let i = 0; i < this.loadedChart.gameType.numCols; i++) {
+        this.chartView.getNotefield().releaseHold(i)
+        this.chartView.getNotefield().releaseRoll(i)
+      }
       for (const note of notedata) {
         if (note.second < this.time) note.gameplay!.hasHit = true
         else break
