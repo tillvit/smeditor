@@ -91,8 +91,8 @@ export class App {
   STAGE_HEIGHT = BASE_STAGE_HEIGHT
   STAGE_WIDTH = BASE_STAGE_HEIGHT
 
-  private lastWidth = window.innerWidth
-  private lastHeight = window.innerHeight
+  private lastWidth = -1
+  private lastHeight = -1
 
   constructor() {
     tippy.setDefaultProps({ duration: [200, 100], theme: "sm" })
@@ -413,10 +413,7 @@ export class App {
 
     setInterval(() => {
       const screenWidth = window.innerWidth
-      const screenHeight =
-        window.innerHeight -
-        document.getElementById("menubar")!.clientHeight -
-        document.getElementById("playback-options")!.clientHeight
+      const screenHeight = this.getCanvasHeight()
       if (this.lastHeight != screenHeight || this.lastWidth != screenWidth) {
         this.lastHeight = screenHeight
         this.lastWidth = screenWidth
@@ -490,14 +487,19 @@ export class App {
 
   updateSize() {
     const screenWidth = window.innerWidth
-    const screenHeight =
-      window.innerHeight -
-      document.getElementById("menubar")!.clientHeight -
-      document.getElementById("playback-options")!.clientHeight
+    const screenHeight = this.getCanvasHeight()
     this.lastHeight = screenHeight
     this.lastWidth = screenWidth
     this.onResize(screenWidth, screenHeight)
     EventHandler.emit("resize")
+  }
+
+  getCanvasHeight() {
+    return (
+      window.innerHeight -
+      (document.getElementById("menubar")?.clientHeight ?? 0) -
+      (document.getElementById("playback-options")?.clientHeight ?? 0)
+    )
   }
 
   checkAppVersion() {
