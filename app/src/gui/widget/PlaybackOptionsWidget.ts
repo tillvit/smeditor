@@ -628,7 +628,8 @@ export class PlaybackOptionsWidget extends Widget {
   update() {
     if (
       !this.enteredMain &&
-      this.manager.chartManager.loadedChart !== undefined
+      this.manager.chartManager.loadedChart !== undefined &&
+      Flags.menuBar
     ) {
       this.enteredMain = true
       this.view.style.height = ""
