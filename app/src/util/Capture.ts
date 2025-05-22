@@ -3,6 +3,8 @@ import { Ticker } from "pixi.js"
 import { App } from "../App"
 import { EditMode } from "../chart/ChartManager"
 import { TIMING_WINDOW_AUTOPLAY } from "../chart/play/StandardTimingWindow"
+import { TimingWindowCollection } from "../chart/play/TimingWindowCollection"
+import { HoldNotedataEntry, isHoldNote } from "../chart/sm/NoteTypes"
 import { Options } from "./Options"
 import { bsearch } from "./Util"
 
@@ -11,6 +13,10 @@ interface CaptureOptions {
   videoHeight: number
   fps: number
   bitrate: number
+  playbackRate: number
+  assistTick: boolean
+  metronome: boolean
+  mode: "edit" | "play"
 }
 
 export class Capture {
@@ -30,6 +36,10 @@ export class Capture {
       videoHeight: 1080,
       fps: 60,
       bitrate: 4e7,
+      playbackRate: 1,
+      assistTick: false,
+      metronome: false,
+      mode: "edit",
       ...options,
     }
     this.app = app
@@ -78,22 +88,26 @@ export class Capture {
     })
   }
 
-  async renderBufferWithVolume(
+  async renderBufferWithModifications(
     buffer: AudioBuffer,
-    volume: number,
-    sampleRate: number
+    options: {
+      volume: number
+      sampleRate: number
+      rate: number
+    }
   ): Promise<AudioBuffer> {
     const offlineCtx = new OfflineAudioContext(
       buffer.numberOfChannels,
-      buffer.duration * sampleRate,
-      sampleRate
+      Math.ceil((buffer.duration * options.sampleRate) / options.rate),
+      options.sampleRate
     )
 
     const gainNode = offlineCtx.createGain()
-    gainNode.gain.setValueAtTime(volume, 0)
+    gainNode.gain.setValueAtTime(options.volume, 0)
 
     const offlineSource = offlineCtx.createBufferSource()
     offlineSource.buffer = buffer
+    offlineSource.playbackRate.setValueAtTime(options.rate, 0)
     offlineSource.connect(gainNode)
     gainNode.connect(offlineCtx.destination)
 
@@ -106,17 +120,11 @@ export class Capture {
   async createAssistSounds(
     startTime: number,
     endTime: number,
-    sampleRate: number
+    sampleRate: number,
+    playbackRate: number
   ) {
-    let assistTick = this.app.chartManager.assistTick.getBuffer()
-    assistTick = await this.renderBufferWithVolume(
-      assistTick,
-      Options.audio.soundEffectVolume * Options.audio.masterVolume,
-      sampleRate
-    )
-
     const buffer = new AudioBuffer({
-      length: Math.floor((endTime - startTime) * sampleRate),
+      length: Math.ceil(((endTime - startTime) * sampleRate) / playbackRate),
       sampleRate,
       numberOfChannels: 2,
     })
@@ -125,20 +133,71 @@ export class Capture {
     const endBeat = chart.getBeatFromSeconds(endTime)
     const notedata = chart.getNotedataInRange(startBeat, endBeat)
 
-    let lastBeat = -1
-    for (const note of notedata) {
-      if (note.beat == lastBeat) {
-        continue
+    if (this.options.assistTick) {
+      let assist_tick = this.app.chartManager.assistTick.getBuffer()
+
+      assist_tick = await this.renderBufferWithModifications(assist_tick, {
+        volume: Options.audio.soundEffectVolume * Options.audio.masterVolume,
+        sampleRate,
+        rate: 1,
+      })
+      let lastBeat = -1
+      for (const note of notedata) {
+        if (note.beat == lastBeat) {
+          continue
+        }
+        lastBeat = note.beat
+        if (chart.gameType.gameLogic.shouldAssistTick(note)) {
+          const startSample = Math.floor(
+            ((note.second - startTime) * sampleRate) / playbackRate
+          )
+          for (let i = 0; i < buffer.numberOfChannels; i++) {
+            const channel = buffer.getChannelData(i)
+            for (let j = 0; j < assist_tick.length; j++) {
+              if (startSample + j >= channel.length) break
+              channel[startSample + j] += assist_tick.getChannelData(
+                i % assist_tick.numberOfChannels
+              )[j]
+            }
+          }
+        }
       }
-      lastBeat = note.beat
-      if (chart.gameType.gameLogic.shouldAssistTick(note)) {
-        const startSample = Math.floor((note.second - startTime) * sampleRate)
+    }
+    if (this.options.metronome) {
+      let me_high = this.app.chartManager.me_high.getBuffer()
+
+      me_high = await this.renderBufferWithModifications(me_high, {
+        volume: Options.audio.soundEffectVolume * Options.audio.masterVolume,
+        sampleRate,
+        rate: 1,
+      })
+
+      let me_low = this.app.chartManager.me_low.getBuffer()
+      me_low = await this.renderBufferWithModifications(me_low, {
+        volume: Options.audio.soundEffectVolume * Options.audio.masterVolume,
+        sampleRate,
+        rate: 1,
+      })
+      let lastSecond: null | number = null
+      for (const [barBeat, isMeasure] of chart.timingData.getMeasureBeats(
+        startBeat,
+        endBeat
+      )) {
+        const barSecond = chart.timingData.getSecondsFromBeat(barBeat)
+        if (lastSecond !== null && barSecond == lastSecond) {
+          continue
+        }
+        lastSecond = barSecond
+        const sound = isMeasure ? me_high : me_low
+        const startSample = Math.floor(
+          ((barSecond - startTime) * sampleRate) / playbackRate
+        )
         for (let i = 0; i < buffer.numberOfChannels; i++) {
           const channel = buffer.getChannelData(i)
-          for (let j = 0; j < assistTick.length; j++) {
+          for (let j = 0; j < sound.length; j++) {
             if (startSample + j >= channel.length) break
-            channel[startSample + j] += assistTick.getChannelData(
-              i % assistTick.numberOfChannels
+            channel[startSample + j] += sound.getChannelData(
+              i % sound.numberOfChannels
             )[j]
           }
         }
@@ -174,11 +233,24 @@ export class Capture {
     Ticker.shared.stop()
 
     let audioBuf = this.app.chartManager.chartAudio.getBuffer()
-    audioBuf = await this.renderBufferWithVolume(
-      audioBuf,
-      Options.audio.songVolume * Options.audio.masterVolume,
-      audioBuf.sampleRate
-    )
+    // cut audio buffer to match length
+    const startSample = Math.floor(startTime * audioBuf.sampleRate)
+    const endSample = Math.ceil(endTime * audioBuf.sampleRate)
+    const length = endSample - startSample
+    const newAudioBuf = new AudioBuffer({
+      length,
+      sampleRate: audioBuf.sampleRate,
+      numberOfChannels: audioBuf.numberOfChannels,
+    })
+    for (let i = 0; i < audioBuf.numberOfChannels; i++) {
+      const channel = audioBuf.getChannelData(i)
+      newAudioBuf.copyToChannel(channel.subarray(startSample, endSample), i, 0)
+    }
+    audioBuf = await this.renderBufferWithModifications(newAudioBuf, {
+      volume: Options.audio.songVolume * Options.audio.masterVolume,
+      sampleRate: newAudioBuf.sampleRate,
+      rate: this.options.playbackRate,
+    })
 
     // calculate note flash index
     let noteFlashIndex = 0
@@ -189,19 +261,24 @@ export class Capture {
       startTime <= chart.getNotedata()[noteFlashIndex - 1].second
     )
       noteFlashIndex--
+    let holdFlashes: HoldNotedataEntry[] = []
 
     // mix assist sounds
     const assistSounds = await this.createAssistSounds(
       startTime,
       endTime,
-      audioBuf.sampleRate
+      audioBuf.sampleRate,
+      this.options.playbackRate
     )
+
+    console.log(audioBuf.length, assistSounds.length, assistSounds)
 
     const render = async () => {
       if (!this.recording) return
 
       if (this.encoder.encodeQueueSize < 300) {
-        const time = frame / this.options.fps + startTime
+        const time =
+          (frame / this.options.fps) * this.options.playbackRate + startTime
         if (time > endTime) {
           this.stop()
           return
@@ -215,17 +292,49 @@ export class Capture {
           noteFlashIndex < notedata.length &&
           time > notedata[noteFlashIndex].second
         ) {
-          if (
-            chart.gameType.gameLogic.shouldAssistTick(notedata[noteFlashIndex])
-          ) {
+          const note = notedata[noteFlashIndex]
+          if (chart.gameType.gameLogic.shouldAssistTick(note)) {
             this.app.chartManager.chartView!.doJudgement(
-              notedata[noteFlashIndex],
+              note,
               0,
               TIMING_WINDOW_AUTOPLAY
             )
+            if (isHoldNote(note)) {
+              if (note.type == "Hold") {
+                this.app.chartManager
+                  .chartView!.getNotefield()
+                  .activateHold(note.col)
+              } else if (note.type == "Roll") {
+                this.app.chartManager
+                  .chartView!.getNotefield()
+                  .activateRoll(note.col)
+              }
+              holdFlashes.push(note)
+            }
           }
           noteFlashIndex++
         }
+        holdFlashes = holdFlashes.filter(hold => {
+          if (this.app.chartManager.beat < hold.beat + hold.hold) return true
+          if (hold.type == "Hold") {
+            this.app.chartManager
+              .chartView!.getNotefield()
+              .releaseHold(hold.col)
+          }
+          if (hold.type == "Roll") {
+            this.app.chartManager
+              .chartView!.getNotefield()
+              .releaseRoll(hold.col)
+          }
+          this.app.chartManager.chartView!.doJudgement(
+            hold,
+            null,
+            TimingWindowCollection.getCollection(
+              Options.play.timingCollection
+            ).getHeldJudgement(hold)
+          )
+          return false
+        })
 
         this.app.renderer.render(this.app.stage)
 
@@ -233,32 +342,28 @@ export class Capture {
           timestamp: (frame / this.options.fps) * 1000000,
         })
 
-        const numFrames =
-          Math.floor((time + 1 / this.options.fps) * audioBuf.sampleRate) -
-          Math.ceil(time * audioBuf.sampleRate)
+        const audioTime = (time - startTime) / this.options.playbackRate
+        const audioStartSample = Math.floor(audioTime * audioBuf.sampleRate)
+        const audioEndSample = Math.ceil(
+          (audioTime + 1 / this.options.fps) * audioBuf.sampleRate
+        )
+        const numFrames = audioEndSample - audioStartSample
         const dataBuf = new Float32Array(numFrames * audioBuf.numberOfChannels)
         for (let i = 0; i < audioBuf.numberOfChannels; i++) {
           const channel = audioBuf.getChannelData(i)
           dataBuf.set(
-            channel.subarray(
-              Math.ceil(time * audioBuf.sampleRate),
-              Math.floor((time + 1 / this.options.fps) * audioBuf.sampleRate)
-            ),
+            channel.subarray(audioStartSample, audioEndSample),
             i * numFrames
           )
 
-          // mix assist sounds
-          const assistChannel = assistSounds.getChannelData(i)
+          if (this.options.metronome || this.options.assistTick) {
+            // mix assist sounds
+            const assistChannel = assistSounds.getChannelData(i)
 
-          const startSample = Math.ceil(
-            (time - startTime) * audioBuf.sampleRate
-          )
-          const endSample = Math.floor(
-            (time - startTime + 1 / this.options.fps) * audioBuf.sampleRate
-          )
-          for (let j = startSample; j < endSample; j++) {
-            if (j >= assistChannel.length) break
-            dataBuf[i * numFrames + j - startSample] += assistChannel[j]
+            for (let j = audioStartSample; j < audioEndSample; j++) {
+              if (j >= assistChannel.length) break
+              dataBuf[i * numFrames + j - audioStartSample] += assistChannel[j]
+            }
           }
         }
         const ad = new AudioData({
@@ -275,7 +380,9 @@ export class Capture {
         this.ac.encode(ad)
         ad.close()
         videoFrame.close()
-        console.log(this.encoder.encodeQueueSize, this.ac.encodeQueueSize)
+        if (frame % this.options.fps === 0) {
+          console.log(this.encoder.encodeQueueSize, this.ac.encodeQueueSize)
+        }
       }
       if (
         performance.now() - lastFrameTime < 16 &&
