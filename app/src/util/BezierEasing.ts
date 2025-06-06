@@ -168,6 +168,7 @@ export class BezierAnimator {
       curve: void 0 !== curve ? curve : noEase,
       onend: onend,
     })
+    this.updateObject(obj, animation, 0)
     return id
   }
 }

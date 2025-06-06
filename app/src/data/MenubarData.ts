@@ -71,6 +71,13 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         type: "selection",
         id: "export",
       },
+      {
+        type: "separator",
+      },
+      {
+        type: "selection",
+        id: "capture",
+      },
     ],
   },
   edit: {

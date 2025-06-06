@@ -29,7 +29,6 @@ import { InitialWindow } from "./gui/window/InitialWindow"
 import { WindowManager } from "./gui/window/WindowManager"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
-import { Capture } from "./util/Capture"
 import { EventHandler } from "./util/EventHandler"
 import { FileHandler } from "./util/file-handler/FileHandler"
 import { Flags, loadFlags } from "./util/Flags"
@@ -412,6 +411,7 @@ export class App {
     })
 
     setInterval(() => {
+      if (this.capturing) return
       const screenWidth = window.innerWidth
       const screenHeight = this.getCanvasHeight()
       if (this.lastHeight != screenHeight || this.lastWidth != screenWidth) {
@@ -593,5 +593,3 @@ function init() {
     window.NoteskinRegistry = NoteskinRegistry
   }
 }
-
-window.Capture = Capture

@@ -2020,6 +2020,7 @@ export class ChartManager {
       this.endRegion = this.startRegion
       this.startRegion = this.beat
     }
+    EventHandler.emit("regionChanged", this.startRegion, this.endRegion)
     if (this.editTimingMode == EditTimingMode.Off) {
       this.setNoteSelection(
         this.loadedChart.getNotedataInRange(this.startRegion, this.endRegion)

@@ -137,6 +137,29 @@ export function isRightClick(event: FederatedMouseEvent) {
   return event.button == 2 || (event.getModifierState("Control") && IS_OSX)
 }
 
+export function formatSeconds(seconds: number): string {
+  const parts: [number, string][] = [
+    [Math.floor(seconds / 3600), "h"],
+    [Math.floor((seconds % 3600) / 60), "m"],
+    [Math.floor(seconds % 60), "s"],
+  ]
+  return parts
+    .filter(part => part[0] > 0)
+    .map(part => part[0] + part[1])
+    .join(" ")
+    .trim()
+}
+
+export function formatBytes(bytes: number): string {
+  const units = ["B", "KB", "MB", "GB", "TB"]
+  let unitIndex = 0
+  while (bytes >= 1024 && unitIndex < units.length - 1) {
+    bytes /= 1024
+    unitIndex++
+  }
+  return bytes.toFixed(2) + " " + units[unitIndex]
+}
+
 export function isIFrame() {
   try {
     return window.self !== window.top

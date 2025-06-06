@@ -2,7 +2,7 @@ import { Container, Sprite, Texture } from "pixi.js"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
 import { getNoteEnd } from "../../../util/Util"
-import { EditMode, EditTimingMode } from "../../ChartManager"
+import { EditTimingMode } from "../../ChartManager"
 import { TimingWindowCollection } from "../../play/TimingWindowCollection"
 import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
 import { HoldObject, Notefield, NoteWrapper } from "./Notefield"
@@ -145,8 +145,7 @@ export class NoteContainer extends Container {
         EditTimingMode.Off
       ) {
         const inSelection =
-          this.notefield.renderer.chartManager.getMode() != EditMode.Play &&
-          this.notefield.renderer.chartManager.isNoteInSelection(note)
+          this.notefield.renderer.shouldDisplayNoteSelection(note)
         container.selection.alpha = inSelection
           ? Math.sin(Date.now() / 320) * 0.1 + 0.3
           : 0

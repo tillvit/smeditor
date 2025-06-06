@@ -3,6 +3,7 @@ import { EditMode, EditTimingMode } from "../chart/ChartManager"
 import { isHoldNote } from "../chart/sm/NoteTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { AboutWindow } from "../gui/window/AboutWindow"
+import { CaptureWindow } from "../gui/window/CaptureWindow"
 import { ChangelogWindow } from "../gui/window/ChangelogWindow"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
 import { EQWindow } from "../gui/window/EQWindow"
@@ -281,6 +282,14 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.windowManager.openWindow(
         new ExportNotedataWindow(app, app.chartManager.selection.notes)
       ),
+  },
+  capture: {
+    label: "Export video...",
+    combos: [],
+    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
+    callback: app => {
+      app.windowManager.openWindow(new CaptureWindow(app))
+    },
   },
   previousSong: {
     label: "Previous song in pack",
@@ -1460,7 +1469,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   openChangelog: {
     label: "Open Changelog",
     combos: [],
-    disabled: false,
+    disabled: () => !Flags.openWindows,
     callback: app => {
       app.windowManager.openWindow(new ChangelogWindow(app))
     },
@@ -1470,7 +1479,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Noteskins...",
     bindLabel: "Open Noteskin Window",
     combos: [{ mods: [Modifier.SHIFT], key: "N" }],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app => !app.chartManager.chartView || !Flags.openWindows,
     callback: app => app.windowManager.openWindow(new NoteskinWindow(app)),
   },
   previousChart: {
@@ -1542,7 +1551,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   about: {
     label: "About",
     combos: [],
-    disabled: false,
+    disabled: () => !Flags.openWindows,
     callback: app => {
       app.windowManager.openWindow(new AboutWindow(app))
     },

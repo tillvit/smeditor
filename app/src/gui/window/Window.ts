@@ -14,6 +14,10 @@ export interface WindowOptions {
 
 export abstract class Window {
   private windowManager?: WindowManager
+  private minimizeElement!: HTMLDivElement
+  private closeElement!: HTMLDivElement
+
+  closed = false
 
   options: WindowOptions
   windowElement: HTMLDivElement
@@ -49,27 +53,33 @@ export abstract class Window {
     if (options.title !== "") {
       navbarElement.appendChild(navbarTitleElement)
     }
-    if (!options.disableClose) {
-      const minimizeElement = Icons.getIcon("MINIMIZE", 15)
-      const closeElement = Icons.getIcon("CLOSE_WINDOW", 15)
 
-      minimizeElement.classList.add("unselectable")
-      minimizeElement.draggable = false
-      minimizeElement.onclick = () => {
-        if (viewElement.style.height != "0px") {
-          viewElement.style.height = "0px"
-        } else {
-          viewElement.style.height = options.height + "px"
-        }
-        this.clampPosition()
+    const minimizeElement = Icons.getIcon("MINIMIZE", 15)
+    const closeElement = Icons.getIcon("CLOSE_WINDOW", 15)
+
+    minimizeElement.classList.add("unselectable")
+    minimizeElement.draggable = false
+    minimizeElement.onclick = () => {
+      if (viewElement.style.height != "0px") {
+        viewElement.style.height = "0px"
+      } else {
+        viewElement.style.height = options.height + "px"
       }
+      this.clampPosition()
+    }
 
-      closeElement.classList.add("unselectable")
-      closeElement.draggable = false
-      closeElement.onclick = () => this.closeWindow()
+    closeElement.classList.add("unselectable")
+    closeElement.draggable = false
+    closeElement.onclick = () => this.closeWindow()
 
-      navbarElement.appendChild(minimizeElement)
-      navbarElement.appendChild(closeElement)
+    navbarElement.appendChild(minimizeElement)
+    navbarElement.appendChild(closeElement)
+    this.minimizeElement = minimizeElement
+    this.closeElement = closeElement
+
+    if (options.disableClose) {
+      minimizeElement.style.display = "none"
+      closeElement.style.display = "none"
     }
 
     navbarTitleElement.innerText = options.title
@@ -108,6 +118,7 @@ export abstract class Window {
 
   closeWindow() {
     if (this.windowManager) {
+      this.closed = true
       this.onClose()
       this.windowManager.removeWindow(this)
       this.windowElement.classList.add("exiting")
@@ -186,5 +197,28 @@ export abstract class Window {
   move(x: number, y: number) {
     this.windowElement.style.left = x + "px"
     this.windowElement.style.top = y + "px"
+  }
+
+  setDisableClose(disable: boolean) {
+    if (disable) {
+      this.minimizeElement.style.display = "none"
+      this.closeElement.style.display = "none"
+    } else {
+      this.minimizeElement.style.display = ""
+      this.closeElement.style.display = ""
+    }
+  }
+
+  setBlocking(blocking: boolean) {
+    if (blocking) {
+      this.windowElement.dataset.blocking = "block"
+      document.getElementById("blocker")!.style.display = "block"
+      window.addEventListener("mousedown", this.block, true)
+    } else {
+      this.windowElement.dataset.blocking = ""
+      document.getElementById("blocker")!.style.display = "none"
+      window.removeEventListener("mousedown", this.block, true)
+    }
+    this.focus()
   }
 }

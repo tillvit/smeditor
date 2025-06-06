@@ -31,7 +31,10 @@ export class SelectionAreaContainer
   }
 
   update() {
-    if (this.renderer.chartManager.getMode() == EditMode.Play) {
+    if (
+      this.renderer.chartManager.getMode() == EditMode.Play ||
+      this.renderer.chartManager.app.capturing
+    ) {
       this.visible = false
       return
     }

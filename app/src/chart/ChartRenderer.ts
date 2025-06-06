@@ -28,7 +28,7 @@ import { TimingTrackContainer } from "./component/timing/TimingTrackContainer"
 import { TimingWindow } from "./play/TimingWindow"
 import { Chart } from "./sm/Chart"
 import { NoteType, NotedataEntry } from "./sm/NoteTypes"
-import { ScrollTimingEvent } from "./sm/TimingTypes"
+import { Cached, ScrollTimingEvent, TimingEvent } from "./sm/TimingTypes"
 
 interface SelectionBounds {
   startX: number
@@ -1200,6 +1200,22 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       (this.chartManager.getMode() != EditMode.Play ||
         !Options.play.hideBarlines) &&
       Flags.barlines
+    )
+  }
+
+  shouldDisplayNoteSelection(note: NotedataEntry) {
+    return (
+      this.chartManager.getMode() != EditMode.Play &&
+      !this.chartManager.app.capturing &&
+      this.chartManager.isNoteInSelection(note)
+    )
+  }
+
+  shouldDisplayEventSelection(event: Cached<TimingEvent>) {
+    return (
+      this.chartManager.getMode() != EditMode.Play &&
+      !this.chartManager.app.capturing &&
+      this.chartManager.isEventInSelection(event)
     )
   }
 }

@@ -1,7 +1,6 @@
 import { BitmapText, Container, Graphics } from "pixi.js"
 import { SnapPopup } from "../../../gui/popup/SnapPopup"
 import { Options } from "../../../util/Options"
-import { EditMode } from "../../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 
 const snapNumbers = {
@@ -62,7 +61,7 @@ export class SnapContainer extends Container implements ChartRendererComponent {
   update() {
     this.y = this.renderer.getActualReceptorYPos()
 
-    this.visible = this.renderer.chartManager.getMode() != EditMode.Play
+    this.visible = this.renderer.shouldDisplayBarlines()
     for (let i = 0; i < 2; i++) {
       const container = this.children[i]
       const square = container.children[0] as Graphics

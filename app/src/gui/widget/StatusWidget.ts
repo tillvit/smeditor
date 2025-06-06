@@ -265,8 +265,13 @@ export class StatusWidget extends Widget {
 
     this.beatCounter = document.createElement("div")
     this.beatCounter.classList.add("playback-counter")
+
+    const beatContainer = document.createElement("div")
+    beatContainer.style.display = "flex"
+    beatContainer.classList.add("playback-counter-main")
+
     const beat = document.createElement("div")
-    beat.classList.add("playback-counter-main", "inlineEdit")
+    beat.classList.add("inlineEdit")
     beat.innerText = "0.000"
     beat.spellcheck = false
     beat.contentEditable = "true"
@@ -298,7 +303,8 @@ export class StatusWidget extends Widget {
     this.beatDropdown.view
       .querySelector(".dropdown-selected")!
       .classList.add("playback-counter-label")
-    this.beatCounter.appendChild(beat)
+    this.beatCounter.appendChild(beatContainer)
+    beatContainer.appendChild(beat)
     this.beatCounter.appendChild(this.beatDropdown.view)
     this.beatDropdown.onChange(() => {
       if (this.beatDropdown.value == "Measure") {
