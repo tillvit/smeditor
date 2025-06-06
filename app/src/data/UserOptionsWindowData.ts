@@ -267,7 +267,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
     children: [
       {
         type: "subgroup",
-        label: "Playfield",
+        label: "Note Placement",
         children: [
           {
             type: "subgroup",
@@ -289,6 +289,16 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
                 },
                 tooltip:
                   "Changes the hold placement behavior. By default, holds can only be extended in one direction when placed. Turn this off to mimic the behavior of AV/Stepmania.",
+              },
+              {
+                type: "item",
+                label: "Force snap notes",
+                id: "chart.forceSnapNotes",
+                input: {
+                  type: "checkbox",
+                },
+                tooltip:
+                  "Placing a note when not on a snap will force the note to be placed on the next snap. Useful for placing notes when playing.",
               },
             ],
           },

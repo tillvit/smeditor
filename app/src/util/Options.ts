@@ -33,6 +33,7 @@ export class DefaultOptions {
     snap: 1,
     hideWarpedArrows: false,
     hideFakedArrows: false,
+    forceSnapNotes: false,
     doSpeedChanges: true,
     drawNoteFlash: true,
     drawIcons: true,
