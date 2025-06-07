@@ -417,8 +417,7 @@ export class Capture {
             timestamp: (this._currentFrame / this.options.fps) * 1000000,
           })
           this._currentFrame += 1
-          const insert_keyframe = this._currentFrame % 150 === 0
-          this.encoder.encode(videoFrame, { keyFrame: insert_keyframe })
+          this.encoder.encode(videoFrame)
           this.ac.encode(ad)
           ad.close()
 

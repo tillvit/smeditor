@@ -3288,3 +3288,16 @@ input[type="checkbox"] {
   background-color: var(--primary-bg-active);
   border-radius: 0.5rem;
 }
+
+.capture-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  width: 75%;
+}

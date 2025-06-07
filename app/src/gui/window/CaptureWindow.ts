@@ -92,6 +92,23 @@ export class CaptureWindow extends Window {
     this.initCaptureView()
 
     padding.replaceChildren(this.optionsView, this.captureView)
+
+    if (!VideoEncoder || !AudioEncoder) {
+      const errorMessage = document.createElement("div")
+      errorMessage.classList.add("capture-error")
+      const errorHeader = document.createElement("h3")
+      errorHeader.innerText =
+        "Your browser doesn't seem to support web encoding."
+      const message = document.createElement("p")
+      message.innerText =
+        "Please try a different browser or use the desktop app."
+      errorMessage.replaceChildren(errorHeader, message)
+      this.optionsView.style.filter = "blur(10px)"
+      this.optionsView.style.pointerEvents = "none"
+      padding.appendChild(errorMessage)
+      this.exportButton.disabled = true
+    }
+
     this.viewElement.appendChild(padding)
   }
 
@@ -264,6 +281,7 @@ export class CaptureWindow extends Window {
 
     const progressLabel = document.createElement("div")
     progressLabel.innerText = "Rendering..."
+    progressLabel.style.textAlign = "center"
     this.progressLabel = progressLabel
 
     captureOverlay.appendChild(progressLabel)
@@ -379,57 +397,74 @@ export class CaptureWindow extends Window {
       estimatedTimeRemaining = Math.round(remainingFrames / average)
     }, 1000)
 
-    const capture = new Capture(this.app, {
-      ...this.captureOptions,
-      startTime:
-        this.app.chartManager.loadedChart!.getSecondsFromBeat(this.startBeat) -
-        1,
-      endTime:
-        this.app.chartManager.loadedChart!.getSecondsFromBeat(this.endBeat) + 1,
-      updateCallback: data => {
-        const completion =
-          (data.currentRenderFrame - data.currentEncodeQueue) / data.totalFrames
-        this.progressBar.style.background = `linear-gradient(90deg, var(--accent-color) 0 ${
-          completion * 100
-        }%, var(--input-bg) ${completion * 100}% 100%)`
-        const state =
-          data.currentRenderFrame == data.totalFrames ? "Encoding" : "Rendering"
-        this.progressLabel.innerText = `${state}...`
-        if (estimatedTimeRemaining >= 0 && state === "Rendering") {
-          this.progressLabel.innerText += ` (est. ${formatSeconds(estimatedTimeRemaining)})`
-        }
-
-        if (!ctx || !data.currentVideoFrame) {
-          return
-        }
-        ctx.clearRect(0, 0, this.captureCanvas.width, this.captureCanvas.height)
-        createImageBitmap(data.currentVideoFrame).then(bitmap => {
-          const scaleRatio = bitmap.height / this.captureCanvas.height
-          const scaledWidth = bitmap.width / scaleRatio
-          const xPadding = (this.captureCanvas.width - scaledWidth) / 2
-          ctx.drawImage(
-            bitmap,
-            0,
-            0,
-            bitmap.width,
-            bitmap.height,
-            xPadding,
-            0,
-            scaledWidth,
-            this.captureCanvas.height
-          )
-        })
-      },
-      onFinish: url => {
-        this.stopCapture(url)
-      },
-    })
-    this.currentCapture = capture
-
     this.captureView.style.display = ""
     this.optionsView.style.display = "none"
+    try {
+      const capture = new Capture(this.app, {
+        ...this.captureOptions,
+        startTime:
+          this.app.chartManager.loadedChart!.getSecondsFromBeat(
+            this.startBeat
+          ) - 1,
+        endTime:
+          this.app.chartManager.loadedChart!.getSecondsFromBeat(this.endBeat) +
+          1,
+        updateCallback: data => {
+          const completion =
+            (data.currentRenderFrame - data.currentEncodeQueue) /
+            data.totalFrames
+          this.progressBar.style.background = `linear-gradient(90deg, var(--accent-color) 0 ${
+            completion * 100
+          }%, var(--input-bg) ${completion * 100}% 100%)`
+          const state =
+            data.currentRenderFrame == data.totalFrames
+              ? "Encoding"
+              : "Rendering"
+          this.progressLabel.innerText = `${state}...`
+          if (estimatedTimeRemaining >= 0 && state === "Rendering") {
+            this.progressLabel.innerText += ` (est. ${formatSeconds(estimatedTimeRemaining)})`
+          }
 
-    capture.start()
+          if (!ctx || !data.currentVideoFrame) {
+            return
+          }
+          ctx.clearRect(
+            0,
+            0,
+            this.captureCanvas.width,
+            this.captureCanvas.height
+          )
+          createImageBitmap(data.currentVideoFrame).then(bitmap => {
+            const scaleRatio = bitmap.height / this.captureCanvas.height
+            const scaledWidth = bitmap.width / scaleRatio
+            const xPadding = (this.captureCanvas.width - scaledWidth) / 2
+            ctx.drawImage(
+              bitmap,
+              0,
+              0,
+              bitmap.width,
+              bitmap.height,
+              xPadding,
+              0,
+              scaledWidth,
+              this.captureCanvas.height
+            )
+          })
+        },
+        onFinish: url => {
+          this.stopCapture(url)
+        },
+      })
+      this.currentCapture = capture
+
+      capture.start().catch(err => {
+        console.error("Error starting capture:", err)
+        this.stopCapture("")
+      })
+    } catch (err) {
+      console.error("Error starting capture:", err)
+      this.stopCapture("")
+    }
   }
 
   stopCapture(url: string) {
@@ -439,12 +474,18 @@ export class CaptureWindow extends Window {
     this.videoURL = url
     this.stopButton.style.display = "none"
     this.returnButton.style.display = ""
-    this.downloadButton.style.display = ""
-    this.downloadButton.innerText = `Download video (${formatBytes(this.currentCapture!.size)})`
+
+    if (url != "") {
+      this.downloadButton.style.display = ""
+      this.downloadButton.innerText = `Download video (${formatBytes(this.currentCapture!.size)})`
+    } else {
+      this.progressLabel.innerText =
+        "Failed to export video! Check console for details."
+    }
 
     clearInterval(this.estimateInterval)
     this.currentCapture = undefined
-    if (this.closed) return
+    if (this.closed || url == "") return
 
     const video = document.createElement("video")
     video.src = url
