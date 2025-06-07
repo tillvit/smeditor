@@ -3,7 +3,6 @@ import { App } from "../../App"
 import { clamp, roundDigit } from "../../util/Math"
 import { parseString } from "../../util/Util"
 import { ColorPicker } from "./ColorPicker"
-import { DoubleEndedSlider } from "./DoubleEndedSlider"
 import { Dropdown } from "./Dropdown"
 import { NumberSlider } from "./NumberSlider"
 import { NumberSpinner } from "./NumberSpinner"
@@ -55,24 +54,6 @@ interface NumberInput {
   onChange?: (app: App, value: number) => void
 }
 
-interface DoubleSliderInput {
-  type: "double-slider"
-  minValue?: number
-  maxValue?: number
-  width?: number
-  min: number
-  max: number
-  step: number
-  precision?: number
-  transformers: {
-    serialize: (value: number) => number
-    deserialize: (value: number) => number
-    display: (value: number) => string | number
-  }
-  onChange?: (app: App, min: number, max: number) => void
-  displayWidth?: number
-}
-
 interface SliderInput {
   type: "slider"
   step?: number
@@ -119,7 +100,6 @@ export type ValueInput<T> =
   | CheckboxInput
   | SliderInput
   | DisplaySliderInput
-  | DoubleSliderInput
   | ColorInput
 
 export function createValueInput<T>(
@@ -246,24 +226,6 @@ export function createValueInput<T>(
         transformer: val => display(val),
         onChange: value => {
           callback?.(app, deserializer(value))
-        },
-      })
-      return slider.view
-    }
-    case "double-slider": {
-      const deserializer =
-        input.transformers?.deserialize ?? ((value: number) => value)
-      const serializer =
-        input.transformers?.serialize ?? ((value: number) => value)
-      const display = input.transformers?.display ?? ((value: number) => value)
-      const callback = input.onChange
-      const slider = DoubleEndedSlider.create({
-        ...input,
-        minValue: serializer(initialValue[0]),
-        maxValue: serializer(initialValue[1]),
-        transformer: val => display(val),
-        onChange: (min, max) => {
-          callback?.(app, deserializer(min), deserializer(max))
         },
       })
       return slider.view
