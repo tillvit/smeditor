@@ -72,7 +72,7 @@ interface AppVersion {
 const BASE_STAGE_HEIGHT = 960
 
 export class App {
-  readonly VERSION = "1.2.1"
+  readonly VERSION = "1.3.0"
 
   readonly options = Options
   readonly events = EventHandler
