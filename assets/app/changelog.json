@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.3.0",
+    "date": 1749416538350,
+    "changelog": "## Changes\n- **Made UI scale with window height + font size** (this should hopefully help larger/smaller displays)\n  - If the UI is still too large/small, you can adjust the size in the Preferences window (UI scale).\n  - please report any bugs! this is a pretty big change\n- Exporting videos!\n  - You can now export a video of your chart under File > Export video...\n  - This feature does not work on Firefox, unfortunately\n- Added Force Snap Notes option\n  - This will force any notes placed to be on a snap even if the cursor is not currently on a snap.\n- Reduced mine volume\n## Fixes\n- Fixed the path being incorrect when selecting a file in the song/chart properties window when using the desktop app on Windows\n- Made hold flashes display in edit mode\n- Fixes some issues with embedding SMEditor + embed flags\n- Fixed Max NPS displaying as -1.7e308 (for real this time)"
+  },
+  {
     "version": "1.2.1",
     "date": 1747697188266,
     "changelog": "## Fixes\n- **Fixed key detection for non-QWERTY keyboards**\n- Fixed selection box not updating when chart is scrolled/moved using arrow keys\n- Fixed up/down and next/previous measure not inverting when \"Invert scroll while in reverse\" is on\n- Fixed chart beat not updating when time is updated and the song is not playing \n\n## Internal Changes\n- Revamped how chart stats are calculated (slight performance increase!)\n- Renamed some timing data functions (docs updated soon i promise)\n- Updated some packages\n"
