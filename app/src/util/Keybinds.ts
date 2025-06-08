@@ -19,6 +19,7 @@ export class Keybinds {
   private static userKeybinds: Map<string, KeyCombo[]> = new Map()
   private static userGameplayKeybinds: Map<string, (string[] | null)[]> =
     new Map()
+  private static enabled = true
 
   static load(app: App) {
     this.app = app
@@ -41,7 +42,7 @@ export class Keybinds {
   }
 
   static checkKey(event: KeyboardEvent, type: "keydown" | "keyup") {
-    // if (this.app.windowManager.getFocusedWindow()) return
+    if (!this.enabled) return
     if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
     if (event.target instanceof HTMLTextAreaElement) return
     if (event.target instanceof HTMLInputElement) return
@@ -433,7 +434,7 @@ export class Keybinds {
     output.push(strings[ids.length + 1])
 
     return (
-      `<div style='display: flex; align-items: center; gap: 6px'>` +
+      `<div style='display: flex; align-items: center; gap: 0.375rem'>` +
       output.join("") +
       "</div>"
     )
@@ -448,5 +449,13 @@ export class Keybinds {
         },
       })
     }
+  }
+
+  static disableKeybinds() {
+    this.enabled = false
+  }
+
+  static enableKeybinds() {
+    this.enabled = true
   }
 }

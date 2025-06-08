@@ -167,10 +167,10 @@ export class ColorPicker extends TransparentPreview {
     picker.formats = []
 
     if (options.height !== undefined) {
-      picker.style.height = options.height + "px"
+      picker.style.height = options.height / 16 + "rem"
     }
     if (options.width !== undefined) {
-      picker.style.width = options.width + "px"
+      picker.style.width = options.width / 16 + "rem"
     }
 
     picker.addEventListener("click", () => {
@@ -486,17 +486,17 @@ export class ColorPicker extends TransparentPreview {
     this.matrix!.style.backgroundColor = `hsl(${this._hue * 360} 100% 50%)`
     this.matrixDot!.style.backgroundColor = this._value.toHex()
     if (!this.matrixDragging) {
-      this.matrixDot!.style.left = this._sat * 200 + "px"
-      this.matrixDot!.style.top = (1 - this._val) * 200 + "px"
+      this.matrixDot!.style.left = (this._sat * 200) / 16 + "rem"
+      this.matrixDot!.style.top = ((1 - this._val) * 200) / 16 + "rem"
     }
     if (!this.hueDragging) {
-      this.hueThumb!.style.left = this._hue * 200 + "px"
+      this.hueThumb!.style.left = (this._hue * 200) / 16 + "rem"
     }
 
     const rgbString = `rgba(${this._value.red * 255}, ${this._value.green * 255}, ${this._value.blue * 255}`
     this.alphaBg!.style.background = `linear-gradient(to right, ${rgbString}, 0 ), ${rgbString}, 1))`
     if (!this.alphaDragging) {
-      this.alphaThumb!.style.left = this._alp * 200 + "px"
+      this.alphaThumb!.style.left = (this._alp * 200) / 16 + "rem"
     }
 
     this.formats.forEach(f => f.setValue(this._value))

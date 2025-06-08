@@ -631,9 +631,7 @@ export class TimingTrackContainer
           ? this.renderer.getYPosFromSecond(event.second)
           : this.renderer.getYPosFromBeat(event.beat)
 
-      const inSelection =
-        this.renderer.chartManager.getMode() != EditMode.Play &&
-        this.renderer.chartManager.isEventInSelection(event)
+      const inSelection = this.renderer.shouldDisplayEventSelection(event)
       box.backgroundObj.tint = inSelection
         ? lighten(
             TIMING_EVENT_COLORS[event.type] ?? 0x000000,

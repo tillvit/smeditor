@@ -4,6 +4,7 @@ import {
   FederatedMouseEvent,
   Point,
   Rectangle,
+  Ticker,
 } from "pixi.js"
 import { ContextMenuPopup } from "../gui/element/ContextMenu"
 import { Flags } from "../util/Flags"
@@ -27,7 +28,7 @@ import { TimingTrackContainer } from "./component/timing/TimingTrackContainer"
 import { TimingWindow } from "./play/TimingWindow"
 import { Chart } from "./sm/Chart"
 import { NoteType, NotedataEntry } from "./sm/NoteTypes"
-import { ScrollTimingEvent } from "./sm/TimingTypes"
+import { Cached, ScrollTimingEvent, TimingEvent } from "./sm/TimingTypes"
 
 interface SelectionBounds {
   startX: number
@@ -114,9 +115,6 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
 
     this.chartManager.app.stage.addChild(this)
 
-    this.x = this.chartManager.app.renderer.screen.width / 2
-    this.y = this.chartManager.app.renderer.screen.height / 2
-
     this.eventMode = "static"
     this.hitArea = new Rectangle(-1e5, -1e5, 2e5, 2e5)
 
@@ -152,13 +150,13 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       this.selectionBoundary.update()
     }
 
-    this.chartManager.app.ticker.add(tickHandler)
+    Ticker.shared.add(tickHandler)
 
     window.addEventListener("keydown", keyHandler)
     this.on("destroyed", () => {
       window.removeEventListener("keydown", keyHandler)
       this.removeAllListeners()
-      this.chartManager.app.ticker.remove(tickHandler)
+      Ticker.shared.remove(tickHandler)
     })
 
     this.on("pointerdown", event => {
@@ -304,9 +302,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     this.cachedBeat = this.chartManager.beat
     this.cachedTime = this.chartManager.time
 
-    this.x =
-      this.chartManager.app.renderer.screen.width / 2 +
-      Options.chart.receptorXPos
+    this.x = Options.chart.receptorXPos
 
     this.speedMult = Options.chart.doSpeedChanges
       ? this.getCurrentSpeedMult()
@@ -614,7 +610,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @memberof ChartRenderer
    */
   getUpperBound(): number {
-    return -this.y / Options.chart.zoom - 64
+    return -this.chartManager.app.STAGE_HEIGHT / 2 / Options.chart.zoom - 64
   }
 
   /**
@@ -624,11 +620,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
    * @memberof ChartRenderer
    */
   getLowerBound(): number {
-    return (
-      (this.chartManager.app.renderer.screen.height - this.y) /
-        Options.chart.zoom +
-      64
-    )
+    return this.chartManager.app.STAGE_HEIGHT / 2 / Options.chart.zoom + 64
   }
 
   findFirstOnScreenScroll(): ScrollTimingEvent {
@@ -1208,6 +1200,22 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       (this.chartManager.getMode() != EditMode.Play ||
         !Options.play.hideBarlines) &&
       Flags.barlines
+    )
+  }
+
+  shouldDisplayNoteSelection(note: NotedataEntry) {
+    return (
+      this.chartManager.getMode() != EditMode.Play &&
+      !this.chartManager.app.capturing &&
+      this.chartManager.isNoteInSelection(note)
+    )
+  }
+
+  shouldDisplayEventSelection(event: Cached<TimingEvent>) {
+    return (
+      this.chartManager.getMode() != EditMode.Play &&
+      !this.chartManager.app.capturing &&
+      this.chartManager.isEventInSelection(event)
     )
   }
 }

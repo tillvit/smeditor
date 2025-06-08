@@ -408,7 +408,9 @@ export class Notefield extends Container implements ChartRendererComponent {
 
   onJudgement(col: number, judge: TimingWindow): void {
     if (this.noteskin === undefined) return
-    this.holdJudges!.addJudge(col, judge)
+    if (this.renderer.chartManager.getMode() == EditMode.Play) {
+      this.holdJudges!.addJudge(col, judge)
+    }
     if (isStandardTimingWindow(judge)) {
       this.noteskin.broadcast({
         type: "hit",

@@ -374,7 +374,7 @@ export class KeybindWindow extends Window {
     label.innerText = KEYBIND_DATA[id].bindLabel ?? KEYBIND_DATA[id].label
 
     const revert = Icons.getIcon("REVERT")
-    revert.style.width = "12px"
+    revert.style.width = "0.75rem"
     revert.addEventListener("click", () => {
       Keybinds.revertKeybind(id)
       this.conflictMap = this.calculateConflicts()

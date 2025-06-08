@@ -7,7 +7,7 @@ import metronomeLow from "../../assets/sound/metronome_low.wav"
 import mine from "../../assets/sound/mine.wav"
 import { App } from "../App"
 import { AUDIO_EXT } from "../data/FileData"
-import { IS_OSX, KEYBIND_DATA } from "../data/KeybindData"
+import { KEYBIND_DATA } from "../data/KeybindData"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { AppUpdateNotification } from "../gui/notification/AppUpdateNotification"
 import { CoreUpdateNotification } from "../gui/notification/CoreUpdateNotification"
@@ -36,6 +36,7 @@ import { tpsUpdate } from "../util/Performance"
 import { RecentFileHandler } from "../util/RecentFileHandler"
 import { SchedulableSoundEffect } from "../util/SchedulableSoundEffect"
 import {
+  IS_OSX,
   bsearch,
   bsearchEarliest,
   compareObjects,
@@ -48,6 +49,7 @@ import { GameTypeRegistry } from "./gameTypes/GameTypeRegistry"
 import { NoteskinRegistry } from "./gameTypes/noteskin/NoteskinRegistry"
 import { GameplayStats } from "./play/GameplayStats"
 import { TIMING_WINDOW_AUTOPLAY } from "./play/StandardTimingWindow"
+import { TimingWindowCollection } from "./play/TimingWindowCollection"
 import { Chart } from "./sm/Chart"
 import {
   HoldNotedataEntry,
@@ -157,6 +159,7 @@ export class ChartManager {
   private assistTickIndex = 0
   private lastMetronomeDivision = -1
   private lastMetronomeMeasure = -1
+  private holdFlashes: HoldNotedataEntry[] = []
 
   private lastSong: string | null = null
 
@@ -361,16 +364,13 @@ export class ChartManager {
     this.app.stage.addChild(this.loadingText)
     this.loadingText.visible = false
 
-    const moveCenterText = () => {
-      this.noChartTextA.x = this.app.renderer.screen.width / 2
-      this.noChartTextA.y = this.app.renderer.screen.height / 2 - 20
-      this.noChartTextB.x = this.app.renderer.screen.width / 2
-      this.noChartTextB.y = this.app.renderer.screen.height / 2 + 10
+    this.noChartTextA.x = 0
+    this.noChartTextA.y = -20
+    this.noChartTextB.x = 0
+    this.noChartTextB.y = 10
 
-      this.loadingText.x = this.app.renderer.screen.width / 2
-      this.loadingText.y = this.app.renderer.screen.height / 2
-    }
-    moveCenterText()
+    this.loadingText.x = 0
+    this.loadingText.y = 0
 
     // Faster update loop, more precision
     setInterval(() => {
@@ -419,27 +419,51 @@ export class ChartManager {
       const notedata = this.loadedChart.getNotedata()
       if (this.chartAudio.isPlaying()) {
         this._beat = this.loadedChart?.getBeatFromSeconds(this.time) ?? 0
-
+        let note = notedata[this.noteFlashIndex]
         // Play note flash
-        while (
-          this.noteFlashIndex < notedata.length &&
-          time > notedata[this.noteFlashIndex].second
-        ) {
+        while (this.noteFlashIndex < notedata.length && time > note.second) {
           if (
             this.mode != EditMode.Record &&
-            this.loadedChart.gameType.gameLogic.shouldAssistTick(
-              notedata[this.noteFlashIndex]
-            )
+            this.loadedChart.gameType.gameLogic.shouldAssistTick(note)
           ) {
-            if (this.mode != EditMode.Play)
-              this.chartView.doJudgement(
-                notedata[this.noteFlashIndex],
-                0,
-                TIMING_WINDOW_AUTOPLAY
-              )
+            if (this.mode != EditMode.Play) {
+              this.chartView.doJudgement(note, 0, TIMING_WINDOW_AUTOPLAY)
+              if (isHoldNote(note)) {
+                if (note.type == "Hold") {
+                  this.chartView.getNotefield().activateHold(note.col)
+                }
+                if (note.type == "Roll") {
+                  this.chartView.getNotefield().activateRoll(note.col)
+                }
+                this.holdFlashes.push(note)
+              }
+            }
           }
           this.noteFlashIndex++
+          note = notedata[this.noteFlashIndex]
         }
+
+        // Deactivate hold flashes
+        this.holdFlashes = this.holdFlashes.filter(hold => {
+          if (this._beat < hold.beat + hold.hold) return true
+          if (this.chartView) {
+            if (hold.type == "Hold") {
+              this.chartView.getNotefield().releaseHold(hold.col)
+            }
+            if (hold.type == "Roll") {
+              this.chartView.getNotefield().releaseRoll(hold.col)
+            }
+            this.chartView.doJudgement(
+              hold,
+              null,
+              TimingWindowCollection.getCollection(
+                Options.play.timingCollection
+              ).getHeldJudgement(hold)
+            )
+          }
+          return false
+        })
+
         // Play assist tick
         const assistRows = new Set()
         while (
@@ -538,14 +562,6 @@ export class ChartManager {
       tpsUpdate()
       DebugWidget.instance?.addUpdateTimeValue(performance.now() - updateStart)
     }, 5)
-
-    EventHandler.on("resize", () => {
-      if (this.chartView) {
-        this.chartView.x = this.app.renderer.screen.width / 2
-        this.chartView.y = this.app.renderer.screen.height / 2
-      }
-      moveCenterText()
-    })
 
     EventHandler.on("chartModified", () => {
       if (this.loadedChart) {
@@ -899,8 +915,6 @@ export class ChartManager {
 
     this.setNoteIndex()
     this.chartView = new ChartRenderer(this)
-    this.chartView.x = this.app.renderer.screen.width / 2
-    this.chartView.y = this.app.renderer.screen.height / 2
     if (this.mode == EditMode.Play || this.mode == EditMode.Record)
       this.setMode(this.lastMode)
     if (Flags.viewMode) this.setMode(EditMode.View)
@@ -1098,6 +1112,14 @@ export class ChartManager {
       this.noteFlashIndex--
 
     this.assistTickIndex = this.noteFlashIndex
+    for (const hold of this.holdFlashes) {
+      if (hold.type == "Hold") {
+        this.chartView.getNotefield().releaseHold(hold.col)
+      } else if (hold.type == "Roll") {
+        this.chartView.getNotefield().releaseRoll(hold.col)
+      }
+    }
+    this.holdFlashes = []
   }
 
   playPause() {
@@ -1335,6 +1357,10 @@ export class ChartManager {
     )
       return
     beat = Math.max(0, Math.round(beat * 48) / 48)
+    if (Options.chart.forceSnapNotes) {
+      const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
+      beat = Math.round(beat / snap) * snap
+    }
     const conflictingNotes = this.loadedChart.getNotedata().filter(note => {
       if (note.col != col) return false
       if (Math.abs(note.beat - beat) < 0.003) return true
@@ -1575,6 +1601,11 @@ export class ChartManager {
           hasHit: false,
         }
       })
+      this.holdFlashes = []
+      for (let i = 0; i < this.loadedChart.gameType.numCols; i++) {
+        this.chartView.getNotefield().releaseHold(i)
+        this.chartView.getNotefield().releaseRoll(i)
+      }
       for (const note of notedata) {
         if (note.second < this.time) note.gameplay!.hasHit = true
         else break
@@ -1993,6 +2024,7 @@ export class ChartManager {
       this.endRegion = this.startRegion
       this.startRegion = this.beat
     }
+    EventHandler.emit("regionChanged", this.startRegion, this.endRegion)
     if (this.editTimingMode == EditTimingMode.Off) {
       this.setNoteSelection(
         this.loadedChart.getNotedataInRange(this.startRegion, this.endRegion)

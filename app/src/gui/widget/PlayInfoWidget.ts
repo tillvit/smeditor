@@ -317,10 +317,8 @@ export class PlayInfoWidget extends Widget {
   update() {
     this.visible = !!this.manager.chartManager.gameStats
     this.x =
-      -this.manager.chartManager.app.renderer.screen.width / 2 +
-      20 +
-      WIDGET_WIDTH / 2
-    this.y = this.manager.chartManager.app.renderer.screen.height / 2 - 20
+      -this.manager.chartManager.app.STAGE_WIDTH / 2 + 20 + WIDGET_WIDTH / 2
+    this.y = this.manager.chartManager.app.STAGE_HEIGHT / 2 - 20
     this.backgroundRect.width = WIDGET_WIDTH + 10
     this.backgroundRect.height = HISTOGRAM_HEIGHT + 260
     this.backgroundRect.x = -WIDGET_WIDTH / 2 - 5

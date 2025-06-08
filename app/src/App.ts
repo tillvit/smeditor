@@ -69,24 +69,29 @@ interface AppVersion {
   changelog: string[]
 }
 
+const BASE_STAGE_HEIGHT = 960
+
 export class App {
-  VERSION = "1.2.1"
+  readonly VERSION = "1.3.0"
 
-  options = Options
-  events = EventHandler
-  themes = Themes
+  readonly options = Options
+  readonly events = EventHandler
+  readonly themes = Themes
 
-  renderer: Renderer
-  ticker: Ticker
-  stage: Container
-  view: HTMLCanvasElement
-  chartManager: ChartManager
-  windowManager: WindowManager
-  menubarManager: MenubarManager
-  actionHistory: ActionHistory
+  readonly renderer: Renderer
+  readonly stage: Container
+  readonly view: HTMLCanvasElement
+  readonly chartManager: ChartManager
+  readonly windowManager: WindowManager
+  readonly menubarManager: MenubarManager
+  readonly actionHistory: ActionHistory
+  capturing = false
 
-  private lastWidth = window.innerWidth
-  private lastHeight = window.innerHeight
+  STAGE_HEIGHT = BASE_STAGE_HEIGHT
+  STAGE_WIDTH = BASE_STAGE_HEIGHT
+
+  private lastWidth = -1
+  private lastHeight = -1
 
   constructor() {
     tippy.setDefaultProps({ duration: [200, 100], theme: "sm" })
@@ -104,9 +109,13 @@ export class App {
       }
     }
 
-    setInterval(() => Options.saveOptions(), 10000)
+    setInterval(() => {
+      if (this.capturing) return
+      Options.saveOptions()
+    }, 10000)
     if (Options.general.smoothAnimations)
       document.body.classList.add("animated")
+    document.body.parentElement!.style.fontSize = `${Options.general.uiScale * 100}%`
     this.registerFonts()
 
     this.view = document.getElementById("pixi") as HTMLCanvasElement
@@ -135,9 +144,8 @@ export class App {
       powerPreference: "low-power",
     })
 
-    this.ticker = new Ticker()
-    this.ticker.maxFPS = 0
-    this.ticker.add(() => {
+    Ticker.shared.maxFPS = 0
+    Ticker.shared.add(() => {
       // Update ChartRenderer every frame
       const updateStart = performance.now()
       this.chartManager.widgetManager.update()
@@ -162,7 +170,7 @@ export class App {
       fpsUpdate()
     }, UPDATE_PRIORITY.HIGH)
 
-    this.ticker.start()
+    Ticker.shared.start()
 
     BetterRoundedRect.init(this.renderer)
 
@@ -320,6 +328,7 @@ export class App {
     }
 
     window.onpagehide = () => {
+      if (this.capturing) return
       Options.saveOptions()
     }
 
@@ -381,6 +390,12 @@ export class App {
       ).toNumber()
     })
 
+    EventHandler.on("userOptionUpdated", option => {
+      if (option == "general.uiScale") {
+        this.updateSize()
+      }
+    })
+
     window.addEventListener("keydown", function (e) {
       if (e.code == "Enter") {
         if (e.target instanceof HTMLButtonElement) {
@@ -396,11 +411,9 @@ export class App {
     })
 
     setInterval(() => {
+      if (this.capturing) return
       const screenWidth = window.innerWidth
-      const screenHeight =
-        window.innerHeight -
-        document.getElementById("menubar")!.clientHeight -
-        document.getElementById("playback-options")!.clientHeight
+      const screenHeight = this.getCanvasHeight()
       if (this.lastHeight != screenHeight || this.lastWidth != screenWidth) {
         this.lastHeight = screenHeight
         this.lastWidth = screenWidth
@@ -465,6 +478,28 @@ export class App {
     this.view.height = screenHeight * this.renderer.resolution
     this.view.style.width = `${screenWidth}px`
     this.view.style.height = `${screenHeight}px`
+    this.STAGE_HEIGHT = BASE_STAGE_HEIGHT / Options.general.uiScale
+    const zoomRatio = screenHeight / this.STAGE_HEIGHT
+    this.stage.scale.set(zoomRatio)
+    this.stage.position.set(screenWidth / 2, screenHeight / 2)
+    this.STAGE_WIDTH = screenWidth / zoomRatio
+  }
+
+  updateSize() {
+    const screenWidth = window.innerWidth
+    const screenHeight = this.getCanvasHeight()
+    this.lastHeight = screenHeight
+    this.lastWidth = screenWidth
+    this.onResize(screenWidth, screenHeight)
+    EventHandler.emit("resize")
+  }
+
+  getCanvasHeight() {
+    return (
+      window.innerHeight -
+      (document.getElementById("menubar")?.clientHeight ?? 0) -
+      (document.getElementById("playback-options")?.clientHeight ?? 0)
+    )
   }
 
   checkAppVersion() {

@@ -1,4 +1,5 @@
 import { clamp } from "../../util/Math"
+import { Options } from "../../util/Options"
 import { Icons } from "../Icons"
 import { WindowManager } from "./WindowManager"
 
@@ -13,6 +14,10 @@ export interface WindowOptions {
 
 export abstract class Window {
   private windowManager?: WindowManager
+  private minimizeElement!: HTMLDivElement
+  private closeElement!: HTMLDivElement
+
+  closed = false
 
   options: WindowOptions
   windowElement: HTMLDivElement
@@ -28,41 +33,53 @@ export abstract class Window {
 
     windowElement.appendChild(navbarElement)
     windowElement.appendChild(viewElement)
-    windowElement.style.width = options.width + "px"
-    windowElement.style.left = window.innerWidth / 2 - options.width / 2 + "px"
-    windowElement.style.top = window.innerHeight / 2 - options.height / 2 + "px"
+    windowElement.style.width = options.width / 16 + "rem"
+    windowElement.style.left =
+      window.innerWidth / 2 -
+      (options.width / 2) * Options.general.uiScale +
+      "px"
+    windowElement.style.top =
+      window.innerHeight / 2 -
+      (options.height / 2) * Options.general.uiScale +
+      "px"
     windowElement.classList.add("window")
     if (options.win_id) windowElement.dataset.win_id = options.win_id
 
     viewElement.classList.add("view")
-    viewElement.style.height = options.height + "px"
-    viewElement.style.width = options.width + "px"
+    viewElement.style.height = options.height / 16 + "rem"
+    viewElement.style.width = options.width / 16 + "rem"
 
     navbarElement.classList.add("navbar")
     if (options.title !== "") {
       navbarElement.appendChild(navbarTitleElement)
     }
-    if (!options.disableClose) {
-      const minimizeElement = Icons.getIcon("MINIMIZE", 15)
-      const closeElement = Icons.getIcon("CLOSE_WINDOW", 15)
 
-      minimizeElement.classList.add("unselectable")
-      minimizeElement.draggable = false
-      minimizeElement.onclick = () => {
-        if (viewElement.style.height != "0px") {
-          viewElement.style.height = "0px"
-        } else {
-          viewElement.style.height = options.height + "px"
-        }
-        this.clampPosition()
+    const minimizeElement = Icons.getIcon("MINIMIZE", 15)
+    const closeElement = Icons.getIcon("CLOSE_WINDOW", 15)
+
+    minimizeElement.classList.add("unselectable")
+    minimizeElement.draggable = false
+    minimizeElement.onclick = () => {
+      if (viewElement.style.height != "0px") {
+        viewElement.style.height = "0px"
+      } else {
+        viewElement.style.height = options.height + "px"
       }
+      this.clampPosition()
+    }
 
-      closeElement.classList.add("unselectable")
-      closeElement.draggable = false
-      closeElement.onclick = () => this.closeWindow()
+    closeElement.classList.add("unselectable")
+    closeElement.draggable = false
+    closeElement.onclick = () => this.closeWindow()
 
-      navbarElement.appendChild(minimizeElement)
-      navbarElement.appendChild(closeElement)
+    navbarElement.appendChild(minimizeElement)
+    navbarElement.appendChild(closeElement)
+    this.minimizeElement = minimizeElement
+    this.closeElement = closeElement
+
+    if (options.disableClose) {
+      minimizeElement.style.display = "none"
+      closeElement.style.display = "none"
     }
 
     navbarTitleElement.innerText = options.title
@@ -97,11 +114,11 @@ export abstract class Window {
     this.focus()
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   onClose(): void {}
 
   closeWindow() {
     if (this.windowManager) {
+      this.closed = true
       this.onClose()
       this.windowManager.removeWindow(this)
       this.windowElement.classList.add("exiting")
@@ -180,5 +197,28 @@ export abstract class Window {
   move(x: number, y: number) {
     this.windowElement.style.left = x + "px"
     this.windowElement.style.top = y + "px"
+  }
+
+  setDisableClose(disable: boolean) {
+    if (disable) {
+      this.minimizeElement.style.display = "none"
+      this.closeElement.style.display = "none"
+    } else {
+      this.minimizeElement.style.display = ""
+      this.closeElement.style.display = ""
+    }
+  }
+
+  setBlocking(blocking: boolean) {
+    if (blocking) {
+      this.windowElement.dataset.blocking = "block"
+      document.getElementById("blocker")!.style.display = "block"
+      window.addEventListener("mousedown", this.block, true)
+    } else {
+      this.windowElement.dataset.blocking = ""
+      document.getElementById("blocker")!.style.display = "none"
+      window.removeEventListener("mousedown", this.block, true)
+    }
+    this.focus()
   }
 }

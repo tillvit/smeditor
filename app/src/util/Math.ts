@@ -51,6 +51,7 @@ export function lcm(array: number[]): number {
 }
 
 export function minArr(array: number[]): number {
+  if (array.length == 0) return 0
   let min = Number.MAX_VALUE
   for (const item of array) {
     if (item < min) {
@@ -61,6 +62,7 @@ export function minArr(array: number[]): number {
 }
 
 export function maxArr(array: number[]): number {
+  if (array.length == 0) return 0
   let max = -Number.MAX_VALUE
   for (const item of array) {
     if (item > max) {

@@ -133,7 +133,8 @@ export abstract class Popup {
 
     const popupView = document.createElement("div")
     popupView.classList.add("popup-zoomer")
-    if (this.options.width) popupView.style.width = `${this.options.width}px`
+    if (this.options.width)
+      popupView.style.width = `${this.options.width / 16}rem`
     popupView.style.backgroundColor = this.options.background ?? ""
     popupView.style.color = this.options.textColor ?? ""
     popup.appendChild(popupView)

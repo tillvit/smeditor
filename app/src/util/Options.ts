@@ -15,6 +15,7 @@ export class DefaultOptions {
     fullscreen: false,
   }
   static general = {
+    uiScale: 1,
     spinnerStep: 1,
     smoothAnimations: true,
     autosaveInterval: 120,
@@ -32,6 +33,7 @@ export class DefaultOptions {
     snap: 1,
     hideWarpedArrows: false,
     hideFakedArrows: false,
+    forceSnapNotes: false,
     doSpeedChanges: true,
     drawNoteFlash: true,
     drawIcons: true,

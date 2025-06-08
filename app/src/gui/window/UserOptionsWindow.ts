@@ -6,13 +6,9 @@ import {
   UserOptionGroup,
 } from "../../data/UserOptionsWindowData"
 import { EventHandler } from "../../util/EventHandler"
-import { clamp, roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { parseString } from "../../util/Util"
 import { Icons } from "../Icons"
-import { ColorPicker } from "../element/ColorPicker"
-import { Dropdown } from "../element/Dropdown"
-import { NumberSpinner } from "../element/NumberSpinner"
+import { createValueInput } from "../element/ValueInput"
 import { Window } from "./Window"
 
 export class UserOptionsWindow extends Window {
@@ -35,8 +31,10 @@ export class UserOptionsWindow extends Window {
 
     EventHandler.on("resize", () => {
       this.move(
-        window.innerWidth / 2 - this.options.width / 2,
-        window.innerHeight / 2 - this.options.height / 2
+        window.innerWidth / 2 -
+          (this.options.width / 2) * Options.general.uiScale,
+        window.innerHeight / 2 -
+          (this.options.height / 2) * Options.general.uiScale
       )
     })
   }
@@ -130,9 +128,8 @@ export class UserOptionsWindow extends Window {
       item.appendChild(label)
     }
 
-    const revert = Icons.getIcon("REVERT")
+    const revert = Icons.getIcon("REVERT", 12)
     if (option.type == "item") {
-      revert.style.width = "12px"
       revert.addEventListener("click", () => {
         Options.applyOption([option.id, Options.getDefaultOption(option.id)])
         const callback: ((app: App, value: any) => void) | undefined =
@@ -149,200 +146,28 @@ export class UserOptionsWindow extends Window {
     }
 
     if (option.type == "item") {
-      const optionValue = Options.getOption(option.id)
-      let input: HTMLElement
-      if (!option.input) return item
       label.innerText = option.label
-      switch (option.input.type) {
-        case "checkbox": {
-          const checkbox = document.createElement("input")
-          const callback = option.input.onChange
-          checkbox.type = "checkbox"
-          checkbox.checked = optionValue
-          checkbox.onblur = null
-          checkbox.onchange = () => {
-            Options.applyOption([option.id, checkbox.checked])
-            revert.style.display =
-              Options.getDefaultOption(option.id) ===
-              Options.getOption(option.id)
-                ? "none"
-                : "block"
-            callback?.(this.app, checkbox.checked)
-          }
-          checkbox.classList.add("pref-input", "right")
-          checkbox.onkeydown = ev => {
-            if (ev.key == "Enter") checkbox.blur()
-          }
-          input = checkbox
-          break
-        }
-        case "dropdown": {
-          if (option.input.advanced) {
-            const deserializer = option.input.transformers.deserialize
-            const serializer = option.input.transformers.serialize
-            const callback = option.input.onChange
-            const dropdown = Dropdown.create(
-              option.input.items,
-              serializer(optionValue)
-            )
-            dropdown.onChange(value => {
-              Options.applyOption([option.id, deserializer(value)])
-              revert.style.display =
-                Options.getDefaultOption(option.id) ===
-                Options.getOption(option.id)
-                  ? "none"
-                  : "block"
-              callback?.(this.app, deserializer(value))
-            })
-            dropdown.view.classList.add("pref-input", "dropdown-right")
-            input = dropdown.view
-          } else {
-            const callback = option.input.onChange
-            const dropdown = Dropdown.create(option.input.items, optionValue)
-            dropdown.onChange(value => {
-              Options.applyOption([option.id, value])
-              revert.style.display =
-                Options.getDefaultOption(option.id) ===
-                Options.getOption(option.id)
-                  ? "none"
-                  : "block"
-              callback?.(this.app, value)
-            })
-            dropdown.view.classList.add("pref-input", "dropdown-right")
-            input = dropdown.view
-          }
-          break
-        }
-        case "number": {
-          const deserializer =
-            option.input.transformers?.deserialize ?? ((value: number) => value)
-          const serializer =
-            option.input.transformers?.serialize ?? ((value: number) => value)
-          const callback = option.input.onChange
-          const spinner = NumberSpinner.create({
-            value: serializer(optionValue as number),
-            ...option.input,
-            onchange: value => {
-              if (!value) {
-                spinner.value = serializer(value as number)
-                return
-              }
-              Options.applyOption([option.id, deserializer(value)])
-              revert.style.display =
-                Options.getDefaultOption(option.id) ===
-                Options.getOption(option.id)
-                  ? "none"
-                  : "block"
-              callback?.(this.app, deserializer(value))
-            },
-          })
-          input = spinner.view
-          break
-        }
-        case "slider": {
-          const deserializer =
-            option.input.transformers?.deserialize ?? ((value: number) => value)
-          const serializer =
-            option.input.transformers?.serialize ?? ((value: number) => value)
-          const callback = option.input.onChange
-          const container = document.createElement("div")
-          container.style.display = "flex"
-          container.style.alignItems = "center"
-          const slider = document.createElement("input")
-          slider.type = "range"
-          slider.min = option.input.min?.toString() ?? ""
-          slider.max = option.input.max?.toString() ?? ""
-          slider.step = option.input.step?.toString() ?? "1"
-          slider.value = serializer(optionValue as number).toString()
-          const numberInput = document.createElement("input")
-          numberInput.type = "text"
-          numberInput.value = (
-            Math.round(serializer(optionValue as number) * 1000) / 1000
-          ).toString()
-          const hardMin =
-            option.input.min ?? option.input.hardMin ?? -Number.MAX_VALUE
-          const hardMax =
-            option.input.max ?? option.input.hardMax ?? Number.MAX_VALUE
-          numberInput.onblur = () => {
-            let value = parseString(numberInput.value)
-            if (value === null) {
-              numberInput.value = (
-                Math.round(serializer(optionValue as number) * 1000) / 1000
-              ).toString()
-              return
-            }
-            value = clamp(value, hardMin, hardMax)
-            numberInput.value = roundDigit(value, 3).toString()
-            numberInput.blur()
-            if (numberInput.value == "") {
-              numberInput.value = serializer(value).toString()
-            } else {
-              Options.applyOption([option.id, deserializer(value)])
-            }
-            slider.value = value.toString()
-            revert.style.display =
-              Options.getDefaultOption(option.id) ===
-              Options.getOption(option.id)
-                ? "none"
-                : "block"
-            callback?.(this.app, deserializer(value))
-          }
-          slider.oninput = () => {
-            const value = parseFloat(slider.value)
-            numberInput.value = roundDigit(value, 3).toString()
-            Options.applyOption([option.id, deserializer(value)])
-            revert.style.display =
-              Options.getDefaultOption(option.id) ===
-              Options.getOption(option.id)
-                ? "none"
-                : "block"
-          }
-          numberInput.style.width = "50px"
-          numberInput.onkeydown = ev => {
-            if (ev.key == "Enter") numberInput.blur()
-          }
-          container.appendChild(slider)
-          container.appendChild(numberInput)
-          input = container
-          break
-        }
-        case "text": {
-          const callback = option.input.onChange
-          const textInput = document.createElement("input")
-          textInput.type = "text"
-          textInput.value = optionValue.toString()
-          textInput.onblur = () => {
-            Options.applyOption([option.id, textInput.value])
-            revert.style.display =
-              Options.getDefaultOption(option.id) ===
-              Options.getOption(option.id)
-                ? "none"
-                : "block"
-            callback?.(this.app, textInput.value)
-          }
-          textInput.onkeydown = ev => {
-            if (ev.key == "Enter") textInput.blur()
-          }
-          input = textInput
-          break
-        }
-        case "color": {
-          const callback = option.input.onChange
-          const colorInput = ColorPicker.create({
-            value: optionValue,
-          })
-          // 'change' event is fired when the user closes the color picker
-          colorInput.onColorChange = c => {
-            Options.applyOption([option.id, c.toHexa()])
-            revert.style.display =
-              Options.getDefaultOption(option.id) ===
-              Options.getOption(option.id)
-                ? "none"
-                : "block"
-            callback?.(this.app, c)
-          }
-          input = colorInput
-        }
+      if (!option.input) return item
+      const optionValue = Options.getOption(option.id)
+      const newInputOptions = option.input
+      const oldCallback: ((app: App, value: any) => void) | undefined =
+        newInputOptions.onChange
+
+      newInputOptions.onChange = (app: App, value: any) => {
+        Options.applyOption([option.id, value])
+        revert.style.display =
+          Options.getDefaultOption(option.id) === Options.getOption(option.id)
+            ? "none"
+            : "block"
+        option
+        oldCallback?.(app, value)
+      }
+      const input = createValueInput(this.app, newInputOptions, optionValue)
+      if (option.input.type == "checkbox") {
+        input.classList.add("pref-input", "right")
+      }
+      if (option.input.type == "dropdown") {
+        input.classList.add("pref-input", "dropdown-right")
       }
       input.classList.add("pref-item-input")
       item.appendChild(input)
