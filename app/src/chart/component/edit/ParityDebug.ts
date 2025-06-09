@@ -16,6 +16,7 @@ import { ParityInternals } from "../../stats/parity/ParityInternal_Temp"
 
 interface ConnectionObject extends Container {
   text: BitmapText
+  bg: BetterRoundedRect
 }
 
 interface NodeObject extends Container {
@@ -139,6 +140,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
           return newChild
         },
       })
+      nodePool.sortableChildren = true
 
       const text = new BitmapText("", {
         fontName: "Main",
@@ -205,6 +207,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
 
     this.addChild(this.connections)
     this.addChild(this.rowPool)
+    this.rowPool.sortableChildren = true
 
     const chartListener = () => {
       this.debugTexts.forEach(debugObject => {
@@ -378,18 +381,31 @@ export class ParityDebug extends Container implements ChartRendererComponent {
                 connection.text.anchor.set(0.5, 1)
                 connection.text.tint = 0xffffff
                 connection.text.y = -bg.height / 2 - 5
+
+                connection.bg = new BetterRoundedRect()
+                connection.bg.visible = false
+                connection.bg.eventMode = "none"
+                connection.bg.tint = 0x383557
+
                 connection.name = outKey
-                connection.addChild(connection.text)
+                connection.addChild(connection.bg, connection.text)
                 nodeObject.connections.addChild(connection)
 
                 connection.on("pointerover", () => {
                   connection.text.text =
                     JSON.stringify(outValue, null, 2) + "\n"
                   connection.scale.set(1.2)
+                  connection.bg.visible = true
+                  connection.bg.width = connection.text.width + 10
+                  connection.bg.height = connection.text.height + 10
+                  connection.bg.alpha = 0.3
+                  connection.bg.x = -connection.bg.width / 2
+                  connection.bg.y = -connection.bg.height - bg.height / 2 - 10
                 })
                 connection.on("pointerout", () => {
                   connection.text.text = outValue["TOTAL"].toFixed(2)
                   connection.scale.set(1)
+                  connection.bg.visible = false
                 })
                 connection.text.hitArea = new Rectangle(
                   -connection.text.width / 2,
@@ -397,6 +413,9 @@ export class ParityDebug extends Container implements ChartRendererComponent {
                   connection.text.width,
                   connection.text.height
                 )
+                connection.zIndex = 1
+                nodeObject.zIndex = 1
+                rowObj.zIndex = 1
               })
               setTint()
             }
@@ -405,12 +424,14 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               if (!active) return
               active = false
               nodeObject.alpha = 0.8
+              nodeObject.zIndex = 0
               nodeObject.detail.visible = false
               nodeObject.connections.children.forEach(connection => {
                 connection.destroy()
               })
               nodeObject.connections.removeChildren()
               setTint()
+              rowObj.zIndex = 0
             }
             nodeObject.activate = activate
             nodeObject.deactivate = deactivate
