@@ -101,6 +101,40 @@ export function bsearchEarliest<T>(
   return idx
 }
 
+/**
+ * Returns the start and end indices of the elements within the
+ * given range in a sorted array.
+ *
+ * @export
+ * @template T
+ * @param {T[]} array The array to search in.
+ * @param {number} start The start of the range.
+ * @param {number} end The end of the range.
+ * @param {(obj: T) => number} index A function that returns the index of the object.
+ * @return {[number, number]} The start and end indices of the elements within the range. The start index is inclusive and the end index is exclusive.
+ */
+export function getRangeInSortedArray<T>(
+  array: T[],
+  start: number,
+  end: number,
+  index: (obj: T) => number
+) {
+  if (array.length == 0) return [0, 0]
+  let startIdx = bsearch(array, start, index)
+  if (index(array[startIdx]) < start) startIdx++
+  while (array[startIdx - 1] && index(array[startIdx - 1]) == start) {
+    startIdx--
+  }
+
+  let endIdx = bsearch(array, end, index)
+  if (index(array[endIdx]) > end) endIdx--
+  while (array[endIdx + 1] && index(array[endIdx + 1]) == end) {
+    endIdx++
+  }
+
+  return [startIdx, endIdx + 1]
+}
+
 export function compareObjects(a: any, b: any) {
   if (Object.keys(a).some(key => a[key] != b[key])) return false
   if (Object.keys(b).some(key => a[key] != b[key])) return false

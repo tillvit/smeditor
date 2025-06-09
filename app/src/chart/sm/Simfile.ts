@@ -68,6 +68,7 @@ export class Simfile {
               error instanceof Error ? error.message : String(error),
               "warn"
             )
+            console.error(error)
             continue
           }
           this.addChart(chart)

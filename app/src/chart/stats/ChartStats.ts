@@ -3,13 +3,15 @@ import { Chart } from "../sm/Chart"
 import { ChartAnalyzer } from "./ChartAnalyzer"
 import { NoteTypeAnalyzer } from "./NoteTypeAnalyzer"
 import { NPSAnalyzer } from "./NPSAnalyzer"
+import { ParityAnalyzer } from "./parity/ParityAnalyzer"
+import { ParityInternals } from "./parity/ParityInternal_Temp"
 import { StreamAnalyzer, StreamData } from "./StreamAnalyzer"
 
 const ANALYZERS: (new (chart: Chart) => ChartAnalyzer)[] = [
   StreamAnalyzer,
   NPSAnalyzer,
   NoteTypeAnalyzer,
-  // ParityAnalyzer,
+  ParityAnalyzer,
 ]
 
 const UPDATE_INTERVAL = 250
@@ -18,6 +20,7 @@ export class ChartStats {
   noteCounts: Record<string, number> = {}
   npsGraph: number[] = []
   streams: StreamData[] = []
+  parity?: ParityInternals
 
   readonly chart
 

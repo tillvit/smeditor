@@ -1,7 +1,7 @@
 import { Chart } from "../sm/Chart"
 
 export abstract class ChartAnalyzer {
-  protected chart
+  protected readonly chart
 
   constructor(chart: Chart) {
     this.chart = chart

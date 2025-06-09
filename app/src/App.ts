@@ -347,7 +347,26 @@ export class App {
         chars: [
           ["a", "z"],
           ["A", "Z"],
-          "!@#$%^&*()~{}[]:.-?=,_",
+          "!@#$%^&*()~{}[]:.-?=,_|",
+          "0123456789/",
+          " ",
+        ],
+        resolution: window.devicePixelRatio,
+      }
+    )
+
+    BitmapFont.from(
+      "Mono",
+      {
+        fontFamily: "monospace",
+        fontSize: 20,
+        fill: "white",
+      },
+      {
+        chars: [
+          ["a", "z"],
+          ["A", "Z"],
+          "!@#$%^&*()~{}[]:.-?=,_|",
           "0123456789/",
           " ",
         ],
@@ -370,7 +389,7 @@ export class App {
         chars: [
           ["a", "z"],
           ["A", "Z"],
-          "!@#$%^&*()~{}[]:.-?=,_",
+          "!@#$%^&*()~{}[]:.-?=,_|",
           "0123456789/",
           " ",
         ],

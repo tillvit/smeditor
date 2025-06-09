@@ -5,6 +5,7 @@ import { getNoteEnd } from "../../../util/Util"
 import { EditTimingMode } from "../../ChartManager"
 import { TimingWindowCollection } from "../../play/TimingWindowCollection"
 import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
+import { Foot } from "../../stats/parity/ParityDataTypes"
 import { HoldObject, Notefield, NoteWrapper } from "./Notefield"
 
 interface HighlightedNoteObject extends Container {
@@ -14,11 +15,12 @@ interface HighlightedNoteObject extends Container {
   lastActive: boolean
 }
 
-const parityColors: Record<string, number> = {
-  L: 0x0390fc,
-  l: 0xabd6f7,
-  R: 0xfcad03,
-  r: 0xfae5b9,
+const parityColors: Record<Foot, number> = {
+  [Foot.NONE]: 0xffffff,
+  [Foot.LEFT_HEEL]: 0x0390fc,
+  [Foot.LEFT_TOE]: 0xabd6f7,
+  [Foot.RIGHT_HEEL]: 0xfcad03,
+  [Foot.RIGHT_TOE]: 0xfae5b9,
 }
 
 export class NoteContainer extends Container {
@@ -69,7 +71,7 @@ export class NoteContainer extends Container {
           zIndex: note.beat,
         })
         const selection = new Sprite(Texture.WHITE)
-        const objectBounds = object.getBounds()
+        const objectBounds = object.getLocalBounds()
         selection.x = objectBounds.x
         selection.y = objectBounds.y
         selection.width = objectBounds.width
@@ -139,6 +141,12 @@ export class NoteContainer extends Container {
         } else {
           hold.setActive(false)
         }
+
+        const objectBounds = container.wrapper.getLocalBounds()
+        container.parity.x = objectBounds.x
+        container.parity.y = objectBounds.y
+        container.parity.width = objectBounds.width
+        container.parity.height = objectBounds.height
       }
       if (
         this.notefield.renderer.chartManager.editTimingMode ==
@@ -170,7 +178,7 @@ export class NoteContainer extends Container {
       }
       container.parity.alpha = note.parity ? 0.4 : 0
       container.parity.tint =
-        note.parity !== undefined ? parityColors[note.parity] : 0xffffff
+        note.parity !== undefined ? parityColors[note.parity.foot] : 0xffffff
     }
   }
 
