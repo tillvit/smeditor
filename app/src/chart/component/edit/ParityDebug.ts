@@ -22,6 +22,9 @@ interface NodeObject extends Container {
   activate: () => void
   deactivate: () => void
   connections: Container<ConnectionObject>
+  bg: BetterRoundedRect
+  letters: BitmapText[]
+  detail: BitmapText
 }
 
 interface DebugObject extends Container {
@@ -35,7 +38,7 @@ interface RowObject extends Container {
   detail: BitmapText
   leftContainer: Container
   rightContainer: Container
-  permutationContainer: Container<NodeObject>
+  nodePool: DisplayObjectPool<NodeObject>
   statusRows: Sprite[][]
   highlights: { col: number; second: number; box: DetailBox }[]
 }
@@ -84,7 +87,57 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       const newChild = new Container() as RowObject
       const leftContainer = new Container()
       const rightContainer = new Container()
-      const permutationContainer = new Container<NodeObject>()
+      const nodePool = new DisplayObjectPool<NodeObject>({
+        create: () => {
+          const newChild = new Container() as NodeObject
+          const bg = new BetterRoundedRect()
+          newChild.addChild(bg)
+          newChild.bg = bg
+          newChild.letters = []
+
+          let textWidth = 0
+          let textHeight = 0
+          for (let j = 0; j < this.renderer.chart.getColumnCount(); j++) {
+            const text = new BitmapText("", {
+              fontName: "Mono",
+              fontSize: 13,
+            })
+            if (!text) continue
+            text.alpha = 0
+            text.anchor.set(0, 0.5)
+            text.x = textWidth
+            newChild.addChild(text)
+            textWidth += text.width
+            textHeight = Math.max(textHeight, text.height)
+            newChild.letters.push(text)
+          }
+
+          bg.width = textWidth + 10
+          bg.height = textHeight + 5
+          bg.pivot.set(bg.width / 2, bg.height / 2)
+
+          newChild.letters.forEach(text => {
+            text.x -= textWidth / 2
+          })
+
+          const detail = new BitmapText("", {
+            fontName: "Mono",
+            fontSize: 10,
+          })
+          detail.anchor.set(0.5, 1)
+          detail.y -= bg.height / 2 + 5
+          detail.visible = false
+          newChild.detail = detail
+          newChild.addChild(detail)
+          newChild.alpha = 0.8
+
+          const connectionsContainer = new Container<ConnectionObject>()
+          newChild.connections = connectionsContainer
+          newChild.addChild(connectionsContainer)
+
+          return newChild
+        },
+      })
 
       const text = new BitmapText("", {
         fontName: "Main",
@@ -113,14 +166,14 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       hitbox.eventMode = "static"
 
       leftContainer.addChild(hitbox, text, detail)
-      newChild.addChild(leftContainer, rightContainer, permutationContainer)
+      newChild.addChild(leftContainer, rightContainer, nodePool)
 
       newChild.hitbox = hitbox
       newChild.text = text
       newChild.detail = detail
       newChild.leftContainer = leftContainer
       newChild.rightContainer = rightContainer
-      newChild.permutationContainer = permutationContainer
+      newChild.nodePool = nodePool
       newChild.highlights = []
       newChild.statusRows = []
 
@@ -236,10 +289,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
         rowObj.highlights.forEach(highlight => {
           highlight.box.destroy()
         })
-        rowObj.permutationContainer.children.forEach(child => {
-          child.destroy({ children: true })
-        })
-        rowObj.permutationContainer.removeChildren()
+        rowObj.nodePool.destroyAll()
         rowObj.highlights = []
         rowObj.hitbox.removeAllListeners()
 
@@ -249,11 +299,11 @@ export class ParityDebug extends Container implements ChartRendererComponent {
             `No permutations found for row ${i} at beat ${row.beat} (${row.id})`
           )
         } else {
-          let nodeWidth = 0
           for (const node of nodeRow.nodes) {
-            const nodeObject = new Container() as NodeObject
+            const nodeObject = rowObj.nodePool.createChild()
+            if (!nodeObject) continue
             nodeObject.name = node.key
-            const bg = new BetterRoundedRect()
+            const bg = nodeObject.bg
 
             const setTint = () => {
               if (
@@ -277,56 +327,20 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               }
             }
 
-            nodeObject.addChild(bg)
-
-            const letters: BitmapText[] = []
-
-            let textWidth = 0
-            let textHeight = 0
             for (let j = 0; j < node.state.combinedColumns.length; j++) {
               const col = node.state.combinedColumns[j]
-              const text = new BitmapText(FEET_LABELS[col], {
-                fontName: "Mono",
-                fontSize: 13,
-              })
+              const text = nodeObject.letters[j]
+              if (!text) continue
+              text.text = FEET_LABELS[col]
               text.alpha = 0.3
               if (node.state.columns[j] == node.state.combinedColumns[j]) {
                 text.alpha = 1
               }
               text.tint = parityColors[col]
-              text.anchor.set(0, 0.5)
-              text.x = textWidth
-              nodeObject.addChild(text)
-              textWidth += text.width
-              textHeight = Math.max(textHeight, text.height)
-              letters.push(text)
             }
 
-            bg.width = textWidth + 10
-            bg.height = textHeight + 5
-            bg.pivot.set(bg.width / 2, bg.height / 2)
+            nodeObject.detail.text = "Key: " + node.key
 
-            letters.forEach(text => {
-              text.x -= textWidth / 2
-            })
-
-            nodeWidth = bg.width
-
-            const detail = new BitmapText("Key: " + node.key, {
-              fontName: "Mono",
-              fontSize: 10,
-            })
-            detail.anchor.set(0.5, 1)
-            detail.y -= bg.height / 2 + 5
-            detail.visible = false
-            nodeObject.addChild(detail)
-
-            nodeObject.eventMode = "static"
-            nodeObject.alpha = 0.8
-
-            const connectionsContainer = new Container<ConnectionObject>()
-            nodeObject.connections = connectionsContainer
-            nodeObject.addChild(connectionsContainer)
             let active = false
             setTint()
 
@@ -334,12 +348,11 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               if (active) return
               active = true
               nodeObject.alpha = 3
-              detail.visible = true
+              nodeObject.detail.visible = true
               node.children.entries().forEach(([outKey, outValue]) => {
                 const nextRow = this.rowMap.get(parityData.notedataRows[i + 1])
                 if (!nextRow) return
-                const connectedNode =
-                  nextRow.permutationContainer.getChildByName(outKey)
+                const connectedNode = nextRow.nodePool.getChildByName(outKey)
                 if (!connectedNode) return
 
                 const connection = new Container() as ConnectionObject
@@ -352,7 +365,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
                 connection.text.y = -bg.height / 2 - 5
                 connection.name = outKey
                 connection.addChild(connection.text)
-                connectionsContainer.addChild(connection)
+                nodeObject.connections.addChild(connection)
 
                 connection.eventMode = "static"
                 connection.on("pointerover", () => {
@@ -378,15 +391,16 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               if (!active) return
               active = false
               nodeObject.alpha = 0.8
-              detail.visible = false
-              connectionsContainer.children.forEach(connection => {
+              nodeObject.detail.visible = false
+              nodeObject.connections.children.forEach(connection => {
                 connection.destroy()
               })
-              connectionsContainer.removeChildren()
+              nodeObject.connections.removeChildren()
               setTint()
             }
             nodeObject.activate = activate
             nodeObject.deactivate = deactivate
+            nodeObject.eventMode = "static"
 
             nodeObject.on("pointerover", () => {
               activate()
@@ -404,13 +418,11 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               event.stopImmediatePropagation()
             })
             nodeObject.cursor = "pointer"
-
-            rowObj.permutationContainer.addChild(nodeObject)
           }
-          nodeWidth += 5
+          const nodeWidth = rowObj.nodePool.children[0].bg.width + 5
           const rowWidth = nodeWidth * nodeRow.nodes.length
           // center + layout permutations
-          rowObj.permutationContainer.children.forEach((child, index) => {
+          rowObj.nodePool.children.forEach((child, index) => {
             child.x = index * nodeWidth - rowWidth / 2
             child.y = 0
           })
@@ -517,7 +529,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       })
       rowObj.y = this.renderer.getYPosFromBeat(row.beat)
 
-      rowObj.permutationContainer.x = (RIGHT_SAFE - LEFT_SAFE) / 2 + LEFT_SAFE
+      rowObj.nodePool.x = (RIGHT_SAFE - LEFT_SAFE) / 2 + LEFT_SAFE
     }
 
     // Update debug texts
@@ -546,14 +558,12 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       const endRowObject = this.rowMap.get(parityData.notedataRows[i + 1])
       if (!startRowObject || !endRowObject) continue
       for (const node of nodes) {
-        const startObject =
-          startRowObject.permutationContainer.getChildByName<NodeObject>(
-            node.key
-          )
+        const startObject = startRowObject.nodePool.getChildByName<NodeObject>(
+          node.key
+        )
         if (!startObject) continue
         for (const [outKey, outValue] of node.children.entries()) {
-          const endObject =
-            endRowObject.permutationContainer.getChildByName(outKey)
+          const endObject = endRowObject.nodePool.getChildByName(outKey)
           if (!endObject) continue
 
           let color = 0xaf77d1
@@ -570,8 +580,8 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               startObject.connections.getChildByName<ConnectionObject>(outKey)!
             connection.x =
               endObject.x +
-              endRowObject.permutationContainer.x -
-              (startObject.x + startRowObject.permutationContainer.x)
+              endRowObject.nodePool.x -
+              (startObject.x + startRowObject.nodePool.x)
             connection.y = endRowObject.y - startRowObject.y
             alpha += 0.3
             color = 0x63c9ff
@@ -589,11 +599,11 @@ export class ParityDebug extends Container implements ChartRendererComponent {
           this.connections.lineStyle(width, color, alpha)
 
           this.connections.moveTo(
-            startObject.x + startRowObject.permutationContainer.x,
+            startObject.x + startRowObject.nodePool.x,
             startRowObject.y
           )
           this.connections.lineTo(
-            endObject.x + endRowObject.permutationContainer.x,
+            endObject.x + endRowObject.nodePool.x,
             endRowObject.y
           )
         }
