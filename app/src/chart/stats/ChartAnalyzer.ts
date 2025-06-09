@@ -13,7 +13,7 @@ export abstract class ChartAnalyzer {
    * @abstract
    * @memberof ChartAnalyzer
    */
-  abstract reset(): void
+  reset(): void {}
 
   /**
    * Calculate data for the entire chart. This method will be called after reset().
@@ -31,4 +31,28 @@ export abstract class ChartAnalyzer {
    * @memberof ChartAnalyzer
    */
   abstract recalculate(startBeat: number, endBeat: number): void
+
+  /**
+   * Called when the chart is unloaded.
+   *
+   * @abstract
+   * @memberof ChartAnalyzer
+   */
+  onUnload(): void {}
+
+  /**
+   * Called when the chart is loaded.
+   *
+   * @abstract
+   * @memberof ChartAnalyzer
+   */
+  onLoad(): void {}
+
+  /**
+   * Called when the chart is destroyed.
+   *
+   * @abstract
+   * @memberof ChartAnalyzer
+   */
+  destroy(): void {}
 }

@@ -511,4 +511,9 @@ export class Chart {
   getColumnCount(): number {
     return this.gameType.numCols
   }
+
+  destroy() {
+    this.stats.destroy()
+    this.timingData.destroy()
+  }
 }

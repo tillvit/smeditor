@@ -760,6 +760,7 @@ export class ChartManager {
     // Destroy everything if no path specified
     if (!path) {
       this.smPath = ""
+      this.loadedSM?.destroy()
       this.loadedSM = undefined
       this.chartAudio.stop()
       this.noChartTextA.visible = false
@@ -815,6 +816,7 @@ export class ChartManager {
       return
     }
     const smFile = await smHandle.getFile()
+    this.loadedSM?.destroy()
     this.loadedSM = new Simfile(smFile)
 
     await this.loadedSM.loaded
@@ -868,7 +870,7 @@ export class ChartManager {
         this.chartView = undefined
         this.noChartTextA.visible = true
         this.noChartTextB.visible = true
-        EventHandler.emit("chartLoaded")
+        EventHandler.emit("chartLoaded", null)
         EventHandler.emit("chartModified")
         return
       }
@@ -939,7 +941,7 @@ export class ChartManager {
         chart.gameType.id
     )
 
-    EventHandler.emit("chartLoaded")
+    EventHandler.emit("chartLoaded", chart)
     EventHandler.emit("audioLoaded")
     EventHandler.emit("chartModified")
 

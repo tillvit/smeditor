@@ -5,7 +5,7 @@ import { getNoteEnd } from "../../../util/Util"
 import { EditTimingMode } from "../../ChartManager"
 import { TimingWindowCollection } from "../../play/TimingWindowCollection"
 import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
-import { Foot } from "../../stats/parity/ParityDataTypes"
+import { PARITY_COLORS } from "../edit/ParityDebug"
 import { HoldObject, Notefield, NoteWrapper } from "./Notefield"
 
 interface HighlightedNoteObject extends Container {
@@ -13,14 +13,6 @@ interface HighlightedNoteObject extends Container {
   parity: Sprite
   wrapper: NoteWrapper
   lastActive: boolean
-}
-
-const parityColors: Record<Foot, number> = {
-  [Foot.NONE]: 0xffffff,
-  [Foot.LEFT_HEEL]: 0x0390fc,
-  [Foot.LEFT_TOE]: 0xabd6f7,
-  [Foot.RIGHT_HEEL]: 0xfcad03,
-  [Foot.RIGHT_TOE]: 0xfae5b9,
 }
 
 export class NoteContainer extends Container {
@@ -176,9 +168,11 @@ export class NoteContainer extends Container {
           this.notefield.renderer.chartManager.removeNoteFromDragSelection(note)
         }
       }
-      container.parity.alpha = note.parity ? 0.4 : 0
-      container.parity.tint =
-        note.parity !== undefined ? parityColors[note.parity.foot] : 0xffffff
+      if (Options.debug.showParity) {
+        container.parity.alpha = note.parity ? 0.4 : 0
+        container.parity.tint =
+          note.parity !== undefined ? PARITY_COLORS[note.parity.foot] : 0xffffff
+      }
     }
   }
 

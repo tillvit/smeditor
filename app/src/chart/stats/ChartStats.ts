@@ -1,3 +1,4 @@
+import { EventHandler } from "../../util/EventHandler"
 import { maxArr } from "../../util/Math"
 import { Chart } from "../sm/Chart"
 import { ChartAnalyzer } from "./ChartAnalyzer"
@@ -27,32 +28,37 @@ export class ChartStats {
   private analyzers: ChartAnalyzer[]
   private lastUpdate: number | null = null
   private queued = false
+  private loaded = false
+
+  private readonly loadHandler = ((chart: Chart | null) => {
+    if (chart != this.chart && this.loaded) {
+      this.loaded = false
+      this.analyzers.forEach(a => a.onUnload())
+    }
+    if (chart == this.chart && !this.loaded) {
+      this.loaded = true
+      this.analyzers.forEach(a => a.onLoad())
+    }
+  }).bind(this)
 
   constructor(chart: Chart) {
     this.chart = chart
     this.analyzers = ANALYZERS.map(a => new a(chart))
+
+    EventHandler.on("chartLoaded", this.loadHandler)
   }
 
   calculate() {
-    console.log(`Recalculating stats`)
-    console.time("total")
     this.analyzers.forEach(a => {
-      console.time(a.constructor.toString().split(" ")[1])
       a.calculateAll()
-      console.timeEnd(a.constructor.toString().split(" ")[1])
     })
-    console.timeEnd("total")
   }
 
   private _recalculate(startBeat: number, endBeat: number) {
     console.log(`Recalculating stats for ${startBeat}-${endBeat}`)
-    console.time("total")
     this.analyzers.forEach(a => {
-      console.time(a.constructor.toString().split(" ")[1])
       a.recalculate(startBeat, endBeat)
-      console.timeEnd(a.constructor.toString().split(" ")[1])
     })
-    console.timeEnd("total")
   }
 
   recalculate(startBeat: number, endBeat: number) {
@@ -80,5 +86,10 @@ export class ChartStats {
     const maxNPS = maxArr(this.npsGraph)
     if (maxNPS == 0) return 0
     return maxNPS
+  }
+
+  destroy() {
+    this.analyzers.forEach(a => a.destroy())
+    EventHandler.off("chartLoaded", this.loadHandler)
   }
 }

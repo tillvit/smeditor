@@ -152,6 +152,7 @@ export class DefaultOptions {
     showFPS: false,
     showTimers: false,
     showScroll: false,
+    showParity: false,
     showNoteskinErrors: false,
     showDebugVariables: false,
   }

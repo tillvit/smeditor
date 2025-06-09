@@ -769,4 +769,15 @@ export class ParityInternals {
     this.edgeCacheSize = 0
     this.permuteCache.clear()
   }
+
+  reset() {
+    this.bestPath = undefined
+    this.bestPathCost = 0
+    this.bestPathSet = undefined
+    this.nodeMap.clear()
+    this.nEdges = 0
+    this.nodeRows = []
+    this.notedataRows = []
+    this.deleteCache()
+  }
 }

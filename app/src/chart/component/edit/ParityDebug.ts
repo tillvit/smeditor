@@ -65,7 +65,7 @@ const ROW_DETAILS = {
   },
 }
 
-const parityColors: Record<Foot, number> = {
+export const PARITY_COLORS: Record<Foot, number> = {
   [Foot.NONE]: 0xffffff,
   [Foot.LEFT_HEEL]: 0x0390fc,
   [Foot.LEFT_TOE]: 0xabd6f7,
@@ -76,6 +76,7 @@ const parityColors: Record<Foot, number> = {
 export class ParityDebug extends Container implements ChartRendererComponent {
   private renderer: ChartRenderer
   private chartDirty = false
+  private lastVisible = false
 
   private debugTexts: DebugObject[] = []
 
@@ -236,6 +237,14 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     this.createDebugObject(0xff9a5c, parityData => {
       return `Found best path in ${parityData.debugStats.pathUpdateTime.toFixed(3)}ms (cached ${parityData.debugStats.cachedBestNodes} nodes)`
     })
+    this.createDebugObject(0xffffff, parityData => {
+      return `Total time: ${(
+        parityData.debugStats.rowUpdateTime +
+        parityData.debugStats.nodeUpdateTime +
+        parityData.debugStats.edgeUpdateTime +
+        parityData.debugStats.pathUpdateTime
+      ).toFixed(3)}ms`
+    })
 
     EventHandler.on("chartModified", chartListener)
     EventHandler.on("timingModified", chartListener)
@@ -248,10 +257,17 @@ export class ParityDebug extends Container implements ChartRendererComponent {
   }
 
   update(firstBeat: number, lastBeat: number) {
-    const parityData = this.renderer.chart.stats.parity
-    this.visible = !!parityData
-    // this.visible = Options.debug.showScroll
-    if (!parityData) return
+    const parityData = this.renderer.chart.stats.parity!
+    this.visible = !!parityData && Options.debug.showParity
+    if (!this.visible) {
+      if (this.lastVisible != this.visible) {
+        this.rowMap.clear()
+        this.rowPool.destroyAll()
+        this.lastVisible = this.visible
+      }
+      return
+    }
+    this.lastVisible = this.visible
 
     if (this.chartDirty) {
       this.rowMap.clear()
@@ -335,7 +351,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               if (node.state.columns[j] == node.state.combinedColumns[j]) {
                 text.alpha = 1
               }
-              text.tint = parityColors[col]
+              text.tint = PARITY_COLORS[col]
             }
 
             nodeObject.detail.text = "Key: " + node.key
@@ -366,7 +382,6 @@ export class ParityDebug extends Container implements ChartRendererComponent {
                 connection.addChild(connection.text)
                 nodeObject.connections.addChild(connection)
 
-                connection.eventMode = "static"
                 connection.on("pointerover", () => {
                   connection.text.text =
                     JSON.stringify(outValue, null, 2) + "\n"
@@ -413,6 +428,9 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               } else {
                 this.activeNode?.deactivate()
                 this.activeNode = nodeObject
+                nodeObject.connections.children.forEach(connection => {
+                  connection.eventMode = "static"
+                })
               }
               event.stopImmediatePropagation()
             })
