@@ -181,6 +181,10 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       return `Calculated ${parityData.debugStats.calculatedEdges} costs (${parityData.debugStats.cachedEdges} cached) in ${parityData.debugStats.edgeUpdateTime.toFixed(3)}ms (cache size ${parityData.edgeCacheSize})`
     })
 
+    this.createDebugObject(0xff9a5c, parityData => {
+      return `Found best path in ${parityData.debugStats.pathUpdateTime.toFixed(3)}ms (cached ${parityData.debugStats.cachedBestEdges} edges)`
+    })
+
     EventHandler.on("chartModified", chartListener)
     EventHandler.on("timingModified", chartListener)
     this.renderer.on("pointerdown", deselect)
@@ -262,6 +266,11 @@ export class ParityDebug extends Container implements ChartRendererComponent {
                 bg.tint = 0xaf77d1
                 bg.alpha = 0.2
               }
+              if (parityData.bestPathSet?.has(node.key)) {
+                bg.tint = 0xbf4900
+                bg.alpha = 0.6
+              }
+
               if (active) {
                 bg.tint = 0x63c9ff
                 bg.alpha = 0.2
@@ -548,13 +557,14 @@ export class ParityDebug extends Container implements ChartRendererComponent {
           if (!endObject) continue
 
           let color = 0xaf77d1
+          let width = 1.5
           if (
             i >= parityData.debugStats.lastUpdatedNodeStart &&
             i < parityData.debugStats.lastUpdatedNodeEnd
           ) {
             color = 0x00ff00
           }
-          let alpha = 0.5 - Math.min(0.45, Math.log1p(outValue["TOTAL"]) / 20)
+          let alpha = 0.5 - Math.min(0.45, Math.log1p(outValue["TOTAL"]) / 30)
           if (startObject.connections.getChildByName(outKey)) {
             const connection =
               startObject.connections.getChildByName<ConnectionObject>(outKey)!
@@ -565,9 +575,18 @@ export class ParityDebug extends Container implements ChartRendererComponent {
             connection.y = endRowObject.y - startRowObject.y
             alpha += 0.3
             color = 0x63c9ff
+            width = 2.5
+          }
+          if (
+            parityData.bestPathSet?.has(node.key) &&
+            parityData.bestPathSet.has(outKey)
+          ) {
+            color = 0xbf4900
+            alpha += 0.4
+            width = 4
           }
 
-          this.connections.lineStyle(2, color, alpha)
+          this.connections.lineStyle(width, color, alpha)
 
           this.connections.moveTo(
             startObject.x + startRowObject.permutationContainer.x,
