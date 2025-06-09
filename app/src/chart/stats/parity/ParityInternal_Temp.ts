@@ -51,6 +51,8 @@ export class ParityInternals {
   // Map of state keys to ParityGraphNodes
   private nodeMap = new Map<string, ParityGraphNode>()
 
+  private nEdges = 0
+
   // The best path found so far
   bestPath?: string[]
   bestPathCost = 0
@@ -78,19 +80,37 @@ export class ParityInternals {
   constructor(chart: Chart) {
     this.notedataRows = []
     this.chart = chart
-    this.layout =
-      STAGE_LAYOUTS[chart.gameType.id] ?? STAGE_LAYOUTS["dance-single"]
+    this.layout = STAGE_LAYOUTS[chart.gameType.id]
     this.costCalc = new ParityCostCalculator(chart.gameType.id)
   }
 
   compute(startBeat: number, endBeat: number) {
+    if (this.layout == undefined) return
     const updatedRows = this.recalculateRows(startBeat, endBeat)
     const updatedStates = this.recalculateStates(updatedRows)
     const updatedCost = this.computeCosts(updatedStates)
     this.computeBestPath(updatedCost)
 
-    // assign notes
+    // Prune edge cache if too big
+    if (this.edgeCacheSize > this.nEdges * 2) {
+      this.edgeCacheSize = 0
+      const newCache = new Map<string, Map<string, { [id: string]: number }>>()
+      for (const nodeRow of this.nodeRows) {
+        for (const node of nodeRow.nodes) {
+          for (const [childKey, costs] of node.children.entries()) {
+            if (!newCache.has(node.key)) {
+              newCache.set(node.key, new Map())
+            }
+            newCache.get(node.key)!.set(childKey, costs)
+            this.edgeCacheSize++
+          }
+        }
+      }
+      this.cachedEdges = newCache
+    }
+
     if (this.bestPath) {
+      // assign notes
       this.notedataRows.forEach((row, idx) => {
         const bestOption = this.nodeMap.get(this.bestPath![idx + 1])!
         bestOption.state.combinedColumns.forEach((foot, col) => {
@@ -332,6 +352,7 @@ export class ParityInternals {
     removedRows.forEach(row => {
       row.nodes.forEach(node => {
         this.nodeMap.delete(node.key)
+        this.nEdges -= node.children.size
       })
     })
 
@@ -345,6 +366,7 @@ export class ParityInternals {
       const newNodes = new Set<ParityGraphNode>()
 
       for (const node of nodes) {
+        this.nEdges -= node.children.size
         node.children.clear()
         const permutations = this.getPermuteColumns(
           this.notedataRows[rowIndex + 1]
@@ -366,6 +388,7 @@ export class ParityInternals {
           }
           newNodes.add(newNode)
           this.debugStats.createdEdges += 1
+          this.nEdges++
           node.children.set(newNode.key, {})
         }
       }
@@ -539,6 +562,9 @@ export class ParityInternals {
               path: lowestCosts.get(node.key)!.path + "*" + child,
             })
           }
+        }
+        if (rowIndex == this.notedataRows.length - 1) {
+          node.children.delete(this.endNode.key)
         }
       }
       rowIndex++

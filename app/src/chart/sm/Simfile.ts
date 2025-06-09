@@ -64,11 +64,7 @@ export class Simfile {
             chart = new Chart(this, data)
           } catch (error) {
             this.unloadedCharts.push(data)
-            WaterfallManager.createFormatted(
-              error instanceof Error ? error.message : String(error),
-              "warn"
-            )
-            console.error(error)
+            WaterfallManager.createFormatted(error, "warn")
             continue
           }
           this.addChart(chart)
