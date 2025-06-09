@@ -183,11 +183,10 @@ export class ParityDebug extends Container implements ChartRendererComponent {
           const box = new Sprite(Texture.WHITE)
           box.width = 10
           box.height = 10
-          box.anchor.set(0, 0.5)
-          box.x = i * 12
+          box.anchor.set(1, 0.5)
           box.y = (row - (Object.keys(ROW_DETAILS).length - 1) / 2) * 12 + 5
           box.visible = true
-          rightContainer.addChild(box)
+          leftContainer.addChild(box)
           statusRow.push(box)
         }
         newChild.statusRows.push(statusRow)
@@ -235,7 +234,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     })
 
     this.createDebugObject(0xff9a5c, parityData => {
-      return `Found best path in ${parityData.debugStats.pathUpdateTime.toFixed(3)}ms (cached ${parityData.debugStats.cachedBestEdges} edges)`
+      return `Found best path in ${parityData.debugStats.pathUpdateTime.toFixed(3)}ms (cached ${parityData.debugStats.cachedBestNodes} nodes)`
     })
 
     EventHandler.on("chartModified", chartListener)
@@ -442,6 +441,12 @@ export class ParityDebug extends Container implements ChartRendererComponent {
           } else {
             rowObj.statusRows[2][k].visible = false
           }
+          for (let j = 0; j < 3; j++) {
+            rowObj.statusRows[j][k].x =
+              (k - this.renderer.chart.getColumnCount()) * 12 -
+              rowObj.text.width -
+              12
+          }
         }
 
         rowObj.hitbox.on("pointerover", () => {
@@ -485,6 +490,11 @@ export class ParityDebug extends Container implements ChartRendererComponent {
             })
             rowObj.addChild(box)
           })
+          rowObj.statusRows.forEach(statusRow => {
+            statusRow.forEach(box => {
+              box.alpha = 0
+            })
+          })
         })
         rowObj.hitbox.on("pointerout", () => {
           rowObj.detail.visible = false
@@ -492,6 +502,11 @@ export class ParityDebug extends Container implements ChartRendererComponent {
             highlight.box.destroy()
           })
           rowObj.highlights = []
+          rowObj.statusRows.forEach(statusRow => {
+            statusRow.forEach(box => {
+              box.alpha = 1
+            })
+          })
         })
         this.rowMap.set(row, rowObj)
       }
@@ -574,7 +589,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
           ) {
             color = 0x00ff00
           }
-          let alpha = 0.5 - Math.min(0.45, Math.log1p(outValue["TOTAL"]) / 30)
+          let alpha = 0.5 - Math.min(0.45, Math.log1p(outValue["TOTAL"]) / 15)
           if (startObject.connections.getChildByName(outKey)) {
             const connection =
               startObject.connections.getChildByName<ConnectionObject>(outKey)!

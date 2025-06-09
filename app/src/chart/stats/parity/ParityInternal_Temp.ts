@@ -31,6 +31,8 @@ export class ParityInternals {
   private readonly chart: Chart
   private readonly costCalc: ParityCostCalculator
   private readonly layout: StageLayout
+
+  // Start and end nodes of the graph
   private readonly initialNode: ParityGraphNode = new ParityGraphNode(
     new State(-1, -1, -1, [])
   )
@@ -38,12 +40,18 @@ export class ParityInternals {
     new State(-2, -2, -2, [])
   )
 
+  // Store cost calculations between two nodes by key
   private cachedEdges = new Map<string, Map<string, { [id: string]: number }>>()
+  // Store the lowest cost for each node by key
   private cachedLowestCost = new Map<string, { cost: number; path: string }>()
+  // Keep track of the size of the edge cache, prune when too large
   edgeCacheSize = 0
+  // Cache for foot permutations
   private permuteCache = new Map<string, Foot[][]>()
+  // Map of state keys to ParityGraphNodes
   private nodeMap = new Map<string, ParityGraphNode>()
 
+  // The best path found so far
   bestPath?: string[]
   bestPathCost = 0
   bestPathSet?: Set<string>
@@ -60,7 +68,7 @@ export class ParityInternals {
     calculatedEdges: 0,
     cachedEdges: 0,
     edgeUpdateTime: -1,
-    cachedBestEdges: 0,
+    cachedBestNodes: 0,
     pathUpdateTime: -1,
   }
 
@@ -110,7 +118,7 @@ export class ParityInternals {
     // Remove previous rows in the range
     const [startIdx, endIdx] = getRangeInSortedArray(
       this.notedataRows,
-      Math.round(startBeat * 48),
+      Math.round(startBeat * 48), // prevent rounding errors
       Math.round(endBeat * 48),
       a => Math.round(a.beat * 48)
     )
@@ -167,6 +175,7 @@ export class ParityInternals {
     let lastColumnBeat: number | null = null
     let notes: NotedataEntry[] = []
 
+    // Create rows in the new section
     const rows: Row[] = []
     for (const note of rangeNotes) {
       if (note.type == "Mine") {
@@ -305,6 +314,7 @@ export class ParityInternals {
     }
   }
 
+  // Regenerates the possible states/nodes given the range of updated rows
   recalculateStates(updatedRows: {
     startIdx: number
     newEndIdx: number
@@ -314,6 +324,7 @@ export class ParityInternals {
     this.debugStats.createdEdges = 0
     const stateTimeStart = performance.now()
 
+    // Get rid of old node rows
     const removedRows = this.nodeRows.splice(
       updatedRows.startIdx,
       updatedRows.oldEndIdx - updatedRows.startIdx
@@ -324,6 +335,7 @@ export class ParityInternals {
       })
     })
 
+    // Previous node must also be affected by new row
     let rowIndex = updatedRows.startIdx ?? 0
     rowIndex -= 1
     this.debugStats.lastUpdatedNodeStart = rowIndex
@@ -365,28 +377,24 @@ export class ParityInternals {
         const curRow = this.nodeRows[rowIndex + 1]
 
         if (curRow && curRow.nodes.length == newNodes.size) {
-          const tA = curRow.nodes
-          const tB = newNodesArray
-          tA.sort()
-          tB.sort()
+          curRow.nodes.sort()
+          newNodesArray.sort()
           let same = true
-          for (let i = 0; i < tA.length; i++) {
-            if (tA[i].key != tB[i].key) {
+          for (let i = 0; i < curRow.nodes.length; i++) {
+            if (curRow.nodes[i].key != newNodesArray[i].key) {
               same = false
               break
             }
           }
-          if (same) {
-            console.log("Finished at row", rowIndex + 1)
-
-            break
-          }
+          if (same) break
         }
+        // Replace the new row
         this.nodeRows[rowIndex + 1] = {
           beat: this.notedataRows[rowIndex + 1].beat,
           nodes: newNodesArray,
         }
       } else {
+        // Insert the new row
         this.nodeRows.splice(rowIndex + 1, 0, {
           beat: this.notedataRows[rowIndex + 1].beat,
           nodes: newNodesArray,
@@ -406,6 +414,7 @@ export class ParityInternals {
     }
   }
 
+  // Computes the edges for the nodes within the rows that were updated
   computeCosts(updatedStates: {
     firstUpdatedRow: number
     lastUpdatedRow: number
@@ -436,6 +445,7 @@ export class ParityInternals {
 
           this.debugStats.calculatedEdges++
 
+          // If the edge is already cached, reuse it
           if (
             this.cachedEdges.has(node.key) &&
             this.cachedEdges.get(node.key)!.has(childKey)
@@ -470,22 +480,46 @@ export class ParityInternals {
     return Math.max(-1, updatedStates.firstUpdatedRow - 1)
   }
 
+  // Finds the best path through the graph
   computeBestPath(firstUpdatedEdge: number) {
     const pathTimeStart = performance.now()
-    this.debugStats.cachedBestEdges = 0
+    this.debugStats.cachedBestNodes = 0
 
-    const lowestCosts = new Map<string, { cost: number; path: string }>() // we use string for path because list creation is slow
+    // we use string for path because list creation is slow
+    // a bit jank, but performance!
+    const lowestCosts = new Map<string, { cost: number; path: string }>()
     lowestCosts.set(this.initialNode.key, {
       cost: 0,
       path: this.initialNode.key,
     })
 
     let rowIndex = -1
+
+    while (rowIndex <= firstUpdatedEdge) {
+      // We can reuse the shortest paths up to the first updated edge
+      // Unforunately, we can't reuse anything after that (at least i think so)
+      let nodes = this.nodeRows[rowIndex]?.nodes
+      if (rowIndex == -1) {
+        nodes = [this.initialNode]
+      }
+      if (!nodes) break
+      for (const node of nodes) {
+        if (this.cachedLowestCost.has(node.key)) {
+          this.debugStats.cachedBestNodes++
+          lowestCosts.set(node.key, this.cachedLowestCost.get(node.key)!)
+          continue
+        }
+      }
+      rowIndex++
+    }
+    rowIndex--
+
     while (rowIndex < this.notedataRows.length) {
       const nodes = this.nodeRows[rowIndex]?.nodes ?? [this.initialNode]
       for (const node of nodes) {
         const currentCost = lowestCosts.get(node.key)?.cost
         if (currentCost === undefined) {
+          // how
           console.warn("No cost found for node:", node.key)
           continue
         }
@@ -496,15 +530,6 @@ export class ParityInternals {
           })
         }
         for (const [child, costs] of node.children.entries()) {
-          if (rowIndex + 1 < firstUpdatedEdge) {
-            // We can reuse the shortest paths up to the first updated edge
-            // Unforunately, we can't reuse anything after that (at least i think so)
-            if (this.cachedLowestCost.has(child)) {
-              this.debugStats.cachedBestEdges++
-              lowestCosts.set(child, this.cachedLowestCost.get(child)!)
-              continue
-            }
-          }
           if (
             !lowestCosts.has(child) ||
             currentCost + costs["TOTAL"] < lowestCosts.get(child)!.cost
@@ -555,6 +580,7 @@ export class ParityInternals {
     return this.permuteCache.get(cacheKey)!
   }
 
+  // Recursively generates all permutations of Foot positions given a Row
   permuteColumn(row: Row, columns: Foot[], column: number): Foot[][] {
     if (column >= columns.length) {
       let leftHeelIndex = -1
@@ -595,6 +621,7 @@ export class ParityInternals {
     return this.permuteColumn(row, columns, column + 1)
   }
 
+  // Creates the resulting state after applying the action (columns) to the initial state
   initResultState(
     initialState: State,
     row: Row,
@@ -629,6 +656,7 @@ export class ParityInternals {
     return resultState
   }
 
+  // Computes the final columns (takes old position and applies action, keeping old feet in place)
   combineColumns(initialState: State, resultState: State) {
     const combinedColumns: Foot[] = new Array(resultState.columns.length).fill(
       Foot.NONE
@@ -711,5 +739,8 @@ export class ParityInternals {
 
   deleteCache() {
     this.cachedEdges.clear()
+    this.cachedLowestCost.clear()
+    this.edgeCacheSize = 0
+    this.permuteCache.clear()
   }
 }
