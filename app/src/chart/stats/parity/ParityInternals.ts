@@ -37,12 +37,8 @@ export class ParityInternals {
   private readonly layout: StageLayout
 
   // Start and end nodes of the graph
-  readonly initialNode: ParityGraphNode = new ParityGraphNode(
-    new State(-1, -1, -1, [])
-  )
-  readonly endNode: ParityGraphNode = new ParityGraphNode(
-    new State(-2, -2, -2, [])
-  )
+  readonly initialNode: ParityGraphNode
+  readonly endNode: ParityGraphNode
 
   // Rows are identified by keys (includes beat/second/other data)
   // If two rows have the same key, they are considered the same row
@@ -94,6 +90,12 @@ export class ParityInternals {
     this.chart = chart
     this.layout = STAGE_LAYOUTS[chart.gameType.id]
     this.costCalc = new ParityCostCalculator(chart.gameType.id)
+    this.initialNode = new ParityGraphNode(
+      new State(-1, -1, [], new Array(5).fill(-1))
+    )
+    this.endNode = new ParityGraphNode(
+      new State(-2, -2, [], new Array(5).fill(-1))
+    )
   }
 
   compute(startBeat: number, endBeat: number) {
@@ -385,11 +387,11 @@ export class ParityInternals {
       for (const node of nodes) {
         this.nEdges -= node.children.size
         node.children.clear()
-        let permutations = this.getPermuteColumns(
+        let permutations = this.getPossibleActions(
           this.notedataRows[rowIndex + 1]
         )
         if (this.notedataRows[rowIndex + 1].overrides.some(p => p)) {
-          permutations = this.filterPermuteColumns(
+          permutations = this.filterActions(
             this.notedataRows[rowIndex + 1],
             permutations,
             this.notedataRows[rowIndex + 1].overrides
@@ -400,7 +402,6 @@ export class ParityInternals {
           const newState = this.initResultState(
             node.state,
             this.notedataRows[rowIndex + 1],
-            rowIndex + 1,
             permutation
           )
           const newKey = newState.toKey()
@@ -599,11 +600,11 @@ export class ParityInternals {
     return s
   }
 
-  getPermuteColumns(row: Row): Foot[][] {
+  getPossibleActions(row: Row): Foot[][] {
     const cacheKey = this.calculatePermuteColumnKey(row)
     let permuteColumns = this.permuteCache.get(cacheKey)
     if (permuteColumns == undefined) {
-      permuteColumns = this.permuteColumn(
+      permuteColumns = this.generateActions(
         row,
         new Array(this.layout.columnCount).fill(Foot.NONE),
         0
@@ -614,7 +615,7 @@ export class ParityInternals {
   }
 
   // Recursively generates all permutations of Foot positions given a Row
-  permuteColumn(row: Row, columns: Foot[], column: number): Foot[][] {
+  generateActions(row: Row, columns: Foot[], column: number): Foot[][] {
     if (column >= columns.length) {
       let leftHeelIndex = -1
       let leftToeIndex = -1
@@ -647,15 +648,15 @@ export class ParityInternals {
         if (columns.includes(foot)) continue
         const newColumns = [...columns]
         newColumns[column] = foot
-        permutations.push(...this.permuteColumn(row, newColumns, column + 1))
+        permutations.push(...this.generateActions(row, newColumns, column + 1))
       }
       return permutations
     }
-    return this.permuteColumn(row, columns, column + 1)
+    return this.generateActions(row, columns, column + 1)
   }
 
   // Apply overrides to the permuted columns (only use permutations that actually match the overrides)
-  filterPermuteColumns(
+  filterActions(
     row: Row,
     permuteColumns: Foot[][],
     overrides: FootOverride[]
@@ -720,51 +721,146 @@ export class ParityInternals {
     return updatedColumns
   }
 
-  // Creates the resulting state after applying the action (columns) to the initial state
-  initResultState(
-    initialState: State,
-    row: Row,
-    rowIndex: number,
-    columns: Foot[]
-  ): State {
+  // Creates the resulting state after applying the action to the initial state
+  initResultState(initialState: State, row: Row, action: Foot[]): State {
     const resultState: State = new State(
-      rowIndex,
       row.second,
       row.beat,
-      columns
+      action,
+      new Array(5).fill(-1)
     )
 
+    // Merge initial + result position
     for (let i = 0; i < this.layout.columnCount; i++) {
       resultState.combinedColumns.push(Foot.NONE)
-      if (columns[i] == undefined || columns[i] == Foot.NONE) {
+      if (action[i] == undefined || action[i] == Foot.NONE) {
         continue
       }
-
+      resultState.footColumns[action[i]] = i
+      resultState.combinedColumns[i] = action[i]
       if (row.holds[i] == undefined) {
-        resultState.movedFeet.add(columns[i])
-      } else if (initialState.combinedColumns[i] != columns[i]) {
-        resultState.movedFeet.add(columns[i])
+        resultState.movedFeet.add(action[i])
+      } else if (initialState.combinedColumns[i] != action[i]) {
+        resultState.movedFeet.add(action[i])
       }
       if (row.holds[i] != undefined) {
-        resultState.holdFeet.add(columns[i])
+        resultState.holdFeet.add(action[i])
+      }
+    }
+    // Fill in previous position
+    if (resultState.footColumns[Foot.LEFT_HEEL] == -1) {
+      resultState.footColumns[Foot.LEFT_HEEL] =
+        initialState.footColumns[Foot.LEFT_HEEL]
+      resultState.footColumns[Foot.LEFT_TOE] =
+        initialState.footColumns[Foot.LEFT_TOE]
+      if (
+        resultState.combinedColumns[resultState.footColumns[Foot.LEFT_HEEL]] ==
+        Foot.NONE
+      ) {
+        resultState.combinedColumns[resultState.footColumns[Foot.LEFT_HEEL]] =
+          Foot.LEFT_HEEL
+      }
+      if (
+        resultState.combinedColumns[resultState.footColumns[Foot.LEFT_TOE]] ==
+        Foot.NONE
+      ) {
+        resultState.combinedColumns[resultState.footColumns[Foot.LEFT_TOE]] =
+          Foot.LEFT_TOE
+      }
+    }
+    if (resultState.footColumns[Foot.RIGHT_HEEL] == -1) {
+      resultState.footColumns[Foot.RIGHT_HEEL] =
+        initialState.footColumns[Foot.RIGHT_HEEL]
+      resultState.footColumns[Foot.RIGHT_TOE] =
+        initialState.footColumns[Foot.RIGHT_TOE]
+      if (
+        resultState.combinedColumns[resultState.footColumns[Foot.RIGHT_HEEL]] ==
+        Foot.NONE
+      ) {
+        resultState.combinedColumns[resultState.footColumns[Foot.RIGHT_HEEL]] =
+          Foot.RIGHT_HEEL
+      }
+      if (
+        resultState.combinedColumns[resultState.footColumns[Foot.RIGHT_TOE]] ==
+        Foot.NONE
+      ) {
+        resultState.combinedColumns[resultState.footColumns[Foot.RIGHT_TOE]] =
+          Foot.RIGHT_TOE
       }
     }
 
-    resultState.combinedColumns = this.combineColumns(initialState, resultState)
+    // }
+
+    //   // copy in data from b over the top which overrides it, as long as it's not nothing
+    //   if (columns[i] != Foot.NONE) {
+    //     combinedColumns[i] = resultState.action[i]
+    //     continue
+    //   }
+
+    //   // copy in data from a first, if it wasn't moved
+    //   if (
+    //     initialState.combinedColumns[i] == Foot.LEFT_HEEL ||
+    //     initialState.combinedColumns[i] == Foot.RIGHT_HEEL
+    //   ) {
+    //     if (!resultState.movedFeet.has(initialState.combinedColumns[i])) {
+    //       combinedColumns[i] = initialState.combinedColumns[i]
+    //     }
+    //   } else if (initialState.combinedColumns[i] == Foot.LEFT_TOE) {
+    //     if (
+    //       !resultState.movedFeet.has(Foot.LEFT_TOE) &&
+    //       !resultState.movedFeet.has(Foot.LEFT_HEEL)
+    //     ) {
+    //       combinedColumns[i] = initialState.combinedColumns[i]
+    //     }
+    //   } else if (initialState.combinedColumns[i] == Foot.RIGHT_TOE) {
+    //     if (
+    //       !resultState.movedFeet.has(Foot.RIGHT_TOE) &&
+    //       !resultState.movedFeet.has(Foot.RIGHT_HEEL)
+    //     ) {
+    //       combinedColumns[i] = initialState.combinedColumns[i]
+    //     }
+    //   }
+
+    // for (let i = 0; i < this.layout.columnCount; i++) {
+    //   resultState.combinedColumns.push(Foot.NONE)
+    //   if (columns[i] == undefined || columns[i] == Foot.NONE) {
+    //     continue
+    //   }
+
+    //   if (row.holds[i] == undefined) {
+    //     resultState.movedFeet.add(columns[i])
+    //   } else if (initialState.combinedColumns[i] != columns[i]) {
+    //     resultState.movedFeet.add(columns[i])
+    //   }
+    //   if (row.holds[i] != undefined) {
+    //     resultState.holdFeet.add(columns[i])
+    //   }
+    // }
+
+    // if (resultState.movedFeet.has(Foot.LEFT_HEEL)) {
+    //   resultState.footPlacement.leftHeel = row.notes.findIndex(
+    //     note => note?.parity?.foot == Foot.LEFT_HEEL
+    //   )
+    // } else {
+    //   resultState.footPlacement.leftHeel = initialState.footPlacement.leftHeel
+    //   resultState.footPlacement.leftToe = initialState.footPlacement.leftToe
+    // }
+
+    // resultState.combinedColumns = this.combineColumns(initialState, resultState)
 
     return resultState
   }
 
   // Computes the final columns (takes old position and applies action, keeping old feet in place)
   combineColumns(initialState: State, resultState: State) {
-    const combinedColumns: Foot[] = new Array(resultState.columns.length).fill(
+    const combinedColumns: Foot[] = new Array(resultState.action.length).fill(
       Foot.NONE
     )
     // Merge initial + result position
-    for (let i = 0; i < resultState.columns.length; i++) {
+    for (let i = 0; i < resultState.action.length; i++) {
       // copy in data from b over the top which overrides it, as long as it's not nothing
-      if (resultState.columns[i] != Foot.NONE) {
-        combinedColumns[i] = resultState.columns[i]
+      if (resultState.action[i] != Foot.NONE) {
+        combinedColumns[i] = resultState.action[i]
         continue
       }
 

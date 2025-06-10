@@ -48,7 +48,7 @@ export class ParityCostCalculator {
       initialState.combinedColumns
     )
     // How did the feet move during this state?
-    const resultPlacement = this.footPlacementFromColumns(resultState.columns)
+    const resultPlacement = this.footPlacementFromColumns(resultState.action)
     // What do the feet end up at the end of this state?
     const combinedPlacement = this.footPlacementFromColumns(combinedColumns)
 
@@ -746,14 +746,14 @@ export class ParityCostCalculator {
         for (let i = 0; i < combinedColumns.length; i++) {
           if (
             initialState.combinedColumns[i] == Foot.NONE ||
-            resultState.columns[i] == Foot.NONE
+            resultState.action[i] == Foot.NONE
           )
             continue
 
           if (
-            initialState.combinedColumns[i] != resultState.columns[i] &&
+            initialState.combinedColumns[i] != resultState.action[i] &&
             initialState.combinedColumns[i] !=
-              OTHER_PART_OF_FOOT[resultState.columns[i]]
+              OTHER_PART_OF_FOOT[resultState.action[i]]
           ) {
             cost +=
               ((elapsedTime - this.SlowFootswitchThreshold) / elapsedTime) *
@@ -771,21 +771,21 @@ export class ParityCostCalculator {
     let cost = 0
 
     if (
-      resultState.columns[0] != Foot.NONE &&
+      resultState.action[0] != Foot.NONE &&
       initialState.combinedColumns[0] != Foot.NONE &&
-      initialState.combinedColumns[0] != resultState.columns[0] &&
+      initialState.combinedColumns[0] != resultState.action[0] &&
       initialState.combinedColumns[0] !=
-        OTHER_PART_OF_FOOT[resultState.columns[0]]
+        OTHER_PART_OF_FOOT[resultState.action[0]]
     ) {
       cost += this.WEIGHTS.SIDESWITCH
     }
 
     if (
-      initialState.combinedColumns[3] != resultState.columns[3] &&
-      resultState.columns[3] != Foot.NONE &&
+      initialState.combinedColumns[3] != resultState.action[3] &&
+      resultState.action[3] != Foot.NONE &&
       initialState.combinedColumns[3] != Foot.NONE &&
       initialState.combinedColumns[3] !=
-        OTHER_PART_OF_FOOT[resultState.columns[3]]
+        OTHER_PART_OF_FOOT[resultState.action[3]]
     ) {
       cost += this.WEIGHTS.SIDESWITCH
     }
@@ -852,17 +852,15 @@ export class ParityCostCalculator {
       const initialPosition = initialState.combinedColumns.indexOf(foot)
       if (initialPosition == -1) continue
 
-      const resultPosition = resultState.columns.indexOf(foot)
+      const resultPosition = resultState.action.indexOf(foot)
 
       // If we're bracketing something, and the toes are now where the heel
       // was, then we don't need to worry about it, we're not actually moving
       // the foot very far
-      const isBracketing = resultState.columns.includes(
-        OTHER_PART_OF_FOOT[foot]
-      )
+      const isBracketing = resultState.action.includes(OTHER_PART_OF_FOOT[foot])
       if (
         isBracketing &&
-        resultState.columns.indexOf(OTHER_PART_OF_FOOT[foot]) == initialPosition
+        resultState.action.indexOf(OTHER_PART_OF_FOOT[foot]) == initialPosition
       ) {
         continue
       }

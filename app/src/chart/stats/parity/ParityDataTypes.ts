@@ -131,20 +131,25 @@ export enum TechCountsCategory {
 export const TECH_COUNTS = ["XO", "FS", "SS", "JA", "BR", "DS"]
 
 export class State {
-  idx: number = -1
-  columns: Foot[] = []
+  action: Foot[] = []
   combinedColumns: Foot[] = []
   movedFeet: Set<Foot> = new Set()
   holdFeet: Set<Foot> = new Set()
   second: number
   beat: number
-  rowIndex: number
 
-  constructor(rowIndex: number, second: number, beat: number, columns: Foot[]) {
-    this.rowIndex = rowIndex
+  footColumns: number[] = []
+
+  constructor(
+    second: number,
+    beat: number,
+    action: Foot[],
+    columns: number[] = []
+  ) {
     this.second = second
     this.beat = beat
-    this.columns = [...columns]
+    this.action = [...action]
+    this.footColumns = [...columns]
   }
 
   toKey() {
@@ -160,8 +165,16 @@ export class State {
         holdString += FEET[i]
       }
     }
+    let feetString = ""
+    for (let i = 1; i < this.footColumns.length; i++) {
+      if (this.footColumns[i] !== -1) {
+        feetString += this.footColumns[i]
+      } else {
+        feetString += "."
+      }
+    }
 
-    return `${this.second.toFixed(3)}-${this.beat.toFixed(3)}-${this.columns.join("")}-${this.combinedColumns.join("")}-${movedString}-${holdString}`
+    return `${this.second.toFixed(3)}-${this.beat.toFixed(3)}-${this.action.join("")}-${this.combinedColumns.join("")}-${movedString}-${holdString}-${feetString}`
   }
 }
 

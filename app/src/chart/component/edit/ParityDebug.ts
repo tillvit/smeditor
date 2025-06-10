@@ -370,13 +370,14 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               if (!text) continue
               text.text = FEET_LABELS[col]
               text.alpha = 0.3
-              if (node.state.columns[j] == node.state.combinedColumns[j]) {
+              if (node.state.action[j] == node.state.combinedColumns[j]) {
                 text.alpha = 1
               }
               text.tint = PARITY_COLORS[col]
             }
 
-            nodeObject.detail.text = "Key: " + node.key
+            nodeObject.detail.text =
+              JSON.stringify(node.state, null, 2) + "\nKey: " + node.key
 
             let active = false
             setTint()
