@@ -617,6 +617,40 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         ],
       },
       {
+        type: "dropdown",
+        title: "Parity",
+        options: [
+          {
+            type: "selection",
+            id: "parityNone",
+          },
+          {
+            type: "selection",
+            id: "parityLeft",
+          },
+          {
+            type: "selection",
+            id: "parityRight",
+          },
+          {
+            type: "selection",
+            id: "parityLeftHeel",
+          },
+          {
+            type: "selection",
+            id: "parityLeftToe",
+          },
+          {
+            type: "selection",
+            id: "parityRightHeel",
+          },
+          {
+            type: "selection",
+            id: "parityRightToe",
+          },
+        ],
+      },
+      {
         type: "separator",
       },
       {

@@ -153,6 +153,7 @@ export class DefaultOptions {
     showTimers: false,
     showScroll: false,
     showParity: false,
+    hideParityGraph: false,
     showNoteskinErrors: false,
     showDebugVariables: false,
   }

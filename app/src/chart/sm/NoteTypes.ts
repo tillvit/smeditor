@@ -1,4 +1,4 @@
-import { Foot } from "../stats/parity/ParityDataTypes"
+import { Foot, FootOverride } from "../stats/parity/ParityDataTypes"
 
 export type Notedata = NotedataEntry[]
 
@@ -45,8 +45,8 @@ interface ExtraNotedata {
     hasHit: boolean
   }
   parity?: {
-    foot: Foot
-    override: boolean
+    foot?: Foot
+    override?: FootOverride
     tech?: string
   }
 }

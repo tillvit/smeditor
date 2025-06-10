@@ -911,6 +911,14 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
       },
       {
         type: "item",
+        label: "Show noteskin errors",
+        id: "debug.showNoteskinErrors",
+        input: {
+          type: "checkbox",
+        },
+      },
+      {
+        type: "item",
         label: "Show scrolls/speeds debug visual",
         id: "debug.showScroll",
         input: {
@@ -918,20 +926,26 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
         },
       },
       {
-        type: "item",
-        label: "Show parity debug visual",
-        id: "debug.showParity",
-        input: {
-          type: "checkbox",
-        },
-      },
-      {
-        type: "item",
-        label: "Show noteskin errors",
-        id: "debug.showNoteskinErrors",
-        input: {
-          type: "checkbox",
-        },
+        type: "subgroup",
+        label: "Parity",
+        children: [
+          {
+            type: "item",
+            label: "Show parity debug visual",
+            id: "debug.showParity",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "item",
+            label: "Hide parity debug graph",
+            id: "debug.hideParityGraph",
+            input: {
+              type: "checkbox",
+            },
+          },
+        ],
       },
     ],
   },

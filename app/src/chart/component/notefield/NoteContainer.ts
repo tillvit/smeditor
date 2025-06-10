@@ -11,6 +11,7 @@ import { HoldObject, Notefield, NoteWrapper } from "./Notefield"
 interface HighlightedNoteObject extends Container {
   selection: Sprite
   parity: Sprite
+  parityOverride: Sprite
   wrapper: NoteWrapper
   lastActive: boolean
 }
@@ -76,13 +77,23 @@ export class NoteContainer extends Container {
         parity.width = objectBounds.width
         parity.height = objectBounds.height
         parity.alpha = 0
+
+        const parityOverride = new Sprite(Texture.WHITE)
+        parityOverride.x = objectBounds.x
+        parityOverride.y = objectBounds.y
+        parityOverride.width = objectBounds.width
+        parityOverride.height = 5
+        parityOverride.tint = 0xff0000
+        parityOverride.alpha = 0
+
         this.notefield.renderer.registerDragNote(container, note)
         container.wrapper = object
         container.selection = selection
         container.parity = parity
+        container.parityOverride = parityOverride
         container.lastActive = false
         this.arrowMap.set(note, container)
-        container.addChild(object, selection, parity)
+        container.addChild(object, selection, parity, parityOverride)
         this.addChild(container)
       }
     }
@@ -139,6 +150,10 @@ export class NoteContainer extends Container {
         container.parity.y = objectBounds.y
         container.parity.width = objectBounds.width
         container.parity.height = objectBounds.height
+
+        container.parityOverride.x = objectBounds.x
+        container.parityOverride.y = objectBounds.y
+        container.parityOverride.width = objectBounds.width
       }
       if (
         this.notefield.renderer.chartManager.editTimingMode ==
@@ -171,7 +186,14 @@ export class NoteContainer extends Container {
       if (Options.debug.showParity) {
         container.parity.alpha = note.parity ? 0.4 : 0
         container.parity.tint =
-          note.parity !== undefined ? PARITY_COLORS[note.parity.foot] : 0xffffff
+          note.parity?.foot !== undefined
+            ? PARITY_COLORS[note.parity.foot]
+            : 0xffffff
+        if (note.parity?.override) {
+          container.parityOverride.alpha = 0.4
+        } else {
+          container.parityOverride.alpha = 0
+        }
       }
     }
   }

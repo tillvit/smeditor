@@ -1,5 +1,6 @@
 import {
   BitmapText,
+  Color,
   Container,
   Graphics,
   Rectangle,
@@ -7,6 +8,7 @@ import {
   Texture,
 } from "pixi.js"
 import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
+import { blendPixiColors } from "../../../util/Color"
 import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
@@ -69,9 +71,9 @@ const ROW_DETAILS = {
 export const PARITY_COLORS: Record<Foot, number> = {
   [Foot.NONE]: 0xffffff,
   [Foot.LEFT_HEEL]: 0x0390fc,
-  [Foot.LEFT_TOE]: 0xabd6f7,
+  [Foot.LEFT_TOE]: 0x81b5de,
   [Foot.RIGHT_HEEL]: 0xfcad03,
-  [Foot.RIGHT_TOE]: 0xfae5b9,
+  [Foot.RIGHT_TOE]: 0xf0d190,
 }
 
 export class ParityDebug extends Container implements ChartRendererComponent {
@@ -324,19 +326,28 @@ export class ParityDebug extends Container implements ChartRendererComponent {
             const bg = nodeObject.bg
 
             const setTint = () => {
+              let tint = 0xaf77d1
+              bg.alpha = 0.2
               if (
                 i >= parityData.debugStats.lastUpdatedNodeStart &&
                 i < parityData.debugStats.lastUpdatedNodeEnd
               ) {
-                bg.tint = 0x225900
+                tint = 0x225900
                 bg.alpha = 0.6
-              } else {
-                bg.tint = 0xaf77d1
-                bg.alpha = 0.2
               }
               if (parityData.bestPathSet?.has(node.key)) {
-                bg.tint = 0xbf4900
+                tint = 0xbf4900
                 bg.alpha = 0.6
+              }
+              bg.tint = tint
+
+              if (row.overrides.some(o => o)) {
+                bg.tint = blendPixiColors(
+                  new Color(tint),
+                  new Color(0xff0000),
+                  0.3
+                )
+                bg.alpha += 0.3
               }
 
               if (active) {
@@ -569,10 +580,17 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       ) {
         this.rowMap.delete(row)
         this.rowPool.destroyChild(rowObj)
+        if (this.activeNode && this.activeNode.parent === rowObj.nodePool) {
+          this.activeNode.deactivate()
+          this.activeNode = undefined
+        }
         i++
         continue
       }
       i++
+
+      rowObj.nodePool.visible = !Options.debug.hideParityGraph
+
       rowObj.highlights.forEach(highlight => {
         const highlightX = this.renderer.getXPosFromColumn(highlight.col)
         const highlightY = this.renderer.getYPosFromSecond(highlight.second)
@@ -603,63 +621,66 @@ export class ParityDebug extends Container implements ChartRendererComponent {
 
     // Create connections
     this.connections.clear()
-    for (let i = 0; i < parityData.notedataRows.length; i++) {
-      if (lastBeat < parityData.notedataRows[i - 1]?.beat) break
-      if (firstBeat > parityData.notedataRows[i + 1]?.beat) continue
-      const row = parityData.notedataRows[i]
-      const nodes = parityData.nodeRows[i].nodes
-      const startRowObject = this.rowMap.get(row)
-      const endRowObject = this.rowMap.get(parityData.notedataRows[i + 1])
-      if (!startRowObject || !endRowObject) continue
-      for (const node of nodes) {
-        const startObject = startRowObject.nodePool.getChildByName<NodeObject>(
-          node.key
-        )
-        if (!startObject) continue
-        for (const [outKey, outValue] of node.children.entries()) {
-          const endObject = endRowObject.nodePool.getChildByName(outKey)
-          if (!endObject) continue
+    if (!Options.debug.hideParityGraph) {
+      for (let i = 0; i < parityData.notedataRows.length; i++) {
+        if (lastBeat < parityData.notedataRows[i - 1]?.beat) break
+        if (firstBeat > parityData.notedataRows[i + 1]?.beat) continue
+        const row = parityData.notedataRows[i]
+        const nodes = parityData.nodeRows[i].nodes
+        const startRowObject = this.rowMap.get(row)
+        const endRowObject = this.rowMap.get(parityData.notedataRows[i + 1])
+        if (!startRowObject || !endRowObject) continue
+        for (const node of nodes) {
+          const startObject =
+            startRowObject.nodePool.getChildByName<NodeObject>(node.key)
+          if (!startObject) continue
+          for (const [outKey, outValue] of node.children.entries()) {
+            const endObject = endRowObject.nodePool.getChildByName(outKey)
+            if (!endObject) continue
 
-          let color = 0xaf77d1
-          let width = 1.5
-          if (
-            i >= parityData.debugStats.lastUpdatedNodeStart &&
-            i < parityData.debugStats.lastUpdatedNodeEnd
-          ) {
-            color = 0x00ff00
-          }
-          let alpha = 0.5 - Math.min(0.45, Math.log1p(outValue["TOTAL"]) / 15)
-          if (startObject.connections.getChildByName(outKey)) {
-            const connection =
-              startObject.connections.getChildByName<ConnectionObject>(outKey)!
-            connection.x =
-              endObject.x +
-              endRowObject.nodePool.x -
-              (startObject.x + startRowObject.nodePool.x)
-            connection.y = endRowObject.y - startRowObject.y
-            alpha += 0.3
-            color = 0x63c9ff
-            width = 2.5
-          }
-          if (
-            parityData.bestPathSet?.has(node.key) &&
-            parityData.bestPathSet.has(outKey)
-          ) {
-            color = 0xbf4900
-            alpha += 0.4
-            width = 4
-          }
+            let color = 0xaf77d1
+            let width = 1.5
+            if (
+              i >= parityData.debugStats.lastUpdatedNodeStart &&
+              i < parityData.debugStats.lastUpdatedNodeEnd
+            ) {
+              color = 0x00ff00
+            }
+            let alpha = 0.5 - Math.min(0.45, Math.log1p(outValue["TOTAL"]) / 15)
+            if (startObject.connections.getChildByName(outKey)) {
+              const connection =
+                startObject.connections.getChildByName<ConnectionObject>(
+                  outKey
+                )!
+              connection.x =
+                endObject.x +
+                endRowObject.nodePool.x -
+                (startObject.x + startRowObject.nodePool.x)
+              connection.y = endRowObject.y - startRowObject.y
+              alpha += 0.3
+              color = 0x63c9ff
+              width = 2.5
+            }
+            if (
+              parityData.bestPathSet?.has(node.key) &&
+              parityData.bestPathSet.has(outKey)
+            ) {
+              color = 0xbf4900
+              alpha += 0.4
+              width = 4
+            }
 
-          this.connections.lineStyle(width, color, alpha)
+            this.connections.lineStyle(width, color, alpha)
 
-          this.connections.moveTo(
-            startObject.x + startRowObject.nodePool.x,
-            startRowObject.y
-          )
-          this.connections.lineTo(
-            endObject.x + endRowObject.nodePool.x,
-            endRowObject.y
-          )
+            this.connections.moveTo(
+              startObject.x + startRowObject.nodePool.x,
+              startRowObject.y
+            )
+            this.connections.lineTo(
+              endObject.x + endRowObject.nodePool.x,
+              endRowObject.y
+            )
+          }
         }
       }
     }

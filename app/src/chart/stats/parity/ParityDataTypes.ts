@@ -27,12 +27,22 @@ export const OTHER_PART_OF_FOOT = [
 
 export const FEET_LABELS = [".", "L", "l", "R", "r"]
 
+export const FEET_LABELS_LONG = [
+  "None",
+  "Left Heel",
+  "Left Toe",
+  "Right Heel",
+  "Right Toe",
+]
+
 export const FEET_LABEL_TO_FOOT: { [key: string]: Foot } = {
   L: Foot.LEFT_HEEL,
   l: Foot.LEFT_TOE,
   R: Foot.RIGHT_HEEL,
   r: Foot.RIGHT_TOE,
 }
+
+export type FootOverride = Foot | "Left" | "Right"
 
 export interface FootPlacement {
   leftHeel: number
@@ -152,6 +162,7 @@ export interface Row {
   second: number
   beat: number
   columns: Foot[]
+  overrides: FootOverride[]
   id: string
 }
 

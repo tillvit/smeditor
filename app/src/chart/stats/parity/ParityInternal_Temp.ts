@@ -6,7 +6,7 @@ import {
   isHoldNote,
 } from "../../sm/NoteTypes"
 import { ParityCostCalculator } from "./ParityCost"
-import { FEET, Foot, Row, State } from "./ParityDataTypes"
+import { FEET, Foot, FootOverride, Row, State } from "./ParityDataTypes"
 import { STAGE_LAYOUTS, StageLayout } from "./StageLayouts"
 
 const SECOND_EPSILON = 0.0005
@@ -116,10 +116,10 @@ export class ParityInternals {
         bestOption.state.combinedColumns.forEach((foot, col) => {
           if (foot == Foot.NONE) return
           if (!row.notes[col]) return
-          row.notes[col].parity = {
-            foot: foot,
-            override: false,
+          if (!row.notes[col].parity) {
+            row.notes[col].parity = {}
           }
+          row.notes[col].parity.foot = foot
         })
       })
     }
@@ -168,7 +168,7 @@ export class ParityInternals {
         curIdx--
         continue
       }
-      if (note.type == "Mine") {
+      if (note.type == "Mine" && fulfilledColumns == 0) {
         if (note.fake) {
           if (nextFakeMines[note.col] === undefined)
             fakeMines[note.col] = note.second
@@ -194,6 +194,7 @@ export class ParityInternals {
     let lastColumnSecond: number | null = null
     let lastColumnBeat: number | null = null
     let notes: NotedataEntry[] = []
+    let overrides: FootOverride[] = []
 
     // Create rows in the new section
     const rows: Row[] = []
@@ -249,6 +250,7 @@ export class ParityInternals {
             second: lastColumnSecond,
             beat: lastColumnBeat,
             columns: [],
+            overrides,
             id: "",
           })
           rows.at(-1)!.id = this.rowToKey(rows.at(-1)!)
@@ -256,6 +258,7 @@ export class ParityInternals {
         lastColumnSecond = note.second
         lastColumnBeat = note.beat
         notes = []
+        overrides = []
         nextMines = mines
         nextFakeMines = fakeMines
         mines = []
@@ -271,6 +274,7 @@ export class ParityInternals {
         })
       }
       notes[note.col] = note
+      if (note.parity?.override) overrides[note.col] = note.parity?.override
       if (isHoldNote(note)) {
         activeHolds[note.col] = note
       }
@@ -303,6 +307,7 @@ export class ParityInternals {
         second: lastColumnSecond!,
         beat: lastColumnBeat!,
         columns: [],
+        overrides,
         id: "",
       })
       rows.at(-1)!.id = this.rowToKey(rows.at(-1)!)
@@ -368,9 +373,17 @@ export class ParityInternals {
       for (const node of nodes) {
         this.nEdges -= node.children.size
         node.children.clear()
-        const permutations = this.getPermuteColumns(
+        let permutations = this.getPermuteColumns(
           this.notedataRows[rowIndex + 1]
         )
+        if (this.notedataRows[rowIndex + 1].overrides.some(p => p)) {
+          permutations = this.filterPermuteColumns(
+            this.notedataRows[rowIndex + 1],
+            permutations,
+            this.notedataRows[rowIndex + 1].overrides
+          )
+        }
+
         for (const permutation of permutations) {
           const newState = this.initResultState(
             node.state,
@@ -647,6 +660,71 @@ export class ParityInternals {
     return this.permuteColumn(row, columns, column + 1)
   }
 
+  filterPermuteColumns(
+    row: Row,
+    permuteColumns: Foot[][],
+    overrides: FootOverride[]
+  ): Foot[][] {
+    // Check for invalid overrides
+    const counts = new Array(FEET.length + 1).fill(0)
+    const footCounts = {
+      Left: 0,
+      Right: 0,
+    }
+    for (const foot of overrides) {
+      if (typeof foot == "number") {
+        counts[foot]++
+      } else if (typeof foot == "string") {
+        footCounts[foot]++
+      }
+    }
+    for (let i = 1; i < FEET.length; i++) {
+      if (counts[i] > 1) {
+        console.warn(
+          `Could not generate any valid permutations with parity overrides for row at beat ${row.beat}, clearing overrides, as there must be something invalid about it.`
+        )
+        return permuteColumns
+      }
+    }
+    if (
+      footCounts.Left + counts[Foot.LEFT_HEEL] + counts[Foot.LEFT_TOE] > 2 ||
+      footCounts.Right + counts[Foot.RIGHT_HEEL] + counts[Foot.RIGHT_TOE] > 2
+    ) {
+      console.warn(
+        `Could not generate any valid permutations with parity overrides for row at beat ${row.beat}, clearing overrides, as there must be something invalid about it.`
+      )
+      return permuteColumns
+    }
+    const updatedColumns = permuteColumns.filter(pc => {
+      // Check if the permutation has any overrides that are not NONE
+      for (let c = 0; c < this.layout.columnCount; c++) {
+        const noteOverride = overrides[c]
+        if (noteOverride == undefined || noteOverride == Foot.NONE) continue
+        if (noteOverride == "Left") {
+          if (pc[c] != Foot.LEFT_HEEL && pc[c] != Foot.LEFT_TOE) {
+            return false
+          }
+        } else if (noteOverride == "Right") {
+          if (pc[c] != Foot.RIGHT_HEEL && pc[c] != Foot.RIGHT_TOE) {
+            return false
+          }
+        } else if (pc[c] != noteOverride) {
+          return false
+        }
+      }
+      return true
+    })
+
+    if (updatedColumns.length == 0) {
+      console.warn(
+        `Could not generate any valid permutations with parity overrides for row at beat ${row.beat}, clearing overrides, as there must be something invalid about it.`
+      )
+      return permuteColumns
+    }
+
+    return updatedColumns
+  }
+
   // Creates the resulting state after applying the action (columns) to the initial state
   initResultState(
     initialState: State,
@@ -750,7 +828,13 @@ export class ParityInternals {
       }
     }
     holdString = holdString.replace(/0+$/, "")
-    return `${row.beat.toFixed(3)}-${noteString}-${fakeString}-${mineString}-${holdString}`
+    let overrideString = ""
+    for (let i = 0; i < this.layout.columnCount; i++) {
+      if (row.overrides[i] !== undefined) {
+        overrideString += i + "" + row.overrides[i]
+      }
+    }
+    return `${row.beat.toFixed(3)}-${noteString}-${fakeString}-${mineString}-${holdString}-${overrideString}`
   }
 
   private isSameSecond(
