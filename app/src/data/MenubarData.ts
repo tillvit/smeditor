@@ -633,6 +633,9 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
             id: "parityRight",
           },
           {
+            type: "separator",
+          },
+          {
             type: "selection",
             id: "parityLeftHeel",
           },

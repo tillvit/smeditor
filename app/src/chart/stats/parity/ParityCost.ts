@@ -27,9 +27,7 @@ export class ParityCostCalculator {
   }
 
   setWeights(newWeights: { [key: string]: number }) {
-    for (const k in this.WEIGHTS) {
-      this.WEIGHTS[k] = newWeights[k] || this.WEIGHTS[k]
-    }
+    this.WEIGHTS = { ...this.WEIGHTS, ...newWeights }
   }
 
   getActionCost(
@@ -41,17 +39,9 @@ export class ParityCostCalculator {
     const row = rows[rowIndex]
     const elapsedTime = resultState.second - initialState.second
 
-    const costs: { [id: string]: number } = JSON.parse(
-      JSON.stringify(this.WEIGHTS)
-    )
-    for (const t in costs) {
-      costs[t] = 0
-    }
+    const costs: { [id: string]: number } = {}
 
-    const combinedColumns: Foot[] = this.combineColumns(
-      initialState,
-      resultState
-    )
+    const combinedColumns: Foot[] = resultState.combinedColumns
 
     // Where were the feet before this state?
     const initialPlacement = this.footPlacementFromColumns(
@@ -238,53 +228,12 @@ export class ParityCostCalculator {
       elapsedTime
     )
 
-    resultState.combinedColumns = combinedColumns
-
     let totalCost = 0
     for (const c in costs) {
       totalCost += costs[c]
     }
     costs["TOTAL"] = totalCost
     return costs
-  }
-
-  combineColumns(initialState: State, resultState: State) {
-    const combinedColumns: Foot[] = new Array(resultState.columns.length).fill(
-      Foot.NONE
-    )
-    // Merge initial + result position
-    for (let i = 0; i < resultState.columns.length; i++) {
-      // copy in data from b over the top which overrides it, as long as it's not nothing
-      if (resultState.columns[i] != Foot.NONE) {
-        combinedColumns[i] = resultState.columns[i]
-        continue
-      }
-
-      // copy in data from a first, if it wasn't moved
-      if (
-        initialState.combinedColumns[i] == Foot.LEFT_HEEL ||
-        initialState.combinedColumns[i] == Foot.RIGHT_HEEL
-      ) {
-        if (!resultState.movedFeet.has(initialState.combinedColumns[i])) {
-          combinedColumns[i] = initialState.combinedColumns[i]
-        }
-      } else if (initialState.combinedColumns[i] == Foot.LEFT_TOE) {
-        if (
-          !resultState.movedFeet.has(Foot.LEFT_TOE) &&
-          !resultState.movedFeet.has(Foot.LEFT_HEEL)
-        ) {
-          combinedColumns[i] = initialState.combinedColumns[i]
-        }
-      } else if (initialState.combinedColumns[i] == Foot.RIGHT_TOE) {
-        if (
-          !resultState.movedFeet.has(Foot.RIGHT_TOE) &&
-          !resultState.movedFeet.has(Foot.RIGHT_HEEL)
-        ) {
-          combinedColumns[i] = initialState.combinedColumns[i]
-        }
-      }
-    }
-    return combinedColumns
   }
 
   // Does the left foot in resultPlacement overlap the right foot in initialPlacement?

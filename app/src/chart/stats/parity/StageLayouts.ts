@@ -1,6 +1,7 @@
 export interface StagePoint {
   x: number
   y: number
+  rotation: number
 }
 
 export class StageLayout {
@@ -93,10 +94,10 @@ export const STAGE_LAYOUTS: { [id: string]: StageLayout } = {
   "dance-single": new StageLayout(
     "dance-single",
     [
-      { x: 0, y: 1 }, // Left
-      { x: 1, y: 0 }, // Down
-      { x: 1, y: 2 }, // Up
-      { x: 2, y: 1 }, // Right
+      { x: -1, y: 0, rotation: 0 }, // Left
+      { x: 0, y: -1, rotation: (Math.PI / 2) * 3 }, // Down
+      { x: 0, y: 1, rotation: Math.PI / 2 }, // Up
+      { x: 1, y: 0, rotation: Math.PI }, // Right
     ],
     [2],
     [1],
@@ -105,15 +106,15 @@ export const STAGE_LAYOUTS: { [id: string]: StageLayout } = {
   "dance-double": new StageLayout(
     "dance-double",
     [
-      { x: 0, y: 1 }, // P1 Left
-      { x: 1, y: 0 }, // P1 Down
-      { x: 1, y: 2 }, // P1 Up
-      { x: 2, y: 1 }, // P1 Right
+      { x: 0, y: 1, rotation: 0 }, // P1 Left
+      { x: 1, y: 0, rotation: (Math.PI / 2) * 3 }, // P1 Down
+      { x: 1, y: 2, rotation: Math.PI / 2 }, // P1 Up
+      { x: 2, y: 1, rotation: Math.PI }, // P1 Right
 
-      { x: 3, y: 1 }, // P2 Left
-      { x: 4, y: 0 }, // P2 Down
-      { x: 4, y: 2 }, // P2 Up
-      { x: 5, y: 1 }, // P2 Right
+      { x: 3, y: 1, rotation: 0 }, // P2 Left
+      { x: 4, y: 0, rotation: (Math.PI / 2) * 3 }, // P2 Down
+      { x: 4, y: 2, rotation: Math.PI / 2 }, // P2 Up
+      { x: 5, y: 1, rotation: Math.PI }, // P2 Right
     ],
     [2, 6],
     [1, 5],

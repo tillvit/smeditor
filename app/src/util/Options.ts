@@ -152,12 +152,17 @@ export class DefaultOptions {
     showFPS: false,
     showTimers: false,
     showScroll: false,
-    showParity: false,
-    hideParityGraph: false,
     showNoteskinErrors: false,
     showDebugVariables: false,
   }
-  static experimental = {}
+  static experimental = {
+    parity: {
+      enabled: false,
+      showDebug: true,
+      showGraph: true,
+      showDancingBot: true,
+    },
+  }
 }
 
 export type OptionsObject = {

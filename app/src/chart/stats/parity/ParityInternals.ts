@@ -1,3 +1,7 @@
+// Parity generation algorithm
+// Original algorithm by Jewel, improved by tillvit, improved further by mjvotaw, improved furtherer by tillvit
+
+import { EventHandler } from "../../../util/EventHandler"
 import { getRangeInSortedArray } from "../../../util/Util"
 import { Chart } from "../../sm/Chart"
 import {
@@ -33,23 +37,31 @@ export class ParityInternals {
   private readonly layout: StageLayout
 
   // Start and end nodes of the graph
-  private readonly initialNode: ParityGraphNode = new ParityGraphNode(
+  readonly initialNode: ParityGraphNode = new ParityGraphNode(
     new State(-1, -1, -1, [])
   )
-  private readonly endNode: ParityGraphNode = new ParityGraphNode(
+  readonly endNode: ParityGraphNode = new ParityGraphNode(
     new State(-2, -2, -2, [])
   )
 
+  // Rows are identified by keys (includes beat/second/other data)
+  // If two rows have the same key, they are considered the same row
+  // Because of this, we can use the key to cache rows (because the calculation is the same)
+
   // Store cost calculations between two nodes by key
   private cachedEdges = new Map<string, Map<string, { [id: string]: number }>>()
+
   // Store the lowest cost for each node by key
   private cachedLowestCost = new Map<string, { cost: number; path: string }>()
+
   // Keep track of the size of the edge cache, prune when too large
   edgeCacheSize = 0
+
   // Cache for foot permutations
   private permuteCache = new Map<string, Foot[][]>()
+
   // Map of state keys to ParityGraphNodes
-  private nodeMap = new Map<string, ParityGraphNode>()
+  nodeMap = new Map<string, ParityGraphNode>()
 
   private nEdges = 0
 
@@ -61,17 +73,17 @@ export class ParityInternals {
   debugStats = {
     lastUpdatedRowStart: -1,
     lastUpdatedRowEnd: -1,
-    rowUpdateTime: -1,
+    rowUpdateTime: 0,
     lastUpdatedNodeStart: -1,
     lastUpdatedNodeEnd: -1,
-    nodeUpdateTime: -1,
+    nodeUpdateTime: 0,
     createdNodes: 0,
     createdEdges: 0,
     calculatedEdges: 0,
     cachedEdges: 0,
-    edgeUpdateTime: -1,
-    cachedBestNodes: 0,
-    pathUpdateTime: -1,
+    edgeUpdateTime: 0,
+    cachedBestRows: 0,
+    pathUpdateTime: 0,
   }
 
   notedataRows: Row[] = []
@@ -109,6 +121,10 @@ export class ParityInternals {
       this.cachedEdges = newCache
     }
 
+    if (this.cachedLowestCost.size > this.nodeMap.size * 2) {
+      this.cachedLowestCost.clear()
+    }
+
     if (this.bestPath) {
       // assign notes
       this.notedataRows.forEach((row, idx) => {
@@ -123,15 +139,11 @@ export class ParityInternals {
         })
       })
     }
+
+    EventHandler.emit("parityModified")
   }
 
-  /**
-   * Regenerates the rows for the given range of beats.
-   *
-   * @param {number} startBeat
-   * @param {number} endBeat
-   * @memberof ParityInternals
-   */
+  // Regenerates the rows for the given range of beats.
   recalculateRows(startBeat: number, endBeat: number) {
     const rowTimeStart = performance.now()
 
@@ -392,10 +404,8 @@ export class ParityInternals {
             permutation
           )
           const newKey = newState.toKey()
-          let newNode
-          if (this.nodeMap.has(newKey)) {
-            newNode = this.nodeMap.get(newKey)!
-          } else {
+          let newNode = this.nodeMap.get(newKey)
+          if (!newNode) {
             newNode = new ParityGraphNode(newState, newKey)
             this.nodeMap.set(newKey, newNode)
           }
@@ -519,41 +529,25 @@ export class ParityInternals {
   // Finds the best path through the graph
   computeBestPath(firstUpdatedEdge: number) {
     const pathTimeStart = performance.now()
-    this.debugStats.cachedBestNodes = 0
 
     // we use string for path because list creation is slow
     // a bit jank, but performance!
-    const lowestCosts = new Map<string, { cost: number; path: string }>()
-    lowestCosts.set(this.initialNode.key, {
+    this.cachedLowestCost.set(this.initialNode.key, {
       cost: 0,
       path: this.initialNode.key,
     })
 
-    let rowIndex = -1
+    let rowIndex = firstUpdatedEdge
+    this.debugStats.cachedBestRows = firstUpdatedEdge + 1
 
-    while (rowIndex <= firstUpdatedEdge) {
-      // We can reuse the shortest paths up to the first updated edge
-      // Unforunately, we can't reuse anything after that (at least i think so)
-      let nodes = this.nodeRows[rowIndex]?.nodes
-      if (rowIndex == -1) {
-        nodes = [this.initialNode]
-      }
-      if (!nodes) break
-      for (const node of nodes) {
-        if (this.cachedLowestCost.has(node.key)) {
-          this.debugStats.cachedBestNodes++
-          lowestCosts.set(node.key, this.cachedLowestCost.get(node.key)!)
-          continue
-        }
-      }
-      rowIndex++
-    }
-    rowIndex--
+    // We can reuse the shortest paths up to the first updated edge
+    // Unforunately, we can't reuse anything after that (at least i think so)
+    const newNodes = new Map<string, number>()
 
     while (rowIndex < this.notedataRows.length) {
       const nodes = this.nodeRows[rowIndex]?.nodes ?? [this.initialNode]
       for (const node of nodes) {
-        const currentCost = lowestCosts.get(node.key)?.cost
+        const currentCost = this.cachedLowestCost.get(node.key)?.cost
         if (currentCost === undefined) {
           // how
           console.warn("No cost found for node:", node.key)
@@ -566,14 +560,13 @@ export class ParityInternals {
           })
         }
         for (const [child, costs] of node.children.entries()) {
-          if (
-            !lowestCosts.has(child) ||
-            currentCost + costs["TOTAL"] < lowestCosts.get(child)!.cost
-          ) {
-            lowestCosts.set(child, {
+          const oldCost = newNodes.get(child)
+          if (oldCost === undefined || currentCost + costs["TOTAL"] < oldCost) {
+            this.cachedLowestCost.set(child, {
               cost: currentCost + costs["TOTAL"],
-              path: lowestCosts.get(node.key)!.path + "*" + child,
+              path: this.cachedLowestCost.get(node.key)!.path + "*" + child,
             })
+            newNodes.set(child, currentCost + costs["TOTAL"])
           }
         }
         if (rowIndex == this.notedataRows.length - 1) {
@@ -583,10 +576,11 @@ export class ParityInternals {
       rowIndex++
     }
 
-    this.cachedLowestCost = lowestCosts
+    // this.cachedLowestCost = lowestCosts
 
-    this.bestPath = lowestCosts.get(this.endNode.key)?.path.split("*") ?? []
-    this.bestPathCost = lowestCosts.get(this.endNode.key)?.cost ?? 0
+    this.bestPath =
+      this.cachedLowestCost.get(this.endNode.key)?.path.split("*") ?? []
+    this.bestPathCost = this.cachedLowestCost.get(this.endNode.key)?.cost ?? 0
 
     if (!this.bestPath) {
       console.error("No best path found")
@@ -660,6 +654,7 @@ export class ParityInternals {
     return this.permuteColumn(row, columns, column + 1)
   }
 
+  // Apply overrides to the permuted columns (only use permutations that actually match the overrides)
   filterPermuteColumns(
     row: Row,
     permuteColumns: Foot[][],
@@ -741,7 +736,7 @@ export class ParityInternals {
 
     for (let i = 0; i < this.layout.columnCount; i++) {
       resultState.combinedColumns.push(Foot.NONE)
-      if (columns[i] == undefined) {
+      if (columns[i] == undefined || columns[i] == Foot.NONE) {
         continue
       }
 

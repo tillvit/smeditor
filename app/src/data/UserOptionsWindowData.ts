@@ -925,22 +925,45 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           type: "checkbox",
         },
       },
+    ],
+  },
+  {
+    type: "group",
+    id: "experimental",
+    label: "Experimental",
+    children: [
       {
         type: "subgroup",
         label: "Parity",
         children: [
           {
             type: "item",
-            label: "Show parity debug visual",
-            id: "debug.showParity",
+            label: "Enabled",
+            id: "experimental.parity.enabled",
             input: {
               type: "checkbox",
             },
           },
           {
             type: "item",
-            label: "Hide parity debug graph",
-            id: "debug.hideParityGraph",
+            label: "Show debug stats",
+            id: "experimental.parity.showDebug",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "item",
+            label: "Show parity graph",
+            id: "experimental.parity.showGraph",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "item",
+            label: "Show dancing bot",
+            id: "experimental.parity.showDancingBot",
             input: {
               type: "checkbox",
             },

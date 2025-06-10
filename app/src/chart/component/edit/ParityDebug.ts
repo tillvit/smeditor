@@ -14,7 +14,7 @@ import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import { FEET_LABELS, Foot, Row } from "../../stats/parity/ParityDataTypes"
-import { ParityInternals } from "../../stats/parity/ParityInternal_Temp"
+import { ParityInternals } from "../../stats/parity/ParityInternals"
 
 interface ConnectionObject extends Container {
   text: BitmapText
@@ -211,7 +211,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     this.addChild(this.rowPool)
     this.rowPool.sortableChildren = true
 
-    const chartListener = () => {
+    const parityListener = () => {
       this.debugTexts.forEach(debugObject => {
         const parityData = this.renderer.chart.stats.parity
         if (!parityData) return
@@ -240,7 +240,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     })
 
     this.createDebugObject(0xff9a5c, parityData => {
-      return `Found best path in ${parityData.debugStats.pathUpdateTime.toFixed(3)}ms (cached ${parityData.debugStats.cachedBestNodes} nodes)`
+      return `Found best path in ${parityData.debugStats.pathUpdateTime.toFixed(3)}ms (cached ${parityData.debugStats.cachedBestRows} rows)`
     })
     this.createDebugObject(0xffffff, parityData => {
       return `Total time: ${(
@@ -251,19 +251,17 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       ).toFixed(3)}ms`
     })
 
-    EventHandler.on("chartModified", chartListener)
-    EventHandler.on("timingModified", chartListener)
+    EventHandler.on("parityModified", parityListener)
     this.renderer.on("pointerdown", deselect)
     this.on("destroyed", () => {
-      EventHandler.off("timingModified", chartListener)
-      EventHandler.off("chartModified", chartListener)
+      EventHandler.off("parityModified", parityListener)
       this.renderer.off("pointerdown", deselect)
     })
   }
 
   update(firstBeat: number, lastBeat: number) {
     const parityData = this.renderer.chart.stats.parity!
-    this.visible = !!parityData && Options.debug.showParity
+    this.visible = !!parityData && Options.experimental.parity.enabled
     if (!this.visible) {
       if (this.lastVisible != this.visible) {
         this.rowMap.clear()
@@ -285,20 +283,30 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       if (lastBeat < parityData.notedataRows[i - 1]?.beat) break
       if (firstBeat > parityData.notedataRows[i + 1]?.beat) continue
       const row = parityData.notedataRows[i]
+      const hasOverrides = row.overrides.some(o => o)
 
       if (!this.rowMap.has(row)) {
         const rowObj = this.rowPool.createChild()
         if (!rowObj) break
-        rowObj.text.tint =
+        let tint =
           i >= parityData.debugStats.lastUpdatedRowStart &&
           i < parityData.debugStats.lastUpdatedRowEnd
             ? 0xff85d2
             : 0xaf77d1
+        if (hasOverrides) {
+          tint = blendPixiColors(
+            new Color(tint),
+            new Color(0xff0000),
+            0.4
+          ).toNumber()
+        }
+        rowObj.text.tint = tint
+
         rowObj.text.text = i + ""
         rowObj.hitbox.width = rowObj.text.width + 10
         rowObj.hitbox.height = rowObj.text.height + 10
         rowObj.detail.text =
-          "Second: " + row.second.toFixed(3) + "\nID: " + row.id
+          "Second: " + row.second.toFixed(3) + "\nKey: " + row.id
         rowObj.detail.x = -rowObj.text.width - 10
         rowObj.detail.tint = rowObj.text.tint
         rowObj.leftContainer.x =
@@ -308,6 +316,9 @@ export class ParityDebug extends Container implements ChartRendererComponent {
         rowObj.detail.visible = false
         rowObj.highlights.forEach(highlight => {
           highlight.box.destroy()
+        })
+        rowObj.nodePool.children.forEach(nodeObject => {
+          nodeObject.deactivate()
         })
         rowObj.nodePool.destroyAll()
         rowObj.highlights = []
@@ -339,21 +350,18 @@ export class ParityDebug extends Container implements ChartRendererComponent {
                 tint = 0xbf4900
                 bg.alpha = 0.6
               }
-              bg.tint = tint
 
-              if (row.overrides.some(o => o)) {
-                bg.tint = blendPixiColors(
-                  new Color(tint),
-                  new Color(0xff0000),
-                  0.3
-                )
+              if (hasOverrides) {
+                tint += 0x350000
                 bg.alpha += 0.3
               }
 
               if (active) {
-                bg.tint = 0x63c9ff
+                tint = 0x63c9ff
                 bg.alpha = 0.2
               }
+
+              bg.tint = tint
             }
 
             for (let j = 0; j < node.state.combinedColumns.length; j++) {
@@ -568,8 +576,8 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       -Options.chart.receptorXPos
     const RIGHT_SAFE =
       this.renderer.chartManager.app.STAGE_WIDTH / 2 -
-      (Options.chart.npsGraph.enabled ? 24 : 0) -
-      (Options.chart.noteLayout.enabled ? 24 : 0)
+      (Options.chart.npsGraph.enabled ? 48 : 0) -
+      (Options.chart.noteLayout.enabled ? 48 : 0)
 
     let i = 0
     const rows = [...this.rowMap.entries()]
@@ -589,7 +597,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       }
       i++
 
-      rowObj.nodePool.visible = !Options.debug.hideParityGraph
+      rowObj.visible = Options.experimental.parity.showGraph
 
       rowObj.highlights.forEach(highlight => {
         const highlightX = this.renderer.getXPosFromColumn(highlight.col)
@@ -607,13 +615,15 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     // Update debug texts
     this.debugTexts.forEach((debugObject, i) => {
       debugObject.x =
-        -this.renderer.chartManager.app.STAGE_WIDTH / 2 +
-        10 -
-        Options.chart.receptorXPos
+        (-this.renderer.chartManager.app.STAGE_WIDTH / 2 +
+          10 -
+          Options.chart.receptorXPos) /
+        Options.chart.zoom
       debugObject.y =
-        this.renderer.chartManager.app.STAGE_HEIGHT / 2 +
-        (i - this.debugTexts.length) * 30 +
-        10
+        (this.renderer.chartManager.app.STAGE_HEIGHT / 2 - 10) /
+          Options.chart.zoom +
+        (i - this.debugTexts.length + 1) * 30
+      debugObject.visible = Options.experimental.parity.showDebug
       const parityData = this.renderer.chart.stats.parity
       if (!parityData) return
       debugObject.text.text = debugObject.update(parityData)
@@ -621,7 +631,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
 
     // Create connections
     this.connections.clear()
-    if (!Options.debug.hideParityGraph) {
+    if (Options.experimental.parity.showGraph) {
       for (let i = 0; i < parityData.notedataRows.length; i++) {
         if (lastBeat < parityData.notedataRows[i - 1]?.beat) break
         if (firstBeat > parityData.notedataRows[i + 1]?.beat) continue

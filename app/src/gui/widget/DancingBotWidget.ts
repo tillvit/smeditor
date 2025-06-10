@@ -1,0 +1,430 @@
+import { Assets, BLEND_MODES, Container, Sprite, Texture } from "pixi.js"
+import {
+  STAGE_LAYOUTS,
+  StageLayout,
+} from "../../chart/stats/parity/StageLayouts"
+import { Widget } from "./Widget"
+import { WidgetManager } from "./WidgetManager"
+
+import bezier from "bezier-easing"
+
+import { BezierAnimator } from "../../util/BezierEasing"
+import { assignTint } from "../../util/Color"
+import { EventHandler } from "../../util/EventHandler"
+import { clamp, lerp, unlerp } from "../../util/Math"
+import { bsearch } from "../../util/Util"
+
+import footUrl from "../../../assets/foot.png"
+import receptorUrl from "../../../assets/receptor.png"
+import { PARITY_COLORS } from "../../chart/component/edit/ParityDebug"
+import { Foot, State } from "../../chart/stats/parity/ParityDataTypes"
+import { Options } from "../../util/Options"
+
+interface StagePanel extends Container {
+  bg: Sprite
+  arrow: Sprite
+}
+
+interface FeetPosition {
+  left: { x: number; y: number; angle: number }
+  right: { x: number; y: number; angle: number }
+}
+
+const PANEL_SIZE = 80
+
+export class DancingBotWidget extends Widget {
+  panels: StagePanel[] = []
+  currentRow = -1
+  lastBeat = 0
+
+  leftFoot?: Sprite
+  rightFoot?: Sprite
+
+  layout?: StageLayout
+
+  constructor(manager: WidgetManager) {
+    super(manager)
+    this.sortableChildren = true
+
+    EventHandler.on("chartLoaded", () => this.build())
+    EventHandler.on("parityModified", () => this.reindex())
+  }
+
+  async build() {
+    this.removeChildren()
+    this.panels = []
+    if (!this.manager.app.chartManager.loadedChart) return
+
+    this.layout =
+      STAGE_LAYOUTS[this.manager.app.chartManager.loadedChart.gameType.id]
+    if (!this.layout) {
+      return
+    }
+
+    const receptorTex = await Assets.load(receptorUrl)
+
+    let maxX = 0
+    let maxY = 0
+
+    this.layout.layout.forEach(point => {
+      const container = new Container() as StagePanel
+
+      const bg = new Sprite(Texture.WHITE)
+      assignTint(bg, "accent-color")
+      bg.alpha = 0.3
+      bg.anchor.set(0.5)
+      bg.width = PANEL_SIZE
+      bg.height = PANEL_SIZE
+
+      const sprite = new Sprite(receptorTex)
+      sprite.anchor.set(0.5)
+      sprite.x = point.x
+      sprite.y = point.y * -1
+      sprite.alpha = 0.3
+      sprite.width = PANEL_SIZE * 0.75
+      sprite.height = PANEL_SIZE * 0.75
+      sprite.blendMode = BLEND_MODES.MULTIPLY
+      sprite.rotation = point.rotation
+
+      container.bg = bg
+      container.arrow = sprite
+      container.x = point.x * PANEL_SIZE
+      container.y = point.y * -PANEL_SIZE
+      container.addChild(bg, sprite)
+
+      this.addChild(container)
+      this.panels.push(container)
+      maxX = Math.max(maxX, Math.abs(container.x))
+      maxY = Math.max(maxY, Math.abs(container.y))
+    })
+    const footTex = await Assets.load(footUrl)
+
+    this.leftFoot = new Sprite(footTex)
+    this.rightFoot = new Sprite(footTex)
+    this.leftFoot.scale.set(((PANEL_SIZE / 4) * 3) / this.leftFoot.height)
+    this.rightFoot.scale.set(((PANEL_SIZE / 4) * 3) / this.rightFoot.height)
+
+    this.leftFoot.tint = PARITY_COLORS[Foot.LEFT_HEEL]
+    this.rightFoot.tint = PARITY_COLORS[Foot.RIGHT_HEEL]
+
+    this.leftFoot.anchor.set(0.5)
+    this.rightFoot.anchor.set(0.5)
+    this.rightFoot.scale.x *= -1
+
+    this.leftFoot.zIndex = 50
+    this.rightFoot.zIndex = 50
+
+    this.addChild(this.leftFoot, this.rightFoot)
+    this.lastBeat = -1
+    this.pivot.set(maxX + PANEL_SIZE / 2, maxY + PANEL_SIZE / 2)
+  }
+
+  reindex() {
+    const parity = this.manager.app.chartManager.loadedChart?.stats.parity
+    if (!parity || !this.manager.app.chartManager.chartView) return
+    const visualBeat = this.manager.app.chartManager.chartView.getVisualBeat()
+    const currentIndex = bsearch(parity.notedataRows, visualBeat, a => a.beat)
+    if (currentIndex == 0 && visualBeat < parity.notedataRows[0].beat) {
+      this.currentRow = -1
+      return
+    }
+    this.currentRow = currentIndex
+  }
+
+  update(): void {
+    const parity = this.manager.app.chartManager.loadedChart?.stats.parity
+
+    const RIGHT_SAFE =
+      this.manager.chartManager.app.STAGE_WIDTH / 2 -
+      (Options.chart.npsGraph.enabled ? 48 : 0) -
+      (Options.chart.noteLayout.enabled ? 48 : 0)
+    this.x = RIGHT_SAFE - 16
+    this.y = this.manager.app.STAGE_HEIGHT / 2 - 16
+
+    if (
+      !parity ||
+      !this.manager.app.chartManager.chartView ||
+      !this.layout ||
+      !Options.experimental.parity.enabled ||
+      !Options.experimental.parity.showDancingBot
+    ) {
+      this.visible = false
+      return
+    }
+    this.visible = true
+    const visualBeat = this.manager.app.chartManager.chartView.getVisualBeat()
+    const visualSecond = this.manager.app.chartManager.chartView.getVisualTime()
+
+    if (this.lastBeat == visualBeat) {
+      return
+    }
+    this.panels.forEach(panel => {
+      const partialBeat = ((visualBeat % 1) + 1) % 1
+      panel.arrow.alpha = 0.3 + clamp(1 - partialBeat, 0.5, 1) * 0.8
+    })
+    if (visualBeat < this.lastBeat) {
+      this.reindex()
+    } else {
+      while (parity.notedataRows[this.currentRow + 1]?.beat <= visualBeat) {
+        this.currentRow++
+        const row = parity.notedataRows[this.currentRow]
+        row.notes.forEach((_, i) => {
+          this.flashPanel(i)
+        })
+      }
+    }
+
+    this.lastBeat = visualBeat
+
+    if (parity.bestPath && this.leftFoot && this.rightFoot) {
+      const oldState =
+        parity.nodeMap.get(parity.bestPath[this.currentRow + 1])?.state ??
+        parity.initialNode.state
+      const newState =
+        parity.nodeMap.get(parity.bestPath[this.currentRow + 2])?.state ??
+        parity.endNode.state
+      if (oldState) {
+        const oldPosition = this.getFeetPosition(this.currentRow + 1)
+        const nextPosition = this.getFeetPosition(this.currentRow + 2)
+
+        const t = clamp(
+          unlerp(
+            Math.max(oldState.second, newState.second - 0.3),
+            newState.second,
+            visualSecond
+          ),
+          0,
+          1
+        )
+        const newPosition = this.lerpPositions(
+          oldPosition,
+          nextPosition,
+          t,
+          newState
+        )
+        let leftScale = ((PANEL_SIZE / 4) * 3) / this.leftFoot.texture.height
+        let rightScale = ((PANEL_SIZE / 4) * 3) / this.rightFoot.texture.height
+
+        const movedLeftOld = oldState.movedFeet.has(Foot.LEFT_HEEL)
+        const movedRightOld = oldState.movedFeet.has(Foot.RIGHT_HEEL)
+        const movedLeftNew = newState.movedFeet.has(Foot.LEFT_HEEL)
+        const movedRightNew = newState.movedFeet.has(Foot.RIGHT_HEEL)
+
+        if (visualSecond > newState.second - 0.1) {
+          const t = clamp(
+            unlerp(newState.second - 0.1, newState.second, visualSecond),
+            0,
+            1
+          )
+          if (movedLeftNew) {
+            leftScale *= lerp(1, 0.9, t)
+          }
+          if (movedRightNew) {
+            rightScale *= lerp(1, 0.9, t)
+          }
+        }
+        if (visualSecond < oldState.second + 0.1) {
+          const t = clamp(
+            unlerp(oldState.second, oldState.second + 0.1, visualSecond),
+            0,
+            1
+          )
+          if (movedLeftOld) {
+            leftScale *= lerp(0.9, 1, t)
+          }
+          if (movedRightOld) {
+            rightScale *= lerp(0.9, 1, t)
+          }
+        }
+        this.leftFoot.scale.set(leftScale)
+        this.rightFoot.scale.set(-rightScale, rightScale)
+
+        this.leftFoot.x = newPosition.left.x
+        this.leftFoot.y = newPosition.left.y
+        this.leftFoot.rotation = newPosition.left.angle
+        this.rightFoot.x = newPosition.right.x
+        this.rightFoot.y = newPosition.right.y
+        this.rightFoot.rotation = newPosition.right.angle
+      }
+    }
+  }
+
+  getState(idx: number) {
+    const parity = this.manager.app.chartManager.loadedChart!.stats.parity!
+    if (idx == -1) return parity.initialNode.state
+    return (
+      parity.nodeMap.get(parity.bestPath![idx])?.state ?? parity.endNode.state
+    )
+  }
+
+  getFeetColumns(idx: number) {
+    let leftHeel = -1
+    let rightHeel = -1
+    let leftToe = -1
+    let rightToe = -1
+
+    let leftFound = false
+    let rightFound = false
+
+    let state = this.getState(idx)
+    while (idx >= -1) {
+      if (state.movedFeet.has(Foot.LEFT_HEEL) && !leftFound) {
+        leftFound = true
+        leftHeel = state.combinedColumns.indexOf(Foot.LEFT_HEEL)
+        leftToe = state.combinedColumns.indexOf(Foot.LEFT_TOE)
+      }
+      if (state.movedFeet.has(Foot.RIGHT_HEEL) && !rightFound) {
+        rightFound = true
+        rightHeel = state.combinedColumns.indexOf(Foot.RIGHT_HEEL)
+        rightToe = state.combinedColumns.indexOf(Foot.RIGHT_TOE)
+      }
+      idx--
+      state = this.getState(idx)
+    }
+    return {
+      leftHeel,
+      rightHeel,
+      leftToe,
+      rightToe,
+    }
+  }
+
+  getFeetPosition(idx: number): FeetPosition {
+    const pos = this.getFeetColumns(idx)
+    const leftPos = {
+      x: this.panels[pos.leftHeel]?.position.x ?? 0,
+      y: this.panels[pos.leftHeel]?.position.y ?? 0,
+    }
+    const rightPos = {
+      x: this.panels[pos.rightHeel]?.position.x ?? 0,
+      y: this.panels[pos.rightHeel]?.position.y ?? 0,
+    }
+
+    if (pos.leftToe != -1) {
+      leftPos.x = (leftPos.x + this.panels[pos.leftToe].position.x) / 2
+      leftPos.y = (leftPos.y + this.panels[pos.leftToe].position.y) / 2
+    }
+
+    if (pos.rightToe != -1) {
+      rightPos.x = (rightPos.x + this.panels[pos.rightToe].position.x) / 2
+      rightPos.y = (rightPos.y + this.panels[pos.rightToe].position.y) / 2
+    }
+
+    if (this.layout!.name == "dance-single") {
+      if (Math.abs(leftPos.x) <= PANEL_SIZE / 4) {
+        leftPos.x -= PANEL_SIZE / 4
+        leftPos.y *= 0.5
+      }
+      if (Math.abs(rightPos.x) <= PANEL_SIZE / 4) {
+        rightPos.x += PANEL_SIZE / 4
+        rightPos.y *= 0.5
+      }
+
+      if (rightPos.x < (-PANEL_SIZE / 4) * 3) {
+        rightPos.y -= (PANEL_SIZE / 4) * Math.sign(leftPos.y)
+        rightPos.x += PANEL_SIZE / 4
+      }
+      if (leftPos.x > (PANEL_SIZE / 4) * 3) {
+        leftPos.y -= (PANEL_SIZE / 4) * Math.sign(leftPos.y)
+        leftPos.x -= PANEL_SIZE / 4
+      }
+    }
+
+    let leftAngle = this.getPlayerAngle(leftPos, rightPos) / 5
+    let rightAngle = leftAngle
+
+    if (pos.leftToe != -1) {
+      leftAngle =
+        -this.getPlayerAngle(
+          {
+            x: this.panels[pos.leftHeel].position.x,
+            y: this.panels[pos.leftHeel].position.y,
+          },
+          {
+            x: this.panels[pos.leftToe].position.x,
+            y: this.panels[pos.leftToe].position.y,
+          }
+        ) +
+        Math.PI / 2
+    }
+    if (pos.rightToe != -1) {
+      rightAngle =
+        -this.getPlayerAngle(
+          {
+            x: this.panels[pos.rightHeel].position.x,
+            y: this.panels[pos.rightHeel].position.y,
+          },
+          {
+            x: this.panels[pos.rightToe].position.x,
+            y: this.panels[pos.rightToe].position.y,
+          }
+        ) +
+        Math.PI / 2
+    }
+
+    return {
+      left: { x: leftPos.x, y: leftPos.y, angle: leftAngle },
+      right: { x: rightPos.x, y: rightPos.y, angle: rightAngle },
+    }
+  }
+
+  getPlayerAngle(
+    left: { x: number; y: number },
+    right: { x: number; y: number }
+  ) {
+    const x1 = right.x - left.x
+    const y1 = right.y - left.y
+    const x2 = 1
+    const y2 = 0
+    const dot = x1 * x2 + y1 * y2
+    const det = x1 * y2 - y1 * x2
+    return Math.atan2(det, dot)
+  }
+
+  lerpPositions(
+    positionA: FeetPosition,
+    positionB: FeetPosition,
+    t: number,
+    state: State
+  ): FeetPosition {
+    const movedLeft = state.movedFeet.has(Foot.LEFT_HEEL)
+    const movedRight = state.movedFeet.has(Foot.RIGHT_HEEL)
+    return {
+      left: {
+        x: lerp(positionA.left.x, positionB.left.x, t),
+        y: lerp(positionA.left.y, positionB.left.y, t),
+        angle: movedLeft
+          ? lerp(positionA.left.angle, positionB.left.angle, t)
+          : positionA.left.angle,
+      },
+      right: {
+        x: lerp(positionA.right.x, positionB.right.x, t),
+        y: lerp(positionA.right.y, positionB.right.y, t),
+        angle: movedRight
+          ? lerp(positionA.right.angle, positionB.right.angle, t)
+          : positionA.right.angle,
+      },
+    }
+  }
+
+  flashPanel(col: number) {
+    const panel = this.panels[col]
+    if (!panel) return
+
+    BezierAnimator.animate(
+      panel.bg,
+      {
+        "0": {
+          alpha: 1.5,
+        },
+        "1": {
+          alpha: 0.3,
+        },
+      },
+      0.4,
+      bezier(0.19, 1.15, 0.55, 0.96),
+      undefined,
+      "panel-" + col
+    )
+  }
+}

@@ -5,7 +5,7 @@ import { ChartAnalyzer } from "./ChartAnalyzer"
 import { NoteTypeAnalyzer } from "./NoteTypeAnalyzer"
 import { NPSAnalyzer } from "./NPSAnalyzer"
 import { ParityAnalyzer } from "./parity/ParityAnalyzer"
-import { ParityInternals } from "./parity/ParityInternal_Temp"
+import { ParityInternals } from "./parity/ParityInternals"
 import { StreamAnalyzer, StreamData } from "./StreamAnalyzer"
 
 const ANALYZERS: (new (chart: Chart) => ChartAnalyzer)[] = [

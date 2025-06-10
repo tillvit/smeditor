@@ -1734,6 +1734,7 @@ for (const type of ["WARPS", "FAKES"] as const) {
 FEET_LABELS_LONG.forEach((label, i) => {
   KEYBIND_DATA[`parity${label.replaceAll(" ", "")}`] = {
     label,
+    bindLabel: `Mark as ${label}`,
     combos: [],
     disabled: app =>
       !app.chartManager.chartView ||
@@ -1767,9 +1768,9 @@ FEET_LABELS_LONG.forEach((label, i) => {
             }
             oldOverrides.push(note.parity.override || Foot.NONE)
             note.parity.override = i
-            app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
-            EventHandler.emit("chartModified")
           })
+          app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
+          EventHandler.emit("chartModified")
         },
         undo: () => {
           selection.forEach((note, i) => {
@@ -1777,9 +1778,9 @@ FEET_LABELS_LONG.forEach((label, i) => {
               note.parity = {}
             }
             note.parity.override = oldOverrides[i]
-            app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
-            EventHandler.emit("chartModified")
           })
+          app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
+          EventHandler.emit("chartModified")
         },
         redo: () => {
           selection.forEach(note => {
@@ -1787,9 +1788,9 @@ FEET_LABELS_LONG.forEach((label, i) => {
               note.parity = {}
             }
             note.parity.override = i
-            app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
-            EventHandler.emit("chartModified")
           })
+          app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
+          EventHandler.emit("chartModified")
         },
       })
     },
@@ -1799,6 +1800,7 @@ FEET_LABELS_LONG.forEach((label, i) => {
 for (const foot of ["Left", "Right"] as const) {
   KEYBIND_DATA[`parity${foot}`] = {
     label: foot,
+    bindLabel: `Mark as ${foot}`,
     combos: [],
     disabled: app =>
       !app.chartManager.chartView ||
@@ -1832,9 +1834,9 @@ for (const foot of ["Left", "Right"] as const) {
             }
             oldOverrides.push(note.parity.override || Foot.NONE)
             note.parity.override = foot
-            app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
-            EventHandler.emit("chartModified")
           })
+          app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
+          EventHandler.emit("chartModified")
         },
         undo: () => {
           selection.forEach((note, i) => {
@@ -1842,9 +1844,9 @@ for (const foot of ["Left", "Right"] as const) {
               note.parity = {}
             }
             note.parity.override = oldOverrides[i]
-            app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
-            EventHandler.emit("chartModified")
           })
+          app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
+          EventHandler.emit("chartModified")
         },
         redo: () => {
           selection.forEach(note => {
@@ -1852,9 +1854,9 @@ for (const foot of ["Left", "Right"] as const) {
               note.parity = {}
             }
             note.parity.override = foot
-            app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
-            EventHandler.emit("chartModified")
           })
+          app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
+          EventHandler.emit("chartModified")
         },
       })
     },
