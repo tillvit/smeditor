@@ -1,4 +1,11 @@
-import { Assets, BLEND_MODES, Container, Sprite, Texture } from "pixi.js"
+import {
+  Assets,
+  BitmapText,
+  BLEND_MODES,
+  Container,
+  Sprite,
+  Texture,
+} from "pixi.js"
 import {
   STAGE_LAYOUTS,
   StageLayout,
@@ -37,8 +44,8 @@ export class DancingBotWidget extends Widget {
   currentRow = -1
   lastBeat = 0
 
-  leftFoot?: Sprite
-  rightFoot?: Sprite
+  leftFoot?: Container
+  rightFoot?: Container
 
   layout?: StageLayout
 
@@ -99,17 +106,38 @@ export class DancingBotWidget extends Widget {
     })
     const footTex = await Assets.load(footUrl)
 
-    this.leftFoot = new Sprite(footTex)
-    this.rightFoot = new Sprite(footTex)
-    this.leftFoot.scale.set(((PANEL_SIZE / 4) * 3) / this.leftFoot.height)
-    this.rightFoot.scale.set(((PANEL_SIZE / 4) * 3) / this.rightFoot.height)
+    const leftContainer = new Container()
+    const rightContainer = new Container()
 
-    this.leftFoot.tint = PARITY_COLORS[Foot.LEFT_HEEL]
-    this.rightFoot.tint = PARITY_COLORS[Foot.RIGHT_HEEL]
+    const leftFoot = new Sprite(footTex)
+    const rightFoot = new Sprite(footTex)
+    leftFoot.scale.set(((PANEL_SIZE / 4) * 3) / leftFoot.height)
+    rightFoot.scale.set(((PANEL_SIZE / 4) * 3) / rightFoot.height)
 
-    this.leftFoot.anchor.set(0.5)
-    this.rightFoot.anchor.set(0.5)
-    this.rightFoot.scale.x *= -1
+    leftFoot.tint = PARITY_COLORS[Foot.LEFT_HEEL]
+    rightFoot.tint = PARITY_COLORS[Foot.RIGHT_HEEL]
+
+    leftFoot.anchor.set(0.5)
+    rightFoot.anchor.set(0.5)
+    rightFoot.scale.x *= -1
+
+    const leftText = new BitmapText("L", {
+      fontSize: 25,
+      fontName: "Fancy",
+      tint: PARITY_COLORS[Foot.LEFT_TOE],
+    })
+    const rightText = new BitmapText("R", {
+      fontSize: 25,
+      fontName: "Fancy",
+      tint: PARITY_COLORS[Foot.RIGHT_TOE],
+    })
+    leftText.anchor.set(0.5)
+    rightText.anchor.set(0.5)
+
+    leftContainer.addChild(leftFoot, leftText)
+    rightContainer.addChild(rightFoot, rightText)
+    this.leftFoot = leftContainer
+    this.rightFoot = rightContainer
 
     this.leftFoot.zIndex = 50
     this.rightFoot.zIndex = 50
@@ -202,8 +230,8 @@ export class DancingBotWidget extends Widget {
           t,
           newState
         )
-        let leftScale = ((PANEL_SIZE / 4) * 3) / this.leftFoot.texture.height
-        let rightScale = ((PANEL_SIZE / 4) * 3) / this.rightFoot.texture.height
+        let leftScale = 1
+        let rightScale = 1
 
         const movedLeftOld = oldState.movedFeet.has(Foot.LEFT_HEEL)
         const movedRightOld = oldState.movedFeet.has(Foot.RIGHT_HEEL)
@@ -237,7 +265,7 @@ export class DancingBotWidget extends Widget {
           }
         }
         this.leftFoot.scale.set(leftScale)
-        this.rightFoot.scale.set(-rightScale, rightScale)
+        this.rightFoot.scale.set(rightScale)
 
         this.leftFoot.x = newPosition.left.x
         this.leftFoot.y = newPosition.left.y
