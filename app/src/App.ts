@@ -34,7 +34,6 @@ import { FileHandler } from "./util/file-handler/FileHandler"
 import { Flags, loadFlags } from "./util/Flags"
 import { Keybinds } from "./util/Keybinds"
 import { Options } from "./util/Options"
-import { ParityGenerator } from "./util/ParityGenerator"
 import { extname } from "./util/Path"
 import { fpsUpdate } from "./util/Performance"
 import { Themes } from "./util/Theme"
@@ -43,7 +42,6 @@ import { isIFrame } from "./util/Util"
 declare global {
   interface Window {
     app: App
-    Parity?: ParityGenerator
     GameTypeRegistry: GameTypeRegistry
     NoteskinRegistry: NoteskinRegistry
   }
