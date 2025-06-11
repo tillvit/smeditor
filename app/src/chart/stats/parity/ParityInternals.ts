@@ -137,10 +137,12 @@ export class ParityInternals {
       for (const nodeRow of this.nodeRows) {
         for (const node of nodeRow.nodes) {
           for (const [childKey, costs] of node.children.entries()) {
-            if (!newCache.has(node.key)) {
-              newCache.set(node.key, new Map())
+            let cache = newCache.get(node.key)
+            if (!cache) {
+              cache = new Map()
+              newCache.set(node.key, cache)
             }
-            newCache.get(node.key)!.set(childKey, costs)
+            cache.set(childKey, costs)
             this.edgeCacheSize++
           }
         }
@@ -540,10 +542,12 @@ export class ParityInternals {
             this.notedataRows,
             rowIndex + 1
           )
-          if (!this.cachedEdges.has(node.key)) {
-            this.cachedEdges.set(node.key, new Map())
+          let cache = this.cachedEdges.get(node.key)
+          if (!cache) {
+            cache = new Map()
+            this.cachedEdges.set(node.key, cache)
           }
-          this.cachedEdges.get(node.key)!.set(childKey, costs)
+          cache.set(childKey, costs)
 
           node.children.set(childKey, costs)
         }

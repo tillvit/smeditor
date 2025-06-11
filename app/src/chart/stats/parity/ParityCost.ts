@@ -30,35 +30,49 @@ export class ParityCostCalculator {
     this.WEIGHTS = { ...this.WEIGHTS, ...newWeights }
   }
 
-  getPlacementData(initialState: State, resultState: State): PlacementData {
-    const previousNonHeldFeet = initialState.movedFeet.difference(
-      initialState.holdFeet
-    )
-    const nonHeldFeet = resultState.movedFeet.difference(resultState.holdFeet)
+  getPlacementData(
+    initialState: State,
+    resultState: State,
+    lastRow: Row,
+    row: Row
+  ): PlacementData {
+    const previousNonHeldFeet = []
+    const nonHeldFeet = []
+
+    for (let i = 0; i < this.layout.layout.length; i++) {
+      if (
+        lastRow &&
+        lastRow.holds[i] === undefined &&
+        initialState.action[i] != Foot.NONE
+      ) {
+        previousNonHeldFeet[initialState.action[i]] = true
+      }
+
+      if (row.holds[i] === undefined && resultState.action[i] != Foot.NONE) {
+        nonHeldFeet[resultState.action[i]] = true
+      }
+    }
 
     const previousMovedLeft =
-      previousNonHeldFeet.has(Foot.LEFT_HEEL) ||
-      previousNonHeldFeet.has(Foot.LEFT_TOE)
+      previousNonHeldFeet[Foot.LEFT_HEEL] || previousNonHeldFeet[Foot.LEFT_TOE]
     const previousMovedRight =
-      previousNonHeldFeet.has(Foot.RIGHT_HEEL) ||
-      previousNonHeldFeet.has(Foot.RIGHT_TOE)
+      previousNonHeldFeet[Foot.RIGHT_HEEL] ||
+      previousNonHeldFeet[Foot.RIGHT_TOE]
 
-    const movedLeft =
-      nonHeldFeet.has(Foot.LEFT_HEEL) || nonHeldFeet.has(Foot.LEFT_TOE)
+    const movedLeft = nonHeldFeet[Foot.LEFT_HEEL] || nonHeldFeet[Foot.LEFT_TOE]
     const movedRight =
-      nonHeldFeet.has(Foot.RIGHT_HEEL) || nonHeldFeet.has(Foot.RIGHT_TOE)
+      nonHeldFeet[Foot.RIGHT_HEEL] || nonHeldFeet[Foot.RIGHT_TOE]
 
     const leftBracket =
-      nonHeldFeet.has(Foot.LEFT_HEEL) && nonHeldFeet.has(Foot.LEFT_TOE)
+      nonHeldFeet[Foot.LEFT_HEEL] && nonHeldFeet[Foot.LEFT_TOE]
     const rightBracket =
-      nonHeldFeet.has(Foot.RIGHT_HEEL) && nonHeldFeet.has(Foot.RIGHT_TOE)
+      nonHeldFeet[Foot.RIGHT_HEEL] && nonHeldFeet[Foot.RIGHT_TOE]
 
     const previousJumped =
-      previousNonHeldFeet.has(Foot.LEFT_HEEL) &&
-      previousNonHeldFeet.has(Foot.RIGHT_HEEL)
+      previousNonHeldFeet[Foot.LEFT_HEEL] &&
+      previousNonHeldFeet[Foot.RIGHT_HEEL]
 
-    const jumped =
-      nonHeldFeet.has(Foot.LEFT_HEEL) && nonHeldFeet.has(Foot.RIGHT_HEEL)
+    const jumped = nonHeldFeet[Foot.LEFT_HEEL] && nonHeldFeet[Foot.RIGHT_HEEL]
 
     const leftJack =
       !jumped &&
@@ -142,7 +156,12 @@ export class ParityCostCalculator {
     const costs: { [id: string]: number } = {}
 
     // Calculate some data beforehand
-    const placementData = this.getPlacementData(initialState, resultState)
+    const placementData = this.getPlacementData(
+      initialState,
+      resultState,
+      lastRow,
+      row
+    )
 
     // Mine weighting
 

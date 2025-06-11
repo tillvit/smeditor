@@ -429,7 +429,9 @@ export class ParityDebug extends Container implements ChartRendererComponent {
                       {
                         ...parityData.costCalc.getPlacementData(
                           node.state,
-                          parityData.nodeMap.get(outKey)!.state
+                          parityData.nodeMap.get(outKey)!.state,
+                          parityData.notedataRows[i - 1],
+                          row
                         ),
                         resultState: "...",
                         initialState: "...",
