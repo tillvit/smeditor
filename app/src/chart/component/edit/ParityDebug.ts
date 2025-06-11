@@ -220,6 +220,12 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       this.chartDirty = true
     }
 
+    const optionListener = (id: string) => {
+      if (id == "experimental.parity.limitGraph") {
+        this.chartDirty = true
+      }
+    }
+
     const deselect = () => {
       if (this.activeNode) {
         this.activeNode.deactivate()
@@ -252,9 +258,11 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     })
 
     EventHandler.on("parityModified", parityListener)
+    EventHandler.on("userOptionUpdated", optionListener)
     this.renderer.on("pointerdown", deselect)
     this.on("destroyed", () => {
       EventHandler.off("parityModified", parityListener)
+      EventHandler.off("userOptionUpdated", optionListener)
       this.renderer.off("pointerdown", deselect)
     })
   }
@@ -330,7 +338,11 @@ export class ParityDebug extends Container implements ChartRendererComponent {
             `No permutations found for row ${i} at beat ${row.beat} (${row.id})`
           )
         } else {
-          for (const node of nodeRow.nodes) {
+          let nodes = nodeRow.nodes
+          if (Options.experimental.parity.limitGraph) {
+            nodes = nodes.slice(0, 16)
+          }
+          for (const node of nodes) {
             const nodeObject = rowObj.nodePool.createChild()
             if (!nodeObject) continue
             nodeObject.name = node.key
@@ -478,7 +490,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
             nodeObject.cursor = "pointer"
           }
           const nodeWidth = rowObj.nodePool.children[0].bg.width + 5
-          const rowWidth = nodeWidth * nodeRow.nodes.length
+          const rowWidth = nodeWidth * nodes.length
           // center + layout permutations
           rowObj.nodePool.children.forEach((child, index) => {
             child.x = index * nodeWidth - rowWidth / 2
@@ -625,9 +637,6 @@ export class ParityDebug extends Container implements ChartRendererComponent {
           Options.chart.zoom +
         (i - this.debugTexts.length + 1) * 30
       debugObject.visible = Options.experimental.parity.showDebug
-      const parityData = this.renderer.chart.stats.parity
-      if (!parityData) return
-      debugObject.text.text = debugObject.update(parityData)
     })
 
     // Create connections

@@ -962,6 +962,16 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           },
           {
             type: "item",
+            label: "Limit graph nodes",
+            tooltip:
+              "Limits the number of nodes in each row of the parity graph to 16.",
+            id: "experimental.parity.limitGraph",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "item",
             label: "Show dancing bot",
             id: "experimental.parity.showDancingBot",
             input: {

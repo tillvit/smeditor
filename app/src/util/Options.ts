@@ -160,6 +160,7 @@ export class DefaultOptions {
       enabled: false,
       showDebug: true,
       showGraph: true,
+      limitGraph: false,
       showDancingBot: true,
     },
   }
