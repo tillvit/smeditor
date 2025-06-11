@@ -425,7 +425,21 @@ export class ParityDebug extends Container implements ChartRendererComponent {
 
                 connection.on("pointerover", () => {
                   connection.text.text =
-                    JSON.stringify(outValue, null, 2) + "\n"
+                    JSON.stringify(
+                      {
+                        ...parityData.costCalc.getPlacementData(
+                          node.state,
+                          parityData.nodeMap.get(outKey)!.state
+                        ),
+                        resultState: "...",
+                        initialState: "...",
+                      },
+                      null,
+                      2
+                    ) +
+                    "\n" +
+                    JSON.stringify(outValue, null, 2) +
+                    "\n"
                   connection.scale.set(1.2)
                   connection.bg.visible = true
                   connection.bg.width = connection.text.width + 10

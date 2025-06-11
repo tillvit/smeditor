@@ -33,8 +33,33 @@ export class ParityGraphNode {
 
 export class ParityInternals {
   private readonly chart: Chart
-  private readonly costCalc: ParityCostCalculator
+  readonly costCalc: ParityCostCalculator
   private readonly layout: StageLayout
+
+  private readonly initialRow = {
+    notes: [],
+    holds: [],
+    holdTails: new Set<number>(),
+    mines: [],
+    fakeMines: [],
+    second: -1,
+    beat: -1,
+    columns: [],
+    overrides: [],
+    id: "start",
+  }
+  private readonly endRow = {
+    notes: [],
+    holds: [],
+    holdTails: new Set<number>(),
+    mines: [],
+    fakeMines: [],
+    second: -1,
+    beat: -1,
+    columns: [],
+    overrides: [],
+    id: "end",
+  }
 
   // Start and end nodes of the graph
   readonly initialNode: ParityGraphNode
@@ -91,10 +116,10 @@ export class ParityInternals {
     this.layout = STAGE_LAYOUTS[chart.gameType.id]
     this.costCalc = new ParityCostCalculator(chart.gameType.id)
     this.initialNode = new ParityGraphNode(
-      new State(-1, -1, [], new Array(5).fill(-1))
+      new State(this.initialRow, [], new Array(5).fill(-1))
     )
     this.endNode = new ParityGraphNode(
-      new State(-2, -2, [], new Array(5).fill(-1))
+      new State(this.endRow, [], new Array(5).fill(-1))
     )
   }
 
@@ -193,7 +218,10 @@ export class ParityInternals {
         continue
       }
 
-      if (note.fake || note.warped) continue
+      if (note.fake || note.warped) {
+        curIdx--
+        continue
+      }
 
       columnStatus[note.col] = 1
       fulfilledColumns++
@@ -723,12 +751,7 @@ export class ParityInternals {
 
   // Creates the resulting state after applying the action to the initial state
   initResultState(initialState: State, row: Row, action: Foot[]): State {
-    const resultState: State = new State(
-      row.second,
-      row.beat,
-      action,
-      new Array(5).fill(-1)
-    )
+    const resultState: State = new State(row, action, new Array(5).fill(-1))
 
     // Merge initial + result position
     for (let i = 0; i < this.layout.columnCount; i++) {

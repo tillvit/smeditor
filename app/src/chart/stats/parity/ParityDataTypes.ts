@@ -44,13 +44,24 @@ export const FEET_LABEL_TO_FOOT: { [key: string]: Foot } = {
 
 export type FootOverride = Foot | "Left" | "Right"
 
-export interface FootPlacement {
-  leftHeel: number
-  leftToe: number
-  rightHeel: number
-  rightToe: number
+export interface PlacementData {
+  previousLeftPos: { x: number; y: number } // can probably cache this?
+  previousRightPos: { x: number; y: number }
+  leftPos: { x: number; y: number }
+  rightPos: { x: number; y: number }
+  movedLeft: boolean
+  movedRight: boolean
   leftBracket: boolean
   rightBracket: boolean
+  previousJumped: boolean
+  jumped: boolean
+  leftJack: boolean
+  rightJack: boolean
+  leftDoubleStep: boolean
+  rightDoubleStep: boolean
+
+  initialState: State
+  resultState: State
 }
 
 export const ZERO_WEIGHT: { [key: string]: number } = {
@@ -61,6 +72,7 @@ export const ZERO_WEIGHT: { [key: string]: number } = {
   SLOW_BRACKET: 0,
   TWISTED_FOOT: 0,
   BRACKETTAP: 0,
+  XO_BR: 0,
   HOLDSWITCH: 0,
   MINE: 0,
   FOOTSWITCH: 0,
@@ -78,11 +90,12 @@ export const ZERO_WEIGHT: { [key: string]: number } = {
 export const DEFAULT_WEIGHTS: { [key: string]: number } = {
   DOUBLESTEP: 850,
   BRACKETJACK: 20,
-  JACK: 30,
+  JACK: 40,
   JUMP: 0,
   SLOW_BRACKET: 300,
   TWISTED_FOOT: 100000,
   BRACKETTAP: 400,
+  XO_BR: 200,
   HOLDSWITCH: 55,
   MINE: 10000,
   FOOTSWITCH: 325,
@@ -103,6 +116,7 @@ export const WEIGHT_SHORT_NAMES: { [id: string]: string } = {
   SLOW_BRACKET: "SLWB",
   TWISTED_FOOT: "TWST",
   BRACKETTAP: "BRT",
+  XO_BR: "XBR",
   HOLDSWITCH: "HLS",
   MINE: "MNE",
   FOOTSWITCH: "FSW",
@@ -137,19 +151,32 @@ export class State {
   holdFeet: Set<Foot> = new Set()
   second: number
   beat: number
+  rowKey: string
 
   footColumns: number[] = []
 
-  constructor(
-    second: number,
-    beat: number,
-    action: Foot[],
-    columns: number[] = []
-  ) {
-    this.second = second
-    this.beat = beat
+  constructor(row: Row, action: Foot[], columns: number[] = []) {
+    this.second = row.second
+    this.beat = row.beat
+    this.rowKey = row.id
     this.action = [...action]
     this.footColumns = [...columns]
+  }
+
+  get leftHeel() {
+    return this.footColumns[Foot.LEFT_HEEL]
+  }
+
+  get leftToe() {
+    return this.footColumns[Foot.LEFT_TOE]
+  }
+
+  get rightHeel() {
+    return this.footColumns[Foot.RIGHT_HEEL]
+  }
+
+  get rightToe() {
+    return this.footColumns[Foot.RIGHT_TOE]
   }
 
   toKey() {
@@ -174,7 +201,7 @@ export class State {
       }
     }
 
-    return `${this.second.toFixed(3)}-${this.beat.toFixed(3)}-${this.action.join("")}-${this.combinedColumns.join("")}-${movedString}-${holdString}-${feetString}`
+    return `${this.rowKey}-${this.action.join("")}-${this.combinedColumns.join("")}-${movedString}-${holdString}-${feetString}`
   }
 }
 
