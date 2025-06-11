@@ -98,49 +98,104 @@ export class ParityCostCalculator {
 
     if (!didJump) {
       if (resultPlacement.leftHeel != -1 && movedLeft) {
+        const startColumns = new Set()
         if (
-          initialState.combinedColumns[resultPlacement.leftHeel] ==
-            Foot.LEFT_HEEL &&
-          !resultState.holdFeet.has(Foot.LEFT_HEEL) &&
-          ((initialState.movedFeet.has(Foot.LEFT_HEEL) &&
-            !initialState.holdFeet.has(Foot.LEFT_HEEL)) ||
-            (initialState.movedFeet.has(Foot.LEFT_TOE) &&
-              !initialState.holdFeet.has(Foot.LEFT_TOE)))
-        )
-          jackedLeft = true
+          initialState.movedFeet.has(Foot.LEFT_HEEL) &&
+          !initialState.holdFeet.has(Foot.LEFT_HEEL)
+        ) {
+          startColumns.add(initialState.footColumns[Foot.LEFT_HEEL])
+        }
         if (
-          initialState.combinedColumns[resultPlacement.leftToe] ==
-            Foot.LEFT_TOE &&
-          !resultState.holdFeet.has(Foot.LEFT_TOE) &&
-          ((initialState.movedFeet.has(Foot.LEFT_HEEL) &&
-            !initialState.holdFeet.has(Foot.LEFT_HEEL)) ||
-            (initialState.movedFeet.has(Foot.LEFT_TOE) &&
-              !initialState.holdFeet.has(Foot.LEFT_TOE)))
-        )
-          jackedLeft = true
+          initialState.movedFeet.has(Foot.LEFT_TOE) &&
+          !initialState.holdFeet.has(Foot.LEFT_TOE)
+        ) {
+          startColumns.add(initialState.footColumns[Foot.LEFT_TOE])
+        }
+        const endColumns = new Set()
+        if (
+          resultState.movedFeet.has(Foot.LEFT_HEEL) &&
+          !resultState.holdFeet.has(Foot.LEFT_HEEL)
+        ) {
+          endColumns.add(resultState.footColumns[Foot.LEFT_HEEL])
+        }
+        if (
+          resultState.movedFeet.has(Foot.LEFT_HEEL) &&
+          !resultState.holdFeet.has(Foot.LEFT_TOE)
+        ) {
+          endColumns.add(resultState.footColumns[Foot.LEFT_TOE])
+        }
+        jackedLeft = startColumns.intersection(endColumns).size > 0
+
+        // if (
+        //   initialState.combinedColumns[resultPlacement.leftHeel] ==
+        //     Foot.LEFT_HEEL &&
+        //   !resultState.holdFeet.has(Foot.LEFT_HEEL) &&
+        //   ((initialState.movedFeet.has(Foot.LEFT_HEEL) &&
+        //     !initialState.holdFeet.has(Foot.LEFT_HEEL)) ||
+        //     (initialState.movedFeet.has(Foot.LEFT_TOE) &&
+        //       !initialState.holdFeet.has(Foot.LEFT_TOE)))
+        // )
+        //   jackedLeft = true
+        // if (
+        //   initialState.combinedColumns[resultPlacement.leftToe] ==
+        //     Foot.LEFT_TOE &&
+        //   !resultState.holdFeet.has(Foot.LEFT_TOE) &&
+        //   ((initialState.movedFeet.has(Foot.LEFT_HEEL) &&
+        //     !initialState.holdFeet.has(Foot.LEFT_HEEL)) ||
+        //     (initialState.movedFeet.has(Foot.LEFT_TOE) &&
+        //       !initialState.holdFeet.has(Foot.LEFT_TOE)))
+        // )
+        //   jackedLeft = true
       }
 
       if (resultPlacement.rightHeel != -1 && movedRight) {
+        // if (
+        //   initialState.combinedColumns[resultPlacement.rightHeel] ==
+        //     Foot.RIGHT_HEEL &&
+        //   !resultState.holdFeet.has(Foot.RIGHT_HEEL) &&
+        //   ((initialState.movedFeet.has(Foot.RIGHT_HEEL) &&
+        //     !initialState.holdFeet.has(Foot.RIGHT_HEEL)) ||
+        //     (initialState.movedFeet.has(Foot.RIGHT_TOE) &&
+        //       !initialState.holdFeet.has(Foot.RIGHT_TOE)))
+        // )
+        //   jackedRight = true
+        // if (
+        //   initialState.combinedColumns[resultPlacement.rightToe] ==
+        //     Foot.RIGHT_TOE &&
+        //   !resultState.holdFeet.has(Foot.RIGHT_TOE) &&
+        //   ((initialState.movedFeet.has(Foot.RIGHT_HEEL) &&
+        //     !initialState.holdFeet.has(Foot.RIGHT_HEEL)) ||
+        //     (initialState.movedFeet.has(Foot.RIGHT_TOE) &&
+        //       !initialState.holdFeet.has(Foot.RIGHT_TOE)))
+        // )
+        //   jackedRight = true
+        const startColumns = new Set()
         if (
-          initialState.combinedColumns[resultPlacement.rightHeel] ==
-            Foot.RIGHT_HEEL &&
-          !resultState.holdFeet.has(Foot.RIGHT_HEEL) &&
-          ((initialState.movedFeet.has(Foot.RIGHT_HEEL) &&
-            !initialState.holdFeet.has(Foot.RIGHT_HEEL)) ||
-            (initialState.movedFeet.has(Foot.RIGHT_TOE) &&
-              !initialState.holdFeet.has(Foot.RIGHT_TOE)))
-        )
-          jackedRight = true
+          initialState.movedFeet.has(Foot.RIGHT_HEEL) &&
+          !initialState.holdFeet.has(Foot.RIGHT_HEEL)
+        ) {
+          startColumns.add(initialState.footColumns[Foot.RIGHT_HEEL])
+        }
         if (
-          initialState.combinedColumns[resultPlacement.rightToe] ==
-            Foot.RIGHT_TOE &&
-          !resultState.holdFeet.has(Foot.RIGHT_TOE) &&
-          ((initialState.movedFeet.has(Foot.RIGHT_HEEL) &&
-            !initialState.holdFeet.has(Foot.RIGHT_HEEL)) ||
-            (initialState.movedFeet.has(Foot.RIGHT_TOE) &&
-              !initialState.holdFeet.has(Foot.RIGHT_TOE)))
-        )
-          jackedRight = true
+          initialState.movedFeet.has(Foot.RIGHT_TOE) &&
+          !initialState.holdFeet.has(Foot.RIGHT_TOE)
+        ) {
+          startColumns.add(initialState.footColumns[Foot.RIGHT_TOE])
+        }
+        const endColumns = new Set()
+        if (
+          resultState.movedFeet.has(Foot.RIGHT_HEEL) &&
+          !resultState.holdFeet.has(Foot.RIGHT_HEEL)
+        ) {
+          endColumns.add(resultState.footColumns[Foot.RIGHT_HEEL])
+        }
+        if (
+          resultState.movedFeet.has(Foot.RIGHT_HEEL) &&
+          !resultState.holdFeet.has(Foot.RIGHT_TOE)
+        ) {
+          endColumns.add(resultState.footColumns[Foot.RIGHT_TOE])
+        }
+        jackedRight = startColumns.intersection(endColumns).size > 0
       }
     }
 
@@ -219,7 +274,8 @@ export class ParityCostCalculator {
     costs["DISTANCE"] = this.calcDistanceCost(
       initialState,
       resultState,
-      elapsedTime
+      elapsedTime,
+      didJump
     )
 
     costs["CROWDED_BRACKET"] = this.calcCrowdedBracketCost(
@@ -516,12 +572,7 @@ export class ParityCostCalculator {
   ) {
     let cost = 0
 
-    if (
-      movedLeft != movedRight &&
-      (movedLeft || movedRight) &&
-      resultState.holdFeet.size == 0 &&
-      !didJump
-    ) {
+    if (movedLeft != movedRight && resultState.holdFeet.size == 0 && !didJump) {
       let doublestepped = false
 
       if (
@@ -839,39 +890,52 @@ export class ParityCostCalculator {
   calcDistanceCost(
     initialState: State,
     resultState: State,
-    elapsedTime: number
+    elapsedTime: number,
+    didJump: boolean
   ) {
     let cost = 0
 
     // To do: weighting for moving a foot a far distance in a fast time
-    for (const foot of resultState.movedFeet) {
-      // foot == 0 is NO FOOT, so we shouldn't be calculating anything for that
-      if (foot == Foot.NONE) {
-        continue
-      }
-      const initialPosition = initialState.combinedColumns.indexOf(foot)
-      if (initialPosition == -1) continue
+    for (const foot of [Foot.LEFT_HEEL, Foot.RIGHT_HEEL]) {
+      if (!resultState.movedFeet.has(foot)) continue
+      const initialHeel = initialState.footColumns[foot]
+      let initialToe = initialState.footColumns[OTHER_PART_OF_FOOT[foot]]
+      if (initialToe == -1) initialToe = initialHeel
+      const initialPosition = this.layout.averagePoint(initialHeel, initialToe)
 
-      const resultPosition = resultState.action.indexOf(foot)
+      const resultToe = resultState.footColumns[OTHER_PART_OF_FOOT[foot]]
+      let resultHeel = resultState.footColumns[foot]
+      if (resultHeel == -1) resultHeel = resultToe
+      const resultPosition = this.layout.averagePoint(resultHeel, resultToe)
 
       // If we're bracketing something, and the toes are now where the heel
       // was, then we don't need to worry about it, we're not actually moving
       // the foot very far
-      const isBracketing = resultState.action.includes(OTHER_PART_OF_FOOT[foot])
-      if (
-        isBracketing &&
-        resultState.action.indexOf(OTHER_PART_OF_FOOT[foot]) == initialPosition
-      ) {
-        continue
+      const isBracketing =
+        initialState.footColumns[OTHER_PART_OF_FOOT[foot]] != -1 ||
+        resultState.footColumns[OTHER_PART_OF_FOOT[foot]] != -1
+      if (isBracketing) {
+        const initialColumns = new Set([initialHeel, initialToe])
+        const resultColumns = new Set([resultHeel, resultToe])
+        if (initialColumns.intersection(resultColumns).size > 0) {
+          continue
+        }
       }
 
-      let dist =
-        (Math.sqrt(this.layout.getDistanceSq(initialPosition, resultPosition)) *
+      if (didJump && elapsedTime < 0.15) {
+        elapsedTime = Math.pow(elapsedTime, 1.5)
+      }
+
+      const dist =
+        (Math.sqrt(
+          this.layout.getDistanceSqPoints(initialPosition, resultPosition)
+        ) *
           this.WEIGHTS.DISTANCE) /
         elapsedTime
-      if (isBracketing) {
-        dist = dist * 0.2
-      }
+      // if (isBracketing) {
+      //   dist = dist * 0.2
+      // }
+
       cost += dist
     }
     return cost

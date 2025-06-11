@@ -73,6 +73,13 @@ export class StageLayout {
     return (p1.y - p2.y) * (p1.y - p2.y) + (p1.x - p2.x) * (p1.x - p2.x)
   }
 
+  getDistanceSqPoints(
+    p1: { x: number; y: number },
+    p2: { x: number; y: number }
+  ) {
+    return (p1.y - p2.y) * (p1.y - p2.y) + (p1.x - p2.x) * (p1.x - p2.x)
+  }
+
   bracketCheck(column1: number, column2: number) {
     return this.getDistanceSq(column1, column2) <= 2
   }
