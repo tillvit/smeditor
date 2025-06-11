@@ -212,8 +212,8 @@ export class DancingBotWidget extends Widget {
         parity.nodeMap.get(parity.bestPath[this.currentRow + 2])?.state ??
         parity.endNode.state
       if (oldState) {
-        const oldPosition = this.getFeetPosition(this.currentRow + 1)
-        const nextPosition = this.getFeetPosition(this.currentRow + 2)
+        const oldPosition = this.getFeetPosition(oldState)
+        const nextPosition = this.getFeetPosition(newState)
 
         const t = clamp(
           unlerp(
@@ -285,57 +285,34 @@ export class DancingBotWidget extends Widget {
     )
   }
 
-  getFeetColumns(idx: number) {
-    let leftHeel = -1
-    let rightHeel = -1
-    let leftToe = -1
-    let rightToe = -1
-
-    let leftFound = false
-    let rightFound = false
-
-    let state = this.getState(idx)
-    while (idx >= -1) {
-      if (state.movedFeet.has(Foot.LEFT_HEEL) && !leftFound) {
-        leftFound = true
-        leftHeel = state.combinedColumns.indexOf(Foot.LEFT_HEEL)
-        leftToe = state.combinedColumns.indexOf(Foot.LEFT_TOE)
-      }
-      if (state.movedFeet.has(Foot.RIGHT_HEEL) && !rightFound) {
-        rightFound = true
-        rightHeel = state.combinedColumns.indexOf(Foot.RIGHT_HEEL)
-        rightToe = state.combinedColumns.indexOf(Foot.RIGHT_TOE)
-      }
-      idx--
-      state = this.getState(idx)
-    }
-    return {
-      leftHeel,
-      rightHeel,
-      leftToe,
-      rightToe,
-    }
-  }
-
-  getFeetPosition(idx: number): FeetPosition {
-    const pos = this.getFeetColumns(idx)
+  getFeetPosition(state: State): FeetPosition {
     const leftPos = {
-      x: this.panels[pos.leftHeel]?.position.x ?? 0,
-      y: this.panels[pos.leftHeel]?.position.y ?? 0,
+      x: this.panels[state.footColumns[Foot.LEFT_HEEL]]?.position.x ?? 0,
+      y: this.panels[state.footColumns[Foot.LEFT_HEEL]]?.position.y ?? 0,
     }
     const rightPos = {
-      x: this.panels[pos.rightHeel]?.position.x ?? 0,
-      y: this.panels[pos.rightHeel]?.position.y ?? 0,
+      x: this.panels[state.footColumns[Foot.RIGHT_HEEL]]?.position.x ?? 0,
+      y: this.panels[state.footColumns[Foot.RIGHT_HEEL]]?.position.y ?? 0,
     }
 
-    if (pos.leftToe != -1) {
-      leftPos.x = (leftPos.x + this.panels[pos.leftToe].position.x) / 2
-      leftPos.y = (leftPos.y + this.panels[pos.leftToe].position.y) / 2
+    if (state.footColumns[Foot.LEFT_TOE] != -1) {
+      leftPos.x =
+        (leftPos.x + this.panels[state.footColumns[Foot.LEFT_TOE]].position.x) /
+        2
+      leftPos.y =
+        (leftPos.y + this.panels[state.footColumns[Foot.LEFT_TOE]].position.y) /
+        2
     }
 
-    if (pos.rightToe != -1) {
-      rightPos.x = (rightPos.x + this.panels[pos.rightToe].position.x) / 2
-      rightPos.y = (rightPos.y + this.panels[pos.rightToe].position.y) / 2
+    if (state.footColumns[Foot.RIGHT_TOE] != -1) {
+      rightPos.x =
+        (rightPos.x +
+          this.panels[state.footColumns[Foot.RIGHT_TOE]].position.x) /
+        2
+      rightPos.y =
+        (rightPos.y +
+          this.panels[state.footColumns[Foot.RIGHT_TOE]].position.y) /
+        2
     }
 
     if (this.layout!.name == "dance-single") {
@@ -361,30 +338,30 @@ export class DancingBotWidget extends Widget {
     let leftAngle = this.getPlayerAngle(leftPos, rightPos) / 5
     let rightAngle = leftAngle
 
-    if (pos.leftToe != -1) {
+    if (state.footColumns[Foot.LEFT_TOE] != -1) {
       leftAngle =
         -this.getPlayerAngle(
           {
-            x: this.panels[pos.leftHeel].position.x,
-            y: this.panels[pos.leftHeel].position.y,
+            x: this.panels[state.footColumns[Foot.LEFT_HEEL]].position.x,
+            y: this.panels[state.footColumns[Foot.LEFT_HEEL]].position.y,
           },
           {
-            x: this.panels[pos.leftToe].position.x,
-            y: this.panels[pos.leftToe].position.y,
+            x: this.panels[state.footColumns[Foot.LEFT_TOE]].position.x,
+            y: this.panels[state.footColumns[Foot.LEFT_TOE]].position.y,
           }
         ) +
         Math.PI / 2
     }
-    if (pos.rightToe != -1) {
+    if (state.footColumns[Foot.RIGHT_TOE] != -1) {
       rightAngle =
         -this.getPlayerAngle(
           {
-            x: this.panels[pos.rightHeel].position.x,
-            y: this.panels[pos.rightHeel].position.y,
+            x: this.panels[state.footColumns[Foot.RIGHT_HEEL]].position.x,
+            y: this.panels[state.footColumns[Foot.RIGHT_HEEL]].position.y,
           },
           {
-            x: this.panels[pos.rightToe].position.x,
-            y: this.panels[pos.rightToe].position.y,
+            x: this.panels[state.footColumns[Foot.RIGHT_TOE]].position.x,
+            y: this.panels[state.footColumns[Foot.RIGHT_TOE]].position.y,
           }
         ) +
         Math.PI / 2
