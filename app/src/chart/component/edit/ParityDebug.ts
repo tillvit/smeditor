@@ -39,8 +39,7 @@ interface RowObject extends Container {
   hitbox: Sprite
   text: BitmapText
   detail: BitmapText
-  leftContainer: Container
-  rightContainer: Container
+  sideContainer: Container
   nodePool: DisplayObjectPool<NodeObject>
   statusRows: Sprite[][]
   highlights: { col: number; second: number; box: DetailBox }[]
@@ -91,8 +90,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
   private rowPool = new DisplayObjectPool({
     create: () => {
       const newChild = new Container() as RowObject
-      const leftContainer = new Container()
-      const rightContainer = new Container()
+      const sideContainer = new Container()
       const nodePool = new DisplayObjectPool<NodeObject>({
         create: () => {
           const newChild = new Container() as NodeObject
@@ -172,14 +170,13 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       hitbox.alpha = 0
       hitbox.eventMode = "static"
 
-      leftContainer.addChild(hitbox, text, detail)
-      newChild.addChild(leftContainer, rightContainer, nodePool)
+      sideContainer.addChild(hitbox, text, detail)
+      newChild.addChild(sideContainer, nodePool)
 
       newChild.hitbox = hitbox
       newChild.text = text
       newChild.detail = detail
-      newChild.leftContainer = leftContainer
-      newChild.rightContainer = rightContainer
+      newChild.sideContainer = sideContainer
       newChild.nodePool = nodePool
       newChild.highlights = []
       newChild.statusRows = []
@@ -193,7 +190,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
           box.anchor.set(1, 0.5)
           box.y = (row - (Object.keys(ROW_DETAILS).length - 1) / 2) * 12 + 5
           box.visible = true
-          leftContainer.addChild(box)
+          sideContainer.addChild(box)
           statusRow.push(box)
         }
         newChild.statusRows.push(statusRow)
@@ -303,6 +300,23 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       this.chartDirty = false
     }
 
+    const LEFT_SAFE = -this.renderer.chartManager.app.STAGE_WIDTH / 2
+    const LEFT_MID_SAFE =
+      -this.renderer.chart.gameType.notefieldWidth / 2 +
+      Options.chart.receptorXPos
+    const RIGHT_MID_SAFE =
+      this.renderer.chart.gameType.notefieldWidth / 2 +
+      Options.chart.receptorXPos
+    const RIGHT_SAFE =
+      this.renderer.chartManager.app.STAGE_WIDTH / 2 -
+      (Options.chart.npsGraph.enabled ? 48 : 0) -
+      (Options.chart.noteLayout.enabled ? 48 : 0)
+
+    const LEFT_WIDTH = LEFT_MID_SAFE - LEFT_SAFE
+    const RIGHT_WIDTH = RIGHT_SAFE - RIGHT_MID_SAFE
+
+    const align = LEFT_WIDTH > RIGHT_WIDTH + 100 ? "left" : "right"
+
     // Create all missing rows
     for (let i = 0; i < parityData.notedataRows.length; i++) {
       if (lastBeat < parityData.notedataRows[i - 1]?.beat) break
@@ -326,18 +340,12 @@ export class ParityDebug extends Container implements ChartRendererComponent {
           ).toNumber()
         }
         rowObj.text.tint = tint
-
         rowObj.text.text = i + ""
         rowObj.hitbox.width = rowObj.text.width + 10
         rowObj.hitbox.height = rowObj.text.height + 10
         rowObj.detail.text =
           "Second: " + row.second.toFixed(3) + "\nKey: " + row.id
-        rowObj.detail.x = -rowObj.text.width - 10
         rowObj.detail.tint = rowObj.text.tint
-        rowObj.leftContainer.x =
-          -this.renderer.chart.gameType.notefieldWidth / 2 - 128
-        rowObj.rightContainer.x =
-          this.renderer.chart.gameType.notefieldWidth / 2 + 96
         rowObj.detail.visible = false
         rowObj.highlights.forEach(highlight => {
           highlight.box.destroy()
@@ -544,12 +552,6 @@ export class ParityDebug extends Container implements ChartRendererComponent {
           } else {
             rowObj.statusRows[2][k].visible = false
           }
-          for (let j = 0; j < 3; j++) {
-            rowObj.statusRows[j][k].x =
-              (k - this.renderer.chart.getColumnCount()) * 12 -
-              rowObj.text.width -
-              12
-          }
         }
 
         rowObj.hitbox.on("pointerover", () => {
@@ -616,20 +618,6 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     }
 
     // Update boxes
-    const LEFT_SAFE = -this.renderer.chartManager.app.STAGE_WIDTH / 2
-    const LEFT_MID_SAFE =
-      -this.renderer.chart.gameType.notefieldWidth / 2 +
-      Options.chart.receptorXPos
-    const RIGHT_MID_SAFE =
-      this.renderer.chart.gameType.notefieldWidth / 2 +
-      Options.chart.receptorXPos
-    const RIGHT_SAFE =
-      this.renderer.chartManager.app.STAGE_WIDTH / 2 -
-      (Options.chart.npsGraph.enabled ? 48 : 0) -
-      (Options.chart.noteLayout.enabled ? 48 : 0)
-
-    const LEFT_WIDTH = LEFT_MID_SAFE - LEFT_SAFE
-    const RIGHT_WIDTH = RIGHT_SAFE - RIGHT_MID_SAFE
 
     let i = 0
     const rows = [...this.rowMap.entries()]
@@ -661,7 +649,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       })
       rowObj.y = this.renderer.getYPosFromBeat(row.beat)
 
-      if (LEFT_WIDTH > RIGHT_WIDTH + 100) {
+      if (align == "left") {
         rowObj.nodePool.x =
           (LEFT_MID_SAFE - LEFT_SAFE) / 2 +
           LEFT_SAFE -
@@ -672,7 +660,27 @@ export class ParityDebug extends Container implements ChartRendererComponent {
           RIGHT_MID_SAFE -
           Options.chart.receptorXPos
       }
+      for (let k = 0; k < this.renderer.chart.getColumnCount(); k++) {
+        for (let j = 0; j < 3; j++) {
+          if (align == "right") {
+            rowObj.statusRows[j][k].x =
+              (k - this.renderer.chart.getColumnCount()) * 12 -
+              rowObj.text.width -
+              12
+          } else {
+            rowObj.statusRows[j][k].x = k * 12 + rowObj.text.width + 18
+          }
+        }
+      }
+      rowObj.sideContainer.x =
+        (-this.renderer.chart.gameType.notefieldWidth / 2 - 128) *
+        (align == "left" ? -1 : 1)
+      rowObj.text.anchor.x = align == "left" ? 0 : 1
+      rowObj.hitbox.anchor.x = rowObj.text.anchor.x
       rowObj.nodePool.x /= Options.chart.zoom
+      rowObj.detail.x = (rowObj.text.width + 10) * (align == "left" ? 1 : -1)
+      rowObj.detail.anchor.x = align == "left" ? 0 : 1
+      rowObj.detail.align = align
     }
 
     // Update debug texts
