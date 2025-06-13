@@ -2,7 +2,7 @@ import { Notedata } from "../../sm/NoteTypes"
 import { Foot, Row } from "./ParityDataTypes"
 import { ParityGraphNode } from "./ParityInternals"
 
-export type DebugUpdateData = {
+export type ParityDebugUpdateData = {
   removedRowsStart: number
   removedRowsEnd: number
   newRows: Row[]
@@ -76,7 +76,7 @@ export interface ParityOutboundComputeMessage
   extends ParityBaseOutboundMessage {
   type: "compute"
   parityLabels: Map<string, Foot> | null
-  debug?: DebugUpdateData
+  debug?: ParityDebugUpdateData
 }
 
 export interface ParityInboundGetDebugMessage extends ParityBaseMessage {

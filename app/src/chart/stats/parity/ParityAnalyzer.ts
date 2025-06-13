@@ -1,3 +1,4 @@
+import { WaterfallManager } from "../../../gui/element/WaterfallManager"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
 import { Chart } from "../../sm/Chart"
@@ -11,6 +12,7 @@ import {
 export class ParityAnalyzer extends ChartAnalyzer {
   worker?: Worker
   active = false
+  disabled = false
 
   private pendingJobs = new Map<
     number,
@@ -37,6 +39,7 @@ export class ParityAnalyzer extends ChartAnalyzer {
       (Options.experimental.parity.showDebug ||
         Options.experimental.parity.showGraph)
     ) {
+      if (this.disabled) return
       this.postMessage({
         type: "getDebug",
       })
@@ -63,8 +66,11 @@ export class ParityAnalyzer extends ChartAnalyzer {
     this.workerCalculate(0, this.chart.getLastBeat())
   }
 
+  // We can use a web worker to make sure the page doesn't freeze while calculating parity
+  // This is good for long/complex charts
   workerCalculate(startBeat: number, endBeat: number) {
-    if (!this.active || !Options.experimental.parity.enabled) return
+    if (!this.active || !Options.experimental.parity.enabled || this.disabled)
+      return
     const start = performance.now()
     const notedata = this.chart.getNotedata()
     this.postMessage({
@@ -204,10 +210,17 @@ export class ParityAnalyzer extends ChartAnalyzer {
     this.postMessage({
       type: "init",
       gameType: this.chart.gameType.id,
+    }).catch(error => {
+      WaterfallManager.createFormatted(
+        "Failed to initialize parity worker: " + error,
+        "error"
+      )
+      this.disabled = true
     })
   }
 
   terminateWorker() {
+    this.disabled = false
     this.worker?.terminate()
     this.worker = undefined
     this.pendingJobs.forEach((job, id) => {

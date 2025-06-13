@@ -1,6 +1,9 @@
 // Parity generation algorithm
 // Original algorithm by Jewel, improved by tillvit, improved further by mjvotaw, improved furtherer by tillvit
 
+// This file, ParityDataTypes, ParityCost, and StageLayouts have been written in a way that can
+// be extracted from SMEditor (some chart/note types/functions will need to be recreated)
+
 import { getRangeInSortedArray } from "../../../util/Util"
 import {
   HoldNotedataEntry,
@@ -12,7 +15,7 @@ import { ParityCostCalculator } from "./ParityCost"
 import { FEET, Foot, FootOverride, Row, State } from "./ParityDataTypes"
 import {
   ParityDebugData,
-  DebugUpdateData as ParityDebugUpdateData,
+  ParityDebugUpdateData,
   ParityInboundMessage,
   ParityOutboundComputeMessage,
   ParityOutboundGetDebugMessage,
@@ -940,10 +943,12 @@ export class ParityInternals {
   }
 }
 
-// Web worker to prevent the browser from freezing
+// Web worker stuff
 
 let instance: ParityInternals | undefined
 
+// Initially, we send the entire debug data if requested (off by default unless debug/graph is turned on)
+// This includes the large nodeMap set (which can take a lot to serialize)
 function getDebugData(): ParityDebugData | null {
   if (!instance) {
     return null
@@ -960,6 +965,8 @@ function getDebugData(): ParityDebugData | null {
   }
 }
 
+// Instead of sending the entire debug data, we send only the updated data
+// On first load, the page might freeze on large files, but later edits will be faster
 function getDebugUpdateData(): ParityDebugUpdateData | null {
   if (!instance) {
     return null
