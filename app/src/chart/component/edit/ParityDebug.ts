@@ -82,6 +82,8 @@ export class ParityDebug extends Container implements ChartRendererComponent {
   private lastVisible = false
 
   private debugTexts: DebugObject[] = []
+  private debugContainer: Container = new Container()
+  private debugBG: Sprite = new Sprite(Texture.WHITE)
 
   private connections: Graphics = new Graphics()
 
@@ -209,6 +211,12 @@ export class ParityDebug extends Container implements ChartRendererComponent {
 
     this.addChild(this.connections)
     this.addChild(this.rowPool)
+
+    this.debugBG.anchor.set(0, 1)
+    this.debugBG.alpha = 0.6
+    this.debugBG.tint = 0
+    this.addChild(this.debugBG)
+    this.addChild(this.debugContainer)
     this.rowPool.sortableChildren = true
 
     const parityListener = () => {
@@ -256,7 +264,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
         parityData.stats.pathUpdateTime
       ).toFixed(3)}ms`
     })
-    this.createDebugObject(0xffffff, parityData => {
+    this.createDebugObject(0xeb4034, parityData => {
       return `Serialization time: ${(
         this.renderer.chart.stats.parityDebugTime! -
         (parityData.stats.rowUpdateTime +
@@ -608,13 +616,21 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     }
 
     // Update boxes
-    const LEFT_SAFE =
+    const LEFT_SAFE = -this.renderer.chartManager.app.STAGE_WIDTH / 2
+    const LEFT_MID_SAFE =
+      -this.renderer.chart.gameType.notefieldWidth / 2 +
+      Options.chart.receptorXPos
+    const RIGHT_MID_SAFE =
       this.renderer.chart.gameType.notefieldWidth / 2 +
-      -Options.chart.receptorXPos
+      Options.chart.receptorXPos
     const RIGHT_SAFE =
       this.renderer.chartManager.app.STAGE_WIDTH / 2 -
       (Options.chart.npsGraph.enabled ? 48 : 0) -
       (Options.chart.noteLayout.enabled ? 48 : 0)
+
+    const LEFT_WIDTH = LEFT_MID_SAFE - LEFT_SAFE
+    const RIGHT_WIDTH = RIGHT_SAFE - RIGHT_MID_SAFE
+    console.log(LEFT_SAFE, LEFT_MID_SAFE, RIGHT_MID_SAFE, RIGHT_SAFE)
 
     let i = 0
     const rows = [...this.rowMap.entries()]
@@ -646,7 +662,18 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       })
       rowObj.y = this.renderer.getYPosFromBeat(row.beat)
 
-      rowObj.nodePool.x = (RIGHT_SAFE - LEFT_SAFE) / 2 + LEFT_SAFE
+      if (LEFT_WIDTH > RIGHT_WIDTH + 100) {
+        rowObj.nodePool.x =
+          (LEFT_MID_SAFE - LEFT_SAFE) / 2 +
+          LEFT_SAFE -
+          Options.chart.receptorXPos
+      } else {
+        rowObj.nodePool.x =
+          (RIGHT_SAFE - RIGHT_MID_SAFE) / 2 +
+          RIGHT_MID_SAFE -
+          Options.chart.receptorXPos
+      }
+      rowObj.nodePool.x /= Options.chart.zoom
     }
 
     // Update debug texts
@@ -662,6 +689,15 @@ export class ParityDebug extends Container implements ChartRendererComponent {
         (i - this.debugTexts.length + 1) * 30
       debugObject.visible = Options.experimental.parity.showDebug
     })
+
+    this.debugBG.x =
+      (-this.renderer.chartManager.app.STAGE_WIDTH / 2 -
+        Options.chart.receptorXPos) /
+      Options.chart.zoom
+    this.debugBG.y =
+      this.renderer.chartManager.app.STAGE_HEIGHT / 2 / Options.chart.zoom
+    this.debugBG.width = this.debugContainer.width + 20 / Options.chart.zoom
+    this.debugBG.height = this.debugContainer.height + 15 / Options.chart.zoom
 
     // Create connections
     this.connections.clear()
@@ -775,7 +811,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     debugObject.update = update
 
     this.debugTexts.push(debugObject)
-    this.addChild(debugObject)
+    this.debugContainer.addChild(debugObject)
 
     return debugObject
   }
