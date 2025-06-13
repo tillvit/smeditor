@@ -851,46 +851,6 @@ export class ParityInternals {
     return resultState
   }
 
-  // Computes the final columns (takes old position and applies action, keeping old feet in place)
-  combineColumns(initialState: ParityState, resultState: ParityState) {
-    const combinedColumns: Foot[] = new Array(resultState.action.length).fill(
-      Foot.NONE
-    )
-    // Merge initial + result position
-    for (let i = 0; i < resultState.action.length; i++) {
-      // copy in data from b over the top which overrides it, as long as it's not nothing
-      if (resultState.action[i] != Foot.NONE) {
-        combinedColumns[i] = resultState.action[i]
-        continue
-      }
-
-      // copy in data from a first, if it wasn't moved
-      if (
-        initialState.combinedColumns[i] == Foot.LEFT_HEEL ||
-        initialState.combinedColumns[i] == Foot.RIGHT_HEEL
-      ) {
-        if (!resultState.movedFeet.has(initialState.combinedColumns[i])) {
-          combinedColumns[i] = initialState.combinedColumns[i]
-        }
-      } else if (initialState.combinedColumns[i] == Foot.LEFT_TOE) {
-        if (
-          !resultState.movedFeet.has(Foot.LEFT_TOE) &&
-          !resultState.movedFeet.has(Foot.LEFT_HEEL)
-        ) {
-          combinedColumns[i] = initialState.combinedColumns[i]
-        }
-      } else if (initialState.combinedColumns[i] == Foot.RIGHT_TOE) {
-        if (
-          !resultState.movedFeet.has(Foot.RIGHT_TOE) &&
-          !resultState.movedFeet.has(Foot.RIGHT_HEEL)
-        ) {
-          combinedColumns[i] = initialState.combinedColumns[i]
-        }
-      }
-    }
-    return combinedColumns
-  }
-
   rowToKey(row: Row): string {
     let noteString = ""
     for (let i = 0; i < this.layout.columnCount; i++) {
@@ -993,7 +953,7 @@ function getDebugUpdateData(): ParityDebugUpdateData | null {
       instance.debugStats.lastUpdatedRowEnd
     ),
     newStates: instance.nodeRows.slice(
-      instance.debugStats.lastUpdatedNodeStart + 1,
+      Math.max(0, instance.debugStats.lastUpdatedNodeStart),
       instance.debugStats.lastUpdatedNodeEnd
     ),
     bestPath: instance.bestPath!,

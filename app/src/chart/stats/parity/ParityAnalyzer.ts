@@ -95,6 +95,7 @@ export class ParityAnalyzer extends ChartAnalyzer {
         if (data.debug) {
           // Incrementally recreate the debug data instead of sending it over
           const debugData = this.chart.stats.parityDebug!
+          console.log(data.debug)
 
           const newRows = this.chart.stats
             .parityDebug!.notedataRows.slice(0, data.debug.removedRowsStart)
@@ -108,15 +109,18 @@ export class ParityAnalyzer extends ChartAnalyzer {
               data.debug.removedRowsEnd +
               data.debug.removedRowsStart)
           const removedStates = debugData.nodeRows.slice(
-            data.debug.removedRowsStart,
+            Math.max(data.debug.removedRowsStart - 1, 0),
             statesToRemove
           )
           const newStates = this.chart.stats
-            .parityDebug!.nodeRows.slice(0, data.debug.removedRowsStart)
+            .parityDebug!.nodeRows.slice(
+              0,
+              Math.max(0, data.debug.removedRowsStart - 1)
+            )
             .concat(data.debug.newStates)
             .concat(
               debugData.nodeRows.slice(
-                data.debug.removedRowsStart + statesToRemove
+                Math.max(0, data.debug.removedRowsStart - 1 + statesToRemove)
               )
             )
 
