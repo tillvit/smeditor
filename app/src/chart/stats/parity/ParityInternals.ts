@@ -1,16 +1,23 @@
 // Parity generation algorithm
 // Original algorithm by Jewel, improved by tillvit, improved further by mjvotaw, improved furtherer by tillvit
 
-import { EventHandler } from "../../../util/EventHandler"
 import { getRangeInSortedArray } from "../../../util/Util"
-import { Chart } from "../../sm/Chart"
 import {
   HoldNotedataEntry,
+  Notedata,
   NotedataEntry,
   isHoldNote,
 } from "../../sm/NoteTypes"
 import { ParityCostCalculator } from "./ParityCost"
 import { FEET, Foot, FootOverride, Row, State } from "./ParityDataTypes"
+import {
+  ParityDebugData,
+  DebugUpdateData as ParityDebugUpdateData,
+  ParityInboundMessage,
+  ParityOutboundComputeMessage,
+  ParityOutboundGetDebugMessage,
+  ParityOutboundInitMessage,
+} from "./ParityWebWorkerTypes"
 import { STAGE_LAYOUTS, StageLayout } from "./StageLayouts"
 
 const SECOND_EPSILON = 0.0005
@@ -32,8 +39,7 @@ export class ParityGraphNode {
 }
 
 export class ParityInternals {
-  private readonly chart: Chart
-  readonly costCalc: ParityCostCalculator
+  private readonly costCalc: ParityCostCalculator
   private readonly layout: StageLayout
 
   private readonly initialRow = {
@@ -62,8 +68,8 @@ export class ParityInternals {
   }
 
   // Start and end nodes of the graph
-  readonly initialNode: ParityGraphNode
-  readonly endNode: ParityGraphNode
+  private readonly initialNode: ParityGraphNode
+  private readonly endNode: ParityGraphNode
 
   // Rows are identified by keys (includes beat/second/other data)
   // If two rows have the same key, they are considered the same row
@@ -93,6 +99,7 @@ export class ParityInternals {
 
   debugStats = {
     lastUpdatedRowStart: -1,
+    lastUpdatedOldRowEnd: -1,
     lastUpdatedRowEnd: -1,
     rowUpdateTime: 0,
     lastUpdatedNodeStart: -1,
@@ -110,11 +117,14 @@ export class ParityInternals {
   notedataRows: Row[] = []
   nodeRows: { beat: number; nodes: ParityGraphNode[] }[] = []
 
-  constructor(chart: Chart) {
+  constructor(gameType: string) {
     this.notedataRows = []
-    this.chart = chart
-    this.layout = STAGE_LAYOUTS[chart.gameType.id]
-    this.costCalc = new ParityCostCalculator(chart.gameType.id)
+    this.layout = STAGE_LAYOUTS[gameType]
+    if (!this.layout) {
+      throw new Error(`Unsupported game type: ${gameType}`)
+    }
+
+    this.costCalc = new ParityCostCalculator(gameType)
     this.initialNode = new ParityGraphNode(
       new State(this.initialRow, [], new Array(5).fill(-1))
     )
@@ -123,15 +133,16 @@ export class ParityInternals {
     )
   }
 
-  compute(startBeat: number, endBeat: number) {
-    if (this.layout == undefined) return
-    const updatedRows = this.recalculateRows(startBeat, endBeat)
+  compute(startBeat: number, endBeat: number, notedata: Notedata) {
+    if (this.layout == undefined) return null
+    const updatedRows = this.recalculateRows(startBeat, endBeat, notedata)
     const updatedStates = this.recalculateStates(updatedRows)
     const updatedCost = this.computeCosts(updatedStates)
     this.computeBestPath(updatedCost)
 
     // Prune edge cache if too big
-    if (this.edgeCacheSize > this.nEdges * 2) {
+    const shouldPruneEdgeCache = this.edgeCacheSize > this.nEdges * 2
+    if (shouldPruneEdgeCache) {
       this.edgeCacheSize = 0
       const newCache = new Map<string, Map<string, { [id: string]: number }>>()
       for (const nodeRow of this.nodeRows) {
@@ -154,37 +165,38 @@ export class ParityInternals {
       this.cachedLowestCost.clear()
     }
 
-    if (this.bestPath) {
-      // assign notes
-      this.notedataRows.forEach((row, idx) => {
-        const bestOption = this.nodeMap.get(this.bestPath![idx + 1])!
-        bestOption.state.combinedColumns.forEach((foot, col) => {
-          if (foot == Foot.NONE) return
-          if (!row.notes[col]) return
-          if (!row.notes[col].parity) {
-            row.notes[col].parity = {}
-          }
-          row.notes[col].parity.foot = foot
-        })
-      })
+    if (!this.bestPath) {
+      return null
     }
 
-    EventHandler.emit("parityModified")
+    const labels = new Map<string, Foot>()
+
+    this.notedataRows.forEach((row, idx) => {
+      const bestOption = this.nodeMap.get(this.bestPath![idx + 1])!
+      bestOption.state.combinedColumns.forEach((foot, col) => {
+        if (foot == Foot.NONE) return
+        if (!row.notes[col]) return
+        labels.set(row.notes[col].beat.toFixed(3) + "-" + col, foot)
+      })
+    })
+
+    return labels
   }
 
   // Regenerates the rows for the given range of beats.
-  recalculateRows(startBeat: number, endBeat: number) {
+  recalculateRows(startBeat: number, endBeat: number, notedata: Notedata) {
     const rowTimeStart = performance.now()
 
     // Remove previous rows in the range
-    const [startIdx, endIdx] = getRangeInSortedArray(
+    const range = getRangeInSortedArray(
       this.notedataRows,
       Math.round(startBeat * 48), // prevent rounding errors
       Math.round(endBeat * 48),
       a => Math.round(a.beat * 48)
     )
+    const startIdx = range[0]
+    let endIdx = range[1]
 
-    const notedata = this.chart.getNotedata()
     const [noteStartIdx, noteEndIdx] = getRangeInSortedArray(
       notedata,
       Math.round(startBeat * 48),
@@ -357,19 +369,22 @@ export class ParityInternals {
       rows.at(-1)!.id = this.rowToKey(rows.at(-1)!)
     }
 
-    this.debugStats.lastUpdatedRowStart = startIdx
-    this.debugStats.lastUpdatedRowEnd = startIdx + rows.length
-
     // Update the next row if needed
     if (this.notedataRows[endIdx]) {
       this.notedataRows[endIdx].mines = mines
       this.notedataRows[endIdx].fakeMines = fakeMines
       const oldID = this.notedataRows[endIdx].id
       this.notedataRows[endIdx].id = this.rowToKey(this.notedataRows[endIdx])
+
       if (oldID != this.notedataRows[endIdx].id) {
-        this.debugStats.lastUpdatedRowEnd++
+        rows.push(this.notedataRows[endIdx])
+        endIdx++
       }
     }
+
+    this.debugStats.lastUpdatedRowStart = startIdx
+    this.debugStats.lastUpdatedOldRowEnd = endIdx
+    this.debugStats.lastUpdatedRowEnd = startIdx + rows.length
 
     // Clear old node rows
 
@@ -575,9 +590,10 @@ export class ParityInternals {
 
     // We can reuse the shortest paths up to the first updated edge
     // Unforunately, we can't reuse anything after that (at least i think so)
-    const newNodes = new Map<string, number>()
+    const rowNodes = new Map<string, number>()
 
     while (rowIndex < this.notedataRows.length) {
+      rowNodes.clear()
       const nodes = this.nodeRows[rowIndex]?.nodes ?? [this.initialNode]
       for (const node of nodes) {
         const currentCost = this.cachedLowestCost.get(node.key)?.cost
@@ -593,13 +609,13 @@ export class ParityInternals {
           })
         }
         for (const [child, costs] of node.children.entries()) {
-          const oldCost = newNodes.get(child)
+          const oldCost = rowNodes.get(child)
           if (oldCost === undefined || currentCost + costs["TOTAL"] < oldCost) {
             this.cachedLowestCost.set(child, {
               cost: currentCost + costs["TOTAL"],
               path: this.cachedLowestCost.get(node.key)!.path + "*" + child,
             })
-            newNodes.set(child, currentCost + costs["TOTAL"])
+            rowNodes.set(child, currentCost + costs["TOTAL"])
           }
         }
         if (rowIndex == this.notedataRows.length - 1) {
@@ -815,66 +831,6 @@ export class ParityInternals {
           Foot.RIGHT_TOE
       }
     }
-
-    // }
-
-    //   // copy in data from b over the top which overrides it, as long as it's not nothing
-    //   if (columns[i] != Foot.NONE) {
-    //     combinedColumns[i] = resultState.action[i]
-    //     continue
-    //   }
-
-    //   // copy in data from a first, if it wasn't moved
-    //   if (
-    //     initialState.combinedColumns[i] == Foot.LEFT_HEEL ||
-    //     initialState.combinedColumns[i] == Foot.RIGHT_HEEL
-    //   ) {
-    //     if (!resultState.movedFeet.has(initialState.combinedColumns[i])) {
-    //       combinedColumns[i] = initialState.combinedColumns[i]
-    //     }
-    //   } else if (initialState.combinedColumns[i] == Foot.LEFT_TOE) {
-    //     if (
-    //       !resultState.movedFeet.has(Foot.LEFT_TOE) &&
-    //       !resultState.movedFeet.has(Foot.LEFT_HEEL)
-    //     ) {
-    //       combinedColumns[i] = initialState.combinedColumns[i]
-    //     }
-    //   } else if (initialState.combinedColumns[i] == Foot.RIGHT_TOE) {
-    //     if (
-    //       !resultState.movedFeet.has(Foot.RIGHT_TOE) &&
-    //       !resultState.movedFeet.has(Foot.RIGHT_HEEL)
-    //     ) {
-    //       combinedColumns[i] = initialState.combinedColumns[i]
-    //     }
-    //   }
-
-    // for (let i = 0; i < this.layout.columnCount; i++) {
-    //   resultState.combinedColumns.push(Foot.NONE)
-    //   if (columns[i] == undefined || columns[i] == Foot.NONE) {
-    //     continue
-    //   }
-
-    //   if (row.holds[i] == undefined) {
-    //     resultState.movedFeet.add(columns[i])
-    //   } else if (initialState.combinedColumns[i] != columns[i]) {
-    //     resultState.movedFeet.add(columns[i])
-    //   }
-    //   if (row.holds[i] != undefined) {
-    //     resultState.holdFeet.add(columns[i])
-    //   }
-    // }
-
-    // if (resultState.movedFeet.has(Foot.LEFT_HEEL)) {
-    //   resultState.footPlacement.leftHeel = row.notes.findIndex(
-    //     note => note?.parity?.foot == Foot.LEFT_HEEL
-    //   )
-    // } else {
-    //   resultState.footPlacement.leftHeel = initialState.footPlacement.leftHeel
-    //   resultState.footPlacement.leftToe = initialState.footPlacement.leftToe
-    // }
-
-    // resultState.combinedColumns = this.combineColumns(initialState, resultState)
-
     return resultState
   }
 
@@ -981,5 +937,133 @@ export class ParityInternals {
     this.nodeRows = []
     this.notedataRows = []
     this.deleteCache()
+  }
+}
+
+// Web worker to prevent the browser from freezing
+
+let instance: ParityInternals | undefined
+
+function getDebugData(): ParityDebugData | null {
+  if (!instance) {
+    return null
+  }
+  return {
+    edgeCacheSize: instance.edgeCacheSize,
+    nodeMap: instance.nodeMap,
+    bestPath: instance.bestPath!,
+    bestPathCost: instance.bestPathCost,
+    bestPathSet: instance.bestPathSet!,
+    notedataRows: instance.notedataRows,
+    nodeRows: instance.nodeRows,
+    stats: instance.debugStats,
+  }
+}
+
+function getDebugUpdateData(): ParityDebugUpdateData | null {
+  if (!instance) {
+    return null
+  }
+  return {
+    removedRowsStart: instance.debugStats.lastUpdatedRowStart,
+    removedRowsEnd: instance.debugStats.lastUpdatedOldRowEnd,
+    newRows: instance.notedataRows.slice(
+      instance.debugStats.lastUpdatedRowStart,
+      instance.debugStats.lastUpdatedRowEnd
+    ),
+    newStates: instance.nodeRows.slice(
+      instance.debugStats.lastUpdatedNodeStart + 1,
+      instance.debugStats.lastUpdatedNodeEnd
+    ),
+    bestPath: instance.bestPath!,
+    bestPathCost: instance.bestPathCost,
+    bestPathSet: instance.bestPathSet!,
+    edgeCacheSize: instance.edgeCacheSize,
+    stats: instance.debugStats,
+  }
+}
+
+self.onmessage = (e: MessageEvent<ParityInboundMessage>) => {
+  switch (e.data.type) {
+    case "init":
+      if (instance) {
+        postMessage({
+          type: "init",
+          id: e.data.id,
+          success: false,
+          error: "Instance already initialized",
+        } satisfies ParityOutboundInitMessage)
+        return
+      }
+      try {
+        instance = new ParityInternals(e.data.gameType)
+        postMessage({
+          type: "init",
+          id: e.data.id,
+          success: true,
+        } satisfies ParityOutboundInitMessage)
+      } catch (error) {
+        postMessage({
+          type: "init",
+          id: e.data.id,
+          success: false,
+          error: (error as Error).message,
+        } satisfies ParityOutboundInitMessage)
+      }
+      break
+    case "compute": {
+      if (!instance) {
+        postMessage({
+          type: "compute",
+          id: e.data.id,
+          success: false,
+          error: "Instance not initialized",
+          parityLabels: null,
+        } satisfies ParityOutboundComputeMessage)
+        return
+      }
+      const result = instance.compute(
+        e.data.startBeat,
+        e.data.endBeat,
+        e.data.notedata
+      )
+      if (!result) {
+        postMessage({
+          type: "compute",
+          id: e.data.id,
+          success: false,
+          error: "No path found",
+          parityLabels: null,
+        } satisfies ParityOutboundComputeMessage)
+        return
+      }
+      postMessage({
+        type: "compute",
+        id: e.data.id,
+        success: true,
+        parityLabels: result,
+        debug: e.data.debug ? getDebugUpdateData()! : undefined,
+      } satisfies ParityOutboundComputeMessage)
+      break
+    }
+    case "getDebug": {
+      if (!instance) {
+        postMessage({
+          type: "getDebug",
+          id: e.data.id,
+          success: false,
+          error: "Instance not initialized",
+          data: null,
+        } satisfies ParityOutboundGetDebugMessage)
+        return
+      }
+      postMessage({
+        type: "getDebug",
+        id: e.data.id,
+        success: true,
+        data: getDebugData(),
+      } satisfies ParityOutboundGetDebugMessage)
+      break
+    }
   }
 }

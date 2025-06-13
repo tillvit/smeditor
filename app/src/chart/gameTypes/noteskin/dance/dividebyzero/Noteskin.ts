@@ -8,7 +8,7 @@ import { BezierAnimator } from "../../../../../util/BezierEasing"
 
 import { NoteFlashContainer } from "./NoteFlash"
 
-import { splitTex } from "../../../../../util/Util"
+import { splitTex } from "../../../../../util/PixiUtil"
 
 import rollBodyUrl from "./rollBody.png"
 

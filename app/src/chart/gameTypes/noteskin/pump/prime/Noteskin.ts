@@ -6,7 +6,7 @@ import { NoteRenderer } from "./NoteRenderer"
 
 import receptorsUrl from "./receptors.png"
 
-import { splitTex } from "../../../../../util/Util"
+import { splitTex } from "../../../../../util/PixiUtil"
 import { AnimatedHoldBody } from "../../_template/HoldBody"
 import { AnimatedHoldTail } from "../../_template/HoldTail"
 import { NoteFlashContainer } from "./NoteFlash"

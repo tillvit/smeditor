@@ -9,7 +9,7 @@ import {
 import { Options } from "../../../../../util/Options"
 
 import { App } from "../../../../../App"
-import { splitTex } from "../../../../../util/Util"
+import { splitTex } from "../../../../../util/PixiUtil"
 import { NotedataEntry } from "../../../../sm/NoteTypes"
 
 import tapCenterUrl from "./tapCenter.png"

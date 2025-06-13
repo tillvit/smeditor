@@ -10,7 +10,7 @@ import { colorFallback } from "../../../util/Color"
 import { EventHandler } from "../../../util/EventHandler"
 import { clamp } from "../../../util/Math"
 import { Options } from "../../../util/Options"
-import { destroyChildIf } from "../../../util/Util"
+import { destroyChildIf } from "../../../util/PixiUtil"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import { TimingData } from "../../sm/TimingData"
 import {

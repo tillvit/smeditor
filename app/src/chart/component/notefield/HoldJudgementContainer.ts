@@ -1,6 +1,5 @@
 import { Assets, Container, Rectangle, Sprite, Texture } from "pixi.js"
 import holdJudgementUrl from "../../../../assets/judgement/hold_judgement.png"
-import { destroyChildIf } from "../../../util/Util"
 import { TimingWindow } from "../../play/TimingWindow"
 import {
   isHoldDroppedTimingWindow,
@@ -8,6 +7,7 @@ import {
 } from "../../play/TimingWindowCollection"
 
 import { Options } from "../../../util/Options"
+import { destroyChildIf } from "../../../util/PixiUtil"
 import { Notefield } from "./Notefield"
 
 interface HoldJudgementObject extends Sprite {

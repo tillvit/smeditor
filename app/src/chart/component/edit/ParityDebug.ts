@@ -14,7 +14,7 @@ import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import { FEET_LABELS, Foot, Row } from "../../stats/parity/ParityDataTypes"
-import { ParityInternals } from "../../stats/parity/ParityInternals"
+import { ParityDebugData } from "../../stats/parity/ParityWebWorkerTypes"
 
 interface ConnectionObject extends Container {
   text: BitmapText
@@ -32,7 +32,7 @@ interface NodeObject extends Container {
 
 interface DebugObject extends Container {
   text: BitmapText
-  update: (parityData: ParityInternals) => string
+  update: (parityData: ParityDebugData) => string
 }
 
 interface RowObject extends Container {
@@ -213,7 +213,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
 
     const parityListener = () => {
       this.debugTexts.forEach(debugObject => {
-        const parityData = this.renderer.chart.stats.parity
+        const parityData = this.renderer.chart.stats.parityDebug
         if (!parityData) return
         debugObject.text.text = debugObject.update(parityData)
       })
@@ -234,26 +234,35 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     }
 
     this.createDebugObject(0xff85d2, parityData => {
-      return `Updated ${parityData.debugStats.lastUpdatedRowEnd - parityData.debugStats.lastUpdatedRowStart} rows in ${parityData.debugStats.rowUpdateTime.toFixed(3)}ms`
+      return `Updated ${parityData.stats.lastUpdatedRowEnd - parityData.stats.lastUpdatedRowStart} rows in ${parityData.stats.rowUpdateTime.toFixed(3)}ms`
     })
 
     this.createDebugObject(0xa8ff6e, parityData => {
-      return `Created ${parityData.debugStats.createdNodes} nodes and ${parityData.debugStats.createdEdges} edges in ${parityData.debugStats.nodeUpdateTime.toFixed(3)}ms`
+      return `Created ${parityData.stats.createdNodes} nodes and ${parityData.stats.createdEdges} edges in ${parityData.stats.nodeUpdateTime.toFixed(3)}ms`
     })
 
     this.createDebugObject(0x63c9ff, parityData => {
-      return `Calculated ${parityData.debugStats.calculatedEdges} costs (${parityData.debugStats.cachedEdges} cached) in ${parityData.debugStats.edgeUpdateTime.toFixed(3)}ms (cache size ${parityData.edgeCacheSize})`
+      return `Calculated ${parityData.stats.calculatedEdges} costs (${parityData.stats.cachedEdges} cached) in ${parityData.stats.edgeUpdateTime.toFixed(3)}ms (cache size ${parityData.edgeCacheSize})`
     })
 
     this.createDebugObject(0xff9a5c, parityData => {
-      return `Found best path in ${parityData.debugStats.pathUpdateTime.toFixed(3)}ms (cached ${parityData.debugStats.cachedBestRows} rows)`
+      return `Found best path in ${parityData.stats.pathUpdateTime.toFixed(3)}ms (cached ${parityData.stats.cachedBestRows} rows)`
     })
     this.createDebugObject(0xffffff, parityData => {
-      return `Total time: ${(
-        parityData.debugStats.rowUpdateTime +
-        parityData.debugStats.nodeUpdateTime +
-        parityData.debugStats.edgeUpdateTime +
-        parityData.debugStats.pathUpdateTime
+      return `Total calculation time: ${(
+        parityData.stats.rowUpdateTime +
+        parityData.stats.nodeUpdateTime +
+        parityData.stats.edgeUpdateTime +
+        parityData.stats.pathUpdateTime
+      ).toFixed(3)}ms`
+    })
+    this.createDebugObject(0xffffff, parityData => {
+      return `Serialization time: ${(
+        this.renderer.chart.stats.parityDebugTime! -
+        (parityData.stats.rowUpdateTime +
+          parityData.stats.nodeUpdateTime +
+          parityData.stats.edgeUpdateTime +
+          parityData.stats.pathUpdateTime)
       ).toFixed(3)}ms`
     })
 
@@ -268,7 +277,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
   }
 
   update(firstBeat: number, lastBeat: number) {
-    const parityData = this.renderer.chart.stats.parity!
+    const parityData = this.renderer.chart.stats.parityDebug!
     this.visible = !!parityData && Options.experimental.parity.enabled
     if (!this.visible) {
       if (this.lastVisible != this.visible) {
@@ -297,8 +306,8 @@ export class ParityDebug extends Container implements ChartRendererComponent {
         const rowObj = this.rowPool.createChild()
         if (!rowObj) break
         let tint =
-          i >= parityData.debugStats.lastUpdatedRowStart &&
-          i < parityData.debugStats.lastUpdatedRowEnd
+          i >= parityData.stats.lastUpdatedRowStart &&
+          i < parityData.stats.lastUpdatedRowEnd
             ? 0xff85d2
             : 0xaf77d1
         if (hasOverrides) {
@@ -352,8 +361,8 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               let tint = 0xaf77d1
               bg.alpha = 0.2
               if (
-                i >= parityData.debugStats.lastUpdatedNodeStart &&
-                i < parityData.debugStats.lastUpdatedNodeEnd
+                i >= parityData.stats.lastUpdatedNodeStart &&
+                i < parityData.stats.lastUpdatedNodeEnd
               ) {
                 tint = 0x225900
                 bg.alpha = 0.6
@@ -425,23 +434,22 @@ export class ParityDebug extends Container implements ChartRendererComponent {
 
                 connection.on("pointerover", () => {
                   connection.text.text =
-                    JSON.stringify(
-                      {
-                        ...parityData.costCalc.getPlacementData(
-                          node.state,
-                          parityData.nodeMap.get(outKey)!.state,
-                          parityData.notedataRows[i - 1],
-                          row
-                        ),
-                        resultState: "...",
-                        initialState: "...",
-                      },
-                      null,
-                      2
-                    ) +
-                    "\n" +
-                    JSON.stringify(outValue, null, 2) +
-                    "\n"
+                    // JSON.stringify(
+                    //   {
+                    //     ...parityData.costCalc.getPlacementData(
+                    //       node.state,
+                    //       parityData.nodeMap.get(outKey)!.state,
+                    //       parityData.notedataRows[i - 1],
+                    //       row
+                    //     ),
+                    //     resultState: "...",
+                    //     initialState: "...",
+                    //   },
+                    //   null,
+                    //   2
+                    // ) +
+                    // "\n" +
+                    JSON.stringify(outValue, null, 2) + "\n"
                   connection.scale.set(1.2)
                   connection.bg.visible = true
                   connection.bg.width = connection.text.width + 10
@@ -677,8 +685,8 @@ export class ParityDebug extends Container implements ChartRendererComponent {
             let color = 0xaf77d1
             let width = 1.5
             if (
-              i >= parityData.debugStats.lastUpdatedNodeStart &&
-              i < parityData.debugStats.lastUpdatedNodeEnd
+              i >= parityData.stats.lastUpdatedNodeStart &&
+              i < parityData.stats.lastUpdatedNodeEnd
             ) {
               color = 0x00ff00
             }
@@ -754,7 +762,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
 
   createDebugObject(
     tint: number,
-    update: (parityData: ParityInternals) => string
+    update: (parityData: ParityDebugData) => string
   ): DebugObject {
     const debugObject = new Container() as DebugObject
     debugObject.text = new BitmapText("", {

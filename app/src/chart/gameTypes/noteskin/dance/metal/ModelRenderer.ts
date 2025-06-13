@@ -27,7 +27,7 @@ import arrowFrameGeomText from "./tap/frame.txt?raw"
 
 import { App } from "../../../../../App"
 import { Options } from "../../../../../util/Options"
-import { loadGeometry } from "../../../../../util/Util"
+import { loadGeometry } from "../../../../../util/PixiUtil"
 import { NotedataEntry } from "../../../../sm/NoteTypes"
 import liftBodyGeomText from "./lift/body.txt?raw"
 import mineBodyGeomText from "./mine/body.txt?raw"
