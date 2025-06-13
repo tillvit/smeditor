@@ -91,6 +91,7 @@ export class ParityAnalyzer extends ChartAnalyzer {
             note.parity.foot = foot
           }
         })
+        this.chart.stats.parityStates = data.bestStates!
         if (data.debug) {
           // Incrementally recreate the debug data instead of sending it over
           const debugData = this.chart.stats.parityDebug!

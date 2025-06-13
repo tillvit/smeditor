@@ -1,5 +1,5 @@
 import { Notedata } from "../../sm/NoteTypes"
-import { Foot, Row } from "./ParityDataTypes"
+import { Foot, ParityState, Row } from "./ParityDataTypes"
 import { ParityGraphNode } from "./ParityInternals"
 
 export type ParityDebugUpdateData = {
@@ -76,6 +76,7 @@ export interface ParityOutboundComputeMessage
   extends ParityBaseOutboundMessage {
   type: "compute"
   parityLabels: Map<string, Foot> | null
+  bestStates: ParityState[] | null
   debug?: ParityDebugUpdateData
 }
 

@@ -60,8 +60,8 @@ export interface PlacementData {
   leftDoubleStep: boolean
   rightDoubleStep: boolean
 
-  initialState: State
-  resultState: State
+  initialState: ParityState
+  resultState: ParityState
 }
 
 export const ZERO_WEIGHT: { [key: string]: number } = {
@@ -144,7 +144,7 @@ export enum TechCountsCategory {
 
 export const TECH_COUNTS = ["XO", "FS", "SS", "JA", "BR", "DS"]
 
-export class State {
+export class ParityState {
   action: Foot[] = []
   combinedColumns: Foot[] = []
   movedFeet: Set<Foot> = new Set()

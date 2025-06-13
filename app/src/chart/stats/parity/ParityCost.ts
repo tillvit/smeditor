@@ -2,9 +2,9 @@ import {
   DEFAULT_WEIGHTS,
   Foot,
   OTHER_PART_OF_FOOT,
+  ParityState,
   PlacementData,
   Row,
-  State,
 } from "./ParityDataTypes"
 
 import { STAGE_LAYOUTS, StageLayout } from "./StageLayouts"
@@ -31,8 +31,8 @@ export class ParityCostCalculator {
   }
 
   getPlacementData(
-    initialState: State,
-    resultState: State,
+    initialState: ParityState,
+    resultState: ParityState,
     lastRow: Row,
     row: Row
   ): PlacementData {
@@ -144,8 +144,8 @@ export class ParityCostCalculator {
   }
 
   getActionCost(
-    initialState: State,
-    resultState: State,
+    initialState: ParityState,
+    resultState: ParityState,
     rows: Row[],
     rowIndex: number
   ): { [id: string]: number } {
@@ -383,8 +383,8 @@ export class ParityCostCalculator {
 
   // Old "OTHER" cost
   calcMovingFootWhileOtherIsntOnPadCost(
-    initialState: State,
-    resultState: State
+    initialState: ParityState,
+    resultState: ParityState
   ) {
     let cost = 0
 

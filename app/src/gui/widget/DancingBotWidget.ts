@@ -24,7 +24,7 @@ import { bsearch } from "../../util/Util"
 import footUrl from "../../../assets/foot.png"
 import receptorUrl from "../../../assets/receptor.png"
 import { PARITY_COLORS } from "../../chart/component/edit/ParityDebug"
-import { Foot, State } from "../../chart/stats/parity/ParityDataTypes"
+import { Foot, ParityState } from "../../chart/stats/parity/ParityDataTypes"
 import { Options } from "../../util/Options"
 
 interface StagePanel extends Container {
@@ -148,7 +148,7 @@ export class DancingBotWidget extends Widget {
   }
 
   reindex() {
-    const parity = this.manager.app.chartManager.loadedChart?.stats.parity
+    const parity = this.manager.app.chartManager.loadedChart?.stats.parityDebug
     if (!parity || !this.manager.app.chartManager.chartView) return
     const visualBeat = this.manager.app.chartManager.chartView.getVisualBeat()
     const currentIndex = bsearch(parity.notedataRows, visualBeat, a => a.beat)
@@ -160,7 +160,8 @@ export class DancingBotWidget extends Widget {
   }
 
   update(): void {
-    const parity = this.manager.app.chartManager.loadedChart?.stats.parity
+    const bestPath =
+      this.manager.app.chartManager.loadedChart?.stats.parityStates
 
     const RIGHT_SAFE =
       this.manager.chartManager.app.STAGE_WIDTH / 2 -
@@ -170,7 +171,7 @@ export class DancingBotWidget extends Widget {
     this.y = this.manager.app.STAGE_HEIGHT / 2 - 16
 
     if (
-      !parity ||
+      !bestPath ||
       !this.manager.app.chartManager.chartView ||
       !this.layout ||
       !Options.experimental.parity.enabled ||
@@ -193,10 +194,11 @@ export class DancingBotWidget extends Widget {
     if (visualBeat < this.lastBeat) {
       this.reindex()
     } else {
-      while (parity.notedataRows[this.currentRow + 1]?.beat <= visualBeat) {
+      while (bestPath[this.currentRow + 1]?.beat <= visualBeat) {
         this.currentRow++
-        const row = parity.notedataRows[this.currentRow]
-        row.notes.forEach((_, i) => {
+        const row = bestPath[this.currentRow]
+        row.action.forEach((col, i) => {
+          if (row.holdFeet.has(i) || !col) return
           this.flashPanel(i)
         })
       }
@@ -204,13 +206,13 @@ export class DancingBotWidget extends Widget {
 
     this.lastBeat = visualBeat
 
-    if (parity.bestPath && this.leftFoot && this.rightFoot) {
-      const oldState =
-        parity.nodeMap.get(parity.bestPath[this.currentRow + 1])?.state ??
-        parity.initialNode.state
-      const newState =
-        parity.nodeMap.get(parity.bestPath[this.currentRow + 2])?.state ??
-        parity.endNode.state
+    if (this.leftFoot && this.rightFoot) {
+      let oldState = bestPath[this.currentRow]
+      const newState = bestPath[this.currentRow + 1] ?? bestPath.at(-2)
+      if (bestPath.at(-1) == oldState) {
+        oldState = bestPath.at(-2)!
+      }
+
       if (oldState) {
         const oldPosition = this.getFeetPosition(oldState)
         const nextPosition = this.getFeetPosition(newState)
@@ -277,15 +279,7 @@ export class DancingBotWidget extends Widget {
     }
   }
 
-  getState(idx: number) {
-    const parity = this.manager.app.chartManager.loadedChart!.stats.parity!
-    if (idx == -1) return parity.initialNode.state
-    return (
-      parity.nodeMap.get(parity.bestPath![idx])?.state ?? parity.endNode.state
-    )
-  }
-
-  getFeetPosition(state: State): FeetPosition {
+  getFeetPosition(state: ParityState): FeetPosition {
     const leftPos = {
       x: this.panels[state.footColumns[Foot.LEFT_HEEL]]?.position.x ?? 0,
       y: this.panels[state.footColumns[Foot.LEFT_HEEL]]?.position.y ?? 0,
@@ -390,7 +384,7 @@ export class DancingBotWidget extends Widget {
     positionA: FeetPosition,
     positionB: FeetPosition,
     t: number,
-    state: State
+    state: ParityState
   ): FeetPosition {
     const movedLeft = state.movedFeet.has(Foot.LEFT_HEEL)
     const movedRight = state.movedFeet.has(Foot.RIGHT_HEEL)

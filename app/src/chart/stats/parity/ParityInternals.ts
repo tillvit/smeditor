@@ -12,7 +12,7 @@ import {
   isHoldNote,
 } from "../../sm/NoteTypes"
 import { ParityCostCalculator } from "./ParityCost"
-import { FEET, Foot, FootOverride, Row, State } from "./ParityDataTypes"
+import { FEET, Foot, FootOverride, ParityState, Row } from "./ParityDataTypes"
 import {
   ParityDebugData,
   ParityDebugUpdateData,
@@ -28,10 +28,10 @@ const SECOND_EPSILON = 0.0005
 export class ParityGraphNode {
   children: Map<string, { [id: string]: number }> = new Map()
 
-  state: State
+  state: ParityState
   key: string
 
-  constructor(state: State, key?: string) {
+  constructor(state: ParityState, key?: string) {
     this.state = state
     if (key) {
       this.key = key
@@ -129,10 +129,10 @@ export class ParityInternals {
 
     this.costCalc = new ParityCostCalculator(gameType)
     this.initialNode = new ParityGraphNode(
-      new State(this.initialRow, [], new Array(5).fill(-1))
+      new ParityState(this.initialRow, [], new Array(5).fill(-1))
     )
     this.endNode = new ParityGraphNode(
-      new State(this.endRow, [], new Array(5).fill(-1))
+      new ParityState(this.endRow, [], new Array(5).fill(-1))
     )
   }
 
@@ -183,7 +183,13 @@ export class ParityInternals {
       })
     })
 
-    return labels
+    const states = this.bestPath.map((key, i) => {
+      if (i == 0) return this.initialNode.state
+      if (i == this.bestPath!.length - 1) return this.endNode.state
+      return this.nodeMap.get(key)!.state
+    })
+
+    return { labels, states }
   }
 
   // Regenerates the rows for the given range of beats.
@@ -773,8 +779,16 @@ export class ParityInternals {
   }
 
   // Creates the resulting state after applying the action to the initial state
-  initResultState(initialState: State, row: Row, action: Foot[]): State {
-    const resultState: State = new State(row, action, new Array(5).fill(-1))
+  initResultState(
+    initialState: ParityState,
+    row: Row,
+    action: Foot[]
+  ): ParityState {
+    const resultState: ParityState = new ParityState(
+      row,
+      action,
+      new Array(5).fill(-1)
+    )
 
     // Merge initial + result position
     for (let i = 0; i < this.layout.columnCount; i++) {
@@ -838,7 +852,7 @@ export class ParityInternals {
   }
 
   // Computes the final columns (takes old position and applies action, keeping old feet in place)
-  combineColumns(initialState: State, resultState: State) {
+  combineColumns(initialState: ParityState, resultState: ParityState) {
     const combinedColumns: Foot[] = new Array(resultState.action.length).fill(
       Foot.NONE
     )
@@ -1026,6 +1040,7 @@ self.onmessage = (e: MessageEvent<ParityInboundMessage>) => {
           success: false,
           error: "Instance not initialized",
           parityLabels: null,
+          bestStates: null,
         } satisfies ParityOutboundComputeMessage)
         return
       }
@@ -1041,6 +1056,7 @@ self.onmessage = (e: MessageEvent<ParityInboundMessage>) => {
           success: false,
           error: "No path found",
           parityLabels: null,
+          bestStates: null,
         } satisfies ParityOutboundComputeMessage)
         return
       }
@@ -1048,7 +1064,8 @@ self.onmessage = (e: MessageEvent<ParityInboundMessage>) => {
         type: "compute",
         id: e.data.id,
         success: true,
-        parityLabels: result,
+        parityLabels: result.labels,
+        bestStates: result.states,
         debug: e.data.debug ? getDebugUpdateData()! : undefined,
       } satisfies ParityOutboundComputeMessage)
       break

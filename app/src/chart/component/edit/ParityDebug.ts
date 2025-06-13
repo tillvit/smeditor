@@ -630,7 +630,6 @@ export class ParityDebug extends Container implements ChartRendererComponent {
 
     const LEFT_WIDTH = LEFT_MID_SAFE - LEFT_SAFE
     const RIGHT_WIDTH = RIGHT_SAFE - RIGHT_MID_SAFE
-    console.log(LEFT_SAFE, LEFT_MID_SAFE, RIGHT_MID_SAFE, RIGHT_SAFE)
 
     let i = 0
     const rows = [...this.rowMap.entries()]
@@ -677,27 +676,33 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     }
 
     // Update debug texts
-    this.debugTexts.forEach((debugObject, i) => {
-      debugObject.x =
-        (-this.renderer.chartManager.app.STAGE_WIDTH / 2 +
-          10 -
+    if (Options.experimental.parity.showDebug) {
+      this.debugTexts.forEach((debugObject, i) => {
+        debugObject.x =
+          (-this.renderer.chartManager.app.STAGE_WIDTH / 2 +
+            10 -
+            Options.chart.receptorXPos) /
+          Options.chart.zoom
+        debugObject.y =
+          (this.renderer.chartManager.app.STAGE_HEIGHT / 2 - 10) /
+            Options.chart.zoom +
+          (i - this.debugTexts.length + 1) * 30
+      })
+
+      this.debugBG.x =
+        (-this.renderer.chartManager.app.STAGE_WIDTH / 2 -
           Options.chart.receptorXPos) /
         Options.chart.zoom
-      debugObject.y =
-        (this.renderer.chartManager.app.STAGE_HEIGHT / 2 - 10) /
-          Options.chart.zoom +
-        (i - this.debugTexts.length + 1) * 30
-      debugObject.visible = Options.experimental.parity.showDebug
-    })
-
-    this.debugBG.x =
-      (-this.renderer.chartManager.app.STAGE_WIDTH / 2 -
-        Options.chart.receptorXPos) /
-      Options.chart.zoom
-    this.debugBG.y =
-      this.renderer.chartManager.app.STAGE_HEIGHT / 2 / Options.chart.zoom
-    this.debugBG.width = this.debugContainer.width + 20 / Options.chart.zoom
-    this.debugBG.height = this.debugContainer.height + 15 / Options.chart.zoom
+      this.debugBG.y =
+        this.renderer.chartManager.app.STAGE_HEIGHT / 2 / Options.chart.zoom
+      this.debugBG.width = this.debugContainer.width + 20 / Options.chart.zoom
+      this.debugBG.height = this.debugContainer.height + 15 / Options.chart.zoom
+      this.debugContainer.visible = true
+      this.debugBG.visible = true
+    } else {
+      this.debugContainer.visible = false
+      this.debugBG.visible = false
+    }
 
     // Create connections
     this.connections.clear()
