@@ -149,7 +149,7 @@ export class UserOptionsWindow extends Window {
       label.innerText = option.label
       if (!option.input) return item
       const optionValue = Options.getOption(option.id)
-      const newInputOptions = option.input
+      const newInputOptions = { ...option.input }
       const oldCallback: ((app: App, value: any) => void) | undefined =
         newInputOptions.onChange
 

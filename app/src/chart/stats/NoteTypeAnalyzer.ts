@@ -2,7 +2,6 @@ import { isHoldNote } from "../sm/NoteTypes"
 import { ChartAnalyzer } from "./ChartAnalyzer"
 
 export class NoteTypeAnalyzer extends ChartAnalyzer {
-  reset(): void {}
   calculateAll(): void {
     const notedata = this.chart.getNotedata()
     const stats: Record<string, number> = {

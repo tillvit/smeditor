@@ -5,20 +5,15 @@ import { getNoteEnd } from "../../../util/Util"
 import { EditTimingMode } from "../../ChartManager"
 import { TimingWindowCollection } from "../../play/TimingWindowCollection"
 import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
+import { PARITY_COLORS } from "../edit/ParityDebug"
 import { HoldObject, Notefield, NoteWrapper } from "./Notefield"
 
 interface HighlightedNoteObject extends Container {
   selection: Sprite
   parity: Sprite
+  parityOverride: Sprite
   wrapper: NoteWrapper
   lastActive: boolean
-}
-
-const parityColors: Record<string, number> = {
-  L: 0x0390fc,
-  l: 0xabd6f7,
-  R: 0xfcad03,
-  r: 0xfae5b9,
 }
 
 export class NoteContainer extends Container {
@@ -69,7 +64,7 @@ export class NoteContainer extends Container {
           zIndex: note.beat,
         })
         const selection = new Sprite(Texture.WHITE)
-        const objectBounds = object.getBounds()
+        const objectBounds = object.getLocalBounds()
         selection.x = objectBounds.x
         selection.y = objectBounds.y
         selection.width = objectBounds.width
@@ -82,13 +77,23 @@ export class NoteContainer extends Container {
         parity.width = objectBounds.width
         parity.height = objectBounds.height
         parity.alpha = 0
+
+        const parityOverride = new Sprite(Texture.WHITE)
+        parityOverride.x = objectBounds.x
+        parityOverride.y = objectBounds.y
+        parityOverride.width = objectBounds.width
+        parityOverride.height = 5
+        parityOverride.tint = 0xff0000
+        parityOverride.alpha = 0
+
         this.notefield.renderer.registerDragNote(container, note)
         container.wrapper = object
         container.selection = selection
         container.parity = parity
+        container.parityOverride = parityOverride
         container.lastActive = false
         this.arrowMap.set(note, container)
-        container.addChild(object, selection, parity)
+        container.addChild(object, selection, parity, parityOverride)
         this.addChild(container)
       }
     }
@@ -139,6 +144,16 @@ export class NoteContainer extends Container {
         } else {
           hold.setActive(false)
         }
+
+        const objectBounds = container.wrapper.getLocalBounds()
+        container.parity.x = objectBounds.x
+        container.parity.y = objectBounds.y
+        container.parity.width = objectBounds.width
+        container.parity.height = objectBounds.height
+
+        container.parityOverride.x = objectBounds.x
+        container.parityOverride.y = objectBounds.y
+        container.parityOverride.width = objectBounds.width
       }
       if (
         this.notefield.renderer.chartManager.editTimingMode ==
@@ -168,9 +183,21 @@ export class NoteContainer extends Container {
           this.notefield.renderer.chartManager.removeNoteFromDragSelection(note)
         }
       }
-      container.parity.alpha = note.parity ? 0.4 : 0
-      container.parity.tint =
-        note.parity !== undefined ? parityColors[note.parity] : 0xffffff
+      if (Options.experimental.parity.enabled) {
+        container.parity.alpha = note.parity ? 0.4 : 0
+        container.parity.tint =
+          note.parity?.foot !== undefined
+            ? PARITY_COLORS[note.parity.foot]
+            : 0xffffff
+        if (note.parity?.override) {
+          container.parityOverride.alpha = 0.4
+        } else {
+          container.parityOverride.alpha = 0
+        }
+      } else {
+        container.parity.alpha = 0
+        container.parityOverride.alpha = 0
+      }
     }
   }
 

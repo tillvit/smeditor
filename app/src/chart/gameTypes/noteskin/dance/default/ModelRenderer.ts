@@ -29,7 +29,7 @@ import noopVert from "./shader/noop.vert?raw"
 import arrowBodyGeomText from "./tap/body.txt?raw"
 import arrowFrameGeomText from "./tap/frame.txt?raw"
 
-import { loadGeometry } from "../../../../../util/Util"
+import { loadGeometry } from "../../../../../util/PixiUtil"
 import liftBodyGeomText from "./lift/body.txt?raw"
 import mineBodyGeomText from "./mine/body.txt?raw"
 

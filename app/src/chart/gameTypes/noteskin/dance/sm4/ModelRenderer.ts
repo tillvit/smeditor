@@ -19,12 +19,11 @@ import { NotedataEntry } from "../../../../sm/NoteTypes"
 import mineFrameUrl from "./mine/frame.png"
 import minePartsUrl from "./mine/parts.png"
 
+import mineBodyGeomText from "./mine/body.txt?raw"
 import mineGradientFrag from "./shader/mine_gradient.frag?raw"
 import noopVert from "./shader/noop.vert?raw"
 
-import { loadGeometry, splitTex } from "../../../../../util/Util"
-import mineBodyGeomText from "./mine/body.txt?raw"
-
+import { loadGeometry, splitTex } from "../../../../../util/PixiUtil"
 import liftUrl from "./lift.png"
 import tapUrl from "./tap.png"
 

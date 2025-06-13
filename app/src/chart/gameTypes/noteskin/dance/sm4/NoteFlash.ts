@@ -9,7 +9,7 @@ import { Noteskin } from "../../Noteskin"
 
 import { BezierAnimator } from "../../../../../util/BezierEasing"
 import { rgbtoHex } from "../../../../../util/Color"
-import { splitTex } from "../../../../../util/Util"
+import { splitTex } from "../../../../../util/PixiUtil"
 import flashUrl from "./flash/flash.png"
 import holdFlashUrl from "./flash/hold.png"
 import mineUrl from "./flash/mine.png"

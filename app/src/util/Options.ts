@@ -155,7 +155,15 @@ export class DefaultOptions {
     showNoteskinErrors: false,
     showDebugVariables: false,
   }
-  static experimental = {}
+  static experimental = {
+    parity: {
+      enabled: false,
+      showDebug: true,
+      showGraph: true,
+      limitGraph: false,
+      showDancingBot: true,
+    },
+  }
 }
 
 export type OptionsObject = {

@@ -4,6 +4,7 @@ import {
   bsearch,
   getDivision,
   getNoteEnd,
+  getRangeInSortedArray,
   isSameRow,
   toRowIndex,
 } from "../../util/Util"
@@ -40,7 +41,7 @@ export class Chart {
   private notedata: Notedata = []
   private notedataRows: RowData[] = []
 
-  stats = new ChartStats(this)
+  stats: ChartStats
 
   private _lastBeat = 0
   private _lastSecond = 0
@@ -54,6 +55,7 @@ export class Chart {
     this.timingData.reloadCache()
     this.sm = sm
     if (!data) {
+      this.stats = new ChartStats(this)
       this.recalculateStats()
       return
     }
@@ -134,6 +136,7 @@ export class Chart {
         throw Error("Failed to load sm chart!")
       }
     }
+    this.stats = new ChartStats(this)
     this.recalculateRows()
     this.recalculateStats()
   }
@@ -342,24 +345,13 @@ export class Chart {
    */
   getNotedataInRange(startBeat: number, endBeat: number): Notedata {
     if (this.notedata.length == 0) return []
-    let startIdx = bsearch(this.notedata, startBeat, a => a.beat)
-    if (this.notedata[startIdx].beat < startBeat) startIdx++
-    while (
-      this.notedata[startIdx - 1] &&
-      isSameRow(this.notedata[startIdx - 1].beat, startBeat)
-    ) {
-      startIdx--
-    }
-    let lastIdx = bsearch(this.notedata, endBeat, a => a.beat)
-
-    if (this.notedata[lastIdx].beat > endBeat) lastIdx--
-    while (
-      this.notedata[lastIdx + 1] &&
-      isSameRow(this.notedata[lastIdx + 1].beat, endBeat)
-    ) {
-      lastIdx++
-    }
-    return this.notedata.slice(startIdx, lastIdx + 1)
+    const [startIdx, endIdx] = getRangeInSortedArray(
+      this.notedata,
+      Math.round(startBeat * 48),
+      Math.round(endBeat * 48),
+      a => Math.round(a.beat * 48)
+    )
+    return this.notedata.slice(startIdx, endIdx)
   }
 
   /**
@@ -514,5 +506,14 @@ export class Chart {
       this.music !== undefined ||
       this.timingData.requiresSSC()
     )
+  }
+
+  getColumnCount(): number {
+    return this.gameType.numCols
+  }
+
+  destroy() {
+    this.stats.destroy()
+    this.timingData.destroy()
   }
 }

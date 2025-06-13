@@ -11,7 +11,7 @@ import { BezierAnimator } from "../../../../../util/BezierEasing"
 
 import bezier from "bezier-easing"
 import { Options } from "../../../../../util/Options"
-import { splitTex } from "../../../../../util/Util"
+import { splitTex } from "../../../../../util/PixiUtil"
 import holdFlashUrl from "./flash/hold.png"
 import mineUrl from "./flash/mine.png"
 import particleUrl from "./flash/particles.png"

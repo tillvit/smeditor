@@ -50,9 +50,16 @@ export class WaterfallManager {
     this.view.appendChild(container)
   }
 
-  static createFormatted(message: string, type: "log" | "warn" | "error") {
+  static createFormatted(
+    message: string | Error,
+    type: "log" | "warn" | "error"
+  ) {
     if (this.view == null) return
     let count = 1
+    const originalObject = message
+    if (typeof message === "object") {
+      message = message.toString()
+    }
     if (this.messages[message] && this.messages[message].type == type) {
       const existingMessage = this.messages[message]
       clearTimeout(existingMessage.timeoutID)
@@ -65,7 +72,7 @@ export class WaterfallManager {
       `<div class='waterfall-${type}'>${capitalize(type)}: </div>` + message
     if (count > 1) container.innerHTML += ` (${count})`
     container.classList.add("waterfall-item")
-    console[type](message)
+    console[type](originalObject)
     WaterfallManager.messages[message] = {
       type,
       container,

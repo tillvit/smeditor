@@ -10,7 +10,7 @@ import { NoteFlashContainer } from "./NoteFlash"
 import receptorUrl from "./receptor.png"
 
 import { BezierAnimator } from "../../../../../util/BezierEasing"
-import { splitTex } from "../../../../../util/Util"
+import { splitTex } from "../../../../../util/PixiUtil"
 import { HoldBody } from "../../_template/HoldBody"
 import { HoldTail } from "../../_template/HoldTail"
 

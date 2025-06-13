@@ -1,3 +1,5 @@
+import { Foot, FootOverride } from "../stats/parity/ParityDataTypes"
+
 export type Notedata = NotedataEntry[]
 
 export type RowData = {
@@ -42,7 +44,11 @@ interface ExtraNotedata {
     hideNote: boolean
     hasHit: boolean
   }
-  parity?: string
+  parity?: {
+    foot?: Foot
+    override?: FootOverride
+    tech?: string
+  }
 }
 
 export type TapNotedataEntry = PartialTapNotedataEntry & ExtraNotedata

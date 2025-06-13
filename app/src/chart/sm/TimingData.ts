@@ -1565,4 +1565,6 @@ export abstract class TimingData {
   requiresSSC(): boolean {
     return TIMING_EVENT_NAMES.some(type => this.typeRequiresSSC(type))
   }
+
+  destroy() {}
 }

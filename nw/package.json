@@ -6,5 +6,5 @@
     "http://127.0.0.1:5173/smeditor/app",
     "https://tillvit.github.io/smeditor/app"
   ],
-  "chromium-args": "--enable-logging --v=1 --enable-gpu-rasterization --enable-drdc --enable-webgl2-compute-context --enable-high-resolution-time --enable-zero-copy --ignore-gpu-blocklist --autoplay-policy=no-user-gesture-required --disable-gpu-sandbox"
+  "chromium-args": "--enable-logging --v=1 --enable-gpu-rasterization --enable-drdc --enable-webgl2-compute-context --enable-high-resolution-time --enable-zero-copy --ignore-gpu-blocklist --autoplay-policy=no-user-gesture-required --disable-gpu-sandbox --enable-cast-receiver=false"
 }

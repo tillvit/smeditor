@@ -10,7 +10,7 @@ import {
 
 import { App } from "../../../../../App"
 import { Options } from "../../../../../util/Options"
-import { splitTex } from "../../../../../util/Util"
+import { splitTex } from "../../../../../util/PixiUtil"
 import { NotedataEntry } from "../../../../sm/NoteTypes"
 
 const TAP_TEXTURES: Record<string, Texture> = {}

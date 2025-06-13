@@ -3,7 +3,7 @@ import { QUANT_COLORS } from "../../chart/component/edit/SnapContainer"
 import { isHoldNote } from "../../chart/sm/NoteTypes"
 import { unlerp } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { destroyChildIf } from "../../util/Util"
+import { destroyChildIf } from "../../util/PixiUtil"
 import { BaseTimelineWidget } from "./BaseTimelineWidget"
 import { WidgetManager } from "./WidgetManager"
 

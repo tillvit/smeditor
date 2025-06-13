@@ -8,7 +8,7 @@ import {
 import { Noteskin } from "../../Noteskin"
 
 import { BezierAnimator } from "../../../../../util/BezierEasing"
-import { splitTex } from "../../../../../util/Util"
+import { splitTex } from "../../../../../util/PixiUtil"
 import flashUrl from "./flash/flash.png"
 import mineUrl from "./flash/mine.png"
 import pressUrl from "./flash/press.png"

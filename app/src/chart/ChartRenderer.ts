@@ -9,9 +9,11 @@ import {
 import { ContextMenuPopup } from "../gui/element/ContextMenu"
 import { Flags } from "../util/Flags"
 import { Options } from "../util/Options"
-import { bsearch, isRightClick } from "../util/Util"
+import { isRightClick } from "../util/PixiUtil"
+import { bsearch } from "../util/Util"
 import { ChartManager, EditMode, EditTimingMode } from "./ChartManager"
 import { BarlineContainer } from "./component/edit/BarlineContainer"
+import { ParityDebug } from "./component/edit/ParityDebug"
 import { PreviewAreaContainer } from "./component/edit/PreviewAreaContainer"
 import { ScrollDebug } from "./component/edit/ScrollDebug"
 import { SelectionAreaContainer } from "./component/edit/SelectionAreaContainer"
@@ -73,6 +75,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   private readonly selectionArea: SelectionAreaContainer
   private readonly previewArea: PreviewAreaContainer
   private readonly scrollDebug: ScrollDebug
+  private readonly parityDebug: ParityDebug
 
   private selectionBounds?: SelectionBounds
 
@@ -95,6 +98,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     this.combo = new ComboNumber(this)
     this.selectionBoundary = new SelectionBoundary(this)
     this.scrollDebug = new ScrollDebug(this)
+    this.parityDebug = new ParityDebug(this)
 
     this.addChild(
       this.waveform,
@@ -110,7 +114,8 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       this.snapDisplay,
       this.judgement,
       this.selectionBoundary,
-      this.scrollDebug
+      this.scrollDebug,
+      this.parityDebug
     )
 
     this.chartManager.app.stage.addChild(this)
@@ -336,7 +341,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       let col = -1
       for (let i = 0; i < this.chart.gameType.numCols; i++) {
         const colWidth = this.chart.gameType.columnWidths[i]
-        const colX = this.notefield.getColumnX(i)
+        const colX = this.getXPosFromColumn(i)
         if (
           this.lastMousePos.x < colX + colWidth / 2 &&
           this.lastMousePos.x > colX - colWidth / 2
@@ -450,6 +455,10 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return beat
   }
 
+  getXPosFromColumn(col: number): number {
+    return this.notefield.getColumnX(col)
+  }
+
   /**
    * Returns the y position for a note on the given beat.
    *
@@ -548,7 +557,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     const gt = this.chart.gameType
     let lastDist = null
     for (let i = 0; i < gt.numCols; i++) {
-      const dist = Math.abs(this.notefield.getColumnX(i) - xp)
+      const dist = Math.abs(this.getXPosFromColumn(i) - xp)
       if (lastDist !== null && dist > lastDist) {
         return i - 1
       }

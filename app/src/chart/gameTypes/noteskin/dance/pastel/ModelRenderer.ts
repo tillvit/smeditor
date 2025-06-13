@@ -19,7 +19,7 @@ import minePartsUrl from "./mine/parts.png"
 import mineGradientFrag from "./shader/mine_gradient.frag?raw"
 import noopVert from "./shader/noop.vert?raw"
 
-import { loadGeometry } from "../../../../../util/Util"
+import { loadGeometry } from "../../../../../util/PixiUtil"
 
 import mineBodyGeomText from "./mine/body.txt?raw"
 

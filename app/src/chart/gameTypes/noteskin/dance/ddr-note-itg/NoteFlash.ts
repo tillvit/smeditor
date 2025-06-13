@@ -11,7 +11,7 @@ import {
   BezierAnimator,
   BezierKeyFrames,
 } from "../../../../../util/BezierEasing"
-import { splitTex } from "../../../../../util/Util"
+import { splitTex } from "../../../../../util/PixiUtil"
 
 import brightUrl from "./flash/flashBright.png"
 import dimUrl from "./flash/flashDim.png"

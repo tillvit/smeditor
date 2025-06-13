@@ -12,7 +12,7 @@ import receptorUrl from "./receptor.png"
 import rollBodyUrl from "./roll/body.png"
 import rollCapUrl from "./roll/cap.png"
 
-import { splitTex } from "../../../../../util/Util"
+import { splitTex } from "../../../../../util/PixiUtil"
 import { HoldBody } from "../../_template/HoldBody"
 import { HoldTail } from "../../_template/HoldTail"
 import holdBodyUrl from "./hold/body.png"

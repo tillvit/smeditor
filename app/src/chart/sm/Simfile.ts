@@ -64,10 +64,7 @@ export class Simfile {
             chart = new Chart(this, data)
           } catch (error) {
             this.unloadedCharts.push(data)
-            WaterfallManager.createFormatted(
-              error instanceof Error ? error.message : String(error),
-              "warn"
-            )
+            WaterfallManager.createFormatted(error as Error, "warn")
             continue
           }
           this.addChart(chart)
@@ -242,5 +239,13 @@ export class Simfile {
   private formatProperty(name: string, item: string | number | undefined) {
     item ||= ""
     return "#" + name.toUpperCase() + ":" + item + ";\n"
+  }
+
+  destroy() {
+    Object.values(this.charts).forEach(charts => {
+      charts.forEach(chart => {
+        chart.destroy()
+      })
+    })
   }
 }

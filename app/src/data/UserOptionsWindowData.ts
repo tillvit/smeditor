@@ -911,19 +911,74 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
       },
       {
         type: "item",
-        label: "Show scrolls/speeds debug visual",
-        id: "debug.showScroll",
+        label: "Show noteskin errors",
+        id: "debug.showNoteskinErrors",
         input: {
           type: "checkbox",
         },
       },
       {
         type: "item",
-        label: "Show noteskin errors",
-        id: "debug.showNoteskinErrors",
+        label: "Show scrolls/speeds debug visual",
+        id: "debug.showScroll",
         input: {
           type: "checkbox",
         },
+      },
+    ],
+  },
+  {
+    type: "group",
+    id: "experimental",
+    label: "Experimental",
+    children: [
+      {
+        type: "subgroup",
+        label: "Parity",
+        children: [
+          {
+            type: "item",
+            label: "Enabled",
+            id: "experimental.parity.enabled",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "item",
+            label: "Show debug stats",
+            id: "experimental.parity.showDebug",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "item",
+            label: "Show parity graph",
+            id: "experimental.parity.showGraph",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "item",
+            label: "Limit graph nodes",
+            tooltip:
+              "Limits the number of nodes in each row of the parity graph to 16.",
+            id: "experimental.parity.limitGraph",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "item",
+            label: "Show dancing bot",
+            id: "experimental.parity.showDancingBot",
+            input: {
+              type: "checkbox",
+            },
+          },
+        ],
       },
     ],
   },

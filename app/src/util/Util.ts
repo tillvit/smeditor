@@ -1,11 +1,4 @@
 import { Parser } from "expr-eval"
-import {
-  DisplayObject,
-  FederatedMouseEvent,
-  Geometry,
-  Rectangle,
-  Texture,
-} from "pixi.js"
 import { PartialNotedataEntry, isHoldNote } from "../chart/sm/NoteTypes"
 
 export const IS_OSX: boolean = navigator.userAgent.indexOf("Mac OS X") > -1
@@ -101,6 +94,58 @@ export function bsearchEarliest<T>(
   return idx
 }
 
+export function countOfItem<T>(array: T[], item: T): number {
+  return array.filter(a => a == item).length
+}
+
+export function arraysAreEqual<T>(array1: T[], array2: T[]): boolean {
+  if (array1.length !== array2.length) {
+    return false
+  }
+
+  for (let i = 0; i < array1.length; i++) {
+    if (array1[i] !== array2[i]) {
+      return false
+    }
+  }
+
+  return true
+}
+
+/**
+ * Returns the start and end indices of the elements within the
+ * given range in a sorted array.
+ *
+ * @export
+ * @template T
+ * @param {T[]} array The array to search in.
+ * @param {number} start The start of the range.
+ * @param {number} end The end of the range.
+ * @param {(obj: T) => number} index A function that returns the index of the object.
+ * @return {[number, number]} The start and end indices of the elements within the range. The start index is inclusive and the end index is exclusive.
+ */
+export function getRangeInSortedArray<T>(
+  array: T[],
+  start: number,
+  end: number,
+  index: (obj: T) => number
+) {
+  if (array.length == 0) return [0, 0]
+  let startIdx = bsearch(array, start, index)
+  if (index(array[startIdx]) < start) startIdx++
+  while (array[startIdx - 1] && index(array[startIdx - 1]) == start) {
+    startIdx--
+  }
+
+  let endIdx = bsearch(array, end, index)
+  if (index(array[endIdx]) > end) endIdx--
+  while (array[endIdx + 1] && index(array[endIdx + 1]) == end) {
+    endIdx++
+  }
+
+  return [startIdx, endIdx + 1]
+}
+
 export function compareObjects(a: any, b: any) {
   if (Object.keys(a).some(key => a[key] != b[key])) return false
   if (Object.keys(b).some(key => a[key] != b[key])) return false
@@ -115,26 +160,9 @@ export function parseString(expr: string) {
   }
 }
 
-export function destroyChildIf<Child extends DisplayObject>(
-  children: Child[],
-  predicate: (child: Child, index: number) => boolean
-) {
-  let i = children.length
-  if (children.length == 0) return
-  while (i--) {
-    if (predicate(children[i], i)) {
-      children[i].destroy()
-    }
-  }
-}
-
 export function capitalize(str: string): string {
   if (str == "") return ""
   return str.slice(0, 1).toUpperCase() + str.slice(1).toLowerCase()
-}
-
-export function isRightClick(event: FederatedMouseEvent) {
-  return event.button == 2 || (event.getModifierState("Control") && IS_OSX)
 }
 
 export function formatSeconds(seconds: number): string {
@@ -166,67 +194,4 @@ export function isIFrame() {
   } catch (e) {
     return true
   }
-}
-
-export function splitTex(
-  texture: Texture,
-  xFrames: number,
-  yFrames: number,
-  xWidth: number,
-  yWidth: number
-) {
-  const frames: Texture[][] = []
-  for (let y = 0; y < yFrames; y++) {
-    const row = []
-    for (let x = 0; x < xFrames; x++) {
-      row.push(
-        new Texture(
-          texture.baseTexture,
-          new Rectangle(xWidth * x, yWidth * y, xWidth, yWidth)
-        )
-      )
-    }
-    frames.push(row)
-  }
-  return frames
-}
-
-export async function loadGeometry(data: string): Promise<Geometry> {
-  const lines = data.split("\n")
-  const numVertices = parseInt(lines[0])
-  const numTriangles = parseInt(lines[numVertices + 1])
-  const vPos = []
-  const vUvs = []
-  const vIndex = []
-  for (let i = 0; i < numVertices; i++) {
-    const match = /(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)/.exec(
-      lines[i + 1]
-    )
-    if (match) {
-      vPos.push(parseFloat(match[1]))
-      vPos.push(parseFloat(match[2]))
-      vUvs.push(parseFloat(match[3]))
-      vUvs.push(parseFloat(match[4]))
-    } else {
-      console.error("Failed to load vertex " + lines[i + 1])
-      return new Geometry()
-    }
-  }
-  for (let i = 0; i < numTriangles; i++) {
-    const match = /(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)/.exec(
-      lines[i + 2 + numVertices]
-    )
-    if (match) {
-      vIndex.push(parseFloat(match[1]))
-      vIndex.push(parseFloat(match[2]))
-      vIndex.push(parseFloat(match[3]))
-    } else {
-      console.error("Failed to load triangle " + lines[i + 2 + numVertices])
-      return new Geometry()
-    }
-  }
-  return new Geometry()
-    .addAttribute("aVertexPosition", vPos, 2)
-    .addAttribute("aUvs", vUvs, 2)
-    .addIndex(vIndex)
 }
