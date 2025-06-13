@@ -424,7 +424,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               active = true
               nodeObject.alpha = 3
               nodeObject.detail.visible = true
-              node.children.entries().forEach(([outKey, outValue]) => {
+              for (const [outKey, outValue] of node.children.entries()) {
                 const nextRow = this.rowMap.get(parityData.notedataRows[i + 1])
                 if (!nextRow) return
                 const connectedNode = nextRow.nodePool.getChildByName(outKey)
@@ -450,21 +450,6 @@ export class ParityDebug extends Container implements ChartRendererComponent {
 
                 connection.on("pointerover", () => {
                   connection.text.text =
-                    // JSON.stringify(
-                    //   {
-                    //     ...parityData.costCalc.getPlacementData(
-                    //       node.state,
-                    //       parityData.nodeMap.get(outKey)!.state,
-                    //       parityData.notedataRows[i - 1],
-                    //       row
-                    //     ),
-                    //     resultState: "...",
-                    //     initialState: "...",
-                    //   },
-                    //   null,
-                    //   2
-                    // ) +
-                    // "\n" +
                     JSON.stringify(outValue, null, 2) + "\n"
                   connection.scale.set(1.2)
                   connection.bg.visible = true
@@ -488,7 +473,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
                 connection.zIndex = 1
                 nodeObject.zIndex = 1
                 rowObj.zIndex = 1
-              })
+              }
               setTint()
             }
 
