@@ -198,7 +198,7 @@ export class DancingBotWidget extends Widget {
         this.currentRow++
         const row = bestPath[this.currentRow]
         row.action.forEach((col, i) => {
-          if (row.holdFeet.has(i) || !col) return
+          if (row.holdFeet.has(col) || !col) return
           this.flashPanel(i)
         })
       }
