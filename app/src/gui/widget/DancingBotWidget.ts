@@ -48,6 +48,7 @@ export class DancingBotWidget extends Widget {
   rightFoot?: Container
 
   layout?: StageLayout
+  dirty = false
 
   constructor(manager: WidgetManager) {
     super(manager)
@@ -157,6 +158,7 @@ export class DancingBotWidget extends Widget {
       return
     }
     this.currentRow = currentIndex
+    this.dirty = true
   }
 
   update(): void {
@@ -184,9 +186,10 @@ export class DancingBotWidget extends Widget {
     const visualBeat = this.manager.app.chartManager.chartView.getVisualBeat()
     const visualSecond = this.manager.app.chartManager.chartView.getVisualTime()
 
-    if (this.lastBeat == visualBeat) {
+    if (this.lastBeat == visualBeat && !this.dirty) {
       return
     }
+    this.dirty = false
     this.panels.forEach(panel => {
       const partialBeat = ((visualBeat % 1) + 1) % 1
       panel.arrow.alpha = 0.3 + clamp(1 - partialBeat, 0.5, 1) * 0.8
