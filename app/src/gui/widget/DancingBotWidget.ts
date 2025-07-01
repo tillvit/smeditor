@@ -26,6 +26,7 @@ import receptorUrl from "../../../assets/receptor.png"
 import { PARITY_COLORS } from "../../chart/component/edit/ParityDebug"
 import { Foot, ParityState } from "../../chart/stats/parity/ParityDataTypes"
 import { Options } from "../../util/Options"
+import { BaseTimelineWidget } from "./BaseTimelineWidget"
 
 interface StagePanel extends Container {
   bg: Sprite
@@ -167,8 +168,7 @@ export class DancingBotWidget extends Widget {
 
     const RIGHT_SAFE =
       this.manager.chartManager.app.STAGE_WIDTH / 2 -
-      (Options.chart.npsGraph.enabled ? 48 : 0) -
-      (Options.chart.noteLayout.enabled ? 48 : 0)
+      BaseTimelineWidget.getTotalWidgetWidth()
     this.x = RIGHT_SAFE - 16
     this.y = this.manager.app.STAGE_HEIGHT / 2 - 16
 

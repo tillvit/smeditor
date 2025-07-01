@@ -17,13 +17,15 @@ export class NPSGraphWidget extends BaseTimelineWidget {
 
   constructor(manager: WidgetManager) {
     const graphWidth = 40
-    super(manager, 60, graphWidth)
+    super(manager, 60, 1)
     this.graphWidth = graphWidth
 
     this.graphGradient = this.makeGradient()
 
     this.npsGraph = new Graphics()
     this.container.addChild(this.npsGraph)
+
+    this.name = "note-layout"
 
     this.npsText.visible = false
     this.npsText.anchor.x = 1
@@ -118,15 +120,6 @@ export class NPSGraphWidget extends BaseTimelineWidget {
       return
     }
     this.visible = true
-    const layoutWidget = this.manager.getChildByName("note-layout") as
-      | NPSGraphWidget
-      | undefined
-    if (layoutWidget !== undefined && layoutWidget.visible) {
-      this.xOffset = layoutWidget.backingWidth + 28
-    } else {
-      this.xOffset = 20
-    }
-
     this.npsText.scale.y = Options.chart.reverse ? -1 : 1
 
     super.update()

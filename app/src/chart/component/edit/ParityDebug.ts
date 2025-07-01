@@ -7,6 +7,7 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
+import { BaseTimelineWidget } from "../../../gui/widget/BaseTimelineWidget"
 import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
 import { blendPixiColors } from "../../../util/Color"
 import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
@@ -262,7 +263,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       ).toFixed(3)}ms`
     })
     this.createDebugObject(0xeb4034, parityData => {
-      return `Serialization time: ${(
+      return `Debug data serialization time: ${(
         this.renderer.chart.stats.parityDebugTime! -
         (parityData.stats.rowUpdateTime +
           parityData.stats.nodeUpdateTime +
@@ -309,8 +310,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       Options.chart.receptorXPos
     const RIGHT_SAFE =
       this.renderer.chartManager.app.STAGE_WIDTH / 2 -
-      (Options.chart.npsGraph.enabled ? 48 : 0) -
-      (Options.chart.noteLayout.enabled ? 48 : 0)
+      BaseTimelineWidget.getTotalWidgetWidth()
 
     const LEFT_WIDTH = LEFT_MID_SAFE - LEFT_SAFE
     const RIGHT_WIDTH = RIGHT_SAFE - RIGHT_MID_SAFE

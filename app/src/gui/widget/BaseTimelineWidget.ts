@@ -1,4 +1,10 @@
-import { Container, FederatedPointerEvent, Sprite, Texture } from "pixi.js"
+import {
+  Container,
+  FederatedPointerEvent,
+  Sprite,
+  Texture,
+  Ticker,
+} from "pixi.js"
 import { EditMode } from "../../chart/ChartManager"
 import { Chart } from "../../chart/sm/Chart"
 import { BetterRoundedRect } from "../../util/BetterRoundedRect"
@@ -25,17 +31,23 @@ export class BaseTimelineWidget extends Widget {
   protected verticalMargin = 40
   protected backingVerticalPadding = 10
   protected backingWidth = 32
-  xOffset = 20
+  private xOffset = 20
+
+  _order = 0
+
+  static widgets: BaseTimelineWidget[] = []
+  static xGap = 10
+  static xMargin = 20
 
   constructor(
     manager: WidgetManager,
-    xOffset: number = 20,
-    backingWidth: number = 32
+    backingWidth: number = 32,
+    order: number = 0
   ) {
     super(manager)
     this.backingWidth = backingWidth
-    this.xOffset = xOffset
     this.sortableChildren = true
+    this._order = order
 
     this.addChild(this.backing)
     this.addChild(this.container)
@@ -86,6 +98,8 @@ export class BaseTimelineWidget extends Widget {
     this.on("mouseleave", () => {
       this.mouseDown = false
     })
+
+    BaseTimelineWidget.register(this)
   }
 
   protected handleMouse(event: FederatedPointerEvent) {
@@ -213,5 +227,44 @@ export class BaseTimelineWidget extends Widget {
 
   protected getChart(): Chart {
     return this.manager.chartManager.loadedChart!
+  }
+
+  get order() {
+    return this._order
+  }
+
+  set order(value: number) {
+    this._order = value
+    BaseTimelineWidget.resort()
+  }
+
+  static register(widget: BaseTimelineWidget) {
+    if (this.widgets.includes(widget)) return
+
+    console.log("Registering widget", widget.constructor.name)
+    if (this.widgets.length == 0) {
+      Ticker.shared.add(() => {
+        let x = this.xMargin
+        this.widgets.forEach(widget => {
+          widget.xOffset = x
+          x += widget.backingWidth + this.xGap
+        })
+      })
+    }
+
+    this.widgets.push(widget)
+    this.resort()
+  }
+
+  static resort() {
+    this.widgets.sort((a, b) => a.order - b.order)
+  }
+
+  static getTotalWidgetWidth() {
+    return (
+      this.widgets.reduce((acc, widget) => acc + widget.backingWidth, 0) +
+      this.xGap * (this.widgets.length - 1) +
+      this.xMargin
+    )
   }
 }
