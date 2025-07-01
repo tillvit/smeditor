@@ -168,8 +168,6 @@ export class App {
       fpsUpdate()
     }, UPDATE_PRIORITY.HIGH)
 
-    Ticker.shared.start()
-
     BetterRoundedRect.init(this.renderer)
 
     this.chartManager = new ChartManager(this)
@@ -331,6 +329,7 @@ export class App {
     }
 
     Themes.loadTheme(Options.general.theme)
+    Ticker.shared.start()
   }
 
   registerFonts() {
