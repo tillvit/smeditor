@@ -12,17 +12,25 @@ import {
   isHoldNote,
 } from "../../sm/NoteTypes"
 import { ParityCostCalculator } from "./ParityCost"
-import { FEET, Foot, FootOverride, ParityState, Row } from "./ParityDataTypes"
+import {
+  FEET,
+  Foot,
+  FootOverride,
+  ParityState,
+  Row,
+  TECH_ERROR_STRINGS,
+} from "./ParityDataTypes"
 import {
   ParityDebugData,
+  ParityDebugStats,
   ParityDebugUpdateData,
   ParityInboundMessage,
   ParityOutboundComputeMessage,
   ParityOutboundGetDebugMessage,
   ParityOutboundInitMessage,
 } from "./ParityWebWorkerTypes"
+import { calculateRowStats } from "./RowStatCalculator"
 import { STAGE_LAYOUTS, StageLayout } from "./StageLayouts"
-import { calculateTechLabels } from "./TechCounts"
 
 const SECOND_EPSILON = 0.0005
 
@@ -102,7 +110,7 @@ export class ParityInternals {
   bestPathCost = 0
   bestPathSet?: Set<string>
 
-  debugStats = {
+  debugStats: ParityDebugStats = {
     lastUpdatedRowStart: -1,
     lastUpdatedOldRowEnd: -1,
     lastUpdatedRowEnd: -1,
@@ -117,6 +125,7 @@ export class ParityInternals {
     edgeUpdateTime: 0,
     cachedBestRows: 0,
     pathUpdateTime: 0,
+    rowStatsUpdateTime: 0,
   }
 
   notedataRows: Row[] = []
@@ -142,8 +151,8 @@ export class ParityInternals {
     if (this.layout == undefined) return null
     const updatedRows = this.recalculateRows(startBeat, endBeat, notedata)
     const updatedStates = this.recalculateStates(updatedRows)
-    const updatedCost = this.computeCosts(updatedStates)
-    this.computeBestPath(updatedCost)
+    const updatedCosts = this.computeCosts(updatedStates)
+    this.computeBestPath(updatedCosts)
 
     // Prune edge cache if too big
     const shouldPruneEdgeCache = this.edgeCacheSize > this.nEdges * 2
@@ -187,7 +196,7 @@ export class ParityInternals {
 
     // TODO: Potentially optimize by sending only deltas
 
-    const bestStates = this.bestPath.map((key, i) => {
+    const states = this.bestPath.map((key, i) => {
       if (i == 0) return this.initialNode.state
       if (i == this.bestPath!.length - 1) return this.endNode.state
       return this.nodeMap.get(key)!.state
@@ -199,11 +208,15 @@ export class ParityInternals {
       return this.nodeMap.get(key)!
     })
 
-    const { techRows, techErrors } = calculateTechLabels(
+    const rowStatsTimeStart = performance.now()
+
+    const { techRows, techErrors, facingRows } = calculateRowStats(
       bestNodes.slice(1, -1),
       this.notedataRows,
       this.layout
     )
+
+    this.debugStats.rowStatsUpdateTime = performance.now() - rowStatsTimeStart
 
     const rowTimestamps = this.notedataRows.map(row => {
       return {
@@ -212,7 +225,30 @@ export class ParityInternals {
       }
     })
 
-    return { parityLabels, bestStates, techRows, techErrors, rowTimestamps }
+    console.log(
+      "Tech Errors:",
+      Object.fromEntries(
+        techErrors.entries().map(([row, errors]) => {
+          return [
+            this.notedataRows[row].beat,
+            errors
+              .values()
+              .toArray()
+              .map(x => TECH_ERROR_STRINGS[x] as string)
+              .join(", "),
+          ] as [number, string]
+        })
+      )
+    )
+
+    return {
+      parityLabels,
+      states,
+      techRows,
+      techErrors,
+      rowTimestamps,
+      facingRows,
+    }
   }
 
   // Regenerates the rows for the given range of beats.
@@ -610,11 +646,17 @@ export class ParityInternals {
     }
 
     this.debugStats.edgeUpdateTime = performance.now() - edgeTimeStart
-    return Math.max(-1, updatedStates.firstUpdatedRow - 1)
+    return {
+      firstUpdatedCost: Math.max(-1, updatedStates.firstUpdatedRow - 1),
+      lastUpdatedCost: updatedStates.lastUpdatedRow,
+    }
   }
 
   // Finds the best path through the graph
-  computeBestPath(firstUpdatedEdge: number) {
+  computeBestPath(updatedCosts: {
+    firstUpdatedCost: number
+    lastUpdatedCost: number
+  }) {
     const pathTimeStart = performance.now()
 
     // we use string for path because list creation is slow
@@ -624,14 +666,16 @@ export class ParityInternals {
       path: this.initialNode.key,
     })
 
-    let rowIndex = firstUpdatedEdge
-    this.debugStats.cachedBestRows = firstUpdatedEdge + 1
+    let rowIndex = updatedCosts.firstUpdatedCost
+    this.debugStats.cachedBestRows = updatedCosts.firstUpdatedCost + 1
 
     // We can reuse the shortest paths up to the first updated edge
     // Unforunately, we can't reuse anything after that (at least i think so)
     const rowNodes = new Map<string, number>()
 
     while (rowIndex < this.notedataRows.length) {
+      let minNode = null
+      let minNodeCost = 0
       rowNodes.clear()
       const nodes = this.nodeRows[rowIndex]?.nodes ?? [this.initialNode]
       for (const node of nodes) {
@@ -655,12 +699,53 @@ export class ParityInternals {
               path: this.cachedLowestCost.get(node.key)!.path + "*" + child,
             })
             rowNodes.set(child, currentCost + costs["TOTAL"])
+
+            if (minNode === null || rowNodes.get(child)! < minNodeCost) {
+              minNode = child
+              minNodeCost = rowNodes.get(child)!
+            }
           }
         }
         if (rowIndex == this.notedataRows.length - 1) {
           node.children.delete(this.endNode.key)
         }
       }
+      // we can't reuse best path (kind of sad because most cases do reuse)
+      // if (
+      //   minNode &&
+      //   this.bestPathSet?.has(minNode) &&
+      //   shouldCache == 0 &&
+      //   rowIndex >= updatedCosts.lastUpdatedCost
+      // ) {
+      //   const firstPart =
+      //     this.cachedLowestCost.get(minNode)!.path.split("*") ?? []
+      //   const endPart = this.bestPath!.slice(
+      //     this.bestPath!.indexOf(minNode) + 1
+      //   )
+      //   this.bestPath = firstPart.concat(endPart)
+
+      //   let cost = this.cachedLowestCost.get(minNode)!.cost
+      //   let node = firstPart.at(-1)
+      //     ? this.nodeMap.get(firstPart.at(-1)!)!
+      //     : this.initialNode
+      //   for (let i = 0; i < endPart.length; i++) {
+      //     const nextNode = this.nodeMap.get(endPart[i])
+      //     if (!nextNode) continue
+      //     cost += node.children.get(nextNode.key)?.TOTAL ?? 0
+      //     node = nextNode
+      //   }
+
+      //   this.bestPathCost = cost
+
+      //   this.debugStats.cachedBestRows += endPart.length - 1
+
+      //   this.bestPathSet = new Set(this.bestPath ?? [])
+
+      //   this.debugStats.pathUpdateTime = performance.now() - pathTimeStart
+      //   shouldCache = rowIndex
+
+      //   return
+      // }
       rowIndex++
     }
 
@@ -675,6 +760,7 @@ export class ParityInternals {
     }
 
     this.bestPathSet = new Set(this.bestPath ?? [])
+    console.log("Best path cost", this.bestPathCost)
 
     this.debugStats.pathUpdateTime = performance.now() - pathTimeStart
   }

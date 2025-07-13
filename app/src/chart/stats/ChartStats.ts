@@ -5,8 +5,10 @@ import { ChartAnalyzer } from "./ChartAnalyzer"
 import { NoteTypeAnalyzer } from "./NoteTypeAnalyzer"
 import { NPSAnalyzer } from "./NPSAnalyzer"
 import { ParityAnalyzer } from "./parity/ParityAnalyzer"
-import { ParityState, TechCategory, TechErrors } from "./parity/ParityDataTypes"
-import { ParityDebugData } from "./parity/ParityWebWorkerTypes"
+import {
+  ParityComputeData,
+  ParityDebugData,
+} from "./parity/ParityWebWorkerTypes"
 import { StreamAnalyzer, StreamData } from "./StreamAnalyzer"
 
 const ANALYZERS: (new (chart: Chart) => ChartAnalyzer)[] = [
@@ -23,11 +25,7 @@ export class ChartStats {
   npsGraph: number[] = []
   streams: StreamData[] = []
 
-  parity?: {
-    states: ParityState[]
-    rowTimestamps: { beat: number; second: number }[]
-    techRows: Set<TechCategory>[]
-    techErrors: Map<number, Set<TechErrors>>
+  parity?: ParityComputeData & {
     debug: ParityDebugData
     debugTime: number
   }

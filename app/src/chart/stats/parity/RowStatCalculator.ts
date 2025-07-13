@@ -7,15 +7,17 @@ import {
   TechErrors,
 } from "./ParityDataTypes"
 import { ParityGraphNode } from "./ParityInternals"
+import { getPlayerAngle } from "./ParityUtils"
 import { StageLayout } from "./StageLayouts"
 
-export function calculateTechLabels(
+export function calculateRowStats(
   nodes: ParityGraphNode[],
   rows: Row[],
   layout: StageLayout
 ) {
   const techRows: Set<TechCategory>[] = [new Set()]
   const techErrors = new Map<number, Set<TechErrors>>()
+  const facingRows: number[] = [0]
 
   for (let i = 0; i < nodes.length - 1; i++) {
     const initialState = nodes[i].state
@@ -29,6 +31,8 @@ export function calculateTechLabels(
       initialRow,
       currentRow
     )
+
+    facingRows.push(getPlayerAngle(data.leftPos, data.rightPos))
 
     const techs = new Set<TechCategory>()
     const errors = new Set<TechErrors>()
@@ -97,32 +101,16 @@ export function calculateTechLabels(
       techs.add(TechCategory.Crossovers)
     }
 
-    // If there was another path that has the same or better cost (and a jump occurred), it could be ambiguous
-    if (
-      data.previousJumped &&
-      currentRow.notes.filter(n => n !== undefined).length == 1
-    ) {
-      const cost =
-        nodes[i].children.get(nodes[i + 1].key)!["TOTAL"] -
-        nodes[i].children.get(nodes[i + 1].key)!["DISTANCE"]
-      if (
-        nodes[i].children.entries().some(([child, costs]) => {
-          if (child == nodes[i + 1].key) return false
-          if (costs["TOTAL"] - costs["DISTANCE"] <= cost) {
-            return true
-          }
-          return false
-        })
-      ) {
-        errors.add(TechErrors.Ambiguous)
-      }
+    if (isAmbiguous(data, currentRow, nodes, i)) {
+      errors.add(TechErrors.Ambiguous)
     }
+
     techRows.push(techs)
     if (errors.size) {
       techErrors.set(i + 1, errors)
     }
   }
-  return { techRows, techErrors }
+  return { techRows, techErrors, facingRows }
 }
 
 function isDoublestepMarked(
@@ -157,6 +145,43 @@ function isDoublestepMarked(
       currentRow.mines[data.initialState.footColumns[Foot.RIGHT_TOE]] ||
       currentRow.fakeMines[data.initialState.footColumns[Foot.RIGHT_TOE]]
     if (willHitMine) return true
+  }
+  return false
+}
+
+function isAmbiguous(
+  data: PlacementData,
+  currentRow: Row,
+  nodes: ParityGraphNode[],
+  i: number
+) {
+  if (
+    !data.previousJumped ||
+    currentRow.notes.filter(n => n !== undefined).length != 1
+  )
+    return false
+  const noteIndex = currentRow.notes.findIndex(n => n !== undefined)
+  if (
+    data.initialState.combinedColumns[noteIndex] ==
+      data.resultState.combinedColumns[noteIndex] ||
+    data.initialState.combinedColumns[noteIndex] ==
+      OTHER_PART_OF_FOOT[data.resultState.combinedColumns[noteIndex]]
+  ) {
+    return false
+  }
+  const cost =
+    nodes[i].children.get(nodes[i + 1].key)!["TOTAL"] -
+    nodes[i].children.get(nodes[i + 1].key)!["DISTANCE"]
+  if (
+    nodes[i].children.entries().some(([child, costs]) => {
+      if (child == nodes[i + 1].key) return false
+      if (costs["TOTAL"] - costs["DISTANCE"] <= cost) {
+        return true
+      }
+      return false
+    })
+  ) {
+    return true
   }
   return false
 }

@@ -93,10 +93,7 @@ export class ParityAnalyzer extends ChartAnalyzer {
         })
         if (!this.chart.stats.parity) {
           this.chart.stats.parity = {
-            rowTimestamps: data.rowTimestamps,
-            states: data.bestStates,
-            techRows: data.techRows,
-            techErrors: data.techErrors,
+            ...data,
             debug: {
               notedataRows: [],
               nodeRows: [],
@@ -120,15 +117,16 @@ export class ParityAnalyzer extends ChartAnalyzer {
                 edgeUpdateTime: 0,
                 cachedBestRows: 0,
                 pathUpdateTime: 0,
+                rowStatsUpdateTime: 0,
               },
             },
             debugTime: 0,
           }
         } else {
-          this.chart.stats.parity.states = data.bestStates
-          this.chart.stats.parity.techRows = data.techRows
-          this.chart.stats.parity.techErrors = data.techErrors
-          this.chart.stats.parity.rowTimestamps = data.rowTimestamps
+          this.chart.stats.parity = {
+            ...data,
+            ...this.chart.stats.parity,
+          }
         }
         if (data.debug) {
           // Incrementally recreate the debug data instead of sending it over

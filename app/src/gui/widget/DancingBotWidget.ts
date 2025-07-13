@@ -312,11 +312,6 @@ export class DancingBotWidget extends Widget {
         2
     }
 
-    const playerCenter = {
-      x: (leftPos.x + rightPos.x) / 2,
-      y: (leftPos.y + rightPos.y) / 2,
-    }
-
     if (this.layout!.name == "dance-single") {
       if (Math.abs(leftPos.x) <= PANEL_SIZE / 4) {
         leftPos.x -= PANEL_SIZE / 4

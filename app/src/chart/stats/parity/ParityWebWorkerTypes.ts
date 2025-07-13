@@ -50,6 +50,7 @@ export type ParityDebugStats = {
   edgeUpdateTime: number
   cachedBestRows: number
   pathUpdateTime: number
+  rowStatsUpdateTime: number
 }
 
 export interface ParityBaseMessage {
@@ -73,13 +74,19 @@ export interface ParityInboundComputeMessage extends ParityBaseMessage {
   debug: boolean
 }
 
-export interface ParityOutboundComputeMessage extends ParityBaseMessage {
-  type: "compute"
+export interface ParityComputeData {
   parityLabels: Map<string, Foot>
-  bestStates: ParityState[]
-  techErrors: Map<number, Set<TechErrors>>
+  states: ParityState[]
   rowTimestamps: { beat: number; second: number }[]
   techRows: Set<TechCategory>[]
+  techErrors: Map<number, Set<TechErrors>>
+  facingRows: number[]
+}
+
+export interface ParityOutboundComputeMessage
+  extends ParityBaseMessage,
+    ParityComputeData {
+  type: "compute"
   debug?: ParityDebugUpdateData
 }
 

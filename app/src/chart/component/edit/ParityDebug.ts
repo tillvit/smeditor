@@ -262,12 +262,17 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     this.createDebugObject(0xff9a5c, parityData => {
       return `Found best path in ${parityData.stats.pathUpdateTime.toFixed(3)}ms (cached ${parityData.stats.cachedBestRows} rows)`
     })
+    this.createDebugObject(0xeeff6b, parityData => {
+      return `Calculated row states in ${parityData.stats.rowStatsUpdateTime.toFixed(3)}ms`
+    })
+
     this.createDebugObject(0xffffff, parityData => {
       return `Total calculation time: ${(
         parityData.stats.rowUpdateTime +
         parityData.stats.nodeUpdateTime +
         parityData.stats.edgeUpdateTime +
-        parityData.stats.pathUpdateTime
+        parityData.stats.pathUpdateTime +
+        parityData.stats.rowStatsUpdateTime
       ).toFixed(3)}ms`
     })
     this.createDebugObject(0xeb4034, parityData => {
@@ -642,6 +647,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
           .toArray()
           .map(x => TECH_STRINGS[x] as string)
           .join(", ") +
+        " " +
         (parityData.techErrors.has(rowObj.i)
           ? parityData.techErrors
               .get(rowObj.i)!
@@ -649,7 +655,9 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               .toArray()
               .map(x => TECH_ERROR_STRINGS[x] as string)
               .join(", ")
-          : "")
+          : "") +
+        " " +
+        parityData.facingRows[rowObj.i]
 
       rowObj.visible = Options.experimental.parity.showGraph
 
