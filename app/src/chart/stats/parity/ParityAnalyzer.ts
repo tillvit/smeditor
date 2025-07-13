@@ -93,7 +93,7 @@ export class ParityAnalyzer extends ChartAnalyzer {
         })
         if (!this.chart.stats.parity) {
           this.chart.stats.parity = {
-            rowTimestamps: [],
+            rowTimestamps: data.rowTimestamps,
             states: data.bestStates,
             techRows: data.techRows,
             techErrors: data.techErrors,
