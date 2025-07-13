@@ -241,7 +241,7 @@ export class BaseTimelineWidget extends Widget {
   static register(widget: BaseTimelineWidget) {
     if (this.widgets.includes(widget)) return
 
-    console.log("Registering widget", widget.constructor.name)
+    // console.log("Registering widget", widget.constructor.name)
     if (this.widgets.length == 0) {
       Ticker.shared.add(() => {
         let x = this.xMargin

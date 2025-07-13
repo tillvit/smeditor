@@ -98,13 +98,17 @@ export function calculateTechLabels(
     }
 
     // If there was another path that has the same or better cost (and a jump occurred), it could be ambiguous
-    if (data.previousJumped) {
-      const cost = nodes[i].children.get(nodes[i + 1].key)!["TOTAL"]
+    if (
+      data.previousJumped &&
+      currentRow.notes.filter(n => n !== undefined).length == 1
+    ) {
+      const cost =
+        nodes[i].children.get(nodes[i + 1].key)!["TOTAL"] -
+        nodes[i].children.get(nodes[i + 1].key)!["DISTANCE"]
       if (
         nodes[i].children.entries().some(([child, costs]) => {
           if (child == nodes[i + 1].key) return false
-          if (costs["TOTAL"] <= cost) {
-            console.log(child, costs, nodes[i + 1].key)
+          if (costs["TOTAL"] - costs["DISTANCE"] <= cost) {
             return true
           }
           return false
