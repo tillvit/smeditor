@@ -1,5 +1,11 @@
 import { Notedata } from "../../sm/NoteTypes"
-import { Foot, ParityState, Row } from "./ParityDataTypes"
+import {
+  Foot,
+  ParityState,
+  Row,
+  TechCategory,
+  TechErrors,
+} from "./ParityDataTypes"
 import { ParityGraphNode } from "./ParityInternals"
 
 export type ParityDebugUpdateData = {
@@ -50,17 +56,12 @@ export interface ParityBaseMessage {
   id: number
 }
 
-export interface ParityBaseOutboundMessage extends ParityBaseMessage {
-  success: boolean
-  error?: string
-}
-
 export interface ParityInboundInitMessage extends ParityBaseMessage {
   type: "init"
   gameType: string
 }
 
-export interface ParityOutboundInitMessage extends ParityBaseOutboundMessage {
+export interface ParityOutboundInitMessage extends ParityBaseMessage {
   type: "init"
 }
 
@@ -72,11 +73,13 @@ export interface ParityInboundComputeMessage extends ParityBaseMessage {
   debug: boolean
 }
 
-export interface ParityOutboundComputeMessage
-  extends ParityBaseOutboundMessage {
+export interface ParityOutboundComputeMessage extends ParityBaseMessage {
   type: "compute"
-  parityLabels: Map<string, Foot> | null
-  bestStates: ParityState[] | null
+  parityLabels: Map<string, Foot>
+  bestStates: ParityState[]
+  techErrors: Map<number, Set<TechErrors>>
+  rowTimestamps: { beat: number; second: number }[]
+  techRows: Set<TechCategory>[]
   debug?: ParityDebugUpdateData
 }
 
@@ -84,8 +87,12 @@ export interface ParityInboundGetDebugMessage extends ParityBaseMessage {
   type: "getDebug"
 }
 
-export interface ParityOutboundGetDebugMessage
-  extends ParityBaseOutboundMessage {
+export interface ParityOutboundErrorMessage extends ParityBaseMessage {
+  type: "error"
+  error: string
+}
+
+export interface ParityOutboundGetDebugMessage extends ParityBaseMessage {
   type: "getDebug"
   data: ParityDebugData | null
 }
@@ -98,3 +105,4 @@ export type ParityOutboundMessage =
   | ParityOutboundInitMessage
   | ParityOutboundComputeMessage
   | ParityOutboundGetDebugMessage
+  | ParityOutboundErrorMessage

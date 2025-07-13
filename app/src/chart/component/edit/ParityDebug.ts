@@ -14,7 +14,13 @@ import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
-import { FEET_LABELS, Foot, Row } from "../../stats/parity/ParityDataTypes"
+import {
+  FEET_LABELS,
+  Foot,
+  Row,
+  TECH_ERROR_STRINGS,
+  TECH_STRINGS,
+} from "../../stats/parity/ParityDataTypes"
 import { ParityDebugData } from "../../stats/parity/ParityWebWorkerTypes"
 
 interface ConnectionObject extends Container {
@@ -44,6 +50,7 @@ interface RowObject extends Container {
   nodePool: DisplayObjectPool<NodeObject>
   statusRows: Sprite[][]
   highlights: { col: number; second: number; box: DetailBox }[]
+  i: number
 }
 
 interface DetailBox extends Container {
@@ -176,6 +183,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
 
       newChild.hitbox = hitbox
       newChild.text = text
+      newChild.i = 0
       newChild.detail = detail
       newChild.sideContainer = sideContainer
       newChild.nodePool = nodePool
@@ -219,7 +227,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
 
     const parityListener = () => {
       this.debugTexts.forEach(debugObject => {
-        const parityData = this.renderer.chart.stats.parityDebug
+        const parityData = this.renderer.chart.stats.parity?.debug
         if (!parityData) return
         debugObject.text.text = debugObject.update(parityData)
       })
@@ -264,7 +272,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     })
     this.createDebugObject(0xeb4034, parityData => {
       return `Debug data serialization time: ${(
-        this.renderer.chart.stats.parityDebugTime! -
+        this.renderer.chart.stats.parity!.debugTime -
         (parityData.stats.rowUpdateTime +
           parityData.stats.nodeUpdateTime +
           parityData.stats.edgeUpdateTime +
@@ -283,7 +291,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
   }
 
   update(firstBeat: number, lastBeat: number) {
-    const parityData = this.renderer.chart.stats.parityDebug!
+    const parityData = this.renderer.chart.stats.parity!
     this.visible = !!parityData && Options.experimental.parity.enabled
     if (!this.visible) {
       if (this.lastVisible != this.visible) {
@@ -318,18 +326,18 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     const align = LEFT_WIDTH > RIGHT_WIDTH + 100 ? "left" : "right"
 
     // Create all missing rows
-    for (let i = 0; i < parityData.notedataRows.length; i++) {
-      if (lastBeat < parityData.notedataRows[i - 1]?.beat) break
-      if (firstBeat > parityData.notedataRows[i + 1]?.beat) continue
-      const row = parityData.notedataRows[i]
+    for (let i = 0; i < parityData.debug.notedataRows.length; i++) {
+      if (lastBeat < parityData.debug.notedataRows[i - 1]?.beat) break
+      if (firstBeat > parityData.debug.notedataRows[i + 1]?.beat) continue
+      const row = parityData.debug.notedataRows[i]
       const hasOverrides = row.overrides.some(o => o)
 
       if (!this.rowMap.has(row)) {
         const rowObj = this.rowPool.createChild()
         if (!rowObj) break
         let tint =
-          i >= parityData.stats.lastUpdatedRowStart &&
-          i < parityData.stats.lastUpdatedRowEnd
+          i >= parityData.debug.stats.lastUpdatedRowStart &&
+          i < parityData.debug.stats.lastUpdatedRowEnd
             ? 0xff85d2
             : 0xaf77d1
         if (hasOverrides) {
@@ -340,6 +348,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
           ).toNumber()
         }
         rowObj.text.tint = tint
+        rowObj.i = i
         rowObj.text.text = i + ""
         rowObj.hitbox.width = rowObj.text.width + 10
         rowObj.hitbox.height = rowObj.text.height + 10
@@ -357,7 +366,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
         rowObj.highlights = []
         rowObj.hitbox.removeAllListeners()
 
-        const nodeRow = parityData.nodeRows[i]
+        const nodeRow = parityData.debug.nodeRows[i]
         if (!nodeRow || nodeRow.nodes.length === 0) {
           console.warn(
             `No permutations found for row ${i} at beat ${row.beat} (${row.id})`
@@ -377,13 +386,13 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               let tint = 0xaf77d1
               bg.alpha = 0.2
               if (
-                i >= parityData.stats.lastUpdatedNodeStart &&
-                i < parityData.stats.lastUpdatedNodeEnd
+                i >= parityData.debug.stats.lastUpdatedNodeStart &&
+                i < parityData.debug.stats.lastUpdatedNodeEnd
               ) {
                 tint = 0x225900
                 bg.alpha = 0.6
               }
-              if (parityData.bestPathSet?.has(node.key)) {
+              if (parityData.debug.bestPathSet?.has(node.key)) {
                 tint = 0xbf4900
                 bg.alpha = 0.6
               }
@@ -425,7 +434,9 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               nodeObject.alpha = 3
               nodeObject.detail.visible = true
               for (const [outKey, outValue] of node.children.entries()) {
-                const nextRow = this.rowMap.get(parityData.notedataRows[i + 1])
+                const nextRow = this.rowMap.get(
+                  parityData.debug.notedataRows[i + 1]
+                )
                 if (!nextRow) return
                 const connectedNode = nextRow.nodePool.getChildByName(outKey)
                 if (!connectedNode) return
@@ -620,7 +631,25 @@ export class ParityDebug extends Container implements ChartRendererComponent {
         i++
         continue
       }
+
       i++
+
+      rowObj.text.text =
+        rowObj.i +
+        " " +
+        parityData.techRows[rowObj.i]
+          .values()
+          .toArray()
+          .map(x => TECH_STRINGS[x] as string)
+          .join(", ") +
+        (parityData.techErrors.has(rowObj.i)
+          ? parityData.techErrors
+              .get(rowObj.i)!
+              .values()
+              .toArray()
+              .map(x => TECH_ERROR_STRINGS[x] as string)
+              .join(", ")
+          : "")
 
       rowObj.visible = Options.experimental.parity.showGraph
 
@@ -700,13 +729,15 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     // Create connections
     this.connections.clear()
     if (Options.experimental.parity.showGraph) {
-      for (let i = 0; i < parityData.notedataRows.length; i++) {
-        if (lastBeat < parityData.notedataRows[i - 1]?.beat) break
-        if (firstBeat > parityData.notedataRows[i + 1]?.beat) continue
-        const row = parityData.notedataRows[i]
-        const nodes = parityData.nodeRows[i].nodes
+      for (let i = 0; i < parityData.debug.notedataRows.length; i++) {
+        if (lastBeat < parityData.debug.notedataRows[i - 1]?.beat) break
+        if (firstBeat > parityData.debug.notedataRows[i + 1]?.beat) continue
+        const row = parityData.debug.notedataRows[i]
+        const nodes = parityData.debug.nodeRows[i].nodes
         const startRowObject = this.rowMap.get(row)
-        const endRowObject = this.rowMap.get(parityData.notedataRows[i + 1])
+        const endRowObject = this.rowMap.get(
+          parityData.debug.notedataRows[i + 1]
+        )
         if (!startRowObject || !endRowObject) continue
         for (const node of nodes) {
           const startObject =
@@ -719,8 +750,8 @@ export class ParityDebug extends Container implements ChartRendererComponent {
             let color = 0xaf77d1
             let width = 1.5
             if (
-              i >= parityData.stats.lastUpdatedNodeStart &&
-              i < parityData.stats.lastUpdatedNodeEnd
+              i >= parityData.debug.stats.lastUpdatedNodeStart &&
+              i < parityData.debug.stats.lastUpdatedNodeEnd
             ) {
               color = 0x00ff00
             }
@@ -740,8 +771,8 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               width = 2.5
             }
             if (
-              parityData.bestPathSet?.has(node.key) &&
-              parityData.bestPathSet.has(outKey)
+              parityData.debug.bestPathSet?.has(node.key) &&
+              parityData.debug.bestPathSet.has(outKey)
             ) {
               color = 0xbf4900
               alpha += 0.4

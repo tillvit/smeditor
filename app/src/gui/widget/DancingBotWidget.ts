@@ -150,11 +150,11 @@ export class DancingBotWidget extends Widget {
   }
 
   reindex() {
-    const parity = this.manager.app.chartManager.loadedChart?.stats.parityDebug
+    const parity = this.manager.app.chartManager.loadedChart?.stats.parity
     if (!parity || !this.manager.app.chartManager.chartView) return
     const visualBeat = this.manager.app.chartManager.chartView.getVisualBeat()
-    const currentIndex = bsearch(parity.notedataRows, visualBeat, a => a.beat)
-    if (currentIndex == 0 && visualBeat < parity.notedataRows[0].beat) {
+    const currentIndex = bsearch(parity.rowTimestamps, visualBeat, a => a.beat)
+    if (currentIndex == 0 && visualBeat < parity.rowTimestamps[0].beat) {
       this.currentRow = -1
       return
     }
@@ -164,7 +164,7 @@ export class DancingBotWidget extends Widget {
 
   update(): void {
     const bestPath =
-      this.manager.app.chartManager.loadedChart?.stats.parityStates
+      this.manager.app.chartManager.loadedChart?.stats.parity?.states
 
     const RIGHT_SAFE =
       this.manager.chartManager.app.STAGE_WIDTH / 2 -
@@ -310,6 +310,11 @@ export class DancingBotWidget extends Widget {
         (rightPos.y +
           this.panels[state.footColumns[Foot.RIGHT_TOE]].position.y) /
         2
+    }
+
+    const playerCenter = {
+      x: (leftPos.x + rightPos.x) / 2,
+      y: (leftPos.y + rightPos.y) / 2,
     }
 
     if (this.layout!.name == "dance-single") {

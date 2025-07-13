@@ -22,6 +22,7 @@ import {
   ParityOutboundInitMessage,
 } from "./ParityWebWorkerTypes"
 import { STAGE_LAYOUTS, StageLayout } from "./StageLayouts"
+import { calculateTechLabels } from "./TechCounts"
 
 const SECOND_EPSILON = 0.0005
 
@@ -172,24 +173,39 @@ export class ParityInternals {
       return null
     }
 
-    const labels = new Map<string, Foot>()
+    const parityLabels = new Map<string, Foot>()
 
     this.notedataRows.forEach((row, idx) => {
       const bestOption = this.nodeMap.get(this.bestPath![idx + 1])!
       bestOption.state.combinedColumns.forEach((foot, col) => {
         if (foot == Foot.NONE) return
         if (!row.notes[col]) return
-        labels.set(row.notes[col].beat.toFixed(3) + "-" + col, foot)
+        parityLabels.set(row.notes[col].beat.toFixed(3) + "-" + col, foot)
       })
     })
 
-    const states = this.bestPath.map((key, i) => {
+    // TODO: Potentially optimize by sending only deltas
+
+    const bestStates = this.bestPath.map((key, i) => {
       if (i == 0) return this.initialNode.state
       if (i == this.bestPath!.length - 1) return this.endNode.state
       return this.nodeMap.get(key)!.state
     })
 
-    return { labels, states }
+    const { techRows, techErrors } = calculateTechLabels(
+      bestStates.slice(1, -1),
+      this.notedataRows,
+      this.layout
+    )
+
+    const rowTimestamps = this.notedataRows.map(row => {
+      return {
+        beat: row.beat,
+        second: row.second,
+      }
+    })
+
+    return { parityLabels, bestStates, techRows, techErrors, rowTimestamps }
   }
 
   // Regenerates the rows for the given range of beats.
@@ -969,11 +985,10 @@ self.onmessage = (e: MessageEvent<ParityInboundMessage>) => {
     case "init":
       if (instance) {
         postMessage({
-          type: "init",
+          type: "error",
           id: e.data.id,
-          success: false,
           error: "Instance already initialized",
-        } satisfies ParityOutboundInitMessage)
+        })
         return
       }
       try {
@@ -981,27 +996,22 @@ self.onmessage = (e: MessageEvent<ParityInboundMessage>) => {
         postMessage({
           type: "init",
           id: e.data.id,
-          success: true,
         } satisfies ParityOutboundInitMessage)
       } catch (error) {
         postMessage({
-          type: "init",
+          type: "error",
           id: e.data.id,
-          success: false,
           error: (error as Error).message,
-        } satisfies ParityOutboundInitMessage)
+        })
       }
       break
     case "compute": {
       if (!instance) {
         postMessage({
-          type: "compute",
+          type: "error",
           id: e.data.id,
-          success: false,
           error: "Instance not initialized",
-          parityLabels: null,
-          bestStates: null,
-        } satisfies ParityOutboundComputeMessage)
+        })
         return
       }
       const result = instance.compute(
@@ -1011,21 +1021,16 @@ self.onmessage = (e: MessageEvent<ParityInboundMessage>) => {
       )
       if (!result) {
         postMessage({
-          type: "compute",
+          type: "error",
           id: e.data.id,
-          success: false,
           error: "No path found",
-          parityLabels: null,
-          bestStates: null,
-        } satisfies ParityOutboundComputeMessage)
+        })
         return
       }
       postMessage({
         type: "compute",
         id: e.data.id,
-        success: true,
-        parityLabels: result.labels,
-        bestStates: result.states,
+        ...result,
         debug: e.data.debug ? getDebugUpdateData()! : undefined,
       } satisfies ParityOutboundComputeMessage)
       break
@@ -1033,18 +1038,15 @@ self.onmessage = (e: MessageEvent<ParityInboundMessage>) => {
     case "getDebug": {
       if (!instance) {
         postMessage({
-          type: "getDebug",
+          type: "error",
           id: e.data.id,
-          success: false,
           error: "Instance not initialized",
-          data: null,
-        } satisfies ParityOutboundGetDebugMessage)
+        })
         return
       }
       postMessage({
         type: "getDebug",
         id: e.data.id,
-        success: true,
         data: getDebugData(),
       } satisfies ParityOutboundGetDebugMessage)
       break

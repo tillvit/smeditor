@@ -30,119 +30,6 @@ export class ParityCostCalculator {
     this.WEIGHTS = { ...this.WEIGHTS, ...newWeights }
   }
 
-  getPlacementData(
-    initialState: ParityState,
-    resultState: ParityState,
-    lastRow: Row,
-    row: Row
-  ): PlacementData {
-    const previousNonHeldFeet = []
-    const nonHeldFeet = []
-
-    for (let i = 0; i < this.layout.layout.length; i++) {
-      if (
-        lastRow &&
-        lastRow.holds[i] === undefined &&
-        initialState.action[i] != Foot.NONE
-      ) {
-        previousNonHeldFeet[initialState.action[i]] = true
-      }
-
-      if (row.holds[i] === undefined && resultState.action[i] != Foot.NONE) {
-        nonHeldFeet[resultState.action[i]] = true
-      }
-    }
-
-    const previousMovedLeft =
-      previousNonHeldFeet[Foot.LEFT_HEEL] || previousNonHeldFeet[Foot.LEFT_TOE]
-    const previousMovedRight =
-      previousNonHeldFeet[Foot.RIGHT_HEEL] ||
-      previousNonHeldFeet[Foot.RIGHT_TOE]
-
-    const movedLeft = nonHeldFeet[Foot.LEFT_HEEL] || nonHeldFeet[Foot.LEFT_TOE]
-    const movedRight =
-      nonHeldFeet[Foot.RIGHT_HEEL] || nonHeldFeet[Foot.RIGHT_TOE]
-
-    const leftBracket =
-      nonHeldFeet[Foot.LEFT_HEEL] && nonHeldFeet[Foot.LEFT_TOE]
-    const rightBracket =
-      nonHeldFeet[Foot.RIGHT_HEEL] && nonHeldFeet[Foot.RIGHT_TOE]
-
-    const previousJumped =
-      previousNonHeldFeet[Foot.LEFT_HEEL] &&
-      previousNonHeldFeet[Foot.RIGHT_HEEL]
-
-    const jumped = nonHeldFeet[Foot.LEFT_HEEL] && nonHeldFeet[Foot.RIGHT_HEEL]
-
-    const leftJack =
-      !jumped &&
-      this.doFeetOverlap(
-        initialState.leftHeel,
-        initialState.leftToe,
-        resultState.leftHeel,
-        resultState.leftToe
-      ) &&
-      previousMovedLeft &&
-      movedLeft
-    const rightJack =
-      !jumped &&
-      this.doFeetOverlap(
-        initialState.rightHeel,
-        initialState.rightToe,
-        resultState.rightHeel,
-        resultState.rightToe
-      ) &&
-      previousMovedRight &&
-      movedRight
-
-    const leftDoubleStep =
-      previousMovedLeft && movedLeft && !jumped && !leftJack && !previousJumped
-    const rightDoubleStep =
-      previousMovedRight &&
-      movedRight &&
-      !jumped &&
-      !rightJack &&
-      !previousJumped
-
-    const previousLeftPos = this.layout.averagePoint(
-      initialState.leftHeel,
-      initialState.leftToe
-    )
-
-    const previousRightPos = this.layout.averagePoint(
-      initialState.rightHeel,
-      initialState.rightToe
-    )
-
-    const leftPos = this.layout.averagePoint(
-      resultState.leftHeel,
-      resultState.leftToe
-    )
-    const rightPos = this.layout.averagePoint(
-      resultState.rightHeel,
-      resultState.rightToe
-    )
-
-    return {
-      previousLeftPos,
-      previousRightPos,
-      leftPos,
-      rightPos,
-      movedLeft,
-      movedRight,
-      leftBracket,
-      rightBracket,
-      previousJumped,
-      jumped,
-      leftJack,
-      rightJack,
-      leftDoubleStep,
-      rightDoubleStep,
-      initialState,
-      resultState,
-    }
-  }
-
   getActionCost(
     initialState: ParityState,
     resultState: ParityState,
@@ -156,7 +43,7 @@ export class ParityCostCalculator {
     const costs: { [id: string]: number } = {}
 
     // Calculate some data beforehand
-    const placementData = this.getPlacementData(
+    const placementData = this.layout.getPlacementData(
       initialState,
       resultState,
       lastRow,
@@ -270,27 +157,6 @@ export class ParityCostCalculator {
     return false
   }
 
-  doFeetOverlap(
-    oldHeel: number,
-    oldToe: number,
-    newHeel: number,
-    newToe: number
-  ): boolean {
-    if (oldHeel != -1) {
-      if (oldHeel == newHeel || oldHeel == newToe) {
-        return true
-      }
-    }
-
-    if (oldToe != -1) {
-      if (oldToe == newHeel || oldToe == newToe) {
-        return true
-      }
-    }
-
-    return false
-  }
-
   // breakout all of the function costs
 
   calcMineCosts(data: PlacementData, row: Row) {
@@ -313,7 +179,10 @@ export class ParityCostCalculator {
       if (row.holds[c]!.beat < data.initialState.beat) continue // the new hold wasn't there in the previous row
       const initialFoot = data.initialState.combinedColumns[c]
       const resultFoot = data.resultState.combinedColumns[c]
-      if (initialFoot != resultFoot) {
+      if (
+        initialFoot != resultFoot &&
+        initialFoot != OTHER_PART_OF_FOOT[resultFoot]
+      ) {
         const tempcost =
           this.WEIGHTS.HOLDSWITCH *
           (data.resultState.footColumns[initialFoot] == -1
@@ -381,7 +250,7 @@ export class ParityCostCalculator {
   calcStartCrossover(data: PlacementData, rowIndex: number) {
     // Don't start the chart crossed over
     if (data.rightPos.x < data.leftPos.x && rowIndex == 0) {
-      return 10000
+      return this.WEIGHTS.START_XO
     }
     return 0
   }
@@ -420,6 +289,9 @@ export class ParityCostCalculator {
           return 0
         }
       }
+
+      // If there is a mine that we will hit, the mine weight will take care of that
+
       return this.WEIGHTS.DOUBLESTEP
     }
     return 0

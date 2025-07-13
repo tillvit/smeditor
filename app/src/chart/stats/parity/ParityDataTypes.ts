@@ -109,18 +109,35 @@ export const WEIGHT_SHORT_NAMES: { [id: string]: string } = {
   TOTAL: "TOT",
 }
 
-export enum TechCountsCategory {
+export enum TechCategory {
   Crossovers = 0,
   Footswitches,
   Sideswitches,
   Jacks,
   Brackets,
   Doublesteps,
-  NUM_TechCountsCategory,
-  Invalid,
+  Holdswitch,
 }
 
-export const TECH_COUNTS = ["XO", "FS", "SS", "JA", "BR", "DS"]
+export const TECH_STRINGS: { [key in TechCategory]: string } = {
+  [TechCategory.Crossovers]: "XO",
+  [TechCategory.Footswitches]: "FS",
+  [TechCategory.Sideswitches]: "SS",
+  [TechCategory.Jacks]: "JA",
+  [TechCategory.Brackets]: "BR",
+  [TechCategory.Doublesteps]: "DS",
+  [TechCategory.Holdswitch]: "HS",
+}
+
+export enum TechErrors {
+  UnmarkedDoublestep = 0,
+  MissedFootswitch,
+}
+
+export const TECH_ERROR_STRINGS: { [key in TechErrors]: string } = {
+  [TechErrors.UnmarkedDoublestep]: "Unmarked DS",
+  [TechErrors.MissedFootswitch]: "Missed FS",
+}
 
 export class ParityState {
   action: Foot[] = []

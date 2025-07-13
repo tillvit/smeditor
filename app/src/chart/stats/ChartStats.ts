@@ -5,7 +5,7 @@ import { ChartAnalyzer } from "./ChartAnalyzer"
 import { NoteTypeAnalyzer } from "./NoteTypeAnalyzer"
 import { NPSAnalyzer } from "./NPSAnalyzer"
 import { ParityAnalyzer } from "./parity/ParityAnalyzer"
-import { ParityState } from "./parity/ParityDataTypes"
+import { ParityState, TechCategory, TechErrors } from "./parity/ParityDataTypes"
 import { ParityDebugData } from "./parity/ParityWebWorkerTypes"
 import { StreamAnalyzer, StreamData } from "./StreamAnalyzer"
 
@@ -22,9 +22,15 @@ export class ChartStats {
   noteCounts: Record<string, number> = {}
   npsGraph: number[] = []
   streams: StreamData[] = []
-  parityStates?: ParityState[]
-  parityDebug?: ParityDebugData
-  parityDebugTime?: number
+
+  parity?: {
+    states: ParityState[]
+    rowTimestamps: { beat: number; second: number }[]
+    techRows: Set<TechCategory>[]
+    techErrors: Map<number, Set<TechErrors>>
+    debug: ParityDebugData
+    debugTime: number
+  }
 
   readonly chart
 
