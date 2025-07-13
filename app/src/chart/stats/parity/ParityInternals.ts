@@ -27,6 +27,7 @@ import { calculateTechLabels } from "./TechCounts"
 const SECOND_EPSILON = 0.0005
 
 export class ParityGraphNode {
+  // map from ids to costs
   children: Map<string, { [id: string]: number }> = new Map()
 
   state: ParityState
@@ -192,8 +193,14 @@ export class ParityInternals {
       return this.nodeMap.get(key)!.state
     })
 
+    const bestNodes = this.bestPath.map((key, i) => {
+      if (i == 0) return this.initialNode
+      if (i == this.bestPath!.length - 1) return this.endNode
+      return this.nodeMap.get(key)!
+    })
+
     const { techRows, techErrors } = calculateTechLabels(
-      bestStates.slice(1, -1),
+      bestNodes.slice(1, -1),
       this.notedataRows,
       this.layout
     )
@@ -242,6 +249,10 @@ export class ParityInternals {
     let fulfilledColumns = 0
     while (curIdx >= 0 && fulfilledColumns < columnStatus.length) {
       const note = notedata[curIdx]
+      if (note.warped) {
+        curIdx--
+        continue
+      }
       if (columnStatus[note.col] == 1) {
         curIdx--
         continue
@@ -257,7 +268,7 @@ export class ParityInternals {
         continue
       }
 
-      if (note.fake || note.warped) {
+      if (note.fake) {
         curIdx--
         continue
       }
@@ -280,6 +291,9 @@ export class ParityInternals {
     // Create rows in the new section
     const rows: Row[] = []
     for (const note of rangeNotes) {
+      if (note.warped) {
+        continue
+      }
       if (note.type == "Mine") {
         if (
           this.isSameSecond(note.second, lastColumnSecond) &&
@@ -299,7 +313,7 @@ export class ParityInternals {
         }
         continue
       }
-      if (note.fake || note.warped) continue
+      if (note.fake) continue
       if (!this.isSameSecond(lastColumnSecond, note.second)) {
         if (lastColumnSecond != null && lastColumnBeat != null) {
           rows.push({

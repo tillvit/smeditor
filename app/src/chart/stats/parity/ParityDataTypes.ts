@@ -132,11 +132,13 @@ export const TECH_STRINGS: { [key in TechCategory]: string } = {
 export enum TechErrors {
   UnmarkedDoublestep = 0,
   MissedFootswitch,
+  Ambiguous,
 }
 
 export const TECH_ERROR_STRINGS: { [key in TechErrors]: string } = {
   [TechErrors.UnmarkedDoublestep]: "Unmarked DS",
   [TechErrors.MissedFootswitch]: "Missed FS",
+  [TechErrors.Ambiguous]: "Ambiguous",
 }
 
 export class ParityState {

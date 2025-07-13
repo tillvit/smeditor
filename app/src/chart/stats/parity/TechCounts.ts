@@ -1,28 +1,26 @@
-// broken for now, but we'll fix it soon
-
 import {
   Foot,
   OTHER_PART_OF_FOOT,
-  ParityState,
   PlacementData,
   Row,
   TechCategory,
   TechErrors,
 } from "./ParityDataTypes"
+import { ParityGraphNode } from "./ParityInternals"
 import { StageLayout } from "./StageLayouts"
 
 export function calculateTechLabels(
-  states: ParityState[],
+  nodes: ParityGraphNode[],
   rows: Row[],
   layout: StageLayout
 ) {
   const techRows: Set<TechCategory>[] = [new Set()]
   const techErrors = new Map<number, Set<TechErrors>>()
 
-  for (let i = 0; i < states.length - 1; i++) {
-    const initialState = states[i]
+  for (let i = 0; i < nodes.length - 1; i++) {
+    const initialState = nodes[i].state
     const initialRow = rows[i]
-    const currentState = states[i + 1]
+    const currentState = nodes[i + 1].state
     const currentRow = rows[i + 1]
 
     const data = layout.getPlacementData(
@@ -99,6 +97,22 @@ export function calculateTechLabels(
       techs.add(TechCategory.Crossovers)
     }
 
+    // If there was another path that has the same or better cost (and a jump occurred), it could be ambiguous
+    if (data.previousJumped) {
+      const cost = nodes[i].children.get(nodes[i + 1].key)!["TOTAL"]
+      if (
+        nodes[i].children.entries().some(([child, costs]) => {
+          if (child == nodes[i + 1].key) return false
+          if (costs["TOTAL"] <= cost) {
+            console.log(child, costs, nodes[i + 1].key)
+            return true
+          }
+          return false
+        })
+      ) {
+        errors.add(TechErrors.Ambiguous)
+      }
+    }
     techRows.push(techs)
     if (errors.size) {
       techErrors.set(i + 1, errors)
