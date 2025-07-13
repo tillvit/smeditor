@@ -335,9 +335,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
         idx--
         while (idx >= 0) {
           const folder = folders[idx]
-          console.log("Checking ", folder.name)
+          // console.log("Checking ", folder.name)
           const files = await handle!.getDirectoryFiles(folder)
-          console.log(files)
+          // console.log(files)
           const candidate =
             files.find(f => f.name.endsWith(".ssc")) ??
             files.find(f => f.name.endsWith(".sm"))
