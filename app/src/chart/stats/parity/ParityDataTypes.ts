@@ -64,29 +64,6 @@ export interface PlacementData {
   resultState: ParityState
 }
 
-export const ZERO_WEIGHT: { [key: string]: number } = {
-  DOUBLESTEP: 0,
-  BRACKETJACK: 0,
-  JACK: 0,
-  JUMP: 0,
-  SLOW_BRACKET: 0,
-  TWISTED_FOOT: 0,
-  BRACKETTAP: 0,
-  XO_BR: 0,
-  HOLDSWITCH: 0,
-  MINE: 0,
-  FOOTSWITCH: 0,
-  MISSED_FOOTSWITCH: 0,
-  FACING: 0,
-  DISTANCE: 0,
-  SPIN: 0,
-  SIDESWITCH: 0,
-  CROWDED_BRACKET: 0,
-  OTHER: 0,
-  OVERRIDE: 0,
-  TOTAL: 0,
-}
-
 export const DEFAULT_WEIGHTS: { [key: string]: number } = {
   DOUBLESTEP: 850,
   BRACKETJACK: 20,
@@ -106,6 +83,7 @@ export const DEFAULT_WEIGHTS: { [key: string]: number } = {
   SIDESWITCH: 130,
   CROWDED_BRACKET: 0,
   OTHER: 0,
+  START_XO: 10000,
 }
 
 export const WEIGHT_SHORT_NAMES: { [id: string]: string } = {

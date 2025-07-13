@@ -171,10 +171,7 @@ export class ParityCostCalculator {
 
     costs["BRACKETTAP"] = this.calcBracketTapCost(placementData, elapsedTime)
 
-    // costs["OTHER"] = this.calcMovingFootWhileOtherIsntOnPadCost( // this shouldn't trigger?
-    //   initialState,
-    //   resultState
-    // )
+    costs["OTHER"] = this.calcStartCrossover(placementData, rowIndex)
 
     costs["BRACKETJACK"] = this.calcBracketJackCost(placementData)
 
@@ -381,42 +378,12 @@ export class ParityCostCalculator {
     return cost
   }
 
-  // Old "OTHER" cost
-  calcMovingFootWhileOtherIsntOnPadCost(
-    initialState: ParityState,
-    resultState: ParityState
-  ) {
-    let cost = 0
-
-    // Weighting for moving a foot while the other isn't on the pad (so marked doublesteps are less bad than this)
-    if (initialState.combinedColumns.some(x => x != Foot.NONE)) {
-      for (const f of resultState.movedFeet) {
-        switch (f) {
-          case Foot.LEFT_HEEL:
-          case Foot.LEFT_TOE:
-            if (
-              !(
-                initialState.combinedColumns.includes(Foot.RIGHT_HEEL) ||
-                initialState.combinedColumns.includes(Foot.RIGHT_TOE)
-              )
-            )
-              cost += this.WEIGHTS.OTHER
-            break
-          case Foot.RIGHT_HEEL:
-          case Foot.RIGHT_TOE:
-            if (
-              !(
-                initialState.combinedColumns.includes(Foot.LEFT_HEEL) ||
-                initialState.combinedColumns.includes(Foot.LEFT_TOE)
-              )
-            )
-              cost += this.WEIGHTS.OTHER
-            break
-        }
-      }
+  calcStartCrossover(data: PlacementData, rowIndex: number) {
+    // Don't start the chart crossed over
+    if (data.rightPos.x < data.leftPos.x && rowIndex == 0) {
+      return 10000
     }
-
-    return cost
+    return 0
   }
 
   calcBracketJackCost(data: PlacementData) {
