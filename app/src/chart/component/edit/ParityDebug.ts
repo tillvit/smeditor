@@ -374,7 +374,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
         } else {
           let nodes = nodeRow.nodes
           if (Options.experimental.parity.limitGraph) {
-            nodes = nodes.slice(0, 16)
+            nodes = nodes.slice(0, 8)
           }
           for (const node of nodes) {
             const nodeObject = rowObj.nodePool.createChild()
