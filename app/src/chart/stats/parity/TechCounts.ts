@@ -47,7 +47,7 @@ export function calculateTechLabels(
       }
     }
 
-    if (!techs.has(TechCategory.Holdswitch)) {
+    if (!techs.has(TechCategory.Holdswitch) && !data.jumped) {
       if (
         (data.leftDoubleStep || data.rightDoubleStep) &&
         !techs.has(TechCategory.Holdswitch)
