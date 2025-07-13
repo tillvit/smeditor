@@ -38,7 +38,10 @@ export class ParityCostCalculator {
   ): { [id: string]: number } {
     const lastRow = rows[rowIndex - 1]
     const row = rows[rowIndex]
-    const elapsedTime = resultState.second - initialState.second
+    let elapsedTime = resultState.second - initialState.second
+    if (rowIndex == 0) {
+      elapsedTime = 0.1
+    }
 
     const costs: { [id: string]: number } = {}
 
