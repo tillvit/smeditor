@@ -78,6 +78,7 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         input: {
           type: "spinner",
           min: 0,
+          step: 1 / 48,
         },
       },
     ],
@@ -138,6 +139,7 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         input: {
           type: "spinner",
           min: 0,
+          step: 1 / 48,
         },
       },
     ],
