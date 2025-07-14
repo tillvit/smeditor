@@ -781,6 +781,37 @@ export class ChartManager {
 
     this.loadingText.visible = true
 
+    // Check if SSC available
+    if (extname(this.smPath) == ".sm" && Options.general.loadSSC != "Never") {
+      const sscPath = this.getSMPath(".ssc")
+      if (await FileHandler.hasFile(sscPath)) {
+        if (Options.general.loadSSC == "Prompt") {
+          const window = new ConfirmationWindow(
+            this.app,
+            "Use SSC File",
+            "An SSC file was found. Do you wish to use the SSC file instead?",
+            [
+              {
+                label: "No",
+                type: "default",
+              },
+              {
+                label: "Yes",
+                type: "confirm",
+              },
+            ],
+            "You can change the default behavior in settings"
+          )
+          this.app.windowManager.openWindow(window)
+          const option = await window.resolved
+          if (option == "Yes") this.smPath = sscPath
+        } else if (Options.general.loadSSC == "Always") {
+          WaterfallManager.create("Loading available SSC file")
+          this.smPath = sscPath
+        }
+      }
+    }
+
     // Check for an autosave
 
     let loadPath = this.smPath

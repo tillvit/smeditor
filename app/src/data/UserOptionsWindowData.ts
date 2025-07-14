@@ -218,6 +218,23 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               },
             },
           },
+        ],
+      },
+      {
+        type: "subgroup",
+        children: [
+          {
+            type: "item",
+            label: "Auto-load SSC files",
+            id: "general.loadSSC",
+            input: {
+              type: "dropdown",
+              items: ["Prompt", "Always", "Never"],
+              advanced: false,
+            },
+            tooltip:
+              "Automatically select .ssc files instead of .sm files when available.",
+          },
           {
             type: "item",
             label: "Autosave interval",
@@ -242,6 +259,11 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             tooltip:
               "Warn before exiting the editor if you have unsaved changes.",
           },
+        ],
+      },
+      {
+        type: "subgroup",
+        children: [
           {
             type: "item",
             label: "Spinner step",

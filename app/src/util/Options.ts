@@ -21,6 +21,7 @@ export class DefaultOptions {
     autosaveInterval: 120,
     warnBeforeExit: true,
     showPlaybackOptions: true,
+    loadSSC: "Prompt",
     theme: "default",
   }
   static chart = {

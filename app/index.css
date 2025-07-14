@@ -2145,6 +2145,12 @@ input[type="range"] {
   color: var(--text-color-detail);
 }
 
+.secondary {
+  font-size: 0.75rem;
+  text-align: center;
+  color: var(--text-color-secondary);
+}
+
 .tippy-box[data-theme~="sm"] {
   background-color: var(--tooltip-bg);
   color: var(--text-color);
