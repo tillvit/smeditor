@@ -166,6 +166,8 @@ export class ChartManager {
   private lastMode: EditMode = EditMode.Edit
 
   private _beat = 0
+  private cachedSecond = 0
+  private cachedBeat = 0
 
   private readonly noChartTextA: BitmapText
   private readonly noChartTextB: BitmapText
@@ -689,7 +691,11 @@ export class ChartManager {
     if (!this.chartAudio.isPlaying()) {
       return this._beat
     }
-    return this.loadedChart.getBeatFromSeconds(this.time)
+    if (this.cachedSecond == this.time) return this.cachedBeat
+    const beat = this.loadedChart.getBeatFromSeconds(this.time)
+    this.cachedBeat = beat
+    this.cachedSecond = this.time
+    return beat
   }
 
   set beat(beat: number) {

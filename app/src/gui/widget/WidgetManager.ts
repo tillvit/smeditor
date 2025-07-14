@@ -4,12 +4,13 @@ import { ChartManager } from "../../chart/ChartManager"
 import { CaptureStatusWidget } from "./CaptureStatusWidget"
 import { DancingBotWidget } from "./DancingBotWidget"
 import { DebugWidget } from "./DebugWidget"
-import { NPSGraphWidget } from "./NPSGraphWidget"
-import { NoteLayoutWidget } from "./NoteLayoutWidget"
 import { PlayInfoWidget } from "./PlayInfoWidget"
 import { PlaybackOptionsWidget } from "./PlaybackOptionsWidget"
 import { StatusWidget } from "./StatusWidget"
 import { Widget } from "./Widget"
+import { DensityWidget } from "./timeline/DensityWidget"
+import { FacingLayoutWidget } from "./timeline/FacingWidget"
+import { NoteLayoutWidget } from "./timeline/NoteLayoutWidget"
 
 export class WidgetManager extends Container {
   app: App
@@ -24,10 +25,12 @@ export class WidgetManager extends Container {
     this.addChild(new PlayInfoWidget(this))
     this.addChild(new StatusWidget(this))
     this.addChild(new DebugWidget(this))
-    this.addChild(new NPSGraphWidget(this))
+    this.addChild(new DensityWidget(this))
     this.addChild(new PlaybackOptionsWidget(this))
+    this.addChild(new FacingLayoutWidget(this))
     this.addChild(new CaptureStatusWidget(this))
     this.addChild(new DancingBotWidget(this))
+
     this.zIndex = 2
   }
 

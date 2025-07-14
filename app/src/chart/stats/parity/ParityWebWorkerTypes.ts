@@ -83,10 +83,9 @@ export interface ParityComputeData {
   facingRows: number[]
 }
 
-export interface ParityOutboundComputeMessage
-  extends ParityBaseMessage,
-    ParityComputeData {
+export interface ParityOutboundComputeMessage extends ParityBaseMessage {
   type: "compute"
+  data: ParityComputeData
   debug?: ParityDebugUpdateData
 }
 

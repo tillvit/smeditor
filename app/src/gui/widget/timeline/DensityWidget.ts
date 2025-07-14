@@ -1,12 +1,12 @@
 import { BitmapText, FederatedPointerEvent, Graphics, Texture } from "pixi.js"
-import { assignTint, colorFallback } from "../../util/Color"
-import { EventHandler } from "../../util/EventHandler"
-import { clamp, lerp, unlerp } from "../../util/Math"
-import { Options } from "../../util/Options"
+import { assignTint, colorFallback } from "../../../util/Color"
+import { EventHandler } from "../../../util/EventHandler"
+import { clamp, unlerp } from "../../../util/Math"
+import { Options } from "../../../util/Options"
+import { WidgetManager } from "../WidgetManager"
 import { BaseTimelineWidget } from "./BaseTimelineWidget"
-import { WidgetManager } from "./WidgetManager"
 
-export class NPSGraphWidget extends BaseTimelineWidget {
+export class DensityWidget extends BaseTimelineWidget {
   npsGraph: Graphics
   private graphGradient: Texture | null = null
   private graphWidth: number = 40
@@ -17,7 +17,10 @@ export class NPSGraphWidget extends BaseTimelineWidget {
 
   constructor(manager: WidgetManager) {
     const graphWidth = 40
-    super(manager, 60, 1)
+    super(manager, {
+      backingWidth: 60,
+      order: 9,
+    })
     this.graphWidth = graphWidth
 
     this.graphGradient = this.makeGradient()
@@ -25,7 +28,7 @@ export class NPSGraphWidget extends BaseTimelineWidget {
     this.npsGraph = new Graphics()
     this.container.addChild(this.npsGraph)
 
-    this.name = "note-layout"
+    this.name = "density"
 
     this.npsText.visible = false
     this.npsText.anchor.x = 1
@@ -70,28 +73,20 @@ export class NPSGraphWidget extends BaseTimelineWidget {
       return
     }
     const npsGraphData = chart.stats.npsGraph
+    const height = this.manager.app.STAGE_HEIGHT - this.verticalMargin
 
-    let t = this.npsGraph.toLocal(event.global).y / this.npsGraph.height
+    let t = this.npsGraph.toLocal(event.global).y / height
     t = clamp(t, 0, 1)
 
-    let beat = lerp(0, chart.getLastBeat(), t)
-    if (Options.chart.CMod) {
-      const second = lerp(
-        -chart.timingData.getOffset(),
-        chart.getLastSecond(),
-        t
-      )
-      beat = chart.timingData.getBeatFromSeconds(second)
-    }
-
-    const npsIndex = Math.floor(chart.timingData.getMeasure(beat))
+    const position = this.getSongPositionFromT(t)
+    const npsIndex = Math.floor(chart.timingData.getMeasure(position.beat))
 
     // npsGraph is a sparse array, so make sure we have a valid number,
     // otherwise the nps for that measure is 0
     const nps = npsGraphData[npsIndex] ?? 0
 
     this.npsText.text = nps.toFixed(1) + " nps"
-    this.npsText.position.y = this.getYFromBeat(beat) - this.npsGraph.height / 2
+    this.npsText.position.y = this.npsGraph.toLocal(event.global).y - height / 2
     this.npsText.position.x = -this.backing.width / 2 - 10
     this.npsText.visible = true
   }
@@ -125,13 +120,11 @@ export class NPSGraphWidget extends BaseTimelineWidget {
     super.update()
   }
 
-  populate() {
+  populate(startBeat?: number, endBeat?: number) {
     const chart = this.getChart()
     if (!chart) {
       return
     }
-
-    const height = this.manager.app.STAGE_HEIGHT - 40
 
     const maxNps = chart.stats.getMaxNPS()
     const npsGraphData = chart.stats.npsGraph
@@ -150,13 +143,15 @@ export class NPSGraphWidget extends BaseTimelineWidget {
     }
 
     this.npsGraph.pivot.x = this.backing.width / 2
-    this.npsGraph.pivot.y = height / 2
+    this.npsGraph.pivot.y =
+      (this.manager.app.STAGE_HEIGHT - this.verticalMargin) / 2
 
     const lastMeasure = Math.floor(
       this.getChart().timingData.getMeasure(lastBeat)
     )
 
-    const startY = this.getYFromBeat(0)
+    const startY = this.getYFromBeat(this.getSongPositionFromT(0).beat)
+    const endY = this.getYFromBeat(this.getSongPositionFromT(1).beat)
     this.npsGraph.moveTo(0, startY)
 
     for (let measureIndex = 0; measureIndex <= lastMeasure; measureIndex++) {
@@ -166,9 +161,15 @@ export class NPSGraphWidget extends BaseTimelineWidget {
         lastBeat,
         chart.timingData.getBeatFromMeasure(measureIndex + 1)
       )
+      if (startBeat !== undefined && endOfMeasureBeat < startBeat) continue
+      if (endBeat !== undefined && beat > endBeat) break
       const x = unlerp(0, maxNps, nps) * this.graphWidth
-      const y = this.getYFromBeat(beat)
-      const endOfMeasureY = this.getYFromBeat(endOfMeasureBeat)
+      const y = clamp(this.getYFromBeat(beat), startY, endY)
+      const endOfMeasureY = clamp(
+        this.getYFromBeat(endOfMeasureBeat),
+        startY,
+        endY
+      )
 
       this.npsGraph.lineTo(x, y)
       this.npsGraph.lineTo(x, endOfMeasureY)
@@ -176,36 +177,10 @@ export class NPSGraphWidget extends BaseTimelineWidget {
 
     const lastnps = npsGraphData.at(-1) ?? 0
     const lastX = unlerp(0, maxNps, lastnps) * this.graphWidth
-    const lastY = this.getYFromBeat(lastBeat)
+    const lastY = clamp(this.getYFromBeat(lastBeat), startY, endY)
     this.npsGraph.lineTo(lastX, lastY)
     this.npsGraph.lineTo(0, lastY)
     this.npsGraph.endFill()
-  }
-
-  private getYFromBeat(beat: number): number {
-    if (Options.chart.CMod) {
-      return this.getYFromSecond(
-        this.getChart().timingData.getSecondsFromBeat(beat)
-      )
-    }
-    let t = unlerp(0, this.getChart().getLastBeat(), beat)
-    t = clamp(t, 0, 1)
-    return t * (this.backing.height - 10)
-  }
-
-  private getYFromSecond(second: number): number {
-    if (!Options.chart.CMod) {
-      return this.getYFromBeat(
-        this.getChart().timingData.getBeatFromSeconds(second)
-      )
-    }
-    let t = unlerp(
-      -this.getChart().timingData.getOffset(),
-      this.getChart().getLastSecond(),
-      second
-    )
-    t = clamp(t, 0, 1)
-    return t * (this.backing.height - 10)
   }
 
   private makeGradient() {

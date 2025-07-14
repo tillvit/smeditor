@@ -566,13 +566,30 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           },
         ],
       },
+    ],
+  },
+  {
+    type: "group",
+    id: "timelines",
+    label: "Timelines",
+    children: [
+      {
+        type: "item",
+        label: "Follow current position",
+        id: "chart.layoutFollowPosition",
+        input: {
+          type: "checkbox",
+        },
+        tooltip:
+          "Change whether layouts show the entire song or range around the cursor.",
+      },
       {
         type: "subgroup",
-        label: "Note Layout",
+        label: "Notes",
         children: [
           {
             type: "item",
-            label: "Show Note Layout",
+            label: "Enabled",
             id: "chart.noteLayout.enabled",
             input: {
               type: "checkbox",
@@ -582,11 +599,25 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
       },
       {
         type: "subgroup",
-        label: "NPS Graph",
+        label: "Player Direction",
         children: [
           {
             type: "item",
-            label: "Show NPS Graph",
+            label: "Enabled",
+            id: "chart.facingLayout.enabled",
+            input: {
+              type: "checkbox",
+            },
+          },
+        ],
+      },
+      {
+        type: "subgroup",
+        label: "Density",
+        children: [
+          {
+            type: "item",
+            label: "Enabled",
             id: "chart.npsGraph.enabled",
             input: {
               type: "checkbox",

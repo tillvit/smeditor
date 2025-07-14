@@ -26,7 +26,7 @@ import receptorUrl from "../../../assets/receptor.png"
 import { PARITY_COLORS } from "../../chart/component/edit/ParityDebug"
 import { Foot, ParityState } from "../../chart/stats/parity/ParityDataTypes"
 import { Options } from "../../util/Options"
-import { BaseTimelineWidget } from "./BaseTimelineWidget"
+import { BaseTimelineWidget } from "./timeline/BaseTimelineWidget"
 
 interface StagePanel extends Container {
   bg: Sprite

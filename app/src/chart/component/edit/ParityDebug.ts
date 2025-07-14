@@ -7,7 +7,7 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
-import { BaseTimelineWidget } from "../../../gui/widget/BaseTimelineWidget"
+import { BaseTimelineWidget } from "../../../gui/widget/timeline/BaseTimelineWidget"
 import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
 import { blendPixiColors } from "../../../util/Color"
 import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
@@ -655,9 +655,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               .toArray()
               .map(x => TECH_ERROR_STRINGS[x] as string)
               .join(", ")
-          : "") +
-        " " +
-        parityData.facingRows[rowObj.i]
+          : "")
 
       rowObj.visible = Options.experimental.parity.showGraph
 

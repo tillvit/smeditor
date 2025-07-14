@@ -82,10 +82,10 @@ export class ParityAnalyzer extends ChartAnalyzer {
         Options.experimental.parity.showDebug ||
         Options.experimental.parity.showGraph,
     })
-      .then(data => {
+      .then(message => {
         notedata.forEach(note => {
           const key = note.beat.toFixed(3) + "-" + note.col
-          const foot = data.parityLabels.get(key)
+          const foot = message.data.parityLabels.get(key)
           if (foot) {
             if (!note.parity) note.parity = {}
             note.parity.foot = foot
@@ -93,7 +93,7 @@ export class ParityAnalyzer extends ChartAnalyzer {
         })
         if (!this.chart.stats.parity) {
           this.chart.stats.parity = {
-            ...data,
+            ...message.data,
             debug: {
               notedataRows: [],
               nodeRows: [],
@@ -123,36 +123,33 @@ export class ParityAnalyzer extends ChartAnalyzer {
             debugTime: 0,
           }
         } else {
-          this.chart.stats.parity = {
-            ...data,
-            ...this.chart.stats.parity,
-          }
+          Object.assign(this.chart.stats.parity, message.data)
         }
-        if (data.debug) {
+        if (message.debug) {
           // Incrementally recreate the debug data instead of sending it over
           const debugData = this.chart.stats.parity.debug
 
           const newRows = this.chart.stats.parity.debug.notedataRows
-            .slice(0, data.debug.removedRowsStart)
-            .concat(data.debug.newRows)
-            .concat(debugData.notedataRows.slice(data.debug.removedRowsEnd))
+            .slice(0, message.debug.removedRowsStart)
+            .concat(message.debug.newRows)
+            .concat(debugData.notedataRows.slice(message.debug.removedRowsEnd))
           debugData.notedataRows = newRows
 
           const statesToRemove =
-            data.debug?.newStates.length -
-            (data.debug.newRows.length -
-              data.debug.removedRowsEnd +
-              data.debug.removedRowsStart)
+            message.debug?.newStates.length -
+            (message.debug.newRows.length -
+              message.debug.removedRowsEnd +
+              message.debug.removedRowsStart)
           const removedStates = debugData.nodeRows.slice(
-            Math.max(data.debug.removedRowsStart - 1, 0),
+            Math.max(message.debug.removedRowsStart - 1, 0),
             statesToRemove
           )
           const newStates = this.chart.stats.parity.debug.nodeRows
-            .slice(0, Math.max(0, data.debug.removedRowsStart - 1))
-            .concat(data.debug.newStates)
+            .slice(0, Math.max(0, message.debug.removedRowsStart - 1))
+            .concat(message.debug.newStates)
             .concat(
               debugData.nodeRows.slice(
-                Math.max(0, data.debug.removedRowsStart - 1 + statesToRemove)
+                Math.max(0, message.debug.removedRowsStart - 1 + statesToRemove)
               )
             )
 
@@ -162,18 +159,18 @@ export class ParityAnalyzer extends ChartAnalyzer {
             })
           })
 
-          data.debug.newStates.forEach(row => {
+          message.debug.newStates.forEach(row => {
             row.nodes.forEach(node => {
               debugData.nodeMap.set(node.key, node)
             })
           })
 
           debugData.nodeRows = newStates
-          debugData.stats = data.debug.stats
-          debugData.edgeCacheSize = data.debug.edgeCacheSize
-          debugData.bestPath = data.debug.bestPath
-          debugData.bestPathCost = data.debug.bestPathCost
-          debugData.bestPathSet = data.debug.bestPathSet
+          debugData.stats = message.debug.stats
+          debugData.edgeCacheSize = message.debug.edgeCacheSize
+          debugData.bestPath = message.debug.bestPath
+          debugData.bestPathCost = message.debug.bestPathCost
+          debugData.bestPathSet = message.debug.bestPathSet
         }
 
         this.chart.stats.parity.debugTime = performance.now() - start

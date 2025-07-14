@@ -760,7 +760,6 @@ export class ParityInternals {
     }
 
     this.bestPathSet = new Set(this.bestPath ?? [])
-    console.log("Best path cost", this.bestPathCost)
 
     this.debugStats.pathUpdateTime = performance.now() - pathTimeStart
   }
@@ -1130,7 +1129,7 @@ self.onmessage = (e: MessageEvent<ParityInboundMessage>) => {
       postMessage({
         type: "compute",
         id: e.data.id,
-        ...result,
+        data: result,
         debug: e.data.debug ? getDebugUpdateData()! : undefined,
       } satisfies ParityOutboundComputeMessage)
       break
