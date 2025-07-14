@@ -114,10 +114,11 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
       obj.height = 1
       obj.width = 6
       if (Math.abs(facing) > 1.6) {
-        obj.height = 3
+        obj.height = 2
         obj.width = 8
       }
-      obj.x = 16 + facing * 6
+      const offset = (Math.sign(facing) * Math.pow(Math.abs(facing), 1.5)) / 2
+      obj.x = 16 + offset * 8
       obj.y = this.getYFromBeat(chart.stats.parity.rowTimestamps[i].beat)
       childIndex++
     }
