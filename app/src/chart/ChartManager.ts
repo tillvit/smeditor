@@ -933,7 +933,6 @@ export class ChartManager {
       this.lastSong = this.loadedChart.getMusicPath()
       const audioPlaying = this.chartAudio.isPlaying()
       await this.loadAudio()
-      EventHandler.emit("audioLoaded")
       if (audioPlaying) this.chartAudio.play()
     }
 
@@ -947,7 +946,6 @@ export class ChartManager {
     )
 
     EventHandler.emit("chartLoaded", chart)
-    EventHandler.emit("audioLoaded")
     EventHandler.emit("chartModified")
 
     if (Flags.autoPlay) {
@@ -974,6 +972,7 @@ export class ChartManager {
       const prevBeat = Math.max(0, this.beat)
       this.chartAudio = new ChartAudio(undefined)
       this.beat = prevBeat
+      EventHandler.emit("audioLoaded")
       return
     }
     const audioHandle = await this.getAudioHandle(musicPath)
@@ -985,6 +984,7 @@ export class ChartManager {
       const prevBeat = Math.max(0, this.beat)
       this.chartAudio = new ChartAudio(undefined)
       this.beat = prevBeat
+      EventHandler.emit("audioLoaded")
       return
     }
     const audioFile = await audioHandle.getFile()
@@ -1003,6 +1003,7 @@ export class ChartManager {
       this.me_low.stop()
     }
     this.setNoteIndex()
+    EventHandler.emit("audioLoaded")
   }
 
   /**
