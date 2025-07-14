@@ -91,7 +91,8 @@ export function calculateRowStats(
       techs.add(TechCategory.Jacks)
       if (
         currentRow.mines.some(x => x !== undefined) ||
-        currentRow.fakeMines.some(x => x !== undefined)
+        (currentRow.fakeMines.some(x => x !== undefined) &&
+          currentRow.second - techRows.length < 0.2)
       ) {
         errors.add(TechErrors.MissedFootswitch)
       }
