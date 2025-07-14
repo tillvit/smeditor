@@ -345,14 +345,14 @@ export class ParityCostCalculator {
   calcFacingCost(data: PlacementData) {
     let cost = 0
 
+    let dx = data.rightPos.x - data.leftPos.x
+    const dy = data.rightPos.y - data.leftPos.y
+
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    dx /= distance
+
     // facing backwards gives a bit of bad weight (scaled heavily the further back you angle, so crossovers aren't Too bad; less bad than doublesteps)
-    const heelFacing =
-      data.resultState.leftHeel != -1 && data.resultState.rightHeel != -1
-        ? this.layout.getFacingDirectionCosine(
-            data.resultState.leftHeel,
-            data.resultState.rightHeel
-          )
-        : 0
+    const heelFacing = dx
 
     const heelFacingPenalty = Math.pow(-Math.min(heelFacing, 0), 7.2) * 200
     if (heelFacingPenalty > 0) cost += heelFacingPenalty * this.WEIGHTS.FACING
