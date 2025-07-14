@@ -25,19 +25,26 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
   bars: Sprite
   barTexture: RenderTexture
 
+  middleLine: Sprite
+
   constructor(manager: WidgetManager) {
     super(manager, {
       backingWidth: 48,
       order: 1,
       trigger: "parity",
     })
-    this.addChild(this.backing)
-    this.addChild(this.container)
     this.visible = false
     this.name = "facing"
 
     this.backing.tint = 0
     this.backing.alpha = 0.3
+
+    this.middleLine = new Sprite(Texture.WHITE)
+    this.middleLine.anchor.set(0.5)
+    this.middleLine.width = 1
+    this.middleLine.alpha = 0.2
+    this.middleLine.height = this.manager.app.STAGE_HEIGHT
+    this.addChild(this.middleLine)
 
     this.barTexture = RenderTexture.create({
       resolution: this.manager.app.renderer.resolution,
@@ -55,6 +62,7 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
       return
     }
     this.visible = true
+    this.middleLine.height = this.backing.height
     super.update()
   }
 
@@ -89,6 +97,23 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
         chart.stats.parity.rowTimestamps[i].beat > endBeat
       )
         break
+
+      if (chart.stats.parity.candles.has(i)) {
+        let c_obj = this.barContainer.children[childIndex]
+        if (!c_obj) {
+          c_obj = new Sprite(Texture.WHITE)
+          this.barContainer.addChild(c_obj)
+        }
+        c_obj.anchor.set(0.5)
+        c_obj.height = 3
+        c_obj.width = 32
+        c_obj.alpha = 0.4
+        c_obj.tint = PARITY_COLORS[chart.stats.parity.candles.get(i)!]
+        c_obj.x = 16
+        c_obj.y = this.getYFromBeat(chart.stats.parity.rowTimestamps[i].beat)
+        childIndex++
+      }
+
       let obj = this.barContainer.children[childIndex]
       if (!obj) {
         obj = new Sprite(Texture.WHITE)
@@ -113,6 +138,7 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
       obj.anchor.set(0.5)
       obj.height = 1
       obj.width = 6
+      obj.alpha = 1
       if (Math.abs(facing) > 1.6) {
         obj.height = 2
         obj.width = 8

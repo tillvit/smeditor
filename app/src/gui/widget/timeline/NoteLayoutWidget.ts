@@ -19,8 +19,6 @@ export class NoteLayoutWidget extends BaseTimelineWidget {
 
   constructor(manager: WidgetManager) {
     super(manager)
-    this.addChild(this.backing)
-    this.addChild(this.container)
     this.visible = false
     this.name = "note-layout"
 

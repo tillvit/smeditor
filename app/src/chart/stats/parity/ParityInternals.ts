@@ -210,7 +210,7 @@ export class ParityInternals {
 
     const rowStatsTimeStart = performance.now()
 
-    const { techRows, techErrors, facingRows } = calculateRowStats(
+    const { techRows, techErrors, facingRows, candles } = calculateRowStats(
       bestNodes.slice(1, -1),
       this.notedataRows,
       this.layout
@@ -248,6 +248,7 @@ export class ParityInternals {
       techErrors,
       rowTimestamps,
       facingRows,
+      candles,
     }
   }
 

@@ -18,6 +18,7 @@ export function calculateRowStats(
   const techRows: Set<TechCategory>[] = [new Set()]
   const techErrors = new Map<number, Set<TechErrors>>()
   const facingRows: number[] = [0]
+  const candles = new Map<number, Foot>()
 
   for (let i = 0; i < nodes.length - 1; i++) {
     const initialState = nodes[i].state
@@ -106,12 +107,26 @@ export function calculateRowStats(
       errors.add(TechErrors.Ambiguous)
     }
 
+    if (
+      data.movedLeft &&
+      Math.abs(data.previousLeftPos.y - data.leftPos.y) > 1.3
+    ) {
+      candles.set(i + 1, Foot.LEFT_HEEL)
+    }
+
+    if (
+      data.movedRight &&
+      Math.abs(data.previousRightPos.y - data.rightPos.y) > 1.3
+    ) {
+      candles.set(i + 1, Foot.RIGHT_HEEL)
+    }
+
     techRows.push(techs)
     if (errors.size) {
       techErrors.set(i + 1, errors)
     }
   }
-  return { techRows, techErrors, facingRows }
+  return { techRows, techErrors, facingRows, candles }
 }
 
 function isDoublestepMarked(

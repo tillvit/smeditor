@@ -81,6 +81,7 @@ export interface ParityComputeData {
   techRows: Set<TechCategory>[]
   techErrors: Map<number, Set<TechErrors>>
   facingRows: number[]
+  candles: Map<number, Foot>
 }
 
 export interface ParityOutboundComputeMessage extends ParityBaseMessage {
