@@ -146,6 +146,7 @@ export class ParityState {
   combinedColumns: Foot[] = []
   movedFeet: Set<Foot> = new Set()
   holdFeet: Set<Foot> = new Set()
+  frontFoot: Foot | null = null
   second: number
   beat: number
   rowKey: string
@@ -198,7 +199,7 @@ export class ParityState {
       }
     }
 
-    return `${this.rowKey}-${this.action.join("")}-${this.combinedColumns.join("")}-${movedString}-${holdString}-${feetString}`
+    return `${this.rowKey}-${this.action.join("")}-${this.combinedColumns.join("")}-${movedString}-${holdString}-${feetString}-${this.frontFoot}`
   }
 }
 

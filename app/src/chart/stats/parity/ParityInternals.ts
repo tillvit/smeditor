@@ -940,6 +940,23 @@ export class ParityInternals {
           Foot.RIGHT_TOE
       }
     }
+    const leftPos = this.layout.averagePoint(
+      resultState.leftHeel,
+      resultState.leftToe
+    )
+    const rightPos = this.layout.averagePoint(
+      resultState.rightHeel,
+      resultState.rightToe
+    )
+
+    if (leftPos.y > rightPos.y) {
+      resultState.frontFoot = Foot.LEFT_HEEL
+    } else if (rightPos.y > leftPos.y) {
+      resultState.frontFoot = Foot.RIGHT_HEEL
+    } else {
+      resultState.frontFoot = initialState.frontFoot
+    }
+
     return resultState
   }
 

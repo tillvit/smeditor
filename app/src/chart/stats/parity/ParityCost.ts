@@ -402,8 +402,9 @@ export class ParityCostCalculator {
 
     // If we cross the 180 deg line, that's a spin
     if (
-      (prevAngle <= Math.PI && angle >= Math.PI) ||
-      (prevAngle >= Math.PI && angle <= Math.PI)
+      ((prevAngle <= Math.PI && angle >= Math.PI) ||
+        (prevAngle >= Math.PI && angle <= Math.PI)) &&
+      data.initialState.frontFoot != data.resultState.frontFoot
     ) {
       cost += this.WEIGHTS.SPIN
     }
