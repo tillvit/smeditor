@@ -16,7 +16,6 @@ import { WidgetManager } from "./WidgetManager"
 import bezier from "bezier-easing"
 
 import { BezierAnimator } from "../../util/BezierEasing"
-import { assignTint } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, lerp, unlerp } from "../../util/Math"
 import { bsearch } from "../../util/Util"
@@ -25,6 +24,7 @@ import footUrl from "../../../assets/foot.png"
 import receptorUrl from "../../../assets/receptor.png"
 import { PARITY_COLORS } from "../../chart/component/edit/ParityDebug"
 import { Foot, ParityState } from "../../chart/stats/parity/ParityDataTypes"
+import { assignTint } from "../../util/Color"
 import { Options } from "../../util/Options"
 import { BaseTimelineWidget } from "./timeline/BaseTimelineWidget"
 
@@ -79,11 +79,18 @@ export class DancingBotWidget extends Widget {
       const container = new Container() as StagePanel
 
       const bg = new Sprite(Texture.WHITE)
-      assignTint(bg, "accent-color")
-      bg.alpha = 0.3
+      bg.alpha = 0.1
       bg.anchor.set(0.5)
       bg.width = PANEL_SIZE
       bg.height = PANEL_SIZE
+
+      const bgTint = new Sprite(Texture.WHITE)
+      bgTint.anchor.set(0.5)
+      bgTint.width = PANEL_SIZE
+      bgTint.height = PANEL_SIZE
+      bgTint.blendMode = BLEND_MODES.COLOR_BURN
+      assignTint(bgTint, "primary-bg-active")
+      container.addChild(bgTint)
 
       const sprite = new Sprite(receptorTex)
       sprite.anchor.set(0.5)
@@ -417,10 +424,10 @@ export class DancingBotWidget extends Widget {
       panel.bg,
       {
         "0": {
-          alpha: 1.5,
+          alpha: 0.6,
         },
         "1": {
-          alpha: 0.3,
+          alpha: 0.1,
         },
       },
       0.4,
