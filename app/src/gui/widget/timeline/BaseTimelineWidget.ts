@@ -151,7 +151,7 @@ export class BaseTimelineWidget extends Widget {
     if (!drag) this.dragStartT = t
     this.dragEndT = t
     const lastNote = this.getChart().getNotedata().at(-1)
-    if (!lastNote || drag) return
+    if (!lastNote || (drag && Options.chart.layoutFollowPosition)) return
 
     const position = this.getSongPositionFromT(t)
 
