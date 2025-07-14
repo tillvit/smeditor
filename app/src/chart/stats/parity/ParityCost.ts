@@ -1,3 +1,4 @@
+import { clamp } from "../../../util/Math"
 import {
   DEFAULT_WEIGHTS,
   Foot,
@@ -6,6 +7,7 @@ import {
   PlacementData,
   Row,
 } from "./ParityDataTypes"
+import { getPlayerAngle } from "./ParityUtils"
 
 import { STAGE_LAYOUTS, StageLayout } from "./StageLayouts"
 
@@ -67,7 +69,12 @@ export class ParityCostCalculator {
 
     costs["XO_BR"] = this.calcXOBRCost(placementData)
 
-    costs["DOUBLESTEP"] = this.calcDoublestepCost(placementData, lastRow, row)
+    costs["DOUBLESTEP"] = this.calcDoublestepCost(
+      placementData,
+      lastRow,
+      row,
+      elapsedTime
+    )
 
     costs["JUMP"] = this.calcJumpCost(placementData, elapsedTime)
 
@@ -281,7 +288,12 @@ export class ParityCostCalculator {
     return cost
   }
 
-  calcDoublestepCost(data: PlacementData, lastRow: Row, row: Row) {
+  calcDoublestepCost(
+    data: PlacementData,
+    lastRow: Row,
+    row: Row,
+    elapsedTime: number
+  ) {
     if (data.leftDoubleStep || data.rightDoubleStep) {
       // Check if we are allowed to DS
 
@@ -310,7 +322,7 @@ export class ParityCostCalculator {
         if (willHitMine) return 0
       }
 
-      return this.WEIGHTS.DOUBLESTEP
+      return this.WEIGHTS.DOUBLESTEP / clamp(elapsedTime * 4, 0.3, 1)
     }
     return 0
   }
@@ -379,24 +391,44 @@ export class ParityCostCalculator {
   calcSpinCost(data: PlacementData) {
     let cost = 0
 
-    // spin
+    let prevAngle = getPlayerAngle(data.previousLeftPos, data.previousRightPos)
+
+    let angle = getPlayerAngle(data.leftPos, data.rightPos)
+
+    if (Math.abs(angle) < Math.PI / 2 || Math.abs(prevAngle) < Math.PI / 2) {
+      return 0
+    }
+
+    if (angle < 0) angle += Math.PI * 2
+    if (prevAngle < 0) prevAngle += Math.PI * 2
+
+    if (angle == prevAngle) return 0
 
     if (
-      data.rightPos.x < data.leftPos.x &&
-      data.previousRightPos.x < data.previousLeftPos.x &&
-      data.rightPos.y < data.leftPos.y &&
-      data.previousRightPos.y > data.previousLeftPos.y
+      (prevAngle <= Math.PI && angle >= Math.PI) ||
+      (prevAngle >= Math.PI && angle <= Math.PI)
     ) {
       cost += this.WEIGHTS.SPIN
     }
-    if (
-      data.rightPos.x < data.leftPos.x &&
-      data.previousRightPos.x < data.previousLeftPos.x &&
-      data.rightPos.y > data.leftPos.y &&
-      data.previousRightPos.y < data.previousLeftPos.y
-    ) {
-      cost += this.WEIGHTS.SPIN
-    }
+
+    // spin
+
+    // if (
+    //   data.rightPos.x < data.leftPos.x &&
+    //   data.previousRightPos.x < data.previousLeftPos.x &&
+    //   data.rightPos.y < data.leftPos.y &&
+    //   data.previousRightPos.y > data.previousLeftPos.y
+    // ) {
+    //   cost += this.WEIGHTS.SPIN
+    // }
+    // if (
+    //   data.rightPos.x < data.leftPos.x &&
+    //   data.previousRightPos.x < data.previousLeftPos.x &&
+    //   data.rightPos.y > data.leftPos.y &&
+    //   data.previousRightPos.y < data.previousLeftPos.y
+    // ) {
+    //   cost += this.WEIGHTS.SPIN
+    // }
 
     // if (
     //   leftPos.y < rightPos.y &&

@@ -79,7 +79,7 @@ export const DEFAULT_WEIGHTS: { [key: string]: number } = {
   MISSED_FOOTSWITCH: 500,
   FACING: 3,
   DISTANCE: 6,
-  SPIN: 1000,
+  SPIN: 2000,
   SIDESWITCH: 130,
   CROWDED_BRACKET: 0,
   OTHER: 0,
