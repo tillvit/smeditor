@@ -293,7 +293,22 @@ export class ParityCostCalculator {
         }
       }
 
-      // If there is a mine that we will hit, the mine weight will take care of that
+      if (data.leftDoubleStep) {
+        const willHitMine =
+          row.mines[data.initialState.footColumns[Foot.LEFT_HEEL]] ||
+          row.fakeMines[data.initialState.footColumns[Foot.LEFT_HEEL]] ||
+          row.mines[data.initialState.footColumns[Foot.LEFT_TOE]] ||
+          row.fakeMines[data.initialState.footColumns[Foot.LEFT_TOE]]
+        if (willHitMine) return 0
+      }
+      if (data.rightDoubleStep) {
+        const willHitMine =
+          row.mines[data.initialState.footColumns[Foot.RIGHT_HEEL]] ||
+          row.fakeMines[data.initialState.footColumns[Foot.RIGHT_HEEL]] ||
+          row.mines[data.initialState.footColumns[Foot.RIGHT_TOE]] ||
+          row.fakeMines[data.initialState.footColumns[Foot.RIGHT_TOE]]
+        if (willHitMine) return 0
+      }
 
       return this.WEIGHTS.DOUBLESTEP
     }
@@ -306,6 +321,7 @@ export class ParityCostCalculator {
   }
 
   private slowBracketThreshold = 0.15
+  private slowBracketCap = 0.5
   calcSlowBracketCost(data: PlacementData, elapsedTime: number) {
     if (
       elapsedTime > this.slowBracketThreshold &&
@@ -313,7 +329,8 @@ export class ParityCostCalculator {
       !data.jumped
     ) {
       return (
-        (elapsedTime - this.slowBracketThreshold) * this.WEIGHTS.SLOW_BRACKET
+        Math.min(this.slowBracketCap, elapsedTime - this.slowBracketThreshold) *
+        this.WEIGHTS.SLOW_BRACKET
       )
     }
     return 0
@@ -407,6 +424,7 @@ export class ParityCostCalculator {
     ) {
       return 0
     }
+    if (data.jumped) return 0
 
     // footswitching has no penalty if there's a mine nearby
     if (
@@ -438,6 +456,7 @@ export class ParityCostCalculator {
 
   calcSideswitchCost(data: PlacementData) {
     let cost = 0
+    if (data.jumped) return 0
 
     this.layout.sideArrows.forEach(col => {
       if (data.resultState.action[col] == Foot.NONE) return
