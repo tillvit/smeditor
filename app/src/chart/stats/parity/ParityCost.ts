@@ -82,11 +82,6 @@ export class ParityCostCalculator {
 
     costs["TWISTED_FOOT"] = this.calcTwistedFoot(placementData)
 
-    // if (combinedPlacement.leftToe == -1)
-    //   combinedPlacement.leftToe = combinedPlacement.leftHeel
-    // if (combinedPlacement.rightToe == -1)
-    //   combinedPlacement.rightToe = combinedPlacement.rightHeel
-
     costs["FACING"] = this.calcFacingCost(placementData)
 
     costs["SPIN"] = this.calcSpinCost(placementData)
@@ -402,42 +397,16 @@ export class ParityCostCalculator {
     if (angle < 0) angle += Math.PI * 2
     if (prevAngle < 0) prevAngle += Math.PI * 2
 
+    // prevent facing backwards but not turning causing a spin
     if (angle == prevAngle) return 0
 
+    // If we cross the 180 deg line, that's a spin
     if (
       (prevAngle <= Math.PI && angle >= Math.PI) ||
       (prevAngle >= Math.PI && angle <= Math.PI)
     ) {
       cost += this.WEIGHTS.SPIN
     }
-
-    // spin
-
-    // if (
-    //   data.rightPos.x < data.leftPos.x &&
-    //   data.previousRightPos.x < data.previousLeftPos.x &&
-    //   data.rightPos.y < data.leftPos.y &&
-    //   data.previousRightPos.y > data.previousLeftPos.y
-    // ) {
-    //   cost += this.WEIGHTS.SPIN
-    // }
-    // if (
-    //   data.rightPos.x < data.leftPos.x &&
-    //   data.previousRightPos.x < data.previousLeftPos.x &&
-    //   data.rightPos.y > data.leftPos.y &&
-    //   data.previousRightPos.y < data.previousLeftPos.y
-    // ) {
-    //   cost += this.WEIGHTS.SPIN
-    // }
-
-    // if (
-    //   leftPos.y < rightPos.y &&
-    //   previousLeftPos.y < previousRightPos.y &&
-    //   rightPos.x > leftPos.x &&
-    //   previousRightPos.x < previousLeftPos.x
-    // ) {
-    //   cost += this.WEIGHTS.SPIN
-    // }
 
     return cost
   }

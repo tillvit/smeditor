@@ -66,7 +66,7 @@ export interface PlacementData {
 
 export const DEFAULT_WEIGHTS: { [key: string]: number } = {
   DOUBLESTEP: 850,
-  BRACKETJACK: 20,
+  BRACKETJACK: 60,
   JACK: 40,
   JUMP: 0,
   SLOW_BRACKET: 300,
@@ -79,7 +79,7 @@ export const DEFAULT_WEIGHTS: { [key: string]: number } = {
   MISSED_FOOTSWITCH: 500,
   FACING: 3,
   DISTANCE: 6,
-  SPIN: 2000,
+  SPIN: 3000,
   SIDESWITCH: 130,
   CROWDED_BRACKET: 0,
   OTHER: 0,
