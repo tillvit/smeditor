@@ -23,3 +23,7 @@ export const SIMFILE_PROPERTIES = [
 ] as const
 
 export type SimfileProperty = (typeof SIMFILE_PROPERTIES)[number]
+
+export type SMEData = {
+  parity: Record<string, string[]>
+}

@@ -12,14 +12,7 @@ import {
   isHoldNote,
 } from "../../sm/NoteTypes"
 import { ParityCostCalculator } from "./ParityCost"
-import {
-  FEET,
-  Foot,
-  FootOverride,
-  ParityState,
-  Row,
-  TECH_ERROR_STRINGS,
-} from "./ParityDataTypes"
+import { FEET, Foot, FootOverride, ParityState, Row } from "./ParityDataTypes"
 import {
   ParityDebugData,
   ParityDebugStats,
@@ -210,7 +203,7 @@ export class ParityInternals {
 
     const rowStatsTimeStart = performance.now()
 
-    const { techRows, techErrors, facingRows, candles } = calculateRowStats(
+    const rowStats = calculateRowStats(
       bestNodes.slice(1, -1),
       this.notedataRows,
       this.layout
@@ -225,30 +218,13 @@ export class ParityInternals {
       }
     })
 
-    console.log(
-      "Tech Errors:",
-      Object.fromEntries(
-        techErrors.entries().map(([row, errors]) => {
-          return [
-            this.notedataRows[row].beat,
-            errors
-              .values()
-              .toArray()
-              .map(x => TECH_ERROR_STRINGS[x] as string)
-              .join(", "),
-          ] as [number, string]
-        })
-      )
-    )
+    console.log(rowStats)
 
     return {
       parityLabels,
       states,
-      techRows,
-      techErrors,
       rowTimestamps,
-      facingRows,
-      candles,
+      ...rowStats,
     }
   }
 

@@ -1,7 +1,7 @@
 import { WaterfallManager } from "../../gui/element/WaterfallManager"
 import { Chart } from "./Chart"
 import { CHART_DIFFICULTIES } from "./ChartTypes"
-import { SIMFILE_PROPERTIES, SimfileProperty } from "./SimfileTypes"
+import { SIMFILE_PROPERTIES, SimfileProperty, SMEData } from "./SimfileTypes"
 import { SongTimingData } from "./SongTimingData"
 import { TIMING_EVENT_NAMES, TimingEventType, TimingType } from "./TimingTypes"
 
@@ -16,18 +16,20 @@ export class Simfile {
 
   loaded: Promise<void>
 
-  constructor(file: File) {
+  constructor(file: File, dataFile?: File) {
     this.loaded = new Promise(resolve => {
       let type = file.name.split(".").pop()
       if (type == "smebak") type = "ssc"
       if (type == "sm" || type == "ssc") this._type = type
       else resolve()
 
-      file.text().then(data => {
-        //Remove Comments
-        data = data.replaceAll(/\/\/.+/g, "")
+      const run = async () => {
+        let smData = await file.text()
 
-        const props = [...data.matchAll(/#([A-Z]+):([^;]*);/g)]
+        // Remove comments
+        smData = smData.replaceAll(/\/\/.+/g, "")
+
+        const props = [...smData.matchAll(/#([A-Z]+):([^;]*);/g)]
         let ssc_pair = false
         let ssc_notedata: { [key: string]: string } = {}
         const temp_charts = []
@@ -69,9 +71,36 @@ export class Simfile {
           }
           this.addChart(chart)
         }
+
+        if (dataFile) {
+          const dataText = await dataFile.text()
+          try {
+            const data: SMEData = JSON.parse(dataText)
+            for (const [gameType, charts] of Object.entries(data.parity)) {
+              for (let i = 0; i < charts.length; i++) {
+                const chart = this.charts[gameType]?.[i]
+                if (chart) {
+                  chart.loadParity(charts[i], true)
+                } else {
+                  WaterfallManager.createFormatted(
+                    `Chart for game type ${gameType} not found`,
+                    "warn"
+                  )
+                }
+              }
+            }
+          } catch (error) {
+            WaterfallManager.createFormatted(
+              "Couldn't parse SME data file: " + error,
+              "error"
+            )
+          }
+        }
+
         this.timingData.reloadCache()
         resolve()
-      })
+      }
+      run()
     })
   }
 
@@ -99,7 +128,7 @@ export class Simfile {
     return true
   }
 
-  serialize(type: "sm" | "ssc"): string {
+  serialize(type: "sm" | "ssc" | "smebak"): string {
     let str = ""
     if (type == "sm") {
       if (this.other_properties["NITGVERSION"])
@@ -206,6 +235,19 @@ export class Simfile {
       }
     }
     return str
+  }
+
+  serializeSMEData(): string {
+    const data: SMEData = {
+      parity: {},
+    }
+
+    for (const gameType in this.charts) {
+      data.parity[gameType] = this.charts[gameType].map(chart => {
+        return chart.serializeParity()
+      })
+    }
+    return JSON.stringify(data)
   }
 
   usesChartTiming(): boolean {

@@ -17,6 +17,8 @@ export function calculateRowStats(
 ) {
   const techRows: Set<TechCategory>[] = [new Set()]
   const techErrors = new Map<number, Set<TechErrors>>()
+  const techCounts: number[] = []
+  const techErrorCounts: number[] = []
   const facingRows: number[] = [0]
   const candles = new Map<number, Foot>()
 
@@ -126,7 +128,25 @@ export function calculateRowStats(
       techErrors.set(i + 1, errors)
     }
   }
-  return { techRows, techErrors, facingRows, candles }
+  techRows.values().forEach(techSet => {
+    techSet.forEach(tech => {
+      techCounts[tech] = (techCounts[tech] || 0) + 1
+    })
+  })
+  techErrors.values().forEach(errorSet => {
+    errorSet.forEach(error => {
+      techErrorCounts[error] = (techErrorCounts[error] || 0) + 1
+    })
+  })
+
+  return {
+    techRows,
+    techErrors,
+    facingRows,
+    candles,
+    techCounts,
+    techErrorCounts,
+  }
 }
 
 function isDoublestepMarked(

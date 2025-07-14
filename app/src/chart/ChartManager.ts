@@ -852,8 +852,12 @@ export class ChartManager {
       return
     }
     const smFile = await smHandle.getFile()
+
+    const dataHandle = await FileHandler.getFileHandle(this.getDataPath())
+    const dataFile = dataHandle ? await dataHandle.getFile() : undefined
+
     this.loadedSM?.destroy()
-    this.loadedSM = new Simfile(smFile)
+    this.loadedSM = new Simfile(smFile, dataFile)
 
     await this.loadedSM.loaded
 
@@ -1730,6 +1734,16 @@ export class ChartManager {
         }
       })
     }
+    await FileHandler.writeFile(
+      this.getDataPath(),
+      this.loadedSM.serializeSMEData()
+    ).catch(err => {
+      const message = err.message
+      if (!message.includes(errors.GONE[0])) {
+        error = message
+      }
+    })
+
     if (error == null) {
       if (this.loadedSM.usesChartTiming()) {
         WaterfallManager.create(
@@ -1744,6 +1758,17 @@ export class ChartManager {
     }
     ActionHistory.instance.setLimit()
     return
+  }
+
+  getDataPath() {
+    if (window.nw) {
+      const path = window.nw.require("path")
+      const pathData = path.parse(this.smPath)
+      return path.resolve(pathData.dir, "data.sme") as string
+    } else {
+      const dir = dirname(this.smPath)
+      return dir + "/data.sme"
+    }
   }
 
   getSMPath(ext: string) {
@@ -1781,7 +1806,7 @@ export class ChartManager {
     let error: string | null = null
     await FileHandler.writeFile(
       this.getSMPath(".smebak"),
-      this.loadedSM.serialize("ssc")
+      this.loadedSM.serialize("smebak")
     ).catch(err => {
       const message = err.message
       if (!message.includes(errors.GONE[0])) {

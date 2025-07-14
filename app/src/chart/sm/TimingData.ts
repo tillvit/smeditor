@@ -298,7 +298,8 @@ export abstract class TimingData {
     })
   }
 
-  serialize(fileType: "sm" | "ssc"): string {
+  serialize(fileType: "sm" | "ssc" | "smebak"): string {
+    if (fileType == "smebak") fileType = "ssc"
     this.reloadCache()
     let str = ""
     if (this.offset) str += "#OFFSET:" + this.offset + ";\n"

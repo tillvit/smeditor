@@ -2,6 +2,7 @@ import { EventHandler } from "../../util/EventHandler"
 import { maxArr } from "../../util/Math"
 import {
   bsearch,
+  bsearchEarliest,
   getDivision,
   getNoteEnd,
   getRangeInSortedArray,
@@ -10,6 +11,7 @@ import {
 } from "../../util/Util"
 import { GameType, GameTypeRegistry } from "../gameTypes/GameTypeRegistry"
 import { ChartStats } from "../stats/ChartStats"
+import { FootOverride } from "../stats/parity/ParityDataTypes"
 import { ChartTimingData } from "./ChartTimingData"
 import { CHART_DIFFICULTIES, ChartDifficulty } from "./ChartTypes"
 import {
@@ -91,6 +93,9 @@ export class Chart {
       this.chartName = dict["CHARTNAME"] ?? ""
       this.chartStyle = dict["CHARTSTYLE"] ?? ""
       this.music = dict["MUSIC"]
+      if (dict["PARITY"]) {
+        this.loadParity(dict["PARITY"], false)
+      }
       for (const key in dict) {
         if (
           [
@@ -106,6 +111,7 @@ export class Chart {
             "MUSIC",
             "NOTES",
             "NOTEDATA",
+            "PARITY",
           ].includes(key)
         )
           continue
@@ -461,7 +467,7 @@ export class Chart {
     return this.difficulty + " " + this.meter
   }
 
-  serialize(type: "sm" | "ssc"): string {
+  serialize(type: "sm" | "ssc" | "smebak"): string {
     let str =
       "//---------------" +
       this.gameType.id +
@@ -487,6 +493,9 @@ export class Chart {
       str += `#METER:${this.meter};\n`
       str += `#METERF:${this.meterF};\n`
       str += `#RADARVALUES:${this.radarValues};\n`
+      if (type == "smebak") {
+        str += `#PARITY:${this.serializeParity()};\n`
+      }
       for (const key in this.other_properties) {
         str += `#${key}:${this.other_properties[key]};\n`
       }
@@ -496,6 +505,52 @@ export class Chart {
     }
     str += this.gameType.parser.serialize(this.notedata, this.gameType) + ";\n"
     return str
+  }
+
+  serializeParity() {
+    return this.notedata
+      .filter(note => note.parity?.override)
+      .map(note => {
+        return `${note.beat}|${note.col}|${note.parity?.override}`
+      })
+      .join(",")
+  }
+
+  loadParity(string: string, callListeners = true) {
+    const parts = string.split(",")
+    for (const part of parts) {
+      const parts = part.split("|")
+      try {
+        const beat = parseFloat(parts[0])
+        const col = parseInt(parts[1])
+        const override = parts[2]
+
+        if (parts.length != 3) continue
+
+        let noteIdx = bsearchEarliest(this.notedata, beat, n => n.beat)
+        while (
+          this.notedata[noteIdx] &&
+          this.notedata[noteIdx].col != col &&
+          isSameRow(this.notedata[noteIdx].beat, beat)
+        ) {
+          noteIdx++
+        }
+        if (!isSameRow(this.notedata[noteIdx].beat, beat)) {
+          console.warn(
+            `No note found at beat ${beat} and column ${col} for parity override ${override}`
+          )
+          continue
+        }
+        const note = this.notedata[noteIdx]
+        if (!note.parity) note.parity = {}
+        note.parity.override = override as FootOverride
+      } catch (e) {
+        console.warn(
+          `Failed to parse parity override ${part} in ${this.chartName}: ${e}`
+        )
+      }
+    }
+    if (callListeners) this.recalculateStats()
   }
 
   requiresSSC(): boolean {

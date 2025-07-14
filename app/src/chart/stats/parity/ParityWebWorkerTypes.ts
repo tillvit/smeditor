@@ -8,6 +8,18 @@ import {
 } from "./ParityDataTypes"
 import { ParityGraphNode } from "./ParityInternals"
 
+export interface ParityComputeData {
+  parityLabels: Map<string, Foot>
+  states: ParityState[]
+  rowTimestamps: { beat: number; second: number }[]
+  techRows: Set<TechCategory>[]
+  techErrors: Map<number, Set<TechErrors>>
+  techCounts: number[]
+  techErrorCounts: number[]
+  facingRows: number[]
+  candles: Map<number, Foot>
+}
+
 export type ParityDebugUpdateData = {
   removedRowsStart: number
   removedRowsEnd: number
@@ -72,16 +84,6 @@ export interface ParityInboundComputeMessage extends ParityBaseMessage {
   endBeat: number
   notedata: Notedata
   debug: boolean
-}
-
-export interface ParityComputeData {
-  parityLabels: Map<string, Foot>
-  states: ParityState[]
-  rowTimestamps: { beat: number; second: number }[]
-  techRows: Set<TechCategory>[]
-  techErrors: Map<number, Set<TechErrors>>
-  facingRows: number[]
-  candles: Map<number, Foot>
 }
 
 export interface ParityOutboundComputeMessage extends ParityBaseMessage {
