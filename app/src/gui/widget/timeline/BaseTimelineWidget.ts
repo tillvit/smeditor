@@ -298,6 +298,7 @@ export class BaseTimelineWidget extends Widget {
         : chart.getLastBeat()
       t = unlerp(topBeat, bottomBeat, beat)
     }
+    t = clamp(t, 0, 1)
 
     return t * (this.manager.app.STAGE_HEIGHT - this.verticalMargin)
   }
