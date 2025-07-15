@@ -250,6 +250,7 @@ export class TimingTrackContainer
   }
 
   private addDragListeners(box: TimingBox, event: Cached<TimingEvent>) {
+    box.cursor = "pointer"
     box.on("mouseenter", () => {
       if (TimingEventPopup.persistent) return
       if (this.renderer.chartManager.eventSelection.timingEvents.length > 0)

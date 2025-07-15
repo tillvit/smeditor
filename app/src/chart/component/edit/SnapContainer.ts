@@ -50,6 +50,7 @@ export class SnapContainer extends Container implements ChartRendererComponent {
       this.addChild(container)
 
       container.eventMode = "static"
+      container.cursor = "pointer"
       container.on("mouseenter", () => SnapPopup.open(graphic))
       container.on("mousedown", () => SnapPopup.select())
       container.on("mouseleave", () => {
