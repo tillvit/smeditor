@@ -519,10 +519,17 @@ export abstract class TimingData {
     switch (eventA.type) {
       case "BPMS":
       case "LABELS":
-      case "SPEEDS":
       case "SCROLLS":
       case "TICKCOUNTS":
         return eventA.type == eventB.type && eventA.value == eventB.value
+
+      case "SPEEDS":
+        return (
+          eventA.type == eventB.type &&
+          eventA.value == eventB.value &&
+          eventA.delay == eventB.delay &&
+          eventA.unit == eventB.unit
+        )
 
       case "TIMESIGNATURES":
         return (
