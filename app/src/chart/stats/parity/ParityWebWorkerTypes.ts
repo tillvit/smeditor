@@ -12,7 +12,7 @@ export interface ParityComputeData {
   parityLabels: Map<string, Foot>
   states: ParityState[]
   rowTimestamps: { beat: number; second: number }[]
-  techRows: Set<TechCategory>[]
+  techRows: (Set<TechCategory> | undefined)[]
   techErrors: Map<number, Set<TechErrors>>
   techCounts: number[]
   techErrorCounts: number[]

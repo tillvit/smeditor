@@ -15,7 +15,7 @@ export function calculateRowStats(
   rows: Row[],
   layout: StageLayout
 ) {
-  const techRows: Set<TechCategory>[] = [new Set()]
+  const techRows: (Set<TechCategory> | undefined)[] = [undefined]
   const techErrors = new Map<number, Set<TechErrors>>()
   const techCounts: number[] = []
   const techErrorCounts: number[] = []
@@ -123,12 +123,17 @@ export function calculateRowStats(
       candles.set(i + 1, Foot.RIGHT_HEEL)
     }
 
-    techRows.push(techs)
+    if (techs.size == 0) {
+      techRows.push(undefined)
+    } else {
+      techRows.push(techs)
+    }
     if (errors.size) {
       techErrors.set(i + 1, errors)
     }
   }
   techRows.values().forEach(techSet => {
+    if (!techSet) return
     techSet.forEach(tech => {
       techCounts[tech] = (techCounts[tech] || 0) + 1
     })
