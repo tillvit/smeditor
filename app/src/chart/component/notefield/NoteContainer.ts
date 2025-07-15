@@ -183,7 +183,7 @@ export class NoteContainer extends Container {
           this.notefield.renderer.chartManager.removeNoteFromDragSelection(note)
         }
       }
-      if (Options.experimental.parity.enabled) {
+      if (Options.chart.parity.enabled && Options.chart.parity.showHighlights) {
         container.parity.alpha = note.parity ? 0.4 : 0
         container.parity.tint =
           note.parity?.foot !== undefined

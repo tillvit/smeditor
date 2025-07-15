@@ -9,6 +9,7 @@ import { EditMode } from "../../../chart/ChartManager"
 import { Chart } from "../../../chart/sm/Chart"
 import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
 import { assignTint } from "../../../util/Color"
+import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { EventHandler } from "../../../util/EventHandler"
 import { Flags } from "../../../util/Flags"
 import { clamp, lerp, maxArr, minArr, unlerp } from "../../../util/Math"
@@ -29,8 +30,19 @@ const BEAT_RADIUS = 16
 export class BaseTimelineWidget extends Widget {
   backing: BetterRoundedRect = new BetterRoundedRect("noBorder")
   overlay: Sprite = new Sprite(Texture.WHITE)
+  receptor: Sprite = new Sprite(Texture.WHITE)
   selectionOverlay: Sprite = new Sprite(Texture.WHITE)
   container: Container = new Container()
+
+  errors = new DisplayObjectPool({
+    create: () => {
+      const sprite = new Sprite(Texture.WHITE)
+      sprite.tint = 0xff0000
+      sprite.alpha = 0.3
+      return sprite
+    },
+  })
+  errorMap: Map<number, Sprite> = new Map()
 
   protected lastHeight = 0
   protected lastBeat = -1
@@ -73,6 +85,14 @@ export class BaseTimelineWidget extends Widget {
 
     assignTint(this.backing, "widget-bg")
 
+    this.receptor.anchor.x = 0.5
+    this.receptor.anchor.y = 0
+    this.receptor.alpha = 0.3
+    this.receptor.zIndex = 10
+    this.receptor.height = 2
+
+    this.addChild(this.receptor)
+
     this.overlay.anchor.x = 0.5
     this.overlay.anchor.y = 0
     this.overlay.alpha = 0.3
@@ -87,6 +107,10 @@ export class BaseTimelineWidget extends Widget {
     this.selectionOverlay.zIndex = 10
 
     this.addChild(this.selectionOverlay)
+
+    this.errors.zIndex = 10
+
+    this.addChild(this.errors)
 
     this.x = this.manager.app.STAGE_WIDTH / 2 - this.xOffset
 
@@ -238,6 +262,10 @@ export class BaseTimelineWidget extends Widget {
       this.selectionOverlay.height = Math.max(2, this.selectionOverlay.height)
     }
 
+    this.receptor.y = Options.chart.CMod
+      ? this.getYFromSecond(chartView.getVisualTime()) - this.backing.height / 2
+      : this.getYFromBeat(chartView.getVisualBeat()) - this.backing.height / 2
+
     if (this.manager.app.STAGE_HEIGHT != this.lastHeight) {
       this.lastHeight = this.manager.app.STAGE_HEIGHT
       this.updateDimensions()
@@ -257,6 +285,8 @@ export class BaseTimelineWidget extends Widget {
         : this.getBottomBeat()
       this.populate(topBeat, bottomBeat)
     }
+
+    this.errors.visible = Options.chart.parity.showErrors
   }
 
   updateDimensions() {
@@ -269,6 +299,7 @@ export class BaseTimelineWidget extends Widget {
     this.backing.height = height + this.backingVerticalPadding
     this.backing.width = this.backingWidth
     this.overlay.width = this.backingWidth
+    this.receptor.width = this.backingWidth
     this.selectionOverlay.width = this.backingWidth
     this.pivot.x = this.backing.width / 2
   }
@@ -359,7 +390,43 @@ export class BaseTimelineWidget extends Widget {
       : chart.getLastBeat()
   }
 
-  populate(_topBeat?: number, _bottomBeat?: number) {}
+  populate(_topBeat?: number, _bottomBeat?: number) {
+    const chart = this.getChart()
+    if (!chart) return
+    if (chart.stats.parity) {
+      const topBeat = _topBeat ?? this.getTopBeat()
+      const bottomBeat = _bottomBeat ?? this.getBottomBeat()
+      for (const rowIdx of chart.stats.parity.techErrors.keys()) {
+        const position = chart.stats.parity.rowTimestamps[rowIdx]
+        if (position.beat < topBeat || position.beat > bottomBeat) continue
+        if (this.errorMap.has(rowIdx)) continue
+        const sprite = this.errors.createChild()
+        if (!sprite) continue
+        sprite.height = 1
+        sprite.anchor.set(0.5, 0)
+        this.errorMap.set(rowIdx, sprite)
+      }
+      if (Options.chart.parity.showErrors) {
+        for (const [rowIdx, sprite] of this.errorMap.entries()) {
+          const position = chart.stats.parity.rowTimestamps[rowIdx]
+          if (
+            !position ||
+            position.beat < topBeat ||
+            position.beat > bottomBeat
+          ) {
+            this.errorMap.delete(rowIdx)
+            this.errors.destroyChild(sprite)
+            continue
+          }
+          sprite.y = this.getYFromBeat(position.beat) - this.backing.height / 2
+          sprite.width = this.backingWidth
+        }
+      }
+    } else {
+      this.errorMap.clear()
+      this.errors.destroyAll()
+    }
+  }
 
   protected getChart(): Chart {
     return this.manager.chartManager.loadedChart!

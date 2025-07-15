@@ -284,8 +284,8 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
   },
   {
     type: "group",
-    id: "chart",
-    label: "Chart",
+    id: "editing",
+    label: "Editing",
     children: [
       {
         type: "subgroup",
@@ -324,128 +324,189 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               },
             ],
           },
+        ],
+      },
+      {
+        type: "subgroup",
+        label: "Parity",
+        children: [
           {
-            type: "subgroup",
-            children: [
-              {
-                type: "item",
-                label: "Zoom",
-                id: "chart.zoom",
-                input: {
-                  type: "slider",
-                  min: 50,
-                  step: 1,
-                  max: 200,
-                  hardMax: 2 ** 31 - 1,
-                  transformers: {
-                    serialize: value => value * 100,
-                    deserialize: value => value / 100,
-                  },
-                },
-              },
-              {
-                type: "item",
-                label: "Reverse playfield",
-                id: "chart.reverse",
-                input: {
-                  type: "checkbox",
-                },
-              },
-            ],
+            type: "item",
+            label: "Enabled",
+            id: "chart.parity.enabled",
+            input: {
+              type: "checkbox",
+            },
           },
           {
-            type: "subgroup",
-            children: [
-              {
-                type: "item",
-                label: "Allow receptor dragging",
-                id: "chart.allowReceptorDrag",
-                input: {
-                  type: "checkbox",
-                },
-                tooltip:
-                  "Allows the receptors to be dragged to move the playfield.",
-              },
-              {
-                type: "item",
-                label: "X position",
-                id: "chart.receptorXPos",
-                input: {
-                  type: "slider",
-                  min: -400,
-                  max: 400,
-                  hardMin: -(2 ** 31 - 1),
-                  hardMax: 2 ** 31 - 1,
-                },
-              },
-              {
-                type: "item",
-                label: "Y position",
-                id: "chart.receptorYPos",
-                input: {
-                  type: "slider",
-                  min: -400,
-                  max: 0,
-                  hardMin: -(2 ** 31 - 1),
-                  hardMax: 2 ** 31 - 1,
-                },
-              },
-            ],
+            type: "item",
+            label: "Show note highlights",
+            id: "chart.parity.showHighlights",
+            input: {
+              type: "checkbox",
+            },
           },
           {
-            type: "subgroup",
-            children: [
-              {
-                type: "item",
-                label: "Draw length",
-                id: "chart.maxDrawBeats",
-                input: {
-                  type: "slider",
-                  min: 0,
-                  max: 30,
-                  hardMax: 2 ** 31 - 1,
-                },
-                tooltip:
-                  "Maximum number of beats to draw notes. Increasing this works well for songs with high bpm but can affect performance. Only applies to XMod.",
-              },
-              {
-                type: "item",
-                label: "Draw length past receptors",
-                id: "chart.maxDrawBeatsBack",
-                input: {
-                  type: "slider",
-                  min: 0,
-                  max: 30,
-                  hardMax: 2 ** 31 - 1,
-                },
-                tooltip:
-                  "Maximum number of beats to draw notes past the receptors. Increasing this can affect performance. Only applies to XMod.",
-              },
-            ],
+            type: "item",
+            label: "Show tech notation",
+            id: "chart.parity.showTech",
+            input: {
+              type: "checkbox",
+            },
           },
+          {
+            type: "item",
+            label: "Highlight candles",
+            id: "chart.parity.showCandles",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "item",
+            label: "Show tech errors",
+            id: "chart.parity.showErrors",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "item",
+            label: "Show dancing bot",
+            id: "chart.parity.showDancingBot",
+            input: {
+              type: "checkbox",
+            },
+          },
+        ],
+      },
+    ],
+  },
+  {
+    type: "group",
+    id: "view",
+    label: "View",
+    children: [
+      {
+        type: "subgroup",
+        children: [
+          {
+            type: "item",
+            label: "Zoom",
+            id: "chart.zoom",
+            input: {
+              type: "slider",
+              min: 50,
+              step: 1,
+              max: 200,
+              hardMax: 2 ** 31 - 1,
+              transformers: {
+                serialize: value => value * 100,
+                deserialize: value => value / 100,
+              },
+            },
+          },
+          {
+            type: "item",
+            label: "Reverse playfield",
+            id: "chart.reverse",
+            input: {
+              type: "checkbox",
+            },
+          },
+        ],
+      },
+      {
+        type: "subgroup",
+        children: [
+          {
+            type: "item",
+            label: "Allow receptor dragging",
+            id: "chart.allowReceptorDrag",
+            input: {
+              type: "checkbox",
+            },
+            tooltip:
+              "Allows the receptors to be dragged to move the playfield.",
+          },
+          {
+            type: "item",
+            label: "X position",
+            id: "chart.receptorXPos",
+            input: {
+              type: "slider",
+              min: -400,
+              max: 400,
+              hardMin: -(2 ** 31 - 1),
+              hardMax: 2 ** 31 - 1,
+            },
+          },
+          {
+            type: "item",
+            label: "Y position",
+            id: "chart.receptorYPos",
+            input: {
+              type: "slider",
+              min: -400,
+              max: 0,
+              hardMin: -(2 ** 31 - 1),
+              hardMax: 2 ** 31 - 1,
+            },
+          },
+        ],
+      },
+      {
+        type: "subgroup",
+        children: [
+          {
+            type: "item",
+            label: "Draw length",
+            id: "chart.maxDrawBeats",
+            input: {
+              type: "slider",
+              min: 0,
+              max: 30,
+              hardMax: 2 ** 31 - 1,
+            },
+            tooltip:
+              "Maximum number of beats to draw notes. Increasing this works well for songs with high bpm but can affect performance. Only applies to XMod.",
+          },
+          {
+            type: "item",
+            label: "Draw length past receptors",
+            id: "chart.maxDrawBeatsBack",
+            input: {
+              type: "slider",
+              min: 0,
+              max: 30,
+              hardMax: 2 ** 31 - 1,
+            },
+            tooltip:
+              "Maximum number of beats to draw notes past the receptors. Increasing this can affect performance. Only applies to XMod.",
+          },
+        ],
+      },
 
+      {
+        type: "subgroup",
+        children: [
           {
-            type: "subgroup",
-            children: [
-              {
-                type: "item",
-                label: "Draw noteflashes",
-                id: "chart.drawNoteFlash",
-                input: {
-                  type: "checkbox",
-                },
-              },
-              {
-                type: "item",
-                label: "Draw note icons",
-                id: "chart.drawIcons",
-                input: {
-                  type: "checkbox",
-                },
-                tooltip:
-                  "Draw indicators above notes that some noteskins may not differentiate, like Fakes and Lifts.",
-              },
-            ],
+            type: "item",
+            label: "Draw noteflashes",
+            id: "chart.drawNoteFlash",
+            input: {
+              type: "checkbox",
+            },
+          },
+          {
+            type: "item",
+            label: "Draw note icons",
+            id: "chart.drawIcons",
+            input: {
+              type: "checkbox",
+            },
+            tooltip:
+              "Draw indicators above notes that some noteskins may not differentiate, like Fakes and Lifts.",
           },
         ],
       },
@@ -764,14 +825,6 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               },
             },
           },
-          {
-            type: "item",
-            label: "Enable metronome",
-            id: "audio.metronome",
-            input: {
-              type: "checkbox",
-            },
-          },
         ],
       },
     ],
@@ -779,7 +832,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
   {
     type: "group",
     id: "play",
-    label: "Play mode",
+    label: "Playtesting",
     children: [
       {
         type: "subgroup",
@@ -978,21 +1031,14 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           type: "checkbox",
         },
       },
-    ],
-  },
-  {
-    type: "group",
-    id: "experimental",
-    label: "Experimental",
-    children: [
       {
         type: "subgroup",
         label: "Parity",
         children: [
           {
             type: "item",
-            label: "Enabled",
-            id: "experimental.parity.enabled",
+            label: "Show parity graph",
+            id: "debug.parity.showGraph",
             input: {
               type: "checkbox",
             },
@@ -1000,15 +1046,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           {
             type: "item",
             label: "Show debug stats",
-            id: "experimental.parity.showDebug",
-            input: {
-              type: "checkbox",
-            },
-          },
-          {
-            type: "item",
-            label: "Show parity graph",
-            id: "experimental.parity.showGraph",
+            id: "debug.parity.showDebug",
             input: {
               type: "checkbox",
             },
@@ -1017,16 +1055,8 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             type: "item",
             label: "Limit graph nodes",
             tooltip:
-              "Limits the number of nodes in each row of the parity graph to 16.",
-            id: "experimental.parity.limitGraph",
-            input: {
-              type: "checkbox",
-            },
-          },
-          {
-            type: "item",
-            label: "Show dancing bot",
-            id: "experimental.parity.showDancingBot",
+              "Limits the number of nodes in each row of the parity graph to 8.",
+            id: "debug.parity.limitGraph",
             input: {
               type: "checkbox",
             },

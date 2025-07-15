@@ -50,6 +50,14 @@ export class DefaultOptions {
       invertZoomScroll: false,
       invertReverseScroll: true,
     },
+    parity: {
+      enabled: false,
+      showHighlights: false,
+      showTech: true,
+      showCandles: true,
+      showErrors: true,
+      showDancingBot: true,
+    },
     waveform: {
       enabled: true,
       antialiasing: true,
@@ -159,14 +167,10 @@ export class DefaultOptions {
     showScroll: false,
     showNoteskinErrors: false,
     showDebugVariables: false,
-  }
-  static experimental = {
     parity: {
-      enabled: false,
-      showDebug: true,
-      showGraph: true,
-      limitGraph: false,
-      showDancingBot: true,
+      showGraph: false,
+      limitGraph: true,
+      showDebug: false,
     },
   }
 }

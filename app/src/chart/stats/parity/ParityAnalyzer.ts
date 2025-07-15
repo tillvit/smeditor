@@ -24,8 +24,8 @@ export class ParityAnalyzer extends ChartAnalyzer {
   private messageId = 0
 
   private eventHandler = ((item: string) => {
-    if (item === "experimental.parity.enabled") {
-      if (Options.experimental.parity.enabled && this.active) {
+    if (item === "chart.parity.enabled") {
+      if (Options.chart.parity.enabled && this.active) {
         this.initializeWorker().then(() => this.calculateAll())
         return
       } else {
@@ -33,11 +33,9 @@ export class ParityAnalyzer extends ChartAnalyzer {
       }
     }
     if (
-      (item == "experimental.parity.showDebug" ||
-        item == "experimental.parity.showGraph") &&
+      (item == "debug.parity.showGraph" || item == "debug.parity.showDebug") &&
       this.worker &&
-      (Options.experimental.parity.showDebug ||
-        Options.experimental.parity.showGraph)
+      (Options.debug.parity.showGraph || Options.debug.parity.showDebug)
     ) {
       if (this.disabled) return
       this.postMessage({
@@ -69,8 +67,7 @@ export class ParityAnalyzer extends ChartAnalyzer {
   // We can use a web worker to make sure the page doesn't freeze while calculating parity
   // This is good for long/complex charts
   workerCalculate(startBeat: number, endBeat: number) {
-    if (!this.active || !Options.experimental.parity.enabled || this.disabled)
-      return
+    if (!this.active || !Options.chart.parity.enabled || this.disabled) return
     const start = performance.now()
     const notedata = this.chart.getNotedata()
     this.postMessage({
@@ -78,9 +75,7 @@ export class ParityAnalyzer extends ChartAnalyzer {
       startBeat,
       endBeat,
       notedata,
-      debug:
-        Options.experimental.parity.showDebug ||
-        Options.experimental.parity.showGraph,
+      debug: Options.debug.parity.showDebug || Options.debug.parity.showGraph,
     })
       .then(event => {
         notedata.forEach(note => {

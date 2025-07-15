@@ -8,6 +8,7 @@ import {
 import { PARITY_COLORS } from "../../../chart/component/edit/ParityDebug"
 import { Foot } from "../../../chart/stats/parity/ParityDataTypes"
 import { blendColors } from "../../../util/Color"
+import { EventHandler } from "../../../util/EventHandler"
 import { clamp } from "../../../util/Math"
 import { Options } from "../../../util/Options"
 import { destroyChildIf } from "../../../util/PixiUtil"
@@ -56,10 +57,16 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
     this.container.addChild(this.bars)
     this.container.addChild(this.barContainer)
     this.populate()
+
+    EventHandler.on("userOptionUpdated", optionId => {
+      if (optionId == "chart.parity.showCandles") {
+        this.populate()
+      }
+    })
   }
 
   update() {
-    if (!Options.chart.facingLayout.enabled) {
+    if (!Options.chart.facingLayout.enabled || !Options.chart.parity.enabled) {
       this.visible = false
       return
     }
@@ -77,6 +84,7 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
   }
 
   populate(startBeat?: number, endBeat?: number) {
+    super.populate(startBeat, endBeat)
     const chart = this.getChart()
     if (
       !chart ||
@@ -120,7 +128,10 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
       )
         break
 
-      if (chart.stats.parity.candles.has(i)) {
+      if (
+        chart.stats.parity.candles.has(i) &&
+        Options.chart.parity.showCandles
+      ) {
         let c_obj = this.barContainer.children[childIndex]
         if (!c_obj) {
           c_obj = new Sprite(Texture.WHITE)
@@ -176,9 +187,6 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
       (_, index) => index >= childIndex
     )
 
-    this.manager.app.renderer.render(this.barContainer, {
-      renderTexture: this.barTexture,
-    })
     if (!Options.chart.layoutFollowPosition) {
       this.barContainer.visible = true
       this.manager.app.renderer.render(this.barContainer, {

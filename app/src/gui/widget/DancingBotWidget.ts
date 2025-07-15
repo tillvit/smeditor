@@ -183,8 +183,8 @@ export class DancingBotWidget extends Widget {
       !bestPath ||
       !this.manager.app.chartManager.chartView ||
       !this.layout ||
-      !Options.experimental.parity.enabled ||
-      !Options.experimental.parity.showDancingBot
+      !Options.chart.parity.enabled ||
+      !Options.chart.parity.showDancingBot
     ) {
       this.visible = false
       return

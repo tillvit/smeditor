@@ -19,7 +19,6 @@ import {
   Foot,
   Row,
   TECH_ERROR_STRINGS,
-  TECH_STRINGS,
 } from "../../stats/parity/ParityDataTypes"
 import { ParityDebugData } from "../../stats/parity/ParityWebWorkerTypes"
 
@@ -235,7 +234,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     }
 
     const optionListener = (id: string) => {
-      if (id == "experimental.parity.limitGraph") {
+      if (id == "debug.parity.limitGraph") {
         this.chartDirty = true
       }
     }
@@ -297,7 +296,9 @@ export class ParityDebug extends Container implements ChartRendererComponent {
 
   update(firstBeat: number, lastBeat: number) {
     const parityData = this.renderer.chart.stats.parity!
-    this.visible = !!parityData && Options.experimental.parity.enabled
+    this.visible =
+      !!parityData &&
+      (Options.debug.parity.showGraph || Options.debug.parity.showDebug)
     if (!this.visible) {
       if (this.lastVisible != this.visible) {
         this.rowMap.clear()
@@ -378,7 +379,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
           )
         } else {
           let nodes = nodeRow.nodes
-          if (Options.experimental.parity.limitGraph) {
+          if (Options.debug.parity.limitGraph) {
             nodes = nodes.slice(0, 8)
           }
           for (const node of nodes) {
@@ -642,12 +643,6 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       rowObj.text.text =
         rowObj.i +
         " " +
-        parityData.techRows[rowObj.i]
-          .values()
-          .toArray()
-          .map(x => TECH_STRINGS[x] as string)
-          .join(", ") +
-        " " +
         (parityData.techErrors.has(rowObj.i)
           ? parityData.techErrors
               .get(rowObj.i)!
@@ -657,7 +652,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               .join(", ")
           : "")
 
-      rowObj.visible = Options.experimental.parity.showGraph
+      rowObj.visible = Options.debug.parity.showGraph
 
       rowObj.highlights.forEach(highlight => {
         const highlightX = this.renderer.getXPosFromColumn(highlight.col)
@@ -704,7 +699,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
     }
 
     // Update debug texts
-    if (Options.experimental.parity.showDebug) {
+    if (Options.debug.parity.showDebug) {
       this.debugTexts.forEach((debugObject, i) => {
         debugObject.x =
           (-this.renderer.chartManager.app.STAGE_WIDTH / 2 +
@@ -734,7 +729,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
 
     // Create connections
     this.connections.clear()
-    if (Options.experimental.parity.showGraph) {
+    if (Options.debug.parity.showGraph) {
       for (let i = 0; i < parityData.debug.notedataRows.length; i++) {
         if (lastBeat < parityData.debug.notedataRows[i - 1]?.beat) break
         if (firstBeat > parityData.debug.notedataRows[i + 1]?.beat) continue
