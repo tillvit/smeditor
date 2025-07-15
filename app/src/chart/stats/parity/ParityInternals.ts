@@ -644,6 +644,10 @@ export class ParityInternals {
     })
 
     let rowIndex = updatedCosts.firstUpdatedCost
+    if (this.cachedLowestCost.size == 1) {
+      // Cache cleared
+      rowIndex = -1
+    }
     this.debugStats.cachedBestRows = updatedCosts.firstUpdatedCost + 1
 
     // We can reuse the shortest paths up to the first updated edge
