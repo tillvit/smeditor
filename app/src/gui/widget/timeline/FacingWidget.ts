@@ -11,6 +11,7 @@ import { blendColors } from "../../../util/Color"
 import { clamp } from "../../../util/Math"
 import { Options } from "../../../util/Options"
 import { destroyChildIf } from "../../../util/PixiUtil"
+import { bsearchEarliest } from "../../../util/Util"
 import { WidgetManager } from "../WidgetManager"
 import { BaseTimelineWidget } from "./BaseTimelineWidget"
 
@@ -53,6 +54,7 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
     this.bars = new Sprite(this.barTexture)
     this.bars.anchor.set(0.5)
     this.container.addChild(this.bars)
+    this.container.addChild(this.barContainer)
     this.populate()
   }
 
@@ -63,6 +65,14 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
     }
     this.visible = true
     this.middleLine.height = this.backing.height
+
+    if (Options.chart.layoutFollowPosition) {
+      this.bars.visible = false
+      this.barContainer.visible = true
+    } else {
+      this.bars.visible = true
+      this.barContainer.visible = false
+    }
     super.update()
   }
 
@@ -83,10 +93,22 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
     let childIndex = 0
 
     const height = this.manager.app.STAGE_HEIGHT - this.verticalMargin
-    this.barTexture.resize(32, height)
+    if (Options.chart.layoutFollowPosition) {
+      this.barContainer.y = -height / 2
+      this.barContainer.x = -16
+    } else {
+      this.barContainer.position.set(0)
+      this.barTexture.resize(32, height)
+    }
     this.updateDimensions()
 
-    for (let i = 0; i < chart.stats.parity.facingRows.length; i++) {
+    const startIdx = bsearchEarliest(
+      chart.stats.parity.rowTimestamps,
+      startBeat ?? 0,
+      pos => pos.beat
+    )
+
+    for (let i = startIdx; i < chart.stats.parity.facingRows.length; i++) {
       if (
         startBeat !== undefined &&
         chart.stats.parity.rowTimestamps[i].beat < startBeat
@@ -157,5 +179,12 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
     this.manager.app.renderer.render(this.barContainer, {
       renderTexture: this.barTexture,
     })
+    if (!Options.chart.layoutFollowPosition) {
+      this.barContainer.visible = true
+      this.manager.app.renderer.render(this.barContainer, {
+        renderTexture: this.barTexture,
+      })
+      this.barContainer.visible = false
+    }
   }
 }

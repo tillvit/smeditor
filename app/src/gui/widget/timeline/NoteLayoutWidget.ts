@@ -32,6 +32,7 @@ export class NoteLayoutWidget extends BaseTimelineWidget {
     this.bars = new Sprite(this.barTexture)
     this.bars.anchor.set(0.5)
     this.container.addChild(this.bars)
+    this.container.addChild(this.barContainer)
     this.populate()
   }
 
@@ -41,10 +42,19 @@ export class NoteLayoutWidget extends BaseTimelineWidget {
       return
     }
     this.visible = true
+
+    if (Options.chart.layoutFollowPosition) {
+      this.bars.visible = false
+      this.barContainer.visible = true
+    } else {
+      this.bars.visible = true
+      this.barContainer.visible = false
+    }
     super.update()
   }
 
   populate(startBeat?: number, endBeat?: number) {
+    super.populate(startBeat, endBeat)
     const chart = this.getChart()
     if (!chart) {
       destroyChildIf(this.barContainer.children, () => true)
@@ -61,6 +71,14 @@ export class NoteLayoutWidget extends BaseTimelineWidget {
     const height = this.manager.app.STAGE_HEIGHT - this.verticalMargin
     this.barTexture.resize(numCols * 6, height)
     this.backingWidth = numCols * 6 + 8
+
+    if (Options.chart.layoutFollowPosition) {
+      this.barContainer.y = -height / 2
+      this.barContainer.x = -numCols * 3
+    } else {
+      this.barContainer.position.set(0)
+      this.barTexture.resize(numCols * 6, height)
+    }
     this.updateDimensions()
 
     if (!lastNote) {
@@ -113,9 +131,13 @@ export class NoteLayoutWidget extends BaseTimelineWidget {
       (_, index) => index >= childIndex
     )
 
-    this.manager.app.renderer.render(this.barContainer, {
-      renderTexture: this.barTexture,
-    })
+    if (!Options.chart.layoutFollowPosition) {
+      this.barContainer.visible = true
+      this.manager.app.renderer.render(this.barContainer, {
+        renderTexture: this.barTexture,
+      })
+      this.barContainer.visible = false
+    }
   }
 
   private shouldDisplayNote(note: NotedataEntry): boolean {

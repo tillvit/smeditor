@@ -121,6 +121,7 @@ export class DensityWidget extends BaseTimelineWidget {
   }
 
   populate(startBeat?: number, endBeat?: number) {
+    super.populate(startBeat, endBeat)
     const chart = this.getChart()
     if (!chart) {
       return

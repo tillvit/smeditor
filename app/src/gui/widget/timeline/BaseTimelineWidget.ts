@@ -215,8 +215,6 @@ export class BaseTimelineWidget extends Widget {
       ;[overlayStartY, overlayEndY] = [overlayEndY, overlayStartY]
     }
 
-    // center the overlay if there is beat / renderer desync
-
     this.overlay.y = overlayStartY - this.backing.height / 2
     this.overlay.height = overlayEndY - overlayStartY
     this.overlay.height = Math.max(2, this.overlay.height)
@@ -252,11 +250,11 @@ export class BaseTimelineWidget extends Widget {
     ) {
       this.lastBeat = chartView.getVisualBeat()
       const topBeat = Options.chart.CMod
-        ? chart.getBeatFromSeconds(chartView.getVisualTime() - SECOND_RADIUS)
-        : chartView.getVisualBeat() - BEAT_RADIUS
+        ? chart.getBeatFromSeconds(this.getTopSecond())
+        : this.getTopBeat()
       const bottomBeat = Options.chart.CMod
-        ? chart.getBeatFromSeconds(chartView.getVisualTime() + SECOND_RADIUS)
-        : chartView.getVisualBeat() + BEAT_RADIUS
+        ? chart.getBeatFromSeconds(this.getBottomSecond())
+        : this.getBottomBeat()
       this.populate(topBeat, bottomBeat)
     }
   }
@@ -278,24 +276,15 @@ export class BaseTimelineWidget extends Widget {
   getYFromBeat(beat: number) {
     const chart = this.getChart()
     const second = chart.getSecondsFromBeat(beat)
-    const chartView = this.manager.chartManager.chartView!
 
     let t = 0
     if (Options.chart.CMod) {
-      const topSecond = Options.chart.layoutFollowPosition
-        ? chartView.getVisualTime() - SECOND_RADIUS
-        : chart.timingData.getOffset()
-      const bottomSecond = Options.chart.layoutFollowPosition
-        ? chartView.getVisualTime() + SECOND_RADIUS
-        : chart.getLastSecond()
+      const topSecond = this.getTopSecond()
+      const bottomSecond = this.getBottomSecond()
       t = unlerp(topSecond, bottomSecond, second)
     } else {
-      const topBeat = Options.chart.layoutFollowPosition
-        ? chartView.getVisualBeat() - BEAT_RADIUS
-        : 0
-      const bottomBeat = Options.chart.layoutFollowPosition
-        ? chartView.getVisualBeat() + BEAT_RADIUS
-        : chart.getLastBeat()
+      const topBeat = this.getTopBeat()
+      const bottomBeat = this.getBottomBeat()
       t = unlerp(topBeat, bottomBeat, beat)
     }
     t = clamp(t, 0, 1)
@@ -310,16 +299,11 @@ export class BaseTimelineWidget extends Widget {
   }
 
   getSongPositionFromT(t: number) {
-    const chartView = this.manager.chartManager.chartView!
     const chart = this.getChart()
 
     if (Options.chart.CMod) {
-      const topSecond = Options.chart.layoutFollowPosition
-        ? chartView.getVisualTime() - SECOND_RADIUS
-        : chart.timingData.getOffset()
-      const bottomSecond = Options.chart.layoutFollowPosition
-        ? chartView.getVisualTime() + SECOND_RADIUS
-        : chart.getLastSecond()
+      const topSecond = this.getTopSecond()
+      const bottomSecond = this.getBottomSecond()
       return {
         second: Math.max(
           -chart.timingData.getOffset(),
@@ -333,12 +317,8 @@ export class BaseTimelineWidget extends Widget {
         ),
       }
     } else {
-      const topBeat = Options.chart.layoutFollowPosition
-        ? chartView.getVisualBeat() - BEAT_RADIUS
-        : 0
-      const bottomBeat = Options.chart.layoutFollowPosition
-        ? chartView.getVisualBeat() + BEAT_RADIUS
-        : chart.getLastBeat()
+      const topBeat = this.getTopBeat()
+      const bottomBeat = this.getBottomBeat()
       return {
         beat: Math.max(0, lerp(topBeat, bottomBeat, t)),
         second: chart.getSecondsFromBeat(
@@ -346,6 +326,37 @@ export class BaseTimelineWidget extends Widget {
         ),
       }
     }
+  }
+
+  getTopSecond() {
+    const chart = this.getChart()
+    const chartView = this.manager.chartManager.chartView!
+    return Options.chart.layoutFollowPosition
+      ? chartView.getVisualTime() - SECOND_RADIUS
+      : chart.timingData.getOffset()
+  }
+
+  getBottomSecond() {
+    const chart = this.getChart()
+    const chartView = this.manager.chartManager.chartView!
+    return Options.chart.layoutFollowPosition
+      ? chartView.getVisualTime() + SECOND_RADIUS
+      : chart.getLastSecond()
+  }
+
+  getTopBeat() {
+    const chartView = this.manager.chartManager.chartView!
+    return Options.chart.layoutFollowPosition
+      ? chartView.getVisualBeat() - BEAT_RADIUS
+      : 0
+  }
+
+  getBottomBeat() {
+    const chart = this.getChart()
+    const chartView = this.manager.chartManager.chartView!
+    return Options.chart.layoutFollowPosition
+      ? chartView.getVisualBeat() + BEAT_RADIUS
+      : chart.getLastBeat()
   }
 
   populate(_topBeat?: number, _bottomBeat?: number) {}
