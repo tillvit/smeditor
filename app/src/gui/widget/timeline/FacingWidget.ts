@@ -29,6 +29,8 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
 
   middleLine: Sprite
 
+  colorCache: Map<number, string> = new Map()
+
   constructor(manager: WidgetManager) {
     super(manager, {
       backingWidth: 48,
@@ -155,19 +157,26 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
       }
       let facing = chart.stats.parity.facingRows[i]
       facing = clamp(facing, -2, 2)
-      if (chart.stats.parity.facingRows[i] < 0) {
-        obj.tint = blendColors(
-          "#ffffff",
-          new Color(PARITY_COLORS[Foot.LEFT_HEEL]).toHex(),
-          facing / -2
-        )
+      if (this.colorCache.has(facing)) {
+        obj.tint = this.colorCache.get(facing)!
       } else {
-        obj.tint = blendColors(
-          "#ffffff",
-          new Color(PARITY_COLORS[Foot.RIGHT_HEEL]).toHex(),
-          facing / 2
-        )
+        let color
+        if (chart.stats.parity.facingRows[i] < 0) {
+          color = blendColors(
+            "#ffffff",
+            new Color(PARITY_COLORS[Foot.LEFT_HEEL]).toHex(),
+            facing / -2
+          )
+        } else {
+          color = blendColors(
+            "#ffffff",
+            new Color(PARITY_COLORS[Foot.RIGHT_HEEL]).toHex(),
+            facing / 2
+          )
+        }
+        this.colorCache.set(facing, color)
       }
+
       obj.anchor.set(0.5)
       obj.height = 1
       obj.width = 6
