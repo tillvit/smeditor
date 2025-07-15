@@ -19,6 +19,7 @@ import { ScrollDebug } from "./component/edit/ScrollDebug"
 import { SelectionAreaContainer } from "./component/edit/SelectionAreaContainer"
 import { SelectionBoundary } from "./component/edit/SelectionSprite"
 import { SnapContainer } from "./component/edit/SnapContainer"
+import { TechIndicators } from "./component/edit/TechIndicators"
 import { Waveform } from "./component/edit/Waveform"
 import { Notefield } from "./component/notefield/Notefield"
 import { ComboNumber } from "./component/play/ComboNumber"
@@ -66,6 +67,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   private readonly barlines: BarlineContainer
   private readonly timingAreas: TimingAreaContainer
   private readonly timingTracks: TimingTrackContainer
+  private readonly techIndicators: TechIndicators
   private readonly selectedEvents: SelectionTimingEventContainer
   private readonly timingBar: ErrorBarContainer
   private notefield: Notefield
@@ -89,6 +91,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     this.barlines = new BarlineContainer(this)
     this.timingAreas = new TimingAreaContainer(this)
     this.timingTracks = new TimingTrackContainer(this)
+    this.techIndicators = new TechIndicators(this)
     this.selectedEvents = new SelectionTimingEventContainer(this)
     this.timingBar = new ErrorBarContainer(this)
     this.notefield = new Notefield(this)
@@ -108,6 +111,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       this.previewArea,
       this.selectionArea,
       this.timingTracks,
+      this.techIndicators,
       this.selectedEvents,
       this.timingBar,
       this.combo,
