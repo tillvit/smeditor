@@ -24,6 +24,7 @@ import { Notefield } from "./component/notefield/Notefield"
 import { ComboNumber } from "./component/play/ComboNumber"
 import { ErrorBarContainer } from "./component/play/ErrorBarContainer"
 import { JudgementSprite } from "./component/play/JudgementSprite"
+import { RowStacker } from "./component/RowStacker"
 import { SelectionTimingEventContainer } from "./component/timing/SelectionTimingEventContainer"
 import { TimingAreaContainer } from "./component/timing/TimingAreaContainer"
 import { TimingTrackContainer } from "./component/timing/TimingTrackContainer"
@@ -117,6 +118,8 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       this.scrollDebug,
       this.parityDebug
     )
+
+    new RowStacker(this)
 
     this.chartManager.app.stage.addChild(this)
 
@@ -323,6 +326,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     this.scale.y = Options.chart.zoom
 
     this.children.forEach(child => child.update(firstBeat, lastBeat))
+    RowStacker.instance.update()
     this.notefield.alpha =
       this.chartManager.editTimingMode == EditTimingMode.Off ||
       this.chartManager.getMode() == EditMode.Play
