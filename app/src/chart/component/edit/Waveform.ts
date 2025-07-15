@@ -168,7 +168,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
 
   update() {
     this.visible =
-      Options.chart.waveform.enabled && this.renderer.shouldDisplayBarlines()
+      Options.chart.waveform.enabled && this.renderer.shouldDisplayEditGUI()
 
     if (!Options.chart.waveform.enabled) return
     if (this.drawDirty || this.variableChanged()) {

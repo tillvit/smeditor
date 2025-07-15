@@ -521,10 +521,10 @@ export class TimingTrackContainer
       this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
       this.renderer.chartManager.getMode() == EditMode.Edit
 
-    this.boxPool.visible = this.renderer.shouldDisplayBarlines()
+    this.boxPool.visible = this.renderer.shouldDisplayEditGUI()
     if (this.ghostBox) {
       this.ghostBox.visible =
-        this.renderer.shouldDisplayBarlines() && editingTiming
+        this.renderer.shouldDisplayEditGUI() && editingTiming
     }
 
     // Create all missing boxes
@@ -683,7 +683,7 @@ export class TimingTrackContainer
         ghostBox.selection
       )
       this.addChild(ghostBox)
-      ghostBox.visible = this.renderer.shouldDisplayBarlines()
+      ghostBox.visible = this.renderer.shouldDisplayEditGUI()
       ghostBox.textObj.anchor.set(0.5, 0.55)
       ghostBox.backgroundObj.height = 25
       ghostBox.selection.height = 25

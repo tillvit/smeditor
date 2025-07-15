@@ -84,7 +84,7 @@ export class TimingAreaContainer
       )
     }
 
-    this.visible = this.renderer.shouldDisplayBarlines()
+    this.visible = this.renderer.shouldDisplayEditGUI()
 
     for (const event of this.timingEvents) {
       // Check beat requirements

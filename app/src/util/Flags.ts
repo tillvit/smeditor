@@ -66,7 +66,7 @@ export const FLAG_MAP: Record<BooleanFlags, { char: string; name: string }> = {
   },
   barlines: {
     char: "B",
-    name: "Hide barlines, waveform, and timing boxes",
+    name: "Hide edit GUI",
   },
   assist: {
     char: "A",
