@@ -1204,10 +1204,9 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return this.selectionBounds
   }
 
-  shouldDisplayBarlines() {
+  shouldDisplayEditGUI() {
     return (
-      (this.chartManager.getMode() != EditMode.Play ||
-        !Options.play.hideBarlines) &&
+      (this.chartManager.getMode() != EditMode.Play || !Options.play.hideGUI) &&
       Flags.barlines
     )
   }

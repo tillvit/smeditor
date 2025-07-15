@@ -48,7 +48,7 @@ export class BarlineContainer
   }
 
   update(firstBeat: number, lastBeat: number) {
-    this.visible = this.renderer.shouldDisplayBarlines()
+    this.visible = this.renderer.shouldDisplayEditGUI()
 
     for (const [
       barBeat,
