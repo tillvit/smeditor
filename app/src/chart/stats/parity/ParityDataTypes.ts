@@ -65,7 +65,7 @@ export interface PlacementData {
 }
 
 export const DEFAULT_WEIGHTS: { [key: string]: number } = {
-  DOUBLESTEP: 850,
+  DOUBLESTEP: 750,
   BRACKETJACK: 60,
   JACK: 40,
   JUMP: 0,
