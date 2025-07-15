@@ -165,7 +165,7 @@ export class TechErrorIndicators
       } else this.renderer.chartManager.beat = errors[idx]
       event.stopImmediatePropagation()
     })
-    this.topCounter.interactive = true
+    this.topCounter.eventMode = "static"
     this.topCounter.cursor = "pointer"
 
     this.bottomCounter.on("pointerover", () => {
@@ -213,7 +213,7 @@ export class TechErrorIndicators
         }
       } else this.renderer.chartManager.beat = errors[idx + 1]
     })
-    this.bottomCounter.interactive = true
+    this.bottomCounter.eventMode = "static"
     this.bottomCounter.cursor = "pointer"
 
     this.topCounter.scale.set(1.25)
