@@ -1,4 +1,3 @@
-import { Color } from "pixi.js"
 import { App } from "../App"
 import { TimingWindowCollection } from "../chart/play/TimingWindowCollection"
 import { Options } from "../util/Options"
@@ -97,7 +96,7 @@ interface UserOptionCheckboxInput {
 
 interface UserOptionColorInput {
   type: "color"
-  onChange?: (app: App, value: Color) => void
+  onChange?: (app: App, value: string) => void
 }
 
 type UserOptionInput<T> =
