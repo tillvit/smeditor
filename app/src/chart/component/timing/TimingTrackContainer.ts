@@ -21,6 +21,7 @@ import { EditMode, EditTimingMode } from "../../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import { TIMING_DATA_DISPLAY_PRECISION } from "../../sm/TimingData"
 import { Cached, TimingEvent, TimingEventType } from "../../sm/TimingTypes"
+import { RowStacker } from "../RowStacker"
 import { TIMING_EVENT_COLORS } from "./TimingAreaContainer"
 
 export interface TimingBox extends Container {
@@ -39,13 +40,6 @@ interface TimingTrack extends Container {
   timingMode: "chart" | "song"
   background: Sprite
   btns: Container
-}
-
-interface TimingRow {
-  beat: number
-  second: number
-  leftOffset: number
-  rightOffset: number
 }
 
 export const timingNumbers = {
@@ -134,8 +128,12 @@ export class TimingTrackContainer
       this.ghostBox = undefined
     }
 
+    const editModeSwapped =
+      this.wasEditingTiming !=
+      (this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
+        this.renderer.chartManager.getMode() == EditMode.Edit)
     this.updateTracks()
-    this.updateBoxes(firstBeat, lastBeat)
+    this.updateBoxes(firstBeat, lastBeat, editModeSwapped)
   }
 
   private createTrack(type: string, x: number) {
@@ -419,7 +417,7 @@ export class TimingTrackContainer
           0: { [prop]: "inherit" },
           1: { [prop]: value },
         },
-        time,
+        Options.general.smoothAnimations ? time : 0,
         bezier(0, 0, 0.16, 1.01),
         () => {},
         id
@@ -510,7 +508,11 @@ export class TimingTrackContainer
     })
   }
 
-  private updateBoxes(firstBeat: number, lastBeat: number) {
+  private updateBoxes(
+    firstBeat: number,
+    lastBeat: number,
+    swappedEditMode: boolean
+  ) {
     if (this.timingDirty) {
       this.timingBoxMap.clear()
       this.boxPool.destroyAll()
@@ -539,7 +541,31 @@ export class TimingTrackContainer
 
       if (!this.timingBoxMap.has(event)) {
         const box = this.boxPool.createChild()
+        const side = Options.chart.timingEventOrder.right.includes(event.type)
+          ? "right"
+          : "left"
+
         if (!box) break
+        if (!editingTiming) {
+          const priority =
+            side == "left"
+              ? -Options.chart.timingEventOrder.left.indexOf(event.type)
+              : Options.chart.timingEventOrder.right.indexOf(event.type)
+          RowStacker.instance.register(
+            box,
+            event.beat,
+            event.second,
+            side,
+            priority
+          )
+        } else {
+          let targetX =
+            this.tracks.getChildByName<TimingTrack>(event.type)?.x ?? box.x
+          targetX +=
+            (TIMING_TRACK_WIDTHS[event.type] / 2) * (targetX > 0 ? 1 : -1)
+          box.x = targetX
+          box.pivot.x = 0
+        }
         this.initializeBox(box, event)
         this.addDragListeners(box, event)
         this.timingBoxMap.set(event, box)
@@ -547,13 +573,6 @@ export class TimingTrackContainer
     }
 
     // Update boxes
-
-    const currentRow: TimingRow | undefined = {
-      beat: -Number.MAX_SAFE_INTEGER,
-      second: -Number.MAX_SAFE_INTEGER,
-      leftOffset: 0,
-      rightOffset: 0,
-    }
 
     for (const [event, box] of this.timingBoxMap.entries()) {
       if (
@@ -572,64 +591,71 @@ export class TimingTrackContainer
         continue
       }
 
-      let targetX = 0
-      let targetAnchor = 0
-      const boxWidth = box.backgroundObj.width
       const side = Options.chart.timingEventOrder.right.includes(event.type)
         ? "right"
         : "left"
+
+      const priority =
+        side == "left"
+          ? -Options.chart.timingEventOrder.left.indexOf(event.type)
+          : Options.chart.timingEventOrder.right.indexOf(event.type)
+      RowStacker.instance.updatePriority(box, priority)
+      RowStacker.instance.updateAlign(box, side)
+
+      if (swappedEditMode) {
+        if (editingTiming) {
+          RowStacker.instance.deregister(box)
+          let targetX =
+            this.tracks.getChildByName<TimingTrack>(event.type)?.x ?? box.x
+          targetX +=
+            (TIMING_TRACK_WIDTHS[event.type] / 2) * (targetX > 0 ? 1 : -1)
+          box.animationId = BezierAnimator.animate(
+            box,
+            {
+              0: { x: "inherit", "pivot.x": "inherit" },
+              1: { x: targetX, "pivot.x": 0 },
+            },
+            Options.general.smoothAnimations ? 0.3 : 0,
+            bezier(0, 0, 0.16, 1.01),
+            () => {},
+            box.animationId
+          )
+          box.lastX = targetX
+        } else {
+          BezierAnimator.stop(box.animationId)
+          RowStacker.instance.register(
+            box,
+            event.beat,
+            event.second,
+            side,
+            priority,
+            true
+          )
+        }
+      }
       if (editingTiming) {
-        targetX =
+        box.y = Options.chart.CMod
+          ? this.renderer.getYPosFromSecond(event.second)
+          : this.renderer.getYPosFromBeat(event.beat)
+        let targetX =
           this.tracks.getChildByName<TimingTrack>(event.type)?.x ?? box.x
         targetX +=
           (TIMING_TRACK_WIDTHS[event.type] / 2) * (targetX > 0 ? 1 : -1)
-        targetAnchor = 0.5
-      } else {
-        targetX =
-          (side == "right" ? 1 : -1) *
-          (this.renderer.chart.gameType.notefieldWidth * 0.5 + 80)
-        if (side == "left") targetX -= 30
-        if (
-          currentRow.beat != event.beat ||
-          (event.second && currentRow.second != event.second)
-        ) {
-          currentRow.leftOffset = 0
-          currentRow.rightOffset = 0
-          currentRow.beat = event.beat!
-          currentRow.second = event.second!
+        if (box.lastX != targetX) {
+          box.animationId = BezierAnimator.animate(
+            box,
+            {
+              0: { x: "inherit", "pivot.x": "inherit" },
+              1: { x: targetX, "pivot.x": 0 },
+            },
+            Options.general.smoothAnimations ? 0.3 : 0,
+            bezier(0, 0, 0.16, 1.01),
+            () => {},
+            box.animationId
+          )
+          box.lastX = targetX
         }
-        if (side == "left") {
-          targetX -= currentRow.leftOffset
-          currentRow.leftOffset += boxWidth + 5
-        } else {
-          targetX += currentRow.rightOffset
-          currentRow.rightOffset += boxWidth + 5
-        }
-        targetAnchor = side == "right" ? 0 : 1
       }
-
-      if (box.lastX === undefined || box.lastAnchor === undefined) {
-        box.x = targetX
-        box.pivot.x = (targetAnchor - 0.5) * boxWidth
-      } else if (box.lastX != targetX || box.lastAnchor != targetAnchor) {
-        box.animationId = BezierAnimator.animate(
-          box,
-          {
-            0: { x: "inherit", "pivot.x": "inherit" },
-            1: { x: targetX, "pivot.x": (targetAnchor - 0.5) * boxWidth },
-          },
-          0.3,
-          bezier(0, 0, 0.16, 1.01),
-          () => {},
-          box.animationId
-        )
-      }
-      box.lastX = targetX
-      box.lastAnchor = targetAnchor
-      box.y =
-        Options.chart.CMod && event.type == "ATTACKS"
-          ? this.renderer.getYPosFromSecond(event.second)
-          : this.renderer.getYPosFromBeat(event.beat)
 
       const inSelection = this.renderer.shouldDisplayEventSelection(event)
       box.backgroundObj.tint = inSelection
