@@ -103,6 +103,10 @@ export class NoteObject extends Container {
     this.note = note
     this.nf = notefield
 
+    this.on("destroyed", () => {
+      this.removeAllListeners()
+    })
+
     if (this.nf.noteskin === undefined) {
       EventHandler.on("noteskinLoaded", () => {
         this.loadElement(note)
