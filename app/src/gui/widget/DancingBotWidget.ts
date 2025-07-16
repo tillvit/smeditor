@@ -44,6 +44,7 @@ export class DancingBotWidget extends Widget {
   panels: StagePanel[] = []
   currentRow = -1
   lastBeat = 0
+  lastSecond = 0
 
   leftFoot?: Container
   rightFoot?: Container
@@ -160,7 +161,10 @@ export class DancingBotWidget extends Widget {
     const parity = this.manager.app.chartManager.loadedChart?.stats.parity
     if (!parity || !this.manager.app.chartManager.chartView) return
     const visualBeat = this.manager.app.chartManager.chartView.getVisualBeat()
-    const currentIndex = bsearch(parity.rowTimestamps, visualBeat, a => a.beat)
+    let currentIndex = bsearch(parity.rowTimestamps, visualBeat, a => a.beat)
+    while (parity.rowTimestamps[currentIndex]?.beat < visualBeat) {
+      currentIndex++
+    }
     if (currentIndex == 0 && visualBeat < parity.rowTimestamps[0].beat) {
       this.currentRow = -1
       return
@@ -193,7 +197,7 @@ export class DancingBotWidget extends Widget {
     const visualBeat = this.manager.app.chartManager.chartView.getVisualBeat()
     const visualSecond = this.manager.app.chartManager.chartView.getVisualTime()
 
-    if (this.lastBeat == visualBeat && !this.dirty) {
+    if (this.lastSecond == visualSecond && !this.dirty) {
       return
     }
     this.dirty = false
@@ -215,6 +219,7 @@ export class DancingBotWidget extends Widget {
     }
 
     this.lastBeat = visualBeat
+    this.lastSecond = visualSecond
 
     if (this.leftFoot && this.rightFoot) {
       let oldState = bestPath[this.currentRow]
@@ -236,6 +241,7 @@ export class DancingBotWidget extends Widget {
           0,
           1
         )
+
         const newPosition = this.lerpPositions(
           oldPosition,
           nextPosition,
