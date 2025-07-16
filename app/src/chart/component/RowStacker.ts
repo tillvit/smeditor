@@ -12,6 +12,7 @@ interface StackedSide {
     width?: number
     beat: number
     second: number
+    registerTime?: number
   }[]
 }
 
@@ -60,6 +61,7 @@ export class RowStacker {
         x: animate ? 0 : null,
         beat,
         second,
+        registerTime: animate ? undefined : Date.now(),
       })
       row.left.items.sort((a, b) => a.priority - b.priority)
     } else {
@@ -69,6 +71,7 @@ export class RowStacker {
         x: animate ? 0 : null,
         beat,
         second,
+        registerTime: animate ? undefined : Date.now(),
       })
       row.right.items.sort((a, b) => a.priority - b.priority)
     }
@@ -139,7 +142,12 @@ export class RowStacker {
     if (!row) return
     let x = -this.renderer.chart.gameType.notefieldWidth * 0.5 - 80 - 30
     for (const item of row.left.items) {
-      if (item.object.x != x && item.x != null) {
+      if (
+        item.object.x != x &&
+        item.x != null &&
+        (item.registerTime === undefined ||
+          Date.now() - item.registerTime > 100) // initial load grace period
+      ) {
         this.objectMap.get(item.object)!.animationId = BezierAnimator.animate(
           item.object,
           {
@@ -160,7 +168,12 @@ export class RowStacker {
     }
     x = this.renderer.chart.gameType.notefieldWidth * 0.5 + 80
     for (const item of row.right.items) {
-      if (item.object.x != x && item.x != null) {
+      if (
+        item.object.x != x &&
+        item.x != null &&
+        (item.registerTime === undefined ||
+          Date.now() - item.registerTime > 100)
+      ) {
         this.objectMap.get(item.object)!.animationId = BezierAnimator.animate(
           item.object,
           {

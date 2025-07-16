@@ -315,7 +315,7 @@ export class TechErrorIndicators
             position.beat,
             position.second,
             "left",
-            20 + error
+            40 + error
           )
           boxes.push(box)
           box.setText(TECH_ERROR_STRINGS[error])

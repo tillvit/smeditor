@@ -13,6 +13,7 @@ import { isRightClick } from "../util/PixiUtil"
 import { bsearch } from "../util/Util"
 import { ChartManager, EditMode, EditTimingMode } from "./ChartManager"
 import { BarlineContainer } from "./component/edit/BarlineContainer"
+import { CandleIndicator } from "./component/edit/CandleIndicator"
 import { ParityDebug } from "./component/edit/ParityDebug"
 import { PreviewAreaContainer } from "./component/edit/PreviewAreaContainer"
 import { ScrollDebug } from "./component/edit/ScrollDebug"
@@ -71,6 +72,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   private readonly timingTracks: TimingTrackContainer
   private readonly techIndicators: TechIndicators
   private readonly techErrors: TechErrorIndicators
+  private readonly candleIndicator: CandleIndicator
   private readonly selectedEvents: SelectionTimingEventContainer
   private readonly timingBar: ErrorBarContainer
   private notefield: Notefield
@@ -96,6 +98,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     this.timingTracks = new TimingTrackContainer(this)
     this.techIndicators = new TechIndicators(this)
     this.techErrors = new TechErrorIndicators(this)
+    this.candleIndicator = new CandleIndicator(this)
     this.selectedEvents = new SelectionTimingEventContainer(this)
     this.timingBar = new ErrorBarContainer(this)
     this.notefield = new Notefield(this)
@@ -115,6 +118,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       this.previewArea,
       this.selectionArea,
       this.timingTracks,
+      this.candleIndicator,
       this.techIndicators,
       this.techErrors,
       this.selectedEvents,

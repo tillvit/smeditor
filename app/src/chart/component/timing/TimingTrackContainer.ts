@@ -547,6 +547,9 @@ export class TimingTrackContainer
           : "left"
 
         if (!box) break
+        this.initializeBox(box, event)
+        this.addDragListeners(box, event)
+        this.timingBoxMap.set(event, box)
         if (!editingTiming) {
           const priority =
             side == "left"
@@ -557,7 +560,8 @@ export class TimingTrackContainer
             event.beat,
             event.second,
             side,
-            priority
+            priority,
+            false
           )
         } else {
           let targetX =
@@ -567,9 +571,6 @@ export class TimingTrackContainer
           box.x = targetX
           box.pivot.x = 0
         }
-        this.initializeBox(box, event)
-        this.addDragListeners(box, event)
-        this.timingBoxMap.set(event, box)
       }
     }
 
