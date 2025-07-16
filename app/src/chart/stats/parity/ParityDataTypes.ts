@@ -119,7 +119,7 @@ export enum TechCategory {
   Holdswitch,
 }
 
-export const TECH_STRINGS: { [key in TechCategory]: string } = {
+export const TECH_STRINGS: Record<number, string> = {
   [TechCategory.Crossovers]: "XO",
   [TechCategory.Footswitches]: "FS",
   [TechCategory.Sideswitches]: "SS",
@@ -135,19 +135,19 @@ export enum TechErrors {
   Ambiguous,
 }
 
-export const TECH_ERROR_STRINGS: { [key in TechErrors]: string } = {
+export const TECH_ERROR_STRINGS: Record<number, string> = {
   [TechErrors.UnmarkedDoublestep]: "DS",
   [TechErrors.MissedFootswitch]: "FS",
   [TechErrors.Ambiguous]: "AM",
 }
 
-export const TECH_ERROR_STRING_REVERSE: { [key: string]: TechErrors } =
+export const TECH_ERROR_STRING_REVERSE: Record<string, TechErrors> =
   Object.fromEntries(
     Object.entries(TECH_ERROR_STRINGS).map(([k, v]) => [
       v,
       Number(k) as TechErrors,
     ])
-  ) as { [key: string]: TechErrors }
+  ) as Record<string, TechErrors>
 
 export const TECH_ERROR_DESCRIPTIONS: {
   [key in TechErrors]: { title: string; description: string }

@@ -5,6 +5,7 @@ import {
 } from "../../chart/gameTypes/GameTypeRegistry"
 import { Chart } from "../../chart/sm/Chart"
 import { CHART_DIFFICULTIES } from "../../chart/sm/ChartTypes"
+import { TECH_STRINGS } from "../../chart/stats/parity/ParityDataTypes"
 import { CHART_PROPERTIES_DATA } from "../../data/ChartListWindowData"
 import { ActionHistory } from "../../util/ActionHistory"
 import { EventHandler } from "../../util/EventHandler"
@@ -25,6 +26,7 @@ export class ChartListWindow extends Window {
   private chartList?: HTMLDivElement
   private chartInfo?: HTMLDivElement
   private gameTypeDropdown?: Dropdown<string>
+  private currentChart?: Chart
   private smLoadHandler = () => {
     this.gameTypeDropdown!.setItems(
       GameTypeRegistry.getPriority().map(gameType => {
@@ -42,6 +44,11 @@ export class ChartListWindow extends Window {
     this.gameType = this.app.chartManager.loadedChart?.gameType ?? this.gameType
     this.loadCharts()
   }
+  private chartModifiedHandler = () => {
+    if (this.app.chartManager.loadedChart == this.currentChart) {
+      this.loadChartDetails(this.app.chartManager.loadedChart)
+    }
+  }
 
   constructor(app: App, gameType?: GameType) {
     super({
@@ -57,6 +64,8 @@ export class ChartListWindow extends Window {
       GameTypeRegistry.getPriority()[0]
     this.initView()
     EventHandler.on("smLoadedAfter", this.smLoadHandler)
+    EventHandler.on("chartModified", this.chartModifiedHandler)
+    EventHandler.on("parityModified", this.chartModifiedHandler)
   }
 
   initView() {
@@ -112,6 +121,8 @@ export class ChartListWindow extends Window {
 
   onClose(): void {
     EventHandler.off("smLoadedAfter", this.smLoadHandler)
+    EventHandler.off("chartModified", this.chartModifiedHandler)
+    EventHandler.off("parityModified", this.chartModifiedHandler)
   }
 
   private loadCharts() {
@@ -234,6 +245,10 @@ export class ChartListWindow extends Window {
       return
     }
     if (!chart) return
+    this.currentChart = chart
+
+    const scroller = document.createElement("div")
+    scroller.classList.add("chart-info-scroller")
 
     const sortDifficulties = () =>
       this.app.chartManager.loadedSM!.charts[chart.gameType.id].sort((a, b) => {
@@ -352,6 +367,26 @@ export class ChartListWindow extends Window {
       grid.appendChild(item)
     })
 
+    const techGrid = document.createElement("div")
+    techGrid.classList.add("chart-info-grid")
+    techGrid.style.marginTop = "1rem"
+    if (chart.stats.parity) {
+      for (let i = 0; i < chart.stats.parity.techCounts.length; i++) {
+        const item = document.createElement("div")
+        item.classList.add("chart-info-grid-item")
+        const label = document.createElement("div")
+        label.innerText = TECH_STRINGS[i]
+        label.classList.add("title", "chart-info-grid-label")
+        const count = document.createElement("div")
+        count.innerText = (chart.stats.parity.techCounts[i] ?? 0) + ""
+        count.classList.add("title", "chart-info-grid-count")
+        item.appendChild(label)
+        item.appendChild(count)
+        techGrid.appendChild(item)
+      }
+    } else {
+      techGrid.style.display = "none"
+    }
     //Menu Button Options
     const menu_options = document.createElement("div")
     menu_options.classList.add("menu-options")
@@ -416,6 +451,26 @@ export class ChartListWindow extends Window {
     deleteButton.classList.add("delete")
     menu_options.append(deleteButton)
 
-    this.chartInfo!.replaceChildren(main, properties, nps, grid, menu_options)
+    scroller.addEventListener(
+      "wheel",
+      () => {
+        menu_options.classList.toggle(
+          "bottom",
+          scroller.clientHeight + scroller.scrollTop <
+            scroller.scrollHeight - 10
+        )
+        scroller.classList.toggle("top", scroller.scrollTop > 10)
+      },
+      { passive: true }
+    )
+    requestAnimationFrame(() =>
+      menu_options.classList.toggle(
+        "bottom",
+        scroller.clientHeight + scroller.scrollTop < scroller.scrollHeight - 10
+      )
+    )
+
+    scroller.replaceChildren(main, properties, nps, grid, techGrid)
+    this.chartInfo!.replaceChildren(scroller, menu_options)
   }
 }

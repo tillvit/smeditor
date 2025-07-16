@@ -30,6 +30,8 @@ export class ParityAnalyzer extends ChartAnalyzer {
         return
       } else {
         this.terminateWorker()
+        this.chart.stats.parity = undefined
+        EventHandler.emit("parityModified")
       }
     }
     if (

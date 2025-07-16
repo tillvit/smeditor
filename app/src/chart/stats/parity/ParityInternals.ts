@@ -218,8 +218,6 @@ export class ParityInternals {
       }
     })
 
-    console.log(rowStats)
-
     return {
       parityLabels,
       states,
