@@ -60,6 +60,7 @@ import {
   PartialNotedataEntry,
   isHoldNote,
 } from "./sm/NoteTypes"
+import { serializeSMEData } from "./sm/SMEParser"
 import { Simfile } from "./sm/Simfile"
 import { Cached, TIMING_EVENT_NAMES, TimingEvent } from "./sm/TimingTypes"
 
@@ -1736,7 +1737,7 @@ export class ChartManager {
     }
     await FileHandler.writeFile(
       this.getDataPath(),
-      this.loadedSM.serializeSMEData()
+      serializeSMEData(this.loadedSM)
     ).catch(err => {
       const message = err.message
       if (!message.includes(errors.GONE[0])) {

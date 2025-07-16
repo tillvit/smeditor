@@ -12,18 +12,23 @@ import {
 } from "../../util/Util"
 import { GameType, GameTypeRegistry } from "../gameTypes/GameTypeRegistry"
 import { ChartStats } from "../stats/ChartStats"
-import { FootOverride, TechErrors } from "../stats/parity/ParityDataTypes"
+import {
+  FootOverride,
+  TECH_ERROR_STRING_REVERSE,
+  TechErrors,
+} from "../stats/parity/ParityDataTypes"
 import { ChartTimingData } from "./ChartTimingData"
 import { CHART_DIFFICULTIES, ChartDifficulty } from "./ChartTypes"
 import {
+  isHoldNote,
   Notedata,
   NotedataEntry,
   PartialNotedata,
   PartialNotedataEntry,
   RowData,
-  isHoldNote,
 } from "./NoteTypes"
 import { Simfile } from "./Simfile"
+import { getParityData, loadChartParityData } from "./SMEParser"
 import { TIMING_EVENT_NAMES, TimingEventType, TimingType } from "./TimingTypes"
 
 export class Chart {
@@ -44,7 +49,7 @@ export class Chart {
   private notedata: Notedata = []
   private notedataRows: RowData[] = []
 
-  private ignoredErrors = new Map<number, Set<TechErrors>>()
+  ignoredErrors = new Map<number, Set<TechErrors>>()
 
   stats: ChartStats
 
@@ -97,7 +102,12 @@ export class Chart {
       this.chartStyle = dict["CHARTSTYLE"] ?? ""
       this.music = dict["MUSIC"]
       if (dict["PARITY"]) {
-        this.loadParity(dict["PARITY"], false)
+        try {
+          const parityData = JSON.parse(dict["PARITY"])
+          loadChartParityData(parityData, this)
+        } catch (e) {
+          console.warn("Failed to parse parity data: " + e)
+        }
       }
       for (const key in dict) {
         if (
@@ -497,7 +507,7 @@ export class Chart {
       str += `#METERF:${this.meterF};\n`
       str += `#RADARVALUES:${this.radarValues};\n`
       if (type == "smebak") {
-        str += `#PARITY:${this.serializeParity()};\n`
+        str += `#PARITY:${JSON.stringify(getParityData(this))};\n`
       }
       for (const key in this.other_properties) {
         str += `#${key}:${this.other_properties[key]};\n`
@@ -510,49 +520,69 @@ export class Chart {
     return str
   }
 
-  serializeParity() {
-    return this.notedata
-      .filter(note => note.parity?.override)
-      .map(note => {
-        return `${note.beat}|${note.col}|${note.parity?.override}`
-      })
-      .join(",")
-  }
-
   loadParity(string: string, callListeners = true) {
-    const parts = string.split(",")
-    for (const part of parts) {
+    const data = JSON.parse(string)
+    const parts = string.split("=")
+
+    const overrides = data["overrides"]
+    if (overrides) {
+      for (const part of overrides) {
+        const parts = part.split("|")
+        try {
+          const beat = parseFloat(parts[0])
+          const col = parseInt(parts[1])
+          const override = parts[2]
+
+          const validOverrides = ["Left", "Right", "1", "2", "3", "4"]
+          if (!validOverrides.includes(override)) continue
+          if (parts.length != 3) continue
+
+          let noteIdx = bsearchEarliest(this.notedata, beat, n => n.beat)
+          while (
+            this.notedata[noteIdx] &&
+            this.notedata[noteIdx].col != col &&
+            isSameRow(this.notedata[noteIdx].beat, beat)
+          ) {
+            noteIdx++
+          }
+          if (!isSameRow(this.notedata[noteIdx].beat, beat)) {
+            console.warn(
+              `No note found at beat ${beat} and column ${col} for parity override ${override}`
+            )
+            continue
+          }
+          const note = this.notedata[noteIdx]
+          if (!note.parity) note.parity = {}
+          note.parity.override = override as FootOverride
+        } catch (e) {
+          console.warn(
+            `Failed to parse parity override ${part} in ${this.chartName}: ${e}`
+          )
+        }
+      }
+    }
+
+    const ignores = parts[1].split(",")
+    for (const part of ignores) {
       const parts = part.split("|")
       try {
         const beat = parseFloat(parts[0])
-        const col = parseInt(parts[1])
-        const override = parts[2]
+        const errors = parts
+          .slice(1)
+          .map(e => TECH_ERROR_STRING_REVERSE[e])
+          .filter(e => e !== undefined)
 
-        if (parts.length != 3) continue
-
-        let noteIdx = bsearchEarliest(this.notedata, beat, n => n.beat)
-        while (
-          this.notedata[noteIdx] &&
-          this.notedata[noteIdx].col != col &&
-          isSameRow(this.notedata[noteIdx].beat, beat)
-        ) {
-          noteIdx++
-        }
-        if (!isSameRow(this.notedata[noteIdx].beat, beat)) {
-          console.warn(
-            `No note found at beat ${beat} and column ${col} for parity override ${override}`
-          )
-          continue
-        }
-        const note = this.notedata[noteIdx]
-        if (!note.parity) note.parity = {}
-        note.parity.override = override as FootOverride
+        if (parts.length < 2) continue
+        if (!this.ignoredErrors.has(beat))
+          this.ignoredErrors.set(beat, new Set())
+        errors.forEach(error => this.ignoredErrors.get(beat)?.add(error))
       } catch (e) {
         console.warn(
-          `Failed to parse parity override ${part} in ${this.chartName}: ${e}`
+          `Failed to parse parity ignore ${part} in ${this.chartName}: ${e}`
         )
       }
     }
+
     if (callListeners) this.recalculateStats()
   }
 

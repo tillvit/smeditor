@@ -42,7 +42,7 @@ export const FEET_LABEL_TO_FOOT: { [key: string]: Foot } = {
   r: Foot.RIGHT_TOE,
 }
 
-export type FootOverride = Foot | "Left" | "Right"
+export type FootOverride = "Left" | "Right"
 
 export interface PlacementData {
   previousLeftPos: { x: number; y: number } // can probably cache this?
@@ -140,6 +140,14 @@ export const TECH_ERROR_STRINGS: { [key in TechErrors]: string } = {
   [TechErrors.MissedFootswitch]: "FS",
   [TechErrors.Ambiguous]: "AM",
 }
+
+export const TECH_ERROR_STRING_REVERSE: { [key: string]: TechErrors } =
+  Object.fromEntries(
+    Object.entries(TECH_ERROR_STRINGS).map(([k, v]) => [
+      v,
+      Number(k) as TechErrors,
+    ])
+  ) as { [key: string]: TechErrors }
 
 export const TECH_ERROR_DESCRIPTIONS: {
   [key in TechErrors]: { title: string; description: string }

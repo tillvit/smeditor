@@ -1,7 +1,8 @@
 import { WaterfallManager } from "../../gui/element/WaterfallManager"
 import { Chart } from "./Chart"
 import { CHART_DIFFICULTIES } from "./ChartTypes"
-import { SIMFILE_PROPERTIES, SimfileProperty, SMEData } from "./SimfileTypes"
+import { SIMFILE_PROPERTIES, SimfileProperty } from "./SimfileTypes"
+import { loadSMEData } from "./SMEParser"
 import { SongTimingData } from "./SongTimingData"
 import { TIMING_EVENT_NAMES, TimingEventType, TimingType } from "./TimingTypes"
 
@@ -74,27 +75,7 @@ export class Simfile {
 
         if (dataFile) {
           const dataText = await dataFile.text()
-          try {
-            const data: SMEData = JSON.parse(dataText)
-            for (const [gameType, charts] of Object.entries(data.parity)) {
-              for (let i = 0; i < charts.length; i++) {
-                const chart = this.charts[gameType]?.[i]
-                if (chart) {
-                  chart.loadParity(charts[i], true)
-                } else {
-                  WaterfallManager.createFormatted(
-                    `Chart for game type ${gameType} not found`,
-                    "warn"
-                  )
-                }
-              }
-            }
-          } catch (error) {
-            WaterfallManager.createFormatted(
-              "Couldn't parse SME data file: " + error,
-              "error"
-            )
-          }
+          loadSMEData(dataText, this)
         }
 
         this.timingData.reloadCache()
@@ -235,19 +216,6 @@ export class Simfile {
       }
     }
     return str
-  }
-
-  serializeSMEData(): string {
-    const data: SMEData = {
-      parity: {},
-    }
-
-    for (const gameType in this.charts) {
-      data.parity[gameType] = this.charts[gameType].map(chart => {
-        return chart.serializeParity()
-      })
-    }
-    return JSON.stringify(data)
   }
 
   usesChartTiming(): boolean {

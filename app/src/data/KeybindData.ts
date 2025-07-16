@@ -1,7 +1,7 @@
 import { App } from "../App"
 import { EditMode, EditTimingMode } from "../chart/ChartManager"
 import { isHoldNote } from "../chart/sm/NoteTypes"
-import { Foot, FootOverride } from "../chart/stats/parity/ParityDataTypes"
+import { FootOverride } from "../chart/stats/parity/ParityDataTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { AboutWindow } from "../gui/window/AboutWindow"
 import { CaptureWindow } from "../gui/window/CaptureWindow"
@@ -1821,14 +1821,14 @@ for (const foot of ["None", "Left", "Right"] as const) {
           maxRange = getNoteEnd(note)
         }
       })
-      const oldOverrides: FootOverride[] = []
+      const oldOverrides: (FootOverride | undefined)[] = []
       ActionHistory.instance.run({
         action: app => {
           selection.forEach(note => {
             if (!note.parity) {
               note.parity = {}
             }
-            oldOverrides.push(note.parity.override || Foot.NONE)
+            oldOverrides.push(note.parity.override)
             note.parity.override = foot == "None" ? undefined : foot
           })
           app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)

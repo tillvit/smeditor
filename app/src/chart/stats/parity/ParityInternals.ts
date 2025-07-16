@@ -845,10 +845,9 @@ export class ParityInternals {
       return permuteColumns
     }
     const updatedColumns = permuteColumns.filter(pc => {
-      // Check if the permutation has any overrides that are not NONE
       for (let c = 0; c < this.layout.columnCount; c++) {
         const noteOverride = overrides[c]
-        if (noteOverride == undefined || noteOverride == Foot.NONE) continue
+        if (noteOverride == undefined) continue
         if (noteOverride == "Left") {
           if (pc[c] != Foot.LEFT_HEEL && pc[c] != Foot.LEFT_TOE) {
             return false
@@ -857,8 +856,6 @@ export class ParityInternals {
           if (pc[c] != Foot.RIGHT_HEEL && pc[c] != Foot.RIGHT_TOE) {
             return false
           }
-        } else if (pc[c] != noteOverride) {
-          return false
         }
       }
       return true
