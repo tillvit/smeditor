@@ -717,6 +717,89 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
         app.chartManager.chartAudio.getSongLength()
       )),
   },
+  jumpPreviousCandle: {
+    label: "Jump to previous candle",
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.Record ||
+      !app.chartManager.loadedChart?.stats.parity ||
+      !Options.chart.parity.enabled,
+    callback: app => {
+      const parity = app.chartManager.loadedChart!.stats.parity!
+      const candles = parity.candles
+        .keys()
+        .map(i => parity.rowTimestamps[i].beat)
+        .toArray()
+        .sort((a, b) => a - b)
+      const prev = previousInSorted(candles, app.chartManager.beat)
+      if (prev !== null) {
+        app.chartManager.beat = prev
+      }
+    },
+  },
+  jumpNextCandle: {
+    label: "Jump to next candle",
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.Record ||
+      !app.chartManager.loadedChart?.stats.parity ||
+      !Options.chart.parity.enabled,
+    callback: app => {
+      const parity = app.chartManager.loadedChart!.stats.parity!
+      const candles = parity.candles
+        .keys()
+        .map(i => parity.rowTimestamps[i].beat)
+        .toArray()
+        .sort((a, b) => a - b)
+      const next = nextInSorted(candles, app.chartManager.beat)
+      if (next !== null) {
+        app.chartManager.beat = next
+      }
+    },
+  },
+  jumpPreviousError: {
+    label: "Jump to previous error",
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.Record ||
+      !app.chartManager.loadedChart?.stats.parity ||
+      !Options.chart.parity.enabled,
+    callback: app => {
+      const errors = app.chartManager
+        .loadedChart!.getTechErrors()
+        .map(e => e.beat)
+      const prev = previousInSorted(errors, app.chartManager.beat)
+      if (prev !== null) {
+        app.chartManager.beat = prev
+      }
+    },
+  },
+  jumpNextError: {
+    label: "Jump to next error",
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.Record ||
+      !app.chartManager.loadedChart?.stats.parity ||
+      !Options.chart.parity.enabled,
+    callback: app => {
+      const parity = app.chartManager.loadedChart!.stats.parity!
+      const errors = app.chartManager
+        .loadedChart!.getTechErrors()
+        .map(e => e.beat)
+      const next = nextInSorted(errors, app.chartManager.beat)
+      if (next !== null) {
+        app.chartManager.beat = next
+      }
+    },
+  },
   assistTick: {
     label: "Assist tick",
     combos: [{ key: "F7", mods: [] }],

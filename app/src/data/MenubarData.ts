@@ -192,6 +192,28 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
             type: "selection",
             id: "jumpSongEnd",
           },
+          {
+            type: "separator",
+          },
+          {
+            type: "selection",
+            id: "jumpPreviousCandle",
+          },
+          {
+            type: "selection",
+            id: "jumpNextCandle",
+          },
+          {
+            type: "separator",
+          },
+          {
+            type: "selection",
+            id: "jumpPreviousError",
+          },
+          {
+            type: "selection",
+            id: "jumpNextError",
+          },
         ],
       },
       {
