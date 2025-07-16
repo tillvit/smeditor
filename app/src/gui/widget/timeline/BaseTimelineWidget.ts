@@ -426,16 +426,18 @@ export class BaseTimelineWidget extends Widget {
       if (Options.chart.parity.showErrors) {
         for (const [rowIdx, sprite] of this.errorMap.entries()) {
           const position = chart.stats.parity.rowTimestamps[rowIdx]
+          const errors = chart.stats.parity.techErrors.get(rowIdx)!
           if (
             !position ||
             position.beat < topBeat ||
-            position.beat > bottomBeat
+            position.beat > bottomBeat ||
+            !errors?.size
           ) {
             this.errorMap.delete(rowIdx)
             this.errors.destroyChild(sprite)
             continue
           }
-          const errors = chart.stats.parity.techErrors.get(rowIdx)!
+
           const ignoreSize =
             chart.getErrorIgnoresAtBeat(position.beat)?.size ?? 0
           if (errors.size - ignoreSize > 0) {

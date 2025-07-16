@@ -20,6 +20,7 @@ export class Simfile {
   constructor(file: File, dataFile?: File) {
     this.loaded = new Promise(resolve => {
       let type = file.name.split(".").pop()
+      const isAutosave = type == "smebak"
       if (type == "smebak") type = "ssc"
       if (type == "sm" || type == "ssc") this._type = type
       else resolve()
@@ -75,7 +76,7 @@ export class Simfile {
 
         if (dataFile) {
           const dataText = await dataFile.text()
-          loadSMEData(dataText, this)
+          loadSMEData(dataText, this, isAutosave)
         }
 
         this.timingData.reloadCache()
