@@ -1559,6 +1559,73 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.windowManager.openWindow(new AboutWindow(app))
     },
   },
+  enableParity: {
+    label: "Enable parity checking",
+    combos: [],
+    disabled: false,
+    callback: () => {
+      Options.chart.parity.enabled = !Options.chart.parity.enabled
+      WaterfallManager.create(
+        "Parity Checking: " + (Options.chart.parity.enabled ? "on" : "off")
+      )
+    },
+  },
+  showTechErrors: {
+    label: "Show tech errors",
+    combos: [],
+    disabled: () => !Options.chart.parity.enabled,
+    callback: () => {
+      Options.chart.parity.showErrors = !Options.chart.parity.showErrors
+      WaterfallManager.create(
+        "Tech Errors: " + (Options.chart.parity.showErrors ? "on" : "off")
+      )
+    },
+  },
+  showFootHighlights: {
+    label: "Show foot highlights",
+    combos: [],
+    disabled: () => !Options.chart.parity.enabled,
+    callback: () => {
+      Options.chart.parity.showHighlights = !Options.chart.parity.showHighlights
+      WaterfallManager.create(
+        "Foot Highlights: " +
+          (Options.chart.parity.showHighlights ? "on" : "off")
+      )
+    },
+  },
+  showDancingBot: {
+    label: "Show dancing bot",
+    combos: [],
+    disabled: () => !Options.chart.parity.enabled,
+    callback: () => {
+      Options.chart.parity.showDancingBot = !Options.chart.parity.showDancingBot
+      WaterfallManager.create(
+        "Dancing Bot: " + (Options.chart.parity.showDancingBot ? "on" : "off")
+      )
+    },
+  },
+  showTechNotation: {
+    label: "Show tech notation",
+    combos: [],
+    disabled: () => !Options.chart.parity.enabled,
+    callback: () => {
+      Options.chart.parity.showTech = !Options.chart.parity.showTech
+      WaterfallManager.create(
+        "Tech Notation: " + (Options.chart.parity.showTech ? "on" : "off")
+      )
+    },
+  },
+  showCandles: {
+    label: "Show candles",
+    combos: [],
+    disabled: () => !Options.chart.parity.enabled,
+    callback: () => {
+      Options.chart.parity.showCandles = !Options.chart.parity.showCandles
+      WaterfallManager.create(
+        "Candles: " + (Options.chart.parity.showCandles ? "on" : "off")
+      )
+    },
+  },
 }
 
 // Dynamically add keybinds
