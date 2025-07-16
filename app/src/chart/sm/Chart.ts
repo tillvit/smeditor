@@ -641,4 +641,50 @@ export class Chart {
       },
     })
   }
+
+  getTechErrorsAtBeat(beat: number, includeIgnored = false): Set<TechErrors> {
+    if (!this.stats.parity) return new Set()
+    const rowIdx = bsearchEarliest(
+      this.stats.parity.rowTimestamps,
+      beat,
+      r => r.beat
+    )
+    return this.getTechErrorsAtRow(rowIdx, includeIgnored)
+  }
+
+  getTechErrorsAtRow(rowIdx: number, includeIgnored = false): Set<TechErrors> {
+    if (!this.stats.parity) return new Set()
+    if (!this.stats.parity.rowTimestamps[rowIdx]) return new Set()
+    const techErrors = this.stats.parity.techErrors.get(rowIdx)
+    if (!techErrors) return new Set()
+    const errors = new Set(techErrors)
+
+    if (includeIgnored) return errors
+    const ignored =
+      this.ignoredErrors.get(this.stats.parity.rowTimestamps[rowIdx].beat) ??
+      new Set()
+    return errors.difference(ignored)
+  }
+
+  getTechErrors(includeIgnored = false): { beat: number; error: TechErrors }[] {
+    if (!this.stats.parity) return []
+    const techErrors = this.stats.parity.techErrors
+
+    return techErrors
+      .keys()
+      .map(idx => {
+        return this.getTechErrorsAtRow(idx, includeIgnored)
+          .values()
+          .map(error => {
+            return {
+              beat: this.stats.parity!.rowTimestamps[idx].beat,
+              error: error,
+            }
+          })
+          .toArray() as { beat: number; error: TechErrors }[]
+      })
+      .toArray()
+      .flat()
+      .sort((a, b) => a.beat - b.beat)
+  }
 }

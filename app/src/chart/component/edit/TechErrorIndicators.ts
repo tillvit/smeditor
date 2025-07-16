@@ -14,7 +14,7 @@ import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
 import { isRightClick } from "../../../util/PixiUtil"
-import { bsearch, isSameRow } from "../../../util/Util"
+import { nextInSorted, previousInSorted } from "../../../util/Util"
 import { EditMode } from "../../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import { TECH_ERROR_STRINGS } from "../../stats/parity/ParityDataTypes"
@@ -189,48 +189,20 @@ export class TechErrorIndicators
       )
     })
 
-    const filterErrorBeats = (includeIgnored: boolean): number[] => {
-      const techErrors = this.renderer.chart.stats.parity!.techErrors
-      if (includeIgnored) {
-        const beats: number[] = techErrors
-          .keys()
-          .map(i => this.renderer.chart.stats.parity!.rowTimestamps[i].beat)
-          .toArray()
-          .sort((a, b) => a - b)
-        return beats
-      }
-      const techErrorsFiltered: number[] = this.renderer.chart.stats
-        .parity!.techErrors.entries()
-        .filter(([i, errors]) => {
-          return errors.values().some(error => {
-            return !this.renderer.chart.isErrorIgnored(
-              error,
-              this.renderer.chart.stats.parity!.rowTimestamps[i].beat
-            )
-          }) as boolean
-        })
-        .map(
-          pair => this.renderer.chart.stats.parity!.rowTimestamps[pair[0]].beat
-        )
-        .toArray()
-        .sort((a, b) => a - b)
-      return techErrorsFiltered
-    }
-
     this.topCounter.on("pointerdown", event => {
       if (!this.renderer.chart.stats.parity) return
-      const errors = filterErrorBeats(event.shiftKey)
-      if (errors.length == 0) return
-      const idx = bsearch(errors, this.renderer.chartManager.beat)
+      const errorBeats = this.renderer.chart
+        .getTechErrors(event.shiftKey)
+        .map(error => error.beat)
 
-      if (isSameRow(this.renderer.chartManager.beat, errors[idx])) {
-        if (idx - 1 >= 0) {
-          this.renderer.chartManager.beat = errors[idx - 1]
-        } else {
-          this.renderer.chartManager.beat = errors[0]
-        }
-      } else this.renderer.chartManager.beat = errors[idx]
-      event.stopImmediatePropagation()
+      const nextBeat = previousInSorted(
+        errorBeats,
+        this.renderer.chartManager.beat
+      )
+      if (nextBeat !== null) {
+        event.stopImmediatePropagation()
+        this.renderer.chartManager.beat = nextBeat
+      }
     })
     this.topCounter.eventMode = "static"
     this.topCounter.cursor = "pointer"
@@ -258,23 +230,14 @@ export class TechErrorIndicators
 
     this.bottomCounter.on("pointerdown", event => {
       if (!this.renderer.chart.stats.parity) return
-      const errors = filterErrorBeats(event.shiftKey)
-      if (errors.length == 0) return
-      event.stopImmediatePropagation()
-      const idx = bsearch(errors, this.renderer.chartManager.beat)
-
-      if (idx == 0 && this.renderer.chartManager.beat < errors[idx]) {
-        this.renderer.chartManager.beat = errors[idx]
-        return
+      const errorBeats = this.renderer.chart
+        .getTechErrors(event.shiftKey)
+        .map(error => error.beat)
+      const nextBeat = nextInSorted(errorBeats, this.renderer.chartManager.beat)
+      if (nextBeat !== null) {
+        event.stopImmediatePropagation()
+        this.renderer.chartManager.beat = nextBeat
       }
-
-      if (isSameRow(this.renderer.chartManager.beat, errors[idx])) {
-        if (idx + 1 < errors.length) {
-          this.renderer.chartManager.beat = errors[idx + 1]
-        } else {
-          this.renderer.chartManager.beat = errors[idx]
-        }
-      } else this.renderer.chartManager.beat = errors[idx + 1]
     })
     this.bottomCounter.eventMode = "static"
     this.bottomCounter.cursor = "pointer"
@@ -308,17 +271,13 @@ export class TechErrorIndicators
     for (const rowIdx of parity.techErrors.keys()) {
       const position = parity.rowTimestamps[rowIdx]
       if (lastBeat < position.beat) {
-        const errors = parity.techErrors.get(rowIdx)
-        const ignoredErrors =
-          chart.getErrorIgnoresAtBeat(position.beat)?.size ?? 0
-        nextErrors += errors!.size - ignoredErrors
+        if (chart.getTechErrorsAtRow(rowIdx).size != 0)
+          nextErrors += chart.getTechErrorsAtRow(rowIdx).size
         continue
       }
       if (firstBeat > position.beat) {
-        const errors = parity.techErrors.get(rowIdx)
-        const ignoredErrors =
-          chart.getErrorIgnoresAtBeat(position.beat)?.size ?? 0
-        previousErrors += errors!.size - ignoredErrors
+        if (chart.getTechErrorsAtRow(rowIdx).size != 0)
+          previousErrors += chart.getTechErrorsAtRow(rowIdx).size
         continue
       }
 
@@ -396,7 +355,6 @@ export class TechErrorIndicators
               chart.addErrorIgnore(error, position.beat)
             }
           })
-
           box.eventMode = "static"
         }
         this.rowMap.set(rowIdx, { boxes, highlight })
@@ -408,16 +366,19 @@ export class TechErrorIndicators
       if (!position) continue
       if (position.beat < firstBeat || position.beat > lastBeat) {
         this.rowMap.delete(i)
-        boxes.forEach(box => this.boxPool.destroyChild(box))
+        boxes.forEach(box => {
+          this.boxPool.destroyChild(box)
+        })
+        if (TechErrorPopup.getError()?.beat == position.beat)
+          TechErrorPopup.close()
         this.highlightPool.destroyChild(highlight)
+
         continue
       }
       const yPos = this.renderer.getYPosFromBeat(position.beat)
       highlight.y = yPos
-      const errors = parity.techErrors.get(i)
-      const ignoredErrors =
-        chart.getErrorIgnoresAtBeat(position.beat)?.size ?? 0
-      highlight.visible = (errors?.size ?? 0) - ignoredErrors != 0
+
+      highlight.visible = chart.getTechErrorsAtRow(i).size != 0
     }
     this.topCounter.setText(previousErrors + "")
     this.bottomCounter.setText(nextErrors + "")

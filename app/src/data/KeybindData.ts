@@ -28,10 +28,10 @@ import { maxArr, minArr, roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
 import { basename, dirname } from "../util/Path"
 import {
-  bsearch,
   getNoteEnd,
   IS_OSX,
-  isSameRow,
+  nextInSorted,
+  previousInSorted,
   QUANT_NAMES,
   QUANT_NUM,
   QUANTS,
@@ -578,15 +578,10 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
         streamPoints.push(stream.startBeat)
         streamPoints.push(stream.endBeat)
       }
-      if (streamPoints.length == 0) return
-      const idx = bsearch(streamPoints, app.chartManager.beat)
-      if (Math.abs(app.chartManager.beat - streamPoints[idx]) < 0.001) {
-        if (idx - 1 >= 0) {
-          app.chartManager.beat = streamPoints[idx - 1]
-        } else {
-          app.chartManager.beat = streamPoints[0]
-        }
-      } else app.chartManager.beat = streamPoints[idx]
+      const nextBeat = previousInSorted(streamPoints, app.chartManager.beat)
+      if (nextBeat !== null) {
+        app.chartManager.beat = nextBeat
+      }
     },
   },
   nextStream: {
@@ -605,19 +600,10 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
         streamPoints.push(stream.startBeat)
         streamPoints.push(stream.endBeat)
       }
-      if (streamPoints.length == 0) return
-      const idx = bsearch(streamPoints, app.chartManager.beat)
-      if (idx == 0 && app.chartManager.beat < streamPoints[idx]) {
-        app.chartManager.beat = streamPoints[idx]
-        return
+      const nextBeat = nextInSorted(streamPoints, app.chartManager.beat)
+      if (nextBeat !== null) {
+        app.chartManager.beat = nextBeat
       }
-      if (isSameRow(app.chartManager.beat, streamPoints[idx])) {
-        if (idx + 1 < streamPoints.length) {
-          app.chartManager.beat = streamPoints[idx + 1]
-        } else {
-          app.chartManager.beat = streamPoints[idx]
-        }
-      } else app.chartManager.beat = streamPoints[idx + 1]
     },
   },
   previousMeasure: {
