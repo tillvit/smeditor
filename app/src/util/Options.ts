@@ -77,7 +77,7 @@ export class DefaultOptions {
       color2: "#423c7aff",
     },
     facingLayout: {
-      enabled: false,
+      enabled: true,
     },
     timingEventOrder: {
       left: [
