@@ -26,6 +26,7 @@ export class TechErrorIndicators
   extends Container
   implements ChartRendererComponent
 {
+  readonly isEditGUI = true
   private renderer: ChartRenderer
   private parityDirty = false
   private errorIconTexture: RenderTexture
@@ -282,8 +283,6 @@ export class TechErrorIndicators
       this.boxPool.destroyAll()
       this.parityDirty = false
     }
-
-    this.boxPool.visible = this.renderer.shouldDisplayEditGUI()
 
     // Create all missing boxes
     let previousErrors = 0

@@ -68,6 +68,7 @@ export class TimingTrackContainer
   extends Container
   implements ChartRendererComponent
 {
+  readonly isEditGUI = true
   private tracks = new Container<TimingTrack>()
 
   private renderer: ChartRenderer
@@ -524,7 +525,6 @@ export class TimingTrackContainer
       this.renderer.chartManager.editTimingMode != EditTimingMode.Off &&
       this.renderer.chartManager.getMode() == EditMode.Edit
 
-    this.boxPool.visible = this.renderer.shouldDisplayEditGUI()
     if (this.ghostBox) {
       this.ghostBox.visible =
         this.renderer.shouldDisplayEditGUI() && editingTiming

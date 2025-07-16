@@ -301,6 +301,7 @@ export class HoldObject extends Container {
 }
 
 export class Notefield extends Container implements ChartRendererComponent {
+  readonly isEditGUI = false
   noteskinOptions?: NoteskinOptions
   noteskin?: Noteskin
   readonly gameType

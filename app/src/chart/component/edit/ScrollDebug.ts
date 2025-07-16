@@ -11,6 +11,8 @@ interface ScrollDebugItem extends Container {
 }
 
 export class ScrollDebug extends Container implements ChartRendererComponent {
+  readonly isEditGUI = false
+
   private renderer: ChartRenderer
 
   private scrollMap: Map<ScrollTimingEvent, ScrollDebugItem> = new Map()

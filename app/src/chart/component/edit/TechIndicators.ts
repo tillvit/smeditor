@@ -28,6 +28,7 @@ export class TechIndicators
   extends Container
   implements ChartRendererComponent
 {
+  readonly isEditGUI = true
   private renderer: ChartRenderer
   private parityDirty = false
 
@@ -79,8 +80,6 @@ export class TechIndicators
       this.boxPool.destroyAll()
       this.parityDirty = false
     }
-
-    this.boxPool.visible = this.renderer.shouldDisplayEditGUI()
 
     // Create all missing boxes
     for (let i = 0; i < parity.techRows.length; i++) {

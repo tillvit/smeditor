@@ -45,6 +45,7 @@ interface SelectionBounds {
 
 export interface ChartRendererComponent extends DisplayObject {
   update: (firstBeat: number, lastBeat: number) => void
+  readonly isEditGUI: boolean
 }
 
 export class ChartRenderer extends Container<ChartRendererComponent> {
@@ -333,7 +334,14 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     this.scale.x = Options.chart.zoom
     this.scale.y = Options.chart.zoom
 
-    this.children.forEach(child => child.update(firstBeat, lastBeat))
+    this.children.forEach(child => {
+      if (child.isEditGUI && !this.shouldDisplayEditGUI()) {
+        child.visible = false
+        return
+      }
+      child.visible = true
+      child.update(firstBeat, lastBeat)
+    })
     RowStacker.instance.update()
     this.notefield.alpha =
       this.chartManager.editTimingMode == EditTimingMode.Off ||
@@ -1218,7 +1226,8 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
 
   shouldDisplayEditGUI() {
     return (
-      (this.chartManager.getMode() != EditMode.Play || !Options.play.hideGUI) &&
+      (this.chartManager.getMode() != EditMode.Play ||
+        !Options.play.hideBarlines) &&
       Flags.barlines
     )
   }

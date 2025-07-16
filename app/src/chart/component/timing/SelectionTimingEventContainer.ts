@@ -23,6 +23,7 @@ export class SelectionTimingEventContainer
   extends Container
   implements ChartRendererComponent
 {
+  readonly isEditGUI = true
   children: TimingBox[] = []
 
   private renderer: ChartRenderer

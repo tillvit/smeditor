@@ -34,6 +34,7 @@ export class TimingAreaContainer
   extends Container
   implements ChartRendererComponent
 {
+  readonly isEditGUI = true
   private renderer: ChartRenderer
   private areaPool = new DisplayObjectPool({
     create: () => {
@@ -83,8 +84,6 @@ export class TimingAreaContainer
         "FAKES"
       )
     }
-
-    this.visible = this.renderer.shouldDisplayEditGUI()
 
     for (const event of this.timingEvents) {
       // Check beat requirements

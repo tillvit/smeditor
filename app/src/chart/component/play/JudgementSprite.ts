@@ -14,6 +14,7 @@ import {
 } from "../../play/TimingWindowCollection"
 
 export class JudgementSprite extends Sprite implements ChartRendererComponent {
+  readonly isEditGUI = false
   private createTime = -1
   private active = false
   private type: StandardTimingWindow = TIMING_WINDOW_AUTOPLAY

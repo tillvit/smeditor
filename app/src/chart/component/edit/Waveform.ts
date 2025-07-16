@@ -26,6 +26,8 @@ interface WaveformLine extends Sprite {
 }
 
 export class Waveform extends Sprite implements ChartRendererComponent {
+  readonly isEditGUI = true
+
   private lineContainer: ParticleContainer = new ParticleContainer(
     1500,
     { position: true, scale: true, tint: true, alpha: true },
@@ -167,8 +169,7 @@ export class Waveform extends Sprite implements ChartRendererComponent {
   }
 
   update() {
-    this.visible =
-      Options.chart.waveform.enabled && this.renderer.shouldDisplayEditGUI()
+    this.visible = Options.chart.waveform.enabled
 
     if (!Options.chart.waveform.enabled) return
     if (this.drawDirty || this.variableChanged()) {

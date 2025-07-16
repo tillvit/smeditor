@@ -6,6 +6,7 @@ import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import { TimingWindowCollection } from "../../play/TimingWindowCollection"
 
 export class ComboNumber extends BitmapText implements ChartRendererComponent {
+  readonly isEditGUI = false
   private renderer: ChartRenderer
 
   constructor(renderer: ChartRenderer) {

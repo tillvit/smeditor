@@ -83,6 +83,8 @@ export const PARITY_COLORS: Record<Foot, number> = {
 }
 
 export class ParityDebug extends Container implements ChartRendererComponent {
+  readonly isEditGUI = false
+
   private renderer: ChartRenderer
   private chartDirty = false
   private lastVisible = false

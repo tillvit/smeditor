@@ -34,6 +34,7 @@ export class ErrorBarContainer
   extends Container
   implements ChartRendererComponent
 {
+  readonly isEditGUI = false
   private barlines: ErrorBarlineContainer =
     new Container() as ErrorBarlineContainer
   private readonly barline: Sprite

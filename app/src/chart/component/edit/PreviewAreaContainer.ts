@@ -8,6 +8,8 @@ export class PreviewAreaContainer
   extends Container
   implements ChartRendererComponent
 {
+  readonly isEditGUI = true
+
   private previewArea = new Sprite(Texture.WHITE)
   private previewText = new BitmapText("SONG PREVIEW", {
     fontName: "Main",
@@ -37,7 +39,6 @@ export class PreviewAreaContainer
     if (
       Number.isNaN(sampleStart) ||
       Number.isNaN(sampleLength) ||
-      !this.renderer.shouldDisplayEditGUI() ||
       this.renderer.chart.timingData.getBeatFromSeconds(
         sampleStart + sampleLength
       ) < firstBeat ||

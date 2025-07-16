@@ -147,7 +147,7 @@ export class DefaultOptions {
     offset: 0,
     effectOffset: 0,
     visualOffset: 0,
-    hideGUI: false,
+    hideBarlines: false,
     judgementTilt: true,
     timingCollection: "ITG",
     timingWindowScale: 1,

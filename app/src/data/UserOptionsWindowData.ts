@@ -898,7 +898,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           },
           {
             type: "item",
-            label: "Hide barlines during play",
+            label: "Hide edit GUI during play",
             id: "play.hideBarlines",
             input: {
               type: "checkbox",
