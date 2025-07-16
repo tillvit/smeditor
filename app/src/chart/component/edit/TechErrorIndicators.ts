@@ -54,6 +54,8 @@ export class TechErrorIndicators
     },
   })
 
+  private reposition = false
+
   private topCounter: TechBox
   private bottomCounter: TechBox
 
@@ -74,11 +76,21 @@ export class TechErrorIndicators
     const parityChanged = () => {
       this.parityDirty = true
     }
+    const repositionHandler = (optionId: string) => {
+      if (
+        optionId == "chart.zoom" ||
+        optionId == "chart.reverse" ||
+        optionId == "general.uiScale"
+      )
+        this.reposition = true
+    }
     EventHandler.on("parityModified", parityChanged)
     EventHandler.on("parityIgnoresModified", parityChanged)
+    EventHandler.on("userOptionUpdated", repositionHandler)
     this.on("destroyed", () => {
       EventHandler.off("parityModified", parityChanged)
       EventHandler.off("parityIgnoresModified", parityChanged)
+      EventHandler.off("userOptionUpdated", repositionHandler)
     })
 
     const circle = new Graphics()
@@ -162,9 +174,11 @@ export class TechErrorIndicators
     this.topCounter.y = Options.chart.reverse
       ? this.renderer.chartManager.app.STAGE_HEIGHT / 2 + 50
       : -this.renderer.chartManager.app.STAGE_HEIGHT / 2 - 50
+    this.topCounter.y /= Options.chart.zoom
     this.bottomCounter.y = Options.chart.reverse
       ? -this.renderer.chartManager.app.STAGE_HEIGHT / 2 - 50
       : this.renderer.chartManager.app.STAGE_HEIGHT / 2 + 50
+    this.bottomCounter.y /= Options.chart.zoom
 
     this.addChild(this.topCounter, this.bottomCounter)
 
@@ -383,7 +397,7 @@ export class TechErrorIndicators
     this.topCounter.setText(previousErrors + "")
     this.bottomCounter.setText(nextErrors + "")
 
-    if (this.previousTopVisible != previousErrors > 0) {
+    if (this.previousTopVisible != previousErrors > 0 || this.reposition) {
       this.previousTopVisible = previousErrors > 0
       let topTargetY = Options.chart.reverse
         ? this.renderer.chartManager.app.STAGE_HEIGHT / 2 - 40
@@ -394,16 +408,16 @@ export class TechErrorIndicators
         this.topCounter,
         {
           "0": { y: "inherit" },
-          "1": { y: topTargetY },
+          "1": { y: topTargetY / Options.chart.zoom },
         },
-        Options.general.smoothAnimations ? 0.3 : 0,
+        Options.general.smoothAnimations && !this.reposition ? 0.3 : 0,
         bezier(0, 0, 0.16, 1.01),
         () => {},
         "te-top-counter"
       )
     }
 
-    if (this.previousBottomVisible != nextErrors > 0) {
+    if (this.previousBottomVisible != nextErrors > 0 || this.reposition) {
       this.previousBottomVisible = nextErrors > 0
       let bottomTargetY = Options.chart.reverse
         ? -this.renderer.chartManager.app.STAGE_HEIGHT / 2 + 40
@@ -414,9 +428,9 @@ export class TechErrorIndicators
         this.bottomCounter,
         {
           "0": { y: "inherit" },
-          "1": { y: bottomTargetY },
+          "1": { y: bottomTargetY / Options.chart.zoom },
         },
-        Options.general.smoothAnimations ? 0.3 : 0,
+        Options.general.smoothAnimations && !this.reposition ? 0.3 : 0,
         bezier(0, 0, 0.16, 1.01),
         () => {},
         "te-bottom-counter"
@@ -427,6 +441,8 @@ export class TechErrorIndicators
 
     this.bottomCounter.x =
       -this.renderer.chart.gameType.notefieldWidth / 2 - 160
+
+    this.reposition = false
   }
 
   createErrorBox() {
