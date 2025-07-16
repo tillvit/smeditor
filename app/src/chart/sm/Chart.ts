@@ -1,3 +1,4 @@
+import { ActionHistory } from "../../util/ActionHistory"
 import { EventHandler } from "../../util/EventHandler"
 import { maxArr } from "../../util/Math"
 import {
@@ -11,7 +12,7 @@ import {
 } from "../../util/Util"
 import { GameType, GameTypeRegistry } from "../gameTypes/GameTypeRegistry"
 import { ChartStats } from "../stats/ChartStats"
-import { FootOverride } from "../stats/parity/ParityDataTypes"
+import { FootOverride, TechErrors } from "../stats/parity/ParityDataTypes"
 import { ChartTimingData } from "./ChartTimingData"
 import { CHART_DIFFICULTIES, ChartDifficulty } from "./ChartTypes"
 import {
@@ -42,6 +43,8 @@ export class Chart {
 
   private notedata: Notedata = []
   private notedataRows: RowData[] = []
+
+  private ignoredErrors = new Map<number, Set<TechErrors>>()
 
   stats: ChartStats
 
@@ -570,5 +573,42 @@ export class Chart {
   destroy() {
     this.stats.destroy()
     this.timingData.destroy()
+  }
+
+  addErrorIgnore(error: TechErrors, beat: number) {
+    if (!this.ignoredErrors.has(beat)) this.ignoredErrors.set(beat, new Set())
+    ActionHistory.instance.run({
+      undo: () => {
+        this.ignoredErrors.get(beat)?.delete(error)
+        EventHandler.emit("parityIgnoresModified")
+      },
+      action: () => {
+        this.ignoredErrors.get(beat)?.add(error)
+        EventHandler.emit("parityIgnoresModified")
+      },
+    })
+  }
+
+  getErrorIgnoresAtBeat(beat: number): Set<TechErrors> | undefined {
+    return this.ignoredErrors.get(beat)
+  }
+
+  isErrorIgnored(error: TechErrors, beat: number) {
+    return this.ignoredErrors.get(beat)?.has(error) ?? false
+  }
+
+  deleteErrorIgnore(error: TechErrors, beat: number) {
+    ActionHistory.instance.run({
+      undo: () => {
+        if (!this.ignoredErrors.has(beat))
+          this.ignoredErrors.set(beat, new Set())
+        this.ignoredErrors.get(beat)?.add(error)
+        EventHandler.emit("parityIgnoresModified")
+      },
+      action: () => {
+        this.ignoredErrors.get(beat)?.delete(error)
+        EventHandler.emit("parityIgnoresModified")
+      },
+    })
   }
 }

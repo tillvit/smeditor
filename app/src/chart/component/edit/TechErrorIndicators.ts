@@ -1,22 +1,25 @@
 import bezier from "bezier-easing"
 import { BitmapText, Container, Graphics, RenderTexture, Sprite } from "pixi.js"
+import { TechErrorPopup } from "../../../gui/popup/TechErrorPopup"
 import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
 import { BezierAnimator } from "../../../util/BezierEasing"
 import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
+import { isRightClick } from "../../../util/PixiUtil"
 import { bsearch, isSameRow } from "../../../util/Util"
+import { EditMode } from "../../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
-import { Cached, TimingEvent } from "../../sm/TimingTypes"
 import { TECH_ERROR_STRINGS } from "../../stats/parity/ParityDataTypes"
 import { RowStacker } from "../RowStacker"
 
 export interface TechBox extends Container {
-  event: Cached<TimingEvent>
   bg: BetterRoundedRect
   icon: Container
   textObj: BitmapText
   setText(text: string): void
+  ignore(): void
+  unignore(): void
 }
 
 export class TechErrorIndicators
@@ -26,6 +29,7 @@ export class TechErrorIndicators
   private renderer: ChartRenderer
   private parityDirty = false
   private errorIconTexture: RenderTexture
+  private errorIconIgnoredTexture: RenderTexture
 
   private boxPool = new DisplayObjectPool({
     create: () => {
@@ -53,9 +57,11 @@ export class TechErrorIndicators
       this.parityDirty = true
     }
     EventHandler.on("parityModified", parityChanged)
-    this.on("destroyed", () =>
+    EventHandler.on("parityIgnoresModified", parityChanged)
+    this.on("destroyed", () => {
       EventHandler.off("parityModified", parityChanged)
-    )
+      EventHandler.off("parityIgnoresModified", parityChanged)
+    })
 
     const circle = new Graphics()
     circle.beginFill(0xad0e4e)
@@ -84,6 +90,24 @@ export class TechErrorIndicators
     })
     this.renderer.chartManager.app.renderer.render(icon, {
       renderTexture: this.errorIconTexture,
+    })
+
+    circle.clear()
+    circle.beginFill(0x444444)
+    circle.drawCircle(0, 0, 12)
+    circle.endFill()
+    circle.lineStyle(0.5, 0x000000)
+    circle.drawCircle(0, 0, 12)
+    circle.lineStyle(0.5, 0xffffff)
+    circle.drawCircle(0, 0, 10)
+
+    this.errorIconIgnoredTexture = RenderTexture.create({
+      resolution: Options.performance.resolution,
+      width: 32,
+      height: 32,
+    })
+    this.renderer.chartManager.app.renderer.render(icon, {
+      renderTexture: this.errorIconIgnoredTexture,
     })
 
     this.topCounter = this.createErrorBox()
@@ -146,13 +170,38 @@ export class TechErrorIndicators
         "te-top-hover"
       )
     })
-    this.topCounter.on("pointerdown", event => {
-      if (!this.renderer.chart.stats.parity) return
-      const errors = this.renderer.chart.stats.parity.techErrors
-        .keys()
-        .map(i => this.renderer.chart.stats.parity!.rowTimestamps[i].beat)
+
+    const filterErrorBeats = (includeIgnored: boolean): number[] => {
+      const techErrors = this.renderer.chart.stats.parity!.techErrors
+      if (includeIgnored) {
+        const beats: number[] = techErrors
+          .keys()
+          .map(i => this.renderer.chart.stats.parity!.rowTimestamps[i].beat)
+          .toArray()
+          .sort((a, b) => a - b)
+        return beats
+      }
+      const techErrorsFiltered: number[] = this.renderer.chart.stats
+        .parity!.techErrors.entries()
+        .filter(([i, errors]) => {
+          return errors.values().some(error => {
+            return !this.renderer.chart.isErrorIgnored(
+              error,
+              this.renderer.chart.stats.parity!.rowTimestamps[i].beat
+            )
+          }) as boolean
+        })
+        .map(
+          pair => this.renderer.chart.stats.parity!.rowTimestamps[pair[0]].beat
+        )
         .toArray()
         .sort((a, b) => a - b)
+      return techErrorsFiltered
+    }
+
+    this.topCounter.on("pointerdown", event => {
+      if (!this.renderer.chart.stats.parity) return
+      const errors = filterErrorBeats(event.shiftKey)
       if (errors.length == 0) return
       const idx = bsearch(errors, this.renderer.chartManager.beat)
 
@@ -191,11 +240,7 @@ export class TechErrorIndicators
 
     this.bottomCounter.on("pointerdown", event => {
       if (!this.renderer.chart.stats.parity) return
-      const errors = this.renderer.chart.stats.parity.techErrors
-        .keys()
-        .map(i => this.renderer.chart.stats.parity!.rowTimestamps[i].beat)
-        .toArray()
-        .sort((a, b) => a - b)
+      const errors = filterErrorBeats(event.shiftKey)
       if (errors.length == 0) return
       event.stopImmediatePropagation()
       const idx = bsearch(errors, this.renderer.chartManager.beat)
@@ -222,6 +267,7 @@ export class TechErrorIndicators
 
   update(firstBeat: number, lastBeat: number) {
     const parity = this.renderer.chart.stats.parity
+    const chart = this.renderer.chart
     if (
       !parity ||
       !Options.chart.parity.enabled ||
@@ -245,18 +291,24 @@ export class TechErrorIndicators
     for (const rowIdx of parity.techErrors.keys()) {
       const position = parity.rowTimestamps[rowIdx]
       if (lastBeat < position.beat) {
-        nextErrors++
+        const errors = parity.techErrors.get(rowIdx)
+        const ignoredErrors =
+          chart.getErrorIgnoresAtBeat(position.beat)?.size ?? 0
+        nextErrors += errors!.size - ignoredErrors
         continue
       }
       if (firstBeat > position.beat) {
-        previousErrors++
+        const errors = parity.techErrors.get(rowIdx)
+        const ignoredErrors =
+          chart.getErrorIgnoresAtBeat(position.beat)?.size ?? 0
+        previousErrors += errors!.size - ignoredErrors
         continue
       }
 
       if (!this.rowMap.has(rowIdx)) {
         const errors = parity.techErrors.get(rowIdx)!.values().toArray().sort()
         const boxes = []
-        for (const tech of errors) {
+        for (const error of errors) {
           const box = this.boxPool.createChild()
           if (!box) break
           RowStacker.instance.register(
@@ -264,10 +316,67 @@ export class TechErrorIndicators
             position.beat,
             position.second,
             "left",
-            20 + tech
+            20 + error
           )
           boxes.push(box)
-          box.setText(TECH_ERROR_STRINGS[tech])
+          box.setText(TECH_ERROR_STRINGS[error])
+
+          if (chart.isErrorIgnored(error, position.beat)) {
+            box.ignore()
+          } else {
+            box.unignore()
+          }
+
+          if (
+            TechErrorPopup.getError()?.beat == position.beat &&
+            TechErrorPopup.getError()?.error == error
+          ) {
+            TechErrorPopup.attach(box)
+          }
+
+          box.cursor = "pointer"
+          box.on("mouseenter", () => {
+            if (this.renderer.isDragSelecting()) return
+            if (
+              TechErrorPopup.getError()?.beat == position.beat &&
+              TechErrorPopup.getError()?.error == error
+            ) {
+              return
+            }
+
+            if (TechErrorPopup.active) TechErrorPopup.close()
+            if (this.renderer.chartManager.getMode() == EditMode.Edit) {
+              TechErrorPopup.open({
+                box: box,
+                beat: position.beat,
+                error: error,
+                ignored: false,
+                chart,
+              })
+            }
+          })
+          box.on("mouseleave", () => {
+            if (
+              TechErrorPopup.getError()?.beat != position.beat ||
+              TechErrorPopup.getError()?.error != error
+            ) {
+              return
+            }
+            TechErrorPopup.close()
+          })
+          box.on("pointerdown", e => {
+            if (isRightClick(e)) {
+              return
+            }
+            e.stopImmediatePropagation()
+            if (chart.isErrorIgnored(error, position.beat)) {
+              chart.deleteErrorIgnore(error, position.beat)
+            } else {
+              chart.addErrorIgnore(error, position.beat)
+            }
+          })
+
+          box.eventMode = "static"
         }
         this.rowMap.set(rowIdx, boxes)
       }
@@ -344,6 +453,7 @@ export class TechErrorIndicators
     const bg = new BetterRoundedRect("noBorder")
     bg.tint = 0xad0e4e
     newChild.bg = bg
+
     newChild.addChild(bg, newChild.textObj, icon)
 
     let lastText = "-"
@@ -361,6 +471,20 @@ export class TechErrorIndicators
     }
     newChild.setText = setText
     setText("")
+
+    const ignore = () => {
+      bg.tint = 0x444444
+      newChild.textObj.alpha = 0.5
+      icon.texture = this.errorIconIgnoredTexture
+    }
+    const unignore = () => {
+      bg.tint = 0xad0e4e
+      newChild.textObj.alpha = 1
+      icon.texture = this.errorIconTexture
+    }
+
+    newChild.ignore = ignore
+    newChild.unignore = unignore
     return newChild
   }
 }

@@ -141,6 +141,23 @@ export const TECH_ERROR_STRINGS: { [key in TechErrors]: string } = {
   [TechErrors.Ambiguous]: "AM",
 }
 
+export const TECH_ERROR_DESCRIPTIONS: {
+  [key in TechErrors]: { title: string; description: string }
+} = {
+  [TechErrors.UnmarkedDoublestep]: {
+    title: "Unmarked Doublestep",
+    description: "A doublestep that is not marked.",
+  },
+  [TechErrors.MissedFootswitch]: {
+    title: "Missed Footswitch",
+    description: "A footswitch that was missed.",
+  },
+  [TechErrors.Ambiguous]: {
+    title: "Ambiguous Step",
+    description: "A step that is ambiguous.",
+  },
+}
+
 export class ParityState {
   action: Foot[] = []
   combinedColumns: Foot[] = []
