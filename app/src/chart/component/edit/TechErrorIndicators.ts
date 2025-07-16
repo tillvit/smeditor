@@ -1,5 +1,12 @@
 import bezier from "bezier-easing"
-import { BitmapText, Container, Graphics, RenderTexture, Sprite } from "pixi.js"
+import {
+  BitmapText,
+  Container,
+  Graphics,
+  RenderTexture,
+  Sprite,
+  Texture,
+} from "pixi.js"
 import { TechErrorPopup } from "../../../gui/popup/TechErrorPopup"
 import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
 import { BezierAnimator } from "../../../util/BezierEasing"
@@ -37,6 +44,15 @@ export class TechErrorIndicators
       return this.createErrorBox()
     },
   })
+  private highlightPool = new DisplayObjectPool({
+    create: () => {
+      const highlight = new Sprite(Texture.WHITE)
+      highlight.height = 16
+      highlight.alpha = 0.6
+      highlight.anchor.set(0.5, 0.5)
+      return highlight
+    },
+  })
 
   private topCounter: TechBox
   private bottomCounter: TechBox
@@ -44,7 +60,7 @@ export class TechErrorIndicators
   private previousTopVisible = false
   private previousBottomVisible = false
 
-  private rowMap = new Map<number, TechBox[]>()
+  private rowMap = new Map<number, { boxes: TechBox[]; highlight: Sprite }>()
 
   children: Container[] = []
 
@@ -52,6 +68,7 @@ export class TechErrorIndicators
     super()
     this.renderer = renderer
 
+    this.addChild(this.highlightPool)
     this.addChild(this.boxPool)
 
     const parityChanged = () => {
@@ -281,6 +298,7 @@ export class TechErrorIndicators
     if (this.parityDirty) {
       this.rowMap.clear()
       this.boxPool.destroyAll()
+      this.highlightPool.destroyAll()
       this.parityDirty = false
     }
 
@@ -307,6 +325,10 @@ export class TechErrorIndicators
       if (!this.rowMap.has(rowIdx)) {
         const errors = parity.techErrors.get(rowIdx)!.values().toArray().sort()
         const boxes = []
+        const highlight = this.highlightPool.createChild()
+        if (!highlight) break
+        highlight.width = this.renderer.chart.gameType.notefieldWidth + 80
+        highlight.tint = 0xad0e4e
         for (const error of errors) {
           const box = this.boxPool.createChild()
           if (!box) break
@@ -377,18 +399,25 @@ export class TechErrorIndicators
 
           box.eventMode = "static"
         }
-        this.rowMap.set(rowIdx, boxes)
+        this.rowMap.set(rowIdx, { boxes, highlight })
       }
     }
 
-    for (const [i, boxes] of this.rowMap.entries()) {
+    for (const [i, { boxes, highlight }] of this.rowMap.entries()) {
       const position = parity.rowTimestamps[i]
       if (!position) continue
       if (position.beat < firstBeat || position.beat > lastBeat) {
         this.rowMap.delete(i)
         boxes.forEach(box => this.boxPool.destroyChild(box))
+        this.highlightPool.destroyChild(highlight)
         continue
       }
+      const yPos = this.renderer.getYPosFromBeat(position.beat)
+      highlight.y = yPos
+      const errors = parity.techErrors.get(i)
+      const ignoredErrors =
+        chart.getErrorIgnoresAtBeat(position.beat)?.size ?? 0
+      highlight.visible = (errors?.size ?? 0) - ignoredErrors != 0
     }
     this.topCounter.setText(previousErrors + "")
     this.bottomCounter.setText(nextErrors + "")
