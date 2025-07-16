@@ -154,15 +154,18 @@ export const TECH_ERROR_DESCRIPTIONS: {
 } = {
   [TechErrors.UnmarkedDoublestep]: {
     title: "Unmarked Doublestep",
-    description: "A doublestep that is not marked.",
+    description:
+      "A doublestep is present but there is no marking for it. You can mark a doublestep with a mine following it or having a hold on the other foot.",
   },
   [TechErrors.MissedFootswitch]: {
-    title: "Missed Footswitch",
-    description: "A footswitch that was missed.",
+    title: "Mismarked Footswitch",
+    description:
+      "A mine that indicates a footswitch was placed for a jack. Either there is a doublestep or the mine is unnecessary.",
   },
   [TechErrors.Ambiguous]: {
     title: "Ambiguous Step",
-    description: "A step that is ambiguous.",
+    description:
+      "The player does not know which foot to use for this step (usually after a jump).",
   },
 }
 
