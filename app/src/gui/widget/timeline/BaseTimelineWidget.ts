@@ -116,12 +116,16 @@ export class BaseTimelineWidget extends Widget {
 
     EventHandler.on("chartLoaded", () => {
       this.queued = false
-      this.populate()
+      this.populateRange()
+    })
+    EventHandler.on("parityIgnoresModified", () => {
+      if (!this.queued) this.populateRange()
+      this.queued = true
     })
     EventHandler.on(
       options.trigger == "chart" ? "chartModifiedAfter" : "parityModified",
       () => {
-        if (!this.queued) this.populate()
+        if (!this.queued) this.populateRange()
         this.queued = true
       }
     )
@@ -132,13 +136,13 @@ export class BaseTimelineWidget extends Widget {
         optionId == "chart.hideWarpedArrows" ||
         optionId == "chart.hideFakedArrows"
       ) {
-        this.populate()
+        this.populateRange()
       }
     })
     const interval = setInterval(() => {
       if (this.queued) {
         this.queued = false
-        this.populate()
+        this.populateRange()
       }
     }, 3000)
 
@@ -289,6 +293,19 @@ export class BaseTimelineWidget extends Widget {
     this.errors.visible = Options.chart.parity.showErrors
   }
 
+  populateRange() {
+    const chart = this.getChart()
+    if (!Options.chart.layoutFollowPosition) this.populate()
+    if (!chart) return
+    const topBeat = Options.chart.CMod
+      ? chart.getBeatFromSeconds(this.getTopSecond())
+      : this.getTopBeat()
+    const bottomBeat = Options.chart.CMod
+      ? chart.getBeatFromSeconds(this.getBottomSecond())
+      : this.getBottomBeat()
+    this.populate(topBeat, bottomBeat)
+  }
+
   updateDimensions() {
     const chart = this.getChart()
     if (!chart) {
@@ -418,6 +435,14 @@ export class BaseTimelineWidget extends Widget {
             this.errors.destroyChild(sprite)
             continue
           }
+          const errors = chart.stats.parity.techErrors.get(rowIdx)!
+          const ignoreSize =
+            chart.getErrorIgnoresAtBeat(position.beat)?.size ?? 0
+          if (errors.size - ignoreSize > 0) {
+            sprite.tint = 0xff0000
+          } else {
+            sprite.tint = 0x888888
+          }
           sprite.y = this.getYFromBeat(position.beat) - this.backing.height / 2
           sprite.width = this.backingWidth
         }
@@ -444,7 +469,6 @@ export class BaseTimelineWidget extends Widget {
   static register(widget: BaseTimelineWidget) {
     if (this.widgets.includes(widget)) return
 
-    // console.log("Registering widget", widget.constructor.name)
     if (this.widgets.length == 0) {
       Ticker.shared.add(() => {
         let x = this.xMargin
