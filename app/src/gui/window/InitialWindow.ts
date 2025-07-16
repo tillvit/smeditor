@@ -2,7 +2,6 @@ import scrollIntoView from "scroll-into-view-if-needed"
 import { App } from "../../App"
 
 import { EventHandler } from "../../util/EventHandler"
-import { Options } from "../../util/Options"
 import { RecentFileHandler } from "../../util/RecentFileHandler"
 import { Icons } from "../Icons"
 import { DirectoryWindow } from "./DirectoryWindow"
@@ -28,12 +27,7 @@ export class InitialWindow extends Window {
     this.initView()
 
     EventHandler.on("resize", () => {
-      this.move(
-        window.innerWidth / 2 -
-          (this.options.width / 2) * Options.general.uiScale,
-        window.innerHeight / 2 -
-          (this.options.height / 2) * Options.general.uiScale
-      )
+      this.center()
     })
   }
 

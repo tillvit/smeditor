@@ -790,7 +790,6 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       !app.chartManager.loadedChart?.stats.parity ||
       !Options.chart.parity.enabled,
     callback: app => {
-      const parity = app.chartManager.loadedChart!.stats.parity!
       const errors = app.chartManager
         .loadedChart!.getTechErrors()
         .map(e => e.beat)
