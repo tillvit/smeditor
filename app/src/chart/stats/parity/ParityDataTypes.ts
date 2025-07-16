@@ -135,6 +135,42 @@ export enum TechErrors {
   Ambiguous,
 }
 
+export const TECH_DESCRIPTIONS: {
+  [key in TechCategory]: { title: string; description: string }
+} = {
+  [TechCategory.Crossovers]: {
+    title: "Crossover",
+    description: "One of the player's feet crosses over the other foot.",
+  },
+  [TechCategory.Footswitches]: {
+    title: "Footswitch",
+    description: "The player uses alternating feet to hit the same arrow.",
+  },
+  [TechCategory.Sideswitches]: {
+    title: "Sideswitch",
+    description:
+      "The player uses alternating feet to hit the same arrow. The arrow appears on the left or right side of the stage.",
+  },
+  [TechCategory.Jacks]: {
+    title: "Jack",
+    description: "The player uses the same foot to hit the same arrow.",
+  },
+  [TechCategory.Brackets]: {
+    title: "Bracket",
+    description:
+      "The player uses one foot to diagonally hit two arrows at once.",
+  },
+  [TechCategory.Doublesteps]: {
+    title: "Doublestep",
+    description:
+      "The player uses the same foot twice in a row to hit two different arrows.",
+  },
+  [TechCategory.Holdswitch]: {
+    title: "Holdswitch",
+    description: "The player swaps which foot is holding a hold.",
+  },
+}
+
 export const TECH_ERROR_STRINGS: Record<number, string> = {
   [TechErrors.UnmarkedDoublestep]: "DS",
   [TechErrors.MissedFootswitch]: "FS",

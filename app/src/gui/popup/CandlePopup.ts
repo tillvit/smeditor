@@ -6,7 +6,7 @@ import { blendPixiColors } from "../../util/Color"
 import { Popup } from "./Popup"
 
 export class CandlePopup extends Popup {
-  static box: CandleBox
+  static box?: CandleBox
   static open(box: CandleBox, foot: Foot) {
     if (this.active) return
     this.box = box
@@ -20,7 +20,7 @@ export class CandlePopup extends Popup {
       background: blendPixiColors(
         new Color(PARITY_COLORS[foot]),
         new Color("black"),
-        0.5
+        0.8
       ).toHex(),
       textColor: "#ffffff",
       options: [],
@@ -29,6 +29,6 @@ export class CandlePopup extends Popup {
   static close() {
     if (!this.active) return
     super.close()
-    this.box
+    this.box = undefined
   }
 }

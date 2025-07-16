@@ -105,7 +105,6 @@ export class CandleIndicator
 
         box.bg.tint = darkColor
 
-        box.cursor = "pointer"
         box.on("mouseenter", () => {
           if (this.renderer.isDragSelecting()) return
 
