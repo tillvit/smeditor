@@ -257,45 +257,6 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         ],
       },
       {
-        type: "dropdown",
-        title: "Parity",
-        options: [
-          {
-            type: "checkbox",
-            id: "enableParity",
-            checked: () => Options.chart.parity.enabled,
-          },
-          {
-            type: "separator",
-          },
-          {
-            type: "checkbox",
-            id: "showTechNotation",
-            checked: () => Options.chart.parity.showTech,
-          },
-          {
-            type: "checkbox",
-            id: "showTechErrors",
-            checked: () => Options.chart.parity.showErrors,
-          },
-          {
-            type: "checkbox",
-            id: "showFootHighlights",
-            checked: () => Options.chart.parity.showHighlights,
-          },
-          {
-            type: "checkbox",
-            id: "showCandles",
-            checked: () => Options.chart.parity.showCandles,
-          },
-          {
-            type: "checkbox",
-            id: "showDancingBot",
-            checked: () => Options.chart.parity.showDancingBot,
-          },
-        ],
-      },
-      {
         type: "separator",
       },
       {
@@ -339,6 +300,48 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         type: "checkbox",
         id: "doSpeedChanges",
         checked: () => Options.chart.doSpeedChanges,
+      },
+      {
+        type: "separator",
+      },
+      {
+        type: "dropdown",
+        title: "Parity",
+        options: [
+          {
+            type: "checkbox",
+            id: "enableParity",
+            checked: () => Options.chart.parity.enabled,
+          },
+          {
+            type: "separator",
+          },
+          {
+            type: "checkbox",
+            id: "showTechNotation",
+            checked: () => Options.chart.parity.showTech,
+          },
+          {
+            type: "checkbox",
+            id: "showTechErrors",
+            checked: () => Options.chart.parity.showErrors,
+          },
+          {
+            type: "checkbox",
+            id: "showFootHighlights",
+            checked: () => Options.chart.parity.showHighlights,
+          },
+          {
+            type: "checkbox",
+            id: "showCandles",
+            checked: () => Options.chart.parity.showCandles,
+          },
+          {
+            type: "checkbox",
+            id: "showDancingBot",
+            checked: () => Options.chart.parity.showDancingBot,
+          },
+        ],
       },
     ],
   },
