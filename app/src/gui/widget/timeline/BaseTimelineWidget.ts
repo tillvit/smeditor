@@ -492,7 +492,9 @@ export class BaseTimelineWidget extends Widget {
 
   static getTotalWidgetWidth() {
     return (
-      this.widgets.reduce((acc, widget) => acc + widget.backingWidth, 0) +
+      this.widgets
+        .filter(widget => widget.visible)
+        .reduce((acc, widget) => acc + widget.backingWidth, 0) +
       this.xGap * (this.widgets.length - 1) +
       this.xMargin
     )
