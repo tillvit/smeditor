@@ -650,7 +650,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               .get(rowObj.i)!
               .values()
               .toArray()
-              .map(x => TECH_ERROR_STRINGS[x] as string)
+              .map(x => TECH_ERROR_STRINGS[x])
               .join(", ")
           : "")
 
