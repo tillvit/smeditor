@@ -27,6 +27,18 @@ export class ChangelogWindow extends Window {
     const padding = document.createElement("div")
     padding.classList.add("padding")
 
+    // Add _blank to every link
+    const md = markdownit()
+    const defaultRender =
+      md.renderer.rules.link_open ||
+      function (tokens, idx, options, _, self) {
+        return self.renderToken(tokens, idx, options)
+      }
+    md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
+      tokens[idx].attrSet("target", "_blank")
+      return defaultRender(tokens, idx, options, env, self)
+    }
+
     const mdContainer = document.createElement("div")
     mdContainer.classList.add("markdown-container")
 
@@ -37,7 +49,7 @@ export class ChangelogWindow extends Window {
           .map(version => {
             return `# ${version.version}\n---\n` + version.changelog
           })
-          .map(text => `<div>${markdownit().render(text)}</div>`)
+          .map(text => `<div>${md.render(text)}</div>`)
           .join("")
       })
 
