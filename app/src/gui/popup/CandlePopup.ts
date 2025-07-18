@@ -1,8 +1,8 @@
 import { Color } from "pixi.js"
 import { CandleBox } from "../../chart/component/edit/CandleIndicator"
-import { PARITY_COLORS } from "../../chart/component/edit/ParityDebug"
 import { Foot } from "../../chart/stats/parity/ParityDataTypes"
 import { blendPixiColors } from "../../util/Color"
+import { getParityColor } from "../../util/Util"
 import { Popup } from "./Popup"
 
 export class CandlePopup extends Popup {
@@ -18,7 +18,7 @@ export class CandlePopup extends Popup {
       editable: false,
       cancelableOnOpen: false,
       background: blendPixiColors(
-        new Color(PARITY_COLORS[foot]),
+        new Color(getParityColor(foot)),
         new Color("black"),
         0.8
       ).toHex(),

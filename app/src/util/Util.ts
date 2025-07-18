@@ -1,5 +1,8 @@
 import { Parser } from "expr-eval"
+import { Color } from "pixi.js"
 import { PartialNotedataEntry, isHoldNote } from "../chart/sm/NoteTypes"
+import { Foot } from "../chart/stats/parity/ParityDataTypes"
+import { Options } from "./Options"
 
 export const IS_OSX: boolean = navigator.userAgent.indexOf("Mac OS X") > -1
 
@@ -231,4 +234,15 @@ export function isIFrame() {
   } catch (e) {
     return true
   }
+}
+
+export function getParityColor(foot: Foot | undefined) {
+  if (foot == Foot.LEFT_HEEL)
+    return new Color(Options.chart.parity.leftHeelColor)
+  if (foot == Foot.LEFT_TOE) return new Color(Options.chart.parity.leftToeColor)
+  if (foot == Foot.RIGHT_HEEL)
+    return new Color(Options.chart.parity.rightHeelColor)
+  if (foot == Foot.RIGHT_TOE)
+    return new Color(Options.chart.parity.rightToeColor)
+  return new Color("#00000000")
 }

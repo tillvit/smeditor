@@ -13,6 +13,7 @@ import { blendPixiColors } from "../../../util/Color"
 import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
+import { getParityColor } from "../../../util/Util"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import {
   FEET_LABELS,
@@ -427,7 +428,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               if (node.state.action[j] == node.state.combinedColumns[j]) {
                 text.alpha = 1
               }
-              text.tint = PARITY_COLORS[col]
+              text.tint = getParityColor(col)
             }
 
             nodeObject.detail.text =

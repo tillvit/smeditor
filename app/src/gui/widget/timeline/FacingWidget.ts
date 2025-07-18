@@ -5,14 +5,13 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
-import { PARITY_COLORS } from "../../../chart/component/edit/ParityDebug"
 import { Foot } from "../../../chart/stats/parity/ParityDataTypes"
 import { blendColors } from "../../../util/Color"
 import { EventHandler } from "../../../util/EventHandler"
 import { clamp } from "../../../util/Math"
 import { Options } from "../../../util/Options"
 import { destroyChildIf } from "../../../util/PixiUtil"
-import { bsearchEarliest } from "../../../util/Util"
+import { bsearchEarliest, getParityColor } from "../../../util/Util"
 import { WidgetManager } from "../WidgetManager"
 import { BaseTimelineWidget } from "./BaseTimelineWidget"
 
@@ -63,6 +62,18 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
     EventHandler.on("userOptionUpdated", optionId => {
       if (optionId == "chart.parity.showCandles") {
         this.populate()
+      }
+      if (
+        [
+          "chart.parity.leftHeelColor",
+          "chart.parity.leftToeColor",
+          "chart.parity.rightHeelColor",
+          "chart.parity.rightToeColor",
+        ].includes(optionId)
+      ) {
+        this.colorCache.clear()
+        if (!this.queued) this.populateRange()
+        this.queued = true
       }
     })
   }
@@ -143,7 +154,7 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
         c_obj.height = 3
         c_obj.width = 32
         c_obj.alpha = 0.4
-        c_obj.tint = PARITY_COLORS[chart.stats.parity.candles.get(i)!]
+        c_obj.tint = getParityColor(chart.stats.parity.candles.get(i))
         c_obj.x = 16
         c_obj.y = this.getYFromBeat(chart.stats.parity.rowTimestamps[i].beat)
         childIndex++
@@ -164,13 +175,13 @@ export class FacingLayoutWidget extends BaseTimelineWidget {
         if (chart.stats.parity.facingRows[i] < 0) {
           color = blendColors(
             "#ffffff",
-            new Color(PARITY_COLORS[Foot.LEFT_HEEL]).toHex(),
+            new Color(getParityColor(Foot.LEFT_HEEL)).toHex(),
             facing / -2
           )
         } else {
           color = blendColors(
             "#ffffff",
-            new Color(PARITY_COLORS[Foot.RIGHT_HEEL]).toHex(),
+            new Color(getParityColor(Foot.RIGHT_HEEL)).toHex(),
             facing / 2
           )
         }

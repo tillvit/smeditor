@@ -1,11 +1,10 @@
 import { Container, Sprite, Texture } from "pixi.js"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
-import { getNoteEnd } from "../../../util/Util"
+import { getNoteEnd, getParityColor } from "../../../util/Util"
 import { EditMode, EditTimingMode } from "../../ChartManager"
 import { TimingWindowCollection } from "../../play/TimingWindowCollection"
 import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
-import { PARITY_COLORS } from "../edit/ParityDebug"
 import { HoldObject, Notefield, NoteWrapper } from "./Notefield"
 
 interface HighlightedNoteObject extends Container {
@@ -188,11 +187,9 @@ export class NoteContainer extends Container {
         Options.chart.parity.showHighlights &&
         this.notefield.renderer.chartManager.getMode() == EditMode.Edit
       ) {
-        container.parity.alpha = note.parity ? 0.4 : 0
-        container.parity.tint =
-          note.parity?.foot !== undefined
-            ? PARITY_COLORS[note.parity.foot]
-            : 0xffffff
+        const color = getParityColor(note.parity?.foot)
+        container.parity.alpha = note.parity ? color.alpha : 0
+        container.parity.tint = color
         if (note.parity?.override) {
           container.parityOverride.alpha = 0.4
         } else {

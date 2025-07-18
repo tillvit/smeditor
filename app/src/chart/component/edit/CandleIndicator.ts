@@ -5,11 +5,11 @@ import { blendPixiColors } from "../../../util/Color"
 import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
+import { getParityColor } from "../../../util/Util"
 import { EditMode } from "../../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import { Foot } from "../../stats/parity/ParityDataTypes"
 import { RowStacker } from "../RowStacker"
-import { PARITY_COLORS } from "./ParityDebug"
 
 export interface CandleBox extends Container {
   bg: BetterRoundedRect
@@ -52,8 +52,22 @@ export class CandleIndicator
       CandlePopup.close()
       this.parityDirty = true
     }
+    const colorChange = (optionId: string) => {
+      if (
+        [
+          "chart.parity.leftHeelColor",
+          "chart.parity.leftToeColor",
+          "chart.parity.rightHeelColor",
+          "chart.parity.rightToeColor",
+        ].includes(optionId)
+      ) {
+        this.parityDirty = true
+      }
+    }
+    EventHandler.on("userOptionUpdated", colorChange)
     EventHandler.on("parityModified", parityChanged)
     this.on("destroyed", () => {
+      EventHandler.off("userOptionUpdated", colorChange)
       EventHandler.off("parityModified", parityChanged)
     })
   }
@@ -98,7 +112,7 @@ export class CandleIndicator
         boxes.push(box)
         box.textObj.text = foot == Foot.LEFT_HEEL ? "C" : "C"
         const darkColor = blendPixiColors(
-          new Color(PARITY_COLORS[foot]),
+          new Color(getParityColor(foot)),
           new Color("black"),
           0.5
         )

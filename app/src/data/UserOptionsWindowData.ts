@@ -377,6 +377,44 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               type: "checkbox",
             },
           },
+          {
+            type: "subgroup",
+            label: "Colors",
+            children: [
+              {
+                type: "item",
+                label: "Left (heel)",
+                id: "chart.parity.leftHeelColor",
+                input: {
+                  type: "color",
+                },
+              },
+              {
+                type: "item",
+                label: "Left Toe",
+                id: "chart.parity.leftToeColor",
+                input: {
+                  type: "color",
+                },
+              },
+              {
+                type: "item",
+                label: "Right (heel)",
+                id: "chart.parity.rightHeelColor",
+                input: {
+                  type: "color",
+                },
+              },
+              {
+                type: "item",
+                label: "Right Toe",
+                id: "chart.parity.rightToeColor",
+                input: {
+                  type: "color",
+                },
+              },
+            ],
+          },
         ],
       },
     ],

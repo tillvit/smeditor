@@ -4,7 +4,6 @@
 // This file, ParityDataTypes, ParityCost, and StageLayouts have been written in a way that can
 // be extracted from SMEditor (some chart/note types/functions will need to be recreated)
 
-import { getRangeInSortedArray } from "../../../util/Util"
 import {
   HoldNotedataEntry,
   Notedata,
@@ -1070,6 +1069,56 @@ function getDebugUpdateData(): ParityDebugUpdateData | null {
     edgeCacheSize: instance.edgeCacheSize,
     stats: instance.debugStats,
   }
+}
+
+// util function so we don't touch anything outside this folder
+
+function getRangeInSortedArray<T>(
+  array: T[],
+  start: number,
+  end: number,
+  index: (obj: T) => number
+) {
+  if (array.length == 0) return [0, 0]
+  let startIdx = bsearch(array, start, index)
+  if (index(array[startIdx]) < start) startIdx++
+  while (array[startIdx - 1] && index(array[startIdx - 1]) == start) {
+    startIdx--
+  }
+
+  let endIdx = bsearch(array, end, index)
+  if (index(array[endIdx]) > end) endIdx--
+  while (array[endIdx + 1] && index(array[endIdx + 1]) == end) {
+    endIdx++
+  }
+
+  return [startIdx, endIdx + 1]
+}
+
+function bsearch<T>(
+  arr: T[],
+  value: number,
+  property?: (a: T) => number
+): number {
+  property = property ?? (a => a as number)
+  if (arr.length == 0) return -1
+  if (value >= property(arr[arr.length - 1])) {
+    let mid = arr.length - 1
+    while (mid > 0 && property(arr[mid - 1]) == value) mid--
+    return mid
+  }
+  let low = 0,
+    high = arr.length
+  while (low <= high && low < arr.length) {
+    let mid = (low + high) >>> 1
+    if (property(arr[mid]) == value) {
+      while (mid > 0 && property(arr[mid - 1]) == value) mid--
+      return mid
+    }
+    if (property(arr[mid]) < value) low = mid + 1
+    if (property(arr[mid]) > value) high = mid - 1
+  }
+  return Math.max(0, high)
 }
 
 self.onmessage = (e: MessageEvent<ParityInboundMessage>) => {
