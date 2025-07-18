@@ -1,3 +1,6 @@
+import { Foot, ParityState, PlacementData, Row } from "./ParityDataTypes"
+import { doFeetOverlap } from "./ParityUtils"
+
 export interface StagePoint {
   x: number
   y: number
@@ -95,6 +98,116 @@ export class StageLayout {
     const det = x1 * y2 - y1 * x2
     return Math.atan2(det, dot)
   }
+
+  getPlacementData(
+    initialState: ParityState,
+    resultState: ParityState,
+    lastRow: Row,
+    row: Row
+  ): PlacementData {
+    const previousNonHeldFeet = []
+    const nonHeldFeet = []
+
+    for (let i = 0; i < this.layout.length; i++) {
+      if (
+        lastRow &&
+        lastRow.holds[i] === undefined &&
+        initialState.action[i] != Foot.NONE
+      ) {
+        previousNonHeldFeet[initialState.action[i]] = true
+      }
+
+      if (row.holds[i] === undefined && resultState.action[i] != Foot.NONE) {
+        nonHeldFeet[resultState.action[i]] = true
+      }
+    }
+
+    const previousMovedLeft =
+      previousNonHeldFeet[Foot.LEFT_HEEL] || previousNonHeldFeet[Foot.LEFT_TOE]
+    const previousMovedRight =
+      previousNonHeldFeet[Foot.RIGHT_HEEL] ||
+      previousNonHeldFeet[Foot.RIGHT_TOE]
+
+    const movedLeft = nonHeldFeet[Foot.LEFT_HEEL] || nonHeldFeet[Foot.LEFT_TOE]
+    const movedRight =
+      nonHeldFeet[Foot.RIGHT_HEEL] || nonHeldFeet[Foot.RIGHT_TOE]
+
+    const leftBracket =
+      nonHeldFeet[Foot.LEFT_HEEL] && nonHeldFeet[Foot.LEFT_TOE]
+    const rightBracket =
+      nonHeldFeet[Foot.RIGHT_HEEL] && nonHeldFeet[Foot.RIGHT_TOE]
+
+    const previousJumped =
+      previousNonHeldFeet[Foot.LEFT_HEEL] &&
+      previousNonHeldFeet[Foot.RIGHT_HEEL]
+
+    const jumped = nonHeldFeet[Foot.LEFT_HEEL] && nonHeldFeet[Foot.RIGHT_HEEL]
+
+    const leftJack =
+      !jumped &&
+      doFeetOverlap(
+        initialState.leftHeel,
+        initialState.leftToe,
+        resultState.leftHeel,
+        resultState.leftToe
+      ) &&
+      previousMovedLeft &&
+      movedLeft
+    const rightJack =
+      !jumped &&
+      doFeetOverlap(
+        initialState.rightHeel,
+        initialState.rightToe,
+        resultState.rightHeel,
+        resultState.rightToe
+      ) &&
+      previousMovedRight &&
+      movedRight
+
+    const leftDoubleStep =
+      previousMovedLeft && movedLeft && !jumped && !leftJack && !previousJumped
+    const rightDoubleStep =
+      previousMovedRight &&
+      movedRight &&
+      !jumped &&
+      !rightJack &&
+      !previousJumped
+
+    const previousLeftPos = this.averagePoint(
+      initialState.leftHeel,
+      initialState.leftToe
+    )
+
+    const previousRightPos = this.averagePoint(
+      initialState.rightHeel,
+      initialState.rightToe
+    )
+
+    const leftPos = this.averagePoint(resultState.leftHeel, resultState.leftToe)
+    const rightPos = this.averagePoint(
+      resultState.rightHeel,
+      resultState.rightToe
+    )
+
+    return {
+      previousLeftPos,
+      previousRightPos,
+      leftPos,
+      rightPos,
+      movedLeft,
+      movedRight,
+      leftBracket,
+      rightBracket,
+      previousJumped,
+      jumped,
+      leftJack,
+      rightJack,
+      leftDoubleStep,
+      rightDoubleStep,
+      initialState,
+      resultState,
+    }
+  }
 }
 
 export const STAGE_LAYOUTS: { [id: string]: StageLayout } = {
@@ -113,15 +226,15 @@ export const STAGE_LAYOUTS: { [id: string]: StageLayout } = {
   "dance-double": new StageLayout(
     "dance-double",
     [
-      { x: 0, y: 1, rotation: 0 }, // P1 Left
-      { x: 1, y: 0, rotation: (Math.PI / 2) * 3 }, // P1 Down
-      { x: 1, y: 2, rotation: Math.PI / 2 }, // P1 Up
-      { x: 2, y: 1, rotation: Math.PI }, // P1 Right
+      { x: -2.5, y: 0, rotation: 0 }, // P1 Left
+      { x: -1.5, y: -1, rotation: (Math.PI / 2) * 3 }, // P1 Down
+      { x: -1.5, y: 1, rotation: Math.PI / 2 }, // P1 Up
+      { x: -0.5, y: 0, rotation: Math.PI }, // P1 Right
 
-      { x: 3, y: 1, rotation: 0 }, // P2 Left
-      { x: 4, y: 0, rotation: (Math.PI / 2) * 3 }, // P2 Down
-      { x: 4, y: 2, rotation: Math.PI / 2 }, // P2 Up
-      { x: 5, y: 1, rotation: Math.PI }, // P2 Right
+      { x: 0.5, y: 0, rotation: 0 }, // P2 Left
+      { x: 1.5, y: -1, rotation: (Math.PI / 2) * 3 }, // P2 Down
+      { x: 1.5, y: 1, rotation: Math.PI / 2 }, // P2 Up
+      { x: 2.5, y: 0, rotation: Math.PI }, // P2 Right
     ],
     [2, 6],
     [1, 5],

@@ -13,6 +13,8 @@ export class BarlineContainer
   extends Container
   implements ChartRendererComponent
 {
+  readonly isEditGUI = true
+
   private renderer: ChartRenderer
   private barlineMap: Map<number, Sprite> = new Map()
   private barlineLabelMap: Map<number, BitmapText> = new Map()
@@ -48,8 +50,6 @@ export class BarlineContainer
   }
 
   update(firstBeat: number, lastBeat: number) {
-    this.visible = this.renderer.shouldDisplayBarlines()
-
     for (const [
       barBeat,
       isMeasure,

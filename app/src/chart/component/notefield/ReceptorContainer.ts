@@ -19,6 +19,7 @@ export class ReceptorContainer extends Container {
   constructor(notefield: Notefield) {
     super()
     this.notefield = notefield
+    this.cursor = "grab"
 
     for (let colNum = 0; colNum < this.notefield.gameType.numCols; colNum++) {
       const receptor = this.notefield.getElement({
@@ -42,11 +43,13 @@ export class ReceptorContainer extends Container {
     }
 
     const releaseHandler = () => {
+      this.cursor = "grab"
       this.notefield.renderer.off("pointermove", moveHandler)
       window.removeEventListener("pointerup", releaseHandler)
     }
 
     this.on("pointerdown", e => {
+      this.cursor = "grabbing"
       this.dragStart = new Point(e.globalX, e.globalY)
       this.dragOptionsStart = [
         Options.chart.receptorXPos,

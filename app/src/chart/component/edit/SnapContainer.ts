@@ -23,6 +23,7 @@ export const QUANT_COLORS: { [key: number]: number } = {
 }
 
 export class SnapContainer extends Container implements ChartRendererComponent {
+  readonly isEditGUI = true
   private renderer: ChartRenderer
 
   children: Container[] = []
@@ -50,6 +51,7 @@ export class SnapContainer extends Container implements ChartRendererComponent {
       this.addChild(container)
 
       container.eventMode = "static"
+      container.cursor = "pointer"
       container.on("mouseenter", () => SnapPopup.open(graphic))
       container.on("mousedown", () => SnapPopup.select())
       container.on("mouseleave", () => {
@@ -61,7 +63,6 @@ export class SnapContainer extends Container implements ChartRendererComponent {
   update() {
     this.y = this.renderer.getActualReceptorYPos()
 
-    this.visible = this.renderer.shouldDisplayBarlines()
     for (let i = 0; i < 2; i++) {
       const container = this.children[i]
       const square = container.children[0] as Graphics

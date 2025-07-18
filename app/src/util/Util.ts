@@ -94,6 +94,43 @@ export function bsearchEarliest<T>(
   return idx
 }
 
+export function previousInSorted(
+  arr: number[],
+  value: number,
+  lambda = 0.001
+): number | null {
+  if (arr.length == 0) return null
+  if (arr[0] > value) return null
+  const idx = bsearch(arr, value)
+  if (Math.abs(value - arr[idx]) <= lambda) {
+    if (idx - 1 >= 0) {
+      return arr[idx - 1]
+    } else {
+      return arr[idx]
+    }
+  } else return arr[idx]
+}
+
+export function nextInSorted(
+  arr: number[],
+  value: number,
+  lambda = 0.001
+): number | null {
+  if (arr.length == 0) return null
+  if (arr.at(-1)! < value) return null
+  const idx = bsearch(arr, value)
+  if (idx == 0 && value < arr[idx]) {
+    return arr[idx]
+  }
+  if (Math.abs(value - arr[idx]) <= lambda) {
+    if (idx + 1 < arr.length) {
+      return arr[idx + 1]
+    } else {
+      return null
+    }
+  } else return arr[idx + 1]
+}
+
 export function countOfItem<T>(array: T[], item: T): number {
   return array.filter(a => a == item).length
 }

@@ -15,17 +15,20 @@ import { ParityCostCalculator } from "./ParityCost"
 import { FEET, Foot, FootOverride, ParityState, Row } from "./ParityDataTypes"
 import {
   ParityDebugData,
+  ParityDebugStats,
   ParityDebugUpdateData,
   ParityInboundMessage,
   ParityOutboundComputeMessage,
   ParityOutboundGetDebugMessage,
   ParityOutboundInitMessage,
 } from "./ParityWebWorkerTypes"
+import { calculateRowStats } from "./RowStatCalculator"
 import { STAGE_LAYOUTS, StageLayout } from "./StageLayouts"
 
 const SECOND_EPSILON = 0.0005
 
 export class ParityGraphNode {
+  // map from ids to costs
   children: Map<string, { [id: string]: number }> = new Map()
 
   state: ParityState
@@ -100,7 +103,7 @@ export class ParityInternals {
   bestPathCost = 0
   bestPathSet?: Set<string>
 
-  debugStats = {
+  debugStats: ParityDebugStats = {
     lastUpdatedRowStart: -1,
     lastUpdatedOldRowEnd: -1,
     lastUpdatedRowEnd: -1,
@@ -115,6 +118,7 @@ export class ParityInternals {
     edgeUpdateTime: 0,
     cachedBestRows: 0,
     pathUpdateTime: 0,
+    rowStatsUpdateTime: 0,
   }
 
   notedataRows: Row[] = []
@@ -140,8 +144,8 @@ export class ParityInternals {
     if (this.layout == undefined) return null
     const updatedRows = this.recalculateRows(startBeat, endBeat, notedata)
     const updatedStates = this.recalculateStates(updatedRows)
-    const updatedCost = this.computeCosts(updatedStates)
-    this.computeBestPath(updatedCost)
+    const updatedCosts = this.computeCosts(updatedStates)
+    this.computeBestPath(updatedCosts)
 
     // Prune edge cache if too big
     const shouldPruneEdgeCache = this.edgeCacheSize > this.nEdges * 2
@@ -172,16 +176,18 @@ export class ParityInternals {
       return null
     }
 
-    const labels = new Map<string, Foot>()
+    const parityLabels = new Map<string, Foot>()
 
     this.notedataRows.forEach((row, idx) => {
       const bestOption = this.nodeMap.get(this.bestPath![idx + 1])!
       bestOption.state.combinedColumns.forEach((foot, col) => {
         if (foot == Foot.NONE) return
         if (!row.notes[col]) return
-        labels.set(row.notes[col].beat.toFixed(3) + "-" + col, foot)
+        parityLabels.set(row.notes[col].beat.toFixed(3) + "-" + col, foot)
       })
     })
+
+    // TODO: Potentially optimize by sending only deltas
 
     const states = this.bestPath.map((key, i) => {
       if (i == 0) return this.initialNode.state
@@ -189,7 +195,35 @@ export class ParityInternals {
       return this.nodeMap.get(key)!.state
     })
 
-    return { labels, states }
+    const bestNodes = this.bestPath.map((key, i) => {
+      if (i == 0) return this.initialNode
+      if (i == this.bestPath!.length - 1) return this.endNode
+      return this.nodeMap.get(key)!
+    })
+
+    const rowStatsTimeStart = performance.now()
+
+    const rowStats = calculateRowStats(
+      bestNodes.slice(1, -1),
+      this.notedataRows,
+      this.layout
+    )
+
+    this.debugStats.rowStatsUpdateTime = performance.now() - rowStatsTimeStart
+
+    const rowTimestamps = this.notedataRows.map(row => {
+      return {
+        beat: row.beat,
+        second: row.second,
+      }
+    })
+
+    return {
+      parityLabels,
+      states,
+      rowTimestamps,
+      ...rowStats,
+    }
   }
 
   // Regenerates the rows for the given range of beats.
@@ -226,6 +260,10 @@ export class ParityInternals {
     let fulfilledColumns = 0
     while (curIdx >= 0 && fulfilledColumns < columnStatus.length) {
       const note = notedata[curIdx]
+      if (note.warped) {
+        curIdx--
+        continue
+      }
       if (columnStatus[note.col] == 1) {
         curIdx--
         continue
@@ -241,7 +279,7 @@ export class ParityInternals {
         continue
       }
 
-      if (note.fake || note.warped) {
+      if (note.fake) {
         curIdx--
         continue
       }
@@ -264,6 +302,9 @@ export class ParityInternals {
     // Create rows in the new section
     const rows: Row[] = []
     for (const note of rangeNotes) {
+      if (note.warped) {
+        continue
+      }
       if (note.type == "Mine") {
         if (
           this.isSameSecond(note.second, lastColumnSecond) &&
@@ -283,7 +324,7 @@ export class ParityInternals {
         }
         continue
       }
-      if (note.fake || note.warped) continue
+      if (note.fake) continue
       if (!this.isSameSecond(lastColumnSecond, note.second)) {
         if (lastColumnSecond != null && lastColumnBeat != null) {
           rows.push({
@@ -580,11 +621,17 @@ export class ParityInternals {
     }
 
     this.debugStats.edgeUpdateTime = performance.now() - edgeTimeStart
-    return Math.max(-1, updatedStates.firstUpdatedRow - 1)
+    return {
+      firstUpdatedCost: Math.max(-1, updatedStates.firstUpdatedRow - 1),
+      lastUpdatedCost: updatedStates.lastUpdatedRow,
+    }
   }
 
   // Finds the best path through the graph
-  computeBestPath(firstUpdatedEdge: number) {
+  computeBestPath(updatedCosts: {
+    firstUpdatedCost: number
+    lastUpdatedCost: number
+  }) {
     const pathTimeStart = performance.now()
 
     // we use string for path because list creation is slow
@@ -594,14 +641,20 @@ export class ParityInternals {
       path: this.initialNode.key,
     })
 
-    let rowIndex = firstUpdatedEdge
-    this.debugStats.cachedBestRows = firstUpdatedEdge + 1
+    let rowIndex = updatedCosts.firstUpdatedCost
+    if (this.cachedLowestCost.size == 1) {
+      // Cache cleared
+      rowIndex = -1
+    }
+    this.debugStats.cachedBestRows = updatedCosts.firstUpdatedCost + 1
 
     // We can reuse the shortest paths up to the first updated edge
     // Unforunately, we can't reuse anything after that (at least i think so)
     const rowNodes = new Map<string, number>()
 
     while (rowIndex < this.notedataRows.length) {
+      let minNode = null
+      let minNodeCost = 0
       rowNodes.clear()
       const nodes = this.nodeRows[rowIndex]?.nodes ?? [this.initialNode]
       for (const node of nodes) {
@@ -625,12 +678,53 @@ export class ParityInternals {
               path: this.cachedLowestCost.get(node.key)!.path + "*" + child,
             })
             rowNodes.set(child, currentCost + costs["TOTAL"])
+
+            if (minNode === null || rowNodes.get(child)! < minNodeCost) {
+              minNode = child
+              minNodeCost = rowNodes.get(child)!
+            }
           }
         }
         if (rowIndex == this.notedataRows.length - 1) {
           node.children.delete(this.endNode.key)
         }
       }
+      // we can't reuse best path (kind of sad because most cases do reuse)
+      // if (
+      //   minNode &&
+      //   this.bestPathSet?.has(minNode) &&
+      //   shouldCache == 0 &&
+      //   rowIndex >= updatedCosts.lastUpdatedCost
+      // ) {
+      //   const firstPart =
+      //     this.cachedLowestCost.get(minNode)!.path.split("*") ?? []
+      //   const endPart = this.bestPath!.slice(
+      //     this.bestPath!.indexOf(minNode) + 1
+      //   )
+      //   this.bestPath = firstPart.concat(endPart)
+
+      //   let cost = this.cachedLowestCost.get(minNode)!.cost
+      //   let node = firstPart.at(-1)
+      //     ? this.nodeMap.get(firstPart.at(-1)!)!
+      //     : this.initialNode
+      //   for (let i = 0; i < endPart.length; i++) {
+      //     const nextNode = this.nodeMap.get(endPart[i])
+      //     if (!nextNode) continue
+      //     cost += node.children.get(nextNode.key)?.TOTAL ?? 0
+      //     node = nextNode
+      //   }
+
+      //   this.bestPathCost = cost
+
+      //   this.debugStats.cachedBestRows += endPart.length - 1
+
+      //   this.bestPathSet = new Set(this.bestPath ?? [])
+
+      //   this.debugStats.pathUpdateTime = performance.now() - pathTimeStart
+      //   shouldCache = rowIndex
+
+      //   return
+      // }
       rowIndex++
     }
 
@@ -749,10 +843,9 @@ export class ParityInternals {
       return permuteColumns
     }
     const updatedColumns = permuteColumns.filter(pc => {
-      // Check if the permutation has any overrides that are not NONE
       for (let c = 0; c < this.layout.columnCount; c++) {
         const noteOverride = overrides[c]
-        if (noteOverride == undefined || noteOverride == Foot.NONE) continue
+        if (noteOverride == undefined) continue
         if (noteOverride == "Left") {
           if (pc[c] != Foot.LEFT_HEEL && pc[c] != Foot.LEFT_TOE) {
             return false
@@ -761,8 +854,6 @@ export class ParityInternals {
           if (pc[c] != Foot.RIGHT_HEEL && pc[c] != Foot.RIGHT_TOE) {
             return false
           }
-        } else if (pc[c] != noteOverride) {
-          return false
         }
       }
       return true
@@ -848,6 +939,23 @@ export class ParityInternals {
           Foot.RIGHT_TOE
       }
     }
+    const leftPos = this.layout.averagePoint(
+      resultState.leftHeel,
+      resultState.leftToe
+    )
+    const rightPos = this.layout.averagePoint(
+      resultState.rightHeel,
+      resultState.rightToe
+    )
+
+    if (leftPos.y > rightPos.y) {
+      resultState.frontFoot = Foot.LEFT_HEEL
+    } else if (rightPos.y > leftPos.y) {
+      resultState.frontFoot = Foot.RIGHT_HEEL
+    } else {
+      resultState.frontFoot = initialState.frontFoot
+    }
+
     return resultState
   }
 
@@ -969,11 +1077,10 @@ self.onmessage = (e: MessageEvent<ParityInboundMessage>) => {
     case "init":
       if (instance) {
         postMessage({
-          type: "init",
+          type: "error",
           id: e.data.id,
-          success: false,
           error: "Instance already initialized",
-        } satisfies ParityOutboundInitMessage)
+        })
         return
       }
       try {
@@ -981,27 +1088,22 @@ self.onmessage = (e: MessageEvent<ParityInboundMessage>) => {
         postMessage({
           type: "init",
           id: e.data.id,
-          success: true,
         } satisfies ParityOutboundInitMessage)
       } catch (error) {
         postMessage({
-          type: "init",
+          type: "error",
           id: e.data.id,
-          success: false,
           error: (error as Error).message,
-        } satisfies ParityOutboundInitMessage)
+        })
       }
       break
     case "compute": {
       if (!instance) {
         postMessage({
-          type: "compute",
+          type: "error",
           id: e.data.id,
-          success: false,
           error: "Instance not initialized",
-          parityLabels: null,
-          bestStates: null,
-        } satisfies ParityOutboundComputeMessage)
+        })
         return
       }
       const result = instance.compute(
@@ -1011,21 +1113,16 @@ self.onmessage = (e: MessageEvent<ParityInboundMessage>) => {
       )
       if (!result) {
         postMessage({
-          type: "compute",
+          type: "error",
           id: e.data.id,
-          success: false,
           error: "No path found",
-          parityLabels: null,
-          bestStates: null,
-        } satisfies ParityOutboundComputeMessage)
+        })
         return
       }
       postMessage({
         type: "compute",
         id: e.data.id,
-        success: true,
-        parityLabels: result.labels,
-        bestStates: result.states,
+        data: result,
         debug: e.data.debug ? getDebugUpdateData()! : undefined,
       } satisfies ParityOutboundComputeMessage)
       break
@@ -1033,18 +1130,15 @@ self.onmessage = (e: MessageEvent<ParityInboundMessage>) => {
     case "getDebug": {
       if (!instance) {
         postMessage({
-          type: "getDebug",
+          type: "error",
           id: e.data.id,
-          success: false,
           error: "Instance not initialized",
-          data: null,
-        } satisfies ParityOutboundGetDebugMessage)
+        })
         return
       }
       postMessage({
         type: "getDebug",
         id: e.data.id,
-        success: true,
         data: getDebugData(),
       } satisfies ParityOutboundGetDebugMessage)
       break

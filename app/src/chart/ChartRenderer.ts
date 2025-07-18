@@ -13,17 +13,21 @@ import { isRightClick } from "../util/PixiUtil"
 import { bsearch } from "../util/Util"
 import { ChartManager, EditMode, EditTimingMode } from "./ChartManager"
 import { BarlineContainer } from "./component/edit/BarlineContainer"
+import { CandleIndicator } from "./component/edit/CandleIndicator"
 import { ParityDebug } from "./component/edit/ParityDebug"
 import { PreviewAreaContainer } from "./component/edit/PreviewAreaContainer"
 import { ScrollDebug } from "./component/edit/ScrollDebug"
 import { SelectionAreaContainer } from "./component/edit/SelectionAreaContainer"
 import { SelectionBoundary } from "./component/edit/SelectionSprite"
 import { SnapContainer } from "./component/edit/SnapContainer"
+import { TechErrorIndicators } from "./component/edit/TechErrorIndicators"
+import { TechIndicators } from "./component/edit/TechIndicators"
 import { Waveform } from "./component/edit/Waveform"
 import { Notefield } from "./component/notefield/Notefield"
 import { ComboNumber } from "./component/play/ComboNumber"
 import { ErrorBarContainer } from "./component/play/ErrorBarContainer"
 import { JudgementSprite } from "./component/play/JudgementSprite"
+import { RowStacker } from "./component/RowStacker"
 import { SelectionTimingEventContainer } from "./component/timing/SelectionTimingEventContainer"
 import { TimingAreaContainer } from "./component/timing/TimingAreaContainer"
 import { TimingTrackContainer } from "./component/timing/TimingTrackContainer"
@@ -42,6 +46,7 @@ interface SelectionBounds {
 
 export interface ChartRendererComponent extends DisplayObject {
   update: (firstBeat: number, lastBeat: number) => void
+  readonly isEditGUI: boolean
 }
 
 export class ChartRenderer extends Container<ChartRendererComponent> {
@@ -65,6 +70,9 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   private readonly barlines: BarlineContainer
   private readonly timingAreas: TimingAreaContainer
   private readonly timingTracks: TimingTrackContainer
+  private readonly techIndicators: TechIndicators
+  private readonly techErrors: TechErrorIndicators
+  private readonly candleIndicator: CandleIndicator
   private readonly selectedEvents: SelectionTimingEventContainer
   private readonly timingBar: ErrorBarContainer
   private notefield: Notefield
@@ -88,6 +96,9 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     this.barlines = new BarlineContainer(this)
     this.timingAreas = new TimingAreaContainer(this)
     this.timingTracks = new TimingTrackContainer(this)
+    this.techIndicators = new TechIndicators(this)
+    this.techErrors = new TechErrorIndicators(this)
+    this.candleIndicator = new CandleIndicator(this)
     this.selectedEvents = new SelectionTimingEventContainer(this)
     this.timingBar = new ErrorBarContainer(this)
     this.notefield = new Notefield(this)
@@ -107,6 +118,9 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       this.previewArea,
       this.selectionArea,
       this.timingTracks,
+      this.candleIndicator,
+      this.techIndicators,
+      this.techErrors,
       this.selectedEvents,
       this.timingBar,
       this.combo,
@@ -117,6 +131,8 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       this.scrollDebug,
       this.parityDebug
     )
+
+    new RowStacker(this)
 
     this.chartManager.app.stage.addChild(this)
 
@@ -322,7 +338,15 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     this.scale.x = Options.chart.zoom
     this.scale.y = Options.chart.zoom
 
-    this.children.forEach(child => child.update(firstBeat, lastBeat))
+    this.children.forEach(child => {
+      if (child.isEditGUI && !this.shouldDisplayEditGUI()) {
+        child.visible = false
+        return
+      }
+      child.visible = true
+      child.update(firstBeat, lastBeat)
+    })
+    RowStacker.instance.update()
     this.notefield.alpha =
       this.chartManager.editTimingMode == EditTimingMode.Off ||
       this.chartManager.getMode() == EditMode.Play
@@ -1204,7 +1228,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     return this.selectionBounds
   }
 
-  shouldDisplayBarlines() {
+  shouldDisplayEditGUI() {
     return (
       (this.chartManager.getMode() != EditMode.Play ||
         !Options.play.hideBarlines) &&

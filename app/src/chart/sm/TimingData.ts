@@ -67,7 +67,7 @@ export abstract class TimingData {
     events = events.concat(
       this.getTimingData("WARPS").map((event: WarpTimingEvent) => ({
         type: "WARP_DEST",
-        beat: event.beat + event.value,
+        beat: Math.round((event.beat + event.value) * 48) / 48,
         value: event.value,
       }))
     )
@@ -298,7 +298,8 @@ export abstract class TimingData {
     })
   }
 
-  serialize(fileType: "sm" | "ssc"): string {
+  serialize(fileType: "sm" | "ssc" | "smebak"): string {
+    if (fileType == "smebak") fileType = "ssc"
     this.reloadCache()
     let str = ""
     if (this.offset) str += "#OFFSET:" + this.offset + ";\n"
@@ -518,10 +519,17 @@ export abstract class TimingData {
     switch (eventA.type) {
       case "BPMS":
       case "LABELS":
-      case "SPEEDS":
       case "SCROLLS":
       case "TICKCOUNTS":
         return eventA.type == eventB.type && eventA.value == eventB.value
+
+      case "SPEEDS":
+        return (
+          eventA.type == eventB.type &&
+          eventA.value == eventB.value &&
+          eventA.delay == eventB.delay &&
+          eventA.unit == eventB.unit
+        )
 
       case "TIMESIGNATURES":
         return (
@@ -1378,7 +1386,10 @@ export abstract class TimingData {
     const fakes = this.getTimingData("FAKES")
     if (fakes == undefined) return false
     for (const event of fakes) {
-      if (flooredBeat >= event.beat && flooredBeat < event.beat + event.value)
+      if (
+        flooredBeat >= event.beat &&
+        flooredBeat < Math.floor((event.beat + event.value) * 48) / 48
+      )
         return true
     }
     return false

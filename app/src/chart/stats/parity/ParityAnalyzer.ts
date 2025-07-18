@@ -24,27 +24,27 @@ export class ParityAnalyzer extends ChartAnalyzer {
   private messageId = 0
 
   private eventHandler = ((item: string) => {
-    if (item === "experimental.parity.enabled") {
-      if (Options.experimental.parity.enabled && this.active) {
+    if (item === "chart.parity.enabled") {
+      if (Options.chart.parity.enabled && this.active) {
         this.initializeWorker().then(() => this.calculateAll())
         return
       } else {
         this.terminateWorker()
+        this.chart.stats.parity = undefined
+        EventHandler.emit("parityModified")
       }
     }
     if (
-      (item == "experimental.parity.showDebug" ||
-        item == "experimental.parity.showGraph") &&
+      (item == "debug.parity.showGraph" || item == "debug.parity.showDebug") &&
       this.worker &&
-      (Options.experimental.parity.showDebug ||
-        Options.experimental.parity.showGraph)
+      (Options.debug.parity.showGraph || Options.debug.parity.showDebug)
     ) {
       if (this.disabled) return
       this.postMessage({
         type: "getDebug",
       })
         .then(data => {
-          this.chart.stats.parityDebug = data.data!
+          this.chart.stats.parity!.debug = data.data!
         })
         .catch(error => {
           console.error("Failed to get parity debug data:", error)
@@ -69,8 +69,7 @@ export class ParityAnalyzer extends ChartAnalyzer {
   // We can use a web worker to make sure the page doesn't freeze while calculating parity
   // This is good for long/complex charts
   workerCalculate(startBeat: number, endBeat: number) {
-    if (!this.active || !Options.experimental.parity.enabled || this.disabled)
-      return
+    if (!this.active || !Options.chart.parity.enabled || this.disabled) return
     const start = performance.now()
     const notedata = this.chart.getNotedata()
     this.postMessage({
@@ -78,49 +77,76 @@ export class ParityAnalyzer extends ChartAnalyzer {
       startBeat,
       endBeat,
       notedata,
-      debug:
-        Options.experimental.parity.showDebug ||
-        Options.experimental.parity.showGraph,
+      debug: Options.debug.parity.showDebug || Options.debug.parity.showGraph,
     })
-      .then(data => {
+      .then(event => {
         notedata.forEach(note => {
           const key = note.beat.toFixed(3) + "-" + note.col
-          const foot = data.parityLabels!.get(key)
+          const foot = event.data.parityLabels.get(key)
           if (foot) {
             if (!note.parity) note.parity = {}
             note.parity.foot = foot
           }
         })
-        this.chart.stats.parityStates = data.bestStates!
-        if (data.debug) {
+        if (!this.chart.stats.parity) {
+          this.chart.stats.parity = {
+            ...event.data,
+            debug: {
+              notedataRows: [],
+              nodeRows: [],
+              edgeCacheSize: 0,
+              nodeMap: new Map(),
+              bestPath: [],
+              bestPathCost: 0,
+              bestPathSet: new Set(),
+              stats: {
+                lastUpdatedRowStart: -1,
+                lastUpdatedOldRowEnd: -1,
+                lastUpdatedRowEnd: -1,
+                rowUpdateTime: 0,
+                lastUpdatedNodeStart: -1,
+                lastUpdatedNodeEnd: -1,
+                nodeUpdateTime: 0,
+                createdNodes: 0,
+                createdEdges: 0,
+                calculatedEdges: 0,
+                cachedEdges: 0,
+                edgeUpdateTime: 0,
+                cachedBestRows: 0,
+                pathUpdateTime: 0,
+                rowStatsUpdateTime: 0,
+              },
+            },
+            debugTime: 0,
+          }
+        } else {
+          Object.assign(this.chart.stats.parity, event.data)
+        }
+        if (event.debug) {
           // Incrementally recreate the debug data instead of sending it over
-          const debugData = this.chart.stats.parityDebug!
-          console.log(data.debug)
+          const debugData = this.chart.stats.parity.debug
 
-          const newRows = this.chart.stats
-            .parityDebug!.notedataRows.slice(0, data.debug.removedRowsStart)
-            .concat(data.debug.newRows)
-            .concat(debugData.notedataRows.slice(data.debug.removedRowsEnd))
+          const newRows = this.chart.stats.parity.debug.notedataRows
+            .slice(0, event.debug.removedRowsStart)
+            .concat(event.debug.newRows)
+            .concat(debugData.notedataRows.slice(event.debug.removedRowsEnd))
           debugData.notedataRows = newRows
 
           const statesToRemove =
-            data.debug?.newStates.length -
-            (data.debug.newRows.length -
-              data.debug.removedRowsEnd +
-              data.debug.removedRowsStart)
+            event.debug?.newStates.length -
+            (event.debug.newRows.length -
+              event.debug.removedRowsEnd +
+              event.debug.removedRowsStart)
           const removedStates = debugData.nodeRows.slice(
-            Math.max(data.debug.removedRowsStart - 1, 0),
+            Math.max(event.debug.removedRowsStart - 1, 0),
             statesToRemove
           )
-          const newStates = this.chart.stats
-            .parityDebug!.nodeRows.slice(
-              0,
-              Math.max(0, data.debug.removedRowsStart - 1)
-            )
-            .concat(data.debug.newStates)
+          const newStates = this.chart.stats.parity.debug.nodeRows
+            .slice(0, Math.max(0, event.debug.removedRowsStart - 1))
+            .concat(event.debug.newStates)
             .concat(
               debugData.nodeRows.slice(
-                Math.max(0, data.debug.removedRowsStart - 1 + statesToRemove)
+                Math.max(0, event.debug.removedRowsStart - 1 + statesToRemove)
               )
             )
 
@@ -130,26 +156,26 @@ export class ParityAnalyzer extends ChartAnalyzer {
             })
           })
 
-          data.debug.newStates.forEach(row => {
+          event.debug.newStates.forEach(row => {
             row.nodes.forEach(node => {
               debugData.nodeMap.set(node.key, node)
             })
           })
 
           debugData.nodeRows = newStates
-          debugData.stats = data.debug.stats
-          debugData.edgeCacheSize = data.debug.edgeCacheSize
-          debugData.bestPath = data.debug.bestPath
-          debugData.bestPathCost = data.debug.bestPathCost
-          debugData.bestPathSet = data.debug.bestPathSet
+          debugData.stats = event.debug.stats
+          debugData.edgeCacheSize = event.debug.edgeCacheSize
+          debugData.bestPath = event.debug.bestPath
+          debugData.bestPathCost = event.debug.bestPathCost
+          debugData.bestPathSet = event.debug.bestPathSet
         }
 
-        this.chart.stats.parityDebugTime = performance.now() - start
+        this.chart.stats.parity.debugTime = performance.now() - start
         EventHandler.emit("parityModified")
       })
       .catch(error => {
         console.error("Failed to calculate parity:", error)
-        this.chart.stats.parityDebugTime = performance.now() - start
+        this.chart.stats.parity!.debugTime = performance.now() - start
       })
   }
 
@@ -173,11 +199,11 @@ export class ParityAnalyzer extends ChartAnalyzer {
   async initializeWorker() {
     this.worker = new ParityInternals()
     this.worker.onmessage = (event: MessageEvent<ParityOutboundMessage>) => {
-      const { id, success } = event.data
+      const { id } = event.data
       if (this.pendingJobs.has(id)) {
         const job = this.pendingJobs.get(id)!
         this.pendingJobs.delete(id)
-        if (!success) {
+        if (event.data.type == "error") {
           job.reject(event.data.error)
         } else {
           job.resolve(event.data)
@@ -185,31 +211,6 @@ export class ParityAnalyzer extends ChartAnalyzer {
       } else {
         console.warn(`Parity: Received message with unknown id: ${id}`)
       }
-    }
-    this.chart.stats.parityDebug = {
-      notedataRows: [],
-      nodeRows: [],
-      edgeCacheSize: 0,
-      nodeMap: new Map(),
-      bestPath: [],
-      bestPathCost: 0,
-      bestPathSet: new Set(),
-      stats: {
-        lastUpdatedRowStart: -1,
-        lastUpdatedOldRowEnd: -1,
-        lastUpdatedRowEnd: -1,
-        rowUpdateTime: 0,
-        lastUpdatedNodeStart: -1,
-        lastUpdatedNodeEnd: -1,
-        nodeUpdateTime: 0,
-        createdNodes: 0,
-        createdEdges: 0,
-        calculatedEdges: 0,
-        cachedEdges: 0,
-        edgeUpdateTime: 0,
-        cachedBestRows: 0,
-        pathUpdateTime: 0,
-      },
     }
 
     this.postMessage({

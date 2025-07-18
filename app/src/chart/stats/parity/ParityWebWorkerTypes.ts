@@ -1,6 +1,24 @@
 import { Notedata } from "../../sm/NoteTypes"
-import { Foot, ParityState, Row } from "./ParityDataTypes"
+import {
+  Foot,
+  ParityState,
+  Row,
+  TechCategory,
+  TechErrors,
+} from "./ParityDataTypes"
 import { ParityGraphNode } from "./ParityInternals"
+
+export interface ParityComputeData {
+  parityLabels: Map<string, Foot>
+  states: ParityState[]
+  rowTimestamps: { beat: number; second: number }[]
+  techRows: (Set<TechCategory> | undefined)[]
+  techErrors: Map<number, Set<TechErrors>>
+  techCounts: number[]
+  techErrorCounts: number[]
+  facingRows: number[]
+  candles: Map<number, Foot>
+}
 
 export type ParityDebugUpdateData = {
   removedRowsStart: number
@@ -44,15 +62,11 @@ export type ParityDebugStats = {
   edgeUpdateTime: number
   cachedBestRows: number
   pathUpdateTime: number
+  rowStatsUpdateTime: number
 }
 
 export interface ParityBaseMessage {
   id: number
-}
-
-export interface ParityBaseOutboundMessage extends ParityBaseMessage {
-  success: boolean
-  error?: string
 }
 
 export interface ParityInboundInitMessage extends ParityBaseMessage {
@@ -60,7 +74,7 @@ export interface ParityInboundInitMessage extends ParityBaseMessage {
   gameType: string
 }
 
-export interface ParityOutboundInitMessage extends ParityBaseOutboundMessage {
+export interface ParityOutboundInitMessage extends ParityBaseMessage {
   type: "init"
 }
 
@@ -72,11 +86,9 @@ export interface ParityInboundComputeMessage extends ParityBaseMessage {
   debug: boolean
 }
 
-export interface ParityOutboundComputeMessage
-  extends ParityBaseOutboundMessage {
+export interface ParityOutboundComputeMessage extends ParityBaseMessage {
   type: "compute"
-  parityLabels: Map<string, Foot> | null
-  bestStates: ParityState[] | null
+  data: ParityComputeData
   debug?: ParityDebugUpdateData
 }
 
@@ -84,8 +96,12 @@ export interface ParityInboundGetDebugMessage extends ParityBaseMessage {
   type: "getDebug"
 }
 
-export interface ParityOutboundGetDebugMessage
-  extends ParityBaseOutboundMessage {
+export interface ParityOutboundErrorMessage extends ParityBaseMessage {
+  type: "error"
+  error: string
+}
+
+export interface ParityOutboundGetDebugMessage extends ParityBaseMessage {
   type: "getDebug"
   data: ParityDebugData | null
 }
@@ -98,3 +114,4 @@ export type ParityOutboundMessage =
   | ParityOutboundInitMessage
   | ParityOutboundComputeMessage
   | ParityOutboundGetDebugMessage
+  | ParityOutboundErrorMessage

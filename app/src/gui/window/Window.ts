@@ -6,7 +6,7 @@ import { WindowManager } from "./WindowManager"
 export interface WindowOptions {
   title: string
   width: number
-  height: number
+  height?: number
   win_id?: string
   disableClose?: boolean
   blocking?: boolean
@@ -38,15 +38,16 @@ export abstract class Window {
       window.innerWidth / 2 -
       (options.width / 2) * Options.general.uiScale +
       "px"
-    windowElement.style.top =
-      window.innerHeight / 2 -
-      (options.height / 2) * Options.general.uiScale +
-      "px"
+    if (options.height)
+      windowElement.style.top =
+        window.innerHeight / 2 -
+        (options.height / 2) * Options.general.uiScale +
+        "px"
     windowElement.classList.add("window")
     if (options.win_id) windowElement.dataset.win_id = options.win_id
 
     viewElement.classList.add("view")
-    viewElement.style.height = options.height / 16 + "rem"
+    if (options.height) viewElement.style.height = options.height / 16 + "rem"
     viewElement.style.width = options.width / 16 + "rem"
 
     navbarElement.classList.add("navbar")
@@ -159,6 +160,19 @@ export abstract class Window {
     this.windowElement.classList.remove("focused")
   }
 
+  center() {
+    const bounds = this.windowElement.getBoundingClientRect()
+    this.windowElement.style.left =
+      window.innerWidth / 2 -
+      (bounds.width / 2) * Options.general.uiScale +
+      "px"
+
+    this.windowElement.style.top =
+      window.innerHeight / 2 -
+      (bounds.height / 2) * Options.general.uiScale +
+      "px"
+    this.clampPosition()
+  }
   private block = (event: MouseEvent) => {
     if (!event.target || this.windowElement.contains(<Node>event.target)) return
     event.stopImmediatePropagation()

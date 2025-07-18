@@ -42,7 +42,7 @@ export const FEET_LABEL_TO_FOOT: { [key: string]: Foot } = {
   r: Foot.RIGHT_TOE,
 }
 
-export type FootOverride = Foot | "Left" | "Right"
+export type FootOverride = "Left" | "Right"
 
 export interface PlacementData {
   previousLeftPos: { x: number; y: number } // can probably cache this?
@@ -64,32 +64,9 @@ export interface PlacementData {
   resultState: ParityState
 }
 
-export const ZERO_WEIGHT: { [key: string]: number } = {
-  DOUBLESTEP: 0,
-  BRACKETJACK: 0,
-  JACK: 0,
-  JUMP: 0,
-  SLOW_BRACKET: 0,
-  TWISTED_FOOT: 0,
-  BRACKETTAP: 0,
-  XO_BR: 0,
-  HOLDSWITCH: 0,
-  MINE: 0,
-  FOOTSWITCH: 0,
-  MISSED_FOOTSWITCH: 0,
-  FACING: 0,
-  DISTANCE: 0,
-  SPIN: 0,
-  SIDESWITCH: 0,
-  CROWDED_BRACKET: 0,
-  OTHER: 0,
-  OVERRIDE: 0,
-  TOTAL: 0,
-}
-
 export const DEFAULT_WEIGHTS: { [key: string]: number } = {
-  DOUBLESTEP: 850,
-  BRACKETJACK: 20,
+  DOUBLESTEP: 750,
+  BRACKETJACK: 60,
   JACK: 40,
   JUMP: 0,
   SLOW_BRACKET: 300,
@@ -102,10 +79,11 @@ export const DEFAULT_WEIGHTS: { [key: string]: number } = {
   MISSED_FOOTSWITCH: 500,
   FACING: 3,
   DISTANCE: 6,
-  SPIN: 1000,
+  SPIN: 3000,
   SIDESWITCH: 130,
   CROWDED_BRACKET: 0,
   OTHER: 0,
+  START_XO: 10000,
 }
 
 export const WEIGHT_SHORT_NAMES: { [id: string]: string } = {
@@ -131,24 +109,108 @@ export const WEIGHT_SHORT_NAMES: { [id: string]: string } = {
   TOTAL: "TOT",
 }
 
-export enum TechCountsCategory {
+export enum TechCategory {
   Crossovers = 0,
   Footswitches,
   Sideswitches,
   Jacks,
   Brackets,
   Doublesteps,
-  NUM_TechCountsCategory,
-  Invalid,
+  Holdswitch,
 }
 
-export const TECH_COUNTS = ["XO", "FS", "SS", "JA", "BR", "DS"]
+export const TECH_STRINGS: Record<number, string> = {
+  [TechCategory.Crossovers]: "XO",
+  [TechCategory.Footswitches]: "FS",
+  [TechCategory.Sideswitches]: "SS",
+  [TechCategory.Jacks]: "JA",
+  [TechCategory.Brackets]: "BR",
+  [TechCategory.Doublesteps]: "DS",
+  [TechCategory.Holdswitch]: "HS",
+}
+
+export enum TechErrors {
+  UnmarkedDoublestep = 0,
+  MissedFootswitch,
+  Ambiguous,
+}
+
+export const TECH_DESCRIPTIONS: {
+  [key in TechCategory]: { title: string; description: string }
+} = {
+  [TechCategory.Crossovers]: {
+    title: "Crossover",
+    description: "One of the player's feet crosses over the other foot.",
+  },
+  [TechCategory.Footswitches]: {
+    title: "Footswitch",
+    description: "The player uses alternating feet to hit the same arrow.",
+  },
+  [TechCategory.Sideswitches]: {
+    title: "Sideswitch",
+    description:
+      "The player uses alternating feet to hit the same arrow. The arrow appears on the left or right side of the stage.",
+  },
+  [TechCategory.Jacks]: {
+    title: "Jack",
+    description: "The player uses the same foot to hit the same arrow.",
+  },
+  [TechCategory.Brackets]: {
+    title: "Bracket",
+    description:
+      "The player uses one foot to diagonally hit two arrows at once.",
+  },
+  [TechCategory.Doublesteps]: {
+    title: "Doublestep",
+    description:
+      "The player uses the same foot twice in a row to hit two different arrows.",
+  },
+  [TechCategory.Holdswitch]: {
+    title: "Holdswitch",
+    description: "The player swaps which foot is holding a hold.",
+  },
+}
+
+export const TECH_ERROR_STRINGS: Record<number, string> = {
+  [TechErrors.UnmarkedDoublestep]: "DS",
+  [TechErrors.MissedFootswitch]: "FS",
+  [TechErrors.Ambiguous]: "AM",
+}
+
+export const TECH_ERROR_STRING_REVERSE: Record<string, TechErrors> =
+  Object.fromEntries(
+    Object.entries(TECH_ERROR_STRINGS).map(([k, v]) => [
+      v,
+      Number(k) as TechErrors,
+    ])
+  ) as Record<string, TechErrors>
+
+export const TECH_ERROR_DESCRIPTIONS: {
+  [key in TechErrors]: { title: string; description: string }
+} = {
+  [TechErrors.UnmarkedDoublestep]: {
+    title: "Unmarked Doublestep",
+    description:
+      "A doublestep is present but there is no marking for it. You can mark a doublestep with a mine following it or having a hold on the other foot.",
+  },
+  [TechErrors.MissedFootswitch]: {
+    title: "Mismarked Footswitch",
+    description:
+      "A mine that indicates a footswitch was placed for a jack. Either there is a doublestep or the mine is unnecessary.",
+  },
+  [TechErrors.Ambiguous]: {
+    title: "Ambiguous Step",
+    description:
+      "The player does not know which foot to use for this step (usually after a jump).",
+  },
+}
 
 export class ParityState {
   action: Foot[] = []
   combinedColumns: Foot[] = []
   movedFeet: Set<Foot> = new Set()
   holdFeet: Set<Foot> = new Set()
+  frontFoot: Foot | null = null
   second: number
   beat: number
   rowKey: string
@@ -201,7 +263,7 @@ export class ParityState {
       }
     }
 
-    return `${this.rowKey}-${this.action.join("")}-${this.combinedColumns.join("")}-${movedString}-${holdString}-${feetString}`
+    return `${this.rowKey}-${this.action.join("")}-${this.combinedColumns.join("")}-${movedString}-${holdString}-${feetString}-${this.frontFoot}`
   }
 }
 

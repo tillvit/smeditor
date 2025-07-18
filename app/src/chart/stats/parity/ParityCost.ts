@@ -1,3 +1,4 @@
+import { clamp } from "../../../util/Math"
 import {
   DEFAULT_WEIGHTS,
   Foot,
@@ -6,6 +7,7 @@ import {
   PlacementData,
   Row,
 } from "./ParityDataTypes"
+import { getPlayerAngle } from "./ParityUtils"
 
 import { STAGE_LAYOUTS, StageLayout } from "./StageLayouts"
 
@@ -30,119 +32,6 @@ export class ParityCostCalculator {
     this.WEIGHTS = { ...this.WEIGHTS, ...newWeights }
   }
 
-  getPlacementData(
-    initialState: ParityState,
-    resultState: ParityState,
-    lastRow: Row,
-    row: Row
-  ): PlacementData {
-    const previousNonHeldFeet = []
-    const nonHeldFeet = []
-
-    for (let i = 0; i < this.layout.layout.length; i++) {
-      if (
-        lastRow &&
-        lastRow.holds[i] === undefined &&
-        initialState.action[i] != Foot.NONE
-      ) {
-        previousNonHeldFeet[initialState.action[i]] = true
-      }
-
-      if (row.holds[i] === undefined && resultState.action[i] != Foot.NONE) {
-        nonHeldFeet[resultState.action[i]] = true
-      }
-    }
-
-    const previousMovedLeft =
-      previousNonHeldFeet[Foot.LEFT_HEEL] || previousNonHeldFeet[Foot.LEFT_TOE]
-    const previousMovedRight =
-      previousNonHeldFeet[Foot.RIGHT_HEEL] ||
-      previousNonHeldFeet[Foot.RIGHT_TOE]
-
-    const movedLeft = nonHeldFeet[Foot.LEFT_HEEL] || nonHeldFeet[Foot.LEFT_TOE]
-    const movedRight =
-      nonHeldFeet[Foot.RIGHT_HEEL] || nonHeldFeet[Foot.RIGHT_TOE]
-
-    const leftBracket =
-      nonHeldFeet[Foot.LEFT_HEEL] && nonHeldFeet[Foot.LEFT_TOE]
-    const rightBracket =
-      nonHeldFeet[Foot.RIGHT_HEEL] && nonHeldFeet[Foot.RIGHT_TOE]
-
-    const previousJumped =
-      previousNonHeldFeet[Foot.LEFT_HEEL] &&
-      previousNonHeldFeet[Foot.RIGHT_HEEL]
-
-    const jumped = nonHeldFeet[Foot.LEFT_HEEL] && nonHeldFeet[Foot.RIGHT_HEEL]
-
-    const leftJack =
-      !jumped &&
-      this.doFeetOverlap(
-        initialState.leftHeel,
-        initialState.leftToe,
-        resultState.leftHeel,
-        resultState.leftToe
-      ) &&
-      previousMovedLeft &&
-      movedLeft
-    const rightJack =
-      !jumped &&
-      this.doFeetOverlap(
-        initialState.rightHeel,
-        initialState.rightToe,
-        resultState.rightHeel,
-        resultState.rightToe
-      ) &&
-      previousMovedRight &&
-      movedRight
-
-    const leftDoubleStep =
-      previousMovedLeft && movedLeft && !jumped && !leftJack && !previousJumped
-    const rightDoubleStep =
-      previousMovedRight &&
-      movedRight &&
-      !jumped &&
-      !rightJack &&
-      !previousJumped
-
-    const previousLeftPos = this.layout.averagePoint(
-      initialState.leftHeel,
-      initialState.leftToe
-    )
-
-    const previousRightPos = this.layout.averagePoint(
-      initialState.rightHeel,
-      initialState.rightToe
-    )
-
-    const leftPos = this.layout.averagePoint(
-      resultState.leftHeel,
-      resultState.leftToe
-    )
-    const rightPos = this.layout.averagePoint(
-      resultState.rightHeel,
-      resultState.rightToe
-    )
-
-    return {
-      previousLeftPos,
-      previousRightPos,
-      leftPos,
-      rightPos,
-      movedLeft,
-      movedRight,
-      leftBracket,
-      rightBracket,
-      previousJumped,
-      jumped,
-      leftJack,
-      rightJack,
-      leftDoubleStep,
-      rightDoubleStep,
-      initialState,
-      resultState,
-    }
-  }
-
   getActionCost(
     initialState: ParityState,
     resultState: ParityState,
@@ -151,12 +40,15 @@ export class ParityCostCalculator {
   ): { [id: string]: number } {
     const lastRow = rows[rowIndex - 1]
     const row = rows[rowIndex]
-    const elapsedTime = resultState.second - initialState.second
+    let elapsedTime = resultState.second - initialState.second
+    if (rowIndex == 0) {
+      elapsedTime = 0.1
+    }
 
     const costs: { [id: string]: number } = {}
 
     // Calculate some data beforehand
-    const placementData = this.getPlacementData(
+    const placementData = this.layout.getPlacementData(
       initialState,
       resultState,
       lastRow,
@@ -171,27 +63,24 @@ export class ParityCostCalculator {
 
     costs["BRACKETTAP"] = this.calcBracketTapCost(placementData, elapsedTime)
 
-    // costs["OTHER"] = this.calcMovingFootWhileOtherIsntOnPadCost( // this shouldn't trigger?
-    //   initialState,
-    //   resultState
-    // )
+    costs["OTHER"] = this.calcStartCrossover(placementData, rowIndex)
 
     costs["BRACKETJACK"] = this.calcBracketJackCost(placementData)
 
     costs["XO_BR"] = this.calcXOBRCost(placementData)
 
-    costs["DOUBLESTEP"] = this.calcDoublestepCost(placementData, lastRow, row)
+    costs["DOUBLESTEP"] = this.calcDoublestepCost(
+      placementData,
+      lastRow,
+      row,
+      elapsedTime
+    )
 
     costs["JUMP"] = this.calcJumpCost(placementData, elapsedTime)
 
     costs["SLOW_BRACKET"] = this.calcSlowBracketCost(placementData, elapsedTime)
 
     costs["TWISTED_FOOT"] = this.calcTwistedFoot(placementData)
-
-    // if (combinedPlacement.leftToe == -1)
-    //   combinedPlacement.leftToe = combinedPlacement.leftHeel
-    // if (combinedPlacement.rightToe == -1)
-    //   combinedPlacement.rightToe = combinedPlacement.rightHeel
 
     costs["FACING"] = this.calcFacingCost(placementData)
 
@@ -273,27 +162,6 @@ export class ParityCostCalculator {
     return false
   }
 
-  doFeetOverlap(
-    oldHeel: number,
-    oldToe: number,
-    newHeel: number,
-    newToe: number
-  ): boolean {
-    if (oldHeel != -1) {
-      if (oldHeel == newHeel || oldHeel == newToe) {
-        return true
-      }
-    }
-
-    if (oldToe != -1) {
-      if (oldToe == newHeel || oldToe == newToe) {
-        return true
-      }
-    }
-
-    return false
-  }
-
   // breakout all of the function costs
 
   calcMineCosts(data: PlacementData, row: Row) {
@@ -316,7 +184,10 @@ export class ParityCostCalculator {
       if (row.holds[c]!.beat < data.initialState.beat) continue // the new hold wasn't there in the previous row
       const initialFoot = data.initialState.combinedColumns[c]
       const resultFoot = data.resultState.combinedColumns[c]
-      if (initialFoot != resultFoot) {
+      if (
+        initialFoot != resultFoot &&
+        initialFoot != OTHER_PART_OF_FOOT[resultFoot]
+      ) {
         const tempcost =
           this.WEIGHTS.HOLDSWITCH *
           (data.resultState.footColumns[initialFoot] == -1
@@ -381,42 +252,12 @@ export class ParityCostCalculator {
     return cost
   }
 
-  // Old "OTHER" cost
-  calcMovingFootWhileOtherIsntOnPadCost(
-    initialState: ParityState,
-    resultState: ParityState
-  ) {
-    let cost = 0
-
-    // Weighting for moving a foot while the other isn't on the pad (so marked doublesteps are less bad than this)
-    if (initialState.combinedColumns.some(x => x != Foot.NONE)) {
-      for (const f of resultState.movedFeet) {
-        switch (f) {
-          case Foot.LEFT_HEEL:
-          case Foot.LEFT_TOE:
-            if (
-              !(
-                initialState.combinedColumns.includes(Foot.RIGHT_HEEL) ||
-                initialState.combinedColumns.includes(Foot.RIGHT_TOE)
-              )
-            )
-              cost += this.WEIGHTS.OTHER
-            break
-          case Foot.RIGHT_HEEL:
-          case Foot.RIGHT_TOE:
-            if (
-              !(
-                initialState.combinedColumns.includes(Foot.LEFT_HEEL) ||
-                initialState.combinedColumns.includes(Foot.LEFT_TOE)
-              )
-            )
-              cost += this.WEIGHTS.OTHER
-            break
-        }
-      }
+  calcStartCrossover(data: PlacementData, rowIndex: number) {
+    // Don't start the chart crossed over
+    if (data.rightPos.x < data.leftPos.x && rowIndex == 0) {
+      return this.WEIGHTS.START_XO
     }
-
-    return cost
+    return 0
   }
 
   calcBracketJackCost(data: PlacementData) {
@@ -442,7 +283,12 @@ export class ParityCostCalculator {
     return cost
   }
 
-  calcDoublestepCost(data: PlacementData, lastRow: Row, row: Row) {
+  calcDoublestepCost(
+    data: PlacementData,
+    lastRow: Row,
+    row: Row,
+    elapsedTime: number
+  ) {
     if (data.leftDoubleStep || data.rightDoubleStep) {
       // Check if we are allowed to DS
 
@@ -453,7 +299,25 @@ export class ParityCostCalculator {
           return 0
         }
       }
-      return this.WEIGHTS.DOUBLESTEP
+
+      if (data.leftDoubleStep) {
+        const willHitMine =
+          row.mines[data.initialState.footColumns[Foot.LEFT_HEEL]] ||
+          row.fakeMines[data.initialState.footColumns[Foot.LEFT_HEEL]] ||
+          row.mines[data.initialState.footColumns[Foot.LEFT_TOE]] ||
+          row.fakeMines[data.initialState.footColumns[Foot.LEFT_TOE]]
+        if (willHitMine) return 0
+      }
+      if (data.rightDoubleStep) {
+        const willHitMine =
+          row.mines[data.initialState.footColumns[Foot.RIGHT_HEEL]] ||
+          row.fakeMines[data.initialState.footColumns[Foot.RIGHT_HEEL]] ||
+          row.mines[data.initialState.footColumns[Foot.RIGHT_TOE]] ||
+          row.fakeMines[data.initialState.footColumns[Foot.RIGHT_TOE]]
+        if (willHitMine) return 0
+      }
+
+      return this.WEIGHTS.DOUBLESTEP / clamp(elapsedTime * 4, 0.3, 1)
     }
     return 0
   }
@@ -464,6 +328,7 @@ export class ParityCostCalculator {
   }
 
   private slowBracketThreshold = 0.15
+  private slowBracketCap = 0.5
   calcSlowBracketCost(data: PlacementData, elapsedTime: number) {
     if (
       elapsedTime > this.slowBracketThreshold &&
@@ -471,7 +336,8 @@ export class ParityCostCalculator {
       !data.jumped
     ) {
       return (
-        (elapsedTime - this.slowBracketThreshold) * this.WEIGHTS.SLOW_BRACKET
+        Math.min(this.slowBracketCap, elapsedTime - this.slowBracketThreshold) *
+        this.WEIGHTS.SLOW_BRACKET
       )
     }
     return 0
@@ -503,14 +369,14 @@ export class ParityCostCalculator {
   calcFacingCost(data: PlacementData) {
     let cost = 0
 
+    let dx = data.rightPos.x - data.leftPos.x
+    const dy = data.rightPos.y - data.leftPos.y
+
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    dx /= distance
+
     // facing backwards gives a bit of bad weight (scaled heavily the further back you angle, so crossovers aren't Too bad; less bad than doublesteps)
-    const heelFacing =
-      data.resultState.leftHeel != -1 && data.resultState.rightHeel != -1
-        ? this.layout.getFacingDirectionCosine(
-            data.resultState.leftHeel,
-            data.resultState.rightHeel
-          )
-        : 0
+    const heelFacing = dx
 
     const heelFacingPenalty = Math.pow(-Math.min(heelFacing, 0), 7.2) * 200
     if (heelFacingPenalty > 0) cost += heelFacingPenalty * this.WEIGHTS.FACING
@@ -520,33 +386,28 @@ export class ParityCostCalculator {
   calcSpinCost(data: PlacementData) {
     let cost = 0
 
-    // spin
+    let prevAngle = getPlayerAngle(data.previousLeftPos, data.previousRightPos)
 
+    let angle = getPlayerAngle(data.leftPos, data.rightPos)
+
+    if (Math.abs(angle) < Math.PI / 2 || Math.abs(prevAngle) < Math.PI / 2) {
+      return 0
+    }
+
+    if (angle < 0) angle += Math.PI * 2
+    if (prevAngle < 0) prevAngle += Math.PI * 2
+
+    // prevent facing backwards but not turning causing a spin
+    if (angle == prevAngle) return 0
+
+    // If we cross the 180 deg line, that's a spin
     if (
-      data.rightPos.x < data.leftPos.x &&
-      data.previousRightPos.x < data.previousLeftPos.x &&
-      data.rightPos.y < data.leftPos.y &&
-      data.previousRightPos.y > data.previousLeftPos.y
+      ((prevAngle <= Math.PI && angle >= Math.PI) ||
+        (prevAngle >= Math.PI && angle <= Math.PI)) &&
+      data.initialState.frontFoot != data.resultState.frontFoot
     ) {
       cost += this.WEIGHTS.SPIN
     }
-    if (
-      data.rightPos.x < data.leftPos.x &&
-      data.previousRightPos.x < data.previousLeftPos.x &&
-      data.rightPos.y > data.leftPos.y &&
-      data.previousRightPos.y < data.previousLeftPos.y
-    ) {
-      cost += this.WEIGHTS.SPIN
-    }
-
-    // if (
-    //   leftPos.y < rightPos.y &&
-    //   previousLeftPos.y < previousRightPos.y &&
-    //   rightPos.x > leftPos.x &&
-    //   previousRightPos.x < previousLeftPos.x
-    // ) {
-    //   cost += this.WEIGHTS.SPIN
-    // }
 
     return cost
   }
@@ -565,6 +426,7 @@ export class ParityCostCalculator {
     ) {
       return 0
     }
+    if (data.jumped) return 0
 
     // footswitching has no penalty if there's a mine nearby
     if (
@@ -596,6 +458,7 @@ export class ParityCostCalculator {
 
   calcSideswitchCost(data: PlacementData) {
     let cost = 0
+    if (data.jumped) return 0
 
     this.layout.sideArrows.forEach(col => {
       if (data.resultState.action[col] == Foot.NONE) return

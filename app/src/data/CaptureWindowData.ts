@@ -92,7 +92,7 @@ export const CAPTURE_WINDOW_VIEW_OPTIONS: {
   [k in keyof CaptureOptions]?: CaptureWindowOptions<any>
 } = {
   hideBarlines: {
-    label: "Hide barlines and events",
+    label: "Hide edit GUI",
     input: {
       type: "checkbox",
     },

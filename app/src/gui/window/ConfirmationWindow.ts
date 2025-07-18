@@ -12,6 +12,7 @@ export class ConfirmationWindow extends Window {
 
   private buttonOptions: ConfirmationOption[]
   private readonly message: string
+  private readonly detail?: string
   private resolve?: (value: string) => void
   resolved: Promise<string> = new Promise(resolve => (this.resolve = resolve))
 
@@ -19,18 +20,19 @@ export class ConfirmationWindow extends Window {
     app: App,
     title: string,
     message: string,
-    buttonOptions: ConfirmationOption[]
+    buttonOptions: ConfirmationOption[],
+    detail?: string
   ) {
     super({
       title: title,
       width: 300,
-      height: 100,
       disableClose: true,
       win_id: "confirm",
       blocking: true,
     })
     this.app = app
     this.message = message
+    this.detail = detail
     this.buttonOptions = buttonOptions
     this.initView()
   }
@@ -40,12 +42,20 @@ export class ConfirmationWindow extends Window {
     this.viewElement.classList.add("confirmation")
     const padding = document.createElement("div")
     padding.classList.add("padding")
+    padding.style.gap = "0.3rem"
 
     const message = document.createElement("div")
     message.classList.add("label")
     message.innerText = this.message
 
     padding.appendChild(message)
+
+    if (this.detail) {
+      const detail = document.createElement("div")
+      detail.classList.add("secondary")
+      detail.innerText = this.detail
+      padding.appendChild(detail)
+    }
 
     //Menu Button Options
     const menu_options = document.createElement("div")
@@ -64,5 +74,7 @@ export class ConfirmationWindow extends Window {
     })
     padding.appendChild(menu_options)
     this.viewElement.appendChild(padding)
+
+    requestAnimationFrame(() => this.center())
   }
 }

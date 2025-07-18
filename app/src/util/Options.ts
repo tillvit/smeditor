@@ -21,6 +21,7 @@ export class DefaultOptions {
     autosaveInterval: 120,
     warnBeforeExit: true,
     showPlaybackOptions: true,
+    loadSSC: "Prompt",
     theme: "default",
   }
   static chart = {
@@ -49,6 +50,14 @@ export class DefaultOptions {
       invertZoomScroll: false,
       invertReverseScroll: true,
     },
+    parity: {
+      enabled: false,
+      showHighlights: false,
+      showTech: true,
+      showCandles: true,
+      showErrors: true,
+      showDancingBot: true,
+    },
     waveform: {
       enabled: true,
       antialiasing: true,
@@ -58,6 +67,7 @@ export class DefaultOptions {
       lineHeight: 1,
       speedChanges: true,
     },
+    layoutFollowPosition: false,
     noteLayout: {
       enabled: true,
     },
@@ -65,6 +75,9 @@ export class DefaultOptions {
       enabled: false,
       color1: "#4aa7bcff",
       color2: "#423c7aff",
+    },
+    facingLayout: {
+      enabled: true,
     },
     timingEventOrder: {
       left: [
@@ -154,14 +167,10 @@ export class DefaultOptions {
     showScroll: false,
     showNoteskinErrors: false,
     showDebugVariables: false,
-  }
-  static experimental = {
     parity: {
-      enabled: false,
-      showDebug: true,
-      showGraph: true,
-      limitGraph: false,
-      showDancingBot: true,
+      showGraph: false,
+      limitGraph: true,
+      showDebug: false,
     },
   }
 }

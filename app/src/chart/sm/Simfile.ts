@@ -2,6 +2,7 @@ import { WaterfallManager } from "../../gui/element/WaterfallManager"
 import { Chart } from "./Chart"
 import { CHART_DIFFICULTIES } from "./ChartTypes"
 import { SIMFILE_PROPERTIES, SimfileProperty } from "./SimfileTypes"
+import { loadSMEData } from "./SMEParser"
 import { SongTimingData } from "./SongTimingData"
 import { TIMING_EVENT_NAMES, TimingEventType, TimingType } from "./TimingTypes"
 
@@ -16,18 +17,21 @@ export class Simfile {
 
   loaded: Promise<void>
 
-  constructor(file: File) {
+  constructor(file: File, dataFile?: File) {
     this.loaded = new Promise(resolve => {
       let type = file.name.split(".").pop()
+      const isAutosave = type == "smebak"
       if (type == "smebak") type = "ssc"
       if (type == "sm" || type == "ssc") this._type = type
       else resolve()
 
-      file.text().then(data => {
-        //Remove Comments
-        data = data.replaceAll(/\/\/.+/g, "")
+      const run = async () => {
+        let smData = await file.text()
 
-        const props = [...data.matchAll(/#([A-Z]+):([^;]*);/g)]
+        // Remove comments
+        smData = smData.replaceAll(/\/\/.+/g, "")
+
+        const props = [...smData.matchAll(/#([A-Z]+):([^;]*);/g)]
         let ssc_pair = false
         let ssc_notedata: { [key: string]: string } = {}
         const temp_charts = []
@@ -69,9 +73,16 @@ export class Simfile {
           }
           this.addChart(chart)
         }
+
+        if (dataFile) {
+          const dataText = await dataFile.text()
+          loadSMEData(dataText, this, isAutosave)
+        }
+
         this.timingData.reloadCache()
         resolve()
-      })
+      }
+      run()
     })
   }
 
@@ -99,7 +110,7 @@ export class Simfile {
     return true
   }
 
-  serialize(type: "sm" | "ssc"): string {
+  serialize(type: "sm" | "ssc" | "smebak"): string {
     let str = ""
     if (type == "sm") {
       if (this.other_properties["NITGVERSION"])

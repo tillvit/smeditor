@@ -8,6 +8,8 @@ export class PreviewAreaContainer
   extends Container
   implements ChartRendererComponent
 {
+  readonly isEditGUI = true
+
   private previewArea = new Sprite(Texture.WHITE)
   private previewText = new BitmapText("SONG PREVIEW", {
     fontName: "Main",
@@ -31,17 +33,16 @@ export class PreviewAreaContainer
     this.addChild(this.previewArea, this.previewText)
   }
 
-  update(firstBeat: number, lastBEat: number) {
+  update(firstBeat: number, lastBeat: number) {
     const sampleStart = Number(this.renderer.chart.sm.properties.SAMPLESTART)
     const sampleLength = Number(this.renderer.chart.sm.properties.SAMPLELENGTH)
     if (
       Number.isNaN(sampleStart) ||
       Number.isNaN(sampleLength) ||
-      !this.renderer.shouldDisplayBarlines() ||
       this.renderer.chart.timingData.getBeatFromSeconds(
         sampleStart + sampleLength
       ) < firstBeat ||
-      this.renderer.chart.timingData.getBeatFromSeconds(sampleStart) > lastBEat
+      this.renderer.chart.timingData.getBeatFromSeconds(sampleStart) > lastBeat
     ) {
       this.visible = false
       return

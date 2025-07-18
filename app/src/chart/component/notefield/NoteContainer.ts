@@ -2,7 +2,7 @@ import { Container, Sprite, Texture } from "pixi.js"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
 import { getNoteEnd } from "../../../util/Util"
-import { EditTimingMode } from "../../ChartManager"
+import { EditMode, EditTimingMode } from "../../ChartManager"
 import { TimingWindowCollection } from "../../play/TimingWindowCollection"
 import { isHoldNote, NotedataEntry } from "../../sm/NoteTypes"
 import { PARITY_COLORS } from "../edit/ParityDebug"
@@ -183,7 +183,11 @@ export class NoteContainer extends Container {
           this.notefield.renderer.chartManager.removeNoteFromDragSelection(note)
         }
       }
-      if (Options.experimental.parity.enabled) {
+      if (
+        Options.chart.parity.enabled &&
+        Options.chart.parity.showHighlights &&
+        this.notefield.renderer.chartManager.getMode() == EditMode.Edit
+      ) {
         container.parity.alpha = note.parity ? 0.4 : 0
         container.parity.tint =
           note.parity?.foot !== undefined

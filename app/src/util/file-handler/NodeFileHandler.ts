@@ -174,7 +174,11 @@ export class NodeFileHandler implements BaseFileHandler {
     if (data instanceof Blob) {
       buf = await data.arrayBuffer()
     } else {
-      buf = new TextEncoder().encode(data).buffer
+      const encoded = new TextEncoder().encode(data)
+      buf = encoded.buffer.slice(
+        encoded.byteOffset,
+        encoded.byteOffset + encoded.byteLength
+      ) as ArrayBuffer
     }
     const writable = await handle.createWritable()
     await writable.truncate(0)

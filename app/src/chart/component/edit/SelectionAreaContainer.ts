@@ -6,6 +6,8 @@ export class SelectionAreaContainer
   extends Container
   implements ChartRendererComponent
 {
+  readonly isEditGUI = true
+
   private startMarker: Sprite = new Sprite(Texture.WHITE)
   private selectionArea: Sprite = new Sprite(Texture.WHITE)
 

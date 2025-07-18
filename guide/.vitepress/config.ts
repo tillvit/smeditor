@@ -27,6 +27,10 @@ export default defineConfig({
             text: "Timing Tracks and Events",
             link: "/timing-events",
           },
+          {
+            text: "Parity Checking",
+            link: "/parity",
+          },
         ],
       },
       {

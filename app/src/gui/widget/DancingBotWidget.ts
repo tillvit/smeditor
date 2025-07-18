@@ -16,7 +16,6 @@ import { WidgetManager } from "./WidgetManager"
 import bezier from "bezier-easing"
 
 import { BezierAnimator } from "../../util/BezierEasing"
-import { assignTint } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, lerp, unlerp } from "../../util/Math"
 import { bsearch } from "../../util/Util"
@@ -25,7 +24,9 @@ import footUrl from "../../../assets/foot.png"
 import receptorUrl from "../../../assets/receptor.png"
 import { PARITY_COLORS } from "../../chart/component/edit/ParityDebug"
 import { Foot, ParityState } from "../../chart/stats/parity/ParityDataTypes"
+import { assignTint } from "../../util/Color"
 import { Options } from "../../util/Options"
+import { BaseTimelineWidget } from "./timeline/BaseTimelineWidget"
 
 interface StagePanel extends Container {
   bg: Sprite
@@ -43,6 +44,7 @@ export class DancingBotWidget extends Widget {
   panels: StagePanel[] = []
   currentRow = -1
   lastBeat = 0
+  lastSecond = 0
 
   leftFoot?: Container
   rightFoot?: Container
@@ -78,11 +80,18 @@ export class DancingBotWidget extends Widget {
       const container = new Container() as StagePanel
 
       const bg = new Sprite(Texture.WHITE)
-      assignTint(bg, "accent-color")
-      bg.alpha = 0.3
+      bg.alpha = 0.1
       bg.anchor.set(0.5)
       bg.width = PANEL_SIZE
       bg.height = PANEL_SIZE
+
+      const bgTint = new Sprite(Texture.WHITE)
+      bgTint.anchor.set(0.5)
+      bgTint.width = PANEL_SIZE
+      bgTint.height = PANEL_SIZE
+      bgTint.blendMode = BLEND_MODES.COLOR_BURN
+      assignTint(bgTint, "primary-bg-active")
+      container.addChild(bgTint)
 
       const sprite = new Sprite(receptorTex)
       sprite.anchor.set(0.5)
@@ -149,11 +158,14 @@ export class DancingBotWidget extends Widget {
   }
 
   reindex() {
-    const parity = this.manager.app.chartManager.loadedChart?.stats.parityDebug
+    const parity = this.manager.app.chartManager.loadedChart?.stats.parity
     if (!parity || !this.manager.app.chartManager.chartView) return
     const visualBeat = this.manager.app.chartManager.chartView.getVisualBeat()
-    const currentIndex = bsearch(parity.notedataRows, visualBeat, a => a.beat)
-    if (currentIndex == 0 && visualBeat < parity.notedataRows[0].beat) {
+    let currentIndex = bsearch(parity.rowTimestamps, visualBeat, a => a.beat)
+    while (parity.rowTimestamps[currentIndex]?.beat < visualBeat) {
+      currentIndex++
+    }
+    if (currentIndex == 0 && visualBeat < parity.rowTimestamps[0].beat) {
       this.currentRow = -1
       return
     }
@@ -163,12 +175,11 @@ export class DancingBotWidget extends Widget {
 
   update(): void {
     const bestPath =
-      this.manager.app.chartManager.loadedChart?.stats.parityStates
+      this.manager.app.chartManager.loadedChart?.stats.parity?.states
 
     const RIGHT_SAFE =
       this.manager.chartManager.app.STAGE_WIDTH / 2 -
-      (Options.chart.npsGraph.enabled ? 48 : 0) -
-      (Options.chart.noteLayout.enabled ? 48 : 0)
+      BaseTimelineWidget.getTotalWidgetWidth()
     this.x = RIGHT_SAFE - 16
     this.y = this.manager.app.STAGE_HEIGHT / 2 - 16
 
@@ -176,8 +187,8 @@ export class DancingBotWidget extends Widget {
       !bestPath ||
       !this.manager.app.chartManager.chartView ||
       !this.layout ||
-      !Options.experimental.parity.enabled ||
-      !Options.experimental.parity.showDancingBot
+      !Options.chart.parity.enabled ||
+      !Options.chart.parity.showDancingBot
     ) {
       this.visible = false
       return
@@ -186,7 +197,7 @@ export class DancingBotWidget extends Widget {
     const visualBeat = this.manager.app.chartManager.chartView.getVisualBeat()
     const visualSecond = this.manager.app.chartManager.chartView.getVisualTime()
 
-    if (this.lastBeat == visualBeat && !this.dirty) {
+    if (this.lastSecond == visualSecond && !this.dirty) {
       return
     }
     this.dirty = false
@@ -208,6 +219,7 @@ export class DancingBotWidget extends Widget {
     }
 
     this.lastBeat = visualBeat
+    this.lastSecond = visualSecond
 
     if (this.leftFoot && this.rightFoot) {
       let oldState = bestPath[this.currentRow]
@@ -229,6 +241,7 @@ export class DancingBotWidget extends Widget {
           0,
           1
         )
+
         const newPosition = this.lerpPositions(
           oldPosition,
           nextPosition,
@@ -417,10 +430,10 @@ export class DancingBotWidget extends Widget {
       panel.bg,
       {
         "0": {
-          alpha: 1.5,
+          alpha: 0.6,
         },
         "1": {
-          alpha: 0.3,
+          alpha: 0.1,
         },
       },
       0.4,

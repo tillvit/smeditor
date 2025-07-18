@@ -1,11 +1,7 @@
 import { App } from "../App"
 import { EditMode, EditTimingMode } from "../chart/ChartManager"
 import { isHoldNote } from "../chart/sm/NoteTypes"
-import {
-  FEET_LABELS_LONG,
-  Foot,
-  FootOverride,
-} from "../chart/stats/parity/ParityDataTypes"
+import { FootOverride } from "../chart/stats/parity/ParityDataTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { AboutWindow } from "../gui/window/AboutWindow"
 import { CaptureWindow } from "../gui/window/CaptureWindow"
@@ -32,10 +28,10 @@ import { maxArr, minArr, roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
 import { basename, dirname } from "../util/Path"
 import {
-  bsearch,
   getNoteEnd,
   IS_OSX,
-  isSameRow,
+  nextInSorted,
+  previousInSorted,
   QUANT_NAMES,
   QUANT_NUM,
   QUANTS,
@@ -335,9 +331,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
         idx--
         while (idx >= 0) {
           const folder = folders[idx]
-          console.log("Checking ", folder.name)
+          // console.log("Checking ", folder.name)
           const files = await handle!.getDirectoryFiles(folder)
-          console.log(files)
+          // console.log(files)
           const candidate =
             files.find(f => f.name.endsWith(".ssc")) ??
             files.find(f => f.name.endsWith(".sm"))
@@ -582,15 +578,10 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
         streamPoints.push(stream.startBeat)
         streamPoints.push(stream.endBeat)
       }
-      if (streamPoints.length == 0) return
-      const idx = bsearch(streamPoints, app.chartManager.beat)
-      if (Math.abs(app.chartManager.beat - streamPoints[idx]) < 0.001) {
-        if (idx - 1 >= 0) {
-          app.chartManager.beat = streamPoints[idx - 1]
-        } else {
-          app.chartManager.beat = streamPoints[0]
-        }
-      } else app.chartManager.beat = streamPoints[idx]
+      const nextBeat = previousInSorted(streamPoints, app.chartManager.beat)
+      if (nextBeat !== null) {
+        app.chartManager.beat = nextBeat
+      }
     },
   },
   nextStream: {
@@ -609,19 +600,10 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
         streamPoints.push(stream.startBeat)
         streamPoints.push(stream.endBeat)
       }
-      if (streamPoints.length == 0) return
-      const idx = bsearch(streamPoints, app.chartManager.beat)
-      if (idx == 0 && app.chartManager.beat < streamPoints[idx]) {
-        app.chartManager.beat = streamPoints[idx]
-        return
+      const nextBeat = nextInSorted(streamPoints, app.chartManager.beat)
+      if (nextBeat !== null) {
+        app.chartManager.beat = nextBeat
       }
-      if (isSameRow(app.chartManager.beat, streamPoints[idx])) {
-        if (idx + 1 < streamPoints.length) {
-          app.chartManager.beat = streamPoints[idx + 1]
-        } else {
-          app.chartManager.beat = streamPoints[idx]
-        }
-      } else app.chartManager.beat = streamPoints[idx + 1]
     },
   },
   previousMeasure: {
@@ -734,6 +716,88 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       (app.chartManager.beat = app.chartManager.loadedChart!.getBeatFromSeconds(
         app.chartManager.chartAudio.getSongLength()
       )),
+  },
+  jumpPreviousCandle: {
+    label: "Jump to previous candle",
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.Record ||
+      !app.chartManager.loadedChart?.stats.parity ||
+      !Options.chart.parity.enabled,
+    callback: app => {
+      const parity = app.chartManager.loadedChart!.stats.parity!
+      const candles = parity.candles
+        .keys()
+        .map(i => parity.rowTimestamps[i].beat)
+        .toArray()
+        .sort((a, b) => a - b)
+      const prev = previousInSorted(candles, app.chartManager.beat)
+      if (prev !== null) {
+        app.chartManager.beat = prev
+      }
+    },
+  },
+  jumpNextCandle: {
+    label: "Jump to next candle",
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.Record ||
+      !app.chartManager.loadedChart?.stats.parity ||
+      !Options.chart.parity.enabled,
+    callback: app => {
+      const parity = app.chartManager.loadedChart!.stats.parity!
+      const candles = parity.candles
+        .keys()
+        .map(i => parity.rowTimestamps[i].beat)
+        .toArray()
+        .sort((a, b) => a - b)
+      const next = nextInSorted(candles, app.chartManager.beat)
+      if (next !== null) {
+        app.chartManager.beat = next
+      }
+    },
+  },
+  jumpPreviousError: {
+    label: "Jump to previous error",
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.Record ||
+      !app.chartManager.loadedChart?.stats.parity ||
+      !Options.chart.parity.enabled,
+    callback: app => {
+      const errors = app.chartManager
+        .loadedChart!.getTechErrors()
+        .map(e => e.beat)
+      const prev = previousInSorted(errors, app.chartManager.beat)
+      if (prev !== null) {
+        app.chartManager.beat = prev
+      }
+    },
+  },
+  jumpNextError: {
+    label: "Jump to next error",
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() == EditMode.Play ||
+      app.chartManager.getMode() == EditMode.Record ||
+      !app.chartManager.loadedChart?.stats.parity ||
+      !Options.chart.parity.enabled,
+    callback: app => {
+      const errors = app.chartManager
+        .loadedChart!.getTechErrors()
+        .map(e => e.beat)
+      const next = nextInSorted(errors, app.chartManager.beat)
+      if (next !== null) {
+        app.chartManager.beat = next
+      }
+    },
   },
   assistTick: {
     label: "Assist tick",
@@ -1563,6 +1627,73 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.windowManager.openWindow(new AboutWindow(app))
     },
   },
+  enableParity: {
+    label: "Enable parity checking",
+    combos: [{ key: "E", mods: [] }],
+    disabled: false,
+    callback: () => {
+      Options.chart.parity.enabled = !Options.chart.parity.enabled
+      WaterfallManager.create(
+        "Parity Checking: " + (Options.chart.parity.enabled ? "on" : "off")
+      )
+    },
+  },
+  showTechErrors: {
+    label: "Show tech errors",
+    combos: [],
+    disabled: () => !Options.chart.parity.enabled,
+    callback: () => {
+      Options.chart.parity.showErrors = !Options.chart.parity.showErrors
+      WaterfallManager.create(
+        "Tech Errors: " + (Options.chart.parity.showErrors ? "on" : "off")
+      )
+    },
+  },
+  showFootHighlights: {
+    label: "Show foot highlights",
+    combos: [],
+    disabled: () => !Options.chart.parity.enabled,
+    callback: () => {
+      Options.chart.parity.showHighlights = !Options.chart.parity.showHighlights
+      WaterfallManager.create(
+        "Foot Highlights: " +
+          (Options.chart.parity.showHighlights ? "on" : "off")
+      )
+    },
+  },
+  showDancingBot: {
+    label: "Show dancing bot",
+    combos: [],
+    disabled: () => !Options.chart.parity.enabled,
+    callback: () => {
+      Options.chart.parity.showDancingBot = !Options.chart.parity.showDancingBot
+      WaterfallManager.create(
+        "Dancing Bot: " + (Options.chart.parity.showDancingBot ? "on" : "off")
+      )
+    },
+  },
+  showTechNotation: {
+    label: "Show tech notation",
+    combos: [],
+    disabled: () => !Options.chart.parity.enabled,
+    callback: () => {
+      Options.chart.parity.showTech = !Options.chart.parity.showTech
+      WaterfallManager.create(
+        "Tech Notation: " + (Options.chart.parity.showTech ? "on" : "off")
+      )
+    },
+  },
+  showCandles: {
+    label: "Show candles",
+    combos: [],
+    disabled: () => !Options.chart.parity.enabled,
+    callback: () => {
+      Options.chart.parity.showCandles = !Options.chart.parity.showCandles
+      WaterfallManager.create(
+        "Candles: " + (Options.chart.parity.showCandles ? "on" : "off")
+      )
+    },
+  },
 }
 
 // Dynamically add keybinds
@@ -1731,76 +1862,9 @@ for (const type of ["WARPS", "FAKES"] as const) {
   }
 }
 
-FEET_LABELS_LONG.forEach((label, i) => {
-  KEYBIND_DATA[`parity${label.replaceAll(" ", "")}`] = {
-    label,
-    bindLabel: `Mark as ${label}`,
-    combos: [],
-    disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit ||
-      !app.chartManager.hasNoteSelection(),
-    callback: app => {
-      const selection = app.chartManager.selection.notes.filter(note => {
-        return (
-          note.type != "Mine" &&
-          note.type != "Fake" &&
-          !note.fake &&
-          !note.warped
-        )
-      })
-      let minRange = Number.MAX_VALUE
-      let maxRange = -Number.MAX_VALUE
-      selection.forEach(note => {
-        if (note.beat < minRange) {
-          minRange = note.beat
-        }
-        if (getNoteEnd(note) > maxRange) {
-          maxRange = getNoteEnd(note)
-        }
-      })
-      const oldOverrides: FootOverride[] = []
-      ActionHistory.instance.run({
-        action: app => {
-          selection.forEach(note => {
-            if (!note.parity) {
-              note.parity = {}
-            }
-            oldOverrides.push(note.parity.override || Foot.NONE)
-            note.parity.override = i
-          })
-          app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
-          EventHandler.emit("chartModified")
-        },
-        undo: () => {
-          selection.forEach((note, i) => {
-            if (!note.parity) {
-              note.parity = {}
-            }
-            note.parity.override = oldOverrides[i]
-          })
-          app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
-          EventHandler.emit("chartModified")
-        },
-        redo: () => {
-          selection.forEach(note => {
-            if (!note.parity) {
-              note.parity = {}
-            }
-            note.parity.override = i
-          })
-          app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
-          EventHandler.emit("chartModified")
-        },
-      })
-    },
-  }
-})
-
-for (const foot of ["Left", "Right"] as const) {
+for (const foot of ["None", "Left", "Right"] as const) {
   KEYBIND_DATA[`parity${foot}`] = {
-    label: foot,
-    bindLabel: `Mark as ${foot}`,
+    label: `Mark as ${foot}`,
     combos: [],
     disabled: app =>
       !app.chartManager.chartView ||
@@ -1825,15 +1889,15 @@ for (const foot of ["Left", "Right"] as const) {
           maxRange = getNoteEnd(note)
         }
       })
-      const oldOverrides: FootOverride[] = []
+      const oldOverrides: (FootOverride | undefined)[] = []
       ActionHistory.instance.run({
         action: app => {
           selection.forEach(note => {
             if (!note.parity) {
               note.parity = {}
             }
-            oldOverrides.push(note.parity.override || Foot.NONE)
-            note.parity.override = foot
+            oldOverrides.push(note.parity.override)
+            note.parity.override = foot == "None" ? undefined : foot
           })
           app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
           EventHandler.emit("chartModified")
@@ -1853,7 +1917,7 @@ for (const foot of ["Left", "Right"] as const) {
             if (!note.parity) {
               note.parity = {}
             }
-            note.parity.override = foot
+            note.parity.override = foot == "None" ? undefined : foot
           })
           app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
           EventHandler.emit("chartModified")

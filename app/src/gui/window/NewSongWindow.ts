@@ -111,16 +111,16 @@ export class NewSongWindow extends Window {
             "Are you sure you want to create a file with no audio?",
             [
               {
+                type: "default",
+                label: "No",
+              },
+              {
                 type: "confirm",
                 label: "Yes",
                 callback: () => {
                   this.createSong()
                   this.closeWindow()
                 },
-              },
-              {
-                type: "default",
-                label: "No",
               },
             ]
           )

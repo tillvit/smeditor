@@ -45,6 +45,7 @@ export class DisplayObjectPool<T extends DisplayObject> extends Container<T> {
     )
     this.pool.push(...(this.children as PoolableObject<T>[]))
     this.children.forEach(child => {
+      child.emit("removed", child.parent)
       child.removeAllListeners()
       child.eventMode = "auto"
     })

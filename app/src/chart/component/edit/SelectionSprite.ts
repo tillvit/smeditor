@@ -5,6 +5,7 @@ export class SelectionBoundary
   extends Sprite
   implements ChartRendererComponent
 {
+  readonly isEditGUI = true
   private renderer
 
   constructor(renderer: ChartRenderer) {

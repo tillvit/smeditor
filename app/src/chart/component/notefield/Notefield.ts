@@ -103,6 +103,10 @@ export class NoteObject extends Container {
     this.note = note
     this.nf = notefield
 
+    this.on("destroyed", () => {
+      this.removeAllListeners()
+    })
+
     if (this.nf.noteskin === undefined) {
       EventHandler.on("noteskinLoaded", () => {
         this.loadElement(note)
@@ -301,6 +305,7 @@ export class HoldObject extends Container {
 }
 
 export class Notefield extends Container implements ChartRendererComponent {
+  readonly isEditGUI = false
   noteskinOptions?: NoteskinOptions
   noteskin?: Noteskin
   readonly gameType

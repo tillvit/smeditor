@@ -192,6 +192,28 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
             type: "selection",
             id: "jumpSongEnd",
           },
+          {
+            type: "separator",
+          },
+          {
+            type: "selection",
+            id: "jumpPreviousCandle",
+          },
+          {
+            type: "selection",
+            id: "jumpNextCandle",
+          },
+          {
+            type: "separator",
+          },
+          {
+            type: "selection",
+            id: "jumpPreviousError",
+          },
+          {
+            type: "selection",
+            id: "jumpNextError",
+          },
         ],
       },
       {
@@ -300,6 +322,48 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         type: "checkbox",
         id: "doSpeedChanges",
         checked: () => Options.chart.doSpeedChanges,
+      },
+      {
+        type: "separator",
+      },
+      {
+        type: "dropdown",
+        title: "Parity",
+        options: [
+          {
+            type: "checkbox",
+            id: "enableParity",
+            checked: () => Options.chart.parity.enabled,
+          },
+          {
+            type: "separator",
+          },
+          {
+            type: "checkbox",
+            id: "showTechNotation",
+            checked: () => Options.chart.parity.showTech,
+          },
+          {
+            type: "checkbox",
+            id: "showTechErrors",
+            checked: () => Options.chart.parity.showErrors,
+          },
+          {
+            type: "checkbox",
+            id: "showFootHighlights",
+            checked: () => Options.chart.parity.showHighlights,
+          },
+          {
+            type: "checkbox",
+            id: "showCandles",
+            checked: () => Options.chart.parity.showCandles,
+          },
+          {
+            type: "checkbox",
+            id: "showDancingBot",
+            checked: () => Options.chart.parity.showDancingBot,
+          },
+        ],
       },
     ],
   },
@@ -631,25 +695,6 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
           {
             type: "selection",
             id: "parityRight",
-          },
-          {
-            type: "separator",
-          },
-          {
-            type: "selection",
-            id: "parityLeftHeel",
-          },
-          {
-            type: "selection",
-            id: "parityLeftToe",
-          },
-          {
-            type: "selection",
-            id: "parityRightHeel",
-          },
-          {
-            type: "selection",
-            id: "parityRightToe",
           },
         ],
       },

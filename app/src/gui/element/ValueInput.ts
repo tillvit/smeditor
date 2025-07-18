@@ -1,4 +1,3 @@
-import { Color } from "pixi.js"
 import { App } from "../../App"
 import { clamp, roundDigit } from "../../util/Math"
 import { parseString } from "../../util/Util"
@@ -90,7 +89,7 @@ interface CheckboxInput {
 
 interface ColorInput {
   type: "color"
-  onChange?: (app: App, value: Color) => void
+  onChange?: (app: App, value: string) => void
 }
 
 export type ValueInput<T> =
@@ -250,7 +249,7 @@ export function createValueInput<T>(
       })
       // 'change' event is fired when the user closes the color picker
       colorInput.onColorChange = c => {
-        callback?.(app, c)
+        callback?.(app, c.toHexa())
       }
       return colorInput
     }

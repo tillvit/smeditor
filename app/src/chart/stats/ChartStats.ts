@@ -5,8 +5,10 @@ import { ChartAnalyzer } from "./ChartAnalyzer"
 import { NoteTypeAnalyzer } from "./NoteTypeAnalyzer"
 import { NPSAnalyzer } from "./NPSAnalyzer"
 import { ParityAnalyzer } from "./parity/ParityAnalyzer"
-import { ParityState } from "./parity/ParityDataTypes"
-import { ParityDebugData } from "./parity/ParityWebWorkerTypes"
+import {
+  ParityComputeData,
+  ParityDebugData,
+} from "./parity/ParityWebWorkerTypes"
 import { StreamAnalyzer, StreamData } from "./StreamAnalyzer"
 
 const ANALYZERS: (new (chart: Chart) => ChartAnalyzer)[] = [
@@ -22,9 +24,11 @@ export class ChartStats {
   noteCounts: Record<string, number> = {}
   npsGraph: number[] = []
   streams: StreamData[] = []
-  parityStates?: ParityState[]
-  parityDebug?: ParityDebugData
-  parityDebugTime?: number
+
+  parity?: ParityComputeData & {
+    debug: ParityDebugData
+    debugTime: number
+  }
 
   readonly chart
 

@@ -431,7 +431,7 @@ export class Keybinds {
       output.push(strings[i])
       output.push(ids[i])
     }
-    output.push(strings[ids.length + 1])
+    output.push(strings[ids.length])
 
     return (
       `<div style='display: flex; align-items: center; gap: 0.375rem'>` +

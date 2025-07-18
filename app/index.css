@@ -723,8 +723,29 @@ textarea {
   border: 0.05rem solid var(--secondary-border);
   border-radius: 0.25rem;
   word-break: break-all;
-  padding: 1rem;
-  overflow: scroll;
+  padding: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chart-info-scroller {
+  flex: 1;
+  overflow: auto;
+}
+
+.chart-info .menu-options {
+  border-top: 1px solid rgba(0, 0, 0, 0.6);
+  padding-top: 0.5rem;
+  margin-top: 0;
+}
+
+.chart-info .chart-info-scroller.top {
+  box-shadow: inset 0em 1.5em 0.8em -0.8em black;
+}
+
+.chart-info .menu-options.bottom {
+  box-shadow: 0em -1.5em 0.8em -0.8em black;
 }
 
 .chart-info .label {
@@ -2143,6 +2164,12 @@ input[type="range"] {
   font-style: italic;
   text-align: center;
   color: var(--text-color-detail);
+}
+
+.secondary {
+  font-size: 0.75rem;
+  text-align: center;
+  color: var(--text-color-secondary);
 }
 
 .tippy-box[data-theme~="sm"] {

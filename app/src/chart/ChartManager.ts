@@ -60,6 +60,7 @@ import {
   PartialNotedataEntry,
   isHoldNote,
 } from "./sm/NoteTypes"
+import { serializeSMEData } from "./sm/SMEParser"
 import { Simfile } from "./sm/Simfile"
 import { Cached, TIMING_EVENT_NAMES, TimingEvent } from "./sm/TimingTypes"
 
@@ -166,6 +167,8 @@ export class ChartManager {
   private lastMode: EditMode = EditMode.Edit
 
   private _beat = 0
+  private cachedSecond = 0
+  private cachedBeat = 0
 
   private readonly noChartTextA: BitmapText
   private readonly noChartTextB: BitmapText
@@ -689,7 +692,11 @@ export class ChartManager {
     if (!this.chartAudio.isPlaying()) {
       return this._beat
     }
-    return this.loadedChart.getBeatFromSeconds(this.time)
+    if (this.cachedSecond == this.time) return this.cachedBeat
+    const beat = this.loadedChart.getBeatFromSeconds(this.time)
+    this.cachedBeat = beat
+    this.cachedSecond = this.time
+    return beat
   }
 
   set beat(beat: number) {
@@ -775,6 +782,37 @@ export class ChartManager {
 
     this.loadingText.visible = true
 
+    // Check if SSC available
+    if (extname(this.smPath) == ".sm" && Options.general.loadSSC != "Never") {
+      const sscPath = this.getSMPath(".ssc")
+      if (await FileHandler.hasFile(sscPath)) {
+        if (Options.general.loadSSC == "Prompt") {
+          const window = new ConfirmationWindow(
+            this.app,
+            "Use SSC File",
+            "An SSC file was found. Do you wish to use the SSC file instead?",
+            [
+              {
+                label: "No",
+                type: "default",
+              },
+              {
+                label: "Yes",
+                type: "confirm",
+              },
+            ],
+            "You can change the default behavior in settings"
+          )
+          this.app.windowManager.openWindow(window)
+          const option = await window.resolved
+          if (option == "Yes") this.smPath = sscPath
+        } else if (Options.general.loadSSC == "Always") {
+          WaterfallManager.create("Loading available SSC file")
+          this.smPath = sscPath
+        }
+      }
+    }
+
     // Check for an autosave
 
     let loadPath = this.smPath
@@ -815,8 +853,12 @@ export class ChartManager {
       return
     }
     const smFile = await smHandle.getFile()
+
+    const dataHandle = await FileHandler.getFileHandle(this.getDataPath())
+    const dataFile = dataHandle ? await dataHandle.getFile() : undefined
+
     this.loadedSM?.destroy()
-    this.loadedSM = new Simfile(smFile)
+    this.loadedSM = new Simfile(smFile, dataFile)
 
     await this.loadedSM.loaded
 
@@ -927,7 +969,6 @@ export class ChartManager {
       this.lastSong = this.loadedChart.getMusicPath()
       const audioPlaying = this.chartAudio.isPlaying()
       await this.loadAudio()
-      EventHandler.emit("audioLoaded")
       if (audioPlaying) this.chartAudio.play()
     }
 
@@ -941,7 +982,6 @@ export class ChartManager {
     )
 
     EventHandler.emit("chartLoaded", chart)
-    EventHandler.emit("audioLoaded")
     EventHandler.emit("chartModified")
 
     if (Flags.autoPlay) {
@@ -968,6 +1008,7 @@ export class ChartManager {
       const prevBeat = Math.max(0, this.beat)
       this.chartAudio = new ChartAudio(undefined)
       this.beat = prevBeat
+      EventHandler.emit("audioLoaded")
       return
     }
     const audioHandle = await this.getAudioHandle(musicPath)
@@ -979,6 +1020,7 @@ export class ChartManager {
       const prevBeat = Math.max(0, this.beat)
       this.chartAudio = new ChartAudio(undefined)
       this.beat = prevBeat
+      EventHandler.emit("audioLoaded")
       return
     }
     const audioFile = await audioHandle.getFile()
@@ -997,6 +1039,7 @@ export class ChartManager {
       this.me_low.stop()
     }
     this.setNoteIndex()
+    EventHandler.emit("audioLoaded")
   }
 
   /**
@@ -1692,6 +1735,16 @@ export class ChartManager {
         }
       })
     }
+    await FileHandler.writeFile(
+      this.getDataPath(),
+      serializeSMEData(this.loadedSM)
+    ).catch(err => {
+      const message = err.message
+      if (!message.includes(errors.GONE[0])) {
+        error = message
+      }
+    })
+
     if (error == null) {
       if (this.loadedSM.usesChartTiming()) {
         WaterfallManager.create(
@@ -1706,6 +1759,17 @@ export class ChartManager {
     }
     ActionHistory.instance.setLimit()
     return
+  }
+
+  getDataPath() {
+    if (window.nw) {
+      const path = window.nw.require("path")
+      const pathData = path.parse(this.smPath)
+      return path.resolve(pathData.dir, "data.sme") as string
+    } else {
+      const dir = dirname(this.smPath)
+      return dir + "/data.sme"
+    }
   }
 
   getSMPath(ext: string) {
@@ -1743,7 +1807,7 @@ export class ChartManager {
     let error: string | null = null
     await FileHandler.writeFile(
       this.getSMPath(".smebak"),
-      this.loadedSM.serialize("ssc")
+      this.loadedSM.serialize("smebak")
     ).catch(err => {
       const message = err.message
       if (!message.includes(errors.GONE[0])) {
