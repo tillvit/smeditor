@@ -57,6 +57,10 @@ export class DefaultOptions {
       showCandles: true,
       showErrors: true,
       showDancingBot: true,
+      leftHeelColor: "#0390fc60",
+      leftToeColor: "#81b5de60",
+      rightHeelColor: "#fcad0360",
+      rightToeColor: "#f0d19060",
     },
     waveform: {
       enabled: true,

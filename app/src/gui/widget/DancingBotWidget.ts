@@ -18,11 +18,10 @@ import bezier from "bezier-easing"
 import { BezierAnimator } from "../../util/BezierEasing"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, lerp, unlerp } from "../../util/Math"
-import { bsearch } from "../../util/Util"
+import { bsearch, getParityColor } from "../../util/Util"
 
 import footUrl from "../../../assets/foot.png"
 import receptorUrl from "../../../assets/receptor.png"
-import { PARITY_COLORS } from "../../chart/component/edit/ParityDebug"
 import { Foot, ParityState } from "../../chart/stats/parity/ParityDataTypes"
 import { assignTint } from "../../util/Color"
 import { Options } from "../../util/Options"
@@ -124,8 +123,8 @@ export class DancingBotWidget extends Widget {
     leftFoot.scale.set(((PANEL_SIZE / 4) * 3) / leftFoot.height)
     rightFoot.scale.set(((PANEL_SIZE / 4) * 3) / rightFoot.height)
 
-    leftFoot.tint = PARITY_COLORS[Foot.LEFT_HEEL]
-    rightFoot.tint = PARITY_COLORS[Foot.RIGHT_HEEL]
+    leftFoot.tint = getParityColor(Foot.LEFT_HEEL)
+    rightFoot.tint = getParityColor(Foot.RIGHT_HEEL)
 
     leftFoot.anchor.set(0.5)
     rightFoot.anchor.set(0.5)
@@ -134,12 +133,12 @@ export class DancingBotWidget extends Widget {
     const leftText = new BitmapText("L", {
       fontSize: 25,
       fontName: "Fancy",
-      tint: PARITY_COLORS[Foot.LEFT_TOE],
+      tint: getParityColor(Foot.LEFT_HEEL),
     })
     const rightText = new BitmapText("R", {
       fontSize: 25,
       fontName: "Fancy",
-      tint: PARITY_COLORS[Foot.RIGHT_TOE],
+      tint: getParityColor(Foot.RIGHT_HEEL),
     })
     leftText.anchor.set(0.5)
     rightText.anchor.set(0.5)
@@ -155,6 +154,23 @@ export class DancingBotWidget extends Widget {
     this.addChild(this.leftFoot, this.rightFoot)
     this.lastBeat = -1
     this.pivot.set(maxX + PANEL_SIZE / 2, maxY + PANEL_SIZE / 2)
+
+    const colorChange = (optionId: string) => {
+      if (
+        [
+          "chart.parity.leftHeelColor",
+          "chart.parity.leftToeColor",
+          "chart.parity.rightHeelColor",
+          "chart.parity.rightToeColor",
+        ].includes(optionId)
+      ) {
+        leftFoot.tint = getParityColor(Foot.LEFT_HEEL)
+        rightFoot.tint = getParityColor(Foot.RIGHT_HEEL)
+        leftText.tint = getParityColor(Foot.LEFT_HEEL)
+        rightText.tint = getParityColor(Foot.RIGHT_HEEL)
+      }
+    }
+    EventHandler.on("userOptionUpdated", colorChange)
   }
 
   reindex() {
