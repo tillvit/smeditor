@@ -75,6 +75,12 @@ When this option is enabled, a stage will appear in the bottom right of the scre
 
 ![Dancing Bot](assets/parity/bot.gif)
 
+### Tech Counts
+
+When parity checking is enabled, you can see the number of each tech in the Chart List Window.
+
+![Tech Counts](assets/parity/counts.png)
+
 ## Correcting the parity checker
 
 Sometimes, the parity checker does not predict the correct foot to use! Some known situations that can cause this are:
