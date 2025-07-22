@@ -428,7 +428,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               if (node.state.action[j] == node.state.combinedColumns[j]) {
                 text.alpha = 1
               }
-              text.tint = getParityColor(col)
+              text.tint = col == Foot.NONE ? 0x666666 : getParityColor(col)
             }
 
             nodeObject.detail.text =
