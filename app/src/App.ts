@@ -400,6 +400,17 @@ export class App {
       this.windowManager.unfocusAll()
     })
 
+    // Change default pixi handler to not fire events when window is in the way
+    const oldPointerMove = (this.renderer.events as any).onPointerMove
+
+    document.removeEventListener("pointermove", oldPointerMove, true)
+
+    const newPointerMove = (e: PointerEvent) => {
+      if (e.target != this.view) return
+      oldPointerMove.call(this.renderer.events, e)
+    }
+    document.addEventListener("pointermove", newPointerMove, true)
+
     EventHandler.on("themeChanged", () => {
       this.renderer.background.color = new Color(
         Themes.getCurrentTheme()["editor-bg"]
