@@ -135,6 +135,12 @@ export class ContextMenuPopup {
       title_bar.classList.add("menu-item-title", "menu-hover")
       title.classList.add("title", "unselectable")
 
+      title_bar.onmouseenter = () => {
+        item.parentElement!.querySelectorAll(".menu-item").forEach(el => {
+          if (el != item) el.classList.remove("selected")
+        })
+      }
+
       if (data.type == "dropdown") {
         const dropdown = document.createElement("div")
         item.appendChild(dropdown)
@@ -142,6 +148,12 @@ export class ContextMenuPopup {
         data.options
           .map(x => this.createElement(app, x))
           .forEach(x => dropdown.appendChild(x))
+        title_bar.onmouseenter = () => {
+          item.parentElement!.querySelectorAll(".menu-item").forEach(el => {
+            if (el != item) el.classList.remove("selected")
+          })
+          item.classList.add("selected")
+        }
       }
       if (data.type == "checkbox") {
         let checked = data.checked
@@ -151,26 +163,7 @@ export class ContextMenuPopup {
       return item
     }
     if (data.type == "menu") {
-      const menuitem = document.createElement("div")
-      const title = document.createElement("div")
-      const dropdown = document.createElement("div")
-      menuitem.appendChild(title)
-      title.innerText = data.title
-      menuitem.appendChild(dropdown)
-      title.classList.add("title", "unselectable")
-      menuitem.classList.add("menu-item", "menu-main")
-      title.classList.add("menu-hover")
-      dropdown.classList.add("menubar-dropdown", "unselectable")
-      menuitem.onmouseenter = () => {
-        dropdown.replaceChildren(
-          ...data.options.map(x => this.createElement(app, x))
-        )
-      }
-      menuitem.onmouseleave = () => {
-        dropdown.replaceChildren()
-      }
-
-      return menuitem
+      throw Error("no menu allowed in context menu")
     }
     return document.createElement("div")
   }

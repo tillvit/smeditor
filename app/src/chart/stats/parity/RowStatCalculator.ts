@@ -22,6 +22,28 @@ export function calculateRowStats(
   const facingRows: number[] = [0]
   const candles = new Map<number, Foot>()
 
+  // Check first row for ambiguous
+  if (
+    rows.length > 0 &&
+    rows[0].notes.filter(n => n !== undefined).length == 1
+  ) {
+    const cost =
+      nodes[0].children.get(nodes[1].key)!["TOTAL"] -
+      nodes[0].children.get(nodes[1].key)!["DISTANCE"]
+    if (
+      nodes[0].children.entries().some(([child, costs]) => {
+        if (child == nodes[1].key) return false
+        if (costs["TOTAL"] - costs["DISTANCE"] <= cost) {
+          return true
+        }
+        return false
+      })
+    ) {
+      techErrors.set(0, new Set([TechErrors.Ambiguous]))
+    }
+  }
+  nodes = nodes.slice(1, -1)
+
   for (let i = 0; i < nodes.length - 1; i++) {
     const initialState = nodes[i].state
     const initialRow = rows[i]
@@ -197,7 +219,7 @@ function isAmbiguous(
   i: number
 ) {
   if (
-    !data.previousJumped ||
+    (!data.previousJumped && i != 0) ||
     currentRow.notes.filter(n => n !== undefined).length != 1
   )
     return false

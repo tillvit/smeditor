@@ -651,8 +651,8 @@ textarea {
   border-radius: 0.25rem;
 }
 
-#menubar .menu-item:not(.disabled):hover > .menubar-dropdown,
-#menubar .menubar-dropdown:not(.disabled):hover {
+#menubar .menu-item:not(.disabled).selected > .menubar-dropdown,
+#menubar .menubar-dropdown:not(.disabled).selected {
   display: block;
 }
 
@@ -686,8 +686,9 @@ textarea {
   font-weight: 800;
 }
 
+.menu-item:not(.disabled).selected > .menu-hover,
 .menu-item:not(.disabled) > .menu-hover:hover {
-  background-color: var(--primary-bg-hover);
+  background-color: var(--accent-color);
 }
 
 .animated .menu-hover {
@@ -740,12 +741,17 @@ textarea {
   margin-top: 0;
 }
 
+.animated .chart-info .chart-info-scroller,
+.animated .chart-info .menu-options.bottom {
+  transition: 0.2s cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
 .chart-info .chart-info-scroller.top {
-  box-shadow: inset 0em 1.5em 0.8em -0.8em black;
+  box-shadow: inset 0em 1.5em 0.8em -0.8em rgba(0, 0, 0, 0.3);
 }
 
 .chart-info .menu-options.bottom {
-  box-shadow: 0em -1.5em 0.8em -0.8em black;
+  box-shadow: 0em -1em 0.9em -0.3em rgba(0, 0, 0, 0.3);
 }
 
 .chart-info .label {
@@ -964,7 +970,7 @@ input[type="number"] {
   border-radius: 0.2rem;
   padding: 0 0.2rem;
   flex: 1;
-  height: 100%;
+  min-height: 1.25rem;
   user-select: text;
   caret-color: auto;
   font-size: 0.8rem;
@@ -1938,14 +1944,14 @@ input[type="range"] {
   }
 }
 
-#context-menu .menu-item:not(.disabled):hover > .menubar-dropdown,
-#context-menu .menubar-dropdown:not(.disabled):hover {
+#context-menu .menu-item:not(.disabled).selected > .menubar-dropdown,
+#context-menu .menubar-dropdown:not(.disabled).selected {
   opacity: 0.95;
   transform: scale(1);
 }
 
-.animated #context-menu .menu-item:not(.disabled):hover > .menubar-dropdown,
-.animated #context-menu .menubar-dropdown:not(.disabled):hover {
+.animated #context-menu .menu-item:not(.disabled).selected > .menubar-dropdown,
+.animated #context-menu .menubar-dropdown:not(.disabled).selected {
   animation: context-dropdown-enter 0.08s cubic-bezier(0.215, 0.61, 0.355, 1)
     forwards;
 }

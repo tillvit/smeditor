@@ -70,7 +70,7 @@ interface AppVersion {
 const BASE_STAGE_HEIGHT = 960
 
 export class App {
-  readonly VERSION = "1.4.0"
+  readonly VERSION = "1.4.1"
 
   readonly options = Options
   readonly events = EventHandler
@@ -399,6 +399,17 @@ export class App {
     this.view.addEventListener("mousedown", () => {
       this.windowManager.unfocusAll()
     })
+
+    // Change default pixi handler to not fire events when window is in the way
+    const oldPointerMove = (this.renderer.events as any).onPointerMove
+
+    document.removeEventListener("pointermove", oldPointerMove, true)
+
+    const newPointerMove = (e: PointerEvent) => {
+      if (e.target != this.view) return
+      oldPointerMove.call(this.renderer.events, e)
+    }
+    document.addEventListener("pointermove", newPointerMove, true)
 
     EventHandler.on("themeChanged", () => {
       this.renderer.background.color = new Color(

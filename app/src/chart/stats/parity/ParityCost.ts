@@ -347,7 +347,8 @@ export class ParityCostCalculator {
   // This should probably be getting filtered out as an invalid positioning before we
   // even get here, but :shrug:
   calcTwistedFoot(data: PlacementData) {
-    const crossedOver = data.rightPos.x < data.leftPos.x
+    // old check, ideally we never do a xobr with the toes facing backward
+    // const crossedOver = data.rightPos.x < data.leftPos.x
     const rightBackwards =
       data.resultState.rightHeel != -1 && data.resultState.rightToe != -1
         ? this.layout.layout[data.resultState.rightToe].y <
@@ -360,7 +361,7 @@ export class ParityCostCalculator {
           this.layout.layout[data.resultState.leftHeel].y
         : false
 
-    if (!crossedOver && (rightBackwards || leftBackwards)) {
+    if (rightBackwards || leftBackwards) {
       return this.WEIGHTS.TWISTED_FOOT
     }
     return 0
