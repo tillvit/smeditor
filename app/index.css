@@ -741,12 +741,17 @@ textarea {
   margin-top: 0;
 }
 
+.animated .chart-info .chart-info-scroller,
+.animated .chart-info .menu-options.bottom {
+  transition: 0.2s cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
 .chart-info .chart-info-scroller.top {
-  box-shadow: inset 0em 1.5em 0.8em -0.8em black;
+  box-shadow: inset 0em 1.5em 0.8em -0.8em rgba(0, 0, 0, 0.3);
 }
 
 .chart-info .menu-options.bottom {
-  box-shadow: 0em -1.5em 0.8em -0.8em black;
+  box-shadow: 0em -1em 0.9em -0.3em rgba(0, 0, 0, 0.3);
 }
 
 .chart-info .label {
@@ -965,7 +970,7 @@ input[type="number"] {
   border-radius: 0.2rem;
   padding: 0 0.2rem;
   flex: 1;
-  height: 100%;
+  min-height: 1.25rem;
   user-select: text;
   caret-color: auto;
   font-size: 0.8rem;
