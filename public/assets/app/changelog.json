@@ -2,7 +2,7 @@
   {
     "version": "1.4.1",
     "date": 1752867826965,
-    "changelog": "## Changes\n- You can now change the color of the feet for parity checking in user preferences.\n- Changed how the menubar behaves (you have to click on the tabs to open them, but you don't have to be precise while navigating dropdowns anymore)\n- The parity checker now checks for an ambiguous first step.\n ## Fixes\n - The canvas no longer reacts to mouse events when a window is over it \n - Fixed the chart info scroll highlights being very black"
+    "changelog": "## Changes\n- You can now change the color of the feet for parity checking in user preferences.\n- Changed how the menubar behaves (you have to click on the tabs to open them, but you don't have to be precise while navigating dropdowns anymore)\n- The parity checker now checks for an ambiguous first step.\n ## Fixes\n - The canvas no longer reacts to mouse events when a window is over it\n- Fixed a bug in how twisted brackets are calculated \n - Fixed the chart info scroll highlights being very black"
   },
   {
     "version": "1.4.0",
