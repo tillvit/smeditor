@@ -8,6 +8,7 @@ import { Icons } from "../Icons"
 export class MenubarManager {
   app: App
   view: HTMLDivElement
+  clicked = false
 
   constructor(app: App, view: HTMLDivElement) {
     this.app = app
@@ -17,6 +18,18 @@ export class MenubarManager {
       this.createElement(value)
     )
     view.replaceChildren(...elements)
+    document.addEventListener("pointerdown", event => {
+      if (this.view.contains(event.target as Node)) return
+      this.clicked = false
+      elements.forEach(el => {
+        el.classList.remove("selected")
+        const dropdown = el.querySelector(".menubar-dropdown")
+        if (dropdown) {
+          dropdown.replaceChildren()
+          dropdown.classList.remove("selected")
+        }
+      })
+    })
   }
 
   createElement(data: MenuOption): HTMLDivElement {
@@ -49,14 +62,17 @@ export class MenubarManager {
         if (typeof disabled == "function") disabled = disabled(this.app)
         if (disabled) item.classList.add("disabled")
 
-        item.addEventListener("click", () => {
+        item.addEventListener("click", event => {
           let disabled = meta.disabled
           if (typeof disabled == "function") disabled = disabled(this.app)
           if (!disabled) meta.callback(this.app)
+          event.stopImmediatePropagation()
           const dropdown = item
             .closest(".menu-main")!
             .querySelector(".menubar-dropdown")!
           dropdown.replaceChildren()
+          dropdown.classList.remove("selected")
+          this.clicked = false
         })
       } else {
         title_bar_right = Icons.getIcon("CHEVRON", 16)
@@ -72,6 +88,12 @@ export class MenubarManager {
       title_bar.classList.add("menu-item-title", "menu-hover")
       title.classList.add("title", "unselectable")
 
+      title_bar.onmouseenter = () => {
+        item.parentElement!.querySelectorAll(".menu-item").forEach(el => {
+          if (el != item) el.classList.remove("selected")
+        })
+      }
+
       if (data.type == "dropdown") {
         const dropdown = document.createElement("div")
         item.appendChild(dropdown)
@@ -79,6 +101,12 @@ export class MenubarManager {
         data.options
           .map(x => this.createElement(x))
           .forEach(x => dropdown.appendChild(x))
+        title_bar.onmouseenter = () => {
+          item.parentElement!.querySelectorAll(".menu-item").forEach(el => {
+            if (el != item) el.classList.remove("selected")
+          })
+          item.classList.add("selected")
+        }
       }
       if (data.type == "checkbox") {
         let checked = data.checked
@@ -98,13 +126,33 @@ export class MenubarManager {
       menuitem.classList.add("menu-item", "menu-main")
       title.classList.add("menu-hover")
       dropdown.classList.add("menubar-dropdown", "unselectable")
-      menuitem.onmouseenter = () => {
+      menuitem.onclick = () => {
+        this.clicked = true
+        if (dropdown.childElementCount > 0) {
+          dropdown.replaceChildren()
+          this.clicked = false
+          menuitem.classList.add("selected")
+          return
+        }
         dropdown.replaceChildren(
           ...data.options.map(x => this.createElement(x))
         )
+        menuitem.classList.add("selected")
+      }
+      title.onmouseenter = () => {
+        if (!this.clicked) return
+        dropdown.replaceChildren(
+          ...data.options.map(x => this.createElement(x))
+        )
+        menuitem.parentElement!.querySelectorAll(".menu-item").forEach(el => {
+          if (el != menuitem) el.classList.remove("selected")
+        })
+        menuitem.classList.add("selected")
       }
       menuitem.onmouseleave = () => {
+        if (this.clicked) return
         dropdown.replaceChildren()
+        menuitem.classList.remove("selected")
       }
 
       return menuitem

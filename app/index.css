@@ -651,8 +651,8 @@ textarea {
   border-radius: 0.25rem;
 }
 
-#menubar .menu-item:not(.disabled):hover > .menubar-dropdown,
-#menubar .menubar-dropdown:not(.disabled):hover {
+#menubar .menu-item:not(.disabled).selected > .menubar-dropdown,
+#menubar .menubar-dropdown:not(.disabled).selected {
   display: block;
 }
 
@@ -686,8 +686,9 @@ textarea {
   font-weight: 800;
 }
 
+.menu-item:not(.disabled).selected > .menu-hover,
 .menu-item:not(.disabled) > .menu-hover:hover {
-  background-color: var(--primary-bg-hover);
+  background-color: var(--accent-color);
 }
 
 .animated .menu-hover {
@@ -1938,14 +1939,14 @@ input[type="range"] {
   }
 }
 
-#context-menu .menu-item:not(.disabled):hover > .menubar-dropdown,
-#context-menu .menubar-dropdown:not(.disabled):hover {
+#context-menu .menu-item:not(.disabled).selected > .menubar-dropdown,
+#context-menu .menubar-dropdown:not(.disabled).selected {
   opacity: 0.95;
   transform: scale(1);
 }
 
-.animated #context-menu .menu-item:not(.disabled):hover > .menubar-dropdown,
-.animated #context-menu .menubar-dropdown:not(.disabled):hover {
+.animated #context-menu .menu-item:not(.disabled).selected > .menubar-dropdown,
+.animated #context-menu .menubar-dropdown:not(.disabled).selected {
   animation: context-dropdown-enter 0.08s cubic-bezier(0.215, 0.61, 0.355, 1)
     forwards;
 }
