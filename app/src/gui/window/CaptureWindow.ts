@@ -409,7 +409,7 @@ export class CaptureWindow extends Window {
         endTime:
           this.app.chartManager.loadedChart!.getSecondsFromBeat(this.endBeat) +
           1,
-        updateCallback: data => {
+        updateCallback: async data => {
           const completion =
             (data.currentRenderFrame - data.currentEncodeQueue) /
             data.totalFrames
@@ -434,22 +434,21 @@ export class CaptureWindow extends Window {
             this.captureCanvas.width,
             this.captureCanvas.height
           )
-          createImageBitmap(data.currentVideoFrame).then(bitmap => {
-            const scaleRatio = bitmap.height / this.captureCanvas.height
-            const scaledWidth = bitmap.width / scaleRatio
-            const xPadding = (this.captureCanvas.width - scaledWidth) / 2
-            ctx.drawImage(
-              bitmap,
-              0,
-              0,
-              bitmap.width,
-              bitmap.height,
-              xPadding,
-              0,
-              scaledWidth,
-              this.captureCanvas.height
-            )
-          })
+          const bitmap = await createImageBitmap(data.currentVideoFrame)
+          const scaleRatio = bitmap.height / this.captureCanvas.height
+          const scaledWidth = bitmap.width / scaleRatio
+          const xPadding = (this.captureCanvas.width - scaledWidth) / 2
+          ctx.drawImage(
+            bitmap,
+            0,
+            0,
+            bitmap.width,
+            bitmap.height,
+            xPadding,
+            0,
+            scaledWidth,
+            this.captureCanvas.height
+          )
         },
         onFinish: url => {
           this.stopCapture(url)
@@ -468,6 +467,7 @@ export class CaptureWindow extends Window {
   }
 
   stopCapture(url: string) {
+    if (!this.currentCapture) return
     this.setDisableClose(false)
     this.setBlocking(false)
     Keybinds.enableKeybinds()
@@ -477,7 +477,7 @@ export class CaptureWindow extends Window {
 
     if (url != "") {
       this.downloadButton.style.display = ""
-      this.downloadButton.innerText = `Download video (${formatBytes(this.currentCapture!.size)})`
+      this.downloadButton.innerText = `Download video (${formatBytes(this.currentCapture.size)})`
     } else {
       this.progressLabel.innerText =
         "Failed to export video! Check console for details."

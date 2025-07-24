@@ -27,7 +27,7 @@ export interface CaptureOptions {
   hideBarlines: boolean
   startTime: number
   endTime: number
-  updateCallback?: (data: CaptureCallbackData) => void
+  updateCallback?: (data: CaptureCallbackData) => Promise<void>
   onFinish?: (url: string) => void
 }
 
@@ -73,28 +73,24 @@ export class Capture {
         height: this.options.videoHeight,
       },
       audio: {
-        codec: "aac",
+        codec: "opus",
         numberOfChannels:
           this.app.chartManager.chartAudio.getBuffer().numberOfChannels,
         sampleRate: this.app.chartManager.chartAudio.getSampleRate(),
       },
       fastStart: "in-memory",
     })
+
+    this.totalFrames = Math.ceil(
+      (this.options.endTime - this.options.startTime) * this.options.fps
+    )
+    this.cachedBarlines = Flags.barlines
+
     this.encoder = new VideoEncoder({
       output: (chunk, meta) => void this.muxer!.addVideoChunk(chunk, meta),
       error: e => {
         throw e
       },
-    })
-    this.encoder.configure({
-      codec: "avc1.420028",
-      width:
-        Math.round((this.options.videoHeight * this.options.aspectRatio) / 2) *
-        2,
-      height: this.options.videoHeight,
-      bitrate: this.options.bitrate,
-      hardwareAcceleration: "prefer-hardware",
-      framerate: this.options.fps,
     })
 
     this.ac = new AudioEncoder({
@@ -103,19 +99,6 @@ export class Capture {
         throw e
       },
     })
-
-    this.ac.configure({
-      codec: "mp4a.40.2",
-      bitrate: 192000,
-      numberOfChannels:
-        this.app.chartManager.chartAudio.getBuffer().numberOfChannels,
-      sampleRate: this.app.chartManager.chartAudio.getSampleRate(),
-    })
-
-    this.totalFrames = Math.ceil(
-      (this.options.endTime - this.options.startTime) * this.options.fps
-    )
-    this.cachedBarlines = Flags.barlines
   }
 
   async renderBufferWithModifications(
@@ -142,6 +125,7 @@ export class Capture {
     gainNode.connect(offlineCtx.destination)
 
     offlineSource.start()
+
     const output = await offlineCtx.startRendering()
     offlineSource.stop()
     return output
@@ -239,6 +223,36 @@ export class Capture {
 
   async start(): Promise<string> {
     console.time("capture")
+
+    const videoEncoderOptions = {
+      codec: "avc1.420028",
+      width:
+        Math.round((this.options.videoHeight * this.options.aspectRatio) / 2) *
+        2,
+      height: this.options.videoHeight,
+      bitrate: this.options.bitrate,
+      hardwareAcceleration: "no-preference",
+      framerate: this.options.fps,
+    } as const
+
+    const audioEncoderOptions = {
+      codec: "opus",
+      numberOfChannels:
+        this.app.chartManager.chartAudio.getBuffer().numberOfChannels,
+      sampleRate: this.app.chartManager.chartAudio.getSampleRate(),
+      bitrate: 192000,
+    }
+
+    if (
+      !(await VideoEncoder.isConfigSupported(videoEncoderOptions)).supported ||
+      !(await AudioEncoder.isConfigSupported(audioEncoderOptions)).supported
+    ) {
+      throw new Error("Exporting is not available on this browser!")
+    }
+
+    this.encoder.configure(videoEncoderOptions)
+    this.ac.configure(audioEncoderOptions)
+
     const chart = this.app.chartManager.loadedChart!
     document.body.classList.remove("animated")
     this.app.chartManager.setMode(EditMode.View)
@@ -281,6 +295,7 @@ export class Capture {
         Math.max(0, -startSample)
       )
     }
+
     audioBuf = await this.renderBufferWithModifications(newAudioBuf, {
       volume: Options.audio.songVolume * Options.audio.masterVolume,
       sampleRate: newAudioBuf.sampleRate,
@@ -307,128 +322,139 @@ export class Capture {
       this.options.playbackRate
     )
 
-    return new Promise(resolve => {
+    console.log(this.ac.state)
+
+    return new Promise((resolve, reject) => {
       this.recording = true
       this.renderInterval = setInterval(() => {
         if (!this.recording) return
+        try {
+          if (this.encoder.encodeQueueSize < 300) {
+            const time =
+              (this._currentFrame / this.options.fps) *
+                this.options.playbackRate +
+              this.options.startTime
+            if (time > this.options.endTime) {
+              resolve(this.stop())
+              return
+            }
+            this.app.chartManager.time = time
 
-        if (this.encoder.encodeQueueSize < 300) {
-          const time =
-            (this._currentFrame / this.options.fps) *
-              this.options.playbackRate +
-            this.options.startTime
-          if (time > this.options.endTime) {
-            resolve(this.stop())
-            return
-          }
-          this.app.chartManager.time = time
-
-          // do note flashes
-          const notedata = chart.getNotedata()
-          while (
-            noteFlashIndex < notedata.length &&
-            time > notedata[noteFlashIndex].second
-          ) {
-            const note = notedata[noteFlashIndex]
-            if (chart.gameType.gameLogic.shouldAssistTick(note)) {
-              this.app.chartManager.chartView!.doJudgement(
-                note,
-                0,
-                TIMING_WINDOW_AUTOPLAY
-              )
-              if (isHoldNote(note)) {
-                if (note.type == "Hold") {
-                  this.app.chartManager
-                    .chartView!.getNotefield()
-                    .activateHold(note.col)
-                } else if (note.type == "Roll") {
-                  this.app.chartManager
-                    .chartView!.getNotefield()
-                    .activateRoll(note.col)
+            // do note flashes
+            const notedata = chart.getNotedata()
+            while (
+              noteFlashIndex < notedata.length &&
+              time > notedata[noteFlashIndex].second
+            ) {
+              const note = notedata[noteFlashIndex]
+              if (chart.gameType.gameLogic.shouldAssistTick(note)) {
+                this.app.chartManager.chartView!.doJudgement(
+                  note,
+                  0,
+                  TIMING_WINDOW_AUTOPLAY
+                )
+                if (isHoldNote(note)) {
+                  if (note.type == "Hold") {
+                    this.app.chartManager
+                      .chartView!.getNotefield()
+                      .activateHold(note.col)
+                  } else if (note.type == "Roll") {
+                    this.app.chartManager
+                      .chartView!.getNotefield()
+                      .activateRoll(note.col)
+                  }
+                  holdFlashes.push(note)
                 }
-                holdFlashes.push(note)
               }
+              noteFlashIndex++
             }
-            noteFlashIndex++
-          }
-          holdFlashes = holdFlashes.filter(hold => {
-            if (this.app.chartManager.beat < hold.beat + hold.hold) return true
-            if (hold.type == "Hold") {
-              this.app.chartManager
-                .chartView!.getNotefield()
-                .releaseHold(hold.col)
-            }
-            if (hold.type == "Roll") {
-              this.app.chartManager
-                .chartView!.getNotefield()
-                .releaseRoll(hold.col)
-            }
-            this.app.chartManager.chartView!.doJudgement(
-              hold,
-              null,
-              TimingWindowCollection.getCollection(
-                Options.play.timingCollection
-              ).getHeldJudgement(hold)
-            )
-            return false
-          })
-          Ticker.shared.update(Ticker.shared.lastTime + 1000 / this.options.fps)
-
-          this.app.renderer.render(this.app.stage)
-
-          const videoFrame = new VideoFrame(this.app.view, {
-            timestamp: (this._currentFrame / this.options.fps) * 1000000,
-          })
-
-          const audioTime =
-            (time - this.options.startTime) / this.options.playbackRate
-          const audioStartSample = Math.floor(audioTime * audioBuf.sampleRate)
-          const audioEndSample = Math.ceil(
-            (audioTime + 1 / this.options.fps) * audioBuf.sampleRate
-          )
-          const numFrames = audioEndSample - audioStartSample
-          const dataBuf = new Float32Array(
-            numFrames * audioBuf.numberOfChannels
-          )
-          for (let i = 0; i < audioBuf.numberOfChannels; i++) {
-            const channel = audioBuf.getChannelData(i)
-            dataBuf.set(
-              channel.subarray(audioStartSample, audioEndSample),
-              i * numFrames
+            holdFlashes = holdFlashes.filter(hold => {
+              if (this.app.chartManager.beat < hold.beat + hold.hold)
+                return true
+              if (hold.type == "Hold") {
+                this.app.chartManager
+                  .chartView!.getNotefield()
+                  .releaseHold(hold.col)
+              }
+              if (hold.type == "Roll") {
+                this.app.chartManager
+                  .chartView!.getNotefield()
+                  .releaseRoll(hold.col)
+              }
+              this.app.chartManager.chartView!.doJudgement(
+                hold,
+                null,
+                TimingWindowCollection.getCollection(
+                  Options.play.timingCollection
+                ).getHeldJudgement(hold)
+              )
+              return false
+            })
+            Ticker.shared.update(
+              Ticker.shared.lastTime + 1000 / this.options.fps
             )
 
-            if (this.options.metronome || this.options.assistTick) {
-              // mix assist sounds
-              const assistChannel = assistSounds.getChannelData(i)
+            this.app.renderer.render(this.app.stage)
 
-              for (let j = audioStartSample; j < audioEndSample; j++) {
-                if (j >= assistChannel.length) break
-                dataBuf[i * numFrames + j - audioStartSample] +=
-                  assistChannel[j]
+            const videoFrame = new VideoFrame(this.app.view, {
+              timestamp: (this._currentFrame / this.options.fps) * 1000000,
+            })
+
+            const audioTime =
+              (time - this.options.startTime) / this.options.playbackRate
+            const audioStartSample = Math.floor(audioTime * audioBuf.sampleRate)
+            const audioEndSample = Math.ceil(
+              (audioTime + 1 / this.options.fps) * audioBuf.sampleRate
+            )
+            const numFrames = audioEndSample - audioStartSample
+            const dataBuf = new Float32Array(
+              numFrames * audioBuf.numberOfChannels
+            )
+            for (let i = 0; i < audioBuf.numberOfChannels; i++) {
+              const channel = audioBuf.getChannelData(i)
+              dataBuf.set(
+                channel.subarray(audioStartSample, audioEndSample),
+                i * numFrames
+              )
+
+              if (this.options.metronome || this.options.assistTick) {
+                // mix assist sounds
+                const assistChannel = assistSounds.getChannelData(i)
+
+                for (let j = audioStartSample; j < audioEndSample; j++) {
+                  if (j >= assistChannel.length) break
+                  dataBuf[i * numFrames + j - audioStartSample] +=
+                    assistChannel[j]
+                }
               }
             }
+            const ad = new AudioData({
+              data: dataBuf,
+              format: "f32-planar",
+              numberOfChannels: audioBuf.numberOfChannels,
+              numberOfFrames: numFrames,
+              sampleRate: audioBuf.sampleRate,
+              timestamp: (this._currentFrame / this.options.fps) * 1000000,
+            })
+            this._currentFrame += 1
+            this.encoder.encode(videoFrame)
+            this.ac.encode(ad)
+            ad.close()
+
+            this.options
+              .updateCallback?.({
+                currentRenderFrame: this._currentFrame,
+                currentEncodeQueue: this.encoder.encodeQueueSize,
+                totalFrames: this.totalFrames,
+                currentVideoFrame: videoFrame,
+              })
+              .then(() => {
+                videoFrame.close()
+              })
           }
-          const ad = new AudioData({
-            data: dataBuf,
-            format: "f32-planar",
-            numberOfChannels: audioBuf.numberOfChannels,
-            numberOfFrames: numFrames,
-            sampleRate: audioBuf.sampleRate,
-            timestamp: (this._currentFrame / this.options.fps) * 1000000,
-          })
-          this._currentFrame += 1
-          this.encoder.encode(videoFrame)
-          this.ac.encode(ad)
-          ad.close()
-
-          this.options.updateCallback?.({
-            currentRenderFrame: this._currentFrame,
-            currentEncodeQueue: this.encoder.encodeQueueSize,
-            totalFrames: this.totalFrames,
-            currentVideoFrame: videoFrame,
-          })
-
-          videoFrame.close()
+        } catch (e) {
+          reject(e)
+          this.stop()
         }
       }, 10)
     })
@@ -474,7 +500,7 @@ export class Capture {
   }
 
   get currentEncodeQueue() {
-    return this.encoder.encodeQueueSize
+    return this.encoder?.encodeQueueSize ?? 0
   }
 
   get size() {
