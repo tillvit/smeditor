@@ -248,7 +248,7 @@ export class DancingBotWidget extends Widget {
         const oldPosition = this.getFeetPosition(oldState)
         const nextPosition = this.getFeetPosition(newState)
 
-        const t = clamp(
+        let t = clamp(
           unlerp(
             Math.max(oldState.second, newState.second - 0.3),
             newState.second,
@@ -257,6 +257,7 @@ export class DancingBotWidget extends Widget {
           0,
           1
         )
+        if (isNaN(t)) t = 1
 
         const newPosition = this.lerpPositions(
           oldPosition,
