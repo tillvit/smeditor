@@ -180,7 +180,3 @@ If you are using the desktop app, this will automatically save your work to your
 
 If you are using a browser, your work will be saved inside your browser's file system.
 To export your work to your hard drive, select *File > Save and export current song*.
-
-::: warning
-Remember to save your work regularly, since there is no autosave.
-:::
