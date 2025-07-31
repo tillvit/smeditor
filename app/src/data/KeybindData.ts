@@ -1630,7 +1630,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   enableParity: {
     label: "Enable parity checking",
     combos: [{ key: "E", mods: [] }],
-    disabled: false,
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit,
     callback: () => {
       Options.chart.parity.enabled = !Options.chart.parity.enabled
       WaterfallManager.create(

@@ -8,11 +8,11 @@ export class AboutWindow extends Window {
     super({
       title: "About",
       width: 300,
-      height: 170,
       win_id: "about",
     })
     this.app = app
     this.initView()
+    requestAnimationFrame(() => this.center())
   }
 
   initView(): void {
@@ -34,11 +34,21 @@ export class AboutWindow extends Window {
     const versionText = document.createElement("div")
     versionText.style.fontSize = "0.875rem"
     versionText.style.color = "var(--text-color-secondary)"
+    versionText.style.textAlign = "center"
     versionText.innerText = `Core v${window.app.VERSION}` // why does using App break pixi
     if (window.nw) {
       const gui = nw.require("nw.gui")
       versionText.innerText += ` | App v${gui.App.manifest.version}`
     }
+    if (
+      import.meta.env.VITE_GIT_COMMIT_DATE &&
+      import.meta.env.VITE_GIT_COMMIT_HASH &&
+      import.meta.env.VITE_GIT_COMMIT_BRANCH
+    ) {
+      const date = new Date(import.meta.env.VITE_GIT_COMMIT_DATE)
+      versionText.innerText += ` | ${import.meta.env.VITE_GIT_COMMIT_BRANCH}-${import.meta.env.VITE_GIT_COMMIT_HASH} (${date.toLocaleString()})`
+    }
+
     container.appendChild(logoContainer)
     logoContainer.appendChild(logo)
     logoContainer.appendChild(logoText)
