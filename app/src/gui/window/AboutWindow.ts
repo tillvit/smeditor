@@ -45,7 +45,8 @@ export class AboutWindow extends Window {
       import.meta.env.VITE_GIT_COMMIT_HASH &&
       import.meta.env.VITE_GIT_COMMIT_BRANCH
     ) {
-      versionText.innerText += ` | ${import.meta.env.VITE_GIT_COMMIT_BRANCH}-${import.meta.env.VITE_GIT_COMMIT_HASH}`
+      const date = new Date(import.meta.env.VITE_GIT_COMMIT_DATE)
+      versionText.innerText += ` | ${import.meta.env.VITE_GIT_COMMIT_BRANCH}-${import.meta.env.VITE_GIT_COMMIT_HASH} (${date.toLocaleString()})`
     }
 
     container.appendChild(logoContainer)
