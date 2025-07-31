@@ -28,8 +28,10 @@ export default defineConfig({
           }
         ]
       },
+      includeManifestIcons: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html}', 'assets/**/*'],
+        globIgnores: ['**/*.mp4'],
         ignoreURLParametersMatching: [/^flags/, /^url/, /^chartIndex/, /^chartType/],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallback: null,
