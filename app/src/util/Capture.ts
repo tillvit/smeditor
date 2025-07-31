@@ -477,8 +477,8 @@ export class Capture {
         currentVideoFrame: null,
       })
     }, 100)
-    await this.encoder?.flush()
-    await this.ac?.flush()
+    if (this.encoder.state == "configured") await this.encoder.flush()
+    if (this.ac.state == "configured") await this.ac.flush()
     this.muxer!.finalize()
     clearInterval(int)
 
