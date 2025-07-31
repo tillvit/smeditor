@@ -28,6 +28,7 @@ export default defineConfig({
           }
         ]
       },
+      includeManifestIcons: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html}', 'assets/**/*'],
         ignoreURLParametersMatching: [/^flags/, /^url/, /^chartIndex/, /^chartType/],
