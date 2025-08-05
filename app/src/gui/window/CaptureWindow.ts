@@ -11,6 +11,7 @@ import { formatBytes, formatSeconds } from "../../util/Util"
 import { Dropdown } from "../element/Dropdown"
 import { NumberSpinner } from "../element/NumberSpinner"
 import { createValueInput } from "../element/ValueInput"
+import { WaterfallManager } from "../element/WaterfallManager"
 import { Window } from "./Window"
 
 export class CaptureWindow extends Window {
@@ -30,6 +31,8 @@ export class CaptureWindow extends Window {
 
   private presetDropdown!: Dropdown<string>
   private exportButton!: HTMLButtonElement
+  private shareButton!: HTMLButtonElement
+  private shareUrlLabel!: HTMLAnchorElement
 
   private optionsView!: HTMLDivElement
   private captureView!: HTMLDivElement
@@ -283,8 +286,14 @@ export class CaptureWindow extends Window {
     progressLabel.innerText = "Rendering..."
     progressLabel.style.textAlign = "center"
     this.progressLabel = progressLabel
-
     captureOverlay.appendChild(progressLabel)
+
+    const shareUrlLabel = document.createElement("a")
+    shareUrlLabel.innerText = ""
+    shareUrlLabel.style.textAlign = "center"
+    shareUrlLabel.style.display = "none"
+    shareUrlLabel.style.color = "var(--accent-color)"
+    this.shareUrlLabel = shareUrlLabel
 
     const progressBar = document.createElement("div")
     progressBar.classList.add("capture-progress-bar")
@@ -301,6 +310,7 @@ export class CaptureWindow extends Window {
     videoButtonsContainer.style.gap = "1rem"
     videoButtonsContainer.style.justifyContent = "center"
     videoButtonsContainer.style.marginTop = "1rem"
+    videoButtonsContainer.style.marginBottom = "1rem"
 
     const stopButton = document.createElement("button")
     stopButton.innerText = "Stop exporting"
@@ -348,13 +358,67 @@ export class CaptureWindow extends Window {
     downloadButton.style.display = "none"
     this.downloadButton = downloadButton
 
+    const shareButton = document.createElement("button")
+    shareButton.innerText = "Share Link"
+    shareButton.classList.add("confirm")
+    shareButton.onclick = async () => {
+      if (!this.videoURL) return
+      const formData = new FormData()
+      formData.append("reqtype", "fileupload")
+      formData.append("time", "1h") // or "12h", "24h", "72h", "1month"
+      const response = await fetch(this.videoURL)
+
+      const blob = await response.blob()
+      const date = new Date()
+      formData.append(
+        "fileToUpload",
+        blob,
+        `SME-${date.toISOString().slice(0, 10)}-${date.toTimeString().slice(0, 8).replaceAll(":", "-")}.mp4`
+      )
+
+      shareButton.innerText = "Uploading..."
+      shareButton.disabled = true
+      fetch("https://litterbox.catbox.moe/resources/internals/api.php", {
+        method: "POST",
+        body: formData,
+      })
+        .then(response => {
+          if (!response.ok) throw new Error("Upload failed")
+          return response.text()
+        })
+        .then(data => {
+          console.log(data)
+          WaterfallManager.create(`${data} copied to clipboard`)
+          navigator.clipboard.writeText(data)
+          shareButton.innerText = "Copied!"
+          this.viewElement.style.height = "425px"
+          shareUrlLabel.style.display = ""
+          shareUrlLabel.innerText = "Uploaded here"
+          shareUrlLabel.href = data
+          return data
+        })
+        .catch((reason: Error) => {
+          WaterfallManager.createFormatted(
+            "Failed to create shareable link: " + reason.message,
+            "error"
+          )
+        })
+    }
+    shareButton.style.display = "none"
+    this.shareButton = shareButton
+
     videoButtonsContainer.replaceChildren(
       stopButton,
       returnButton,
-      downloadButton
+      downloadButton,
+      shareButton
     )
 
-    captureView.replaceChildren(videoContainer, videoButtonsContainer)
+    captureView.replaceChildren(
+      videoContainer,
+      videoButtonsContainer,
+      shareUrlLabel
+    )
 
     this.captureCanvas = canvas
     this.videoContainer = videoContainer
@@ -369,6 +433,7 @@ export class CaptureWindow extends Window {
     this.stopButton.style.display = ""
     this.returnButton.style.display = "none"
     this.downloadButton.style.display = "none"
+    this.shareButton.style.display = "none"
     this.setDisableClose(true)
     this.setBlocking(true)
 
@@ -478,6 +543,8 @@ export class CaptureWindow extends Window {
     if (url != "") {
       this.downloadButton.style.display = ""
       this.downloadButton.innerText = `Download video (${formatBytes(this.currentCapture.size)})`
+      this.shareButton.style.display = ""
+      this.shareButton.innerText = "Share link"
     } else {
       this.progressLabel.innerText =
         "Failed to export video! Check console for details."
