@@ -42,7 +42,7 @@ export const FEET_LABEL_TO_FOOT: { [key: string]: Foot } = {
   r: Foot.RIGHT_TOE,
 }
 
-export type FootOverride = "Left" | "Right"
+export type FootOverride = "Left" | "Right" | Foot
 
 export interface PlacementData {
   previousLeftPos: { x: number; y: number } // can probably cache this?

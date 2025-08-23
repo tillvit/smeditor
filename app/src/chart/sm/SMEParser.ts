@@ -25,7 +25,7 @@ export function serializeSMEData(sm: Simfile): string {
 }
 
 export function getParityData(chart: Chart): SMEParityData {
-  const overrides: [number, number, string][] = []
+  const overrides: [number, number, FootOverride][] = []
   for (const note of chart.getNotedata()) {
     if (note.parity?.override) {
       overrides.push([roundDigit(note.beat, 3), note.col, note.parity.override])

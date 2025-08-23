@@ -1,7 +1,12 @@
 import { App } from "../App"
 import { EditMode, EditTimingMode } from "../chart/ChartManager"
 import { isHoldNote } from "../chart/sm/NoteTypes"
-import { FootOverride } from "../chart/stats/parity/ParityDataTypes"
+import {
+  FEET_LABELS,
+  FEET_LABELS_LONG,
+  Foot,
+  FootOverride,
+} from "../chart/stats/parity/ParityDataTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { AboutWindow } from "../gui/window/AboutWindow"
 import { CaptureWindow } from "../gui/window/CaptureWindow"
@@ -1864,6 +1869,60 @@ for (const type of ["WARPS", "FAKES"] as const) {
   }
 }
 
+function markOverride(foot: FootOverride | "None") {
+  return (app: App) => {
+    const selection = app.chartManager.selection.notes.filter(note => {
+      return (
+        note.type != "Mine" && note.type != "Fake" && !note.fake && !note.warped
+      )
+    })
+    let minRange = Number.MAX_VALUE
+    let maxRange = -Number.MAX_VALUE
+    selection.forEach(note => {
+      if (note.beat < minRange) {
+        minRange = note.beat
+      }
+      if (getNoteEnd(note) > maxRange) {
+        maxRange = getNoteEnd(note)
+      }
+    })
+    const oldOverrides: (FootOverride | undefined)[] = []
+    ActionHistory.instance.run({
+      action: app => {
+        selection.forEach(note => {
+          if (!note.parity) {
+            note.parity = {}
+          }
+          oldOverrides.push(note.parity.override)
+          note.parity.override = foot == "None" ? undefined : foot
+        })
+        app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
+        EventHandler.emit("chartModified")
+      },
+      undo: () => {
+        selection.forEach((note, i) => {
+          if (!note.parity) {
+            note.parity = {}
+          }
+          note.parity.override = oldOverrides[i]
+        })
+        app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
+        EventHandler.emit("chartModified")
+      },
+      redo: () => {
+        selection.forEach(note => {
+          if (!note.parity) {
+            note.parity = {}
+          }
+          note.parity.override = foot == "None" ? undefined : foot
+        })
+        app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
+        EventHandler.emit("chartModified")
+      },
+    })
+  }
+}
+
 for (const foot of ["None", "Left", "Right"] as const) {
   KEYBIND_DATA[`parity${foot}`] = {
     label: `Mark as ${foot}`,
@@ -1872,59 +1931,23 @@ for (const foot of ["None", "Left", "Right"] as const) {
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit ||
       !app.chartManager.hasNoteSelection(),
-    callback: app => {
-      const selection = app.chartManager.selection.notes.filter(note => {
-        return (
-          note.type != "Mine" &&
-          note.type != "Fake" &&
-          !note.fake &&
-          !note.warped
-        )
-      })
-      let minRange = Number.MAX_VALUE
-      let maxRange = -Number.MAX_VALUE
-      selection.forEach(note => {
-        if (note.beat < minRange) {
-          minRange = note.beat
-        }
-        if (getNoteEnd(note) > maxRange) {
-          maxRange = getNoteEnd(note)
-        }
-      })
-      const oldOverrides: (FootOverride | undefined)[] = []
-      ActionHistory.instance.run({
-        action: app => {
-          selection.forEach(note => {
-            if (!note.parity) {
-              note.parity = {}
-            }
-            oldOverrides.push(note.parity.override)
-            note.parity.override = foot == "None" ? undefined : foot
-          })
-          app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
-          EventHandler.emit("chartModified")
-        },
-        undo: () => {
-          selection.forEach((note, i) => {
-            if (!note.parity) {
-              note.parity = {}
-            }
-            note.parity.override = oldOverrides[i]
-          })
-          app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
-          EventHandler.emit("chartModified")
-        },
-        redo: () => {
-          selection.forEach(note => {
-            if (!note.parity) {
-              note.parity = {}
-            }
-            note.parity.override = foot == "None" ? undefined : foot
-          })
-          app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
-          EventHandler.emit("chartModified")
-        },
-      })
-    },
+    callback: markOverride(foot),
+  }
+}
+
+for (const foot of [
+  Foot.LEFT_HEEL,
+  Foot.LEFT_TOE,
+  Foot.RIGHT_HEEL,
+  Foot.RIGHT_TOE,
+] as const) {
+  KEYBIND_DATA[`parity${FEET_LABELS[foot]}`] = {
+    label: `Mark as ${FEET_LABELS_LONG[foot]}`,
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasNoteSelection(),
+    callback: markOverride(foot),
   }
 }

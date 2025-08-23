@@ -845,6 +845,10 @@ export class ParityInternals {
       for (let c = 0; c < this.layout.columnCount; c++) {
         const noteOverride = overrides[c]
         if (noteOverride == undefined) continue
+        // Check for exact heel/toe overrides
+        if (typeof noteOverride == "number" && pc[c] != noteOverride) {
+          return false
+        }
         if (noteOverride == "Left") {
           if (pc[c] != Foot.LEFT_HEEL && pc[c] != Foot.LEFT_TOE) {
             return false
