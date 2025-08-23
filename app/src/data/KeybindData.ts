@@ -48,6 +48,7 @@ export interface Keybind {
   label: string
   bindLabel?: string
   combos: KeyCombo[]
+  visible?: boolean | ((app: App) => boolean)
   disabled: boolean | ((app: App) => boolean)
   disableRepeat?: boolean
   preventDefault?: boolean
@@ -269,6 +270,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   export: {
     label: "Save and export current song",
     combos: [{ key: "E", mods: [DEF_MOD] }],
+    visible: () => !window.nw,
     disabled: app =>
       !!window.nw ||
       !app.chartManager.loadedSM ||
@@ -1699,6 +1701,15 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       WaterfallManager.create(
         "Candles: " + (Options.chart.parity.showCandles ? "on" : "off")
       )
+    },
+  },
+  newWindow: {
+    label: "New window",
+    combos: [{ mods: [Modifier.SHIFT, DEF_MOD], key: "N" }],
+    visible: () => !!window.nw,
+    disabled: () => !window.nw,
+    callback: () => {
+      window.nw.Window.open(window.location.href)
     },
   },
 }

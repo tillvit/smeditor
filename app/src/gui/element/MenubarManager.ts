@@ -62,6 +62,11 @@ export class MenubarManager {
         if (typeof disabled == "function") disabled = disabled(this.app)
         if (disabled) item.classList.add("disabled")
 
+        let visible = meta.visible
+        if (visible === undefined) visible = true
+        if (typeof visible == "function") visible = visible(this.app)
+        if (!visible) return document.createElement("div")
+
         item.addEventListener("click", event => {
           let disabled = meta.disabled
           if (typeof disabled == "function") disabled = disabled(this.app)
