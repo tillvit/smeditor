@@ -2,7 +2,7 @@ import { ActionHistory } from "../../util/ActionHistory"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { bsearch } from "../../util/Util"
+import { bsearch, bsearchEarliest } from "../../util/Util"
 import {
   AttackTimingEvent,
   BGChangeTimingEvent,
@@ -1453,11 +1453,15 @@ export abstract class TimingData {
     lastBeat: number
   ): Generator<[number, boolean], void> {
     firstBeat = Math.max(0, firstBeat)
-    const timeSigs = this.getTimingData("TIMESIGNATURES")
-    let currentTimeSig = this.getEventAtBeat("TIMESIGNATURES", firstBeat)
-    let timeSigIndex = currentTimeSig
-      ? timeSigs.findIndex(t => t.beat == currentTimeSig!.beat)
-      : -1
+    const timeSigs: TimeSignatureTimingEvent[] = [
+      ...this.getTimingData("TIMESIGNATURES"),
+    ]
+    if (timeSigs.length == 0 || timeSigs[0].beat != 0) {
+      timeSigs.unshift({ type: "TIMESIGNATURES", beat: 0, lower: 4, upper: 4 })
+    }
+
+    let timeSigIndex = bsearchEarliest(timeSigs, firstBeat, e => e.beat)
+    let currentTimeSig = timeSigs[timeSigIndex]
     let divisionLength = this.getDivisionLength(firstBeat)
     const beatsToNearestDivision =
       (this.getDivisionOfMeasure(firstBeat) % 1) * divisionLength
