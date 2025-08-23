@@ -52,7 +52,7 @@ export class DefaultOptions {
     },
     parity: {
       enabled: false,
-      showHighlights: false,
+      showHighlights: true,
       showTech: true,
       showCandles: true,
       showErrors: true,
