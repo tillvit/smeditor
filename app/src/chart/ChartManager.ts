@@ -1391,11 +1391,12 @@ export class ChartManager {
       this.chartView == undefined
     )
       return
-    beat = Math.max(0, Math.round(beat * 48) / 48)
     if (Options.chart.forceSnapNotes) {
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
       beat = Math.round(beat / snap) * snap
     }
+    beat = Math.max(0, Math.round(beat * 48) / 48)
+
     const conflictingNotes = this.loadedChart.getNotedata().filter(note => {
       if (note.col != col) return false
       if (Math.abs(note.beat - beat) < 0.003) return true
