@@ -35,24 +35,28 @@ export class JudgementTexture {
   private texture?: Texture
   private judgeNames: string[] = []
   private earlyLate: boolean
+  private path: string
 
   constructor(path: string, judgeNames: string[], earlyLate = true) {
     this.judgeNames = judgeNames
     this.earlyLate = earlyLate
-    this.loadTex(path)
+    this.path = path
   }
 
-  private async loadTex(path: string) {
-    const judge_tex = await Assets.load(path)
+  private async loadTex() {
+    const judge_tex = await Assets.load(this.path)
     this.texture = judge_tex
     this.texHeight = judge_tex.height
     this.texWidth = judge_tex.width
   }
 
-  getTexture(
+  async getTexture(
     error: number,
     judgment: StandardTimingWindow
-  ): Texture | undefined {
+  ): Promise<Texture | undefined> {
+    if (!this.texture) {
+      await this.loadTex()
+    }
     if (!this.texture) return
     if (!this.judgeNames.includes(judgment.id)) return
     let tex_coord_x = 0

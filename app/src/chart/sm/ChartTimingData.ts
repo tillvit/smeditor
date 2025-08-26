@@ -118,7 +118,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
 
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
 
         this.callListeners(events)
       },
@@ -135,7 +135,7 @@ export class ChartTimingData extends TimingData {
         }
 
         this.songTimingData.reloadCache()
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
         this.callListeners(events)
       },
     })
@@ -164,7 +164,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
 
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
 
         this.callListeners(events)
       },
@@ -176,7 +176,7 @@ export class ChartTimingData extends TimingData {
         Object.assign(this.columns, cachedColumns)
 
         this.songTimingData.reloadCache()
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
         this.callListeners(events)
       },
     })
@@ -196,7 +196,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
 
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
 
         this.callListeners()
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
@@ -207,7 +207,7 @@ export class ChartTimingData extends TimingData {
         })
 
         this.songTimingData.reloadCache()
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
         this.callListeners()
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
       },
@@ -232,7 +232,7 @@ export class ChartTimingData extends TimingData {
         this.songTimingData.reloadCache()
         this.offset = this.getOffset()
 
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
 
         this.callListeners()
         EventHandler.emit("timeSigChanged")
@@ -249,7 +249,7 @@ export class ChartTimingData extends TimingData {
         this.offset = cachedOffset
 
         this.songTimingData.reloadCache()
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
         this.callListeners()
         EventHandler.emit("timeSigChanged")
       },
@@ -266,7 +266,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
 
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
 
         this.callListeners()
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
@@ -277,7 +277,7 @@ export class ChartTimingData extends TimingData {
         })
 
         this.songTimingData.reloadCache()
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
         this.callListeners()
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
       },
@@ -298,7 +298,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
 
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
 
         this.callListeners()
         EventHandler.emit("timeSigChanged")
@@ -310,7 +310,7 @@ export class ChartTimingData extends TimingData {
         if (missingOffset) this.offset = undefined
 
         this.songTimingData.reloadCache()
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
         this.callListeners()
         EventHandler.emit("timeSigChanged")
       },
@@ -334,7 +334,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
 
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
 
         this.callListeners()
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
@@ -343,7 +343,7 @@ export class ChartTimingData extends TimingData {
         Object.assign(this.columns, cachedColumns)
 
         this.songTimingData.reloadCache()
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
         this.callListeners()
         if (hasTimeSig) EventHandler.emit("timeSigChanged")
       },
@@ -365,7 +365,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
 
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
 
         this.callListeners()
         EventHandler.emit("timeSigChanged")
@@ -375,7 +375,7 @@ export class ChartTimingData extends TimingData {
         this.offset = cachedOffset
 
         this.songTimingData.reloadCache()
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
         this.callListeners()
         EventHandler.emit("timeSigChanged")
       },
@@ -428,8 +428,8 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
 
-        app.chartManager.clearSelections()
-        app.chartManager.setEventSelection(
+        app?.chartManager.clearSelections()
+        app?.chartManager.setEventSelection(
           this.findEvents(chartResults.events).concat(
             this.songTimingData.findEvents(smResults.events)
           )
@@ -446,7 +446,7 @@ export class ChartTimingData extends TimingData {
         this._insert(chartResults.insertConflicts)
 
         this.songTimingData.reloadCache()
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
         this.callListeners(events)
       },
     })
@@ -468,8 +468,8 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
 
-        app.chartManager.clearSelections()
-        app.chartManager.setEventSelection(
+        app?.chartManager.clearSelections()
+        app?.chartManager.setEventSelection(
           this.findEvents(chartResults.newEvents).concat(
             this.songTimingData.findEvents(smResults.newEvents)
           )
@@ -489,8 +489,8 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
 
-        app.chartManager.clearSelections()
-        app.chartManager.setEventSelection(
+        app?.chartManager.clearSelections()
+        app?.chartManager.setEventSelection(
           this.findEvents(chartResults.oldEvents).concat(
             this.songTimingData.findEvents(smResults.oldEvents)
           )
@@ -515,7 +515,7 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
 
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
         this.callListeners(events)
       },
       undo: app => {
@@ -527,8 +527,8 @@ export class ChartTimingData extends TimingData {
 
         this.songTimingData.reloadCache()
 
-        app.chartManager.clearSelections()
-        app.chartManager.setEventSelection(
+        app?.chartManager.clearSelections()
+        app?.chartManager.setEventSelection(
           this.findEvents(chartResults.removedEvents).concat(
             this.songTimingData.findEvents(smResults.removedEvents)
           )

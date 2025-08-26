@@ -6,12 +6,12 @@ import {
   Texture,
 } from "pixi.js"
 import { Foot } from "../../../chart/stats/parity/ParityDataTypes"
-import { blendColors } from "../../../util/Color"
+import { blendColors, getParityColor } from "../../../util/Color"
 import { EventHandler } from "../../../util/EventHandler"
 import { clamp } from "../../../util/Math"
 import { Options } from "../../../util/Options"
 import { destroyChildIf } from "../../../util/PixiUtil"
-import { bsearchEarliest, getParityColor } from "../../../util/Util"
+import { bsearchEarliest } from "../../../util/Util"
 import { WidgetManager } from "../WidgetManager"
 import { BaseTimelineWidget } from "./BaseTimelineWidget"
 

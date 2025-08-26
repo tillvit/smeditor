@@ -41,6 +41,11 @@ import {
   compareObjects,
   getNoteEnd,
 } from "../util/Util"
+import { CustomScriptRunner } from "../util/custom-script/CustomScriptRunner"
+import {
+  createSMFromPayload,
+  createSMPayload,
+} from "../util/custom-script/CustomScriptUtils"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { ChartRenderer } from "./ChartRenderer"
 import { ChartAudio } from "./audio/ChartAudio"
@@ -110,6 +115,30 @@ export enum EditTimingMode {
   Edit,
   Add,
 }
+
+window.createSMPayload = createSMPayload
+window.createSMFromPayload = createSMFromPayload
+const testScript: CustomScript = {
+  name: "Test Script",
+  description: "A test script that does nothing",
+  code: `
+    // This is a test script that does nothing
+    // sm is the Simfile object
+    // chart is the Chart object
+    // selection is an array of NotedataEntry objects that are currently selected
+    // args is an array of arguments passed to the script
+    console.log("Hello from the test script!")
+    console.log("Simfile:", sm)
+    console.log("Chart:", chart)
+    console.log("Selection:", selection)
+    console.log("Args:", args)
+    chart.notedata.forEach(note => {
+      note.col = (note.col + 1) % chart.gameType.numCols
+    })
+`,
+  arguments: [],
+}
+window.test = () => CustomScriptRunner.run(window.app, testScript, [])
 
 export class ChartManager {
   app: App
@@ -888,14 +917,16 @@ export class ChartManager {
     // Find the chart with the highest difficulty
     if (chart == undefined) {
       if (this.loadedChart) {
-        const charts = this.loadedSM.charts[this.loadedChart.gameType.id]
+        const charts = this.loadedSM.getChartsByGameType(
+          this.loadedChart.gameType.id
+        )
         if (charts && charts.length > 0) {
           chart = charts.at(-1)
         }
       }
       if (!chart) {
         for (const gameType of GameTypeRegistry.getPriority()) {
-          const charts = this.loadedSM.charts[gameType.id]
+          const charts = this.loadedSM.getChartsByGameType(gameType.id)
           if (charts && charts.length > 0) {
             chart = charts.at(-1)
             break

@@ -1,20 +1,20 @@
-import { App } from "../App"
+import type { App } from "../App"
 import { EventHandler } from "./EventHandler"
 
-interface UndoableAction {
-  action: (app: App) => void
-  undo: (app: App) => void
-  redo?: (app: App) => void
+export interface UndoableAction {
+  action: (app?: App) => void
+  undo: (app?: App) => void
+  redo?: (app?: App) => void
 }
 
 export class ActionHistory {
   private items: UndoableAction[] = []
   private itemIndex = 0
   private limit = 0
-  private readonly app: App
+  private readonly app?: App
   static instance: ActionHistory
 
-  constructor(app: App) {
+  constructor(app?: App) {
     this.app = app
     if (!ActionHistory.instance) ActionHistory.instance = this
   }

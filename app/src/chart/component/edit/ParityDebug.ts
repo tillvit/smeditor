@@ -9,11 +9,10 @@ import {
 } from "pixi.js"
 import { BaseTimelineWidget } from "../../../gui/widget/timeline/BaseTimelineWidget"
 import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
-import { blendPixiColors } from "../../../util/Color"
+import { blendPixiColors, getParityColor } from "../../../util/Color"
 import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
-import { getParityColor } from "../../../util/Util"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
 import {
   FEET_LABELS,

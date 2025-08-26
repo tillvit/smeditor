@@ -1,5 +1,6 @@
 import { TimingEventType } from "../chart/sm/TimingTypes"
 import { EventHandler } from "./EventHandler"
+import { isWorker } from "./Util"
 
 const SAVE_BLACKLIST = [
   "audio.rate",
@@ -163,7 +164,7 @@ export class DefaultOptions {
   }
   static performance = {
     antialiasing: false,
-    resolution: window.devicePixelRatio,
+    resolution: isWorker() ? 1 : window.devicePixelRatio,
   }
   static debug = {
     showFPS: false,

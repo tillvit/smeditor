@@ -32,7 +32,15 @@ import { getParityData, loadChartParityData } from "./SMEParser"
 import { TIMING_EVENT_NAMES, TimingEventType, TimingType } from "./TimingTypes"
 
 export class Chart {
+  _id?: string
+  readonly sm: Simfile
+  readonly stats: ChartStats
+  private notedata: Notedata = []
+  private notedataRows: RowData[] = []
+
   gameType: GameType = GameTypeRegistry.getPriority()[0]
+  timingData: ChartTimingData
+
   description = ""
   difficulty: ChartDifficulty = "Beginner"
   meter = 1
@@ -42,16 +50,9 @@ export class Chart {
   chartStyle = ""
   credit = ""
   music?: string
-  timingData: ChartTimingData
-  sm: Simfile
+
   other_properties: { [key: string]: string } = {}
-
-  private notedata: Notedata = []
-  private notedataRows: RowData[] = []
-
   ignoredErrors = new Map<number, Set<TechErrors>>()
-
-  stats: ChartStats
 
   private _lastBeat = 0
   private _lastSecond = 0

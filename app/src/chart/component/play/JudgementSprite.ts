@@ -52,14 +52,14 @@ export class JudgementSprite extends Sprite implements ChartRendererComponent {
     }
   }
 
-  doJudge(error: number | null, judgment: TimingWindow) {
+  async doJudge(error: number | null, judgment: TimingWindow) {
     if (error == null) error = 0
     if (
       !isStandardTimingWindow(judgment) &&
       !isStandardMissTimingWindow(judgment)
     )
       return
-    const tex = judgment.judgementTexture.getTexture(error, judgment)
+    const tex = await judgment.judgementTexture.getTexture(error, judgment)
     if (!tex) return
     this.texture = tex
     this.texture.updateUvs()

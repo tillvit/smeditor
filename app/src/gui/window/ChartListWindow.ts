@@ -30,16 +30,12 @@ export class ChartListWindow extends Window {
   private smLoadHandler = () => {
     this.gameTypeDropdown!.setItems(
       GameTypeRegistry.getPriority().map(gameType => {
-        const charts = this.app.chartManager.loadedSM?.charts[gameType.id] ?? []
+        const charts = this.getCharts(gameType)
         return gameType.id + " (" + charts.length + ")"
       })
     )
     this.gameTypeDropdown!.setSelected(
-      this.gameType.id +
-        " (" +
-        (this.app.chartManager.loadedSM?.charts[this.gameType.id] ?? [])
-          .length +
-        ") "
+      this.gameType.id + " (" + this.getCharts(this.gameType).length + ") "
     )
     this.gameType = this.app.chartManager.loadedChart?.gameType ?? this.gameType
     this.loadCharts()
@@ -83,13 +79,17 @@ export class ChartListWindow extends Window {
 
     this.gameTypeDropdown = Dropdown.create(
       GameTypeRegistry.getPriority().map(gameType => {
-        const charts = this.app.chartManager.loadedSM?.charts[gameType.id] ?? []
+        const charts =
+          this.app.chartManager.loadedSM?.getChartsByGameType(gameType.id) ?? []
         return gameType.id + " (" + charts.length + ")"
       }),
       this.gameType.id +
         " (" +
-        (this.app.chartManager.loadedSM?.charts[this.gameType.id] ?? [])
-          .length +
+        (
+          this.app.chartManager.loadedSM?.getChartsByGameType(
+            this.gameType.id
+          ) ?? []
+        ).length +
         ") "
     )
     this.gameTypeDropdown.onChange(value => {
@@ -126,21 +126,16 @@ export class ChartListWindow extends Window {
   }
 
   private loadCharts() {
-    const charts =
-      this.app.chartManager.loadedSM?.charts[this.gameType.id] ?? []
+    const charts = this.getCharts(this.gameType)
     const chartEls: HTMLElement[] = []
     this.gameTypeDropdown!.setItems(
       GameTypeRegistry.getPriority().map(gameType => {
-        const charts = this.app.chartManager.loadedSM?.charts[gameType.id] ?? []
+        const charts = this.getCharts(gameType)
         return gameType.id + " (" + charts.length + ")"
       })
     )
     this.gameTypeDropdown!.setSelected(
-      this.gameType.id +
-        " (" +
-        (this.app.chartManager.loadedSM?.charts[this.gameType.id] ?? [])
-          .length +
-        ") "
+      this.gameType.id + " (" + this.getCharts(this.gameType).length + ") "
     )
     charts.forEach(chart => {
       const chartListItem = document.createElement("div") as ChartListItem
@@ -251,7 +246,7 @@ export class ChartListWindow extends Window {
     scroller.classList.add("chart-info-scroller")
 
     const sortDifficulties = () =>
-      this.app.chartManager.loadedSM!.charts[chart.gameType.id].sort((a, b) => {
+      this.getCharts(chart.gameType).sort((a, b) => {
         if (
           CHART_DIFFICULTIES.indexOf(a.difficulty) ==
           CHART_DIFFICULTIES.indexOf(b.difficulty)
@@ -472,5 +467,11 @@ export class ChartListWindow extends Window {
 
     scroller.replaceChildren(main, properties, nps, grid, techGrid)
     this.chartInfo!.replaceChildren(scroller, menu_options)
+  }
+
+  private getCharts(gameType: GameType) {
+    return (
+      this.app.chartManager.loadedSM?.getChartsByGameType(gameType.id) ?? []
+    )
   }
 }

@@ -1209,8 +1209,8 @@ export abstract class TimingData {
         results = this._insert(events)
         this._delete(results.errors)
         this.reloadCache()
-        app.chartManager.clearSelections()
-        app.chartManager.setEventSelection(this.findEvents(results.events))
+        app?.chartManager.clearSelections()
+        app?.chartManager.setEventSelection(this.findEvents(results.events))
         this.callListeners(events)
       },
       undo: app => {
@@ -1218,7 +1218,7 @@ export abstract class TimingData {
         this._delete(results.events)
         this._insert(results.insertConflicts)
         this.reloadCache()
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
         this.callListeners(events)
       },
     })
@@ -1231,8 +1231,8 @@ export abstract class TimingData {
         results = this._modify(events)
         this._delete(results.errors)
         this.reloadCache()
-        app.chartManager.clearSelections()
-        app.chartManager.setEventSelection(this.findEvents(results.newEvents))
+        app?.chartManager.clearSelections()
+        app?.chartManager.setEventSelection(this.findEvents(results.newEvents))
         this.callListeners(events.map(pair => pair[0]))
       },
       undo: app => {
@@ -1242,8 +1242,8 @@ export abstract class TimingData {
         this._insert(results.oldEvents)
         this.reloadCache()
 
-        app.chartManager.clearSelections()
-        app.chartManager.setEventSelection(this.findEvents(results.oldEvents))
+        app?.chartManager.clearSelections()
+        app?.chartManager.setEventSelection(this.findEvents(results.oldEvents))
         this.callListeners(events.map(pair => pair[0]))
       },
     })
@@ -1256,15 +1256,15 @@ export abstract class TimingData {
         results = this._delete(events)
         this._delete(results.errors)
         this.reloadCache()
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
         this.callListeners(events)
       },
       undo: app => {
         this._insert(results.errors)
         this._insert(results.removedEvents)
         this.reloadCache()
-        app.chartManager.clearSelections()
-        app.chartManager.setEventSelection(
+        app?.chartManager.clearSelections()
+        app?.chartManager.setEventSelection(
           this.findEvents(results.removedEvents)
         )
         this.callListeners(events)

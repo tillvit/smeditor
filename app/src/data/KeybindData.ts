@@ -1470,12 +1470,12 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       }
       ActionHistory.instance.run({
         action: app => {
-          app.chartManager.loadedSM!.properties.SAMPLESTART = newStart
-          app.chartManager.loadedSM!.properties.SAMPLELENGTH = newLength
+          app!.chartManager.loadedSM!.properties.SAMPLESTART = newStart
+          app!.chartManager.loadedSM!.properties.SAMPLELENGTH = newLength
         },
-        undo: () => {
-          app.chartManager.loadedSM!.properties.SAMPLESTART = lastStart
-          app.chartManager.loadedSM!.properties.SAMPLELENGTH = lastLength
+        undo: app => {
+          app!.chartManager.loadedSM!.properties.SAMPLESTART = lastStart
+          app!.chartManager.loadedSM!.properties.SAMPLELENGTH = lastLength
         },
       })
     },
@@ -1567,10 +1567,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     callback: app => {
       if (!app.chartManager.loadedSM?.charts || !app.chartManager.loadedChart)
         return
-      const charts =
-        app.chartManager.loadedSM?.charts[
-          app.chartManager.loadedChart.gameType.id
-        ]
+      const charts = app.chartManager.loadedSM?.getChartsByGameType(
+        app.chartManager.loadedChart.gameType.id
+      )
       const curIndex = charts.indexOf(app.chartManager.loadedChart)
       if (charts[curIndex - 1]) {
         app.chartManager.loadChart(charts[curIndex - 1])
@@ -1586,10 +1585,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     callback: app => {
       if (!app.chartManager.loadedSM?.charts || !app.chartManager.loadedChart)
         return
-      const charts =
-        app.chartManager.loadedSM?.charts[
-          app.chartManager.loadedChart.gameType.id
-        ]
+      const charts = app.chartManager.loadedSM?.getChartsByGameType(
+        app.chartManager.loadedChart.gameType.id
+      )
       const curIndex = charts.indexOf(app.chartManager.loadedChart)
       if (charts[curIndex + 1]) {
         app.chartManager.loadChart(charts[curIndex + 1])
@@ -1899,7 +1897,7 @@ function markOverride(foot: FootOverride | "None") {
     })
     const oldOverrides: (FootOverride | undefined)[] = []
     ActionHistory.instance.run({
-      action: app => {
+      action: () => {
         selection.forEach(note => {
           if (!note.parity) {
             note.parity = {}

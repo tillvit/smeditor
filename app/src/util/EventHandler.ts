@@ -1,4 +1,5 @@
 import EventEmitter from "eventemitter3"
+import { isWorker } from "./Util"
 
 export class EventHandler extends EventEmitter {
   private static _instance: EventHandler
@@ -11,6 +12,7 @@ export class EventHandler extends EventEmitter {
   }
 
   static emit(event: string | symbol, ...args: any[]): boolean {
+    if (isWorker()) return false
     return EventHandler.instance.emit(event, ...args)
   }
 

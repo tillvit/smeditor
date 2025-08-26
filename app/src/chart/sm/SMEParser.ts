@@ -16,8 +16,9 @@ export function serializeSMEData(sm: Simfile): string {
     parity: {},
   }
 
-  for (const gameType in sm.charts) {
-    data.parity[gameType] = sm.charts[gameType].map(chart => {
+  const charts = sm.getAllChartsByGameType()
+  for (const gameType in charts) {
+    data.parity[gameType] = charts[gameType].map(chart => {
       return getParityData(chart)
     })
   }
@@ -46,11 +47,12 @@ export function getParityData(chart: Chart): SMEParityData {
 export function loadSMEData(string: string, sm: Simfile, isAutosave: boolean) {
   try {
     const data = JSON.parse(string) as SMEData
+    const smCharts = sm.getAllChartsByGameType()
     // Don't load if autosave is used
     if (!isAutosave) {
       for (const [gameType, charts] of Object.entries(data.parity)) {
         for (let i = 0; i < charts.length; i++) {
-          const chart = sm.charts[gameType]?.[i]
+          const chart = smCharts[gameType]?.[i]
           if (chart) {
             loadChartParityData(charts[i], chart)
           } else {
