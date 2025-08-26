@@ -46,7 +46,7 @@ export class CustomScriptRunner {
       worker.terminate()
     }
 
-    return new Promise(resolve => {
+    return new Promise(() => {
       worker.onmessage = (event: MessageEvent<string>) => {
         const newState = event.data
         console.log(newState)

@@ -1,3 +1,5 @@
+/// <reference lib="webworker" />
+
 import { Parser } from "expr-eval"
 import { PartialNotedataEntry, isHoldNote } from "../chart/sm/NoteTypes"
 

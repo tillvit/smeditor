@@ -101,6 +101,7 @@ export class Simfile {
   }
 
   removeChart(chart: Chart): boolean {
+    if (!chart._id) return false
     if (!this.charts[chart._id]) return false
     delete this.charts[chart._id]
     return true
