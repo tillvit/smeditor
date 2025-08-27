@@ -12,6 +12,7 @@ import { AboutWindow } from "../gui/window/AboutWindow"
 import { CaptureWindow } from "../gui/window/CaptureWindow"
 import { ChangelogWindow } from "../gui/window/ChangelogWindow"
 import { ChartListWindow } from "../gui/window/ChartListWindow"
+import { CustomScriptEditorWindow } from "../gui/window/CustomScriptEditorWindow"
 import { EQWindow } from "../gui/window/EQWindow"
 import { ExportNotedataWindow } from "../gui/window/ExportNotedataWindow"
 import { GameplayKeybindWindow } from "../gui/window/GameplayKeybindWindow"
@@ -1708,6 +1709,14 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     disabled: () => !window.nw,
     callback: () => {
       window.nw.Window.open(window.location.href)
+    },
+  },
+  editCustomScripts: {
+    label: "Edit custom scripts...",
+    combos: [],
+    disabled: false,
+    callback: app => {
+      app.windowManager.openWindow(new CustomScriptEditorWindow(app))
     },
   },
 }

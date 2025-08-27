@@ -1,5 +1,3 @@
-/// <reference lib="webworker" />
-
 import { Parser } from "expr-eval"
 import { PartialNotedataEntry, isHoldNote } from "../chart/sm/NoteTypes"
 
@@ -233,6 +231,10 @@ export function isIFrame() {
   } catch (e) {
     return true
   }
+}
+
+declare global {
+  const WorkerGlobalScope: any
 }
 
 export function isWorker() {

@@ -3,6 +3,11 @@ import { WaterfallManager } from "../../gui/element/WaterfallManager"
 import { ActionHistory } from "../ActionHistory"
 import { EventHandler } from "../EventHandler"
 import { isSameRow } from "../Util"
+import {
+  CustomScript,
+  CustomScriptResult,
+  CustomScriptWorkerArgs,
+} from "./CustomScriptTypes"
 import { applyPayloadToSM, createSMPayload } from "./CustomScriptUtils"
 import CustomScriptWorker from "./CustomScriptWorker?worker"
 
@@ -28,7 +33,7 @@ export class CustomScriptRunner {
 
     const workerArgs: CustomScriptWorkerArgs = {
       smPayload: previousState,
-      codePayload: script.code,
+      codePayload: script.jsCode,
       chartId: app.chartManager.loadedChart._id!,
       selectionNoteIndices,
       // todo add selection event indices
@@ -47,8 +52,12 @@ export class CustomScriptRunner {
     }
 
     return new Promise(() => {
-      worker.onmessage = (event: MessageEvent<string>) => {
-        const newState = event.data
+      worker.onmessage = (event: MessageEvent<CustomScriptResult>) => {
+        if (event.data.type != "payload") {
+          console[event.data.type](...event.data.args)
+          return
+        }
+        const newState = event.data.payload
         console.log(newState)
 
         ActionHistory.instance.run({

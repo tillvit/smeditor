@@ -41,7 +41,6 @@ import {
   compareObjects,
   getNoteEnd,
 } from "../util/Util"
-import { CustomScriptRunner } from "../util/custom-script/CustomScriptRunner"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { ChartRenderer } from "./ChartRenderer"
 import { ChartAudio } from "./audio/ChartAudio"
@@ -111,8 +110,6 @@ export enum EditTimingMode {
   Edit,
   Add,
 }
-
-window.CustomScriptRunner = CustomScriptRunner
 
 export class ChartManager {
   app: App

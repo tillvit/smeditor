@@ -191,4 +191,9 @@ export class Themes {
   static getColor(id: ThemeProperty) {
     return this.currentTheme?.[id] ?? DEFAULT_THEMES["default"][id]
   }
+
+  static isDarkTheme() {
+    const col = this.getColor("primary-bg")
+    return (col.red + col.green + col.blue) / 3 < 0.5
+  }
 }

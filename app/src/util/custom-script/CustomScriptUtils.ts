@@ -77,7 +77,7 @@ export async function createSMFromPayload(payload: any) {
   return sm
 }
 
-export async function applyPayloadToSM(sm: Simfile, payload: any) {
+export function applyPayloadToSM(sm: Simfile, payload: any) {
   const charts = payload.charts
   const songTimingData = payload.timingData
   delete payload.charts
@@ -86,7 +86,7 @@ export async function applyPayloadToSM(sm: Simfile, payload: any) {
   payload.charts = charts
   payload.timingData = songTimingData
 
-  const songTD = new SongTimingData(sm)
+  const songTD = sm.timingData
   Object.assign(songTD, songTimingData)
   sm.timingData = songTD
 

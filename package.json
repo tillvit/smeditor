@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run core:build && npm run guide:build",
+    "build": "npm run core:build-editor && npm run core:build && npm run guide:build",
     "core:build": "tsc && vite build",
+    "core:build-editor": "tsc --outFile app/src/util/custom-script/smlib.d.ts --emitDeclarationOnly --declaration  --stripInternal --isolatedModules false --noEmit false",
     "app:dev": "nw ./nw --debug",
     "app:build": "node nwbuild.js",
     "preview": "vite preview",
@@ -35,9 +36,10 @@
     "prettier": "^3.0.1",
     "prettier-plugin-glsl": "^0.1.2",
     "typescript": "^5.8.3",
-    "vite": "^6.3.5",
-    "vite-plugin-pwa": "^1.0.0",
-    "vitepress": "^1.6.3"
+    "vite": "^7.1.3",
+    "vite-plugin-monaco-editor": "^1.1.0",
+    "vite-plugin-pwa": "^1.0.3",
+    "vitepress": "^1.6.4"
   },
   "dependencies": {
     "@pixi/filter-adjustment": "^5.0.0",
@@ -52,6 +54,7 @@
     "howler": "^2.2.3",
     "jszip": "^3.10.1",
     "markdown-it": "^14.1.0",
+    "monaco-editor": "^0.52.2",
     "mp4-muxer": "^3.0.3",
     "pixi.js": "^7.0.4",
     "scroll-into-view-if-needed": "^3.0.3",
@@ -88,7 +91,8 @@
       "@typescript-eslint"
     ],
     "ignorePatterns": [
-      "*.js"
+      "*.js",
+      "*.d.ts"
     ],
     "rules": {
       "require-await": "off",
