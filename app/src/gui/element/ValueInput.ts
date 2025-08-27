@@ -6,7 +6,7 @@ import { Dropdown } from "./Dropdown"
 import { NumberSlider } from "./NumberSlider"
 import { NumberSpinner } from "./NumberSpinner"
 
-interface TextInput {
+export interface TextInput {
   type: "text"
   transformers?: {
     serialize: (value: string) => string
@@ -15,7 +15,7 @@ interface TextInput {
   onChange?: (app: App, value: string) => void
 }
 
-type DropdownInput<T> =
+export type DropdownInput<T> =
   | {
       type: "dropdown"
       items: readonly string[]
@@ -39,7 +39,7 @@ type DropdownInput<T> =
       onChange?: (app: App, value: string | number | boolean) => void
     }
 
-interface NumberInput {
+export interface NumberInput {
   type: "number"
   step: number
   precision?: number
@@ -53,7 +53,7 @@ interface NumberInput {
   onChange?: (app: App, value: number) => void
 }
 
-interface SliderInput {
+export interface SliderInput {
   type: "slider"
   step?: number
   min?: number
@@ -67,7 +67,7 @@ interface SliderInput {
   onChange?: (app: App, value: number) => void
 }
 
-interface DisplaySliderInput {
+export interface DisplaySliderInput {
   type: "display-slider"
   step: number
   min: number
@@ -82,12 +82,12 @@ interface DisplaySliderInput {
   width?: number
 }
 
-interface CheckboxInput {
+export interface CheckboxInput {
   type: "checkbox"
   onChange?: (app: App, value: boolean) => void
 }
 
-interface ColorInput {
+export interface ColorInput {
   type: "color"
   onChange?: (app: App, value: string) => void
 }
@@ -100,6 +100,27 @@ export type ValueInput<T> =
   | SliderInput
   | DisplaySliderInput
   | ColorInput
+
+export function createLabeledInput<T>(
+  app: App,
+  name: string,
+  input: ValueInput<T>,
+  initialValue: any
+) {
+  console.log("labeled input", name, input, initialValue)
+  const item = document.createElement("div")
+  item.classList.add("pref-item")
+
+  const label = document.createElement("div")
+  label.classList.add("pref-item-label", "label")
+
+  label.innerText = name
+  item.appendChild(label)
+
+  const valueInput = createValueInput(app, input, initialValue)
+  item.appendChild(valueInput)
+  return item
+}
 
 export function createValueInput<T>(
   app: App,
@@ -150,7 +171,7 @@ export function createValueInput<T>(
       const spinner = NumberSpinner.create({
         value: serializer(initialValue as number),
         ...input,
-        onchange: value => {
+        onChange: value => {
           if (!value) {
             spinner.value = serializer(value as number)
             return

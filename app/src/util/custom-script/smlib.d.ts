@@ -644,8 +644,28 @@ declare module "app/src/gui/Icons" {
       height?: number,
       color?: string
     ): Icon
+    static getReactIcon(
+      id: string,
+      width?: number,
+      height?: number,
+      color?: string
+    ): import("react/jsx-runtime").JSX.Element
     private static fetchIcon
   }
+  interface ReactIconProps {
+    id: string
+    width?: number
+    height?: number
+    color?: string
+    style: string
+  }
+  export function ReactIcon({
+    id,
+    width,
+    height,
+    color,
+    style,
+  }: ReactIconProps): import("react/jsx-runtime").JSX.Element
 }
 declare module "app/src/gui/window/WindowManager" {
   import { App } from "app/src/App"
@@ -1039,7 +1059,7 @@ declare module "app/src/gui/element/NumberSpinner" {
     minPrecision: number | null
     min: number
     max: number
-    onchange?: (value: number | undefined) => void
+    onChange?: (value: number | undefined) => void
   }
   export class NumberSpinner {
     readonly view: HTMLDivElement
@@ -1069,7 +1089,7 @@ declare module "app/src/gui/element/NumberSpinner" {
 }
 declare module "app/src/gui/element/ValueInput" {
   import { App } from "app/src/App"
-  interface TextInput {
+  export interface TextInput {
     type: "text"
     transformers?: {
       serialize: (value: string) => string
@@ -1077,7 +1097,7 @@ declare module "app/src/gui/element/ValueInput" {
     }
     onChange?: (app: App, value: string) => void
   }
-  type DropdownInput<T> =
+  export type DropdownInput<T> =
     | {
         type: "dropdown"
         items: readonly string[]
@@ -1100,7 +1120,7 @@ declare module "app/src/gui/element/ValueInput" {
         }
         onChange?: (app: App, value: string | number | boolean) => void
       }
-  interface NumberInput {
+  export interface NumberInput {
     type: "number"
     step: number
     precision?: number
@@ -1113,7 +1133,7 @@ declare module "app/src/gui/element/ValueInput" {
     }
     onChange?: (app: App, value: number) => void
   }
-  interface SliderInput {
+  export interface SliderInput {
     type: "slider"
     step?: number
     min?: number
@@ -1126,7 +1146,7 @@ declare module "app/src/gui/element/ValueInput" {
     }
     onChange?: (app: App, value: number) => void
   }
-  interface DisplaySliderInput {
+  export interface DisplaySliderInput {
     type: "display-slider"
     step: number
     min: number
@@ -1140,11 +1160,11 @@ declare module "app/src/gui/element/ValueInput" {
     displayWidth?: number
     width?: number
   }
-  interface CheckboxInput {
+  export interface CheckboxInput {
     type: "checkbox"
     onChange?: (app: App, value: boolean) => void
   }
-  interface ColorInput {
+  export interface ColorInput {
     type: "color"
     onChange?: (app: App, value: string) => void
   }
@@ -1156,6 +1176,12 @@ declare module "app/src/gui/element/ValueInput" {
     | SliderInput
     | DisplaySliderInput
     | ColorInput
+  export function createLabeledInput<T>(
+    app: App,
+    name: string,
+    input: ValueInput<T>,
+    initialValue: any
+  ): HTMLDivElement
   export function createValueInput<T>(
     app: App,
     input: ValueInput<T>,
@@ -3245,20 +3271,6 @@ declare module "app/src/gui/window/ChartListWindow" {
     private getCharts
   }
 }
-declare module "app/src/util/custom-script/CustomScriptEditor" {
-  export type CustomEditor = ReturnType<typeof createEditor>
-  export function createEditor(
-    parent: HTMLElement,
-    value: string,
-    theme: "light" | "dark"
-  ): {
-    transpile: () => Promise<string>
-    getTS: () => string
-    setJS: (code: string) => void
-    swapTheme(theme: "light" | "dark"): void
-    destroy: () => void
-  }
-}
 declare module "app/src/util/custom-script/CustomScriptTypes" {
   import { KeyCombo } from "app/src/data/KeybindData"
   export interface CustomScript {
@@ -3276,7 +3288,7 @@ declare module "app/src/util/custom-script/CustomScriptTypes" {
     selectionNoteIndices: number[]
     args: any[]
   }
-  type CustomScriptArgument =
+  export type CustomScriptArgument =
     | CustomScriptCheckboxArgument
     | CustomScriptColorArgument
     | CustomScriptNumberArgument
@@ -3286,41 +3298,40 @@ declare module "app/src/util/custom-script/CustomScriptTypes" {
   interface CustomScriptBaseArgument {
     name: string
     description: string
-    default?: any
   }
-  interface CustomScriptCheckboxArgument extends CustomScriptBaseArgument {
+  export interface CustomScriptCheckboxArgument
+    extends CustomScriptBaseArgument {
     type: "checkbox"
-    default?: boolean
+    default: boolean
   }
-  interface CustomScriptColorArgument extends CustomScriptBaseArgument {
+  export interface CustomScriptColorArgument extends CustomScriptBaseArgument {
     type: "color"
-    default?: string
+    default: string
   }
-  interface CustomScriptNumberArgument extends CustomScriptBaseArgument {
+  export interface CustomScriptNumberArgument extends CustomScriptBaseArgument {
     type: "number"
-    default?: number
+    default: number
     min?: number
     max?: number
     step?: number
     precision?: number
     minPrecision?: number
   }
-  interface CustomScriptTextArgument extends CustomScriptBaseArgument {
+  export interface CustomScriptTextArgument extends CustomScriptBaseArgument {
     type: "text"
-    default?: string
+    default: string
   }
-  interface CustomScriptDropdownArgument extends CustomScriptBaseArgument {
+  export interface CustomScriptDropdownArgument
+    extends CustomScriptBaseArgument {
     type: "dropdown"
     items: (string | number)[]
-    default?: string | number
+    default: string | number
   }
-  interface CustomScriptSliderArgument extends CustomScriptBaseArgument {
+  export interface CustomScriptSliderArgument extends CustomScriptBaseArgument {
     type: "slider"
-    default?: number
-    min?: number
-    max?: number
-    hardMax?: number
-    hardMin?: number
+    default: number
+    min: number
+    max: number
   }
   interface CustomScriptPayload {
     type: "payload"
@@ -3332,21 +3343,57 @@ declare module "app/src/util/custom-script/CustomScriptTypes" {
   }
   export type CustomScriptResult = CustomScriptPayload | CustomScriptLog
 }
-declare module "app/src/data/SMData" {
-  export const DEFAULT_SM =
-    "#TITLE:New Song;\n#SUBTITLE:;\n#ARTIST:;\n#TITLETRANSLIT:;\n#SUBTITLETRANSLIT:;\n#ARTISTTRANSLIT:;\n#GENRE:;\n#CREDIT:;\n#BANNER:;\n#BACKGROUND:;\n#LYRICSPATH:;\n#CDTITLE:;\n#MUSIC:;\n#OFFSET:0;\n#SAMPLESTART:0.000000;\n#SAMPLELENGTH:10.000000;\n#SELECTABLE:YES;\n#BPMS:0.000=120.000;\n#STOPS:;\n#WARPS:;\n#DELAYS:;\n#SPEEDS:0.000=1.000=0.000=0;\n#SCROLLS:0.000=1.000;\n#TICKCOUNTS:;\n#TIMESIGNATURES:0.000000=4=4;\n#LABELS:;\n#COMBOS:;\n#BGCHANGES:;\n#FGCHANGES:;\n#KEYSOUNDS:;\n#ATTACKS:;\n"
+declare module "app/src/data/CustomScriptWindowData" {
+  import { ValueInput } from "app/src/gui/element/ValueInput"
+  import { CustomScriptArgument } from "app/src/util/custom-script/CustomScriptTypes"
+  type CustomScriptInput<T, U extends CustomScriptArgument> = Omit<
+    ValueInput<T>,
+    "onChange"
+  > & {
+    onChange: (argument: U, value: T) => void
+  }
+  interface CustomScriptArgumentField<T, U extends CustomScriptArgument> {
+    name: string
+    description?: string
+    input: CustomScriptInput<T, U> | ((arg: U) => CustomScriptInput<T, U>)
+    reload?: boolean
+    getValue: (arg: U) => any
+  }
+  export const ARGUMENT_FIELDS: {
+    [Type in CustomScriptArgument["type"]]: CustomScriptArgumentField<
+      any,
+      Extract<
+        CustomScriptArgument,
+        {
+          type: Type
+        }
+      >
+    >[]
+  }
+  export const DEFAULT_ARGUMENTS: {
+    [Type in CustomScriptArgument["type"]]: Extract<
+      CustomScriptArgument,
+      {
+        type: Type
+      }
+    >
+  }
 }
-declare module "app/src/util/custom-script/CustomScriptUtils" {
-  import { Simfile } from "app/src/chart/sm/Simfile"
-  export function createSMPayload(sm: Simfile): any
-  export function createSMFromPayload(payload: any): Promise<Simfile>
-  export function applyPayloadToSM(sm: Simfile, payload: any): Simfile
-}
-declare module "app/src/util/custom-script/CustomScriptRunner" {
-  import { App } from "app/src/App"
-  import { CustomScript } from "app/src/util/custom-script/CustomScriptTypes"
-  export class CustomScriptRunner {
-    static run(app: App, script: CustomScript, args: any): Promise<unknown>
+declare module "app/src/util/custom-script/CustomScriptEditor" {
+  import "monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution"
+  import "monaco-editor/esm/vs/editor/editor.all.js"
+  import "monaco-editor/esm/vs/language/typescript/monaco.contribution"
+  export type CustomEditor = ReturnType<typeof createEditor>
+  export function createEditor(
+    parent: HTMLElement,
+    value: string,
+    theme: "light" | "dark"
+  ): {
+    transpile: () => Promise<string>
+    getTS: () => string
+    setJS: (code: string) => void
+    swapTheme(theme: "light" | "dark"): void
+    destroy: () => void
   }
 }
 declare module "app/src/util/custom-script/CustomScripts" {
@@ -3372,6 +3419,9 @@ declare module "app/src/gui/window/CustomScriptEditorWindow" {
     initView(): void
     private loadScripts
     private loadScriptDetails
+    private createArgumentsTab
+    private buildArgumentEditor
+    private createEditorTab
   }
 }
 declare module "app/src/util/BezierEasing" {
@@ -3508,6 +3558,10 @@ declare module "app/src/util/RecentFileHandler" {
     private static limitEntries
     private static saveEntries
   }
+}
+declare module "app/src/data/SMData" {
+  export const DEFAULT_SM =
+    "#TITLE:New Song;\n#SUBTITLE:;\n#ARTIST:;\n#TITLETRANSLIT:;\n#SUBTITLETRANSLIT:;\n#ARTISTTRANSLIT:;\n#GENRE:;\n#CREDIT:;\n#BANNER:;\n#BACKGROUND:;\n#LYRICSPATH:;\n#CDTITLE:;\n#MUSIC:;\n#OFFSET:0;\n#SAMPLESTART:0.000000;\n#SAMPLELENGTH:10.000000;\n#SELECTABLE:YES;\n#BPMS:0.000=120.000;\n#STOPS:;\n#WARPS:;\n#DELAYS:;\n#SPEEDS:0.000=1.000=0.000=0;\n#SCROLLS:0.000=1.000;\n#TICKCOUNTS:;\n#TIMESIGNATURES:0.000000=4=4;\n#LABELS:;\n#COMBOS:;\n#BGCHANGES:;\n#FGCHANGES:;\n#KEYSOUNDS:;\n#ATTACKS:;\n"
 }
 declare module "app/src/data/SMPropertiesData" {
   import { App } from "app/src/App"
@@ -8534,31 +8588,7 @@ declare module "app/src/chart/ChartManager" {
 }
 declare module "app/src/gui/element/MenubarManager" {
   import { App } from "app/src/App"
-  import {
-    MenuCheckbox,
-    MenuDropdown,
-    MenuMain,
-    MenuOption,
-    MenuSelection,
-  } from "app/src/data/MenubarData"
-  export class MenubarManager {
-    app: App
-    view: HTMLDivElement
-    clicked: boolean
-    constructor(app: App, view: HTMLDivElement)
-    createElement(data: MenuOption): HTMLDivElement
-    createSearchBar(): HTMLDivElement
-    traverseOptions(
-      data: MenuDropdown | MenuMain,
-      path?: string[]
-    ): {
-      path: string[]
-      option: MenuCheckbox | MenuSelection
-    }[]
-    evaluateDynamicProperty<T extends string | number | boolean>(
-      property: T | ((app: App) => T)
-    ): T
-  }
+  export function createMenubar(app: App, view: HTMLDivElement): void
 }
 declare module "app/src/App" {
   import { Container, Renderer } from "pixi.js"
@@ -8567,7 +8597,6 @@ declare module "app/src/App" {
   import { ChartManager } from "app/src/chart/ChartManager"
   import { GameTypeRegistry } from "app/src/chart/gameTypes/GameTypeRegistry"
   import { NoteskinRegistry } from "app/src/chart/gameTypes/noteskin/NoteskinRegistry"
-  import { MenubarManager } from "app/src/gui/element/MenubarManager"
   import { WindowManager } from "app/src/gui/window/WindowManager"
   import { ActionHistory } from "app/src/util/ActionHistory"
   import { EventHandler } from "app/src/util/EventHandler"
@@ -8597,7 +8626,6 @@ declare module "app/src/App" {
     readonly view: HTMLCanvasElement
     readonly chartManager: ChartManager
     readonly windowManager: WindowManager
-    readonly menubarManager: MenubarManager
     readonly actionHistory: ActionHistory
     capturing: boolean
     STAGE_HEIGHT: number
@@ -8612,6 +8640,19 @@ declare module "app/src/App" {
     getCanvasHeight(): number
     checkAppVersion(): void
     checkCoreVersion(): void
+  }
+}
+declare module "app/src/util/custom-script/CustomScriptUtils" {
+  import { Simfile } from "app/src/chart/sm/Simfile"
+  export function createSMPayload(sm: Simfile): any
+  export function createSMFromPayload(payload: any): Promise<Simfile>
+  export function applyPayloadToSM(sm: Simfile, payload: any): Simfile
+}
+declare module "app/src/util/custom-script/CustomScriptRunner" {
+  import { App } from "app/src/App"
+  import { CustomScript } from "app/src/util/custom-script/CustomScriptTypes"
+  export class CustomScriptRunner {
+    static run(app: App, script: CustomScript, args: any): Promise<unknown>
   }
 }
 declare module "app/src/util/custom-script/CustomScriptWorker" {}

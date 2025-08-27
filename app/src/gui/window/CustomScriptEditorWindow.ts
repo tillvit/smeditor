@@ -1,9 +1,17 @@
 import { App } from "../../App"
+import {
+  ARGUMENT_FIELDS,
+  DEFAULT_ARGUMENTS,
+} from "../../data/CustomScriptWindowData"
 import { CustomEditor } from "../../util/custom-script/CustomScriptEditor"
-import { CustomScriptRunner } from "../../util/custom-script/CustomScriptRunner"
 import { CustomScripts } from "../../util/custom-script/CustomScripts"
-import { CustomScript } from "../../util/custom-script/CustomScriptTypes"
+import {
+  CustomScript,
+  CustomScriptArgument,
+} from "../../util/custom-script/CustomScriptTypes"
 import { Themes } from "../../util/Theme"
+import { capitalize } from "../../util/Util"
+import { createLabeledInput, ValueInput } from "../element/ValueInput"
 import { Window } from "./Window"
 
 export class CustomScriptEditorWindow extends Window {
@@ -100,37 +108,142 @@ export class CustomScriptEditorWindow extends Window {
     }
     this.currentScript = script
 
+    this.scriptData!.replaceChildren(
+      this.createArgumentsTab(script),
+      await this.createEditorTab(script)
+    )
+  }
+
+  private createArgumentsTab(script: CustomScript) {
+    const scriptArguments = document.createElement("div")
+    script.arguments.forEach(arg => {
+      const argument = document.createElement("div")
+
+      const name = document.createElement("div")
+      name.innerText = arg.name
+
+      const editor = this.buildArgumentEditor(arg)
+      argument.replaceChildren(name, editor)
+      scriptArguments.appendChild(argument)
+    })
+    return scriptArguments
+  }
+
+  private buildArgumentEditor(arg: CustomScriptArgument) {
+    const inputs = document.createElement("div")
+    const nameInput = createLabeledInput(
+      this.app,
+      "Name",
+      {
+        type: "text",
+        onChange: (_, value) => {
+          arg.name = value
+        },
+      },
+      arg.name
+    )
+    const descriptionInput = createLabeledInput(
+      this.app,
+      "Description",
+      {
+        type: "text",
+        onChange: (_, value) => {
+          arg.description = value
+        },
+      },
+      arg.description
+    )
+    const typeInput = createLabeledInput(
+      this.app,
+      "Type",
+      {
+        type: "dropdown",
+        items: ["Text", "Number", "Checkbox", "Color", "Dropdown", "Slider"],
+        advanced: false,
+        onChange: (_, value) => {
+          const oldName = arg.name
+          const oldDescription = arg.description
+          const newType = (
+            value as string
+          ).toLowerCase() as CustomScriptArgument["type"]
+          Object.keys(arg).forEach(key => {
+            delete (arg as any)[key]
+          })
+          Object.assign(arg, DEFAULT_ARGUMENTS[newType])
+          arg.name = oldName
+          arg.description = oldDescription
+          console.log(arg)
+          loadTypeSpecificInputs(arg)
+        },
+      },
+      capitalize(arg.type)
+    )
+
+    const loadTypeSpecificInputs = <Type extends CustomScriptArgument["type"]>(
+      arg: Extract<CustomScriptArgument, { type: Type }>
+    ) => {
+      inputs.replaceChildren(nameInput, descriptionInput, typeInput)
+      const fields = ARGUMENT_FIELDS[arg.type]
+      fields.forEach(field => {
+        const fieldInput =
+          typeof field.input == "function" ? field.input(arg) : field.input
+        const inputOnChange = fieldInput.onChange
+        const input = createLabeledInput(
+          this.app,
+          field.name,
+          {
+            ...fieldInput,
+            onChange: (_: App, value: any) => {
+              inputOnChange(arg, value)
+              if (field.reload) {
+                console.log("reloading", arg)
+                loadTypeSpecificInputs(arg)
+              }
+            },
+          } as Extract<ValueInput<any>, { type: Type }>,
+          field.getValue(arg)
+        )
+        inputs.appendChild(input)
+      })
+    }
+
+    loadTypeSpecificInputs(arg)
+    return inputs
+  }
+
+  private async createEditorTab(script: CustomScript) {
+    this.currentEditor?.destroy()
+    const editorTab = document.createElement("div")
+    editorTab.style.width = "100%"
+    editorTab.style.height = "100%"
+
     const createEditor = await import(
       "../../util/custom-script/CustomScriptEditor"
     ).then(m => m.createEditor)
 
     const editor = createEditor(
-      this.scriptData!,
+      editorTab,
       script.tsCode,
       Themes.isDarkTheme() ? "dark" : "light"
     )
-    const transpile = document.createElement("button")
-    transpile.innerText = "Transpile & Save"
-    transpile.onclick = async () => {
-      const code = await editor.transpile()
-      console.log(code)
-    }
-    this.scriptData!.appendChild(transpile)
+    this.currentScript
 
-    const run = document.createElement("button")
-    run.innerText = "Run Script"
-    run.style.marginLeft = "10px"
-    run.onclick = async () => {
-      this.currentScript!.tsCode = editor.getTS()
-      this.currentScript!.jsCode = await editor.transpile()
-      console.log(this.currentScript)
-      CustomScriptRunner.run(this.app, this.currentScript!, {})
-    }
-    this.scriptData!.appendChild(run)
+    // const run = document.createElement("button")
+    // run.innerText = "Run Script"
+    // run.style.marginLeft = "10px"
+    // run.onclick = async () => {
+    //   this.currentScript!.tsCode = editor.getTS()
+    //   this.currentScript!.jsCode = await editor.transpile()
+    //   console.log(this.currentScript)
+    //   CustomScriptRunner.run(this.app, this.currentScript!, {})
+    // }
+    // this.scriptData!.appendChild(run)
 
     this.scriptData!.style.width = "100%"
     this.scriptData!.style.height = "400px"
 
     this.currentEditor = editor
+
+    return editorTab
   }
 }

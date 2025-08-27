@@ -10,7 +10,7 @@ interface NumberSpinnerOptions {
   minPrecision: number | null
   min: number
   max: number
-  onchange?: (value: number | undefined) => void
+  onChange?: (value: number | undefined) => void
 }
 
 export class NumberSpinner {
@@ -44,7 +44,7 @@ export class NumberSpinner {
     input.onblur = () => {
       if (input.value === this.lastVal) return
       if (input.value === "") {
-        this.options.onchange?.(undefined)
+        this.options.onChange?.(undefined)
         return
       }
       const val = parseString(input.value)
@@ -57,7 +57,7 @@ export class NumberSpinner {
         this.options.precision
       )
       input.value = this.formatValue(value)
-      this.options.onchange?.(value)
+      this.options.onChange?.(value)
     }
     input.onkeydown = ev => {
       if (ev.key == "Enter") input.blur()
@@ -82,17 +82,21 @@ export class NumberSpinner {
     upButton.appendChild(Icons.getIcon("CHEVRON", 10))
     upButton.tabIndex = -1
     upButton.onclick = e => {
+      let value = parseFloat(input.value)
+      if (isNaN(value)) {
+        value = options.min ?? 0
+      }
       let changeStep = this.options.step ?? Options.general.spinnerStep
       if (e.getModifierState("Shift")) {
         changeStep /= 10
       }
-      if (parseFloat(input.value) + changeStep > this.options.max) {
+      if (value + changeStep > this.options.max) {
         input.value = this.formatValue(this.options.max)
-        this.options.onchange?.(this.options.max)
+        this.options.onChange?.(this.options.max)
         return
       }
-      input.value = this.formatValue(parseFloat(input.value) + changeStep)
-      this.options.onchange?.(parseFloat(input.value))
+      input.value = this.formatValue(value + changeStep)
+      this.options.onChange?.(value)
     }
     spinner.appendChild(upButton)
 
@@ -101,26 +105,39 @@ export class NumberSpinner {
     downButton.appendChild(Icons.getIcon("CHEVRON", 10))
     downButton.tabIndex = -1
     downButton.onclick = e => {
+      let value = parseFloat(input.value)
+      if (isNaN(value)) {
+        value = options.max ?? 10
+      }
       let changeStep = this.options.step ?? Options.general.spinnerStep
       if (e.getModifierState("Shift")) {
         changeStep /= 10
       }
-      if (parseFloat(input.value) - changeStep < this.options.min) {
+      if (value - changeStep < this.options.min) {
         input.value = this.formatValue(this.options.min)
-        this.options.onchange?.(this.options.min)
+        this.options.onChange?.(this.options.min)
         return
       }
-      input.value = this.formatValue(parseFloat(input.value) - changeStep)
-      this.options.onchange?.(parseFloat(input.value))
+      input.value = this.formatValue(value - changeStep)
+      this.options.onChange?.(value)
     }
     spinner.appendChild(downButton)
   }
 
   static create(options: Partial<NumberSpinnerOptions>) {
+    for (const key of Object.keys(options)) {
+      if (key == "value") continue
+      if (options[key as keyof NumberSpinnerOptions] === undefined) {
+        delete options[key as keyof NumberSpinnerOptions]
+      }
+    }
     return new NumberSpinner(document.createElement("div"), options)
   }
 
-  private formatValue(value: number) {
+  private formatValue(value: number | undefined) {
+    if (value === undefined) {
+      return ""
+    }
     const decimalLength = value.toString().split(".")[1]?.length ?? 0
     if (
       this.options.minPrecision !== null &&
@@ -193,11 +210,11 @@ export class NumberSpinner {
   }
 
   get onchange(): ((value: number | undefined) => void) | undefined {
-    return this.options.onchange
+    return this.options.onChange
   }
 
   set onchange(value: ((value: number | undefined) => void) | undefined) {
-    this.options.onchange = value
+    this.options.onChange = value
   }
 
   get disabled(): boolean {

@@ -25,7 +25,47 @@ for (const bpm of bpms) {
 const scrolls = bpms.map(bpm => ScrollEvent(bpm.beat, maxBPM / Math.abs(bpm.value)));
 chart.timingData.insertColumnEvents(scrolls);
 `,
-    arguments: [],
+    arguments: [
+      {
+        type: "checkbox",
+        name: "Example Argument",
+        description: "This is an example argument",
+        default: true,
+      },
+      {
+        type: "text",
+        name: "Another Argument",
+        description: "This is another argument",
+        default: "Hello World",
+      },
+      {
+        type: "number",
+        name: "Yet Another Argument",
+        description: "This is yet another argument",
+        default: 42,
+      },
+      {
+        type: "slider",
+        name: "Final Argument",
+        description: "This is the final argument",
+        default: 0,
+        min: 0,
+        max: 100,
+      },
+      {
+        type: "dropdown",
+        name: "Dropdown Argument",
+        description: "This is a dropdown argument",
+        items: ["Option 1", "Option 2", "Option 3"],
+        default: "Option 1",
+      },
+      {
+        type: "color",
+        name: "Final Argument",
+        description: "This is the final argument",
+        default: "#ffffff",
+      },
+    ],
     keybinds: [],
   },
 ]

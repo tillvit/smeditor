@@ -1,3 +1,5 @@
+import { useMemo } from "react"
+
 class Icon extends HTMLDivElement {
   _width: number | undefined
   _height: number | undefined
@@ -82,6 +84,25 @@ export class Icons {
     return wrapper
   }
 
+  static getReactIcon(
+    id: string,
+    width?: number,
+    height?: number,
+    color?: string
+  ) {
+    const icon = this.getIcon(id, width, height, color)
+    return useMemo(
+      () => (
+        <div
+          ref={ref => {
+            void ref?.appendChild(icon)
+          }}
+        ></div>
+      ),
+      []
+    )
+  }
+
   private static fetchIcon(id: string) {
     fetch(`/smeditor/assets/svg/${id}.svg`)
       .then(res => res.text())
@@ -93,4 +114,27 @@ export class Icons {
         this.pendingWrappers.set(id, [])
       })
   }
+}
+
+interface ReactIconProps {
+  id: string
+  width?: number
+  height?: number
+  color?: string
+  style: string
+}
+
+export function ReactIcon({ id, width, height, color, style }: ReactIconProps) {
+  const icon = Icons.getIcon(id, width, height, color)
+  return useMemo(
+    () => (
+      <div
+        ref={ref => {
+          void ref?.replaceWith(icon)
+          icon.style = style
+        }}
+      ></div>
+    ),
+    []
+  )
 }

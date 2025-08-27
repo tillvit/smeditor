@@ -18,7 +18,7 @@ import { GameTypeRegistry } from "./chart/gameTypes/GameTypeRegistry"
 import { NoteskinRegistry } from "./chart/gameTypes/noteskin/NoteskinRegistry"
 import { Chart } from "./chart/sm/Chart"
 import { ContextMenuPopup } from "./gui/element/ContextMenu"
-import { MenubarManager } from "./gui/element/MenubarManager"
+import { createMenubar } from "./gui/element/MenubarManager"
 import { WaterfallManager } from "./gui/element/WaterfallManager"
 import { AppUpdateNotification } from "./gui/notification/AppUpdateNotification"
 import { CoreUpdateNotification } from "./gui/notification/CoreUpdateNotification"
@@ -81,7 +81,6 @@ export class App {
   readonly view: HTMLCanvasElement
   readonly chartManager: ChartManager
   readonly windowManager: WindowManager
-  readonly menubarManager: MenubarManager
   readonly actionHistory: ActionHistory
   capturing = false
 
@@ -171,10 +170,7 @@ export class App {
     BetterRoundedRect.init(this.renderer)
 
     this.chartManager = new ChartManager(this)
-    this.menubarManager = new MenubarManager(
-      this,
-      document.getElementById("menubar") as HTMLDivElement
-    )
+    createMenubar(this, document.getElementById("menubar") as HTMLDivElement)
     this.windowManager = new WindowManager(
       this,
       document.getElementById("windows") as HTMLDivElement

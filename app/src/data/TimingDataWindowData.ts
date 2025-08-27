@@ -41,7 +41,7 @@ function createSimpleData(
         ...precisionSettings,
         value: 0,
         min: type == "WARPS" ? 0 : -Number.MAX_VALUE,
-        onchange: value => {
+        onChange: value => {
           const timingData = app.chartManager.loadedChart!.timingData
           const beat = Math.round(app.chartManager.beat * 48) / 48
           if (value == undefined) {
@@ -79,7 +79,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
         const input = NumberSpinner.create({
           ...precisionSettings,
           step: Options.general.spinnerStep / 100,
-          onchange: value => {
+          onChange: value => {
             const timingData = app.chartManager.loadedChart!.timingData
             if (value == undefined) return
             if (timingData.hasChartOffset()) {
@@ -127,7 +127,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           step: 1,
           precision: 0,
           min: 1,
-          onchange: value => {
+          onChange: value => {
             const timingData = app.chartManager.loadedChart!.timingData
             const beat = Math.round(app.chartManager.beat * 48) / 48
             if (value == undefined) {
@@ -150,7 +150,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           step: 1,
           precision: 0,
           min: 1,
-          onchange: value => {
+          onChange: value => {
             const timingData = app.chartManager.loadedChart!.timingData
             const beat = Math.round(app.chartManager.beat * 48) / 48
             if (value == undefined) {
@@ -195,7 +195,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           step: 1,
           precision: 0,
           min: 0,
-          onchange: value => {
+          onChange: value => {
             const timingData = app.chartManager.loadedChart!.timingData
             const beat = Math.round(app.chartManager.beat * 48) / 48
             if (value == undefined) {
@@ -228,7 +228,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           step: 1,
           precision: 0,
           min: 0,
-          onchange: value => {
+          onChange: value => {
             const timingData = app.chartManager.loadedChart!.timingData
             const beat = Math.round(app.chartManager.beat * 48) / 48
             if (value == undefined) {
@@ -251,7 +251,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           step: 1,
           precision: 0,
           min: 0,
-          onchange: value => {
+          onChange: value => {
             const timingData = app.chartManager.loadedChart!.timingData
             const beat = Math.round(app.chartManager.beat * 48) / 48
             if (value == undefined) {
@@ -318,7 +318,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           ...precisionSettings,
           value: 1,
           step: 0.1,
-          onchange: value => {
+          onChange: value => {
             const timingData = app.chartManager.loadedChart!.timingData
             const beat = Math.round(app.chartManager.beat * 48) / 48
             if (value == undefined) {
@@ -334,7 +334,7 @@ export const TIMING_WINDOW_DATA: { [key: string]: TimingDataWindowData } = {
           value: 1,
           step: 0.1,
           min: 0,
-          onchange: value => {
+          onChange: value => {
             if (value == undefined || value < 0) return
             update()
           },

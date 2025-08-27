@@ -15,6 +15,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": true,
+    "jsx": "react-jsx",
     "types": [
       "vite/client",
       "@types/dom-webcodecs",

@@ -22,13 +22,16 @@
     "@types/howler": "^2.2.7",
     "@types/node": "^20.4.8",
     "@types/nw.js": "^0.13.16",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.8",
     "@types/webfontloader": "^1.6.35",
     "@typescript-eslint/eslint-plugin": "^6.3.0",
     "@typescript-eslint/parser": "^6.3.0",
     "cross-env": "^7.0.3",
-    "eslint": "^8.31.0",
+    "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-react": "^7.37.5",
     "husky": "^8.0.3",
     "lint-staged": "^15.5.2",
     "nw": "^0.90.0-sdk",
@@ -37,13 +40,13 @@
     "prettier-plugin-glsl": "^0.1.2",
     "typescript": "^5.8.3",
     "vite": "^7.1.3",
-    "vite-plugin-monaco-editor": "^1.1.0",
     "vite-plugin-pwa": "^1.0.3",
     "vitepress": "^1.6.4"
   },
   "dependencies": {
     "@pixi/filter-adjustment": "^5.0.0",
     "@types/dom-webcodecs": "^0.1.11",
+    "@vitejs/plugin-react": "^5.0.1",
     "base85": "^3.1.0",
     "bezier-easing": "^2.1.0",
     "buffer": "^6.0.3",
@@ -57,13 +60,21 @@
     "monaco-editor": "^0.52.2",
     "mp4-muxer": "^3.0.3",
     "pixi.js": "^7.0.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "scroll-into-view-if-needed": "^3.0.3",
     "semver": "^7.5.4",
     "tippy.js": "^6.3.7",
+    "vite-plugin-monaco-editor-esm": "^2.0.2",
     "webfontloader": "^1.6.28"
   },
   "lint-staged": {
     "*.ts": [
+      "prettier --write",
+      "eslint --fix",
+      "git add"
+    ],
+    "*.tsx": [
       "prettier --write",
       "eslint --fix",
       "git add"

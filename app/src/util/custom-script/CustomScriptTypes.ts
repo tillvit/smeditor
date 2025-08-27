@@ -17,7 +17,7 @@ export interface CustomScriptWorkerArgs {
   args: any[]
 }
 
-type CustomScriptArgument =
+export type CustomScriptArgument =
   | CustomScriptCheckboxArgument
   | CustomScriptColorArgument
   | CustomScriptNumberArgument
@@ -28,22 +28,21 @@ type CustomScriptArgument =
 interface CustomScriptBaseArgument {
   name: string
   description: string
-  default?: any
 }
 
-interface CustomScriptCheckboxArgument extends CustomScriptBaseArgument {
+export interface CustomScriptCheckboxArgument extends CustomScriptBaseArgument {
   type: "checkbox"
-  default?: boolean
+  default: boolean
 }
 
-interface CustomScriptColorArgument extends CustomScriptBaseArgument {
+export interface CustomScriptColorArgument extends CustomScriptBaseArgument {
   type: "color"
-  default?: string
+  default: string
 }
 
-interface CustomScriptNumberArgument extends CustomScriptBaseArgument {
+export interface CustomScriptNumberArgument extends CustomScriptBaseArgument {
   type: "number"
-  default?: number
+  default: number
   min?: number
   max?: number
   step?: number
@@ -51,24 +50,22 @@ interface CustomScriptNumberArgument extends CustomScriptBaseArgument {
   minPrecision?: number
 }
 
-interface CustomScriptTextArgument extends CustomScriptBaseArgument {
+export interface CustomScriptTextArgument extends CustomScriptBaseArgument {
   type: "text"
-  default?: string
+  default: string
 }
 
-interface CustomScriptDropdownArgument extends CustomScriptBaseArgument {
+export interface CustomScriptDropdownArgument extends CustomScriptBaseArgument {
   type: "dropdown"
   items: (string | number)[]
-  default?: string | number
+  default: string | number
 }
 
-interface CustomScriptSliderArgument extends CustomScriptBaseArgument {
+export interface CustomScriptSliderArgument extends CustomScriptBaseArgument {
   type: "slider"
-  default?: number
-  min?: number
-  max?: number
-  hardMax?: number
-  hardMin?: number
+  default: number
+  min: number
+  max: number
 }
 
 interface CustomScriptPayload {

@@ -537,7 +537,7 @@ export class CaptureWindow extends Window {
 
     const beatInput = NumberSpinner.create({
       value: 0,
-      onchange: value => {
+      onChange: value => {
         if (value === undefined) {
           return
         }
@@ -548,7 +548,7 @@ export class CaptureWindow extends Window {
 
     const secondInput = NumberSpinner.create({
       value: 0,
-      onchange: value => {
+      onChange: value => {
         if (value === undefined) {
           return
         }
