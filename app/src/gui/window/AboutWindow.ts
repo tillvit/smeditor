@@ -12,7 +12,6 @@ export class AboutWindow extends Window {
     })
     this.app = app
     this.initView()
-    requestAnimationFrame(() => this.center())
   }
 
   initView(): void {
