@@ -271,6 +271,11 @@ export class TechErrorIndicators
       this.visible = false
       return
     }
+    this.topCounter.visible =
+      this.renderer.chartManager.getMode() == EditMode.Edit
+    this.bottomCounter.visible =
+      this.renderer.chartManager.getMode() == EditMode.Edit
+
     this.visible = true
     if (this.parityDirty) {
       this.rowMap.clear()
