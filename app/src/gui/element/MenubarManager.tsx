@@ -14,13 +14,23 @@ import { Flags } from "../../util/Flags"
 import { Keybinds } from "../../util/Keybinds"
 import { ReactIcon } from "../Icons"
 
-interface MenubarProps {
+interface MenubarProps<T extends MenuOption = MenuOption> {
   app: App
   id: string
-  data: MenuOption
+  data: T
   parentActive: string | null
   setActive: (key: string | null) => void
   close: () => void
+}
+
+function evaluateDynamicProperty<T extends string | number | boolean>(
+  app: App,
+  property: T | ((app: App) => T)
+) {
+  if (typeof property === "function") {
+    return property(app)
+  }
+  return property
 }
 
 function SearchBar(props: { app: App }) {
@@ -28,15 +38,6 @@ function SearchBar(props: { app: App }) {
   const [results, setResults] = useState<
     { path: string[]; option: MenuCheckbox | MenuSelection }[]
   >([])
-
-  function evaluateDynamicProperty<T extends string | number | boolean>(
-    property: T | ((app: App) => T)
-  ) {
-    if (typeof property === "function") {
-      return property(props.app)
-    }
-    return property
-  }
 
   function traverseOptions(
     data: MenuDropdown | MenuMain,
@@ -53,7 +54,7 @@ function SearchBar(props: { app: App }) {
           results = results.concat(
             traverseOptions(option, [
               ...path,
-              evaluateDynamicProperty(option.title),
+              evaluateDynamicProperty(props.app, option.title),
             ])
           )
           break
@@ -87,7 +88,7 @@ function SearchBar(props: { app: App }) {
         const keybind = KEYBIND_DATA[data.option.id]
         if (
           keybind.visible !== undefined &&
-          !evaluateDynamicProperty(keybind.visible)
+          !evaluateDynamicProperty(props.app, keybind.visible)
         )
           return false
         return true
@@ -95,7 +96,7 @@ function SearchBar(props: { app: App }) {
     if (filtered.length > 15) {
       filtered = filtered.filter(data => {
         const keybind = KEYBIND_DATA[data.option.id]
-        return !evaluateDynamicProperty(keybind.disabled)
+        return !evaluateDynamicProperty(props.app, keybind.disabled)
       })
     }
     setResults(filtered.slice(0, 15))
@@ -137,103 +138,70 @@ function SearchBar(props: { app: App }) {
   )
 }
 
-function MenubarItem(props: MenubarProps) {
-  const [activeItem, setActiveItem] = useState<string | null>(null)
-
-  function getItemData(app: App, option: MenuOption) {
-    switch (option.type) {
-      case "selection":
-      case "checkbox": {
-        const meta = KEYBIND_DATA[option.id] ?? {
-          label: option.id,
-          combos: [],
-          callback: () => {},
-        }
-        const visible =
-          meta.visible === undefined ||
-          (typeof meta.visible === "function"
-            ? meta.visible(app)
-            : meta.visible)
-        const disabled =
-          typeof meta.disabled === "function"
-            ? meta.disabled(app)
-            : meta.disabled
-        return {
-          title: meta.label,
-          visible,
-          disabled,
-        }
-      }
-      case "menu": {
-        return {
-          title: option.title,
-          visible: true,
-          disabled: false,
-        }
-      }
-      case "dropdown": {
-        if (typeof option.title == "function") {
-          return {
-            title: option.title(app),
-            visible: true,
-            disabled: false,
-          }
-        }
-        return {
-          title: option.title,
-          visible: true,
-          disabled: false,
-        }
-      }
-      case "separator": {
-        return {
-          title: "",
-          visible: true,
-          disabled: false,
-        }
-      }
-    }
+function MenubarSelection(props: MenubarProps<MenuSelection | MenuCheckbox>) {
+  const meta = KEYBIND_DATA[props.data.id] ?? {
+    label: props.data.id,
+    combos: [],
+    callback: () => {},
   }
+  const visible =
+    meta.visible === undefined ||
+    evaluateDynamicProperty(props.app, meta.visible)
+  const disabled = evaluateDynamicProperty(props.app, meta.disabled)
+  if (!visible) return <></>
 
-  function isChecked() {
-    if (props.data.type != "checkbox") return false
-    let checked = props.data.checked
-    if (typeof checked == "function") checked = checked(props.app)
-    return checked
-  }
-
-  const data = getItemData(props.app, props.data)
-  if (!data.visible) return <></>
-
-  if (props.data.type == "separator") {
-    return (
-      <div className="separator" onClick={event => event.stopPropagation()} />
-    )
-  }
+  const checked =
+    props.data.type == "checkbox" &&
+    evaluateDynamicProperty(props.app, props.data.checked)
 
   return (
     <div
       className={
         "menu-item" +
-        (props.data.type == "menu" ? " menu-main" : "") +
-        (data.disabled ? " disabled" : "") +
+        (disabled ? " disabled" : "") +
         (props.parentActive == props.id ? " selected" : "")
       }
       onClick={event => {
         event.stopPropagation()
-        if (data.disabled) return
-        if (props.data.type == "menu") {
-          if (props.parentActive == props.id) {
-            props.setActive(null)
-            return
-          }
-          props.setActive(props.id)
-        }
-        if (props.data.type != "selection" && props.data.type != "checkbox")
-          return
-        const meta = KEYBIND_DATA[props.data.id]
+        if (disabled) return
         meta?.callback(props.app)
         props.close()
+      }}
+      onMouseEnter={() => props.setActive(props.id)}
+    >
+      <div className="menu-title">
+        <span className="title unselectable">
+          {checked && "✓ "}
+          {meta.label}
+        </span>
+        <span className="keybind unselectable">
+          {Keybinds.getKeybindString(props.data.id)}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function MenubarDropdown(props: MenubarProps<MenuDropdown | MenuMain>) {
+  const [activeItem, setActiveItem] = useState<string | null>(null)
+  const title =
+    typeof props.data.title === "function"
+      ? props.data.title(props.app)
+      : props.data.title
+  return (
+    <div
+      className={
+        "menu-item" +
+        (props.data.type == "menu" ? " menu-main" : "") +
+        (props.parentActive == props.id ? " selected" : "")
+      }
+      onClick={event => {
+        event.stopPropagation()
+        if (props.parentActive == props.id && props.data.type == "menu") {
+          props.setActive(null)
+          return
+        }
+        props.setActive(props.id)
       }}
       onMouseEnter={() => {
         if (props.data.type == "menu") {
@@ -246,15 +214,7 @@ function MenubarItem(props: MenubarProps) {
       }}
     >
       <div className="menu-title">
-        <span className="title unselectable">
-          {props.data.type == "checkbox" && isChecked() && "✓ "}
-          {data.title}
-        </span>
-        {(props.data.type == "selection" || props.data.type == "checkbox") && (
-          <span className="keybind unselectable">
-            {Keybinds.getKeybindString(props.data.id)}
-          </span>
-        )}
+        <span className="title unselectable">{title}</span>
         {props.data.type == "dropdown" && (
           <ReactIcon
             id="CHEVRON"
@@ -265,29 +225,41 @@ function MenubarItem(props: MenubarProps) {
           />
         )}
       </div>
-      {(props.data.type == "dropdown" || props.data.type == "menu") &&
-        props.parentActive == props.id && (
-          <div className="menubar-dropdown">
-            {props.data.type == "menu" && data.title == "Help" && (
-              <SearchBar app={props.app} />
-            )}
-            {props.data.options.map((option, i) => {
-              return (
-                <MenubarItem
-                  key={i}
-                  app={props.app}
-                  id={props.id + "-" + i}
-                  data={option}
-                  parentActive={activeItem}
-                  setActive={setActiveItem}
-                  close={() => {
-                    props.close()
-                  }}
-                />
-              )
-            })}
-          </div>
-        )}
+      {props.parentActive == props.id && (
+        <div className="menubar-dropdown">
+          {props.data.type == "menu" && props.data.title == "Help" && (
+            <SearchBar app={props.app} />
+          )}
+          {props.data.options.map((option, i) => {
+            const newProps = {
+              key: i,
+              app: props.app,
+              id: props.id + "-" + i,
+              parentActive: activeItem,
+              setActive: setActiveItem,
+              close: () => {
+                props.close()
+              },
+            }
+            switch (option.type) {
+              case "separator":
+                return (
+                  <div
+                    className="separator"
+                    key={i}
+                    onClick={event => event.stopPropagation()}
+                  />
+                )
+              case "selection":
+              case "checkbox":
+                return <MenubarSelection {...newProps} data={option} />
+              case "dropdown":
+              case "menu":
+                return <MenubarDropdown {...newProps} data={option} />
+            }
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -312,7 +284,7 @@ function Menubar(props: { app: App }): React.JSX.Element {
     <>
       {Object.entries(MENUBAR_DATA).map(([key, data]) => {
         return (
-          <MenubarItem
+          <MenubarDropdown
             key={key}
             id={key}
             app={props.app}
