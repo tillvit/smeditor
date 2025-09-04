@@ -1,6 +1,13 @@
 import { App } from "../../App"
 import { KEYBIND_DATA } from "../../data/KeybindData"
-import { MENUBAR_DATA, MenuOption } from "../../data/MenubarData"
+import {
+  MENUBAR_DATA,
+  MenuCheckbox,
+  MenuDropdown,
+  MenuMain,
+  MenuOption,
+  MenuSelection,
+} from "../../data/MenubarData"
 import { Flags } from "../../util/Flags"
 import { Keybinds } from "../../util/Keybinds"
 import { Icons } from "../Icons"
@@ -61,6 +68,11 @@ export class MenubarManager {
         let disabled = meta.disabled
         if (typeof disabled == "function") disabled = disabled(this.app)
         if (disabled) item.classList.add("disabled")
+
+        let visible = meta.visible
+        if (visible === undefined) visible = true
+        if (typeof visible == "function") visible = visible(this.app)
+        if (!visible) return document.createElement("div")
 
         item.addEventListener("click", event => {
           let disabled = meta.disabled
@@ -137,6 +149,10 @@ export class MenubarManager {
         dropdown.replaceChildren(
           ...data.options.map(x => this.createElement(x))
         )
+        if (data.title == "Help") {
+          const searchBar = this.createSearchBar()
+          dropdown.insertBefore(searchBar, dropdown.firstElementChild)
+        }
         menuitem.classList.add("selected")
       }
       title.onmouseenter = () => {
@@ -144,6 +160,10 @@ export class MenubarManager {
         dropdown.replaceChildren(
           ...data.options.map(x => this.createElement(x))
         )
+        if (data.title == "Help") {
+          const searchBar = this.createSearchBar()
+          dropdown.insertBefore(searchBar, dropdown.firstElementChild)
+        }
         menuitem.parentElement!.querySelectorAll(".menu-item").forEach(el => {
           if (el != menuitem) el.classList.remove("selected")
         })
@@ -158,5 +178,129 @@ export class MenubarManager {
       return menuitem
     }
     return document.createElement("div")
+  }
+
+  createSearchBar() {
+    const container = document.createElement("div")
+    container.classList.add("menu-search")
+
+    const input = document.createElement("input")
+    input.type = "text"
+    input.placeholder = "Search the menus..."
+
+    const dropdown = document.createElement("div")
+    dropdown.classList.add("menu-search-dropdown")
+
+    input.oninput = () => {
+      const query = input.value.trim().toLowerCase()
+      if (query == "") {
+        dropdown.replaceChildren()
+        return
+      }
+      const options = Object.values(MENUBAR_DATA)
+        .map(v => this.traverseOptions(v, [v.title]))
+        .flat()
+      let filteredOptions = options.filter(data => {
+        if (!data.path.some(part => part.toLowerCase().includes(query)))
+          return false
+        const keybind = KEYBIND_DATA[data.option.id]
+        if (
+          keybind.visible !== undefined &&
+          !this.evaluateDynamicProperty(keybind.visible)
+        )
+          return false
+        return true
+      })
+      if (filteredOptions.length > 15) {
+        filteredOptions = filteredOptions.filter(data => {
+          const keybind = KEYBIND_DATA[data.option.id]
+          return !this.evaluateDynamicProperty(keybind.disabled)
+        })
+      }
+      filteredOptions = filteredOptions.slice(0, 15)
+      dropdown.replaceChildren(
+        ...filteredOptions.map(data => {
+          const el = this.createElement(data.option)
+          const title: HTMLDivElement | null = el.querySelector(".title")
+          if (title) {
+            title.innerText = data.path.join(" > ")
+          }
+
+          // const container = document.createElement("div")
+          // container.classList.add("menu-item")
+          // const title = document.createElement("div")
+          // title.classList.add("menu-item-title", "menu-hover")
+          // title.innerText = path.join(" > ")
+          // container.replaceChildren(title)
+          return el
+        })
+      )
+      if (filteredOptions.length == 0) {
+        const item = document.createElement("div")
+        const title_bar = document.createElement("div")
+        const title = document.createElement("div")
+        item.classList.add("disabled")
+        title.innerText = "No results found"
+
+        title_bar.appendChild(title)
+        item.appendChild(title_bar)
+        item.classList.add("menu-item")
+        title_bar.classList.add("menu-item-title", "menu-hover")
+        title.classList.add("title", "unselectable")
+        dropdown.appendChild(item)
+      }
+    }
+
+    input.autofocus = true
+    input.onclick = e => {
+      e.stopImmediatePropagation()
+    }
+
+    container.appendChild(input)
+    container.appendChild(dropdown)
+    return container
+  }
+
+  traverseOptions(
+    data: MenuDropdown | MenuMain,
+    path: string[] = []
+  ): { path: string[]; option: MenuCheckbox | MenuSelection }[] {
+    let results: {
+      path: string[]
+      option: MenuCheckbox | MenuSelection
+    }[] = []
+    for (const option of data.options) {
+      switch (option.type) {
+        case "dropdown":
+        case "menu":
+          results = results.concat(
+            this.traverseOptions(option, [
+              ...path,
+              this.evaluateDynamicProperty(option.title),
+            ])
+          )
+          break
+        case "selection":
+        case "checkbox":
+          results.push({
+            path: [...path, KEYBIND_DATA[option.id].label],
+            option,
+          })
+          break
+        case "separator":
+          break
+      }
+    }
+
+    return results
+  }
+
+  evaluateDynamicProperty<T extends string | number | boolean>(
+    property: T | ((app: App) => T)
+  ) {
+    if (typeof property == "function") {
+      return property(this.app)
+    }
+    return property
   }
 }

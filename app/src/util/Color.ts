@@ -1,7 +1,9 @@
 import { Color, ColorSource } from "pixi.js"
+import { Foot } from "../chart/stats/parity/ParityDataTypes"
 import { ThemeProperty } from "../data/ThemeData"
 import { EventHandler } from "./EventHandler"
 import { clamp, lerp } from "./Math"
+import { Options } from "./Options"
 import { Themes } from "./Theme"
 
 export function rgbtoHex(r: number, g: number, b: number): number {
@@ -159,4 +161,15 @@ export function colorFallback(
   } catch (e) {
     return new Color(fallback ?? "black")
   }
+}
+
+export function getParityColor(foot: Foot | undefined) {
+  if (foot == Foot.LEFT_HEEL)
+    return new Color(Options.chart.parity.leftHeelColor)
+  if (foot == Foot.LEFT_TOE) return new Color(Options.chart.parity.leftToeColor)
+  if (foot == Foot.RIGHT_HEEL)
+    return new Color(Options.chart.parity.rightHeelColor)
+  if (foot == Foot.RIGHT_TOE)
+    return new Color(Options.chart.parity.rightToeColor)
+  return new Color("#00000000")
 }

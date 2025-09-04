@@ -70,7 +70,7 @@ interface AppVersion {
 const BASE_STAGE_HEIGHT = 960
 
 export class App {
-  readonly VERSION = "1.4.1"
+  readonly VERSION = "1.4.2"
 
   readonly options = Options
   readonly events = EventHandler
@@ -214,7 +214,7 @@ export class App {
           if (!sm) return
           let gameTypeCharts: Chart[] | undefined
           if (Flags.chartType != null) {
-            gameTypeCharts = sm.charts[Flags.chartType]
+            gameTypeCharts = sm.getChartsByGameType(Flags.chartType)
             if (gameTypeCharts === undefined) {
               WaterfallManager.createFormatted(
                 `Couldn't find chart with type ${Flags.chartType}`,
@@ -229,7 +229,7 @@ export class App {
               // no charts available
               return
             }
-            gameTypeCharts = sm.charts[gameTypes[0]]
+            gameTypeCharts = sm.getChartsByGameType(gameTypes[0])
             if (gameTypeCharts.length == 0) {
               return
             }

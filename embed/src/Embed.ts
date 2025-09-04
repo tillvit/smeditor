@@ -149,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const gameTypeDropdown = Dropdown.create<string>([])
   gameTypeDropdown.onChange(value => {
     const gameType = value.split(" ")?.[0] ?? "dance-single"
-    const charts = loadedSM?.charts[gameType] ?? []
+    const charts = loadedSM?.getChartsByGameType(gameType) ?? []
     chartDropdown.setItems(
       charts.map(chart => `${chart.difficulty} ${chart.meter}`)
     )
@@ -178,11 +178,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function loadCharts() {
     gameTypeDropdown.setItems(
       GameTypeRegistry.getPriority().map(gameType => {
-        const charts = loadedSM!.charts[gameType.id] ?? []
+        const charts = loadedSM!.getChartsByGameType(gameType.id) ?? []
         return gameType.id + " (" + charts.length + ")"
       })
     )
-    const charts = loadedSM?.charts["dance-single"] ?? []
+    const charts = loadedSM?.getChartsByGameType("dance-single") ?? []
     chartDropdown.setItems(
       charts.map(chart => `${chart.difficulty} ${chart.meter}`)
     )

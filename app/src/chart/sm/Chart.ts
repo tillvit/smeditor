@@ -32,7 +32,17 @@ import { getParityData, loadChartParityData } from "./SMEParser"
 import { TIMING_EVENT_NAMES, TimingEventType, TimingType } from "./TimingTypes"
 
 export class Chart {
+  /** @internal */
+  _id?: string
+  readonly sm: Simfile
+
+  readonly stats: ChartStats
+  private notedata: Notedata = []
+  private notedataRows: RowData[] = []
+
   gameType: GameType = GameTypeRegistry.getPriority()[0]
+  timingData: ChartTimingData
+
   description = ""
   difficulty: ChartDifficulty = "Beginner"
   meter = 1
@@ -42,16 +52,12 @@ export class Chart {
   chartStyle = ""
   credit = ""
   music?: string
-  timingData: ChartTimingData
-  sm: Simfile
+
   other_properties: { [key: string]: string } = {}
 
-  private notedata: Notedata = []
-  private notedataRows: RowData[] = []
-
+  // stripped for custom scripts
+  /** @internal */
   ignoredErrors = new Map<number, Set<TechErrors>>()
-
-  stats: ChartStats
 
   private _lastBeat = 0
   private _lastSecond = 0
@@ -460,6 +466,7 @@ export class Chart {
     }
   }
 
+  /** @internal */
   recalculateStats(start: number | null = null, end: number | null = null) {
     this.recalculateLastNote()
     if (start == null || end == null) {
@@ -520,6 +527,7 @@ export class Chart {
     return str
   }
 
+  /** @internal */
   loadParity(string: string, callListeners = true) {
     const data = JSON.parse(string)
     const parts = string.split("=")
@@ -600,11 +608,13 @@ export class Chart {
     return this.gameType.numCols
   }
 
+  /** @internal */
   destroy() {
     this.stats.destroy()
     this.timingData.destroy()
   }
 
+  /** @internal */
   addErrorIgnore(error: TechErrors, beat: number) {
     if (!this.ignoredErrors.has(beat)) this.ignoredErrors.set(beat, new Set())
     ActionHistory.instance.run({
@@ -619,14 +629,17 @@ export class Chart {
     })
   }
 
+  /** @internal */
   getErrorIgnoresAtBeat(beat: number): Set<TechErrors> | undefined {
     return this.ignoredErrors.get(beat)
   }
 
+  /** @internal */
   isErrorIgnored(error: TechErrors, beat: number) {
     return this.ignoredErrors.get(beat)?.has(error) ?? false
   }
 
+  /** @internal */
   deleteErrorIgnore(error: TechErrors, beat: number) {
     ActionHistory.instance.run({
       undo: () => {
@@ -642,6 +655,7 @@ export class Chart {
     })
   }
 
+  /** @internal */
   getTechErrorsAtBeat(beat: number, includeIgnored = false): Set<TechErrors> {
     if (!this.stats.parity) return new Set()
     const rowIdx = bsearchEarliest(
@@ -652,6 +666,7 @@ export class Chart {
     return this.getTechErrorsAtRow(rowIdx, includeIgnored)
   }
 
+  /** @internal */
   getTechErrorsAtRow(rowIdx: number, includeIgnored = false): Set<TechErrors> {
     if (!this.stats.parity) return new Set()
     if (!this.stats.parity.rowTimestamps[rowIdx]) return new Set()
@@ -666,6 +681,7 @@ export class Chart {
     return errors.difference(ignored)
   }
 
+  /** @internal */
   getTechErrors(includeIgnored = false): { beat: number; error: TechErrors }[] {
     if (!this.stats.parity) return []
     const techErrors = this.stats.parity.techErrors

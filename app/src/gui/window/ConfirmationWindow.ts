@@ -74,7 +74,5 @@ export class ConfirmationWindow extends Window {
     })
     padding.appendChild(menu_options)
     this.viewElement.appendChild(padding)
-
-    requestAnimationFrame(() => this.center())
   }
 }

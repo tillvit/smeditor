@@ -50,6 +50,10 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
         id: "openSong",
       },
       {
+        type: "selection",
+        id: "newWindow",
+      },
+      {
         type: "separator",
       },
       {
@@ -696,6 +700,25 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
             type: "selection",
             id: "parityRight",
           },
+          {
+            type: "separator",
+          },
+          {
+            type: "selection",
+            id: "parityL",
+          },
+          {
+            type: "selection",
+            id: "parityl",
+          },
+          {
+            type: "selection",
+            id: "parityR",
+          },
+          {
+            type: "selection",
+            id: "parityr",
+          },
         ],
       },
       {
@@ -833,6 +856,16 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
     ],
   },
+  // scripts: {
+  //   type: "menu",
+  //   title: "Scripts",
+  //   options: [
+  //     {
+  //       type: "selection",
+  //       id: "editCustomScripts",
+  //     },
+  //   ],
+  // },
   preferences: {
     type: "menu",
     title: "Preferences",

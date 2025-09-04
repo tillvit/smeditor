@@ -24,4 +24,5 @@
     ]
   },
   "include": ["app/src", "embed/src"],
+  "exclude": ["**/smlib.d.ts"]
 }

@@ -1,7 +1,12 @@
 import { App } from "../App"
 import { EditMode, EditTimingMode } from "../chart/ChartManager"
 import { isHoldNote } from "../chart/sm/NoteTypes"
-import { FootOverride } from "../chart/stats/parity/ParityDataTypes"
+import {
+  FEET_LABELS,
+  FEET_LABELS_LONG,
+  Foot,
+  FootOverride,
+} from "../chart/stats/parity/ParityDataTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
 import { AboutWindow } from "../gui/window/AboutWindow"
 import { CaptureWindow } from "../gui/window/CaptureWindow"
@@ -43,6 +48,7 @@ export interface Keybind {
   label: string
   bindLabel?: string
   combos: KeyCombo[]
+  visible?: boolean | ((app: App) => boolean)
   disabled: boolean | ((app: App) => boolean)
   disableRepeat?: boolean
   preventDefault?: boolean
@@ -264,6 +270,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   export: {
     label: "Save and export current song",
     combos: [{ key: "E", mods: [DEF_MOD] }],
+    visible: () => !window.nw,
     disabled: app =>
       !!window.nw ||
       !app.chartManager.loadedSM ||
@@ -1463,12 +1470,12 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       }
       ActionHistory.instance.run({
         action: app => {
-          app.chartManager.loadedSM!.properties.SAMPLESTART = newStart
-          app.chartManager.loadedSM!.properties.SAMPLELENGTH = newLength
+          app!.chartManager.loadedSM!.properties.SAMPLESTART = newStart
+          app!.chartManager.loadedSM!.properties.SAMPLELENGTH = newLength
         },
-        undo: () => {
-          app.chartManager.loadedSM!.properties.SAMPLESTART = lastStart
-          app.chartManager.loadedSM!.properties.SAMPLELENGTH = lastLength
+        undo: app => {
+          app!.chartManager.loadedSM!.properties.SAMPLESTART = lastStart
+          app!.chartManager.loadedSM!.properties.SAMPLELENGTH = lastLength
         },
       })
     },
@@ -1560,10 +1567,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     callback: app => {
       if (!app.chartManager.loadedSM?.charts || !app.chartManager.loadedChart)
         return
-      const charts =
-        app.chartManager.loadedSM?.charts[
-          app.chartManager.loadedChart.gameType.id
-        ]
+      const charts = app.chartManager.loadedSM?.getChartsByGameType(
+        app.chartManager.loadedChart.gameType.id
+      )
       const curIndex = charts.indexOf(app.chartManager.loadedChart)
       if (charts[curIndex - 1]) {
         app.chartManager.loadChart(charts[curIndex - 1])
@@ -1579,10 +1585,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     callback: app => {
       if (!app.chartManager.loadedSM?.charts || !app.chartManager.loadedChart)
         return
-      const charts =
-        app.chartManager.loadedSM?.charts[
-          app.chartManager.loadedChart.gameType.id
-        ]
+      const charts = app.chartManager.loadedSM?.getChartsByGameType(
+        app.chartManager.loadedChart.gameType.id
+      )
       const curIndex = charts.indexOf(app.chartManager.loadedChart)
       if (charts[curIndex + 1]) {
         app.chartManager.loadChart(charts[curIndex + 1])
@@ -1696,6 +1701,23 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       )
     },
   },
+  newWindow: {
+    label: "New window",
+    combos: [{ mods: [Modifier.SHIFT, DEF_MOD], key: "N" }],
+    visible: () => !!window.nw,
+    disabled: () => !window.nw,
+    callback: () => {
+      window.nw.Window.open(window.location.href)
+    },
+  },
+  // editCustomScripts: {
+  //   label: "Edit custom scripts...",
+  //   combos: [],
+  //   disabled: false,
+  //   callback: app => {
+  //     app.windowManager.openWindow(new CustomScriptEditorWindow(app))
+  //   },
+  // },
 }
 
 // Dynamically add keybinds
@@ -1864,6 +1886,60 @@ for (const type of ["WARPS", "FAKES"] as const) {
   }
 }
 
+function markOverride(foot: FootOverride | "None") {
+  return (app: App) => {
+    const selection = app.chartManager.selection.notes.filter(note => {
+      return (
+        note.type != "Mine" && note.type != "Fake" && !note.fake && !note.warped
+      )
+    })
+    let minRange = Number.MAX_VALUE
+    let maxRange = -Number.MAX_VALUE
+    selection.forEach(note => {
+      if (note.beat < minRange) {
+        minRange = note.beat
+      }
+      if (getNoteEnd(note) > maxRange) {
+        maxRange = getNoteEnd(note)
+      }
+    })
+    const oldOverrides: (FootOverride | undefined)[] = []
+    ActionHistory.instance.run({
+      action: () => {
+        selection.forEach(note => {
+          if (!note.parity) {
+            note.parity = {}
+          }
+          oldOverrides.push(note.parity.override)
+          note.parity.override = foot == "None" ? undefined : foot
+        })
+        app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
+        EventHandler.emit("chartModified")
+      },
+      undo: () => {
+        selection.forEach((note, i) => {
+          if (!note.parity) {
+            note.parity = {}
+          }
+          note.parity.override = oldOverrides[i]
+        })
+        app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
+        EventHandler.emit("chartModified")
+      },
+      redo: () => {
+        selection.forEach(note => {
+          if (!note.parity) {
+            note.parity = {}
+          }
+          note.parity.override = foot == "None" ? undefined : foot
+        })
+        app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
+        EventHandler.emit("chartModified")
+      },
+    })
+  }
+}
+
 for (const foot of ["None", "Left", "Right"] as const) {
   KEYBIND_DATA[`parity${foot}`] = {
     label: `Mark as ${foot}`,
@@ -1872,59 +1948,23 @@ for (const foot of ["None", "Left", "Right"] as const) {
       !app.chartManager.chartView ||
       app.chartManager.getMode() != EditMode.Edit ||
       !app.chartManager.hasNoteSelection(),
-    callback: app => {
-      const selection = app.chartManager.selection.notes.filter(note => {
-        return (
-          note.type != "Mine" &&
-          note.type != "Fake" &&
-          !note.fake &&
-          !note.warped
-        )
-      })
-      let minRange = Number.MAX_VALUE
-      let maxRange = -Number.MAX_VALUE
-      selection.forEach(note => {
-        if (note.beat < minRange) {
-          minRange = note.beat
-        }
-        if (getNoteEnd(note) > maxRange) {
-          maxRange = getNoteEnd(note)
-        }
-      })
-      const oldOverrides: (FootOverride | undefined)[] = []
-      ActionHistory.instance.run({
-        action: app => {
-          selection.forEach(note => {
-            if (!note.parity) {
-              note.parity = {}
-            }
-            oldOverrides.push(note.parity.override)
-            note.parity.override = foot == "None" ? undefined : foot
-          })
-          app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
-          EventHandler.emit("chartModified")
-        },
-        undo: () => {
-          selection.forEach((note, i) => {
-            if (!note.parity) {
-              note.parity = {}
-            }
-            note.parity.override = oldOverrides[i]
-          })
-          app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
-          EventHandler.emit("chartModified")
-        },
-        redo: () => {
-          selection.forEach(note => {
-            if (!note.parity) {
-              note.parity = {}
-            }
-            note.parity.override = foot == "None" ? undefined : foot
-          })
-          app.chartManager.loadedChart!.recalculateStats(minRange, maxRange)
-          EventHandler.emit("chartModified")
-        },
-      })
-    },
+    callback: markOverride(foot),
+  }
+}
+
+for (const foot of [
+  Foot.LEFT_HEEL,
+  Foot.LEFT_TOE,
+  Foot.RIGHT_HEEL,
+  Foot.RIGHT_TOE,
+] as const) {
+  KEYBIND_DATA[`parity${FEET_LABELS[foot]}`] = {
+    label: `Mark as ${FEET_LABELS_LONG[foot]}`,
+    combos: [],
+    disabled: app =>
+      !app.chartManager.chartView ||
+      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasNoteSelection(),
+    callback: markOverride(foot),
   }
 }

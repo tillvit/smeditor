@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.4.2",
+    "date": 1756994963319,
+    "changelog": "## Changes\n - Changed some cache stuff, hopefully SMEditor works while offline again\n - Added the ability to override parity with left/right heel/toe\n   - The dancing bot will still prefer to hit brackets while facing foward, so you will have to mark backwards brackets manually\n - Enable parity highlights by default\n - Allow opening more than one instance of SMEditor when using the app (File > New Window)\n - Added more default timing events when creating a new chart\n - Added a search bar to the menubar (under Help tab)\n - Added commit info in the About window\n - Tech error indicators hide when in play mode\n - Centered the no files text in the custom file picker\n## Fixes\n - Fixed BANNER not being saved correctly when saving as .sm\n - Fixed an issue with measures when no time signature is placed at beat 0 and a non 4/4 signature is used\n - Fixed not being able to remove some notes when force every snap is on\n - Fixed pastel noteskin not showing 192nd quants\n"
+  },
+  {
     "version": "1.4.1",
     "date": 1752867826965,
     "changelog": "## Changes\n- You can now change the color of the feet for parity checking in user preferences.\n- Changed how the menubar behaves (you have to click on the tabs to open them, but you don't have to be precise while navigating dropdowns anymore)\n- The parity checker now checks for an ambiguous first step.\n ## Fixes\n - The canvas no longer reacts to mouse events when a window is over it\n- Fixed a bug in how twisted brackets are calculated \n - Fixed the chart info scroll highlights being very black"

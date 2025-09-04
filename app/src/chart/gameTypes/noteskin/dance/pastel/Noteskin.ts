@@ -103,12 +103,13 @@ export default {
         return spr
       },
       Tap: options => {
-        const tex =
+        let tex =
           tapTex[
-            [4, 8, 12, 16, 24, 32, 48, 64, 96, 192].indexOf(
+            [4, 8, 12, 16, 24, 32, 48, 64, 96].indexOf(
               options.note?.quant ?? 4
             ) ?? 0
           ]
+        if (options.note?.quant == 192) tex = tapTex[8]
         const spr = new Sprite(tex)
         spr.anchor.set(0.5)
         spr.width = 64
@@ -120,12 +121,13 @@ export default {
       },
       Fake: { element: "Tap" },
       Lift: options => {
-        const tex =
+        let tex =
           liftTex[
-            [4, 8, 12, 16, 24, 32, 48, 64, 96, 192].indexOf(
+            [4, 8, 12, 16, 24, 32, 48, 64, 96].indexOf(
               options.note?.quant ?? 4
             ) ?? 0
           ]
+        if (options.note?.quant == 192) tex = liftTex[8]
         const spr = new Sprite(tex)
         spr.anchor.set(0.5)
         spr.width = 64

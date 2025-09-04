@@ -12,6 +12,8 @@ export interface GameType {
   columnWidths: number[]
   notefieldWidth: number
   columnNames: string[]
+  // stripped for custom scripts
+  /** @internal */
   gameLogic: GameLogic
   parser: NotedataParser
   editNoteTypes: NoteType[]

@@ -888,14 +888,16 @@ export class ChartManager {
     // Find the chart with the highest difficulty
     if (chart == undefined) {
       if (this.loadedChart) {
-        const charts = this.loadedSM.charts[this.loadedChart.gameType.id]
+        const charts = this.loadedSM.getChartsByGameType(
+          this.loadedChart.gameType.id
+        )
         if (charts && charts.length > 0) {
           chart = charts.at(-1)
         }
       }
       if (!chart) {
         for (const gameType of GameTypeRegistry.getPriority()) {
-          const charts = this.loadedSM.charts[gameType.id]
+          const charts = this.loadedSM.getChartsByGameType(gameType.id)
           if (charts && charts.length > 0) {
             chart = charts.at(-1)
             break
@@ -1391,11 +1393,12 @@ export class ChartManager {
       this.chartView == undefined
     )
       return
-    beat = Math.max(0, Math.round(beat * 48) / 48)
     if (Options.chart.forceSnapNotes) {
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
       beat = Math.round(beat / snap) * snap
     }
+    beat = Math.max(0, Math.round(beat * 48) / 48)
+
     const conflictingNotes = this.loadedChart.getNotedata().filter(note => {
       if (note.col != col) return false
       if (Math.abs(note.beat - beat) < 0.003) return true

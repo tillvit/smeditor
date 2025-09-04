@@ -7,7 +7,7 @@ import { SongTimingData } from "./SongTimingData"
 import { TIMING_EVENT_NAMES, TimingEventType, TimingType } from "./TimingTypes"
 
 export class Simfile {
-  charts: Record<string, Chart[]> = {}
+  charts: Record<string, Chart> = {}
   _type?: "sm" | "ssc"
   other_properties: { [key: string]: string } = {}
   properties: { [key in SimfileProperty]?: string } = {}
@@ -87,27 +87,49 @@ export class Simfile {
   }
 
   addChart(chart: Chart) {
-    this.charts[chart.gameType.id] ||= []
-    this.charts[chart.gameType.id].push(chart)
-    this.charts[chart.gameType.id].sort((a, b) => {
-      if (
-        CHART_DIFFICULTIES.indexOf(a.difficulty) ==
-        CHART_DIFFICULTIES.indexOf(b.difficulty)
-      )
-        return a.meter - b.meter
-      return (
-        CHART_DIFFICULTIES.indexOf(a.difficulty) -
-        CHART_DIFFICULTIES.indexOf(b.difficulty)
-      )
-    })
+    const id = this.createChartID()
+    this.charts[id] = chart
+    chart._id = id
+  }
+
+  private createChartID(): string {
+    let id = Math.random().toString(36).substring(2, 9)
+    while (this.charts[id]) {
+      id = Math.random().toString(36).substring(2, 9)
+    }
+    return id
   }
 
   removeChart(chart: Chart): boolean {
-    if (!this.charts[chart.gameType.id]) return false
-    const i = this.charts[chart.gameType.id].indexOf(chart)
-    if (i == -1) return false
-    this.charts[chart.gameType.id].splice(i, 1)
+    if (!chart._id) return false
+    if (!this.charts[chart._id]) return false
+    delete this.charts[chart._id]
     return true
+  }
+
+  getChartsByGameType(gameType: string) {
+    return Object.values(this.charts)
+      .filter(c => c.gameType.id == gameType)
+      .sort((a, b) => {
+        if (
+          CHART_DIFFICULTIES.indexOf(a.difficulty) ==
+          CHART_DIFFICULTIES.indexOf(b.difficulty)
+        )
+          return a.meter - b.meter
+        return (
+          CHART_DIFFICULTIES.indexOf(a.difficulty) -
+          CHART_DIFFICULTIES.indexOf(b.difficulty)
+        )
+      })
+  }
+
+  getAllChartsByGameType() {
+    const charts: Record<string, Chart[]> = {}
+    for (const chart of Object.values(this.charts)) {
+      if (!charts[chart.gameType.id]) charts[chart.gameType.id] = []
+      charts[chart.gameType.id].push(chart)
+    }
+    return charts
   }
 
   serialize(type: "sm" | "ssc" | "smebak"): string {
@@ -122,7 +144,7 @@ export class Simfile {
       str += this.formatProperty("SUBTITLE", this.properties.SUBTITLE)
       str += this.formatProperty("ARTIST", this.properties.ARTIST)
       str += this.formatProperty("MUSIC", this.properties.MUSIC ?? "")
-      str += this.formatProperty("BANNER", this.properties.GENRE)
+      str += this.formatProperty("BANNER", this.properties.BANNER)
       str += this.formatProperty("BACKGROUND", this.properties.BACKGROUND)
       str += this.formatProperty("LYRICSPATH", this.properties.LYRICSPATH)
       str += this.formatProperty("CDTITLE", this.properties.CDTITLE)
@@ -168,8 +190,9 @@ export class Simfile {
       str += this.formatProperty(prop, this.other_properties[prop])
     }
     str += "\n"
-    for (const gameType in this.charts) {
-      for (const chart of this.charts[gameType]) {
+    const charts = this.getAllChartsByGameType()
+    for (const gameType in charts) {
+      for (const chart of charts[gameType]) {
         str += chart.serialize(type) + "\n"
       }
     }
@@ -220,10 +243,8 @@ export class Simfile {
   }
 
   usesChartTiming(): boolean {
-    for (const type in this.charts) {
-      for (const chart of this.charts[type]) {
-        if (chart.timingData.usesChartTiming()) return true
-      }
+    for (const chart of Object.values(this.charts)) {
+      if (chart.timingData.usesChartTiming()) return true
     }
     return false
   }
@@ -231,19 +252,15 @@ export class Simfile {
   requiresSSC(): boolean {
     if (this.timingData.requiresSSC()) return true
     if (this.usesChartTiming()) return true
-    for (const type in this.charts) {
-      for (const chart of this.charts[type]) {
-        if (chart.requiresSSC()) return true
-      }
+    for (const chart of Object.values(this.charts)) {
+      if (chart.requiresSSC()) return true
     }
     return false
   }
 
   recalculateAllStats() {
-    for (const type in this.charts) {
-      for (const chart of this.charts[type]) {
-        chart.recalculateStats()
-      }
+    for (const chart of Object.values(this.charts)) {
+      chart.recalculateStats()
     }
   }
 
@@ -253,10 +270,8 @@ export class Simfile {
   }
 
   destroy() {
-    Object.values(this.charts).forEach(charts => {
-      charts.forEach(chart => {
-        chart.destroy()
-      })
+    Object.values(this.charts).forEach(chart => {
+      chart.destroy()
     })
   }
 }

@@ -105,6 +105,8 @@ export abstract class Window {
 
     this.windowElement = windowElement
     this.viewElement = viewElement
+
+    requestAnimationFrame(() => this.center())
   }
 
   abstract initView(): void

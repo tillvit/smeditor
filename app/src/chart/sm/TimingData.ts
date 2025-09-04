@@ -2,7 +2,7 @@ import { ActionHistory } from "../../util/ActionHistory"
 import { EventHandler } from "../../util/EventHandler"
 import { clamp, roundDigit } from "../../util/Math"
 import { Options } from "../../util/Options"
-import { bsearch } from "../../util/Util"
+import { bsearch, bsearchEarliest } from "../../util/Util"
 import {
   AttackTimingEvent,
   BGChangeTimingEvent,
@@ -1209,8 +1209,8 @@ export abstract class TimingData {
         results = this._insert(events)
         this._delete(results.errors)
         this.reloadCache()
-        app.chartManager.clearSelections()
-        app.chartManager.setEventSelection(this.findEvents(results.events))
+        app?.chartManager.clearSelections()
+        app?.chartManager.setEventSelection(this.findEvents(results.events))
         this.callListeners(events)
       },
       undo: app => {
@@ -1218,7 +1218,7 @@ export abstract class TimingData {
         this._delete(results.events)
         this._insert(results.insertConflicts)
         this.reloadCache()
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
         this.callListeners(events)
       },
     })
@@ -1231,8 +1231,8 @@ export abstract class TimingData {
         results = this._modify(events)
         this._delete(results.errors)
         this.reloadCache()
-        app.chartManager.clearSelections()
-        app.chartManager.setEventSelection(this.findEvents(results.newEvents))
+        app?.chartManager.clearSelections()
+        app?.chartManager.setEventSelection(this.findEvents(results.newEvents))
         this.callListeners(events.map(pair => pair[0]))
       },
       undo: app => {
@@ -1242,8 +1242,8 @@ export abstract class TimingData {
         this._insert(results.oldEvents)
         this.reloadCache()
 
-        app.chartManager.clearSelections()
-        app.chartManager.setEventSelection(this.findEvents(results.oldEvents))
+        app?.chartManager.clearSelections()
+        app?.chartManager.setEventSelection(this.findEvents(results.oldEvents))
         this.callListeners(events.map(pair => pair[0]))
       },
     })
@@ -1256,15 +1256,15 @@ export abstract class TimingData {
         results = this._delete(events)
         this._delete(results.errors)
         this.reloadCache()
-        app.chartManager.clearSelections()
+        app?.chartManager.clearSelections()
         this.callListeners(events)
       },
       undo: app => {
         this._insert(results.errors)
         this._insert(results.removedEvents)
         this.reloadCache()
-        app.chartManager.clearSelections()
-        app.chartManager.setEventSelection(
+        app?.chartManager.clearSelections()
+        app?.chartManager.setEventSelection(
           this.findEvents(results.removedEvents)
         )
         this.callListeners(events)
@@ -1453,11 +1453,15 @@ export abstract class TimingData {
     lastBeat: number
   ): Generator<[number, boolean], void> {
     firstBeat = Math.max(0, firstBeat)
-    const timeSigs = this.getTimingData("TIMESIGNATURES")
-    let currentTimeSig = this.getEventAtBeat("TIMESIGNATURES", firstBeat)
-    let timeSigIndex = currentTimeSig
-      ? timeSigs.findIndex(t => t.beat == currentTimeSig!.beat)
-      : -1
+    const timeSigs: TimeSignatureTimingEvent[] = [
+      ...this.getTimingData("TIMESIGNATURES"),
+    ]
+    if (timeSigs.length == 0 || timeSigs[0].beat != 0) {
+      timeSigs.unshift({ type: "TIMESIGNATURES", beat: 0, lower: 4, upper: 4 })
+    }
+
+    let timeSigIndex = bsearchEarliest(timeSigs, firstBeat, e => e.beat)
+    let currentTimeSig = timeSigs[timeSigIndex]
     let divisionLength = this.getDivisionLength(firstBeat)
     const beatsToNearestDivision =
       (this.getDivisionOfMeasure(firstBeat) % 1) * divisionLength
