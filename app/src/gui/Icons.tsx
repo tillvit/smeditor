@@ -121,7 +121,7 @@ interface ReactIconProps {
   width?: number
   height?: number
   color?: string
-  style: string
+  style?: string
 }
 
 export function ReactIcon({ id, width, height, color, style }: ReactIconProps) {
@@ -131,7 +131,7 @@ export function ReactIcon({ id, width, height, color, style }: ReactIconProps) {
       <div
         ref={ref => {
           void ref?.replaceWith(icon)
-          icon.style = style
+          if (style) icon.style = style
         }}
       ></div>
     ),

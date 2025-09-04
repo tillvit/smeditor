@@ -2678,14 +2678,14 @@ input[type="checkbox"] {
   width: var(--w);
 }
 
-.po-spinner {
+.pm-spinner {
   display: flex;
   flex-direction: row;
   align-items: center;
   height: 1.25rem;
 }
 
-#playback-options .po-spinner-btn {
+#playback-options .pm-spinner-btn {
   box-shadow: none;
   transform: none;
   border: none;
@@ -2700,31 +2700,31 @@ input[type="checkbox"] {
   justify-content: center;
 }
 
-#playback-options .po-spinner .po-spinner-btn:first-of-type {
+#playback-options .pm-spinner .pm-spinner-btn:first-of-type {
   border-top-right-radius: 0px;
   border-bottom-right-radius: 0px;
   border: 0.05rem var(--input-border) solid;
 }
 
-#playback-options .po-spinner .po-spinner-btn:last-of-type {
+#playback-options .pm-spinner .pm-spinner-btn:last-of-type {
   border-top-left-radius: 0px;
   border-bottom-left-radius: 0px;
   border: 0.05rem var(--input-border) solid;
 }
 
-#playback-options .po-spinner-btn:disabled {
+#playback-options .pm-spinner-btn:disabled {
   filter: brightness(0.5);
 }
 
-#playback-options .po-spinner-btn:hover:not(:disabled) {
+#playback-options .pm-spinner-btn:hover:not(:disabled) {
   background-color: var(--input-bg-hover);
 }
 
-#playback-options .po-spinner-btn:active:not(:disabled) {
+#playback-options .pm-spinner-btn:active:not(:disabled) {
   background-color: var(--input-bg-active);
 }
 
-#playback-options .po-spinner-input {
+#playback-options .pm-spinner-input {
   background-color: var(--input-bg);
   border-left: none;
   border-right: none;
@@ -2738,16 +2738,16 @@ input[type="checkbox"] {
   caret-color: auto;
 }
 
-#playback-options .po-spinner-input:hover {
+#playback-options .pm-spinner-input:hover {
   background-color: var(--input-bg-hover);
 }
 
-#playback-options .po-spinner-input:disabled {
+#playback-options .pm-spinner-input:disabled {
   filter: brightness(0.6);
 }
 
-.animated .po-spinner-btn,
-.animated .po-spinner-input {
+.animated .pm-spinner-btn,
+.animated .pm-spinner-input {
   transition: 0.08s ease-in-out;
 }
 

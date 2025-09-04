@@ -402,7 +402,7 @@ export class PlaybackOptionsWidget extends Widget {
 
   createSpinner(options: SpinnerOptions) {
     const container = document.createElement("div")
-    container.classList.add("po-spinner")
+    container.classList.add("pm-spinner")
 
     const getStep = (ev: WheelEvent | MouseEvent) => {
       let step = Options.general.spinnerStep
@@ -419,7 +419,7 @@ export class PlaybackOptionsWidget extends Widget {
     }
 
     const btnMinus = document.createElement("button")
-    btnMinus.classList.add("po-spinner-btn")
+    btnMinus.classList.add("pm-spinner-btn")
     btnMinus.innerText = "-"
 
     btnMinus.onclick = ev => {
@@ -430,7 +430,7 @@ export class PlaybackOptionsWidget extends Widget {
     }
 
     const btnPlus = document.createElement("button")
-    btnPlus.classList.add("po-spinner-btn")
+    btnPlus.classList.add("pm-spinner-btn")
     btnPlus.innerText = "+"
 
     btnPlus.onclick = ev => {
@@ -441,7 +441,7 @@ export class PlaybackOptionsWidget extends Widget {
     }
 
     const input = document.createElement("input")
-    input.classList.add("po-spinner-input")
+    input.classList.add("pm-spinner-input")
     input.type = "text"
 
     const update = (trigger = true) => {

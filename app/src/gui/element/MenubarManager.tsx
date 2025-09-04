@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react"
-import { createRoot } from "react-dom/client"
 import { App } from "../../App"
 import { KEYBIND_DATA } from "../../data/KeybindData"
 import {
@@ -232,7 +231,6 @@ function MenubarDropdown(props: MenubarProps<MenuDropdown | MenuMain>) {
           )}
           {props.data.options.map((option, i) => {
             const newProps = {
-              key: i,
               app: props.app,
               id: props.id + "-" + i,
               parentActive: activeItem,
@@ -252,10 +250,10 @@ function MenubarDropdown(props: MenubarProps<MenuDropdown | MenuMain>) {
                 )
               case "selection":
               case "checkbox":
-                return <MenubarSelection {...newProps} data={option} />
+                return <MenubarSelection key={i} {...newProps} data={option} />
               case "dropdown":
               case "menu":
-                return <MenubarDropdown {...newProps} data={option} />
+                return <MenubarDropdown key={i} {...newProps} data={option} />
             }
           })}
         </div>
@@ -264,7 +262,9 @@ function MenubarDropdown(props: MenubarProps<MenuDropdown | MenuMain>) {
   )
 }
 
-function Menubar(props: { app: App }): React.JSX.Element {
+export function Menubar(props: { app: App }): React.JSX.Element {
+  if (!Flags.menuBar) return <></>
+
   const [activeItem, setActiveItem] = useState<string | null>(null)
 
   useEffect(() => {
@@ -281,7 +281,7 @@ function Menubar(props: { app: App }): React.JSX.Element {
   }, [])
 
   return (
-    <>
+    <div id="menubar">
       {Object.entries(MENUBAR_DATA).map(([key, data]) => {
         return (
           <MenubarDropdown
@@ -297,11 +297,6 @@ function Menubar(props: { app: App }): React.JSX.Element {
           />
         )
       })}
-    </>
+    </div>
   )
-}
-
-export function createMenubar(app: App, view: HTMLDivElement) {
-  if (!Flags.menuBar) return
-  createRoot(view).render(<Menubar app={app} />)
 }

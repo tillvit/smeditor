@@ -7,6 +7,8 @@ import {
   Ticker,
   UPDATE_PRIORITY,
 } from "pixi.js"
+import { useEffect, useRef, useState } from "react"
+import { createRoot } from "react-dom/client"
 import semver from "semver"
 import tippy from "tippy.js"
 import "tippy.js/animations/scale-subtle.css"
@@ -18,7 +20,8 @@ import { GameTypeRegistry } from "./chart/gameTypes/GameTypeRegistry"
 import { NoteskinRegistry } from "./chart/gameTypes/noteskin/NoteskinRegistry"
 import { Chart } from "./chart/sm/Chart"
 import { ContextMenuPopup } from "./gui/element/ContextMenu"
-import { createMenubar } from "./gui/element/MenubarManager"
+import { Menubar } from "./gui/element/MenubarManager"
+import { PlaybackOptions } from "./gui/element/PlaybackOptions"
 import { WaterfallManager } from "./gui/element/WaterfallManager"
 import { AppUpdateNotification } from "./gui/notification/AppUpdateNotification"
 import { CoreUpdateNotification } from "./gui/notification/CoreUpdateNotification"
@@ -94,7 +97,7 @@ export class App {
     tippy.setDefaultProps({ duration: [200, 100], theme: "sm" })
 
     Options.loadOptions()
-    loadFlags()
+
     Keybinds.load(this)
 
     if (window.nw) {
@@ -170,7 +173,7 @@ export class App {
     BetterRoundedRect.init(this.renderer)
 
     this.chartManager = new ChartManager(this)
-    createMenubar(this, document.getElementById("menubar") as HTMLDivElement)
+    // createMenubar(this, document.getElementById("menubar") as HTMLDivElement)
     this.windowManager = new WindowManager(
       this,
       document.getElementById("windows") as HTMLDivElement
@@ -575,17 +578,36 @@ export class App {
   }
 }
 
-document.querySelector("body")!.innerHTML = `<div id="popups"></div>
-          <div id="view-wrapper">
-            <div id="menubar"></div>
-            <div id="waterfall"><div id="waterfall-container"></div></div>
-            <canvas id="pixi"></canvas>
-          </div>
-          <div id="context-menu"></div>
-          <div id="blocker" style="display: none"></div>
-          <div id="windows"></div>
-          <div id="embed"></div>
-        `
+function SMEditorApp() {
+  const pixiCanvas = useRef<HTMLCanvasElement>(null)
+  const [app, setApp] = useState<App | null>(null)
+
+  useEffect(() => {
+    if (!pixiCanvas.current) return
+    if (app) return
+    const a = new App()
+    setApp(a)
+    window.app = a
+  }, [pixiCanvas])
+
+  return (
+    <>
+      <div id="popups"></div>
+      <div id="view-wrapper">
+        {app && <Menubar app={app} />}
+        {app && <PlaybackOptions />}
+        <div id="waterfall">
+          <div id="waterfall-container"></div>
+        </div>
+        <canvas ref={pixiCanvas} id="pixi"></canvas>
+      </div>
+      <div id="context-menu"></div>
+      <div id="blocker" style={{ display: "none" }}></div>
+      <div id="windows"></div>
+      <div id="embed"></div>
+    </>
+  )
+}
 
 WebFont.load({
   custom: {
@@ -611,8 +633,10 @@ function init() {
       </div>
     </div>`
   } else {
-    window.app = new App()
-    window.GameTypeRegistry = GameTypeRegistry
-    window.NoteskinRegistry = NoteskinRegistry
+    loadFlags()
+    createRoot(document.getElementById("app")!).render(<SMEditorApp />)
+    // window.app = new App()
+    // window.GameTypeRegistry = GameTypeRegistry
+    // window.NoteskinRegistry = NoteskinRegistry
   }
 }
