@@ -856,16 +856,16 @@ export const MENUBAR_DATA: { [key: string]: MenuMain } = {
       },
     ],
   },
-  scripts: {
-    type: "menu",
-    title: "Scripts",
-    options: [
-      {
-        type: "selection",
-        id: "editCustomScripts",
-      },
-    ],
-  },
+  // scripts: {
+  //   type: "menu",
+  //   title: "Scripts",
+  //   options: [
+  //     {
+  //       type: "selection",
+  //       id: "editCustomScripts",
+  //     },
+  //   ],
+  // },
   preferences: {
     type: "menu",
     title: "Preferences",
