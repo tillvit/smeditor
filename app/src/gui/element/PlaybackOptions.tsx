@@ -6,7 +6,7 @@ import { parseString } from "../../util/Util"
 import { ReactIcon } from "../Icons"
 
 interface SpinnerOptions {
-  value: number
+  getValue: () => number
   step?: number
   altStep?: number
   min?: number
@@ -16,48 +16,101 @@ interface SpinnerOptions {
   onChange: (value: number) => void
 }
 
-interface Spinner {
-  btnMinus: HTMLButtonElement
-  btnPlus: HTMLButtonElement
-  input: HTMLInputElement
-  options: SpinnerOptions
-  currentValue: number
-  update: (trigger: boolean) => void
-}
-
 interface ToggleOptions {
+  onChange: (index: number) => void
   getValue: () => number
-  onChange: (value: string | HTMLElement, index: number) => void
-  value?: number
-  values: (string | HTMLElement)[]
-}
-
-interface Toggle {
-  currentValue: number
-  options: ToggleOptions
-  update: (trigger: boolean) => void
+  values: React.JSX.Element[]
 }
 
 interface CheckboxOptions {
   onChange: (value: boolean) => void
-  value: boolean
+  getValue: () => boolean
   onEl: React.JSX.Element
   offEl: React.JSX.Element
 }
 
-interface Checkbox {
-  currentValue: boolean
-  options: CheckboxOptions
-  update: (trigger: boolean) => void
+function PlaybackOptionsToggle(props: ToggleOptions) {
+  const [currentValue, setCurrentValue] = useState(props.getValue())
+  const containerRef = useRef<HTMLDivElement>(null)
+  const highlightRef = useRef<HTMLDivElement>(null)
+  const valueRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  useEffect(() => {
+    const optionUpdate = () => {
+      setCurrentValue(props.getValue())
+    }
+    EventHandler.on("userOptionUpdated", optionUpdate)
+    return () => EventHandler.off("userOptionUpdated", optionUpdate)
+  }, [])
+
+  function updateHighlight() {
+    if (
+      containerRef.current &&
+      highlightRef.current &&
+      valueRefs.current[currentValue]
+    ) {
+      const selected = valueRefs.current[currentValue]
+      const first = valueRefs.current[0]!
+      const left =
+        selected.getBoundingClientRect().left -
+        first.getBoundingClientRect().left
+      highlightRef.current.style.left = `${left}px`
+      highlightRef.current.style.width = `${selected.getBoundingClientRect().width}px`
+      highlightRef.current.style.height = `${selected.getBoundingClientRect().height}px`
+    }
+  }
+
+  useEffect(() => {
+    // Move highlight to selected item
+    updateHighlight()
+  }, [currentValue, highlightRef, valueRefs, containerRef])
+
+  useEffect(() => {
+    window.addEventListener("resize", updateHighlight)
+    return () => {
+      window.removeEventListener("resize", updateHighlight)
+    }
+  })
+
+  const handleClick = (idx: number) => {
+    if (currentValue === idx) return
+    setCurrentValue(idx)
+    props.onChange(idx)
+  }
+
+  return (
+    <div className="po-toggle" ref={containerRef}>
+      {props.values.map((el, idx) => (
+        <div
+          key={idx}
+          onClick={() => handleClick(idx)}
+          ref={el => void (valueRefs.current[idx] = el)}
+          className={currentValue === idx ? "active" : ""}
+        >
+          {el}
+        </div>
+      ))}
+      <div className="po-toggle-highlight" ref={highlightRef} />
+    </div>
+  )
 }
 
 function PlusMinusSpinner(props: SpinnerOptions) {
-  const [value, setValue] = useState(props.value.toString())
-  const [lastValue, setLastValue] = useState(props.value)
+  const [value, setValue] = useState(props.getValue().toFixed())
+  const [lastValue, setLastValue] = useState(props.getValue())
   const inputRef = useRef<HTMLInputElement>(null)
 
   const container = document.createElement("div")
   container.classList.add("pm-spinner")
+
+  useEffect(() => {
+    const optionUpdate = () => {
+      setValue(props.getValue().toFixed())
+      setLastValue(props.getValue())
+    }
+    EventHandler.on("userOptionUpdated", optionUpdate)
+    return () => EventHandler.off("userOptionUpdated", optionUpdate)
+  }, [])
 
   const getStep = (shift: boolean) => {
     let step = Options.general.spinnerStep
@@ -143,8 +196,15 @@ function PlusMinusSpinner(props: SpinnerOptions) {
 }
 
 function PlaybackOptionsCheckbox(props: CheckboxOptions) {
-  const [toggled, setToggled] = useState(props.value)
-  console.log(toggled)
+  const [toggled, setToggled] = useState(props.getValue())
+
+  useEffect(() => {
+    const optionUpdate = () => {
+      setToggled(props.getValue())
+    }
+    EventHandler.on("userOptionUpdated", optionUpdate)
+    return () => EventHandler.off("userOptionUpdated", optionUpdate)
+  }, [])
 
   return (
     <div
@@ -154,8 +214,7 @@ function PlaybackOptionsCheckbox(props: CheckboxOptions) {
         props.onChange(!toggled)
       }}
     >
-      {/* {toggled && props.onEl}
-      {!toggled && props.offEl} */}
+      {toggled ? props.onEl : props.offEl}
     </div>
   )
 }
@@ -164,21 +223,33 @@ function PlaybackOptionsSeparator() {
   return <div className="po-separator" />
 }
 
-function PlaybackOptionsLabel(props: {
+function PlaybackOptionsGroup(props: {
   label: string
   children: React.ReactNode
+  className?: string
+  scaling?: boolean
   addTooltip?: (ref: HTMLElement) => void
 }) {
   const container = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    if (!container.current) return
     if (props.addTooltip) {
-      props.addTooltip(container.current!)
+      props.addTooltip(container.current)
+    }
+    if (props.scaling) {
+      container.current.style.setProperty(
+        "--w",
+        container.current.offsetWidth / 16 + "rem"
+      )
     }
   }, [container])
 
   return (
-    <div className="playback-options-row" ref={container}>
+    <div
+      className={"playback-options-row " + (props.className || "")}
+      ref={container}
+    >
       <div className="playback-options-label">{props.label}</div>
       {props.children}
     </div>
@@ -187,6 +258,8 @@ function PlaybackOptionsLabel(props: {
 
 export function PlaybackOptions() {
   const playbackOptionsRef = useRef<HTMLDivElement>(null)
+  const [initialRender, setInitialRender] = useState(false) // scuffed way to fix x/c mod sizes
+  const [isCMod, setIsCMod] = useState(Options.chart.CMod)
 
   useEffect(() => {
     if (!playbackOptionsRef.current) return
@@ -198,13 +271,15 @@ export function PlaybackOptions() {
       if (id == "general.showPlaybackOptions") {
         view.classList.toggle("collapsed", !Options.general.showPlaybackOptions)
       }
+      if (id == "chart.CMod") {
+        setIsCMod(Options.chart.CMod)
+      }
     })
-    // EventHandler.on("resize", () => {
-    //   this.registeredToggles.forEach(toggle => {
-    //     toggle.update(false)
-    //   })
-    // })
   }, [playbackOptionsRef])
+
+  useEffect(() => {
+    if (!initialRender) setTimeout(() => setInitialRender(true), 200)
+  }, [])
 
   function tooltip(strings: TemplateStringsArray, ...ids: string[]) {
     return (el: HTMLElement) => {
@@ -214,47 +289,176 @@ export function PlaybackOptions() {
 
   return (
     <div ref={playbackOptionsRef} id="playback-options">
-      <PlaybackOptionsLabel
+      <PlaybackOptionsGroup
         label="Zoom"
         addTooltip={tooltip`Adjust playfield size ${"zoomOut"}/${"zoomIn"}`}
       >
         <PlusMinusSpinner
-          value={Options.chart.zoom * 100}
+          getValue={() => Options.chart.zoom * 100}
           step={10}
           altStep={2}
           min={10}
           hardMin={0}
           onChange={value => (Options.chart.zoom = value / 100)}
         />
-      </PlaybackOptionsLabel>
+      </PlaybackOptionsGroup>
       <PlaybackOptionsSeparator />
-      <PlaybackOptionsLabel
+      <PlaybackOptionsGroup
         label="Playback"
         addTooltip={tooltip`Adjust audio playback rate  ${"rateDown"}/${"rateUp"}`}
       >
         <PlusMinusSpinner
-          value={Options.audio.rate * 100}
+          getValue={() => Options.audio.rate * 100}
           step={10}
           altStep={2}
           min={10}
           hardMin={0}
           onChange={value => (Options.audio.rate = value / 100)}
         />
-      </PlaybackOptionsLabel>
+      </PlaybackOptionsGroup>
       <div style={{ gap: "0.25rem", display: "flex", alignItems: "center" }}>
         <PlaybackOptionsCheckbox
           onChange={value => (Options.audio.assistTick = value)}
-          value={Options.audio.assistTick}
+          getValue={() => Options.audio.assistTick}
           onEl={<ReactIcon id="CLAP" width={18} />}
           offEl={<ReactIcon id="X_CLAP" width={18} />}
         />
         <PlaybackOptionsCheckbox
           onChange={value => (Options.audio.metronome = value)}
-          value={Options.audio.metronome}
+          getValue={() => Options.audio.metronome}
           onEl={<ReactIcon id="METRONOME" width={18} />}
           offEl={<ReactIcon id="X_METRONOME" width={18} />}
         />
       </div>
+      <PlaybackOptionsSeparator />
+      <PlaybackOptionsGroup
+        label="Scroll"
+        addTooltip={tooltip`Change scroll direction ${"reverse"}`}
+      >
+        <PlaybackOptionsToggle
+          onChange={value => (Options.chart.reverse = !!value)}
+          getValue={() => (Options.chart.reverse ? 1 : 0)}
+          values={[
+            <ReactIcon
+              id="DBL_CHEVRON"
+              width={16}
+              style={{ margin: "0.125rem" }}
+            />,
+            <ReactIcon
+              id="DBL_CHEVRON"
+              width={16}
+              style={{ transform: "rotate(180deg)", margin: "0.125rem" }}
+            />,
+          ]}
+        />
+      </PlaybackOptionsGroup>
+      <PlaybackOptionsGroup label="Speedmod">
+        <PlaybackOptionsToggle
+          onChange={value => (Options.chart.CMod = !!value)}
+          getValue={() => (Options.chart.CMod ? 1 : 0)}
+          values={[
+            <p className="po-toggle-text">X</p>,
+            <p className="po-toggle-text">C</p>,
+          ]}
+        />
+        <PlusMinusSpinner
+          getValue={() => Options.chart.speed}
+          step={25}
+          altStep={5}
+          min={10}
+          hardMin={10}
+          hardMax={35000}
+          onChange={value => (Options.chart.speed = value)}
+        />
+      </PlaybackOptionsGroup>
+      <PlaybackOptionsSeparator />
+      <PlaybackOptionsGroup
+        label="Speed Changes"
+        className={isCMod && initialRender ? "hidden" : ""}
+        scaling={true}
+      >
+        <PlaybackOptionsToggle
+          onChange={value => (Options.chart.doSpeedChanges = !value)}
+          getValue={() => (Options.chart.doSpeedChanges ? 1 : 0)}
+          values={[
+            <p className="po-toggle-text">On</p>,
+            <p className="po-toggle-text">Off</p>,
+          ]}
+        />
+      </PlaybackOptionsGroup>
+      <PlaybackOptionsGroup
+        label="Warped Notes"
+        addTooltip={tooltip`Change scroll direction ${"reverse"}`}
+        className={isCMod || !initialRender ? "" : "hidden"}
+        scaling={true}
+      >
+        <PlaybackOptionsCheckbox
+          onChange={value => (Options.chart.hideWarpedArrows = value)}
+          getValue={() => Options.chart.hideWarpedArrows}
+          onEl={<ReactIcon id="X_EYE" width={18} />}
+          offEl={<ReactIcon id="EYE" width={18} />}
+        />
+      </PlaybackOptionsGroup>
+      <PlaybackOptionsGroup
+        label="Faked Notes"
+        addTooltip={tooltip`Change scroll direction ${"reverse"}`}
+        className={isCMod || !initialRender ? "" : "hidden"}
+        scaling={true}
+      >
+        <PlaybackOptionsCheckbox
+          onChange={value => (Options.chart.hideFakedArrows = value)}
+          getValue={() => Options.chart.hideFakedArrows}
+          onEl={<ReactIcon id="X_EYE" width={18} />}
+          offEl={<ReactIcon id="EYE" width={18} />}
+        />
+      </PlaybackOptionsGroup>
+      <ReactIcon
+        id="VOLUME"
+        width={22}
+        style={{
+          marginLeft: "auto",
+          marginRight: "-1rem",
+          height: "1.375rem",
+          width: "1.375rem",
+          alignSelf: "center",
+        }}
+      />
+      <PlaybackOptionsGroup label="Master">
+        <PlusMinusSpinner
+          step={5}
+          altStep={1}
+          min={0}
+          max={200}
+          hardMin={0}
+          hardMax={200}
+          onChange={value => (Options.audio.masterVolume = value / 100)}
+          getValue={() => Options.audio.masterVolume * 100}
+        />
+      </PlaybackOptionsGroup>
+      <PlaybackOptionsGroup label="Song">
+        <PlusMinusSpinner
+          step={5}
+          altStep={1}
+          min={0}
+          max={200}
+          hardMin={0}
+          hardMax={200}
+          onChange={value => (Options.audio.songVolume = value / 100)}
+          getValue={() => Options.audio.songVolume * 100}
+        />
+      </PlaybackOptionsGroup>
+      <PlaybackOptionsGroup label="FX">
+        <PlusMinusSpinner
+          step={5}
+          altStep={1}
+          min={0}
+          max={200}
+          hardMin={0}
+          hardMax={200}
+          onChange={value => (Options.audio.soundEffectVolume = value / 100)}
+          getValue={() => Options.audio.soundEffectVolume * 100}
+        />
+      </PlaybackOptionsGroup>
     </div>
   )
 }

@@ -108,7 +108,7 @@ function SearchBar(props: { app: App }) {
         placeholder="Search the menus..."
         value={query}
         autoFocus
-        onChange={e => setQuery(e.target.value)}
+        onChange={e => void setQuery(e.target.value)}
         onClick={e => e.stopPropagation()}
       />
       <div className="menu-search-dropdown">
@@ -220,7 +220,7 @@ function MenubarDropdown(props: MenubarProps<MenuDropdown | MenuMain>) {
             width={16}
             height={16}
             color="var(--text-color)"
-            style="transform: rotate(-90deg);"
+            style={{ transform: "rotate(-90deg)" }}
           />
         )}
       </div>

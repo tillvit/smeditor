@@ -1,4 +1,5 @@
-import { useMemo } from "react"
+import { CSSProperties, JSX } from "react"
+import SVG from "react-inlinesvg"
 
 class Icon extends HTMLDivElement {
   _width: number | undefined
@@ -84,25 +85,6 @@ export class Icons {
     return wrapper
   }
 
-  static getReactIcon(
-    id: string,
-    width?: number,
-    height?: number,
-    color?: string
-  ) {
-    const icon = this.getIcon(id, width, height, color)
-    return useMemo(
-      () => (
-        <div
-          ref={ref => {
-            void ref?.appendChild(icon)
-          }}
-        ></div>
-      ),
-      []
-    )
-  }
-
   private static fetchIcon(id: string) {
     fetch(`/smeditor/assets/svg/${id}.svg`)
       .then(res => res.text())
@@ -121,20 +103,33 @@ interface ReactIconProps {
   width?: number
   height?: number
   color?: string
-  style?: string
+  style?: CSSProperties
 }
 
-export function ReactIcon({ id, width, height, color, style }: ReactIconProps) {
-  const icon = Icons.getIcon(id, width, height, color)
-  return useMemo(
-    () => (
-      <div
-        ref={ref => {
-          void ref?.replaceWith(icon)
-          if (style) icon.style = style
-        }}
-      ></div>
-    ),
-    []
+export function ReactIcon({
+  id,
+  width,
+  height,
+  color,
+  style,
+}: ReactIconProps): JSX.Element {
+  return (
+    <div className="icon" style={style}>
+      <SVG
+        src={`/smeditor/assets/svg/${id}.svg`}
+        width={width ? width / 16 + "rem" : undefined}
+        height={height ? height / 16 + "rem" : undefined}
+        fill={color}
+        style={{ fillRule: "evenodd" }}
+        loader={
+          <div
+            style={{
+              width: width ? width / 16 + "rem" : undefined,
+              height: height ? height / 16 + "rem" : undefined,
+            }}
+          />
+        }
+      />
+    </div>
   )
 }

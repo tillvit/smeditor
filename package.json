@@ -62,6 +62,7 @@
     "pixi.js": "^7.0.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-inlinesvg": "^4.2.0",
     "scroll-into-view-if-needed": "^3.0.3",
     "semver": "^7.5.4",
     "tippy.js": "^6.3.7",
