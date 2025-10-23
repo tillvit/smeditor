@@ -30,7 +30,7 @@ export class NodeFileHandler implements BaseFileHandler {
     const items = event.dataTransfer!.items
     // TODO: make dropping files load sm
     console.log(items)
-    return ""
+    return []
   }
 
   async getDirectoryHandle(

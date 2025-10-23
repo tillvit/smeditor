@@ -902,9 +902,9 @@ export abstract class TimingData {
       case "ATTACKS":
       case "BGCHANGES":
       case "FGCHANGES":
+        return false
       case "SPEEDS":
       case "SCROLLS":
-        return false
       case "WARPS":
       case "DELAYS":
       case "LABELS":

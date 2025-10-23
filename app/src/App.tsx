@@ -20,16 +20,20 @@ import { GameTypeRegistry } from "./chart/gameTypes/GameTypeRegistry"
 import { NoteskinRegistry } from "./chart/gameTypes/noteskin/NoteskinRegistry"
 import { Chart } from "./chart/sm/Chart"
 import { ContextMenuPopup } from "./gui/element/ContextMenu"
-import { Menubar } from "./gui/element/MenubarManager"
-import { PlaybackOptions } from "./gui/element/PlaybackOptions"
+import { Menubar } from "./gui/element/menubar/Menubar"
+import { PlaybackOptions } from "./gui/element/playback-options/PlaybackOptions"
 import { WaterfallManager } from "./gui/element/WaterfallManager"
 import { AppUpdateNotification } from "./gui/notification/AppUpdateNotification"
 import { CoreUpdateNotification } from "./gui/notification/CoreUpdateNotification"
+import { PopupManagerComponent } from "./gui/popup/PopupManager"
 import { DebugWidget } from "./gui/widget/DebugWidget"
-import { ChangelogWindow } from "./gui/window/ChangelogWindow"
-import { DirectoryWindow } from "./gui/window/DirectoryWindow"
-import { InitialWindow } from "./gui/window/InitialWindow"
-import { WindowManager } from "./gui/window/WindowManager"
+import { ChangelogWindow } from "./gui/window/Changelog/ChangelogWindow"
+import { FileSelectorWindow } from "./gui/window/FileSelector/FileSelectorWindow"
+import { InitialWindow } from "./gui/window/Initial/InitialWindow"
+import {
+  WindowManager,
+  WindowManagerComponent,
+} from "./gui/window/WindowManager"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
 import { EventHandler } from "./util/EventHandler"
@@ -83,7 +87,6 @@ export class App {
   readonly stage: Container
   readonly view: HTMLCanvasElement
   readonly chartManager: ChartManager
-  readonly windowManager: WindowManager
   readonly actionHistory: ActionHistory
   capturing = false
 
@@ -144,6 +147,8 @@ export class App {
       powerPreference: "low-power",
     })
 
+    this.updateSize()
+
     Ticker.shared.maxFPS = 0
     Ticker.shared.add(() => {
       // Update ChartRenderer every frame
@@ -173,11 +178,6 @@ export class App {
     BetterRoundedRect.init(this.renderer)
 
     this.chartManager = new ChartManager(this)
-    // createMenubar(this, document.getElementById("menubar") as HTMLDivElement)
-    this.windowManager = new WindowManager(
-      this,
-      document.getElementById("windows") as HTMLDivElement
-    )
     this.actionHistory = new ActionHistory(this)
 
     this.registerListeners()
@@ -252,7 +252,7 @@ export class App {
         })
         return
       }
-      this.windowManager.openWindow(new InitialWindow(this))
+      WindowManager.openWindow(InitialWindow())
 
       if (window.nw) {
         const win = nw.Window.get()
@@ -274,7 +274,7 @@ export class App {
           }
           if (foundSM != "") {
             this.chartManager.loadSM(foundSM)
-            this.windowManager.getWindowById("select_sm_initial")?.closeWindow()
+            // this.windowManager.getWindowById("initial")?.closeWindow()
           }
         })
 
@@ -396,7 +396,7 @@ export class App {
 
   registerListeners() {
     this.view.addEventListener("mousedown", () => {
-      this.windowManager.unfocusAll()
+      WindowManager.unfocusAll()
     })
 
     // Change default pixi handler to not fire events when window is in the way
@@ -471,27 +471,31 @@ export class App {
         }
         if (foundSM != "") {
           this.chartManager.loadSM(foundSM)
-          this.windowManager.getWindowById("select_sm_initial")?.closeWindow()
+          WindowManager.closeWindow("initial")
         }
       } else {
-        FileHandler.handleDropEvent(event).then(folder => {
-          const dirWindow = new DirectoryWindow(this, {
-            title: "Select an sm/ssc file...",
-            accepted_file_types: [".sm", ".ssc"],
-            disableClose: true,
-            callback: (path: string) => {
-              this.chartManager.loadSM(path)
-              this.windowManager
-                .getWindowById("select_sm_initial")
-                ?.closeWindow()
-            },
-            onload: () => {
-              dirWindow
-                .getAcceptableFile(folder ?? "")
-                .then(path => dirWindow.selectPath(path))
-            },
-          })
-          this.windowManager.openWindow(dirWindow)
+        if (WindowManager.isWindowOpen("file_selector")) return
+        FileHandler.handleDropEvent(event).then(items => {
+          if (!items || items.length === 0) return
+          items = items.sort((a, b) =>
+            a.path.toLowerCase().localeCompare(b.path.toLowerCase())
+          )
+          const firstFolder = items.find(item => item.type === "directory")
+          let checkPath = ""
+          if (firstFolder) checkPath = firstFolder.path
+
+          WindowManager.openWindow(
+            FileSelectorWindow({
+              title: "Select an sm/ssc file...",
+              accepted_file_types: [".sm", ".ssc"],
+              disableClose: true,
+              autoSearchPath: checkPath,
+              callback: (path: string) => {
+                this.chartManager.loadSM(path)
+                WindowManager.closeWindow("initial")
+              },
+            })
+          )
         })
       }
     })
@@ -572,7 +576,7 @@ export class App {
 
     const localVersion = localStorage.getItem("coreVersion")
     if (localVersion !== null && semver.lt(localVersion, this.VERSION)) {
-      this.windowManager.openWindow(new ChangelogWindow(this))
+      WindowManager.openWindow(ChangelogWindow())
     }
     localStorage.setItem("coreVersion", this.VERSION)
   }
@@ -592,7 +596,7 @@ function SMEditorApp() {
 
   return (
     <>
-      <div id="popups"></div>
+      <PopupManagerComponent app={app} />
       <div id="view-wrapper">
         {app && <Menubar app={app} />}
         {app && <PlaybackOptions />}
@@ -602,8 +606,7 @@ function SMEditorApp() {
         <canvas ref={pixiCanvas} id="pixi"></canvas>
       </div>
       <div id="context-menu"></div>
-      <div id="blocker" style={{ display: "none" }}></div>
-      <div id="windows"></div>
+      <WindowManagerComponent app={app} />
       <div id="embed"></div>
     </>
   )

@@ -5,7 +5,7 @@ export interface BaseFileHandler {
   handleDropEvent(
     event: DragEvent,
     prefix?: string
-  ): Promise<string | undefined>
+  ): Promise<{ type: "file" | "directory"; path: string }[] | undefined>
 
   getDirectoryHandle(
     path: string,

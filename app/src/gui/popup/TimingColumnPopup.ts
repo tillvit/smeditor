@@ -4,7 +4,7 @@ import { ChartTimingData } from "../../chart/sm/ChartTimingData"
 import { TimingEvent, TimingEventType } from "../../chart/sm/TimingTypes"
 import { SPLIT_TIMING_DATA } from "../../data/SplitTimingData"
 import { EventHandler } from "../../util/EventHandler"
-import { Popup, PopupOptions } from "./Popup"
+import { Popup, PopupOptions } from "./Popup_old"
 
 interface TimingColumnPopupOptions {
   attach: Container

@@ -158,18 +158,24 @@ export class HoldObject extends Container {
 
   private wasActive = false
   private lastLength: number | null = null
+  private lastBrightness: number | null = null
 
   private elements!: HoldElements
+  private lowDetailHold: Sprite
 
   private readonly metrics
   private readonly ns
   readonly nf
   private loaded = false
 
+  private loadLowDetail = this.toggleLowDetail.bind(this)
+
   constructor(notefield: Notefield, note: HoldNotedataEntry) {
     super()
     const active = new Container()
     const inactive = new Container()
+
+    const lowDetailHold = new Sprite(Texture.WHITE)
 
     this.note = note
     this.ns = notefield.noteskin!
@@ -180,15 +186,34 @@ export class HoldObject extends Container {
 
     this.active = active
     this.inactive = inactive
+    this.lowDetailHold = lowDetailHold
+    this.lowDetailHold.anchor.x = 0.5
+    this.lowDetailHold.width = 48
 
-    this.addChild(inactive, active)
+    this.addChild(lowDetailHold, inactive, active)
 
     if (notefield.noteskin === undefined) {
-      EventHandler.on("noteskinLoaded", () => {
+      EventHandler.once("noteskinLoaded", () => {
         this.loadElements()
       })
     } else {
       this.loadElements()
+    }
+
+    EventHandler.on("userOptionUpdated", this.loadLowDetail)
+    this.on("destroyed", () => {
+      EventHandler.off("userOptionUpdated", this.loadLowDetail)
+    })
+  }
+
+  toggleLowDetail(id: string) {
+    if (id != "performance.lowDetailHolds") return
+    const lowDetail = Options.performance.lowDetailHolds
+    this.lowDetailHold.visible = lowDetail
+    for (const state of ["Active", "Inactive"] as const) {
+      for (const part of ["Body", "TopCap", "BottomCap"] as const) {
+        this.elements[state][part].visible = !Options.performance.lowDetailHolds
+      }
     }
   }
 
@@ -220,6 +245,7 @@ export class HoldObject extends Container {
       }
     }
     this.loaded = true
+    this.toggleLowDetail("performance.lowDetailHolds")
   }
 
   getNoteskinElement(element: string) {
@@ -243,6 +269,8 @@ export class HoldObject extends Container {
 
   setBrightness(brightness: number) {
     if (!this.loaded) return
+    if (this.lastBrightness == brightness) return
+    this.lastBrightness = brightness
     const states = ["Active", "Inactive"] as const
     const items = ["Body", "TopCap", "BottomCap"] as const
     for (const state of states) {
@@ -256,6 +284,11 @@ export class HoldObject extends Container {
         }
       }
     }
+    this.lowDetailHold.tint = rgbtoHex(
+      brightness * 255,
+      brightness * 255,
+      brightness * 255
+    )
   }
 
   setLength(length: number) {
@@ -301,6 +334,8 @@ export class HoldObject extends Container {
       this.elements[state].BottomCap.y *= sign
       this.elements[state].TopCap.y *= sign
     }
+    this.lowDetailHold.height = Math.max(0, absLength + bbO - btO)
+    this.lowDetailHold.y = sign == -1 ? -this.lowDetailHold.height : 0
   }
 }
 

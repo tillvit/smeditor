@@ -163,6 +163,7 @@ export class DefaultOptions {
     } as { [key: string]: string },
   }
   static performance = {
+    lowDetailHolds: false,
     antialiasing: false,
     resolution: isWorker() ? 1 : window.devicePixelRatio,
   }

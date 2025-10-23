@@ -2,7 +2,7 @@ import { Color } from "pixi.js"
 import { CandleBox } from "../../chart/component/edit/CandleIndicator"
 import { Foot } from "../../chart/stats/parity/ParityDataTypes"
 import { blendPixiColors, getParityColor } from "../../util/Color"
-import { Popup } from "./Popup"
+import { Popup } from "./Popup_old"
 
 export class CandlePopup extends Popup {
   static box?: CandleBox

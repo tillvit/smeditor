@@ -2,7 +2,7 @@ import { Graphics } from "pixi.js"
 import { EventHandler } from "../../util/EventHandler"
 import { Options } from "../../util/Options"
 import { NumberSpinner } from "../element/NumberSpinner"
-import { Popup } from "./Popup"
+import { Popup } from "./Popup_old"
 
 export class SnapPopup extends Popup {
   private static onSnapChange = this.updateValues.bind(this)

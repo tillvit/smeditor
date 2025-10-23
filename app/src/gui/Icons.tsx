@@ -1,4 +1,4 @@
-import { CSSProperties, JSX } from "react"
+import { CSSProperties } from "react"
 import SVG from "react-inlinesvg"
 
 class Icon extends HTMLDivElement {
@@ -104,19 +104,17 @@ interface ReactIconProps {
   height?: number
   color?: string
   style?: CSSProperties
+  onClick?: (event: React.MouseEvent<HTMLDivElement>) => void
+  className?: string
 }
 
-export function ReactIcon({
-  id,
-  width,
-  height,
-  color,
-  style,
-}: ReactIconProps): JSX.Element {
+export function ReactIcon(props: ReactIconProps) {
+  const { id, width, height, color, style, onClick, className } = props
   return (
-    <div className="icon" style={style}>
+    <div className={`icon ${className ?? ""}`} style={style} onClick={onClick}>
       <SVG
         src={`/smeditor/assets/svg/${id}.svg`}
+        cacheRequests={true}
         width={width ? width / 16 + "rem" : undefined}
         height={height ? height / 16 + "rem" : undefined}
         fill={color}
@@ -125,7 +123,11 @@ export function ReactIcon({
           <div
             style={{
               width: width ? width / 16 + "rem" : undefined,
-              height: height ? height / 16 + "rem" : undefined,
+              height: height
+                ? height / 16 + "rem"
+                : width
+                  ? width / 16 + "rem"
+                  : undefined,
             }}
           />
         }

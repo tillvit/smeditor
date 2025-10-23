@@ -5,7 +5,7 @@ import {
   TechErrors,
 } from "../../chart/stats/parity/ParityDataTypes"
 import { EventHandler } from "../../util/EventHandler"
-import { Popup, PopupOptions } from "./Popup"
+import { Popup, PopupOptions } from "./Popup_old"
 
 interface TechErrorPopupOptions {
   box: TechBox

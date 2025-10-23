@@ -2,7 +2,7 @@ import { WaterfallManager } from "../../../gui/element/WaterfallManager"
 import { GameType } from "../GameTypeRegistry"
 import { NoteskinOptions } from "./Noteskin"
 
-interface RegistryData {
+export interface NoteskinRegistryData {
   id: string
   gameTypes: string[]
   load: () => Promise<NoteskinOptions>
@@ -12,9 +12,12 @@ interface RegistryData {
 }
 
 export class NoteskinRegistry {
-  private static noteskins = new Map<string, Map<string, RegistryData>>()
+  private static noteskins = new Map<
+    string,
+    Map<string, NoteskinRegistryData>
+  >()
 
-  static register(options: RegistryData) {
+  static register(options: NoteskinRegistryData) {
     for (const gameType of new Set(options.gameTypes)) {
       if (!NoteskinRegistry.noteskins.has(gameType)) {
         NoteskinRegistry.noteskins.set(gameType, new Map())

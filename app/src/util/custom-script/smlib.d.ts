@@ -472,6 +472,11 @@ declare module "app/src/util/EventHandler" {
       fn: (...args: any[]) => void,
       context?: any
     ): void
+    static once(
+      event: string | symbol,
+      fn: (...args: any[]) => void,
+      context?: any
+    ): void
     static off(
       event: string | symbol,
       fn?: (...args: any[]) => void,
@@ -591,6 +596,7 @@ declare module "app/src/util/Options" {
       }
     }
     static performance: {
+      lowDetailHolds: boolean
       antialiasing: boolean
       resolution: number
     }
@@ -621,7 +627,7 @@ declare module "app/src/util/Options" {
   }
 }
 declare module "app/src/gui/Icons" {
-  import { CSSProperties, JSX } from "react"
+  import { CSSProperties } from "react"
   class Icon extends HTMLDivElement {
     _width: number | undefined
     _height: number | undefined
@@ -653,33 +659,14 @@ declare module "app/src/gui/Icons" {
     height?: number
     color?: string
     style?: CSSProperties
+    onClick?: (event: React.MouseEvent<HTMLDivElement>) => void
+    className?: string
   }
-  export function ReactIcon({
-    id,
-    width,
-    height,
-    color,
-    style,
-  }: ReactIconProps): JSX.Element
-}
-declare module "app/src/gui/window/WindowManager" {
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  export class WindowManager {
-    view: HTMLDivElement
-    windows: Window[]
-    app: App
-    constructor(app: App, view: HTMLDivElement)
-    unfocusAll(): void
-    getFocusedWindow(): Window | null
-    isBlocked(): boolean
-    openWindow(window: Window): void
-    removeWindow(window: Window): void
-    getWindowById(id: string): Window | undefined
-  }
+  export function ReactIcon(
+    props: ReactIconProps
+  ): import("react/jsx-runtime").JSX.Element
 }
 declare module "app/src/gui/window/Window" {
-  import { WindowManager } from "app/src/gui/window/WindowManager"
   export interface WindowOptions {
     title: string
     width: number
@@ -688,500 +675,51 @@ declare module "app/src/gui/window/Window" {
     disableClose?: boolean
     blocking?: boolean
   }
-  export abstract class Window {
-    private windowManager?
-    private minimizeElement
-    private closeElement
-    closed: boolean
-    options: WindowOptions
-    windowElement: HTMLDivElement
-    viewElement: HTMLDivElement
-    protected constructor(options: WindowOptions)
-    abstract initView(): void
-    addToManager(windowManager: WindowManager): void
-    onClose(): void
-    closeWindow(): void
-    focus(): void
-    unfocus(): void
-    center(): void
-    private block
-    private handleDrag
-    private clampPosition
-    move(x: number, y: number): void
-    setDisableClose(disable: boolean): void
-    setBlocking(blocking: boolean): void
-  }
+  export function Window(props: {
+    focused: boolean
+  }): import("react/jsx-runtime").JSX.Element
 }
-declare module "app/src/gui/window/AboutWindow" {
+declare module "app/src/gui/window/WindowManager" {
+  import { CSSProperties, ReactNode } from "react"
   import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  export class AboutWindow extends Window {
-    app: App
-    constructor(app: App)
-    initView(): void
-  }
-}
-declare module "app/src/util/Theme" {
-  import { Color } from "pixi.js"
-  import { Theme, ThemeProperty, ThemeString } from "app/src/data/ThemeData"
-  export class Themes {
-    private static _themes
-    private static _userThemes
-    private static _initialized
-    private static style
-    private static currentTheme
-    private static initialize
-    private static _createThemeStyle
-    private static _loadUserThemes
-    private static _saveUserThemes
-    private static validateTheme
-    static getThemes(): {
-      [x: string]: Theme
-    }
-    static getBuiltinThemes(): Record<string, Theme>
-    static getUserThemes(): Record<string, Theme>
-    static loadTheme(id: string): void
-    static _applyTheme(theme: Theme): void
-    static loadThemeFromColors(theme: ThemeString): void
-    static getCurrentTheme(): Theme
-    private static convertThemeToString
-    static exportCurrentTheme(options?: {
-      code?: boolean
-      spaces?: boolean
-    }): string
-    static createUserTheme(id: string, base?: Theme): void
-    static setUserTheme(id: string, base: Theme): void
-    static deleteUserTheme(id: string): void
-    static renameUserTheme(id: string, newId: string): void
-    static parseThemeText(text: string): Theme | null
-    static getColor(id: ThemeProperty): Color
-    static isDarkTheme(): boolean
-  }
-}
-declare module "app/src/util/Path" {
-  export function basename(path: string, ext?: string): string
-  export function dirname(path: string): string
-  export function extname(path: string): string
-}
-declare module "app/src/gui/window/ConfirmationWindow" {
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  interface ConfirmationOption {
-    label: string
-    callback?: () => void
-    type: "delete" | "confirm" | "default"
-  }
-  export class ConfirmationWindow extends Window {
-    app: App
-    private buttonOptions
-    private readonly message
-    private readonly detail?
-    private resolve?
-    resolved: Promise<string>
-    constructor(
-      app: App,
-      title: string,
-      message: string,
-      buttonOptions: ConfirmationOption[],
-      detail?: string
-    )
-    initView(): void
-  }
-}
-declare module "app/src/gui/window/ThemeSelectionWindow" {
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  export class ThemeSelectionWindow extends Window {
-    app: App
-    private grid
-    private actions
-    constructor(app: App)
-    initView(): void
-    createOptionTray(): HTMLDivElement
-    loadGrid(): void
-    removeAllSelections(): void
-    filterGrid(query: string): void
-    containsQuery(query: string, string: string | undefined): boolean
-    getNonConflictingName(base: string): string
-  }
-}
-declare module "app/src/gui/window/ThemeEditorWindow" {
-  import { Color } from "pixi.js"
-  import { App } from "app/src/App"
-  import { Theme, ThemeGroup, ThemeProperty } from "app/src/data/ThemeData"
-  import { Window } from "app/src/gui/window/Window"
-  export class ThemeEditorWindow extends Window {
-    app: App
-    private pickers
-    private handlers
-    private linkBlacklist
-    static isOpen: boolean
-    constructor(app: App)
-    initView(): void
-    createGroup(group: ThemeGroup): HTMLDivElement
-    createPicker(opt: { id: ThemeProperty; label: string }): HTMLDivElement
-    getLink(
-      id: ThemeProperty
-    ):
-      | "accent-color"
-      | "editor-bg"
-      | "widget-bg"
-      | "editable-overlay-hover"
-      | "editable-overlay-active"
-      | "text-color"
-      | "text-color-secondary"
-      | "text-color-detail"
-      | "text-color-disabled"
-      | "primary-bg"
-      | "primary-border"
-      | "primary-bg-active"
-      | "primary-bg-hover"
-      | "secondary-bg"
-      | "secondary-border"
-      | "secondary-bg-active"
-      | "secondary-bg-hover"
-      | "tooltip-bg"
-      | "input-bg"
-      | "input-bg-active"
-      | "input-bg-hover"
-      | "input-border"
-      | "navbar-bg"
-      | "navbar-bg-inactive"
-      | "window-bg"
-      | "window-border"
-      | null
-    average(c: Color): number
-    lighten(color: Color, gamma: number): Color
-    add(color: Color, gamma: number): Color
-    updateLinks(updatedId: ThemeProperty, theme: Theme): Theme
-    onClose(): void
-  }
-}
-declare module "app/src/data/ThemeData" {
-  import { Color } from "pixi.js"
-  import { ThemeEditorWindow } from "app/src/gui/window/ThemeEditorWindow"
-  export const THEME_VAR_WHITELIST: readonly [
-    "accent-color",
-    "editor-bg",
-    "widget-bg",
-    "editable-overlay-hover",
-    "editable-overlay-active",
-    "text-color",
-    "text-color-secondary",
-    "text-color-detail",
-    "text-color-disabled",
-    "primary-bg",
-    "primary-border",
-    "primary-bg-active",
-    "primary-bg-hover",
-    "secondary-bg",
-    "secondary-border",
-    "secondary-bg-active",
-    "secondary-bg-hover",
-    "tooltip-bg",
-    "input-bg",
-    "input-bg-active",
-    "input-bg-hover",
-    "input-border",
-    "navbar-bg",
-    "navbar-bg-inactive",
-    "window-bg",
-    "window-border",
-  ]
-  export type ThemeProperty = (typeof THEME_VAR_WHITELIST)[number]
-  export type ThemeString = {
-    [key in ThemeProperty]: string
-  }
-  export type Theme = {
-    [key in ThemeProperty]: Color
-  }
-  export type ThemeGroup = {
-    name: string
-    ids: {
-      id: ThemeProperty
-      label: string
-    }[]
-  }
-  export const THEME_GRID_PROPS: ThemeProperty[]
-  export const THEME_GROUPS: ThemeGroup[]
-  export const THEME_PROPERTY_DESCRIPTIONS: {
-    [key in ThemeProperty]: string
-  }
-  export type ThemeColorLinks = {
-    [key in ThemeProperty]?: (this: ThemeEditorWindow, c: Color) => Color
-  }
-  export const THEME_GENERATOR_LINKS: {
-    [key in ThemeProperty]?: ThemeColorLinks
-  }
-  export const DEFAULT_THEMES: Record<string, Theme>
-}
-declare module "app/src/util/Color" {
-  import { Color, ColorSource } from "pixi.js"
-  import { Foot } from "app/src/chart/stats/parity/ParityDataTypes"
-  import { ThemeProperty } from "app/src/data/ThemeData"
-  export function rgbtoHex(r: number, g: number, b: number): number
-  export function lighten(col: number, gamma: number): number
-  export function add(col: number, gamma: number): number
-  export function average(c: Color): number
-  export function blendColors(
-    colorA: string,
-    colorB: string,
-    amount: number
-  ): string
-  export function blendPixiColors(
-    colorA: Color,
-    colorB: Color,
-    amount: number
-  ): Color
-  type TintableObject = {
-    tint: ColorSource
-    alpha: number
-    destroyed: boolean
-  }
-  export function assignTint(element: TintableObject, id: ThemeProperty): void
-  export function colorToHsla(color: Color): number[]
-  export function colorToHsva(color: Color): number[]
-  export function colorFallback(
-    colorString: ColorSource,
-    fallback?: ColorSource
-  ): Color
-  export function getParityColor(foot: Foot | undefined): Color
-}
-declare module "app/src/gui/element/ColorPicker" {
-  import { Color } from "pixi.js"
-  class TransparentPreview extends HTMLDivElement {
-    colorElement: HTMLDivElement
-    set color(value: Color)
-  }
-  interface ColorPickerOptions {
-    value: string
+  export interface WindowData {
+    title: string
+    width: number
     height?: number
-    width?: number
+    disableClose?: boolean
+    viewStyle?: CSSProperties
+    blocking?: boolean
+    id: string
+    content: ReactNode
   }
-  export class ColorPicker extends TransparentPreview {
-    private _value
-    private _hue
-    private _sat
-    private _val
-    private _alp
-    private popup?
-    private matrix?
-    private matrixDot?
-    private matrixDragging
-    private hueDragging
-    private hueThumb?
-    private alphaDragging
-    private alphaBg?
-    private alphaThumb?
-    private previewNew?
-    private formats
-    onColorChange?: (color: Color) => void
-    static create(options: ColorPickerOptions): ColorPicker
-    private updatePreview
-    get value(): Color
-    set value(color: Color)
-    get hue(): number
-    set hue(value: number)
-    get sat(): number
-    set sat(value: number)
-    get val(): number
-    set val(value: number)
-    get alpha(): number
-    set alpha(value: number)
-    updateColor(): void
-    createPopup(): void
-    updatePopup(): void
-    closePopup(): void
-    createMatrix(): HTMLDivElement[]
-    createSlider(opt: {
-      ondrag?: () => void
-      change: (val: number) => void
-      offdrag?: () => void
-    }): HTMLDivElement[]
-    private movePosition
-    isActive(): boolean
+  interface WindowContextData extends WindowData {
+    isFocused: boolean
+    focus: () => void
+    close: () => void
+    setDisableClose: (close: boolean) => void
+    setBlocking: (blocking: boolean) => void
+    center?: () => void
+    app: App
   }
+  export const WindowContext: import("react").Context<WindowContextData | null>
+  export class WindowManager {
+    static openWindow(windowData: WindowData): void
+    static closeWindow(id: string): void
+    static getFocusedWindow(): string | null
+    static unfocusAll(): void
+    static isBlocking(): boolean
+    static isWindowOpen(id: string): boolean
+  }
+  export function WindowManagerComponent({
+    app,
+  }: {
+    app: App | null
+  }): import("react/jsx-runtime").JSX.Element
 }
-declare module "app/src/gui/element/Dropdown" {
-  export class Dropdown<T> {
-    view: HTMLDivElement
-    private items
-    private selectedItem
-    private onChangeHandlers
-    static create<T>(items?: readonly T[], selectedItem?: T): Dropdown<T>
-    private constructor()
-    onChange(handler: (value: T, index: number) => void): void
-    removeHandler(handler: (value: T, index: number) => void): void
-    getItems(): readonly T[]
-    setItems(items: readonly T[]): void
-    setSelected(item?: T): void
-    closeDropdown(): void
-    get value(): T
-    get disabled(): boolean
-    set disabled(value: boolean)
-    private createDropdown
-  }
-}
-declare module "app/src/gui/element/NumberSlider" {
-  interface SliderOptions {
-    value?: number
-    width?: number
-    min: number
-    max: number
-    step: number
-    precision?: number
-    transformer?: (value: number) => string | number
-    onChange?: (value: number) => void
-    displayWidth?: number
-  }
-  export class NumberSlider {
-    view: HTMLDivElement
-    slider: HTMLInputElement
-    text: HTMLDivElement
-    options: SliderOptions
-    constructor(view: HTMLDivElement, options: SliderOptions)
-    get value(): number
-    setValue(value: number): void
-    static create(options: SliderOptions): NumberSlider
-    private formatValue
-  }
-}
-declare module "app/src/gui/element/NumberSpinner" {
-  interface NumberSpinnerOptions {
-    value: number
-    step: number | null
-    precision: number
-    minPrecision: number | null
-    min: number
-    max: number
-    onChange?: (value: number | undefined) => void
-  }
-  export class NumberSpinner {
-    readonly view: HTMLDivElement
-    readonly input: HTMLInputElement
-    private options
-    private lastVal
-    constructor(view: HTMLDivElement, options: Partial<NumberSpinnerOptions>)
-    static create(options: Partial<NumberSpinnerOptions>): NumberSpinner
-    private formatValue
-    get value(): number
-    set value(value: number)
-    get step(): number | null
-    set step(value: number | null)
-    get min(): number
-    set min(value: number)
-    get max(): number
-    set max(value: number)
-    get precision(): number
-    set precision(value: number)
-    get minPrecision(): number | null
-    set minPrecision(value: number | null)
-    get onchange(): ((value: number | undefined) => void) | undefined
-    set onchange(value: ((value: number | undefined) => void) | undefined)
-    get disabled(): boolean
-    set disabled(value: boolean)
-  }
-}
-declare module "app/src/gui/element/ValueInput" {
-  import { App } from "app/src/App"
-  export interface TextInput {
-    type: "text"
-    transformers?: {
-      serialize: (value: string) => string
-      deserialize: (value: string) => string
-    }
-    onChange?: (app: App, value: string) => void
-  }
-  export type DropdownInput<T> =
-    | {
-        type: "dropdown"
-        items: readonly string[]
-        advanced: false
-        onChange?: (app: App, value: string | number) => void
-      }
-    | {
-        type: "dropdown"
-        items: readonly number[]
-        advanced: false
-        onChange?: (app: App, value: string | number) => void
-      }
-    | {
-        type: "dropdown"
-        items: T[]
-        advanced: true
-        transformers: {
-          serialize: (value: string | number | boolean) => T
-          deserialize: (value: T) => string | number | boolean
-        }
-        onChange?: (app: App, value: string | number | boolean) => void
-      }
-  export interface NumberInput {
-    type: "number"
-    step: number
-    precision?: number
-    minPrecision?: number
-    min?: number
-    max?: number
-    transformers?: {
-      serialize: (value: number) => number
-      deserialize: (value: number) => number
-    }
-    onChange?: (app: App, value: number) => void
-  }
-  export interface SliderInput {
-    type: "slider"
-    step?: number
-    min?: number
-    max?: number
-    hardMax?: number
-    hardMin?: number
-    transformers?: {
-      serialize: (value: number) => number
-      deserialize: (value: number) => number
-    }
-    onChange?: (app: App, value: number) => void
-  }
-  export interface DisplaySliderInput {
-    type: "display-slider"
-    step: number
-    min: number
-    max: number
-    transformers: {
-      serialize: (value: number) => number
-      deserialize: (value: number) => number
-      display: (value: number) => string | number
-    }
-    onChange?: (app: App, value: number) => void
-    displayWidth?: number
-    width?: number
-  }
-  export interface CheckboxInput {
-    type: "checkbox"
-    onChange?: (app: App, value: boolean) => void
-  }
-  export interface ColorInput {
-    type: "color"
-    onChange?: (app: App, value: string) => void
-  }
-  export type ValueInput<T> =
-    | TextInput
-    | DropdownInput<T>
-    | NumberInput
-    | CheckboxInput
-    | SliderInput
-    | DisplaySliderInput
-    | ColorInput
-  export function createLabeledInput<T>(
-    app: App,
-    name: string,
-    input: ValueInput<T>,
-    initialValue: any
-  ): HTMLDivElement
-  export function createValueInput<T>(
-    app: App,
-    input: ValueInput<T>,
-    initialValue: any
-  ): HTMLElement
+declare module "app/src/gui/window/About/AboutWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export function AboutWindowContent(): import("react/jsx-runtime").JSX.Element
+  export function AboutWindow(): WindowData
 }
 declare module "app/src/chart/play/JudgementTexture" {
   import { Texture } from "pixi.js"
@@ -1427,6 +965,7 @@ declare module "app/src/util/ActionHistory" {
     private limit
     private readonly app?
     static instance: ActionHistory
+    afterUpdate: () => void
     constructor(app?: App)
     run(action: UndoableAction): void
     undo(): void
@@ -1917,21 +1456,6 @@ declare module "app/src/util/Capture" {
     get size(): number
   }
 }
-declare module "app/src/data/CaptureWindowData" {
-  import { ValueInput } from "app/src/gui/element/ValueInput"
-  import { CaptureOptions } from "app/src/util/Capture"
-  export type CaptureWindowOptions<T> = {
-    label: string
-    tooltip?: string
-    input: ValueInput<T>
-  }
-  export const CAPTURE_WINDOW_VIDEO_OPTIONS: {
-    [k in keyof CaptureOptions]?: CaptureWindowOptions<any>
-  }
-  export const CAPTURE_WINDOW_VIEW_OPTIONS: {
-    [k in keyof CaptureOptions]?: CaptureWindowOptions<any>
-  }
-}
 declare module "app/src/data/GameplayKeybindData" {
   interface GameplayKeybind {
     label: string
@@ -1949,6 +1473,7 @@ declare module "app/src/util/Keybinds" {
     private static userKeybinds
     private static userGameplayKeybinds
     private static enabled
+    private static userKeybindKeymap
     static load(app: App): void
     static checkKey(event: KeyboardEvent, type: "keydown" | "keyup"): void
     static getKeyNameFromEvent(event: KeyboardEvent): string
@@ -1963,6 +1488,9 @@ declare module "app/src/util/Keybinds" {
     static setKeybind(id: string, combo: KeyCombo): void
     static removeKeybind(id: string, combo: KeyCombo): void
     static revertKeybind(id: string): void
+    static buildConflictMap(): void
+    static getConflicts(combo: KeyCombo): [string, number][]
+    static getGameplayConflicts(key: string, gameTypeId: string): number[]
     static revertGameplayKeybind(id: string, col: number): void
     static setGameplayKeybind(id: string, col: number, key: string): void
     static removeGameplayKeybind(id: string, col: number, key: string): void
@@ -1978,54 +1506,171 @@ declare module "app/src/util/Keybinds" {
     static enableKeybinds(): void
   }
 }
-declare module "app/src/gui/window/CaptureWindow" {
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  export class CaptureWindow extends Window {
-    app: App
-    private captureOptions
-    private startBeat
-    private endBeat
-    private presetDropdown
-    private exportButton
-    private optionsView
-    private captureView
-    private captureCanvas
-    private videoContainer
-    private progressLabel
-    private progressBar
-    private currentCapture?
-    private videoURL?
-    private stopButton
-    private returnButton
-    private downloadButton
-    private estimateInterval?
-    private regionHandler
-    constructor(app: App)
-    onClose(): void
-    initView(): void
-    initOptionsView(): void
-    initCaptureView(): void
-    startCapture(): void
-    stopCapture(url: string): void
-    private buildBeatSecondInput
-    private updateSizeEstimate
-    private buildOptions
+declare module "app/src/gui/inputs/NumberInput" {
+  export interface NumberInputProps extends NumberInputOptions {
+    value: number
+    onChange?: (value: number | null) => void
   }
+  export interface NumberInputOptions {
+    allowNull?: boolean
+    step?: number
+    precision?: number
+    minPrecision?: number | null
+    min?: number
+    max?: number
+    style?: React.CSSProperties
+    className?: string
+    disabled?: boolean
+    transformers?: {
+      serialize: (value: number) => number
+      deserialize: (value: number) => number
+    }
+  }
+  export function NumberInput(
+    props: NumberInputProps
+  ): import("react/jsx-runtime").JSX.Element
 }
-declare module "app/src/gui/window/ChangelogWindow" {
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
+declare module "app/src/gui/window/Capture/CaptureOptionLabel" {
+  import { ReactNode } from "react"
+  export function CaptureOptionLabel(props: {
+    label: string
+    children?: ReactNode
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Capture/CaptureBeatSecondInput" {
+  export function CaptureBeatSecondInput(props: {
+    beat: number
+    setBeat: (newBeat: number) => void
+    label: string
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Capture/CaptureBeatOptions" {
+  import { Dispatch, SetStateAction } from "react"
+  export function CaptureBeatOptions(props: {
+    startBeat: number
+    setStartBeat: Dispatch<SetStateAction<number>>
+    endBeat: number
+    setEndBeat: Dispatch<SetStateAction<number>>
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/inputs/DisplaySliderInput" {
+  export interface DisplaySliderInputProps extends DisplaySliderInputOptions {
+    value: number
+    onChange?: (value: number) => void
+  }
+  export interface DisplaySliderInputOptions {
+    step?: number
+    min: number
+    max: number
+    style?: React.CSSProperties
+    sliderWidth?: number
+    displayWidth?: number
+    className?: string
+    transformers?: {
+      serialize: (value: number) => number
+      deserialize: (value: number) => number
+      display: (value: number) => string
+    }
+  }
+  export function DisplaySliderInput(
+    props: DisplaySliderInputProps
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/inputs/DropdownInput" {
+  export interface DropdownInputProps extends DropdownInputOptions {
+    value: string
+    onChange?: (value: string) => void
+  }
+  export interface DropdownInputOptions {
+    values: readonly string[]
+    style?: React.CSSProperties
+    className?: string
+    disabled?: boolean
+  }
+  export function DropdownInput(
+    props: DropdownInputProps
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Capture/CaptureVideoOptions" {
+  import { Dispatch, SetStateAction } from "react"
+  import { CaptureOptions } from "app/src/util/Capture"
+  export function CaptureVideoOptions(props: {
+    captureOptions: Omit<CaptureOptions, "startTime" | "endTime">
+    setCaptureOptions: Dispatch<
+      SetStateAction<Omit<CaptureOptions, "startTime" | "endTime">>
+    >
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/inputs/CheckboxInput" {
+  export interface CheckboxInputProps extends CheckboxInputOptions {
+    value: boolean
+    onChange?: (value: boolean) => void
+  }
+  export interface CheckboxInputOptions {
+    style?: React.CSSProperties
+    className?: string
+  }
+  export function CheckboxInput(
+    props: CheckboxInputProps
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Capture/CaptureViewOptions" {
+  import { Dispatch, SetStateAction } from "react"
+  import { CaptureOptions } from "app/src/util/Capture"
+  export function CaptureViewOptions(props: {
+    captureOptions: Omit<CaptureOptions, "startTime" | "endTime">
+    setCaptureOptions: Dispatch<
+      SetStateAction<Omit<CaptureOptions, "startTime" | "endTime">>
+    >
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Capture/CaptureOptionView" {
+  import { Dispatch, SetStateAction } from "react"
+  import { CaptureOptions } from "app/src/util/Capture"
+  export function CaptureOptionsView(props: {
+    captureOptions: Omit<CaptureOptions, "startTime" | "endTime">
+    setCaptureOptions: Dispatch<
+      SetStateAction<Omit<CaptureOptions, "startTime" | "endTime">>
+    >
+    startBeat: number
+    setStartBeat: Dispatch<SetStateAction<number>>
+    endBeat: number
+    setEndBeat: Dispatch<SetStateAction<number>>
+    startRecording: () => void
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Capture/CaptureRecordingView" {
+  import { RefObject } from "react"
+  import { Capture } from "app/src/util/Capture"
+  import { CaptureState } from "app/src/gui/window/Capture/CaptureWindow"
+  export function CaptureRecordingView(props: {
+    capture: RefObject<Capture | null>
+    state: CaptureState
+    setState: (state: CaptureState) => void
+    videoURL: string | null
+    videoSize: number | null
+    canvasRef: RefObject<HTMLCanvasElement | null>
+    progress: number
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Capture/CaptureWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export type CaptureState =
+    | "idle"
+    | "recording"
+    | "encoding"
+    | "finished"
+    | "failed"
+  export function CaptureWindow(): WindowData
+}
+declare module "app/src/gui/window/Changelog/ChangelogWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
   export interface CoreVersion {
     version: string
     date: number
     changelog: string
   }
-  export class ChangelogWindow extends Window {
-    app: App
-    constructor(app: App)
-    initView(): void
-  }
+  export function ChangelogWindow(): WindowData
 }
 declare module "app/src/chart/stats/ChartAnalyzer" {
   import { Chart } from "app/src/chart/sm/Chart"
@@ -2979,6 +2624,51 @@ declare module "app/src/chart/sm/Chart" {
     getColumnCount(): number
   }
 }
+declare module "app/src/util/Path" {
+  export function basename(path: string, ext?: string): string
+  export function dirname(path: string): string
+  export function extname(path: string): string
+}
+declare module "app/src/gui/hooks/ChartHook" {
+  import { Chart } from "app/src/chart/sm/Chart"
+  import { ChartDifficulty } from "app/src/chart/sm/ChartTypes"
+  import { ChartStats } from "app/src/chart/stats/ChartStats"
+  type ChartProps = {
+    meter: number
+    difficulty: ChartDifficulty
+    credit: string
+    stepCount: number
+    name: string
+    style: string
+    description: string
+    noteCounts: Record<string, number>
+    music: string | undefined
+    parity?: ChartStats["parity"]
+  }
+  export function useChart(chart: Chart): ChartProps
+}
+declare module "app/src/gui/hooks/SMHook" {
+  import { Chart } from "app/src/chart/sm/Chart"
+  import { Simfile } from "app/src/chart/sm/Simfile"
+  type SMProps = Simfile["properties"] & {
+    charts: Record<string, Chart>
+  }
+  export function useSM(sm: Simfile): SMProps
+}
+declare module "app/src/gui/inputs/InlineTextInput" {
+  export interface InlineInputProps extends InlineInputOptions {
+    value: string
+    onChange?: (value: string) => void
+  }
+  export interface InlineInputOptions {
+    style?: React.CSSProperties
+    className?: string
+    disabled?: boolean
+  }
+  export function InlineTextInput(
+    props: InlineInputProps
+  ): import("react/jsx-runtime").JSX.Element
+}
 declare module "app/src/util/file-handler/URLFileHandler" {
   import { BaseFileHandler } from "app/src/util/file-handler/FileHandler"
   export class URLFileHandler implements BaseFileHandler {
@@ -3037,7 +2727,12 @@ declare module "app/src/util/file-handler/WebFileHandler" {
     handleDropEvent(
       event: DragEvent,
       prefix?: string
-    ): Promise<string | undefined>
+    ): Promise<
+      {
+        type: "file" | "directory"
+        path: string
+      }[]
+    >
     uploadDir(
       dir: FileSystemDirectoryHandle,
       base?: FileSystemDirectoryHandle | string
@@ -3086,7 +2781,7 @@ declare module "app/src/util/file-handler/WebFileHandler" {
 declare module "app/src/util/file-handler/NodeFileHandler" {
   import { BaseFileHandler } from "app/src/util/file-handler/FileHandler"
   export class NodeFileHandler implements BaseFileHandler {
-    handleDropEvent(event: DragEvent, _prefix?: string): Promise<string>
+    handleDropEvent(event: DragEvent, _prefix?: string): Promise<never[]>
     getDirectoryHandle(
       path: string,
       options?: FileSystemGetFileOptions
@@ -3121,7 +2816,13 @@ declare module "app/src/util/file-handler/FileHandler" {
     handleDropEvent(
       event: DragEvent,
       prefix?: string
-    ): Promise<string | undefined>
+    ): Promise<
+      | {
+          type: "file" | "directory"
+          path: string
+        }[]
+      | undefined
+    >
     getDirectoryHandle(
       path: string,
       options?: FileSystemGetFileOptions
@@ -3158,7 +2859,13 @@ declare module "app/src/util/file-handler/FileHandler" {
     static handleDropEvent(
       event: DragEvent,
       prefix?: string
-    ): Promise<string | undefined>
+    ): Promise<
+      | {
+          type: "file" | "directory"
+          path: string
+        }[]
+      | undefined
+    >
     static getDirectoryHandle(
       path: string,
       options?: FileSystemGetFileOptions
@@ -3186,237 +2893,501 @@ declare module "app/src/util/file-handler/FileHandler" {
     static getRelativePath(from: string, to: string): string
   }
 }
-declare module "app/src/gui/window/DirectoryWindow" {
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  interface DirectoryWindowOptions {
+declare module "app/src/gui/window/FileSelector/ObjectInfo" {
+  import { ReactNode } from "react"
+  import { FileSelectorNode } from "app/src/gui/window/FileSelector/FileSelectorWindow"
+  interface ObjectInfoOptions {
+    node: FileSelectorNode
+    children?: ReactNode
+    className?: string
+    onClick?: () => void
+    onDblClick?: () => void
+  }
+  export function ObjectInfo(
+    props: ObjectInfoOptions
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/FileSelector/FileObject" {
+  import { FileSelectorFile } from "app/src/gui/window/FileSelector/FileSelectorWindow"
+  export function FileObject(props: {
+    node: FileSelectorFile
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/FileSelector/DirectoryObject" {
+  import { FileSelectorDirectory } from "app/src/gui/window/FileSelector/FileSelectorWindow"
+  export function DirectoryObject(props: {
+    node: FileSelectorDirectory
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/FileSelector/FileOptions" {
+  export function FileOptions(): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/FileSelector/FileSelectorWindow" {
+  import { Dispatch, SetStateAction } from "react"
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  interface FileSelectorOptions {
     title: string
     accepted_file_types?: string[]
     callback?: (path: string) => void
-    onload?: () => void
     disableClose?: boolean
+    selectedPath?: string
+    autoSearchPath?: string
   }
-  export class DirectoryWindow extends Window {
-    app: App
-    dirOptions: DirectoryWindowOptions
-    private fileDropPath
-    private draggedElement?
-    private draggedCopy?
-    private readonly keyHandler
-    private readonly dropHandler
-    private readonly mouseHandler
-    private readonly dragHandler
-    constructor(
-      app: App,
-      options: DirectoryWindowOptions,
-      selectedPath?: string
-    )
-    initView(): Promise<void>
-    private expand
-    private collapse
-    private selectElement
-    private createDiv
-    private createBaseElement
-    private confirmFile
-    private acceptableFileType
-    private getIconId
-    private startEditing
-    private refreshDirectory
-    private getElement
-    getAcceptableFile(path: string): Promise<string | undefined>
-    selectPath(path: string | undefined): Promise<void>
-    private handleKeyEvent
-    private startDragging
-    private handleDragEvent
-    private stopDragging
-    private handleDropEvent
-    private handleMouseEvent
-    private escapeSelector
-  }
-}
-declare module "app/src/data/ChartListWindowData" {
-  import { App } from "app/src/App"
-  import { Chart } from "app/src/chart/sm/Chart"
-  type ChartPropertyEditor = {
-    title: string
-    element: (chart: Chart, app: App) => HTMLElement
-  }
-  export const CHART_PROPERTIES_DATA: {
-    [key: string]: ChartPropertyEditor
-  }
-}
-declare module "app/src/gui/window/ChartListWindow" {
-  import { App } from "app/src/App"
-  import { GameType } from "app/src/chart/gameTypes/GameTypeRegistry"
-  import { Window } from "app/src/gui/window/Window"
-  export class ChartListWindow extends Window {
-    app: App
-    gameType: GameType
-    private chartList?
-    private chartInfo?
-    private gameTypeDropdown?
-    private currentChart?
-    private smLoadHandler
-    private chartModifiedHandler
-    constructor(app: App, gameType?: GameType)
-    initView(): void
-    onClose(): void
-    private loadCharts
-    private loadChartDetails
-    private getCharts
-  }
-}
-declare module "app/src/util/custom-script/CustomScriptTypes" {
-  import { KeyCombo } from "app/src/data/KeybindData"
-  export interface CustomScript {
+  export interface FileSelectorFile {
+    type: "file"
     name: string
-    description: string
-    jsCode: string
-    tsCode: string
-    arguments: CustomScriptArgument[]
-    keybinds: KeyCombo[]
+    fullPath: string
+    parent: FileSelectorDirectory | null
   }
-  export interface CustomScriptWorkerArgs {
-    smPayload: string
-    codePayload: string
-    chartId: string
-    selectionNoteIndices: number[]
-    args: any[]
-  }
-  export type CustomScriptArgument =
-    | CustomScriptCheckboxArgument
-    | CustomScriptColorArgument
-    | CustomScriptNumberArgument
-    | CustomScriptTextArgument
-    | CustomScriptDropdownArgument
-    | CustomScriptSliderArgument
-  interface CustomScriptBaseArgument {
+  export interface FileSelectorDirectory {
+    type: "directory"
     name: string
-    description: string
+    fullPath: string
+    children: FileSelectorNode[] | null
+    parent: FileSelectorDirectory | null
   }
-  export interface CustomScriptCheckboxArgument
-    extends CustomScriptBaseArgument {
-    type: "checkbox"
-    default: boolean
-  }
-  export interface CustomScriptColorArgument extends CustomScriptBaseArgument {
-    type: "color"
-    default: string
-  }
-  export interface CustomScriptNumberArgument extends CustomScriptBaseArgument {
-    type: "number"
-    default: number
-    min?: number
-    max?: number
-    step?: number
-    precision?: number
-    minPrecision?: number
-  }
-  export interface CustomScriptTextArgument extends CustomScriptBaseArgument {
-    type: "text"
-    default: string
-  }
-  export interface CustomScriptDropdownArgument
-    extends CustomScriptBaseArgument {
-    type: "dropdown"
-    items: (string | number)[]
-    default: string | number
-  }
-  export interface CustomScriptSliderArgument extends CustomScriptBaseArgument {
-    type: "slider"
-    default: number
-    min: number
-    max: number
-  }
-  interface CustomScriptPayload {
-    type: "payload"
-    payload: string
-  }
-  interface CustomScriptLog {
-    type: "error" | "log" | "warn" | "info"
-    args: string[]
-  }
-  export type CustomScriptResult = CustomScriptPayload | CustomScriptLog
-}
-declare module "app/src/data/CustomScriptWindowData" {
-  import { ValueInput } from "app/src/gui/element/ValueInput"
-  import { CustomScriptArgument } from "app/src/util/custom-script/CustomScriptTypes"
-  type CustomScriptInput<T, U extends CustomScriptArgument> = Omit<
-    ValueInput<T>,
-    "onChange"
-  > & {
-    onChange: (argument: U, value: T) => void
-  }
-  interface CustomScriptArgumentField<T, U extends CustomScriptArgument> {
-    name: string
-    description?: string
-    input: CustomScriptInput<T, U> | ((arg: U) => CustomScriptInput<T, U>)
-    reload?: boolean
-    getValue: (arg: U) => any
-  }
-  export const ARGUMENT_FIELDS: {
-    [Type in CustomScriptArgument["type"]]: CustomScriptArgumentField<
-      any,
-      Extract<
-        CustomScriptArgument,
-        {
-          type: Type
-        }
-      >
-    >[]
-  }
-  export const DEFAULT_ARGUMENTS: {
-    [Type in CustomScriptArgument["type"]]: Extract<
-      CustomScriptArgument,
-      {
-        type: Type
-      }
+  export type FileSelectorNode = FileSelectorFile | FileSelectorDirectory
+  type FileSelectorData = {
+    editingPath: string | null
+    setEditingPath: Dispatch<SetStateAction<string | null>>
+    selectedItem: {
+      path: string
+      type: "file" | "directory"
+    } | null
+    setSelectedItem: Dispatch<
+      SetStateAction<{
+        path: string
+        type: "file" | "directory"
+      } | null>
     >
+    draggingPath: string | null
+    setDraggingPath: Dispatch<SetStateAction<string | null>>
+    fileDropPath: string | null
+    setFileDropPath: Dispatch<SetStateAction<string | null>>
+    setBusy: Dispatch<SetStateAction<boolean>>
+    isFileValid: (path: string) => boolean
+    selectAcceptableFile: (path: string) => void
+    confirmFile: (path: string) => void
+    loadDirectory: (path: string) => Promise<void>
+    unloadDirectory: (path: string) => Promise<void>
   }
+  export const FileSelectorContext: import("react").Context<
+    FileSelectorData | undefined
+  >
+  export function FileSelectorWindowContent(
+    props: FileSelectorOptions
+  ): import("react/jsx-runtime").JSX.Element
+  export function FileSelectorWindow(options: FileSelectorOptions): WindowData
 }
-declare module "app/src/util/custom-script/CustomScriptEditor" {
-  import "monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution"
-  import "monaco-editor/esm/vs/editor/editor.all.js"
-  import "monaco-editor/esm/vs/language/typescript/monaco.contribution"
-  export type CustomEditor = ReturnType<typeof createEditor>
-  export function createEditor(
-    parent: HTMLElement,
-    value: string,
-    theme: "light" | "dark"
-  ): {
-    transpile: () => Promise<string>
-    getTS: () => string
-    setJS: (code: string) => void
-    swapTheme(theme: "light" | "dark"): void
-    destroy: () => void
+declare module "app/src/gui/inputs/PathInput" {
+  export interface PathInputOptions {
+    typeName: string
+    accept: string[]
+    style?: React.CSSProperties
+    className?: string
+    placeholder?: string
+    baseDir?: string
   }
+  export interface PathInputProps extends PathInputOptions {
+    value: string
+    autoSelect?: string
+    onChange?: (value: string | undefined) => void
+  }
+  export function PathInput(
+    props: PathInputProps
+  ): import("react/jsx-runtime").JSX.Element
 }
-declare module "app/src/util/custom-script/CustomScripts" {
-  import { CustomScript } from "app/src/util/custom-script/CustomScriptTypes"
-  export class CustomScripts {
-    static _scripts: CustomScript[]
-    static get scripts(): CustomScript[]
-    static loadCustomScripts(): void
-    static saveCustomScripts(): void
+declare module "app/src/gui/inputs/TextInput" {
+  export interface TextInputProps extends TextInputOptions {
+    value: string
+    onChange?: (value: string) => void
   }
+  export interface TextInputOptions {
+    style?: React.CSSProperties
+    className?: string
+  }
+  export function TextInput(
+    props: TextInputProps
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Confirmation/ConfirmationWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  interface ConfirmationWindowOptions {
+    title: string
+    message: string
+    detail?: string
+    buttonOptions: ConfirmationOption[]
+  }
+  interface ConfirmationOption {
+    label: string
+    callback?: () => void
+    type: "delete" | "confirm" | "default"
+  }
+  export function ConfirmationWindow(
+    props: ConfirmationWindowOptions
+  ): WindowData
+}
+declare module "app/src/gui/window/ChartList/ChartListDetails" {
+  import { Chart } from "app/src/chart/sm/Chart"
+  import { Simfile } from "app/src/chart/sm/Simfile"
+  interface ChartListDetailsOptions {
+    chart: Chart
+    sm: Simfile
+    loadCharts: () => void
+    selectChart: (chart: Chart | null) => void
+  }
+  export function ChartListDetails(
+    props: ChartListDetailsOptions
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/ChartList/ChartListItem" {
+  import { Chart } from "app/src/chart/sm/Chart"
+  interface ChartListItemOptions {
+    chart: Chart
+    selected: boolean
+    onSelect: (chart: Chart) => void
+    onHover: () => void
+    onUnhover: () => void
+  }
+  export function ChartListItem(
+    props: ChartListItemOptions
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/ChartList/ChartListWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export function ChartListWindowContent(): import("react/jsx-runtime").JSX.Element
+  export function ChartListWindow(): WindowData
 }
 declare module "app/src/gui/window/CustomScriptEditorWindow" {
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  export class CustomScriptEditorWindow extends Window {
-    app: App
-    private scriptList?
-    private scriptData?
-    private currentScript?
-    private currentEditor?
-    constructor(app: App)
-    onClose(): void
-    initView(): void
-    private loadScripts
-    private loadScriptDetails
-    private createArgumentsTab
-    private buildArgumentEditor
-    private createEditorTab
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export function CustomScriptEditorWindow(): WindowData
+}
+declare module "app/src/data/ThemeData" {
+  import { Color } from "pixi.js"
+  export const THEME_VAR_WHITELIST: readonly [
+    "accent-color",
+    "editor-bg",
+    "widget-bg",
+    "editable-overlay-hover",
+    "editable-overlay-active",
+    "text-color",
+    "text-color-secondary",
+    "text-color-detail",
+    "text-color-disabled",
+    "primary-bg",
+    "primary-border",
+    "primary-bg-active",
+    "primary-bg-hover",
+    "secondary-bg",
+    "secondary-border",
+    "secondary-bg-active",
+    "secondary-bg-hover",
+    "tooltip-bg",
+    "input-bg",
+    "input-bg-active",
+    "input-bg-hover",
+    "input-border",
+    "navbar-bg",
+    "navbar-bg-inactive",
+    "window-bg",
+    "window-border",
+  ]
+  export type ThemeProperty = (typeof THEME_VAR_WHITELIST)[number]
+  export type ThemeString = {
+    [key in ThemeProperty]: string
+  }
+  export type Theme = {
+    [key in ThemeProperty]: Color
+  }
+  export type ThemeGroup = {
+    name: string
+    ids: {
+      id: ThemeProperty
+      label: string
+    }[]
+  }
+  export const THEME_GRID_PROPS: ThemeProperty[]
+  export const THEME_GROUPS: ThemeGroup[]
+  export const THEME_PROPERTY_DESCRIPTIONS: {
+    [key in ThemeProperty]: string
+  }
+  export type ThemeColorLinks = {
+    [key in ThemeProperty]?: (c: Color) => Color
+  }
+  export const THEME_GENERATOR_LINKS: {
+    [key in ThemeProperty]?: ThemeColorLinks
+  }
+  export const DEFAULT_THEMES: Record<string, Theme>
+}
+declare module "app/src/util/Theme" {
+  import { Color } from "pixi.js"
+  import { Theme, ThemeProperty, ThemeString } from "app/src/data/ThemeData"
+  export class Themes {
+    private static _themes
+    private static _userThemes
+    private static _initialized
+    private static style
+    private static currentTheme
+    private static initialize
+    private static _createThemeStyle
+    private static _loadUserThemes
+    private static _saveUserThemes
+    private static validateTheme
+    static getThemes(): {
+      [x: string]: Theme
+    }
+    static getBuiltinThemes(): Record<string, Theme>
+    static getUserThemes(): Record<string, Theme>
+    static loadTheme(id: string): void
+    static _applyTheme(theme: Theme): void
+    static loadThemeFromColors(theme: ThemeString): void
+    static getCurrentTheme(): Theme
+    static getNonConflictingName(base: string): string
+    private static convertThemeToString
+    static exportCurrentTheme(options?: {
+      code?: boolean
+      spaces?: boolean
+    }): string
+    static createUserTheme(id: string, base?: Theme): void
+    static setUserTheme(id: string, base: Theme): void
+    static deleteUserTheme(id: string): void
+    static renameUserTheme(id: string, newId: string): void
+    static parseThemeText(text: string): Theme | null
+    static getColor(id: ThemeProperty): Color
+    static isDarkTheme(): boolean
+  }
+}
+declare module "app/src/util/Color" {
+  import { Color, ColorSource } from "pixi.js"
+  import { Foot } from "app/src/chart/stats/parity/ParityDataTypes"
+  import { ThemeProperty } from "app/src/data/ThemeData"
+  export function rgbtoHex(r: number, g: number, b: number): number
+  export function lighten(col: number, gamma: number): number
+  export function add(col: number, gamma: number): number
+  export function average(c: Color): number
+  export function blendColors(
+    colorA: string,
+    colorB: string,
+    amount: number
+  ): string
+  export function blendPixiColors(
+    colorA: Color,
+    colorB: Color,
+    amount: number
+  ): Color
+  type TintableObject = {
+    tint: ColorSource
+    alpha: number
+    destroyed: boolean
+  }
+  export function assignTint(element: TintableObject, id: ThemeProperty): void
+  export function colorToHsla(color: Color): number[]
+  export function colorToHsva(color: Color): number[]
+  export function colorToRgba(color: Color): {
+    r: number
+    g: number
+    b: number
+    a: number
+  }
+  export function colorFallback(
+    colorString: ColorSource,
+    fallback?: ColorSource
+  ): Color
+  export function getParityColor(foot: Foot | undefined): Color
+}
+declare module "app/src/chart/audio/ChartAudio" {
+  class ToggleableBiquadFilterNode extends BiquadFilterNode {
+    enabled: boolean
+    static create(filter: BiquadFilterNode): ToggleableBiquadFilterNode
+  }
+  export class ChartAudio {
+    private readonly _audioAnalyzer
+    private readonly _filteredAudioAnalyzer
+    private readonly _freqData
+    private readonly _filteredFreqData
+    private readonly _gainNode
+    private readonly type
+    private _audioContext
+    private _source?
+    private _playbackTime
+    private _startTimestamp
+    private _rate
+    private _isPlaying
+    private _buffer
+    private _filteredBuffer
+    private _loadedBuffer
+    private _delay?
+    private _loadListeners
+    private _updateListeners
+    private _volume
+    private _destroyed
+    private _renderTimeout?
+    private _filters
+    private _filtersEnabled
+    onStop?: () => void
+    loaded: Promise<void>
+    constructor(data?: ArrayBuffer, type?: string)
+    /**
+     * Renders the specified AudioBuffer to the buffer of this ChartAudio
+     *
+     * @private
+     * @param {(AudioBuffer | undefined)} buffer The buffer to render.
+     * @return {*}  {Promise<void>}
+     * @memberof ChartAudio
+     */
+    private renderBuffer
+    /**
+     * Renders the specified AudioBuffer to the buffer of this ChartAudio, applying filters set to this instance.
+     *
+     * @private
+     * @param {(AudioBuffer | undefined)} buffer The buffer to render.
+     * @return {*}  {Promise<void>}
+     * @memberof ChartAudio
+     */
+    private renderFilteredBuffer
+    private createFilter
+    getFilters(): ToggleableBiquadFilterNode[]
+    getFilter(filterIndex: number): ToggleableBiquadFilterNode
+    updateFilter(
+      filterIndex: number,
+      properties: {
+        Q?: number
+        gain?: number
+        frequency?: number
+      }
+    ): void
+    enableFilter(filterIndex: number): void
+    disableFilter(filterIndex: number): void
+    hasFilters(): boolean
+    /**
+     * Add a listener that fires when the audio buffer is loaded.
+     * @memberof ChartAudio
+     */
+    onLoad(callback: () => void): void
+    /**
+     * Removes a listener that fires when the audio buffer is loaded.
+     * @memberof ChartAudio
+     */
+    offLoad(callback: () => void): void
+    /**
+     * Add a listener that fires when the filters are updated or the audio buffer is loaded.
+     * @memberof ChartAudio
+     */
+    onUpdate(callback: () => void): void
+    /**
+     * Removes a listener that fires when the filters are updated or the audio buffer is loaded.
+     * @memberof ChartAudio
+     */
+    offUpdate(callback: () => void): void
+    /**
+     * Returns the length of the audio in seconds.
+     *
+     * @return {*} {number}
+     * @memberof ChartAudio
+     */
+    getSongLength(): number
+    /**
+     * Returns an array containing the byte frequency data.
+     *
+     * @return {*}  {Uint8Array}
+     * @memberof ChartAudio
+     */
+    getFrequencyData(): Uint8Array
+    /**
+     * Returns an array containing the byte frequency data after audio filtering.
+     *
+     * @return {*}  {Uint8Array}
+     * @memberof ChartAudio
+     */
+    getFilteredFrequencyData(): Uint8Array
+    /**
+     * Returns the sample rate of the audio
+     *
+     * @return {*}  {number}
+     * @memberof ChartAudio
+     */
+    getSampleRate(): number
+    /**
+     * Returns the FFT size of the audio analyzer.
+     *
+     * @return {*}  {number}
+     * @memberof ChartAudio
+     */
+    getFFTSize(): number
+    /**
+     * Returns the raw audio data. Each channel has its own Float32Array.
+     *
+     * @return {*}  {number[]}
+     * @memberof ChartAudio
+     */
+    getRawData(): Float32Array[]
+    /**
+     * Returns the filtered raw audio data. Each channel has its own Float32Array.
+     *
+     * @return {*}  {number[]}
+     * @memberof ChartAudio
+     */
+    getFilteredRawData(): Float32Array[]
+    getBuffer(): AudioBuffer
+    /**
+     * Returns whether the audio is currently playing
+     *
+     * @return {*}  {boolean}
+     * @memberof ChartAudio
+     */
+    isPlaying(): boolean
+    reload(): void
+    /**
+     * Destroys this instance and frees up memory. Unbinds all bound waveforms.
+     * Destroyed instances cannot be used again.
+     * @memberof ChartAudio
+     */
+    destroy(): void
+    getFrequencyResponse(frequencies: number[]): number[]
+    private callLoadListeners
+    private callUpdateListeners
+    private decodeData
+    private initSource
+    /**
+     * Sets the volume of this audio. 1 is 100%.
+     *
+     * @param {number} volume
+     * @memberof ChartAudio
+     */
+    volume(volume: number): void
+    /**
+     * Sets the playback rate of this audio. 1 is 100%.
+     * Changing the rate will change the pitch.
+     * @param {number} rate
+     * @memberof ChartAudio
+     */
+    rate(rate: number): void
+    /**
+     * Starts playing this audio.
+     *
+     * @memberof ChartAudio
+     */
+    play(): void
+    /**
+     * Seeks the audio to the specified location. If no time is provided, returns the current playback time.
+     * @return {*}  {number}
+     * @memberof ChartAudio
+     */
+    seek(): number
+    seek(playbackTime: number): void
+    /**
+     * Pauses this audio.
+     *
+     * @memberof ChartAudio
+     */
+    pause(): void
+    /**
+     * Stops this audio.
+     *
+     * @param {boolean} [pause]
+     * @memberof ChartAudio
+     */
+    stop(pause?: boolean): void
   }
 }
 declare module "app/src/util/BezierEasing" {
@@ -3454,89 +3425,65 @@ declare module "app/src/util/BezierEasing" {
     ): string
   }
 }
-declare module "app/src/gui/window/EQWindow" {
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  export class EQWindow extends Window {
-    app: App
-    private cachedReponse
-    private onAudioLoad
-    private onThemeChange
-    private points
-    private icons
-    private info
-    private trackedFilter
-    constructor(app: App)
-    destroy(): void
-    initView(): void
-    private selectText
-    private setupInput
-    onAudio(): void
-    getResponse(): void
-    drawEQ(canvas: HTMLCanvasElement): () => void
-    drawFrequencies(ctx: CanvasRenderingContext2D, data: Uint8Array): void
-    drawResponse(ctx: CanvasRenderingContext2D): void
-    drawGrid(ctx: CanvasRenderingContext2D): void
-    changeHTMLColors(): void
-    updateIcons(): void
-    trackFilter(index: number): void
-    endTrack(): void
-  }
-}
-declare module "app/src/gui/window/ExportNotedataWindow" {
-  import { App } from "app/src/App"
-  import { Notedata } from "app/src/chart/sm/NoteTypes"
-  import { Window } from "app/src/gui/window/Window"
-  export class ExportNotedataWindow extends Window {
-    app: App
-    private selection
-    private outputDiv?
-    private exportOptions
-    constructor(app: App, selection?: Notedata)
-    initView(): void
-    private export
-    private getNumIncludes
-    private padNum
-  }
-}
-declare module "app/src/gui/window/KeyComboWindow" {
-  import { App } from "app/src/App"
-  import { KeyCombo } from "app/src/data/KeybindData"
-  import { Window } from "app/src/gui/window/Window"
-  export class KeyComboWindow extends Window {
-    app: App
-    private readonly allowMods
-    private readonly callback
-    private combo
-    private readonly conflictCheck
-    private listener?
-    static active: boolean
+declare module "app/src/gui/window/EQ/EQPoint" {
+  import { ChartAudio } from "app/src/chart/audio/ChartAudio"
+  export class EQPoint {
+    readonly filterIndex: number
+    private audio
+    private x
+    private y
+    private readonly type
+    private response
+    private _empty
+    private highlighted
+    private dragging
+    private fetchData
+    pointSize: number
     constructor(
-      app: App,
-      allowMods: boolean,
-      callback: (combo: KeyCombo) => void,
-      conflictCheck?: (combo: KeyCombo) => string[] | "self"
+      audio: ChartAudio,
+      filterIndex: number,
+      fetchData: (index: number | null) => void
     )
-    initView(): void
-    onClose(): void
+    hitTest(x: number, y: number): boolean
+    canChangeGain(): boolean
+    canChangeQ(): boolean
+    getY(): void
+    getGain(): number | undefined
+    mouseDown(event: MouseEvent): void
+    calcResponse(): void
+    draw(ctx: CanvasRenderingContext2D): void
+    refreshPoint(): void
+    highlight(): void
+    unhighlight(): void
   }
 }
-declare module "app/src/gui/window/GameplayKeybindWindow" {
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  export class GameplayKeybindWindow extends Window {
-    app: App
-    private observer?
-    private conflictMap
-    constructor(app: App)
-    initView(): void
-    private createSections
-    private createOptions
-    private createEmptySection
-    private createKeybindItem
-    private calculateConflicts
-    onClose(): void
-  }
+declare module "app/src/gui/window/EQ/EQCanvas" {
+  import { Dispatch, RefObject, SetStateAction } from "react"
+  import { EQPoint } from "app/src/gui/window/EQ/EQPoint"
+  export function EQCanvas(props: {
+    response: RefObject<number[]>
+    points: RefObject<EQPoint[]>
+    setFilterIndex: Dispatch<SetStateAction<number | null>>
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/EQ/EQWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export const EQGraphLeft = 0
+  export const EQGraphTop = 0
+  export const EQGraphWidth = 1200
+  export const EQGraphHeight = 400
+  export const EQFreqPool: number[]
+  export const EQFreqPoolTyped: Float32Array<ArrayBuffer>
+  export function freqToX(frequency: number): number
+  export function xToFreq(x: number): number
+  export function gainToY(gain: number): number
+  export function yToGain(y: number): number
+  export const EQFills: string[]
+  export function EQWindow(): WindowData
+}
+declare module "app/src/gui/window/ExportNotedata/ExportNotedataWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export function ExportNotedataWindow(): WindowData
 }
 declare module "app/src/util/RecentFileHandler" {
   import { Simfile } from "app/src/chart/sm/Simfile"
@@ -3558,82 +3505,440 @@ declare module "app/src/data/SMData" {
   export const DEFAULT_SM =
     "#TITLE:New Song;\n#SUBTITLE:;\n#ARTIST:;\n#TITLETRANSLIT:;\n#SUBTITLETRANSLIT:;\n#ARTISTTRANSLIT:;\n#GENRE:;\n#CREDIT:;\n#BANNER:;\n#BACKGROUND:;\n#LYRICSPATH:;\n#CDTITLE:;\n#MUSIC:;\n#OFFSET:0;\n#SAMPLESTART:0.000000;\n#SAMPLELENGTH:10.000000;\n#SELECTABLE:YES;\n#BPMS:0.000=120.000;\n#STOPS:;\n#WARPS:;\n#DELAYS:;\n#SPEEDS:0.000=1.000=0.000=0;\n#SCROLLS:0.000=1.000;\n#TICKCOUNTS:;\n#TIMESIGNATURES:0.000000=4=4;\n#LABELS:;\n#COMBOS:;\n#BGCHANGES:;\n#FGCHANGES:;\n#KEYSOUNDS:;\n#ATTACKS:;\n"
 }
-declare module "app/src/data/SMPropertiesData" {
-  import { App } from "app/src/App"
-  import { Simfile } from "app/src/chart/sm/Simfile"
-  import { SimfileProperty } from "app/src/chart/sm/SimfileTypes"
-  import { ActionHistory } from "app/src/util/ActionHistory"
-  type SMPropertyGroupData = {
+declare module "app/src/gui/popup/Popup_old" {
+  import { DisplayObject } from "pixi.js"
+  export interface PopupOptions {
+    attach: DisplayObject | HTMLElement
     title: string
-    items: SMPropertyData[]
+    description?: string
+    width?: number
+    height?: number
+    options?: PopupOption[]
+    background?: string
+    textColor?: string
+    editable: boolean
+    cancelableOnOpen: boolean
+    clickHandler?: (event: MouseEvent) => void
   }
-  type SMPropertyCustomInput = {
-    type: "custom"
-    create: (app: App, sm: Simfile, history: ActionHistory) => HTMLElement
+  interface PopupOption {
+    label: string
+    callback?: () => void
+    type: "delete" | "confirm" | "default"
   }
-  type SMPropertyStringInput = {
-    type: "string"
+  export abstract class Popup {
+    static active: boolean
+    static persistent: boolean
+    static options: PopupOptions
+    static popup?: HTMLDivElement
+    static view?: HTMLDivElement
+    static title?: HTMLDivElement
+    static desc?: HTMLDivElement
+    static editText?: HTMLDivElement
+    private static clickOutside?
+    private static moveInterval
+    private static updateInterval
+    static _open(options: PopupOptions): void
+    private static cloneRect
+    private static movePosition
+    private static _build
+    static buildContent(): void
+    static close(): void
+    static select(): void
+    static detach(): void
+    static attach(target: DisplayObject): void
   }
-  type SMPropertyFileInput = {
-    type: "file"
+}
+declare module "app/src/gui/popup/Popup" {
+  import { DisplayObject } from "pixi.js"
+  import { PopupOptions } from "app/src/gui/popup/Popup_old"
+  export function Popup(): import("react/jsx-runtime").JSX.Element
+  export abstract class _Popup {
+    static active: boolean
+    static persistent: boolean
+    static options: PopupOptions
+    static popup?: HTMLDivElement
+    static view?: HTMLDivElement
+    static title?: HTMLDivElement
+    static desc?: HTMLDivElement
+    static editText?: HTMLDivElement
+    private static clickOutside?
+    private static moveInterval
+    private static updateInterval
+    static _open(options: PopupOptions): void
+    private static cloneRect
+    private static movePosition
+    private static _build
+    static buildContent(): void
+    static close(): void
+    static select(): void
+    static detach(): void
+    static attach(target: DisplayObject): void
+  }
+}
+declare module "app/src/gui/popup/PopupManager" {
+  import { DisplayObject } from "pixi.js"
+  import { CSSProperties, ReactNode } from "react"
+  import { App } from "app/src/App"
+  export interface PopupData {
+    width?: number
+    height?: number
+    id: string
+    key?: number
+    content: ReactNode
+    attach: DisplayObject | HTMLElement
+    background?: string
+    closed?: boolean
+    className?: string
+    style?: CSSProperties
+  }
+  interface PopupContextData extends PopupData {
+    close: () => void
+    app: App
+  }
+  export const PopupContext: import("react").Context<PopupContextData | null>
+  export class PopupManager {
+    static openPopup(popupData: PopupData): void
+    static closePopup(id: string): void
+    static isPopupOpen(id: string): boolean
+  }
+  export function PopupManagerComponent({
+    app,
+  }: {
+    app: App | null
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/inputs/color/ColorFormatInput" {
+  interface ColorFormatInputOptions {
+    value: string
+    onChange: (val: string) => void
+    isValid: (val: string) => string | null
+  }
+  export function ColorFormatInput(
+    props: ColorFormatInputOptions
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/inputs/color/ColorFormatter" {
+  import { ReactNode } from "react"
+  interface ColorFormatOptions {
+    label: string
+    children: ReactNode
+  }
+  export function ColorFormatter(
+    props: ColorFormatOptions
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/inputs/color/ColorFormats" {
+  export function ColorFormatHex(): import("react/jsx-runtime").JSX.Element
+  export function ColorFormatRgba(): import("react/jsx-runtime").JSX.Element
+  export function ColorFormatHsla(): import("react/jsx-runtime").JSX.Element
+  export function ColorFormatHsva(): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/inputs/color/ColorMatrix" {
+  export function ColorMatrix(): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/inputs/color/ColorSlider" {
+  import { ReactNode } from "react"
+  export function ColorSlider(props: {
+    value: number
+    onChange: (val: number) => void
+    background?: string
+    className?: string
+    children?: ReactNode
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/inputs/color/ColorPickerPopup" {
+  import { Color, DisplayObject } from "pixi.js"
+  import { Dispatch, SetStateAction } from "react"
+  import { PopupData } from "app/src/gui/popup/PopupManager"
+  interface ColorPickerContextData {
+    hue: number
+    saturation: number
+    value: number
+    alpha: number
+    color: Color
+    setHue: Dispatch<SetStateAction<number>>
+    setSaturation: Dispatch<SetStateAction<number>>
+    setValue: Dispatch<SetStateAction<number>>
+    setAlpha: Dispatch<SetStateAction<number>>
+    setColor: (val: Color) => void
+  }
+  export const ColorPickerContext: import("react").Context<ColorPickerContextData | null>
+  export function ColorPickerPopup(
+    attach: HTMLElement | DisplayObject,
+    color: Color,
+    onChange: (val: Color) => void
+  ): PopupData
+}
+declare module "app/src/gui/inputs/color/ColorInput" {
+  import { Color } from "pixi.js"
+  export interface ColorInputProps extends ColorInputOptions {
+    value: Color
+    onChange?: (value: Color) => void
+  }
+  export interface ColorInputOptions {
+    style?: React.CSSProperties
+    className?: string
+    height?: number
+    width?: number
+  }
+  export function ColorInput(
+    props: ColorInputProps
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/inputs/FileUploadInput" {
+  export interface FileUploadInputOptions {
     typeName: string
     accept: string[]
-    onChange?: (app: App) => void
+    style?: React.CSSProperties
+    className?: string
   }
-  type SMPropertyNumberInput = {
-    type: "number"
+  export interface FileUploadInputProps extends FileUploadInputOptions {
+    value: string
+    baseDir?: string
+    onChange?: (value: File | undefined) => void
+  }
+  export function FileUploadInput(
+    props: FileUploadInputProps
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/inputs/SliderInput" {
+  export interface SliderInputProps extends SliderInputOptions {
+    value: number
+    onChange?: (value: number | null) => void
+  }
+  export interface SliderInputOptions {
     step?: number
     precision?: number
-    min?: number
-    max?: number
+    min: number
+    max: number
+    hardMin?: number
+    hardMax?: number
+    style?: React.CSSProperties
+    sliderWidth?: number
+    displayWidth?: number
+    className?: string
+    transformers?: {
+      serialize: (value: number) => number
+      deserialize: (value: number) => number
+    }
   }
-  type SMPropertyInput =
-    | SMPropertyStringInput
-    | SMPropertyFileInput
-    | SMPropertyNumberInput
-    | SMPropertyCustomInput
-  type SMPropertyData = {
-    title: string
-    propName: SimfileProperty
-    input: SMPropertyInput
-  }
-  export const SM_PROPERTIES_DATA: SMPropertyGroupData[]
-  export function createInputElement(
-    app: App,
-    sm: Simfile,
-    history: ActionHistory,
-    data: SMPropertyData
-  ): HTMLElement
+  export function SliderInput(
+    props: SliderInputProps
+  ): import("react/jsx-runtime").JSX.Element
 }
-declare module "app/src/gui/window/NewSongWindow" {
-  import { App } from "app/src/App"
+declare module "app/src/gui/inputs/ValueInput" {
+  import { JSXElementConstructor } from "react"
+  import {
+    CheckboxInputOptions,
+    CheckboxInputProps,
+  } from "app/src/gui/inputs/CheckboxInput"
+  import {
+    ColorInputOptions,
+    ColorInputProps,
+  } from "app/src/gui/inputs/color/ColorInput"
+  import {
+    DisplaySliderInputOptions,
+    DisplaySliderInputProps,
+  } from "app/src/gui/inputs/DisplaySliderInput"
+  import {
+    DropdownInputOptions,
+    DropdownInputProps,
+  } from "app/src/gui/inputs/DropdownInput"
+  import {
+    FileUploadInputOptions,
+    FileUploadInputProps,
+  } from "app/src/gui/inputs/FileUploadInput"
+  import {
+    NumberInputOptions,
+    NumberInputProps,
+  } from "app/src/gui/inputs/NumberInput"
+  import {
+    PathInputOptions,
+    PathInputProps,
+  } from "app/src/gui/inputs/PathInput"
+  import {
+    SliderInputOptions,
+    SliderInputProps,
+  } from "app/src/gui/inputs/SliderInput"
+  import {
+    TextInputOptions,
+    TextInputProps,
+  } from "app/src/gui/inputs/TextInput"
+  interface CustomInputOptions {
+    element: JSXElementConstructor<any>
+  }
+  interface CustomInputProps<T> extends CustomInputOptions {
+    value: T
+    onChange?: (value: T) => void
+  }
+  export type ValueInputOptions =
+    | ({
+        type: "display-slider"
+      } & DisplaySliderInputOptions)
+    | ({
+        type: "slider"
+      } & SliderInputOptions)
+    | ({
+        type: "color"
+      } & ColorInputOptions)
+    | ({
+        type: "dropdown"
+      } & DropdownInputOptions)
+    | ({
+        type: "number"
+      } & NumberInputOptions)
+    | ({
+        type: "text"
+      } & TextInputOptions)
+    | ({
+        type: "file"
+      } & FileUploadInputOptions)
+    | ({
+        type: "path"
+      } & PathInputOptions)
+    | ({
+        type: "checkbox"
+      } & CheckboxInputOptions)
+    | ({
+        type: "custom"
+      } & CustomInputOptions)
+  export type ValueInputProps =
+    | ({
+        type: "display-slider"
+      } & DisplaySliderInputProps)
+    | ({
+        type: "slider"
+      } & SliderInputProps)
+    | ({
+        type: "color"
+      } & ColorInputProps)
+    | ({
+        type: "dropdown"
+      } & DropdownInputProps)
+    | ({
+        type: "number"
+      } & NumberInputProps)
+    | ({
+        type: "text"
+      } & TextInputProps)
+    | ({
+        type: "file"
+      } & FileUploadInputProps)
+    | ({
+        type: "path"
+      } & PathInputProps)
+    | ({
+        type: "checkbox"
+      } & CheckboxInputProps)
+    | ({
+        type: "custom"
+      } & CustomInputProps<any>)
+  export function ValueInput(
+    props: ValueInputProps
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/SMProperties/SMPropertyEditor" {
+  import { Simfile } from "app/src/chart/sm/Simfile"
   import { SimfileProperty } from "app/src/chart/sm/SimfileTypes"
-  import { Window } from "app/src/gui/window/Window"
-  export class NewSongWindow extends Window {
-    app: App
-    private readonly sm
-    private readonly history
-    private fileTable
-    constructor(app: App)
-    initView(): void
-    createSong(): Promise<void>
-    createFileElement(
-      propName: SimfileProperty,
-      typeName: string
-    ): HTMLDivElement
+  interface SMPropertyEditorOptions {
+    sm: Simfile
+    newSong: boolean
+    onChange?: (
+      property: SimfileProperty,
+      value: string | File | undefined
+    ) => void
   }
+  export function SMPropertyEditor(
+    props: SMPropertyEditorOptions
+  ): import("react/jsx-runtime").JSX.Element
 }
-declare module "app/src/gui/window/InitialWindow" {
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  export class InitialWindow extends Window {
-    app: App
-    private readonly keyHandler
-    constructor(app: App, disableClose?: boolean)
-    onClose(): void
-    initView(): void
-    private handleKeyEvent
+declare module "app/src/gui/window/NewSong/NewSongWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export function NewSongWindow(): WindowData
+}
+declare module "app/src/gui/window/Initial/InitialWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export function InitialWindowContent(): import("react/jsx-runtime").JSX.Element
+  export function InitialWindow(disableClose?: boolean): WindowData
+}
+declare module "app/src/gui/window/UserOptions/OptionGroupComponent" {
+  import { ReactNode } from "react"
+  import {
+    OptionData,
+    OptionGroup,
+    OptionItem,
+  } from "app/src/gui/window/UserOptions/OptionViewer"
+  export function OptionGroupComponent<Item extends OptionItem>(props: {
+    data: OptionGroup<Item>
+    observer: IntersectionObserver
+    createElement: (option: OptionData<Item>) => ReactNode
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/UserOptions/OptionSubgroupComponent" {
+  import { ReactNode } from "react"
+  import {
+    OptionData,
+    OptionItem,
+    OptionSubgroup,
+  } from "app/src/gui/window/UserOptions/OptionViewer"
+  export function OptionSubgroupComponent<Item extends OptionItem>(props: {
+    data: OptionSubgroup<Item>
+    createComponent: (option: OptionData<Item>) => ReactNode
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/UserOptions/OptionViewer" {
+  import { ReactNode } from "react"
+  export type OptionData<Item extends OptionItem> =
+    | OptionGroup<Item>
+    | OptionSubgroup<Item>
+    | Item
+  export interface OptionGroup<Item extends OptionItem> {
+    type: "group"
+    id: string
+    label: string
+    children: OptionData<Item>[]
   }
+  export interface OptionSubgroup<Item extends OptionItem> {
+    type: "subgroup"
+    label?: string
+    children: OptionData<Item>[]
+  }
+  export interface OptionItem {
+    type: "item"
+  }
+  interface OptionsViewerProps<Item extends OptionItem> {
+    options: OptionData<Item>[]
+    itemElement: (props: { item: Item }) => ReactNode
+  }
+  export function OptionViewer<Item extends OptionItem>(
+    props: OptionsViewerProps<Item>
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Keybind/KeyComboWindow" {
+  import { KeyCombo } from "app/src/data/KeybindData"
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  interface KeyComboWindowProps {
+    allowMods: boolean
+    callback: (combo: KeyCombo) => void
+    conflictCheck?: (combo: KeyCombo) => string[] | "self"
+  }
+  export function KeyComboWindow(props: KeyComboWindowProps): WindowData
+}
+declare module "app/src/gui/window/Keybind/GameplayKeybindItemComponent" {
+  import { GameplayKeybindItem } from "app/src/gui/window/Keybind/GameplayKeybindWindow"
+  export function GameplayKeybindItemComponent(props: {
+    item: GameplayKeybindItem
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Keybind/GameplayKeybindWindow" {
+  import { OptionItem } from "app/src/gui/window/UserOptions/OptionViewer"
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export interface GameplayKeybindItem extends OptionItem {
+    index: number
+    id: string
+    label: string
+  }
+  export function GameplayKeybindWindow(): WindowData
 }
 declare module "app/src/data/MenubarData" {
   import { App } from "app/src/App"
@@ -3669,27 +3974,20 @@ declare module "app/src/data/MenubarData" {
     [key: string]: MenuMain
   }
 }
-declare module "app/src/gui/window/KeybindWindow" {
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  export class KeybindWindow extends Window {
-    private static GROUPS
-    app: App
-    private observer?
-    private searchDropdown?
-    private conflictMap
-    constructor(app: App)
-    initView(): void
-    private createSections
-    private createOptions
-    private static createGroups
-    private filterID
-    private static expandMenubarOptions
-    private createEmptySection
-    private createKeybindItem
-    private calculateConflicts
-    onClose(): void
+declare module "app/src/gui/window/Keybind/KeybindItemComponent" {
+  import { KeybindItem } from "app/src/gui/window/Keybind/KeybindWindow"
+  export function KeybindItemComponent(props: {
+    item: KeybindItem
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Keybind/KeybindWindow" {
+  import { OptionItem } from "app/src/gui/window/UserOptions/OptionViewer"
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export interface KeybindItem extends OptionItem {
+    id: string
+    label: string
   }
+  export function KeybindWindow(): WindowData
 }
 declare module "app/src/gui/element/ContextMenu" {
   import { FederatedMouseEvent } from "pixi.js"
@@ -3762,53 +4060,10 @@ declare module "app/src/chart/component/edit/BarlineContainer" {
     update(firstBeat: number, lastBeat: number): void
   }
 }
-declare module "app/src/gui/popup/Popup" {
-  import { DisplayObject } from "pixi.js"
-  export interface PopupOptions {
-    attach: DisplayObject | HTMLElement
-    title: string
-    description?: string
-    width?: number
-    height?: number
-    options?: PopupOption[]
-    background?: string
-    textColor?: string
-    editable: boolean
-    cancelableOnOpen: boolean
-    clickHandler?: (event: MouseEvent) => void
-  }
-  interface PopupOption {
-    label: string
-    callback?: () => void
-    type: "delete" | "confirm" | "default"
-  }
-  export abstract class Popup {
-    static active: boolean
-    static persistent: boolean
-    static options: PopupOptions
-    static popup?: HTMLDivElement
-    static view?: HTMLDivElement
-    static title?: HTMLDivElement
-    static desc?: HTMLDivElement
-    static editText?: HTMLDivElement
-    private static clickOutside?
-    private static moveInterval
-    private static updateInterval
-    static _open(options: PopupOptions): void
-    private static cloneRect
-    private static movePosition
-    private static _build
-    static buildContent(): void
-    static close(): void
-    static select(): void
-    static detach(): void
-    static attach(target: DisplayObject): void
-  }
-}
 declare module "app/src/gui/popup/CandlePopup" {
   import { CandleBox } from "app/src/chart/component/edit/CandleIndicator"
   import { Foot } from "app/src/chart/stats/parity/ParityDataTypes"
-  import { Popup } from "app/src/gui/popup/Popup"
+  import { Popup } from "app/src/gui/popup/Popup_old"
   export class CandlePopup extends Popup {
     static box?: CandleBox
     static open(box: CandleBox, foot: Foot): void
@@ -4095,6 +4350,26 @@ declare module "app/src/gui/widget/PlaybackOptionsWidget" {
     private parseString
   }
 }
+declare module "app/src/gui/element/Dropdown" {
+  export class Dropdown<T> {
+    view: HTMLDivElement
+    private items
+    private selectedItem
+    private onChangeHandlers
+    static create<T>(items?: readonly T[], selectedItem?: T): Dropdown<T>
+    private constructor()
+    onChange(handler: (value: T, index: number) => void): void
+    removeHandler(handler: (value: T, index: number) => void): void
+    getItems(): readonly T[]
+    setItems(items: readonly T[]): void
+    setSelected(item?: T): void
+    closeDropdown(): void
+    get value(): T
+    get disabled(): boolean
+    set disabled(value: boolean)
+    private createDropdown
+  }
+}
 declare module "app/src/chart/component/timing/TimingAreaContainer" {
   import { Container } from "pixi.js"
   import {
@@ -4198,7 +4473,7 @@ declare module "app/src/data/SplitTimingData" {
 declare module "app/src/gui/popup/SplitTimingPopup" {
   import { App } from "app/src/App"
   import { TimingEventType } from "app/src/chart/sm/TimingTypes"
-  import { Popup } from "app/src/gui/popup/Popup"
+  import { Popup } from "app/src/gui/popup/Popup_old"
   export class SplitTimingPopup extends Popup {
     private static app
     private static timingGrid
@@ -4212,7 +4487,7 @@ declare module "app/src/gui/popup/SplitTimingPopup" {
   }
 }
 declare module "app/src/gui/popup/TimingTrackOrderPopup" {
-  import { Popup } from "app/src/gui/popup/Popup"
+  import { Popup } from "app/src/gui/popup/Popup_old"
   export class TimingTrackOrderPopup extends Popup {
     private static draggedElement?
     private static dragOffsetX
@@ -4233,17 +4508,27 @@ declare module "app/src/gui/popup/TimingTrackOrderPopup" {
     static close(): void
   }
 }
-declare module "app/src/gui/window/SyncWindow" {
+declare module "app/src/gui/window/Sync/SyncCover" {
+  export function SyncCover(props: {
+    label: string
+    index: number
+    active: boolean
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Sync/SyncEngine" {
+  import { Dispatch, SetStateAction } from "react"
   import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  export class SyncWindow extends Window {
+  import { SyncData } from "app/src/gui/window/Sync/SyncWindow"
+  export const SyncGraphWidth = 800
+  export const SyncGraphHeight = 200
+  export class SyncEngine {
     app: App
+    canvas: HTMLCanvasElement
     private onAudioLoad
-    private onResize
-    private windowStep
-    private fftSize
-    private tempoFftSize
-    private tempoStep
+    windowStep: number
+    fftSize: number
+    tempoFftSize: number
+    tempoStep: number
     private monoAudioData?
     private audioLength
     private sampleRate
@@ -4260,23 +4545,16 @@ declare module "app/src/gui/window/SyncWindow" {
     private _threshold
     private spectroHeights
     private spectroWeights
-    private placeNotesSelectionButton
-    private toggleButton
-    private resetButton
-    private onsetResults
-    private offsetTableLabel
-    private offsetRows
-    private bpmRows
-    private covers
-    private doAnalysis
     private lastSecond
-    constructor(app: App)
-    onClose(): void
-    initView(): void
-    resize(): void
-    createOptionsView(): HTMLDivElement
-    createTempoView(): HTMLDivElement
-    createOnsetsView(): HTMLDivElement
+    runAnalysis: boolean
+    private destroyed
+    private setSyncData
+    constructor(
+      app: App,
+      canvas: HTMLCanvasElement,
+      setSyncData: Dispatch<SetStateAction<SyncData>>
+    )
+    destroy(): void
     reset(): Promise<void>
     hasData(): boolean
     windowLoop(canvas: HTMLCanvasElement): () => void
@@ -4294,6 +4572,62 @@ declare module "app/src/gui/window/SyncWindow" {
     calcTempogram(): void
     storeTempogram(blockNum: number, response: Float64Array): void
   }
+}
+declare module "app/src/gui/window/Sync/SyncLabel" {
+  import { ReactNode } from "react"
+  export function SyncLabel(props: {
+    text: string
+    tooltip: string
+    children?: ReactNode
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Sync/SyncOnsetView" {
+  import { Dispatch, SetStateAction } from "react"
+  import { SyncData } from "app/src/gui/window/Sync/SyncWindow"
+  export function SyncOnsetView(props: {
+    syncData: SyncData
+    onsetThreshold: number
+    setOnsetThreshold: Dispatch<SetStateAction<number>>
+    placeOnsets: (selection?: boolean) => void
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Sync/SyncOptionsView" {
+  import { Dispatch, SetStateAction } from "react"
+  export interface SyncOptions {
+    fftSize: number
+    windowStep: number
+    tempoFftSize: number
+    tempoStep: number
+  }
+  export function SyncOptionsView(props: {
+    syncOptions: SyncOptions
+    setSyncOptions: Dispatch<SetStateAction<SyncOptions>>
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Sync/SyncTempoView" {
+  import { SyncData } from "app/src/gui/window/Sync/SyncWindow"
+  export function SyncTempoView(props: {
+    syncData: SyncData
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Sync/SyncWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export interface SyncData {
+    hasData: boolean
+    bpms: {
+      bpm: number
+      confidence: number
+    }[]
+    offsets: {
+      offset: number
+      confidence: number
+    }[]
+    offsetBPM: number
+    state: "idle" | "spectogram" | "tempogram" | "finished"
+    percentage: number
+    numOnsets: number
+  }
+  export function SyncWindow(): WindowData
 }
 declare module "app/src/gui/widget/StatusWidget" {
   import { Widget } from "app/src/gui/widget/Widget"
@@ -4382,9 +4716,45 @@ declare module "app/src/gui/widget/timeline/FacingWidget" {
     populate(startBeat?: number, endBeat?: number): void
   }
 }
+declare module "app/src/gui/element/NumberSpinner" {
+  interface NumberSpinnerOptions {
+    value: number
+    step: number | null
+    precision: number
+    minPrecision: number | null
+    min: number
+    max: number
+    onChange?: (value: number | undefined) => void
+  }
+  export class NumberSpinner {
+    readonly view: HTMLDivElement
+    readonly input: HTMLInputElement
+    private options
+    private lastVal
+    constructor(view: HTMLDivElement, options: Partial<NumberSpinnerOptions>)
+    static create(options: Partial<NumberSpinnerOptions>): NumberSpinner
+    private formatValue
+    get value(): number
+    set value(value: number)
+    get step(): number | null
+    set step(value: number | null)
+    get min(): number
+    set min(value: number)
+    get max(): number
+    set max(value: number)
+    get precision(): number
+    set precision(value: number)
+    get minPrecision(): number | null
+    set minPrecision(value: number | null)
+    get onchange(): ((value: number | undefined) => void) | undefined
+    set onchange(value: ((value: number | undefined) => void) | undefined)
+    get disabled(): boolean
+    set disabled(value: boolean)
+  }
+}
 declare module "app/src/gui/popup/SnapPopup" {
   import { Graphics } from "pixi.js"
-  import { Popup } from "app/src/gui/popup/Popup"
+  import { Popup } from "app/src/gui/popup/Popup_old"
   export class SnapPopup extends Popup {
     private static onSnapChange
     private static divInput
@@ -4646,7 +5016,7 @@ declare module "app/src/gui/popup/TechErrorPopup" {
   import { TechBox } from "app/src/chart/component/edit/TechErrorIndicators"
   import { Chart } from "app/src/chart/sm/Chart"
   import { TechErrors } from "app/src/chart/stats/parity/ParityDataTypes"
-  import { Popup, PopupOptions } from "app/src/gui/popup/Popup"
+  import { Popup, PopupOptions } from "app/src/gui/popup/Popup_old"
   interface TechErrorPopupOptions {
     box: TechBox
     beat: number
@@ -4715,7 +5085,7 @@ declare module "app/src/chart/component/edit/TechErrorIndicators" {
 declare module "app/src/gui/popup/TechPopup" {
   import { TechBox } from "app/src/chart/component/edit/TechIndicators"
   import { TechCategory } from "app/src/chart/stats/parity/ParityDataTypes"
-  import { Popup } from "app/src/gui/popup/Popup"
+  import { Popup } from "app/src/gui/popup/Popup_old"
   export class TechPopup extends Popup {
     static box?: TechBox
     static open(box: TechBox, tech: TechCategory): void
@@ -4969,12 +5339,16 @@ declare module "app/src/chart/component/notefield/Notefield" {
     private inactive
     private wasActive
     private lastLength
+    private lastBrightness
     private elements
+    private lowDetailHold
     private readonly metrics
     private readonly ns
     readonly nf: Notefield
     private loaded
+    private loadLowDetail
     constructor(notefield: Notefield, note: HoldNotedataEntry)
+    toggleLowDetail(id: string): void
     loadElements(): void
     getNoteskinElement(element: string): NoteskinSprite
     setActive(active: boolean): void
@@ -5081,7 +5455,7 @@ declare module "app/src/gui/popup/TimingColumnPopup" {
   import { Container } from "pixi.js"
   import { ChartTimingData } from "app/src/chart/sm/ChartTimingData"
   import { TimingEvent, TimingEventType } from "app/src/chart/sm/TimingTypes"
-  import { Popup, PopupOptions } from "app/src/gui/popup/Popup"
+  import { Popup, PopupOptions } from "app/src/gui/popup/Popup_old"
   interface TimingColumnPopupOptions {
     attach: Container
     type: TimingEventType
@@ -5149,7 +5523,7 @@ declare module "app/src/gui/popup/TimingEventPopup" {
   import { TimingBox } from "app/src/chart/component/timing/TimingTrackContainer"
   import { TimingData } from "app/src/chart/sm/TimingData"
   import { TimingEvent } from "app/src/chart/sm/TimingTypes"
-  import { Popup, PopupOptions } from "app/src/gui/popup/Popup"
+  import { Popup, PopupOptions } from "app/src/gui/popup/Popup_old"
   interface TimingEventPopupOptions {
     box: TimingBox
     timingData: TimingData
@@ -7621,7 +7995,7 @@ declare module "app/src/chart/gameTypes/noteskin/pump/prime/Noteskin" {
 declare module "app/src/chart/gameTypes/noteskin/NoteskinRegistry" {
   import { GameType } from "app/src/chart/gameTypes/GameTypeRegistry"
   import { NoteskinOptions } from "app/src/chart/gameTypes/noteskin/Noteskin"
-  interface RegistryData {
+  export interface NoteskinRegistryData {
     id: string
     gameTypes: string[]
     load: () => Promise<NoteskinOptions>
@@ -7631,7 +8005,7 @@ declare module "app/src/chart/gameTypes/noteskin/NoteskinRegistry" {
   }
   export class NoteskinRegistry {
     private static noteskins
-    static register(options: RegistryData): void
+    static register(options: NoteskinRegistryData): void
     static getNoteskin(
       gameType: GameType,
       id: string
@@ -7639,104 +8013,155 @@ declare module "app/src/chart/gameTypes/noteskin/NoteskinRegistry" {
     static getNoteskinData(
       gameType: GameType,
       id: string
-    ): RegistryData | undefined
-    static getNoteskins(): Map<string, Map<string, RegistryData>>
+    ): NoteskinRegistryData | undefined
+    static getNoteskins(): Map<string, Map<string, NoteskinRegistryData>>
     static getPreviewUrl(gameType: GameType, id: string): string
   }
 }
-declare module "app/src/gui/window/NoteskinWindow" {
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  export class NoteskinWindow extends Window {
-    app: App
-    private grid
-    private lastGameType
-    constructor(app: App)
-    initView(): void
-    loadGrid(): void
-    removeAllSelections(): void
-    filterGrid(query: string): void
-    containsQuery(query: string, string: string | undefined): boolean
-  }
+declare module "app/src/gui/window/NoteSkin/NoteskinWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export function NoteskinWindow(): WindowData
 }
-declare module "app/src/gui/window/OffsetWindow" {
-  import { Howl } from "howler/dist/howler.core.min.js"
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  interface TickLine {
-    time: number
-    beat: number
-  }
-  interface ResultLine {
-    startTime: number
-    offset: number
-  }
-  export class OffsetWindow extends Window {
-    app: App
-    metronomeInterval: NodeJS.Timeout
-    startTime: number
-    me_high: Howl
-    me_low: Howl
-    tickLines: TickLine[]
-    resultLines: ResultLine[]
-    previousOffsets: number[]
-    keyHandler: (e: KeyboardEvent) => void
-    constructor(app: App)
-    initView(): void
-    drawEQ(canvas: HTMLCanvasElement): () => void
-    onClose(): void
-  }
+declare module "app/src/gui/window/SMProperties/SMPropertiesWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export function SMPropertiesWindow(): WindowData
 }
-declare module "app/src/gui/window/SMPropertiesWindow" {
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  export class SMPropertiesWindow extends Window {
-    app: App
-    private changeHandler
-    constructor(app: App)
-    onClose(): void
-    initView(): void
-  }
+declare module "app/src/gui/window/Theme/ThemeSelectionItem" {
+  import { Theme } from "app/src/data/ThemeData"
+  export function ThemeSelectionItem(props: {
+    id: string
+    theme: Theme
+  }): import("react/jsx-runtime").JSX.Element
 }
-declare module "app/src/data/TimingDataWindowData" {
-  import { App } from "app/src/App"
-  import { TimingData } from "app/src/chart/sm/TimingData"
-  type TimingDataWindowInputs = {
-    data: any[]
-  }
-  type TimingDataWindowElement = {
-    create: (this: TimingDataWindowInputs, app: App) => HTMLElement
-    update: (
-      this: TimingDataWindowInputs,
-      timingData: TimingData,
-      beat: number
-    ) => void
-  }
-  type TimingDataWindowData = {
+declare module "app/src/gui/window/Theme/ThemeColorPicker" {
+  import { Color } from "pixi.js"
+  import { Dispatch, SetStateAction } from "react"
+  import { ThemeProperty } from "app/src/data/ThemeData"
+  export function ThemeColorPicker(props: {
+    id: ThemeProperty
+    label: string
+    color: Color
+    onChange: (color: Color) => void
+    linkBlacklist: Record<string, boolean>
+    setLinkedBlacklist: Dispatch<SetStateAction<Record<string, boolean>>>
+    hovered: ThemeProperty | null
+    setHovered: Dispatch<SetStateAction<ThemeProperty | null>>
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Theme/ThemeEditorGroup" {
+  import { Color } from "pixi.js"
+  import { Dispatch, SetStateAction } from "react"
+  import { Theme, ThemeGroup, ThemeProperty } from "app/src/data/ThemeData"
+  export function ThemeEditorGroup(props: {
+    theme: Theme
+    group: ThemeGroup
+    linkBlacklist: Record<string, boolean>
+    setLinkedBlacklist: Dispatch<SetStateAction<Record<string, boolean>>>
+    onChange: (id: ThemeProperty, color: Color) => void
+    hovered: ThemeProperty | null
+    setHovered: Dispatch<SetStateAction<ThemeProperty | null>>
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Theme/ThemeEditorWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export function ThemeEditorWindowContent(): import("react/jsx-runtime").JSX.Element
+  export function ThemeEditorWindow(): WindowData
+}
+declare module "app/src/gui/window/Theme/ThemeTray" {
+  export function ThemeTray({
+    selectedTheme,
+  }: {
+    selectedTheme: string
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Theme/ThemeSelectionWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export function ThemeSelectionWindow(): WindowData
+}
+declare module "app/src/gui/window/TimingData/TimingDataWindowRow" {
+  import { ReactNode } from "react"
+  export function TimingDataWindowRow(props: {
     title: string
-    element: TimingDataWindowElement
-  }
-  export const TIMING_WINDOW_DATA: {
-    [key: string]: TimingDataWindowData
-  }
+    children: ReactNode
+  }): import("react/jsx-runtime").JSX.Element
 }
-declare module "app/src/gui/window/TimingDataWindow" {
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  export class TimingDataWindow extends Window {
-    app: App
-    private lastBeat
-    private readonly interval
-    private changeHandler
-    private data
-    constructor(app: App)
-    onClose(): void
-    initView(): void
-    setData(): void
+declare module "app/src/gui/window/TimingData/ComboRow" {
+  import { ChartTimingData } from "app/src/chart/sm/ChartTimingData"
+  export function ComboRow(props: {
+    td: ChartTimingData
+    value: {
+      hitMult: number
+      missMult: number
+    }
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/TimingData/LabelRow" {
+  import { ChartTimingData } from "app/src/chart/sm/ChartTimingData"
+  export function LabelRow(props: {
+    td: ChartTimingData
+    value: string
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/TimingData/OffsetRow" {
+  import { ChartTimingData } from "app/src/chart/sm/ChartTimingData"
+  export function OffsetRow(props: {
+    td: ChartTimingData
+    value: number
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/TimingData/SimpleTimingRow" {
+  import { ChartTimingData } from "app/src/chart/sm/ChartTimingData"
+  export function SimpleTimingRow(props: {
+    td: ChartTimingData
+    title: string
+    type:
+      | "BPMS"
+      | "STOPS"
+      | "WARPS"
+      | "DELAYS"
+      | "SCROLLS"
+      | "FAKES"
+      | "TICKCOUNTS"
+    value: number
+    min?: number
+    precision?: number
+    minPrecision?: number | null
+    step?: number
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/TimingData/SpeedRow" {
+  import { ChartTimingData } from "app/src/chart/sm/ChartTimingData"
+  export function SpeedRow(props: {
+    td: ChartTimingData
+    sameRow: boolean
+    value: {
+      value: number
+      delay: number
+      unit: "B" | "T"
+    }
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/TimingData/TimeSignatureRow" {
+  import { ChartTimingData } from "app/src/chart/sm/ChartTimingData"
+  export function TimeSignatureRow(props: {
+    td: ChartTimingData
+    value: {
+      upper: number
+      lower: number
+    }
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/TimingData/TimingDataWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export const precisionSettings: {
+    precision: number
+    minPrecision: number
   }
+  export function TimingDataWindow(): WindowData
 }
 declare module "app/src/data/UserOptionsWindowData" {
   import { App } from "app/src/App"
+  import { ValueInputOptions } from "app/src/gui/inputs/ValueInput"
   export type UserOption = UserOptionGroup | UserOptionSubgroup | UserOptionItem
   export interface UserOptionGroup {
     type: "group"
@@ -7745,109 +8170,33 @@ declare module "app/src/data/UserOptionsWindowData" {
     children: UserOption[]
     disable?: (app: App) => boolean
   }
-  interface UserOptionSubgroup {
+  export interface UserOptionSubgroup {
     type: "subgroup"
     label?: string
     children: UserOption[]
     disable?: (app: App) => boolean
   }
-  interface UserOptionItem {
+  export interface UserOptionItem {
     type: "item"
     id: string
     label: string
     tooltip?: string
-    input: UserOptionInput<any>
+    input: ValueInputOptions & {
+      onChange?: (app: App, value: any) => void
+    }
     disable?: (app: App) => boolean
   }
-  interface UserOptionTextInput {
-    type: "text"
-    transformers?: {
-      serialize: (value: string) => string
-      deserialize: (value: string) => string
-    }
-    onChange?: (app: App, value: string) => void
-  }
-  type UserOptionDropdownInput<T> =
-    | {
-        type: "dropdown"
-        items: readonly string[]
-        advanced: false
-        onChange?: (app: App, value: string | number) => void
-      }
-    | {
-        type: "dropdown"
-        items: readonly number[]
-        advanced: false
-        onChange?: (app: App, value: string | number) => void
-      }
-    | {
-        type: "dropdown"
-        items: T[]
-        advanced: true
-        transformers: {
-          serialize: (value: string | number | boolean) => T
-          deserialize: (value: T) => string | number | boolean
-        }
-        onChange?: (app: App, value: string | number | boolean) => void
-      }
-  interface UserOptionNumberInput {
-    type: "number"
-    step: number
-    precision?: number
-    minPrecision?: number
-    min?: number
-    max?: number
-    transformers?: {
-      serialize: (value: number) => number
-      deserialize: (value: number) => number
-    }
-    onChange?: (app: App, value: number) => void
-  }
-  interface UserOptionSliderInput {
-    type: "slider"
-    step?: number
-    min?: number
-    max?: number
-    hardMax?: number
-    hardMin?: number
-    transformers?: {
-      serialize: (value: number) => number
-      deserialize: (value: number) => number
-    }
-    onChange?: (app: App, value: number) => void
-  }
-  interface UserOptionCheckboxInput {
-    type: "checkbox"
-    onChange?: (app: App, value: boolean) => void
-  }
-  interface UserOptionColorInput {
-    type: "color"
-    onChange?: (app: App, value: string) => void
-  }
-  type UserOptionInput<T> =
-    | UserOptionTextInput
-    | UserOptionDropdownInput<T>
-    | UserOptionNumberInput
-    | UserOptionCheckboxInput
-    | UserOptionSliderInput
-    | UserOptionColorInput
   export const USER_OPTIONS_WINDOW_DATA: UserOption[]
 }
-declare module "app/src/gui/window/UserOptionsWindow" {
-  import { App } from "app/src/App"
-  import { Window } from "app/src/gui/window/Window"
-  export class UserOptionsWindow extends Window {
-    app: App
-    private observer?
-    private sectionContainer?
-    constructor(app: App)
-    initView(): void
-    private createOptions
-    private makeOption
-    private filterOptions
-    private createEmptyGroup
-    onClose(): void
-  }
+declare module "app/src/gui/window/UserOptions/UserOptionItemComponent" {
+  import { UserOptionItem } from "app/src/data/UserOptionsWindowData"
+  export function UserOptionItemComponent(props: {
+    item: UserOptionItem
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/UserOptions/UserOptionsWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export function UserOptionsWindow(): WindowData
 }
 declare module "app/src/data/KeybindData" {
   import { App } from "app/src/App"
@@ -7993,201 +8342,6 @@ declare module "app/src/util/SchedulableSoundEffect" {
     play(offset: number): void
     stop(): void
     getBuffer(): AudioBuffer
-  }
-}
-declare module "app/src/chart/audio/ChartAudio" {
-  class ToggleableBiquadFilterNode extends BiquadFilterNode {
-    enabled: boolean
-    static create(filter: BiquadFilterNode): ToggleableBiquadFilterNode
-  }
-  export class ChartAudio {
-    private readonly _audioAnalyzer
-    private readonly _filteredAudioAnalyzer
-    private readonly _freqData
-    private readonly _filteredFreqData
-    private readonly _gainNode
-    private readonly type
-    private _audioContext
-    private _source?
-    private _playbackTime
-    private _startTimestamp
-    private _rate
-    private _isPlaying
-    private _buffer
-    private _filteredBuffer
-    private _loadedBuffer
-    private _delay?
-    private _loadListeners
-    private _updateListeners
-    private _volume
-    private _destroyed
-    private _renderTimeout?
-    private _filters
-    private _filtersEnabled
-    onStop?: () => void
-    loaded: Promise<void>
-    constructor(data?: ArrayBuffer, type?: string)
-    /**
-     * Renders the specified AudioBuffer to the buffer of this ChartAudio
-     *
-     * @private
-     * @param {(AudioBuffer | undefined)} buffer The buffer to render.
-     * @return {*}  {Promise<void>}
-     * @memberof ChartAudio
-     */
-    private renderBuffer
-    /**
-     * Renders the specified AudioBuffer to the buffer of this ChartAudio, applying filters set to this instance.
-     *
-     * @private
-     * @param {(AudioBuffer | undefined)} buffer The buffer to render.
-     * @return {*}  {Promise<void>}
-     * @memberof ChartAudio
-     */
-    private renderFilteredBuffer
-    private createFilter
-    getFilters(): ToggleableBiquadFilterNode[]
-    getFilter(filterIndex: number): ToggleableBiquadFilterNode
-    updateFilter(
-      filterIndex: number,
-      properties: {
-        Q?: number
-        gain?: number
-        frequency?: number
-      }
-    ): void
-    enableFilter(filterIndex: number): void
-    disableFilter(filterIndex: number): void
-    hasFilters(): boolean
-    /**
-     * Add a listener that fires when the audio buffer is loaded.
-     * @memberof ChartAudio
-     */
-    onLoad(callback: () => void): void
-    /**
-     * Removes a listener that fires when the audio buffer is loaded.
-     * @memberof ChartAudio
-     */
-    offLoad(callback: () => void): void
-    /**
-     * Add a listener that fires when the filters are updated or the audio buffer is loaded.
-     * @memberof ChartAudio
-     */
-    onUpdate(callback: () => void): void
-    /**
-     * Removes a listener that fires when the filters are updated or the audio buffer is loaded.
-     * @memberof ChartAudio
-     */
-    offUpdate(callback: () => void): void
-    /**
-     * Returns the length of the audio in seconds.
-     *
-     * @return {*} {number}
-     * @memberof ChartAudio
-     */
-    getSongLength(): number
-    /**
-     * Returns an array containing the byte frequency data.
-     *
-     * @return {*}  {Uint8Array}
-     * @memberof ChartAudio
-     */
-    getFrequencyData(): Uint8Array
-    /**
-     * Returns an array containing the byte frequency data after audio filtering.
-     *
-     * @return {*}  {Uint8Array}
-     * @memberof ChartAudio
-     */
-    getFilteredFrequencyData(): Uint8Array
-    /**
-     * Returns the sample rate of the audio
-     *
-     * @return {*}  {number}
-     * @memberof ChartAudio
-     */
-    getSampleRate(): number
-    /**
-     * Returns the FFT size of the audio analyzer.
-     *
-     * @return {*}  {number}
-     * @memberof ChartAudio
-     */
-    getFFTSize(): number
-    /**
-     * Returns the raw audio data. Each channel has its own Float32Array.
-     *
-     * @return {*}  {number[]}
-     * @memberof ChartAudio
-     */
-    getRawData(): Float32Array[]
-    /**
-     * Returns the filtered raw audio data. Each channel has its own Float32Array.
-     *
-     * @return {*}  {number[]}
-     * @memberof ChartAudio
-     */
-    getFilteredRawData(): Float32Array[]
-    getBuffer(): AudioBuffer
-    /**
-     * Returns whether the audio is currently playing
-     *
-     * @return {*}  {boolean}
-     * @memberof ChartAudio
-     */
-    isPlaying(): boolean
-    reload(): void
-    /**
-     * Destroys this instance and frees up memory. Unbinds all bound waveforms.
-     * Destroyed instances cannot be used again.
-     * @memberof ChartAudio
-     */
-    destroy(): void
-    getFrequencyResponse(frequencies: number[]): number[]
-    private callLoadListeners
-    private callUpdateListeners
-    private decodeData
-    private initSource
-    /**
-     * Sets the volume of this audio. 1 is 100%.
-     *
-     * @param {number} volume
-     * @memberof ChartAudio
-     */
-    volume(volume: number): void
-    /**
-     * Sets the playback rate of this audio. 1 is 100%.
-     * Changing the rate will change the pitch.
-     * @param {number} rate
-     * @memberof ChartAudio
-     */
-    rate(rate: number): void
-    /**
-     * Starts playing this audio.
-     *
-     * @memberof ChartAudio
-     */
-    play(): void
-    /**
-     * Seeks the audio to the specified location. If no time is provided, returns the current playback time.
-     * @return {*}  {number}
-     * @memberof ChartAudio
-     */
-    seek(): number
-    seek(playbackTime: number): void
-    /**
-     * Pauses this audio.
-     *
-     * @memberof ChartAudio
-     */
-    pause(): void
-    /**
-     * Stops this audio.
-     *
-     * @param {boolean} [pause]
-     * @memberof ChartAudio
-     */
-    stop(pause?: boolean): void
   }
 }
 declare module "app/src/chart/play/GameplayStats" {
@@ -8581,11 +8735,99 @@ declare module "app/src/chart/ChartManager" {
     copy(): string | undefined
   }
 }
-declare module "app/src/gui/element/MenubarManager" {
-  import { App } from "app/src/App"
-  export function Menubar(props: { app: App }): React.JSX.Element
+declare module "app/src/gui/element/menubar/MenubarSelection" {
+  import { MenuCheckbox, MenuSelection } from "app/src/data/MenubarData"
+  import { MenubarProps } from "app/src/gui/element/menubar/Menubar"
+  export function MenubarSelection(
+    props: MenubarProps<MenuSelection | MenuCheckbox>
+  ): import("react/jsx-runtime").JSX.Element
 }
-declare module "app/src/gui/element/PlaybackOptions" {
+declare module "app/src/gui/element/menubar/SearchBar" {
+  import { App } from "app/src/App"
+  export function SearchBar(props: {
+    app: App
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/menubar/MenubarDropdown" {
+  import { MenuDropdown, MenuMain } from "app/src/data/MenubarData"
+  import { MenubarProps } from "app/src/gui/element/menubar/Menubar"
+  export function MenubarDropdown(
+    props: MenubarProps<MenuDropdown | MenuMain>
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/menubar/Menubar" {
+  import { App } from "app/src/App"
+  import { MenuOption } from "app/src/data/MenubarData"
+  export interface MenubarProps<T extends MenuOption = MenuOption> {
+    app: App
+    id: string
+    data: T
+    parentActive: string | null
+    setActive: (key: string | null) => void
+    close: () => void
+  }
+  export function evaluateDynamicProperty<T extends string | number | boolean>(
+    app: App,
+    property: T | ((app: App) => T)
+  ): T
+  export function Menubar(props: {
+    app: App
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/playback-options/PlaybackOptionsCheckbox" {
+  import { ReactNode } from "react"
+  interface CheckboxOptions {
+    onChange: (value: boolean) => void
+    getValue: () => boolean
+    onEl: ReactNode
+    offEl: ReactNode
+    addTooltip?: (ref: HTMLElement) => void
+  }
+  export function PlaybackOptionsCheckbox(
+    props: CheckboxOptions
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/playback-options/PlaybackOptionsGroup" {
+  export function PlaybackOptionsGroup(props: {
+    label: string
+    children: React.ReactNode
+    className?: string
+    scaling?: boolean
+    addTooltip?: (ref: HTMLElement) => void
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/playback-options/PlaybackOptionsSeparator" {
+  export function PlaybackOptionsSeparator(): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/playback-options/PlaybackOptionsToggle" {
+  import { ReactNode } from "react"
+  interface ToggleOptions {
+    onChange: (index: number) => void
+    getValue: () => number
+    values: ReactNode[]
+    addTooltip?: (ref: HTMLElement) => void
+  }
+  export function PlaybackOptionsToggle(
+    props: ToggleOptions
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/playback-options/PlusMinusSpinner" {
+  interface SpinnerOptions {
+    getValue: () => number
+    step?: number
+    altStep?: number
+    min?: number
+    max?: number
+    hardMin?: number
+    hardMax?: number
+    onChange: (value: number) => void
+    addTooltip?: (ref: HTMLElement) => void
+  }
+  export function PlusMinusSpinner(
+    props: SpinnerOptions
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/playback-options/PlaybackOptions" {
   export function PlaybackOptions(): import("react/jsx-runtime").JSX.Element
 }
 declare module "app/src/App" {
@@ -8595,7 +8837,6 @@ declare module "app/src/App" {
   import { ChartManager } from "app/src/chart/ChartManager"
   import { GameTypeRegistry } from "app/src/chart/gameTypes/GameTypeRegistry"
   import { NoteskinRegistry } from "app/src/chart/gameTypes/noteskin/NoteskinRegistry"
-  import { WindowManager } from "app/src/gui/window/WindowManager"
   import { ActionHistory } from "app/src/util/ActionHistory"
   import { EventHandler } from "app/src/util/EventHandler"
   import { Options } from "app/src/util/Options"
@@ -8623,7 +8864,6 @@ declare module "app/src/App" {
     readonly stage: Container
     readonly view: HTMLCanvasElement
     readonly chartManager: ChartManager
-    readonly windowManager: WindowManager
     readonly actionHistory: ActionHistory
     capturing: boolean
     STAGE_HEIGHT: number
@@ -8640,6 +8880,361 @@ declare module "app/src/App" {
     checkCoreVersion(): void
   }
 }
+declare module "app/src/gui/element/ColorPicker" {
+  import { Color } from "pixi.js"
+  class TransparentPreview extends HTMLDivElement {
+    colorElement: HTMLDivElement
+    set color(value: Color)
+  }
+  interface ColorPickerOptions {
+    value: string
+    height?: number
+    width?: number
+  }
+  export class ColorPicker extends TransparentPreview {
+    private _value
+    private _hue
+    private _sat
+    private _val
+    private _alp
+    private popup?
+    private matrix?
+    private matrixDot?
+    private matrixDragging
+    private hueDragging
+    private hueThumb?
+    private alphaDragging
+    private alphaBg?
+    private alphaThumb?
+    private previewNew?
+    private formats
+    onColorChange?: (color: Color) => void
+    static create(options: ColorPickerOptions): ColorPicker
+    private updatePreview
+    get value(): Color
+    set value(color: Color)
+    get hue(): number
+    set hue(value: number)
+    get sat(): number
+    set sat(value: number)
+    get val(): number
+    set val(value: number)
+    get alpha(): number
+    set alpha(value: number)
+    updateColor(): void
+    createPopup(): void
+    updatePopup(): void
+    closePopup(): void
+    createMatrix(): HTMLDivElement[]
+    createSlider(opt: {
+      ondrag?: () => void
+      change: (val: number) => void
+      offdrag?: () => void
+    }): HTMLDivElement[]
+    private movePosition
+    isActive(): boolean
+  }
+}
+declare module "app/src/gui/element/NumberSlider" {
+  interface SliderOptions {
+    value?: number
+    width?: number
+    min: number
+    max: number
+    step: number
+    precision?: number
+    transformer?: (value: number) => string | number
+    onChange?: (value: number) => void
+    displayWidth?: number
+  }
+  export class NumberSlider {
+    view: HTMLDivElement
+    slider: HTMLInputElement
+    text: HTMLDivElement
+    options: SliderOptions
+    constructor(view: HTMLDivElement, options: SliderOptions)
+    get value(): number
+    setValue(value: number): void
+    static create(options: SliderOptions): NumberSlider
+    private formatValue
+  }
+}
+declare module "app/src/gui/element/ValueInput" {
+  import { App } from "app/src/App"
+  export interface TextInput {
+    type: "text"
+    transformers?: {
+      serialize: (value: string) => string
+      deserialize: (value: string) => string
+    }
+    onChange?: (app: App, value: string) => void
+  }
+  export type DropdownInput<T> =
+    | {
+        type: "dropdown"
+        items: readonly string[]
+        advanced: false
+        onChange?: (app: App, value: string | number) => void
+      }
+    | {
+        type: "dropdown"
+        items: readonly number[]
+        advanced: false
+        onChange?: (app: App, value: string | number) => void
+      }
+    | {
+        type: "dropdown"
+        items: T[]
+        advanced: true
+        transformers: {
+          serialize: (value: string | number | boolean) => T
+          deserialize: (value: T) => string | number | boolean
+        }
+        onChange?: (app: App, value: string | number | boolean) => void
+      }
+  export interface NumberInput {
+    type: "number"
+    step: number
+    precision?: number
+    minPrecision?: number
+    min?: number
+    max?: number
+    transformers?: {
+      serialize: (value: number) => number
+      deserialize: (value: number) => number
+    }
+    onChange?: (app: App, value: number) => void
+  }
+  export interface SliderInput {
+    type: "slider"
+    step?: number
+    min?: number
+    max?: number
+    hardMax?: number
+    hardMin?: number
+    transformers?: {
+      serialize: (value: number) => number
+      deserialize: (value: number) => number
+    }
+    onChange?: (app: App, value: number) => void
+  }
+  export interface DisplaySliderInput {
+    type: "display-slider"
+    step: number
+    min: number
+    max: number
+    transformers: {
+      serialize: (value: number) => number
+      deserialize: (value: number) => number
+      display: (value: number) => string | number
+    }
+    onChange?: (app: App, value: number) => void
+    displayWidth?: number
+    width?: number
+  }
+  export interface CheckboxInput {
+    type: "checkbox"
+    onChange?: (app: App, value: boolean) => void
+  }
+  export interface ColorInput {
+    type: "color"
+    onChange?: (app: App, value: string) => void
+  }
+  export type ValueInput<T> =
+    | TextInput
+    | DropdownInput<T>
+    | NumberInput
+    | CheckboxInput
+    | SliderInput
+    | DisplaySliderInput
+    | ColorInput
+  export function createLabeledInput<T>(
+    app: App,
+    name: string,
+    input: ValueInput<T>,
+    initialValue: any
+  ): HTMLDivElement
+  export function createValueInput<T>(
+    app: App,
+    input: ValueInput<T>,
+    initialValue: any
+  ): HTMLElement
+}
+declare module "app/src/util/custom-script/CustomScriptTypes" {
+  import { KeyCombo } from "app/src/data/KeybindData"
+  export interface CustomScript {
+    name: string
+    description: string
+    jsCode: string
+    tsCode: string
+    arguments: CustomScriptArgument[]
+    keybinds: KeyCombo[]
+  }
+  export interface CustomScriptWorkerArgs {
+    smPayload: string
+    codePayload: string
+    chartId: string
+    selectionNoteIndices: number[]
+    args: any[]
+  }
+  export type CustomScriptArgument =
+    | CustomScriptCheckboxArgument
+    | CustomScriptColorArgument
+    | CustomScriptNumberArgument
+    | CustomScriptTextArgument
+    | CustomScriptDropdownArgument
+    | CustomScriptSliderArgument
+  interface CustomScriptBaseArgument {
+    name: string
+    description: string
+  }
+  export interface CustomScriptCheckboxArgument
+    extends CustomScriptBaseArgument {
+    type: "checkbox"
+    default: boolean
+  }
+  export interface CustomScriptColorArgument extends CustomScriptBaseArgument {
+    type: "color"
+    default: string
+  }
+  export interface CustomScriptNumberArgument extends CustomScriptBaseArgument {
+    type: "number"
+    default: number
+    min?: number
+    max?: number
+    step?: number
+    precision?: number
+    minPrecision?: number
+  }
+  export interface CustomScriptTextArgument extends CustomScriptBaseArgument {
+    type: "text"
+    default: string
+  }
+  export interface CustomScriptDropdownArgument
+    extends CustomScriptBaseArgument {
+    type: "dropdown"
+    items: (string | number)[]
+    default: string | number
+  }
+  export interface CustomScriptSliderArgument extends CustomScriptBaseArgument {
+    type: "slider"
+    default: number
+    min: number
+    max: number
+  }
+  interface CustomScriptPayload {
+    type: "payload"
+    payload: string
+  }
+  interface CustomScriptLog {
+    type: "error" | "log" | "warn" | "info"
+    args: string[]
+  }
+  export type CustomScriptResult = CustomScriptPayload | CustomScriptLog
+}
+declare module "app/src/data/CustomScriptWindowData" {
+  import { ValueInput } from "app/src/gui/element/ValueInput"
+  import { CustomScriptArgument } from "app/src/util/custom-script/CustomScriptTypes"
+  type CustomScriptInput<T, U extends CustomScriptArgument> = Omit<
+    ValueInput<T>,
+    "onChange"
+  > & {
+    onChange: (argument: U, value: T) => void
+  }
+  interface CustomScriptArgumentField<T, U extends CustomScriptArgument> {
+    name: string
+    description?: string
+    input: CustomScriptInput<T, U> | ((arg: U) => CustomScriptInput<T, U>)
+    reload?: boolean
+    getValue: (arg: U) => any
+  }
+  export const ARGUMENT_FIELDS: {
+    [Type in CustomScriptArgument["type"]]: CustomScriptArgumentField<
+      any,
+      Extract<
+        CustomScriptArgument,
+        {
+          type: Type
+        }
+      >
+    >[]
+  }
+  export const DEFAULT_ARGUMENTS: {
+    [Type in CustomScriptArgument["type"]]: Extract<
+      CustomScriptArgument,
+      {
+        type: Type
+      }
+    >
+  }
+}
+declare module "app/src/data/TimingDataWindowData" {
+  import { App } from "app/src/App"
+  import { TimingData } from "app/src/chart/sm/TimingData"
+  type TimingDataWindowInputs = {
+    data: any[]
+  }
+  type TimingDataWindowElement = {
+    create: (this: TimingDataWindowInputs, app: App) => HTMLElement
+    update: (
+      this: TimingDataWindowInputs,
+      timingData: TimingData,
+      beat: number
+    ) => void
+  }
+  type TimingDataWindowData = {
+    title: string
+    element: TimingDataWindowElement
+  }
+  export const TIMING_WINDOW_DATA: {
+    [key: string]: TimingDataWindowData
+  }
+}
+declare module "app/src/gui/hooks/TimingDataHook" {
+  import { Chart } from "app/src/chart/sm/Chart"
+  import { ChartDifficulty } from "app/src/chart/sm/ChartTypes"
+  import { ChartStats } from "app/src/chart/stats/ChartStats"
+  type ChartProps = {
+    meter: number
+    difficulty: ChartDifficulty
+    credit: string
+    stepCount: number
+    name: string
+    style: string
+    description: string
+    noteCounts: Record<string, number>
+    music: string | undefined
+    parity?: ChartStats["parity"]
+  }
+  export function useChart(chart: Chart): ChartProps
+}
+declare module "app/src/gui/window/OffsetWindow" {
+  export {}
+}
+declare module "app/src/gui/window/UserOptions/OptionSection" {
+  import { UserOptionGroup } from "app/src/data/UserOptionsWindowData"
+  export function UserOptionSectionComponent(props: {
+    data: UserOptionGroup
+    highlighted: boolean
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/util/custom-script/CustomScriptEditor" {
+  import "monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution"
+  import "monaco-editor/esm/vs/editor/editor.all.js"
+  import "monaco-editor/esm/vs/language/typescript/monaco.contribution"
+  export type CustomEditor = ReturnType<typeof createEditor>
+  export function createEditor(
+    parent: HTMLElement,
+    value: string,
+    theme: "light" | "dark"
+  ): {
+    transpile: () => Promise<string>
+    getTS: () => string
+    setJS: (code: string) => void
+    swapTheme(theme: "light" | "dark"): void
+    destroy: () => void
+  }
+}
 declare module "app/src/util/custom-script/CustomScriptUtils" {
   import { Simfile } from "app/src/chart/sm/Simfile"
   export function createSMPayload(sm: Simfile): any
@@ -8654,6 +9249,15 @@ declare module "app/src/util/custom-script/CustomScriptRunner" {
   }
 }
 declare module "app/src/util/custom-script/CustomScriptWorker" {}
+declare module "app/src/util/custom-script/CustomScripts" {
+  import { CustomScript } from "app/src/util/custom-script/CustomScriptTypes"
+  export class CustomScripts {
+    static _scripts: CustomScript[]
+    static get scripts(): CustomScript[]
+    static loadCustomScripts(): void
+    static saveCustomScripts(): void
+  }
+}
 interface SecureFileSystemFileHandle extends FileSystemHandle {
   readonly kind: "file"
   /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/FileSystemFileHandle/createSyncAccessHandle) */

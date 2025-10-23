@@ -8,27 +8,28 @@ import {
   FootOverride,
 } from "../chart/stats/parity/ParityDataTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
-import { AboutWindow } from "../gui/window/AboutWindow"
-import { CaptureWindow } from "../gui/window/CaptureWindow"
-import { ChangelogWindow } from "../gui/window/ChangelogWindow"
-import { ChartListWindow } from "../gui/window/ChartListWindow"
+import { AboutWindow } from "../gui/window/About/AboutWindow"
+import { CaptureWindow } from "../gui/window/Capture/CaptureWindow"
+import { ChangelogWindow } from "../gui/window/Changelog/ChangelogWindow"
+import { ChartListWindow } from "../gui/window/ChartList/ChartListWindow"
 import { CustomScriptEditorWindow } from "../gui/window/CustomScriptEditorWindow"
-import { EQWindow } from "../gui/window/EQWindow"
-import { ExportNotedataWindow } from "../gui/window/ExportNotedataWindow"
-import { GameplayKeybindWindow } from "../gui/window/GameplayKeybindWindow"
-import { InitialWindow } from "../gui/window/InitialWindow"
-import { KeybindWindow } from "../gui/window/KeybindWindow"
-import { NewSongWindow } from "../gui/window/NewSongWindow"
-import { NoteskinWindow } from "../gui/window/NoteskinWindow"
-import { OffsetWindow } from "../gui/window/OffsetWindow"
-import { SMPropertiesWindow } from "../gui/window/SMPropertiesWindow"
-import { SyncWindow } from "../gui/window/SyncWindow"
-import { ThemeEditorWindow } from "../gui/window/ThemeEditorWindow"
-import { ThemeSelectionWindow } from "../gui/window/ThemeSelectionWindow"
-import { TimingDataWindow } from "../gui/window/TimingDataWindow"
-import { UserOptionsWindow } from "../gui/window/UserOptionsWindow"
+import { EQWindow } from "../gui/window/EQ/EQWindow"
+import { ExportNotedataWindow } from "../gui/window/ExportNotedata/ExportNotedataWindow"
+import { InitialWindow } from "../gui/window/Initial/InitialWindow"
+import { GameplayKeybindWindow } from "../gui/window/Keybind/GameplayKeybindWindow"
+import { KeybindWindow } from "../gui/window/Keybind/KeybindWindow"
+import { NewSongWindow } from "../gui/window/NewSong/NewSongWindow"
+import { NoteskinWindow } from "../gui/window/NoteSkin/NoteskinWindow"
+import { SMPropertiesWindow } from "../gui/window/SMProperties/SMPropertiesWindow"
+import { SyncWindow } from "../gui/window/Sync/SyncWindow"
+import { ThemeSelectionWindow } from "../gui/window/Theme/ThemeSelectionWindow"
+import { TimingDataWindow } from "../gui/window/TimingData/TimingDataWindow"
+import { UserOptionsWindow } from "../gui/window/UserOptions/UserOptionsWindow"
+import { WindowManager } from "../gui/window/WindowManager"
 import { ActionHistory } from "../util/ActionHistory"
 import { EventHandler } from "../util/EventHandler"
+import { FileHandler } from "../util/file-handler/FileHandler"
+import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 import { Flags } from "../util/Flags"
 import { maxArr, minArr, roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
@@ -42,8 +43,6 @@ import {
   QUANT_NUM,
   QUANTS,
 } from "../util/Util"
-import { FileHandler } from "../util/file-handler/FileHandler"
-import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 
 export interface Keybind {
   label: string
@@ -229,8 +228,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "New song",
     combos: [{ key: "N", mods: [DEF_MOD] }],
     disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
-    callback: app => {
-      app.windowManager.openWindow(new NewSongWindow(app))
+    callback: () => {
+      WindowManager.openWindow(NewSongWindow())
     },
   },
   openSong: {
@@ -247,7 +246,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
           app.chartManager.loadSM(fileSelector.value)
         fileSelector.click()
       } else {
-        app.windowManager.openWindow(new InitialWindow(app, false))
+        WindowManager.openWindow(InitialWindow(false))
       }
     },
   },
@@ -256,7 +255,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Open song properties",
     combos: [{ key: "O", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
-    callback: app => app.windowManager.openWindow(new SMPropertiesWindow(app)),
+    callback: () => WindowManager.openWindow(SMPropertiesWindow()),
   },
   save: {
     label: "Save...",
@@ -289,17 +288,14 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Export to notedata",
     combos: [{ key: "E", mods: [DEF_MOD, Modifier.SHIFT] }],
     disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
-    callback: app =>
-      app.windowManager.openWindow(
-        new ExportNotedataWindow(app, app.chartManager.selection.notes)
-      ),
+    callback: () => WindowManager.openWindow(ExportNotedataWindow()),
   },
   capture: {
     label: "Export video...",
     combos: [],
     disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
-    callback: app => {
-      app.windowManager.openWindow(new CaptureWindow(app))
+    callback: () => {
+      WindowManager.openWindow(CaptureWindow())
     },
   },
   previousSong: {
@@ -435,13 +431,13 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Open chart list",
     combos: [{ key: "O", mods: [DEF_MOD, Modifier.SHIFT] }],
     disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
-    callback: app => app.windowManager.openWindow(new ChartListWindow(app)),
+    callback: () => WindowManager.openWindow(ChartListWindow()),
   },
   timingDataRow: {
     label: "Edit timing data at row",
     combos: [{ key: "T", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartView || !Flags.openWindows,
-    callback: app => app.windowManager.openWindow(new TimingDataWindow(app)),
+    callback: () => WindowManager.openWindow(TimingDataWindow()),
   },
   selectRegion: {
     label: "Select region",
@@ -895,13 +891,13 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Equalizer",
     combos: [{ key: "E", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartAudio || !Flags.openWindows,
-    callback: app => app.windowManager.openWindow(new EQWindow(app)),
+    callback: () => WindowManager.openWindow(EQWindow()),
   },
   detectSync: {
     label: "Detect audio sync",
     combos: [{ key: "L", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartAudio || !Flags.openWindows,
-    callback: app => app.windowManager.openWindow(new SyncWindow(app)),
+    callback: () => WindowManager.openWindow(SyncWindow()),
   },
   previousNoteType: {
     label: "Previous note type",
@@ -997,8 +993,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Edit options",
     combos: [{ key: ",", mods: [DEF_MOD] }],
     disabled: () => !Flags.openWindows || !Flags.openWindows,
-    callback: app => {
-      app.windowManager.openWindow(new UserOptionsWindow(app))
+    callback: () => {
+      WindowManager.openWindow(UserOptionsWindow())
     },
   },
   keybinds: {
@@ -1006,8 +1002,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Edit keybinds",
     combos: [],
     disabled: () => !Flags.openWindows || !Flags.openWindows,
-    callback: app => {
-      app.windowManager.openWindow(new KeybindWindow(app))
+    callback: () => {
+      WindowManager.openWindow(KeybindWindow())
     },
   },
   gameplayKeybinds: {
@@ -1015,8 +1011,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Edit gameplay keybinds",
     combos: [],
     disabled: () => !Flags.openWindows || !Flags.openWindows,
-    callback: app => {
-      app.windowManager.openWindow(new GameplayKeybindWindow(app))
+    callback: () => {
+      WindowManager.openWindow(GameplayKeybindWindow())
     },
   },
   themes: {
@@ -1024,9 +1020,11 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Edit themes",
     combos: [],
     disabled: () =>
-      !Flags.openWindows || !Flags.openWindows || ThemeEditorWindow.isOpen,
-    callback: app => {
-      app.windowManager.openWindow(new ThemeSelectionWindow(app))
+      !Flags.openWindows ||
+      !Flags.openWindows ||
+      WindowManager.isWindowOpen("theme-editor"),
+    callback: () => {
+      WindowManager.openWindow(ThemeSelectionWindow())
     },
   },
   convertHoldsRolls: {
@@ -1426,12 +1424,6 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.deleteSelection()
     },
   },
-  adjustOffset: {
-    label: "Adjust offset",
-    combos: [],
-    disabled: () => !Flags.openWindows,
-    callback: app => app.windowManager.openWindow(new OffsetWindow(app)),
-  },
   setSongPreview: {
     label: "Set as song preview",
     combos: [],
@@ -1549,17 +1541,17 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Open Changelog",
     combos: [],
     disabled: () => !Flags.openWindows,
-    callback: app => {
-      app.windowManager.openWindow(new ChangelogWindow(app))
+    callback: () => {
+      WindowManager.openWindow(ChangelogWindow())
     },
   },
 
   noteskinWindow: {
     label: "Noteskins...",
-    bindLabel: "Open Noteskin Window",
+    bindLabel: "Open noteskin selection",
     combos: [{ mods: [Modifier.SHIFT], key: "N" }],
     disabled: app => !app.chartManager.chartView || !Flags.openWindows,
-    callback: app => app.windowManager.openWindow(new NoteskinWindow(app)),
+    callback: () => WindowManager.openWindow(NoteskinWindow()),
   },
   previousChart: {
     label: "Previous chart",
@@ -1629,8 +1621,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "About",
     combos: [],
     disabled: () => !Flags.openWindows,
-    callback: app => {
-      app.windowManager.openWindow(new AboutWindow(app))
+    callback: () => {
+      WindowManager.openWindow(AboutWindow())
     },
   },
   enableParity: {
@@ -1715,8 +1707,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Edit custom scripts...",
     combos: [],
     disabled: false,
-    callback: app => {
-      app.windowManager.openWindow(new CustomScriptEditorWindow(app))
+    callback: () => {
+      WindowManager.openWindow(CustomScriptEditorWindow())
     },
   },
 }

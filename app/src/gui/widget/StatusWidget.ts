@@ -20,7 +20,8 @@ import { Icons } from "../Icons"
 import { Dropdown } from "../element/Dropdown"
 import { SplitTimingPopup } from "../popup/SplitTimingPopup"
 import { TimingTrackOrderPopup } from "../popup/TimingTrackOrderPopup"
-import { SyncWindow } from "../window/SyncWindow"
+import { SyncWindow } from "../window/Sync/SyncWindow"
+import { WindowManager } from "../window/WindowManager"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
 
@@ -436,9 +437,7 @@ export class StatusWidget extends Widget {
     const detectSyncIcon = Icons.getIcon("DETECT_SYNC", 32)
     this.detectSync.appendChild(detectSyncIcon)
     this.detectSync.onclick = () => {
-      this.manager.app.windowManager.openWindow(
-        new SyncWindow(this.manager.app)
-      )
+      WindowManager.openWindow(SyncWindow())
       this.detectSync.blur()
     }
     this.detectSync.id = "detect-sync"

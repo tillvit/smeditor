@@ -1,5 +1,5 @@
 import { Color } from "pixi.js"
-import { ThemeEditorWindow } from "../gui/window/ThemeEditorWindow"
+import { add, lighten } from "../util/Color"
 
 export const THEME_VAR_WHITELIST = [
   "accent-color",
@@ -242,7 +242,19 @@ export const THEME_PROPERTY_DESCRIPTIONS: {
 }
 
 export type ThemeColorLinks = {
-  [key in ThemeProperty]?: (this: ThemeEditorWindow, c: Color) => Color
+  [key in ThemeProperty]?: (c: Color) => Color
+}
+
+function average(c: Color) {
+  return (c.red + c.green + c.blue) / 3
+}
+
+function _lighten(color: Color, gamma: number) {
+  return new Color(lighten(new Color(color).toNumber(), 1 + gamma / 100))
+}
+
+function _add(color: Color, gamma: number) {
+  return new Color(add(new Color(color).toNumber(), gamma))
 }
 
 export const THEME_GENERATOR_LINKS: {
@@ -250,39 +262,39 @@ export const THEME_GENERATOR_LINKS: {
 } = {
   "primary-bg": {
     "primary-border": function (c) {
-      return this.lighten(c, 10).setAlpha(0xbb / 0xff)
+      return _lighten(c, 10).setAlpha(0xbb / 0xff)
     },
     "primary-bg-active": function (c) {
-      return this.lighten(c, 10)
+      return _lighten(c, 10)
     },
     "primary-bg-hover": function (c) {
-      return this.lighten(c, 30)
+      return _lighten(c, 30)
     },
     "widget-bg": function (c) {
-      return this.add(c, -50).setAlpha(0x88 / 0xff)
+      return _add(c, -50).setAlpha(0x88 / 0xff)
     },
     "window-bg": function (c) {
-      return this.lighten(c, -10)
+      return _lighten(c, -10)
     },
     "text-color": function (c) {
-      return this.average(c) > 0.5 ? new Color("#000") : new Color("#fff")
+      return average(c) > 0.5 ? new Color("#000") : new Color("#fff")
     },
     "input-bg": function (c) {
-      return this.average(c) < 0.5 ? new Color("#000") : new Color("#fff")
+      return average(c) < 0.5 ? new Color("#000") : new Color("#fff")
     },
     "input-border": function (c) {
-      return this.average(c) > 0.5
-        ? this.add(c, -30).setAlpha(0x77 / 0xff)
-        : this.add(c, +30).setAlpha(0x77 / 0xff)
+      return average(c) > 0.5
+        ? _add(c, -30).setAlpha(0x77 / 0xff)
+        : _add(c, +30).setAlpha(0x77 / 0xff)
     },
     "tooltip-bg": function (c) {
-      return this.lighten(c, -10).setAlpha(0xee / 0xff)
+      return _lighten(c, -10).setAlpha(0xee / 0xff)
     },
     "secondary-bg": function (c) {
-      return this.lighten(c, -20)
+      return _lighten(c, -20)
     },
     "editor-bg": function (c) {
-      return this.lighten(c, -60)
+      return _lighten(c, -60)
     },
   },
   "window-bg": {
@@ -292,18 +304,18 @@ export const THEME_GENERATOR_LINKS: {
   },
   "secondary-bg": {
     "secondary-border": function (c) {
-      return this.lighten(c, 10).setAlpha(0xbb / 0xff)
+      return _lighten(c, 10).setAlpha(0xbb / 0xff)
     },
     "secondary-bg-active": function (c) {
-      return this.lighten(c, 50)
+      return _lighten(c, 50)
     },
     "secondary-bg-hover": function (c) {
-      return this.lighten(c, 30)
+      return _lighten(c, 30)
     },
   },
   "navbar-bg": {
     "navbar-bg-inactive": function (c) {
-      return this.lighten(c, -33)
+      return _lighten(c, -33)
     },
   },
   "text-color": {
@@ -319,13 +331,13 @@ export const THEME_GENERATOR_LINKS: {
   },
   "input-bg": {
     "input-border": function (c) {
-      return this.lighten(c, 10).setAlpha(0xbb / 0xff)
+      return _lighten(c, 10).setAlpha(0xbb / 0xff)
     },
     "input-bg-active": function (c) {
-      return this.lighten(c, 50)
+      return _lighten(c, 50)
     },
     "input-bg-hover": function (c) {
-      return this.lighten(c, 30)
+      return _lighten(c, 30)
     },
   },
 }

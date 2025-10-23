@@ -11,7 +11,7 @@ import { blendColors } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { Dropdown } from "../element/Dropdown"
 import { NumberSpinner } from "../element/NumberSpinner"
-import { Popup, PopupOptions } from "./Popup"
+import { Popup, PopupOptions } from "./Popup_old"
 
 interface FinalRow {
   data: PopupRow

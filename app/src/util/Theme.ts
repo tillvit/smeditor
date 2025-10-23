@@ -114,6 +114,25 @@ export class Themes {
     return this.currentTheme
   }
 
+  static getNonConflictingName(base: string) {
+    const themes = Themes.getThemes()
+    if (themes[base] == undefined) return base
+
+    let i = 2
+    const m = /([^]+)-(\d+)$/.exec(base)
+
+    if (m) {
+      base = m[1]
+      i = parseInt(m[2])
+    }
+    let name = `${base}-${i}`
+    while (themes[name] !== undefined) {
+      name = `${base}-${i}`
+      i++
+    }
+    return name
+  }
+
   private static convertThemeToString(theme: Theme) {
     return Object.fromEntries(
       Object.entries(theme).map(([prop, col]) => [prop, col.toHexa()])
@@ -155,6 +174,7 @@ export class Themes {
       this._userThemes[id] = { ...DEFAULT_THEMES["default"] }
     }
     this._saveUserThemes()
+    EventHandler.emit("themeChanged")
   }
 
   static setUserTheme(id: string, base: Theme) {
@@ -168,6 +188,7 @@ export class Themes {
     delete this._userThemes[id]
     this.loadTheme("default")
     this._saveUserThemes()
+    EventHandler.emit("themeChanged")
   }
 
   static renameUserTheme(id: string, newId: string) {
@@ -176,6 +197,7 @@ export class Themes {
     this._userThemes[newId] = this._userThemes[id]
     delete this._userThemes[id]
     this._saveUserThemes()
+    EventHandler.emit("themeChanged")
   }
 
   static parseThemeText(text: string) {

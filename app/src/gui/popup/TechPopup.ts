@@ -3,7 +3,7 @@ import {
   TECH_DESCRIPTIONS,
   TechCategory,
 } from "../../chart/stats/parity/ParityDataTypes"
-import { Popup } from "./Popup"
+import { Popup } from "./Popup_old"
 
 export class TechPopup extends Popup {
   static box?: TechBox

@@ -14,10 +14,10 @@ import { CoreUpdateNotification } from "../gui/notification/CoreUpdateNotificati
 import { OfflineUpdateNotification } from "../gui/notification/OfflineUpdateNotification"
 import { DebugWidget } from "../gui/widget/DebugWidget"
 import { WidgetManager } from "../gui/widget/WidgetManager"
-import { ChartListWindow } from "../gui/window/ChartListWindow"
-import { ConfirmationWindow } from "../gui/window/ConfirmationWindow"
-import { InitialWindow } from "../gui/window/InitialWindow"
-import { KeyComboWindow } from "../gui/window/KeyComboWindow"
+import { ChartListWindow } from "../gui/window/ChartList/ChartListWindow"
+import { ConfirmationWindow } from "../gui/window/Confirmation/ConfirmationWindow"
+import { InitialWindow } from "../gui/window/Initial/InitialWindow"
+import { WindowManager } from "../gui/window/WindowManager"
 import { ActionHistory } from "../util/ActionHistory"
 import {
   decodeNotes,
@@ -349,9 +349,7 @@ export class ChartManager {
       this.noChartTextB.tint = 0x556677
     })
     this.noChartTextB.on("mousedown", () => {
-      this.app.windowManager.openWindow(
-        new ChartListWindow(app, GameTypeRegistry.getGameType("dance-single"))
-      )
+      WindowManager.openWindow(ChartListWindow())
     })
     this.noChartTextA.visible = false
     this.noChartTextB.visible = false
@@ -607,7 +605,7 @@ export class ChartManager {
         if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
         if (event.target instanceof HTMLTextAreaElement) return
         if (event.target instanceof HTMLInputElement) return
-        if (KeyComboWindow.active) return
+        if (WindowManager.isWindowOpen("key-combo-selector")) return
         // Start editing note
         if (
           event.code.startsWith("Digit") &&
@@ -737,27 +735,38 @@ export class ChartManager {
     OfflineUpdateNotification.close()
     // Save confirmation
     if (ActionHistory.instance.isDirty()) {
-      const window = new ConfirmationWindow(
-        this.app,
-        "Save",
-        "Do you wish to save the current file?",
-        [
-          {
-            label: "Cancel",
-            type: "default",
-          },
-          {
-            label: "No",
-            type: "default",
-          },
-          {
-            label: "Yes",
-            type: "confirm",
-          },
-        ]
-      )
-      this.app.windowManager.openWindow(window)
-      const option = await window.resolved
+      const option = await new Promise(resolve => {
+        WindowManager.openWindow(
+          ConfirmationWindow({
+            title: "Save",
+            message: "Do you wish to save the current file?",
+            buttonOptions: [
+              {
+                label: "Cancel",
+                type: "default",
+                callback: () => {
+                  resolve("Cancel")
+                },
+              },
+              {
+                label: "No",
+                type: "default",
+                callback: () => {
+                  resolve("No")
+                },
+              },
+              {
+                label: "Yes",
+                type: "confirm",
+                callback: () => {
+                  resolve("Yes")
+                },
+              },
+            ],
+          })
+        )
+      })
+
       if (option == "Cancel") return
       if (option == "Yes") this.save()
       if (option == "No") await this.removeAutosaves()
@@ -787,24 +796,33 @@ export class ChartManager {
       const sscPath = this.getSMPath(".ssc")
       if (await FileHandler.hasFile(sscPath)) {
         if (Options.general.loadSSC == "Prompt") {
-          const window = new ConfirmationWindow(
-            this.app,
-            "Use SSC File",
-            "An SSC file was found. Do you wish to use the SSC file instead?",
-            [
-              {
-                label: "No",
-                type: "default",
-              },
-              {
-                label: "Yes",
-                type: "confirm",
-              },
-            ],
-            "You can change the default behavior in settings"
-          )
-          this.app.windowManager.openWindow(window)
-          const option = await window.resolved
+          const option = await new Promise(resolve => {
+            WindowManager.openWindow(
+              ConfirmationWindow({
+                title: "Use SSC File",
+                message:
+                  "An SSC file was found. Do you wish to use the SSC file instead?",
+                buttonOptions: [
+                  {
+                    label: "No",
+                    type: "default",
+                    callback: () => {
+                      resolve("No")
+                    },
+                  },
+                  {
+                    label: "Yes",
+                    type: "confirm",
+                    callback: () => {
+                      resolve("Yes")
+                    },
+                  },
+                ],
+                detail: "You can change the default behavior in settings",
+              })
+            )
+          })
+
           if (option == "Yes") this.smPath = sscPath
         } else if (Options.general.loadSSC == "Always") {
           WaterfallManager.create("Loading available SSC file")
@@ -819,23 +837,31 @@ export class ChartManager {
 
     const autosavePath = this.getSMPath(".smebak")
     if (await FileHandler.hasFile(autosavePath)) {
-      const window = new ConfirmationWindow(
-        this.app,
-        "Autosave",
-        "An autosave was found. Do you wish to load the autosave?",
-        [
-          {
-            label: "No",
-            type: "default",
-          },
-          {
-            label: "Yes",
-            type: "confirm",
-          },
-        ]
-      )
-      this.app.windowManager.openWindow(window)
-      const option = await window.resolved
+      const option = await new Promise(resolve => {
+        WindowManager.openWindow(
+          ConfirmationWindow({
+            title: "Load Autosave",
+            message: "An autosave was found. Do you wish to load the autosave?",
+            buttonOptions: [
+              {
+                label: "No",
+                type: "default",
+                callback: () => {
+                  resolve("No")
+                },
+              },
+              {
+                label: "Yes",
+                type: "confirm",
+                callback: () => {
+                  resolve("Yes")
+                },
+              },
+            ],
+          })
+        )
+      })
+
       if (option == "Yes") {
         loadPath = autosavePath
       }
@@ -848,7 +874,7 @@ export class ChartManager {
         "Couldn't load the file at " + loadPath,
         "error"
       )
-      this.app.windowManager.openWindow(new InitialWindow(this.app))
+      WindowManager.openWindow(InitialWindow())
       this.loadingText.visible = false
       return
     }
@@ -1724,20 +1750,20 @@ export class ChartManager {
         }
       )
     }
-    if (
-      this.loadedSM.requiresSSC() ||
-      (await FileHandler.getFileHandle(sscPath))
-    ) {
-      await FileHandler.writeFile(
-        sscPath,
-        this.loadedSM.serialize("ssc")
-      ).catch(err => {
+    // if (
+    //   this.loadedSM.requiresSSC() ||
+    //   true ||
+    //   (await FileHandler.getFileHandle(sscPath))
+    // ) {
+    await FileHandler.writeFile(sscPath, this.loadedSM.serialize("ssc")).catch(
+      err => {
         const message = err.message
         if (!message.includes(errors.GONE[0])) {
           error = message
         }
-      })
-    }
+      }
+    )
+    // }
     await FileHandler.writeFile(
       this.getDataPath(),
       serializeSMEData(this.loadedSM)

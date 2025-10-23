@@ -3,7 +3,7 @@ import { TIMING_EVENT_NAMES } from "../../chart/sm/TimingTypes"
 import { blendColors } from "../../util/Color"
 import { DefaultOptions, Options } from "../../util/Options"
 import { Icons } from "../Icons"
-import { Popup } from "./Popup"
+import { Popup } from "./Popup_old"
 
 export class TimingTrackOrderPopup extends Popup {
   private static draggedElement?: HTMLDivElement

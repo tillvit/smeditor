@@ -8,7 +8,7 @@ import {
 } from "../../data/SplitTimingData"
 import { blendColors } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
-import { Popup } from "./Popup"
+import { Popup } from "./Popup_old"
 
 export class SplitTimingPopup extends Popup {
   private static app: App

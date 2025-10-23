@@ -634,7 +634,7 @@ export class PlaybackOptionsWidget extends Widget {
       this.enteredMain = true
       this.view.style.height = ""
       this.collapseButton.style.display = ""
-      document.getElementById("menubar")?.appendChild(this.collapseButton)
+      // document.getElementById("menubar")?.appendChild(this.collapseButton)
     }
 
     for (const spinner of this.registeredSpinners) {

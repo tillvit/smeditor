@@ -13,6 +13,7 @@ export class ActionHistory {
   private limit = 0
   private readonly app?: App
   static instance: ActionHistory
+  afterUpdate = () => {}
 
   constructor(app?: App) {
     this.app = app
@@ -27,6 +28,7 @@ export class ActionHistory {
       action
     )
     this.itemIndex++
+    this.afterUpdate()
   }
 
   undo() {
@@ -34,6 +36,7 @@ export class ActionHistory {
     this.items[this.itemIndex - 1].undo(this.app)
     this.itemIndex--
     EventHandler.emit("undo")
+    this.afterUpdate()
   }
 
   redo() {
@@ -43,6 +46,7 @@ export class ActionHistory {
     else this.items[this.itemIndex].action(this.app)
     this.itemIndex++
     EventHandler.emit("redo")
+    this.afterUpdate()
   }
 
   reset() {
