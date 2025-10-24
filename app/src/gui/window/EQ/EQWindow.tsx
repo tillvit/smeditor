@@ -4,7 +4,7 @@ import { average, blendPixiColors } from "../../../util/Color"
 import { EventHandler } from "../../../util/EventHandler"
 import { clamp, roundDigit } from "../../../util/Math"
 import { Themes } from "../../../util/Theme"
-import { parseString as numericParse } from "../../../util/Util"
+import { parseString } from "../../../util/Util"
 import { ReactIcon } from "../../Icons"
 import { InlineTextInput } from "../../inputs/InlineTextInput"
 import { WindowContext, WindowData } from "../WindowManager"
@@ -248,7 +248,7 @@ function EQWindowContent() {
             disabled={activeFilterData.frequency == ""}
             style={{ color: activeFilterColor }}
             onChange={value => {
-              const number = numericParse(value.replace("Hz", ""))
+              const number = parseString(value.replace("Hz", ""))
               if (number === null) return
               windowData.app.chartManager.chartAudio.updateFilter(
                 filterIndex!,
@@ -271,7 +271,7 @@ function EQWindowContent() {
             }
             style={{ color: activeFilterColor }}
             onChange={value => {
-              const number = numericParse(value.replace("dB", ""))
+              const number = parseString(value.replace("dB", ""))
               if (number === null) return
               windowData.app.chartManager.chartAudio.updateFilter(
                 filterIndex!,
@@ -292,7 +292,7 @@ function EQWindowContent() {
             disabled={activeFilterData.Q == "-" || activeFilterData.Q == ""}
             style={{ color: activeFilterColor }}
             onChange={value => {
-              const number = numericParse(value)
+              const number = parseString(value)
               if (number === null) return
               windowData.app.chartManager.chartAudio.updateFilter(
                 filterIndex!,

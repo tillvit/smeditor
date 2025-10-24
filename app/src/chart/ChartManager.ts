@@ -677,8 +677,9 @@ export class ChartManager {
       (event: KeyboardEvent) => {
         if (this.mode != EditMode.Play && this.mode != EditMode.Record) return
         if (event.key == "Escape") {
-          this.setMode(this.lastMode)
           this.chartAudio.pause()
+          this.setMode(this.lastMode)
+          EventHandler.emit("playStateChanged")
         }
       },
       true
@@ -893,6 +894,7 @@ export class ChartManager {
     this.noChartTextA.visible = true
     this.noChartTextB.visible = true
     this.editTimingMode = EditTimingMode.Off
+    EventHandler.emit("timingModeChanged")
 
     EventHandler.emit("smLoaded")
     await this.loadChart()
@@ -1191,6 +1193,7 @@ export class ChartManager {
       this.chartAudio.pause()
       this._beat = this.loadedChart?.getBeatFromSeconds(this.time) ?? 0
     } else this.chartAudio.play()
+    EventHandler.emit("playStateChanged")
   }
 
   getClosestTick(beat: number, quant: number) {
@@ -1651,6 +1654,8 @@ export class ChartManager {
         this.setNoteIndex()
         this.chartAudio.pause()
       }
+      EventHandler.emit("playStateChanged")
+      EventHandler.emit("modeChanged")
       return
     }
     if (this.mode == EditMode.View || this.mode == EditMode.Edit)
@@ -1680,14 +1685,17 @@ export class ChartManager {
       this.loadedChart.gameType.gameLogic.startPlay(this)
       this.chartAudio.play()
       this.chartView.startPlay()
+      EventHandler.emit("playStateChanged")
     } else if (this.mode == EditMode.Record) {
       this.chartAudio.seek(Math.max(0, this.time) - 1)
       this.chartAudio.play()
+      EventHandler.emit("playStateChanged")
     } else {
       this.chartView.endPlay()
 
       notedata.forEach(note => (note.gameplay = undefined))
     }
+    EventHandler.emit("modeChanged")
   }
 
   /**

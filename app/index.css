@@ -1452,10 +1452,15 @@ input[type="range"] {
   margin: 0 0.25rem;
 }
 
-#status-widget .playback-counter .playback-counter-label {
+#status-widget .playback-counter .playback-counter-label,
+#status-widget .playback-counter .playback-counter-label .dropdown-selected {
   font-size: 0.6rem;
   padding: 0;
   color: var(--text-color-secondary);
+}
+
+#status-widget .playback-counter .playback-counter-label .dropdown-items {
+  font-size: 0.8rem;
 }
 
 .playback-counter-label > .icon {
@@ -1472,6 +1477,7 @@ input[type="range"] {
   line-height: 1.1rem;
   max-width: 6rem;
   align-items: baseline;
+  display: flex;
 }
 
 #status-widget .playback-counter .playback-counter-main,

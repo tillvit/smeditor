@@ -502,6 +502,7 @@ declare module "app/src/util/Options" {
       showPlaybackOptions: boolean
       loadSSC: string
       theme: string
+      statusMeasures: boolean
     }
     static chart: {
       CMod: boolean
@@ -4350,337 +4351,19 @@ declare module "app/src/gui/widget/PlaybackOptionsWidget" {
     private parseString
   }
 }
-declare module "app/src/gui/element/Dropdown" {
-  export class Dropdown<T> {
-    view: HTMLDivElement
-    private items
-    private selectedItem
-    private onChangeHandlers
-    static create<T>(items?: readonly T[], selectedItem?: T): Dropdown<T>
-    private constructor()
-    onChange(handler: (value: T, index: number) => void): void
-    removeHandler(handler: (value: T, index: number) => void): void
-    getItems(): readonly T[]
-    setItems(items: readonly T[]): void
-    setSelected(item?: T): void
-    closeDropdown(): void
-    get value(): T
-    get disabled(): boolean
-    set disabled(value: boolean)
-    private createDropdown
-  }
-}
-declare module "app/src/chart/component/timing/TimingAreaContainer" {
-  import { Container } from "pixi.js"
-  import {
-    ChartRenderer,
-    ChartRendererComponent,
-  } from "app/src/chart/ChartRenderer"
-  export const TIMING_EVENT_COLORS: {
-    [key: string]: number
-  }
-  export class TimingAreaContainer
-    extends Container
-    implements ChartRendererComponent
-  {
-    readonly isEditGUI = true
-    private renderer
-    private areaPool
-    private timingAreaMap
-    private timingEvents
-    private timingDirty
-    constructor(renderer: ChartRenderer)
-    update(firstBeat: number, lastBeat: number): void
-    private shouldDrawEvent
-  }
-}
-declare module "app/src/data/SplitTimingData" {
-  import { ChartTimingData } from "app/src/chart/sm/ChartTimingData"
-  import { TimingEventType } from "app/src/chart/sm/TimingTypes"
-  export const SPLIT_TIMING_DATA: {
-    chart: {
-      title: string
-      desc: string
-      convertText: string
-      buttonOne: {
-        text: string
-        tooltip: string
-        tooltipAll: string
-        action: (timingData: ChartTimingData, type: TimingEventType) => void
-        actionAll: (timingData: ChartTimingData) => void
-      }
-      buttonTwo: {
-        text: string
-        tooltip: string
-        tooltipAll: string
-        action: (timingData: ChartTimingData, type: TimingEventType) => void
-        actionAll: (timingData: ChartTimingData) => void
-      }
-    }
-    song: {
-      title: string
-      desc: string
-      convertText: string
-      buttonOne: {
-        text: string
-        tooltip: string
-        tooltipAll: string
-        action: (timingData: ChartTimingData, type: TimingEventType) => void
-        actionAll: (timingData: ChartTimingData) => void
-      }
-      buttonTwo: {
-        text: string
-        tooltip: string
-        tooltipAll: string
-        action: (timingData: ChartTimingData, type: TimingEventType) => void
-        actionAll: (timingData: ChartTimingData) => void
-      }
-    }
-  }
-  export const SPLIT_OFFSET_DATA: {
-    chart: {
-      title: string
-      desc: string
-      convertText: string
-      buttonOne: {
-        text: string
-        tooltip: string
-        action: (timingData: ChartTimingData) => void
-      }
-      buttonTwo: {
-        text: string
-        tooltip: string
-        action: (timingData: ChartTimingData) => void
-      }
-    }
-    song: {
-      title: string
-      desc: string
-      convertText: string
-      buttonOne: {
-        text: string
-        tooltip: string
-        action: (timingData: ChartTimingData) => void
-      }
-      buttonTwo: {
-        text: string
-        tooltip: string
-        action: (timingData: ChartTimingData) => void
-      }
-    }
-  }
-}
-declare module "app/src/gui/popup/SplitTimingPopup" {
-  import { App } from "app/src/App"
-  import { TimingEventType } from "app/src/chart/sm/TimingTypes"
-  import { Popup } from "app/src/gui/popup/Popup_old"
-  export class SplitTimingPopup extends Popup {
-    private static app
-    private static timingGrid
-    private static onTimingChange
-    static open(app: App): void
-    static buildContent(): void
-    static updateValues(): HTMLDivElement
-    static buildRow(eventType: TimingEventType): HTMLDivElement
-    static buildModifyGrid(): HTMLDivElement
-    static close(): void
-  }
-}
-declare module "app/src/gui/popup/TimingTrackOrderPopup" {
-  import { Popup } from "app/src/gui/popup/Popup_old"
-  export class TimingTrackOrderPopup extends Popup {
-    private static draggedElement?
-    private static dragOffsetX
-    private static dragOffsetY
-    private static grid?
-    private static leftovers?
-    private static boundaryCache
-    static open(): void
-    static buildContent(): void
-    private static makeDraggableTrack
-    private static makeLeftoverTrack
-    private static startDragging
-    private static saveOptions
-    private static deleteTrack
-    private static getClosestSlot
-    private static getBoundaries
-    private static clearBoundaries
-    static close(): void
-  }
-}
-declare module "app/src/gui/window/Sync/SyncCover" {
-  export function SyncCover(props: {
-    label: string
-    index: number
-    active: boolean
-  }): import("react/jsx-runtime").JSX.Element
-}
-declare module "app/src/gui/window/Sync/SyncEngine" {
-  import { Dispatch, SetStateAction } from "react"
-  import { App } from "app/src/App"
-  import { SyncData } from "app/src/gui/window/Sync/SyncWindow"
-  export const SyncGraphWidth = 800
-  export const SyncGraphHeight = 200
-  export class SyncEngine {
-    app: App
-    canvas: HTMLCanvasElement
-    private onAudioLoad
-    windowStep: number
-    fftSize: number
-    tempoFftSize: number
-    tempoStep: number
-    private monoAudioData?
-    private audioLength
-    private sampleRate
-    private tempogram
-    private tempogramGroups
-    private spectrogram
-    private spectrogramDifference
-    private noveltyCurve
-    private noveltyCurveIsolated
-    private spectrogramCanvases
-    private lowestFinishedBlock
-    private numRenderedBlocks
-    private peaks
-    private _threshold
-    private spectroHeights
-    private spectroWeights
-    private lastSecond
-    runAnalysis: boolean
-    private destroyed
-    private setSyncData
-    constructor(
-      app: App,
-      canvas: HTMLCanvasElement,
-      setSyncData: Dispatch<SetStateAction<SyncData>>
-    )
-    destroy(): void
-    reset(): Promise<void>
-    hasData(): boolean
-    windowLoop(canvas: HTMLCanvasElement): () => void
-    renderBlock(blockNum: number): void
-    calcDifference(blockNum: number): void
-    storeResponse(blockNum: number, response: Float64Array): void
-    storeDifferenceResponse(blockNum: number, response: Float64Array): void
-    calcIsolatedNovelty(blockNum: number): void
-    storeIsolatedNovelty(blockNum: number, sum: number): void
-    getMonoAudioData(): Promise<void>
-    get threshold(): number
-    set threshold(value: number)
-    calculateOffset(): void
-    placeOnsets(selection?: boolean): void
-    calcTempogram(): void
-    storeTempogram(blockNum: number, response: Float64Array): void
-  }
-}
-declare module "app/src/gui/window/Sync/SyncLabel" {
-  import { ReactNode } from "react"
-  export function SyncLabel(props: {
-    text: string
-    tooltip: string
-    children?: ReactNode
-  }): import("react/jsx-runtime").JSX.Element
-}
-declare module "app/src/gui/window/Sync/SyncOnsetView" {
-  import { Dispatch, SetStateAction } from "react"
-  import { SyncData } from "app/src/gui/window/Sync/SyncWindow"
-  export function SyncOnsetView(props: {
-    syncData: SyncData
-    onsetThreshold: number
-    setOnsetThreshold: Dispatch<SetStateAction<number>>
-    placeOnsets: (selection?: boolean) => void
-  }): import("react/jsx-runtime").JSX.Element
-}
-declare module "app/src/gui/window/Sync/SyncOptionsView" {
-  import { Dispatch, SetStateAction } from "react"
-  export interface SyncOptions {
-    fftSize: number
-    windowStep: number
-    tempoFftSize: number
-    tempoStep: number
-  }
-  export function SyncOptionsView(props: {
-    syncOptions: SyncOptions
-    setSyncOptions: Dispatch<SetStateAction<SyncOptions>>
-  }): import("react/jsx-runtime").JSX.Element
-}
-declare module "app/src/gui/window/Sync/SyncTempoView" {
-  import { SyncData } from "app/src/gui/window/Sync/SyncWindow"
-  export function SyncTempoView(props: {
-    syncData: SyncData
-  }): import("react/jsx-runtime").JSX.Element
-}
-declare module "app/src/gui/window/Sync/SyncWindow" {
-  import { WindowData } from "app/src/gui/window/WindowManager"
-  export interface SyncData {
-    hasData: boolean
-    bpms: {
-      bpm: number
-      confidence: number
-    }[]
-    offsets: {
-      offset: number
-      confidence: number
-    }[]
-    offsetBPM: number
-    state: "idle" | "spectogram" | "tempogram" | "finished"
-    percentage: number
-    numOnsets: number
-  }
-  export function SyncWindow(): WindowData
-}
 declare module "app/src/gui/widget/StatusWidget" {
   import { Widget } from "app/src/gui/widget/Widget"
   import { WidgetManager } from "app/src/gui/widget/WidgetManager"
   export class StatusWidget extends Widget {
-    private view
-    private readonly playbackBar
-    private readonly skipStart
-    private readonly skipEnd
-    private readonly play
-    private readonly playIcon
-    private readonly stopIcon
-    private readonly record
-    private readonly playtest
-    private readonly timeCounter
-    private readonly beatCounter
-    private readonly min
-    private readonly sec
-    private readonly millis
-    private readonly beat
-    private readonly beatDropdown
-    private readonly editBar
-    private readonly editSteps
-    private readonly editTiming
-    private readonly stepsContainer
-    private readonly timingContainer
-    private readonly editChoiceContainer
-    private readonly addTimingEvent
-    private readonly splitTiming
-    private readonly toggleTimingTracks
-    private readonly detectSync
-    private readonly offsetCounter
-    private readonly offset
     private noteArrows
     private readonly noteArrowMask
-    private lastTime
-    private lastBeat
-    private lastOffset
-    private lastMode
-    private lastTimingMode
-    private lastHover
-    private lastPlaying
-    private hovering
     private trackingMovement
     private idleFrames
+    private lastMode
+    private lastTimingMode
     private lastBounds?
     constructor(manager: WidgetManager)
     update(): void
-    private selectText
-    private updateTime
-    private updateBeat
-    private updateOffset
-    private parseString
   }
 }
 declare module "app/src/gui/widget/timeline/DensityWidget" {
@@ -5451,6 +5134,106 @@ declare module "app/src/chart/component/play/JudgementSprite" {
     reset(): void
   }
 }
+declare module "app/src/chart/component/timing/TimingAreaContainer" {
+  import { Container } from "pixi.js"
+  import {
+    ChartRenderer,
+    ChartRendererComponent,
+  } from "app/src/chart/ChartRenderer"
+  export const TIMING_EVENT_COLORS: {
+    [key: string]: number
+  }
+  export class TimingAreaContainer
+    extends Container
+    implements ChartRendererComponent
+  {
+    readonly isEditGUI = true
+    private renderer
+    private areaPool
+    private timingAreaMap
+    private timingEvents
+    private timingDirty
+    constructor(renderer: ChartRenderer)
+    update(firstBeat: number, lastBeat: number): void
+    private shouldDrawEvent
+  }
+}
+declare module "app/src/data/SplitTimingData" {
+  import { ChartTimingData } from "app/src/chart/sm/ChartTimingData"
+  import { TimingEventType } from "app/src/chart/sm/TimingTypes"
+  export const SPLIT_TIMING_DATA: {
+    chart: {
+      title: string
+      desc: string
+      convertText: string
+      buttonOne: {
+        text: string
+        tooltip: string
+        tooltipAll: string
+        action: (timingData: ChartTimingData, type: TimingEventType) => void
+        actionAll: (timingData: ChartTimingData) => void
+      }
+      buttonTwo: {
+        text: string
+        tooltip: string
+        tooltipAll: string
+        action: (timingData: ChartTimingData, type: TimingEventType) => void
+        actionAll: (timingData: ChartTimingData) => void
+      }
+    }
+    song: {
+      title: string
+      desc: string
+      convertText: string
+      buttonOne: {
+        text: string
+        tooltip: string
+        tooltipAll: string
+        action: (timingData: ChartTimingData, type: TimingEventType) => void
+        actionAll: (timingData: ChartTimingData) => void
+      }
+      buttonTwo: {
+        text: string
+        tooltip: string
+        tooltipAll: string
+        action: (timingData: ChartTimingData, type: TimingEventType) => void
+        actionAll: (timingData: ChartTimingData) => void
+      }
+    }
+  }
+  export const SPLIT_OFFSET_DATA: {
+    chart: {
+      title: string
+      desc: string
+      convertText: string
+      buttonOne: {
+        text: string
+        tooltip: string
+        action: (timingData: ChartTimingData) => void
+      }
+      buttonTwo: {
+        text: string
+        tooltip: string
+        action: (timingData: ChartTimingData) => void
+      }
+    }
+    song: {
+      title: string
+      desc: string
+      convertText: string
+      buttonOne: {
+        text: string
+        tooltip: string
+        action: (timingData: ChartTimingData) => void
+      }
+      buttonTwo: {
+        text: string
+        tooltip: string
+        action: (timingData: ChartTimingData) => void
+      }
+    }
+  }
+}
 declare module "app/src/gui/popup/TimingColumnPopup" {
   import { Container } from "pixi.js"
   import { ChartTimingData } from "app/src/chart/sm/ChartTimingData"
@@ -5517,6 +5300,26 @@ declare module "app/src/data/TimingEventPopupData" {
   }
   export const POPUP_ROWS: {
     [key in TimingEventType]: Popup
+  }
+}
+declare module "app/src/gui/element/Dropdown" {
+  export class Dropdown<T> {
+    view: HTMLDivElement
+    private items
+    private selectedItem
+    private onChangeHandlers
+    static create<T>(items?: readonly T[], selectedItem?: T): Dropdown<T>
+    private constructor()
+    onChange(handler: (value: T, index: number) => void): void
+    removeHandler(handler: (value: T, index: number) => void): void
+    getItems(): readonly T[]
+    setItems(items: readonly T[]): void
+    setSelected(item?: T): void
+    closeDropdown(): void
+    get value(): T
+    get disabled(): boolean
+    set disabled(value: boolean)
+    private createDropdown
   }
 }
 declare module "app/src/gui/popup/TimingEventPopup" {
@@ -8026,6 +7829,127 @@ declare module "app/src/gui/window/SMProperties/SMPropertiesWindow" {
   import { WindowData } from "app/src/gui/window/WindowManager"
   export function SMPropertiesWindow(): WindowData
 }
+declare module "app/src/gui/window/Sync/SyncCover" {
+  export function SyncCover(props: {
+    label: string
+    index: number
+    active: boolean
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Sync/SyncEngine" {
+  import { Dispatch, SetStateAction } from "react"
+  import { App } from "app/src/App"
+  import { SyncData } from "app/src/gui/window/Sync/SyncWindow"
+  export const SyncGraphWidth = 800
+  export const SyncGraphHeight = 200
+  export class SyncEngine {
+    app: App
+    canvas: HTMLCanvasElement
+    private onAudioLoad
+    windowStep: number
+    fftSize: number
+    tempoFftSize: number
+    tempoStep: number
+    private monoAudioData?
+    private audioLength
+    private sampleRate
+    private tempogram
+    private tempogramGroups
+    private spectrogram
+    private spectrogramDifference
+    private noveltyCurve
+    private noveltyCurveIsolated
+    private spectrogramCanvases
+    private lowestFinishedBlock
+    private numRenderedBlocks
+    private peaks
+    private _threshold
+    private spectroHeights
+    private spectroWeights
+    private lastSecond
+    runAnalysis: boolean
+    private destroyed
+    private setSyncData
+    constructor(
+      app: App,
+      canvas: HTMLCanvasElement,
+      setSyncData: Dispatch<SetStateAction<SyncData>>
+    )
+    destroy(): void
+    reset(): Promise<void>
+    hasData(): boolean
+    windowLoop(canvas: HTMLCanvasElement): () => void
+    renderBlock(blockNum: number): void
+    calcDifference(blockNum: number): void
+    storeResponse(blockNum: number, response: Float64Array): void
+    storeDifferenceResponse(blockNum: number, response: Float64Array): void
+    calcIsolatedNovelty(blockNum: number): void
+    storeIsolatedNovelty(blockNum: number, sum: number): void
+    getMonoAudioData(): Promise<void>
+    get threshold(): number
+    set threshold(value: number)
+    calculateOffset(): void
+    placeOnsets(selection?: boolean): void
+    calcTempogram(): void
+    storeTempogram(blockNum: number, response: Float64Array): void
+  }
+}
+declare module "app/src/gui/window/Sync/SyncLabel" {
+  import { ReactNode } from "react"
+  export function SyncLabel(props: {
+    text: string
+    tooltip: string
+    children?: ReactNode
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Sync/SyncOnsetView" {
+  import { Dispatch, SetStateAction } from "react"
+  import { SyncData } from "app/src/gui/window/Sync/SyncWindow"
+  export function SyncOnsetView(props: {
+    syncData: SyncData
+    onsetThreshold: number
+    setOnsetThreshold: Dispatch<SetStateAction<number>>
+    placeOnsets: (selection?: boolean) => void
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Sync/SyncOptionsView" {
+  import { Dispatch, SetStateAction } from "react"
+  export interface SyncOptions {
+    fftSize: number
+    windowStep: number
+    tempoFftSize: number
+    tempoStep: number
+  }
+  export function SyncOptionsView(props: {
+    syncOptions: SyncOptions
+    setSyncOptions: Dispatch<SetStateAction<SyncOptions>>
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Sync/SyncTempoView" {
+  import { SyncData } from "app/src/gui/window/Sync/SyncWindow"
+  export function SyncTempoView(props: {
+    syncData: SyncData
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/window/Sync/SyncWindow" {
+  import { WindowData } from "app/src/gui/window/WindowManager"
+  export interface SyncData {
+    hasData: boolean
+    bpms: {
+      bpm: number
+      confidence: number
+    }[]
+    offsets: {
+      offset: number
+      confidence: number
+    }[]
+    offsetBPM: number
+    state: "idle" | "spectogram" | "tempogram" | "finished"
+    percentage: number
+    numOnsets: number
+  }
+  export function SyncWindow(): WindowData
+}
 declare module "app/src/gui/window/Theme/ThemeSelectionItem" {
   import { Theme } from "app/src/data/ThemeData"
   export function ThemeSelectionItem(props: {
@@ -8830,6 +8754,97 @@ declare module "app/src/gui/element/playback-options/PlusMinusSpinner" {
 declare module "app/src/gui/element/playback-options/PlaybackOptions" {
   export function PlaybackOptions(): import("react/jsx-runtime").JSX.Element
 }
+declare module "app/src/gui/element/status/StepsContainer" {
+  import { App } from "app/src/App"
+  import { EditTimingMode } from "app/src/chart/ChartManager"
+  export function StepsContainer(props: {
+    app: App
+    timingMode: EditTimingMode
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/popup/SplitTimingPopup" {
+  import { App } from "app/src/App"
+  import { TimingEventType } from "app/src/chart/sm/TimingTypes"
+  import { Popup } from "app/src/gui/popup/Popup_old"
+  export class SplitTimingPopup extends Popup {
+    private static app
+    private static timingGrid
+    private static onTimingChange
+    static open(app: App): void
+    static buildContent(): void
+    static updateValues(): HTMLDivElement
+    static buildRow(eventType: TimingEventType): HTMLDivElement
+    static buildModifyGrid(): HTMLDivElement
+    static close(): void
+  }
+}
+declare module "app/src/gui/popup/TimingTrackOrderPopup" {
+  import { Popup } from "app/src/gui/popup/Popup_old"
+  export class TimingTrackOrderPopup extends Popup {
+    private static draggedElement?
+    private static dragOffsetX
+    private static dragOffsetY
+    private static grid?
+    private static leftovers?
+    private static boundaryCache
+    static open(): void
+    static buildContent(): void
+    private static makeDraggableTrack
+    private static makeLeftoverTrack
+    private static startDragging
+    private static saveOptions
+    private static deleteTrack
+    private static getClosestSlot
+    private static getBoundaries
+    private static clearBoundaries
+    static close(): void
+  }
+}
+declare module "app/src/gui/element/status/InlineExpandingInput" {
+  import { InlineInputProps } from "app/src/gui/inputs/InlineTextInput"
+  export function InlineExpandingInput(
+    props: InlineInputProps
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/status/TimingContainer" {
+  import { App } from "app/src/App"
+  import { EditTimingMode } from "app/src/chart/ChartManager"
+  export function TimingContainer(props: {
+    app: App
+    timingMode: EditTimingMode
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/status/EditBar" {
+  import { App } from "app/src/App"
+  import { EditTimingMode } from "app/src/chart/ChartManager"
+  export function EditBar(props: {
+    app: App
+    timingMode: EditTimingMode
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/status/TimeCounters" {
+  import { App } from "app/src/App"
+  import { EditMode } from "app/src/chart/ChartManager"
+  export function TimeCounters(props: {
+    app: App
+    state: EditMode
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/status/PlaybackBar" {
+  import { App } from "app/src/App"
+  import { EditMode } from "app/src/chart/ChartManager"
+  export function PlaybackBar(props: {
+    app: App
+    playing: boolean
+    state: EditMode
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/status/StatusBar" {
+  import { App } from "app/src/App"
+  export function StatusBar(props: {
+    app: App
+  }): import("react/jsx-runtime").JSX.Element
+}
 declare module "app/src/App" {
   import { Container, Renderer } from "pixi.js"
   import "tippy.js/animations/scale-subtle.css"
@@ -8856,7 +8871,7 @@ declare module "app/src/App" {
     }
   }
   export class App {
-    readonly VERSION = "1.4.1"
+    readonly VERSION = "1.4.2"
     readonly options: typeof Options
     readonly events: typeof EventHandler
     readonly themes: typeof Themes

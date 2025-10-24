@@ -1601,6 +1601,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       } else {
         app.chartManager.editTimingMode = EditTimingMode.Edit
       }
+      EventHandler.emit("timingModeChanged")
     },
   },
   toggleAddTiming: {
@@ -1615,6 +1616,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       } else {
         app.chartManager.editTimingMode = EditTimingMode.Edit
       }
+      EventHandler.emit("timingModeChanged")
     },
   },
   about: {

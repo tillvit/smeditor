@@ -118,6 +118,7 @@ export function ReactIcon(props: ReactIconProps) {
         width={width ? width / 16 + "rem" : undefined}
         height={height ? height / 16 + "rem" : undefined}
         fill={color}
+        color={color}
         style={{ fillRule: "evenodd" }}
         loader={
           <div

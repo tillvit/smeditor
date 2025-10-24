@@ -60,6 +60,7 @@
     "mp4-muxer": "^3.0.3",
     "pixi.js": "^7.0.4",
     "react": "^18.3.1",
+    "react-contenteditable": "^3.3.7",
     "react-dom": "^18.3.1",
     "react-inlinesvg": "^4.2.0",
     "react-markdown": "^10.1.0",

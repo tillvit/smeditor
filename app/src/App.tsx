@@ -7,7 +7,7 @@ import {
   Ticker,
   UPDATE_PRIORITY,
 } from "pixi.js"
-import { useEffect, useRef, useState } from "react"
+import { StrictMode, useEffect, useRef, useState } from "react"
 import { createRoot } from "react-dom/client"
 import semver from "semver"
 import tippy from "tippy.js"
@@ -22,6 +22,7 @@ import { Chart } from "./chart/sm/Chart"
 import { ContextMenuPopup } from "./gui/element/ContextMenu"
 import { Menubar } from "./gui/element/menubar/Menubar"
 import { PlaybackOptions } from "./gui/element/playback-options/PlaybackOptions"
+import { StatusBar } from "./gui/element/status/StatusBar"
 import { WaterfallManager } from "./gui/element/WaterfallManager"
 import { AppUpdateNotification } from "./gui/notification/AppUpdateNotification"
 import { CoreUpdateNotification } from "./gui/notification/CoreUpdateNotification"
@@ -595,7 +596,7 @@ function SMEditorApp() {
   }, [pixiCanvas])
 
   return (
-    <>
+    <StrictMode>
       <PopupManagerComponent app={app} />
       <div id="view-wrapper">
         {app && <Menubar app={app} />}
@@ -604,11 +605,12 @@ function SMEditorApp() {
           <div id="waterfall-container"></div>
         </div>
         <canvas ref={pixiCanvas} id="pixi"></canvas>
+        {app && <StatusBar app={app} />}
       </div>
       <div id="context-menu"></div>
       <WindowManagerComponent app={app} />
       <div id="embed"></div>
-    </>
+    </StrictMode>
   )
 }
 

@@ -24,6 +24,7 @@ export class DefaultOptions {
     showPlaybackOptions: true,
     loadSSC: "Prompt",
     theme: "default",
+    statusMeasures: false,
   }
   static chart = {
     CMod: false,
