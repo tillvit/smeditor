@@ -26,7 +26,7 @@ import { StatusBar } from "./gui/element/status/StatusBar"
 import { WaterfallManager } from "./gui/element/WaterfallManager"
 import { AppUpdateNotification } from "./gui/notification/AppUpdateNotification"
 import { CoreUpdateNotification } from "./gui/notification/CoreUpdateNotification"
-import { PopupManagerComponent } from "./gui/popup/PopupManager"
+import { PopupManager, PopupManagerComponent } from "./gui/popup/PopupManager"
 import { DebugWidget } from "./gui/widget/DebugWidget"
 import { ChangelogWindow } from "./gui/window/Changelog/ChangelogWindow"
 import { FileSelectorWindow } from "./gui/window/FileSelector/FileSelectorWindow"
@@ -126,13 +126,14 @@ export class App {
 
     document.oncontextmenu = event => {
       event.preventDefault()
+      event.stopImmediatePropagation()
       if (!this.chartManager.loadedChart) return
       if (event.target != this.view) return
-      ContextMenuPopup.open(this, event)
+      PopupManager.openPopup(ContextMenuPopup(event))
     }
 
     this.view.onmousedown = () => {
-      ContextMenuPopup.close()
+      PopupManager.closePopup("context-menu")
     }
 
     this.stage = new Container()

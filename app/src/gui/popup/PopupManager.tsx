@@ -1,4 +1,4 @@
-import { DisplayObject } from "pixi.js"
+import { DisplayObject, Point } from "pixi.js"
 import {
   createContext,
   CSSProperties,
@@ -12,10 +12,13 @@ import { Popup } from "./Popup"
 export interface PopupData {
   width?: number
   height?: number
+  padding?: number
+  pivot?: { x: number; y: number }
+  offset?: { x: number; y: number }
   id: string
   key?: number
   content: ReactNode
-  attach: DisplayObject | HTMLElement
+  attach: DisplayObject | HTMLElement | Point
   background?: string
   closed?: boolean
   className?: string
@@ -37,6 +40,7 @@ let _pmInstance: {
 
 export class PopupManager {
   static openPopup(popupData: PopupData) {
+    if (this.isPopupOpen(popupData.id)) return
     _pmInstance?.openPopup(popupData)
   }
   static closePopup(id: string) {
@@ -59,7 +63,18 @@ export function PopupManagerComponent({ app }: { app: App | null }) {
       setPopups(prev => [...prev, popupData])
     },
     closePopup: (id: string) => {
-      setPopups(prev => prev.filter(w => w.id !== id))
+      const popup = popups.find(p => p.id === id)
+      if (!popup) return
+      if (popup.closed) return
+      setPopups(prev => {
+        return prev.map(p => {
+          if (p.id === popup.id) p.closed = true
+          return p
+        })
+      })
+      setTimeout(() => {
+        setPopups(prev => prev.filter(w => w.key !== popup.key))
+      }, 200)
     },
     isPopupOpen: (id: string) => {
       return popups.some(w => w.id === id)

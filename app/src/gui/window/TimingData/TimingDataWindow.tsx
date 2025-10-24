@@ -1,3 +1,4 @@
+import { Ticker } from "pixi.js"
 import { useContext, useEffect, useState } from "react"
 import {
   TIMING_DATA_DISPLAY_PRECISION,
@@ -99,14 +100,15 @@ function TimingDataWindowContent() {
   }, [])
 
   useEffect(() => {
-    const beatInterval = setInterval(() => {
+    const update = () => {
       const newBeat = windowData.app.chartManager.beat
       if (!isSameRow(beat, newBeat)) {
         setBeat(newBeat)
       }
-    }, 17)
+    }
+    Ticker.shared.add(update)
     return () => {
-      clearInterval(beatInterval)
+      Ticker.shared.remove(update)
     }
   }, [beat])
 

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { MenuDropdown, MenuMain } from "../../../data/MenubarData"
 import { ReactIcon } from "../../Icons"
 import { MenubarProps } from "./Menubar"
@@ -11,6 +11,13 @@ export function MenubarDropdown(props: MenubarProps<MenuDropdown | MenuMain>) {
     typeof props.data.title === "function"
       ? props.data.title(props.app)
       : props.data.title
+
+  useEffect(() => {
+    if (props.parentActive !== props.id) {
+      setActiveItem(null)
+    }
+  }, [props.parentActive, props.id])
+
   return (
     <div
       className={

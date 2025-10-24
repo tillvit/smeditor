@@ -1,4 +1,4 @@
-import { DisplayObject, Rectangle } from "pixi.js"
+import { DisplayObject, Point, Rectangle } from "pixi.js"
 import { useContext, useEffect, useRef } from "react"
 import { clamp } from "../../util/Math"
 import { PopupContext } from "./PopupManager"
@@ -24,6 +24,17 @@ function cloneRect(rect: Rectangle) {
   }
 }
 
+function createRect(point: Point) {
+  return {
+    top: point.y,
+    bottom: point.y,
+    left: point.x,
+    right: point.x,
+    width: 0,
+    height: 0,
+  }
+}
+
 const MOVE_INTERVAL = 150
 
 export function Popup() {
@@ -31,32 +42,34 @@ export function Popup() {
   const popupRef = useRef<HTMLDivElement>(null)
   const popupZoomerRef = useRef<HTMLDivElement>(null)
 
+  const pivot = popupData.pivot ?? { x: 0.5, y: 0.5 }
+
   function positionPopup() {
     const bounds: ObjectBounds =
-      popupData.attach instanceof HTMLElement
-        ? popupData.attach.getBoundingClientRect()
-        : cloneRect(popupData.attach.getBounds())
-    if (!(popupData.attach instanceof HTMLElement)) {
+      popupData.attach instanceof Point
+        ? createRect(popupData.attach)
+        : popupData.attach instanceof HTMLElement
+          ? popupData.attach.getBoundingClientRect()
+          : cloneRect(popupData.attach.getBounds())
+    if (
+      !(popupData.attach instanceof HTMLElement) &&
+      !(popupData.attach instanceof Point)
+    ) {
       // Shift the top if it is a pixi object
       bounds.top += document.getElementById("pixi")!.offsetTop + 9
     }
     const popup = popupRef.current!
-    const popupZoomer = popupZoomerRef.current!
-    const centerx = bounds.left + bounds.width / 2
+    const centerX = bounds.left + bounds.width / 2 + (popupData.offset?.x ?? 0)
     const width = popup.clientWidth
-    const leftRestriction = width / 2 + 15
-    const rightRestriction = window.innerWidth - width / 2 - 15
-    popup.style.left = `${clamp(centerx, leftRestriction, rightRestriction)}px`
-    const topY = bounds.top + bounds.height / 2 + 15
-    popup.style.top = `${topY}px`
-    if (topY + popup.clientHeight > window.innerHeight - 15) {
-      popup.style.transform = "translate(-50%, -100%)"
-      popupZoomer.style.transformOrigin = "bottom"
-      popup.style.top = `${bounds.top - 15}px`
-    } else {
-      popup.style.transform = ""
-      popupZoomer.style.transformOrigin = ""
-    }
+    const leftRestriction = pivot.x * width
+    const rightRestriction = window.innerWidth - (1 - pivot.x) * width
+    popup.style.left = `${clamp(centerX, leftRestriction, rightRestriction)}px`
+
+    const topRestriction = pivot.y * popup.clientHeight
+    const bottomRestriction =
+      window.innerHeight - (1 - pivot.y) * popup.clientHeight
+    const centerY = bounds.top + bounds.height / 2 + (popupData.offset?.y ?? 0)
+    popup.style.top = `${clamp(centerY, topRestriction, bottomRestriction)}px`
     requestAnimationFrame(() => (popup.style.transitionDuration = ""))
   }
 
@@ -84,11 +97,12 @@ export function Popup() {
     <div
       ref={popupRef}
       className={
-        `popup ${popupData.className}` + (popupData.closed ? " exiting" : "")
+        `popup ${popupData.className ?? ""}` +
+        (popupData.closed ? " exiting" : "")
       }
       style={{
         ...popupData.style,
-
+        transform: `translate(${-pivot.x * 100}%, ${-pivot.y * 100}%)`,
         background: popupData.background,
       }}
     >
@@ -96,6 +110,7 @@ export function Popup() {
         className="popup-zoomer"
         style={{
           width: popupData.width ? `${popupData.width / 16}rem` : undefined,
+          transformOrigin: `${pivot.x * 100}% ${pivot.y * 100}%`,
         }}
         ref={popupZoomerRef}
       >

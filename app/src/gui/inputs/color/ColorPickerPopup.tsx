@@ -158,6 +158,8 @@ export function ColorPickerPopup(
   return {
     id: "color-picker",
     attach,
+    offset: { x: 0, y: 15 },
+    pivot: { x: 0.5, y: 0 },
     content: <ColorPickerContent color={color} onChange={onChange} />,
   }
 }

@@ -7,6 +7,7 @@ import {
   Ticker,
 } from "pixi.js"
 import { ContextMenuPopup } from "../gui/element/ContextMenu"
+import { PopupManager } from "../gui/popup/PopupManager"
 import { Flags } from "../util/Flags"
 import { Options } from "../util/Options"
 import { isRightClick } from "../util/PixiUtil"
@@ -1153,8 +1154,9 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
           this.chartManager.clearSelections()
           this.chartManager.addNoteToSelection(notedata)
         }
-        ContextMenuPopup.open(this.chartManager.app, event)
+        PopupManager.openPopup(ContextMenuPopup(event))
         event.preventDefault()
+        event.stopImmediatePropagation()
         return
       }
       if (
