@@ -112,15 +112,24 @@ export class NoteContainer extends Container {
         this.notefield.renderer.getVisualBeat() < note.beat
       )
         container.y = this.notefield.renderer.getYPosFromBeat(note.beat)
-      if (isHoldNote(note) && note.gameplay?.droppedHoldBeat)
+      if (isHoldNote(note) && note.gameplay?.droppedHoldBeat) {
         container.y = this.notefield.renderer.getYPosFromBeat(
           note.gameplay.droppedHoldBeat
         )
+      }
 
       if (isHoldNote(note)) {
-        const holdLength =
+        let holdLength =
           this.notefield.renderer.getYPosFromBeat(getNoteEnd(note)) -
           container.y
+
+        if (
+          note.gameplay?.lastHoldActivation &&
+          this.notefield.renderer.getVisualBeat() > getNoteEnd(note)
+        ) {
+          holdLength = 0
+        }
+
         const hold = container.wrapper.object as HoldObject
         hold.setLength(holdLength)
         if (note.gameplay?.lastHoldActivation) {

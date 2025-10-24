@@ -3577,16 +3577,25 @@ declare module "app/src/gui/popup/Popup" {
   }
 }
 declare module "app/src/gui/popup/PopupManager" {
-  import { DisplayObject } from "pixi.js"
+  import { DisplayObject, Point } from "pixi.js"
   import { CSSProperties, ReactNode } from "react"
   import { App } from "app/src/App"
   export interface PopupData {
     width?: number
     height?: number
+    padding?: number
+    pivot?: {
+      x: number
+      y: number
+    }
+    offset?: {
+      x: number
+      y: number
+    }
     id: string
     key?: number
     content: ReactNode
-    attach: DisplayObject | HTMLElement
+    attach: DisplayObject | HTMLElement | Point
     background?: string
     closed?: boolean
     className?: string
@@ -3990,18 +3999,49 @@ declare module "app/src/gui/window/Keybind/KeybindWindow" {
   }
   export function KeybindWindow(): WindowData
 }
-declare module "app/src/gui/element/ContextMenu" {
-  import { FederatedMouseEvent } from "pixi.js"
+declare module "app/src/gui/element/menubar/Menubar" {
   import { App } from "app/src/App"
-  export class ContextMenuPopup {
-    private static menuElement
-    private static closeTimeout
-    static open(app: App, event: MouseEvent | FederatedMouseEvent): void
-    private static fitContextMenu
-    static close(): void
-    private static buildMenu
-    private static createElement
+  import { MenuOption } from "app/src/data/MenubarData"
+  export interface MenubarProps<T extends MenuOption = MenuOption> {
+    app: App
+    id: string
+    data: T
+    parentActive: string | null
+    setActive: (key: string | null) => void
+    close: () => void
   }
+  export function evaluateDynamicProperty<T extends string | number | boolean>(
+    app: App,
+    property: T | ((app: App) => T)
+  ): T
+  export function Menubar(props: {
+    app: App
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/menubar/MenubarSelection" {
+  import { MenuCheckbox, MenuSelection } from "app/src/data/MenubarData"
+  import { MenubarProps } from "app/src/gui/element/menubar/Menubar"
+  export function MenubarSelection(
+    props: MenubarProps<MenuSelection | MenuCheckbox>
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/menubar/SearchBar" {
+  import { App } from "app/src/App"
+  export function SearchBar(props: {
+    app: App
+  }): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/menubar/MenubarDropdown" {
+  import { MenuDropdown, MenuMain } from "app/src/data/MenubarData"
+  import { MenubarProps } from "app/src/gui/element/menubar/Menubar"
+  export function MenubarDropdown(
+    props: MenubarProps<MenuDropdown | MenuMain>
+  ): import("react/jsx-runtime").JSX.Element
+}
+declare module "app/src/gui/element/ContextMenu" {
+  import { PopupData } from "app/src/gui/popup/PopupManager"
+  export function ContextMenuPopupContent(): import("react/jsx-runtime").JSX.Element
+  export function ContextMenuPopup(event: MouseEvent): PopupData
 }
 declare module "app/src/util/PixiUtil" {
   import {
@@ -8658,45 +8698,6 @@ declare module "app/src/chart/ChartManager" {
     pasteTempo(data: string): boolean
     copy(): string | undefined
   }
-}
-declare module "app/src/gui/element/menubar/MenubarSelection" {
-  import { MenuCheckbox, MenuSelection } from "app/src/data/MenubarData"
-  import { MenubarProps } from "app/src/gui/element/menubar/Menubar"
-  export function MenubarSelection(
-    props: MenubarProps<MenuSelection | MenuCheckbox>
-  ): import("react/jsx-runtime").JSX.Element
-}
-declare module "app/src/gui/element/menubar/SearchBar" {
-  import { App } from "app/src/App"
-  export function SearchBar(props: {
-    app: App
-  }): import("react/jsx-runtime").JSX.Element
-}
-declare module "app/src/gui/element/menubar/MenubarDropdown" {
-  import { MenuDropdown, MenuMain } from "app/src/data/MenubarData"
-  import { MenubarProps } from "app/src/gui/element/menubar/Menubar"
-  export function MenubarDropdown(
-    props: MenubarProps<MenuDropdown | MenuMain>
-  ): import("react/jsx-runtime").JSX.Element
-}
-declare module "app/src/gui/element/menubar/Menubar" {
-  import { App } from "app/src/App"
-  import { MenuOption } from "app/src/data/MenubarData"
-  export interface MenubarProps<T extends MenuOption = MenuOption> {
-    app: App
-    id: string
-    data: T
-    parentActive: string | null
-    setActive: (key: string | null) => void
-    close: () => void
-  }
-  export function evaluateDynamicProperty<T extends string | number | boolean>(
-    app: App,
-    property: T | ((app: App) => T)
-  ): T
-  export function Menubar(props: {
-    app: App
-  }): import("react/jsx-runtime").JSX.Element
 }
 declare module "app/src/gui/element/playback-options/PlaybackOptionsCheckbox" {
   import { ReactNode } from "react"
