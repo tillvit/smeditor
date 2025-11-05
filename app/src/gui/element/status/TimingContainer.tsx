@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import tippy from "tippy.js"
 import { App } from "../../../App"
 import { EditTimingMode } from "../../../chart/ChartManager"
@@ -7,6 +7,7 @@ import { Keybinds } from "../../../util/Keybinds"
 import { roundDigit } from "../../../util/Math"
 import { parseString } from "../../../util/Util"
 import { ReactIcon } from "../../Icons"
+import { PopupManager } from "../../popup/PopupManager"
 import { SplitTimingPopup } from "../../popup/SplitTimingPopup"
 import { TimingTrackOrderPopup } from "../../popup/TimingTrackOrderPopup"
 import { SyncWindow } from "../../window/Sync/SyncWindow"
@@ -18,6 +19,7 @@ export function TimingContainer(props: {
   timingMode: EditTimingMode
 }) {
   const [offset, setOffset] = useState(0)
+  const splitRef = useRef<HTMLButtonElement | null>(null)
 
   useEffect(() => {
     const timingModified = () => {
@@ -67,11 +69,12 @@ export function TimingContainer(props: {
           tippy(el, {
             content: "Manage split timing",
           })
+          splitRef.current = el
         }}
         onClick={e => {
-          SplitTimingPopup.active
-            ? SplitTimingPopup.close()
-            : SplitTimingPopup.open(props.app)
+          PopupManager.isOpen("split-timing")
+            ? PopupManager.close("split-timing")
+            : PopupManager.open(SplitTimingPopup(splitRef.current!))
           e.currentTarget.blur()
         }}
       >
@@ -86,9 +89,9 @@ export function TimingContainer(props: {
           })
         }}
         onClick={e => {
-          TimingTrackOrderPopup.active
-            ? TimingTrackOrderPopup.close()
-            : TimingTrackOrderPopup.open()
+          PopupManager.isOpen("timing-track-order-popup")
+            ? PopupManager.close("timing-track-order-popup")
+            : PopupManager.open(TimingTrackOrderPopup(e.currentTarget))
           e.currentTarget.blur()
         }}
       >

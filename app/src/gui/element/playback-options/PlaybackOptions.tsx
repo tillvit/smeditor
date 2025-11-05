@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { EventHandler } from "../../../util/EventHandler"
+import { Flags } from "../../../util/Flags"
 import { Keybinds } from "../../../util/Keybinds"
 import { Options } from "../../../util/Options"
 import { ReactIcon } from "../../Icons"
@@ -14,6 +15,8 @@ export function PlaybackOptions() {
   const [isCMod, setIsCMod] = useState(Options.chart.CMod)
   const [collapsed, setCollapsed] = useState(true)
   const chartLoaded = useRef(false)
+
+  if (!Flags.playbackOptions) return <></>
 
   useEffect(() => {
     if (!initialRender) setTimeout(() => setInitialRender(true), 200)
@@ -66,7 +69,15 @@ export function PlaybackOptions() {
           onChange={value => (Options.audio.rate = value / 100)}
         />
       </PlaybackOptionsGroup>
-      <div style={{ gap: "0.25rem", display: "flex", alignItems: "center" }}>
+      <div
+        style={{
+          gap: "0.25rem",
+          display: "flex",
+          alignItems: "center",
+          opacity: Flags.assist ? 1 : 0.5,
+          pointerEvents: Flags.assist ? "auto" : "none",
+        }}
+      >
         <PlaybackOptionsCheckbox
           addTooltip={tooltip`Toggle assist tick ${"assistTick"}`}
           onChange={value => (Options.audio.assistTick = value)}

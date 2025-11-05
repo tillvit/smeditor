@@ -24,6 +24,7 @@ import footUrl from "../../../assets/foot.png"
 import receptorUrl from "../../../assets/receptor.png"
 import { Foot, ParityState } from "../../chart/stats/parity/ParityDataTypes"
 import { assignTint, getParityColor } from "../../util/Color"
+import { Flags } from "../../util/Flags"
 import { Options } from "../../util/Options"
 import { BaseTimelineWidget } from "./timeline/BaseTimelineWidget"
 
@@ -204,7 +205,8 @@ export class DancingBotWidget extends Widget {
       !this.manager.app.chartManager.chartView ||
       !this.layout ||
       !Options.chart.parity.enabled ||
-      !Options.chart.parity.showDancingBot
+      !Options.chart.parity.showDancingBot ||
+      !Flags.barlines
     ) {
       this.visible = false
       return

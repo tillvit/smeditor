@@ -1,4 +1,5 @@
 import { BitmapText, Container } from "pixi.js"
+import { PopupManager } from "../../../gui/popup/PopupManager"
 import { TechPopup } from "../../../gui/popup/TechPopup"
 import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
 import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
@@ -6,12 +7,10 @@ import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
 import { EditMode } from "../../ChartManager"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
-import { Cached, TimingEvent } from "../../sm/TimingTypes"
 import { TECH_STRINGS } from "../../stats/parity/ParityDataTypes"
 import { RowStacker } from "../RowStacker"
 
 export interface TechBox extends Container {
-  event: Cached<TimingEvent>
   backgroundObj: BetterRoundedRect
   textObj: BitmapText
 }
@@ -48,6 +47,7 @@ export class TechIndicators
   })
 
   private rowMap = new Map<number, TechBox[]>()
+  private popupBox?: TechBox
 
   children: Container[] = []
 
@@ -114,14 +114,15 @@ export class TechIndicators
           // box.backgroundObj.position.y = -25 / 2
           box.on("mouseenter", () => {
             if (this.renderer.isDragSelecting()) return
-
-            if (TechPopup.active) TechPopup.close()
+            PopupManager.close("tech-popup")
             if (this.renderer.chartManager.getMode() == EditMode.Edit) {
-              TechPopup.open(box, tech)
+              PopupManager.open(TechPopup(box, tech))
+              this.popupBox = box
             }
           })
           box.on("mouseleave", () => {
-            TechPopup.close()
+            PopupManager.close("tech-popup")
+            this.popupBox = undefined
           })
 
           box.eventMode = "static"
@@ -137,7 +138,10 @@ export class TechIndicators
         this.rowMap.delete(i)
         boxes.forEach(box => {
           this.boxPool.destroyChild(box)
-          if (TechPopup.box == box) TechPopup.close()
+          if (this.popupBox == box) {
+            PopupManager.close("tech-popup")
+            this.popupBox = undefined
+          }
         })
 
         continue

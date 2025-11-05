@@ -35,7 +35,7 @@ export function ColorInput(props: ColorInputProps) {
         ref={pickerRef}
         onClick={() => {
           cachedColor.current = value
-          PopupManager.openPopup(
+          PopupManager.open(
             ColorPickerPopup(pickerRef.current!, value, val => {
               setValue(val)
               console.log(val)

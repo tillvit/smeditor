@@ -1580,13 +1580,17 @@ declare module "app/src/gui/inputs/DisplaySliderInput" {
 declare module "app/src/gui/inputs/DropdownInput" {
   export interface DropdownInputProps extends DropdownInputOptions {
     value: string
-    onChange?: (value: string) => void
+    onChange?: (value: string, idx: number) => void
   }
   export interface DropdownInputOptions {
     values: readonly string[]
     style?: React.CSSProperties
     className?: string
     disabled?: boolean
+    transformers?: {
+      serialize: (value: string) => string
+      deserialize: (value: string) => string
+    }
   }
   export function DropdownInput(
     props: DropdownInputProps
@@ -3506,75 +3510,8 @@ declare module "app/src/data/SMData" {
   export const DEFAULT_SM =
     "#TITLE:New Song;\n#SUBTITLE:;\n#ARTIST:;\n#TITLETRANSLIT:;\n#SUBTITLETRANSLIT:;\n#ARTISTTRANSLIT:;\n#GENRE:;\n#CREDIT:;\n#BANNER:;\n#BACKGROUND:;\n#LYRICSPATH:;\n#CDTITLE:;\n#MUSIC:;\n#OFFSET:0;\n#SAMPLESTART:0.000000;\n#SAMPLELENGTH:10.000000;\n#SELECTABLE:YES;\n#BPMS:0.000=120.000;\n#STOPS:;\n#WARPS:;\n#DELAYS:;\n#SPEEDS:0.000=1.000=0.000=0;\n#SCROLLS:0.000=1.000;\n#TICKCOUNTS:;\n#TIMESIGNATURES:0.000000=4=4;\n#LABELS:;\n#COMBOS:;\n#BGCHANGES:;\n#FGCHANGES:;\n#KEYSOUNDS:;\n#ATTACKS:;\n"
 }
-declare module "app/src/gui/popup/Popup_old" {
-  import { DisplayObject } from "pixi.js"
-  export interface PopupOptions {
-    attach: DisplayObject | HTMLElement
-    title: string
-    description?: string
-    width?: number
-    height?: number
-    options?: PopupOption[]
-    background?: string
-    textColor?: string
-    editable: boolean
-    cancelableOnOpen: boolean
-    clickHandler?: (event: MouseEvent) => void
-  }
-  interface PopupOption {
-    label: string
-    callback?: () => void
-    type: "delete" | "confirm" | "default"
-  }
-  export abstract class Popup {
-    static active: boolean
-    static persistent: boolean
-    static options: PopupOptions
-    static popup?: HTMLDivElement
-    static view?: HTMLDivElement
-    static title?: HTMLDivElement
-    static desc?: HTMLDivElement
-    static editText?: HTMLDivElement
-    private static clickOutside?
-    private static moveInterval
-    private static updateInterval
-    static _open(options: PopupOptions): void
-    private static cloneRect
-    private static movePosition
-    private static _build
-    static buildContent(): void
-    static close(): void
-    static select(): void
-    static detach(): void
-    static attach(target: DisplayObject): void
-  }
-}
 declare module "app/src/gui/popup/Popup" {
-  import { DisplayObject } from "pixi.js"
-  import { PopupOptions } from "app/src/gui/popup/Popup_old"
   export function Popup(): import("react/jsx-runtime").JSX.Element
-  export abstract class _Popup {
-    static active: boolean
-    static persistent: boolean
-    static options: PopupOptions
-    static popup?: HTMLDivElement
-    static view?: HTMLDivElement
-    static title?: HTMLDivElement
-    static desc?: HTMLDivElement
-    static editText?: HTMLDivElement
-    private static clickOutside?
-    private static moveInterval
-    private static updateInterval
-    static _open(options: PopupOptions): void
-    private static cloneRect
-    private static movePosition
-    private static _build
-    static buildContent(): void
-    static close(): void
-    static select(): void
-    static detach(): void
-    static attach(target: DisplayObject): void
-  }
 }
 declare module "app/src/gui/popup/PopupManager" {
   import { DisplayObject, Point } from "pixi.js"
@@ -3598,18 +3535,24 @@ declare module "app/src/gui/popup/PopupManager" {
     attach: DisplayObject | HTMLElement | Point
     background?: string
     closed?: boolean
+    highlighted?: boolean
     className?: string
     style?: CSSProperties
   }
   interface PopupContextData extends PopupData {
     close: () => void
+    setBackground: (color: string) => void
     app: App
   }
   export const PopupContext: import("react").Context<PopupContextData | null>
   export class PopupManager {
-    static openPopup(popupData: PopupData): void
-    static closePopup(id: string): void
-    static isPopupOpen(id: string): boolean
+    static open(popupData: PopupData, overrideIfOpen?: boolean): void
+    static close(id: string): void
+    static isOpen(id: string): boolean
+    static getPopupOptions(id: string): PopupData | null
+    static highlight(id: string): void
+    static isHighlighted(id: string): boolean
+    static updatePopupOptions(id: string, options: Partial<PopupData>): void
   }
   export function PopupManagerComponent({
     app,
@@ -4101,15 +4044,21 @@ declare module "app/src/chart/component/edit/BarlineContainer" {
     update(firstBeat: number, lastBeat: number): void
   }
 }
+declare module "app/src/gui/popup/SimplePopup" {
+  import { PopupData } from "app/src/gui/popup/PopupManager"
+  type SimplePopupOptions = Partial<PopupData> & {
+    id: string
+    label: string
+    attach: PopupData["attach"]
+    description: string
+  }
+  export function SimplePopup(data: SimplePopupOptions): PopupData
+}
 declare module "app/src/gui/popup/CandlePopup" {
   import { CandleBox } from "app/src/chart/component/edit/CandleIndicator"
   import { Foot } from "app/src/chart/stats/parity/ParityDataTypes"
-  import { Popup } from "app/src/gui/popup/Popup_old"
-  export class CandlePopup extends Popup {
-    static box?: CandleBox
-    static open(box: CandleBox, foot: Foot): void
-    static close(): void
-  }
+  import { PopupData } from "app/src/gui/popup/PopupManager"
+  export function CandlePopup(box: CandleBox, foot: Foot): PopupData
 }
 declare module "app/src/util/BetterRoundedRect" {
   import { NineSlicePlane, Renderer, RenderTexture } from "pixi.js"
@@ -4194,6 +4143,7 @@ declare module "app/src/chart/component/edit/CandleIndicator" {
     private boxPool
     private highlightPool
     private rowMap
+    private popupBox?
     constructor(renderer: ChartRenderer)
     update(firstBeat: number, lastBeat: number): void
     createBox(): CandleBox
@@ -4439,56 +4389,13 @@ declare module "app/src/gui/widget/timeline/FacingWidget" {
     populate(startBeat?: number, endBeat?: number): void
   }
 }
-declare module "app/src/gui/element/NumberSpinner" {
-  interface NumberSpinnerOptions {
-    value: number
-    step: number | null
-    precision: number
-    minPrecision: number | null
-    min: number
-    max: number
-    onChange?: (value: number | undefined) => void
-  }
-  export class NumberSpinner {
-    readonly view: HTMLDivElement
-    readonly input: HTMLInputElement
-    private options
-    private lastVal
-    constructor(view: HTMLDivElement, options: Partial<NumberSpinnerOptions>)
-    static create(options: Partial<NumberSpinnerOptions>): NumberSpinner
-    private formatValue
-    get value(): number
-    set value(value: number)
-    get step(): number | null
-    set step(value: number | null)
-    get min(): number
-    set min(value: number)
-    get max(): number
-    set max(value: number)
-    get precision(): number
-    set precision(value: number)
-    get minPrecision(): number | null
-    set minPrecision(value: number | null)
-    get onchange(): ((value: number | undefined) => void) | undefined
-    set onchange(value: ((value: number | undefined) => void) | undefined)
-    get disabled(): boolean
-    set disabled(value: boolean)
-  }
+declare module "app/src/gui/popup/PopupEditIndicator" {
+  export function PopupEditIndicator(): import("react/jsx-runtime").JSX.Element
 }
 declare module "app/src/gui/popup/SnapPopup" {
   import { Graphics } from "pixi.js"
-  import { Popup } from "app/src/gui/popup/Popup_old"
-  export class SnapPopup extends Popup {
-    private static onSnapChange
-    private static divInput
-    private static divLabel
-    private static beatInput
-    static open(snapSprite: Graphics): void
-    static buildContent(): void
-    private static updateValues
-    private static suffixSnap
-    static close(): void
-  }
+  import { PopupData } from "app/src/gui/popup/PopupManager"
+  export function SnapPopup(snapSprite: Graphics): PopupData
 }
 declare module "app/src/chart/component/edit/SnapContainer" {
   import { Container } from "pixi.js"
@@ -4739,7 +4646,7 @@ declare module "app/src/gui/popup/TechErrorPopup" {
   import { TechBox } from "app/src/chart/component/edit/TechErrorIndicators"
   import { Chart } from "app/src/chart/sm/Chart"
   import { TechErrors } from "app/src/chart/stats/parity/ParityDataTypes"
-  import { Popup, PopupOptions } from "app/src/gui/popup/Popup_old"
+  import { PopupData } from "app/src/gui/popup/PopupManager"
   interface TechErrorPopupOptions {
     box: TechBox
     beat: number
@@ -4747,25 +4654,7 @@ declare module "app/src/gui/popup/TechErrorPopup" {
     ignored: boolean
     chart: Chart
   }
-  export class TechErrorPopup extends Popup {
-    static options: TechErrorPopupOptions & PopupOptions
-    static cachedError?: {
-      beat: number
-      error: TechErrors
-    }
-    static editText: HTMLDivElement
-    static onParityChange: () => void
-    static open(options: TechErrorPopupOptions): void
-    static buildContent(): void
-    private static updateValues
-    static close(): void
-    static getError():
-      | {
-          beat: number
-          error: TechErrors
-        }
-      | undefined
-  }
+  export function TechErrorPopup(options: TechErrorPopupOptions): PopupData
 }
 declare module "app/src/chart/component/edit/TechErrorIndicators" {
   import { BitmapText, Container } from "pixi.js"
@@ -4799,6 +4688,7 @@ declare module "app/src/chart/component/edit/TechErrorIndicators" {
     private previousTopVisible
     private previousBottomVisible
     private rowMap
+    private popupBox?
     children: Container[]
     constructor(renderer: ChartRenderer)
     update(firstBeat: number, lastBeat: number): void
@@ -4808,12 +4698,8 @@ declare module "app/src/chart/component/edit/TechErrorIndicators" {
 declare module "app/src/gui/popup/TechPopup" {
   import { TechBox } from "app/src/chart/component/edit/TechIndicators"
   import { TechCategory } from "app/src/chart/stats/parity/ParityDataTypes"
-  import { Popup } from "app/src/gui/popup/Popup_old"
-  export class TechPopup extends Popup {
-    static box?: TechBox
-    static open(box: TechBox, tech: TechCategory): void
-    static close(): void
-  }
+  import { PopupData } from "app/src/gui/popup/PopupManager"
+  export function TechPopup(box: TechBox, tech: TechCategory): PopupData
 }
 declare module "app/src/chart/component/edit/TechIndicators" {
   import { BitmapText, Container } from "pixi.js"
@@ -4822,9 +4708,7 @@ declare module "app/src/chart/component/edit/TechIndicators" {
     ChartRenderer,
     ChartRendererComponent,
   } from "app/src/chart/ChartRenderer"
-  import { Cached, TimingEvent } from "app/src/chart/sm/TimingTypes"
   export interface TechBox extends Container {
-    event: Cached<TimingEvent>
     backgroundObj: BetterRoundedRect
     textObj: BitmapText
   }
@@ -4837,6 +4721,7 @@ declare module "app/src/chart/component/edit/TechIndicators" {
     private parityDirty
     private boxPool
     private rowMap
+    private popupBox?
     children: Container[]
     constructor(renderer: ChartRenderer)
     update(firstBeat: number, lastBeat: number): void
@@ -5277,29 +5162,20 @@ declare module "app/src/data/SplitTimingData" {
 declare module "app/src/gui/popup/TimingColumnPopup" {
   import { Container } from "pixi.js"
   import { ChartTimingData } from "app/src/chart/sm/ChartTimingData"
-  import { TimingEvent, TimingEventType } from "app/src/chart/sm/TimingTypes"
-  import { Popup, PopupOptions } from "app/src/gui/popup/Popup_old"
+  import { TimingEventType } from "app/src/chart/sm/TimingTypes"
+  import { PopupData } from "app/src/gui/popup/PopupManager"
   interface TimingColumnPopupOptions {
     attach: Container
     type: TimingEventType
     timingData: ChartTimingData
   }
-  export class TimingColumnPopup extends Popup {
-    static options: TimingColumnPopupOptions & PopupOptions
-    private static convertText
-    private static convertBtnOne
-    private static convertBtnTwo
-    private static readonly onTimingChange
-    onConfirm: (event: TimingEvent) => void
-    persistent: boolean
-    static open(options: TimingColumnPopupOptions): void
-    static buildContent(): void
-    static close(): void
-    static updateValues(): void
-  }
+  export function TimingColumnPopup(
+    options: TimingColumnPopupOptions
+  ): PopupData
 }
 declare module "app/src/data/TimingEventPopupData" {
   import { TimingEventType } from "app/src/chart/sm/TimingTypes"
+  import { ValueInputOptions } from "app/src/gui/inputs/ValueInput"
   interface Popup {
     rows: PopupRow[]
     title: string
@@ -5309,84 +5185,25 @@ declare module "app/src/data/TimingEventPopupData" {
   export interface PopupRow {
     label: string
     key: string
-    input: PopupInput
+    input: ValueInputOptions
   }
-  type PopupInput =
-    | PopupInputSpinner
-    | PopupInputText
-    | PopupInputDropdown
-    | PopupInputCheckbox
-  interface PopupInputSpinner {
-    type: "spinner"
-    step?: number | null
-    precision?: number
-    minPrecision?: number | null
-    min?: number
-    max?: number
-  }
-  interface PopupInputText {
-    type: "text"
-  }
-  interface PopupInputDropdown {
-    type: "dropdown"
-    items: string[]
-    transformers?: {
-      serialize: (value: string) => string
-      deserialize: (value: string) => string
-    }
-  }
-  interface PopupInputCheckbox {
-    type: "checkbox"
-  }
-  export const POPUP_ROWS: {
+  export const TIMING_POPUP_ROWS: {
     [key in TimingEventType]: Popup
   }
 }
-declare module "app/src/gui/element/Dropdown" {
-  export class Dropdown<T> {
-    view: HTMLDivElement
-    private items
-    private selectedItem
-    private onChangeHandlers
-    static create<T>(items?: readonly T[], selectedItem?: T): Dropdown<T>
-    private constructor()
-    onChange(handler: (value: T, index: number) => void): void
-    removeHandler(handler: (value: T, index: number) => void): void
-    getItems(): readonly T[]
-    setItems(items: readonly T[]): void
-    setSelected(item?: T): void
-    closeDropdown(): void
-    get value(): T
-    get disabled(): boolean
-    set disabled(value: boolean)
-    private createDropdown
-  }
-}
 declare module "app/src/gui/popup/TimingEventPopup" {
-  import { TimingBox } from "app/src/chart/component/timing/TimingTrackContainer"
+  import { DisplayObject } from "pixi.js"
   import { TimingData } from "app/src/chart/sm/TimingData"
-  import { TimingEvent } from "app/src/chart/sm/TimingTypes"
-  import { Popup, PopupOptions } from "app/src/gui/popup/Popup_old"
+  import { Cached, TimingEvent } from "app/src/chart/sm/TimingTypes"
+  import { PopupData } from "app/src/gui/popup/PopupManager"
   interface TimingEventPopupOptions {
-    box: TimingBox
+    box: DisplayObject
+    event: Cached<TimingEvent>
     timingData: TimingData
-    modifyBox: boolean
+    newEvent: boolean
     onConfirm: (event: TimingEvent) => void
   }
-  export class TimingEventPopup extends Popup {
-    static options: TimingEventPopupOptions & PopupOptions
-    static cachedEvent: TimingEvent
-    private static rows
-    static onTimingChange: () => void
-    static open(options: TimingEventPopupOptions): void
-    static buildContent(): void
-    private static buildRow
-    private static modifyEvent
-    private static updateValues
-    static close(): void
-    static getEvent(): TimingEvent
-    static attach(target: TimingBox): void
-  }
+  export function TimingEventPopup(options: TimingEventPopupOptions): PopupData
 }
 declare module "app/src/chart/component/timing/TimingTrackContainer" {
   import { BitmapText, Container, Point, Sprite } from "pixi.js"
@@ -5432,6 +5249,7 @@ declare module "app/src/chart/component/timing/TimingTrackContainer" {
     private ghostBox?
     private timingDirty
     private tracksDirty
+    private popupEvent?
     constructor(renderer: ChartRenderer)
     update(firstBeat: number, lastBeat: number): void
     private createTrack
@@ -8764,42 +8582,12 @@ declare module "app/src/gui/element/status/StepsContainer" {
   }): import("react/jsx-runtime").JSX.Element
 }
 declare module "app/src/gui/popup/SplitTimingPopup" {
-  import { App } from "app/src/App"
-  import { TimingEventType } from "app/src/chart/sm/TimingTypes"
-  import { Popup } from "app/src/gui/popup/Popup_old"
-  export class SplitTimingPopup extends Popup {
-    private static app
-    private static timingGrid
-    private static onTimingChange
-    static open(app: App): void
-    static buildContent(): void
-    static updateValues(): HTMLDivElement
-    static buildRow(eventType: TimingEventType): HTMLDivElement
-    static buildModifyGrid(): HTMLDivElement
-    static close(): void
-  }
+  import { PopupData } from "app/src/gui/popup/PopupManager"
+  export function SplitTimingPopup(attach: HTMLElement): PopupData
 }
 declare module "app/src/gui/popup/TimingTrackOrderPopup" {
-  import { Popup } from "app/src/gui/popup/Popup_old"
-  export class TimingTrackOrderPopup extends Popup {
-    private static draggedElement?
-    private static dragOffsetX
-    private static dragOffsetY
-    private static grid?
-    private static leftovers?
-    private static boundaryCache
-    static open(): void
-    static buildContent(): void
-    private static makeDraggableTrack
-    private static makeLeftoverTrack
-    private static startDragging
-    private static saveOptions
-    private static deleteTrack
-    private static getClosestSlot
-    private static getBoundaries
-    private static clearBoundaries
-    static close(): void
-  }
+  import { PopupData } from "app/src/gui/popup/PopupManager"
+  export function TimingTrackOrderPopup(attach: HTMLElement): PopupData
 }
 declare module "app/src/gui/element/status/InlineExpandingInput" {
   import { InlineInputProps } from "app/src/gui/inputs/InlineTextInput"
@@ -8896,186 +8684,6 @@ declare module "app/src/App" {
     checkCoreVersion(): void
   }
 }
-declare module "app/src/gui/element/ColorPicker" {
-  import { Color } from "pixi.js"
-  class TransparentPreview extends HTMLDivElement {
-    colorElement: HTMLDivElement
-    set color(value: Color)
-  }
-  interface ColorPickerOptions {
-    value: string
-    height?: number
-    width?: number
-  }
-  export class ColorPicker extends TransparentPreview {
-    private _value
-    private _hue
-    private _sat
-    private _val
-    private _alp
-    private popup?
-    private matrix?
-    private matrixDot?
-    private matrixDragging
-    private hueDragging
-    private hueThumb?
-    private alphaDragging
-    private alphaBg?
-    private alphaThumb?
-    private previewNew?
-    private formats
-    onColorChange?: (color: Color) => void
-    static create(options: ColorPickerOptions): ColorPicker
-    private updatePreview
-    get value(): Color
-    set value(color: Color)
-    get hue(): number
-    set hue(value: number)
-    get sat(): number
-    set sat(value: number)
-    get val(): number
-    set val(value: number)
-    get alpha(): number
-    set alpha(value: number)
-    updateColor(): void
-    createPopup(): void
-    updatePopup(): void
-    closePopup(): void
-    createMatrix(): HTMLDivElement[]
-    createSlider(opt: {
-      ondrag?: () => void
-      change: (val: number) => void
-      offdrag?: () => void
-    }): HTMLDivElement[]
-    private movePosition
-    isActive(): boolean
-  }
-}
-declare module "app/src/gui/element/NumberSlider" {
-  interface SliderOptions {
-    value?: number
-    width?: number
-    min: number
-    max: number
-    step: number
-    precision?: number
-    transformer?: (value: number) => string | number
-    onChange?: (value: number) => void
-    displayWidth?: number
-  }
-  export class NumberSlider {
-    view: HTMLDivElement
-    slider: HTMLInputElement
-    text: HTMLDivElement
-    options: SliderOptions
-    constructor(view: HTMLDivElement, options: SliderOptions)
-    get value(): number
-    setValue(value: number): void
-    static create(options: SliderOptions): NumberSlider
-    private formatValue
-  }
-}
-declare module "app/src/gui/element/ValueInput" {
-  import { App } from "app/src/App"
-  export interface TextInput {
-    type: "text"
-    transformers?: {
-      serialize: (value: string) => string
-      deserialize: (value: string) => string
-    }
-    onChange?: (app: App, value: string) => void
-  }
-  export type DropdownInput<T> =
-    | {
-        type: "dropdown"
-        items: readonly string[]
-        advanced: false
-        onChange?: (app: App, value: string | number) => void
-      }
-    | {
-        type: "dropdown"
-        items: readonly number[]
-        advanced: false
-        onChange?: (app: App, value: string | number) => void
-      }
-    | {
-        type: "dropdown"
-        items: T[]
-        advanced: true
-        transformers: {
-          serialize: (value: string | number | boolean) => T
-          deserialize: (value: T) => string | number | boolean
-        }
-        onChange?: (app: App, value: string | number | boolean) => void
-      }
-  export interface NumberInput {
-    type: "number"
-    step: number
-    precision?: number
-    minPrecision?: number
-    min?: number
-    max?: number
-    transformers?: {
-      serialize: (value: number) => number
-      deserialize: (value: number) => number
-    }
-    onChange?: (app: App, value: number) => void
-  }
-  export interface SliderInput {
-    type: "slider"
-    step?: number
-    min?: number
-    max?: number
-    hardMax?: number
-    hardMin?: number
-    transformers?: {
-      serialize: (value: number) => number
-      deserialize: (value: number) => number
-    }
-    onChange?: (app: App, value: number) => void
-  }
-  export interface DisplaySliderInput {
-    type: "display-slider"
-    step: number
-    min: number
-    max: number
-    transformers: {
-      serialize: (value: number) => number
-      deserialize: (value: number) => number
-      display: (value: number) => string | number
-    }
-    onChange?: (app: App, value: number) => void
-    displayWidth?: number
-    width?: number
-  }
-  export interface CheckboxInput {
-    type: "checkbox"
-    onChange?: (app: App, value: boolean) => void
-  }
-  export interface ColorInput {
-    type: "color"
-    onChange?: (app: App, value: string) => void
-  }
-  export type ValueInput<T> =
-    | TextInput
-    | DropdownInput<T>
-    | NumberInput
-    | CheckboxInput
-    | SliderInput
-    | DisplaySliderInput
-    | ColorInput
-  export function createLabeledInput<T>(
-    app: App,
-    name: string,
-    input: ValueInput<T>,
-    initialValue: any
-  ): HTMLDivElement
-  export function createValueInput<T>(
-    app: App,
-    input: ValueInput<T>,
-    initialValue: any
-  ): HTMLElement
-}
 declare module "app/src/util/custom-script/CustomScriptTypes" {
   import { KeyCombo } from "app/src/data/KeybindData"
   export interface CustomScript {
@@ -9149,24 +8757,23 @@ declare module "app/src/util/custom-script/CustomScriptTypes" {
   export type CustomScriptResult = CustomScriptPayload | CustomScriptLog
 }
 declare module "app/src/data/CustomScriptWindowData" {
-  import { ValueInput } from "app/src/gui/element/ValueInput"
+  import { ValueInputOptions } from "app/src/gui/inputs/ValueInput"
   import { CustomScriptArgument } from "app/src/util/custom-script/CustomScriptTypes"
-  type CustomScriptInput<T, U extends CustomScriptArgument> = Omit<
-    ValueInput<T>,
+  type CustomScriptInput<U extends CustomScriptArgument> = Omit<
+    ValueInputOptions,
     "onChange"
   > & {
-    onChange: (argument: U, value: T) => void
+    onChange: (argument: U, value: any) => void
   }
-  interface CustomScriptArgumentField<T, U extends CustomScriptArgument> {
+  interface CustomScriptArgumentField<U extends CustomScriptArgument> {
     name: string
     description?: string
-    input: CustomScriptInput<T, U> | ((arg: U) => CustomScriptInput<T, U>)
+    input: CustomScriptInput<U> | ((arg: U) => CustomScriptInput<U>)
     reload?: boolean
     getValue: (arg: U) => any
   }
   export const ARGUMENT_FIELDS: {
     [Type in CustomScriptArgument["type"]]: CustomScriptArgumentField<
-      any,
       Extract<
         CustomScriptArgument,
         {
@@ -9182,28 +8789,6 @@ declare module "app/src/data/CustomScriptWindowData" {
         type: Type
       }
     >
-  }
-}
-declare module "app/src/data/TimingDataWindowData" {
-  import { App } from "app/src/App"
-  import { TimingData } from "app/src/chart/sm/TimingData"
-  type TimingDataWindowInputs = {
-    data: any[]
-  }
-  type TimingDataWindowElement = {
-    create: (this: TimingDataWindowInputs, app: App) => HTMLElement
-    update: (
-      this: TimingDataWindowInputs,
-      timingData: TimingData,
-      beat: number
-    ) => void
-  }
-  type TimingDataWindowData = {
-    title: string
-    element: TimingDataWindowElement
-  }
-  export const TIMING_WINDOW_DATA: {
-    [key: string]: TimingDataWindowData
   }
 }
 declare module "app/src/gui/hooks/TimingDataHook" {

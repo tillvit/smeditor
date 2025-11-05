@@ -21,12 +21,14 @@ export interface PopupData {
   attach: DisplayObject | HTMLElement | Point
   background?: string
   closed?: boolean
+  highlighted?: boolean
   className?: string
   style?: CSSProperties
 }
 
 interface PopupContextData extends PopupData {
   close: () => void
+  setBackground: (color: string) => void
   app: App
 }
 
@@ -36,19 +38,38 @@ let _pmInstance: {
   openPopup: (popupData: PopupData) => void
   closePopup: (id: string) => void
   isPopupOpen: (id: string) => boolean
+  getPopupOptions: (id: string) => PopupData | null
+  updatePopupOptions: (id: string, options: Partial<PopupData>) => void
 } | null = null
 
 export class PopupManager {
-  static openPopup(popupData: PopupData) {
-    if (this.isPopupOpen(popupData.id)) return
+  static open(popupData: PopupData, overrideIfOpen = false) {
+    if (this.isOpen(popupData.id) && !overrideIfOpen) return
+    popupData.highlighted = popupData.highlighted ?? false
     _pmInstance?.openPopup(popupData)
   }
-  static closePopup(id: string) {
+  static close(id: string) {
     _pmInstance?.closePopup(id)
   }
 
-  static isPopupOpen(id: string) {
+  static isOpen(id: string) {
     return _pmInstance?.isPopupOpen(id) ?? false
+  }
+
+  static getPopupOptions(id: string): PopupData | null {
+    return _pmInstance?.getPopupOptions(id) ?? null
+  }
+
+  static highlight(id: string) {
+    _pmInstance?.updatePopupOptions(id, { highlighted: true })
+  }
+
+  static isHighlighted(id: string): boolean {
+    return _pmInstance?.getPopupOptions(id)?.highlighted ?? false
+  }
+
+  static updatePopupOptions(id: string, options: Partial<PopupData>) {
+    _pmInstance?.updatePopupOptions(id, options)
   }
 }
 
@@ -63,21 +84,32 @@ export function PopupManagerComponent({ app }: { app: App | null }) {
       setPopups(prev => [...prev, popupData])
     },
     closePopup: (id: string) => {
-      const popup = popups.find(p => p.id === id)
-      if (!popup) return
-      if (popup.closed) return
       setPopups(prev => {
+        const popup = prev.find(p => p.id === id && p.closed !== true)
+        if (!popup) return prev
+        setTimeout(() => {
+          setPopups(prev => prev.filter(p => p.key !== popup.key))
+        }, 200)
         return prev.map(p => {
           if (p.id === popup.id) p.closed = true
           return p
         })
       })
-      setTimeout(() => {
-        setPopups(prev => prev.filter(w => w.key !== popup.key))
-      }, 200)
     },
     isPopupOpen: (id: string) => {
-      return popups.some(w => w.id === id)
+      return popups.some(p => p.id === id && p.closed !== true)
+    },
+    getPopupOptions: (id: string) => {
+      const popup = popups.find(p => p.id === id && p.closed !== true)
+      return popup || null
+    },
+    updatePopupOptions: (id: string, options: Partial<PopupData>) => {
+      setPopups(prev => {
+        const popup = prev.find(p => p.id === id && p.closed !== true)
+        if (!popup) return prev
+        Object.assign(popup, options)
+        return [...prev]
+      })
     },
   }
 
@@ -93,6 +125,10 @@ export function PopupManagerComponent({ app }: { app: App | null }) {
               value={{
                 ...popup,
                 app,
+                setBackground(color) {
+                  popup.background = color
+                  setPopups(prev => [...prev])
+                },
                 close: () => {
                   if (popup.closed) return
                   setPopups(prev => {

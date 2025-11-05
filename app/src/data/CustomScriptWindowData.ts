@@ -1,17 +1,17 @@
-import { ValueInput } from "../gui/element/ValueInput"
+import { ValueInputOptions } from "../gui/inputs/ValueInput"
 import { CustomScriptArgument } from "../util/custom-script/CustomScriptTypes"
 
-type CustomScriptInput<T, U extends CustomScriptArgument> = Omit<
-  ValueInput<T>,
+type CustomScriptInput<U extends CustomScriptArgument> = Omit<
+  ValueInputOptions,
   "onChange"
 > & {
-  onChange: (argument: U, value: T) => void
+  onChange: (argument: U, value: any) => void
 }
 
-interface CustomScriptArgumentField<T, U extends CustomScriptArgument> {
+interface CustomScriptArgumentField<U extends CustomScriptArgument> {
   name: string
   description?: string
-  input: CustomScriptInput<T, U> | ((arg: U) => CustomScriptInput<T, U>)
+  input: CustomScriptInput<U> | ((arg: U) => CustomScriptInput<U>)
   // reload all inputs on change
   reload?: boolean
   getValue: (arg: U) => any
@@ -19,7 +19,6 @@ interface CustomScriptArgumentField<T, U extends CustomScriptArgument> {
 
 export const ARGUMENT_FIELDS: {
   [Type in CustomScriptArgument["type"]]: CustomScriptArgumentField<
-    any,
     Extract<CustomScriptArgument, { type: Type }>
   >[]
 } = {

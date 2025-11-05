@@ -129,11 +129,11 @@ export class App {
       event.stopImmediatePropagation()
       if (!this.chartManager.loadedChart) return
       if (event.target != this.view) return
-      PopupManager.openPopup(ContextMenuPopup(event))
+      PopupManager.open(ContextMenuPopup(event))
     }
 
     this.view.onmousedown = () => {
-      PopupManager.closePopup("context-menu")
+      PopupManager.close("context-menu")
     }
 
     this.stage = new Container()

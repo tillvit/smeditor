@@ -1,5 +1,6 @@
 import { BitmapText, Color, Container, Sprite, Texture } from "pixi.js"
 import { CandlePopup } from "../../../gui/popup/CandlePopup"
+import { PopupManager } from "../../../gui/popup/PopupManager"
 import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
 import { blendPixiColors, getParityColor } from "../../../util/Color"
 import { DisplayObjectPool } from "../../../util/DisplayObjectPool"
@@ -39,6 +40,7 @@ export class CandleIndicator
   })
 
   private rowMap = new Map<number, { box: CandleBox; highlight: Sprite }>()
+  private popupBox?: CandleBox
 
   constructor(renderer: ChartRenderer) {
     super()
@@ -48,7 +50,8 @@ export class CandleIndicator
     this.addChild(this.boxPool)
 
     const parityChanged = () => {
-      CandlePopup.close()
+      PopupManager.close("candle-popup")
+      this.popupBox = undefined
       this.parityDirty = true
     }
     const colorChange = (optionId: string) => {
@@ -121,13 +124,15 @@ export class CandleIndicator
         box.on("mouseenter", () => {
           if (this.renderer.isDragSelecting()) return
 
-          if (CandlePopup.active) CandlePopup.close()
+          PopupManager.close("candle-popup")
           if (this.renderer.chartManager.getMode() == EditMode.Edit) {
-            CandlePopup.open(box, foot)
+            PopupManager.open(CandlePopup(box, foot))
+            this.popupBox = box
           }
         })
         box.on("mouseleave", () => {
-          CandlePopup.close()
+          PopupManager.close("candle-popup")
+          this.popupBox = undefined
         })
 
         box.eventMode = "static"
@@ -145,7 +150,10 @@ export class CandleIndicator
         this.rowMap.delete(i)
         this.boxPool.destroyChild(items.box)
         this.highlightPool.destroyChild(items.highlight)
-        if (CandlePopup.box == items.box) CandlePopup.close()
+        if (items.box == this.popupBox) {
+          PopupManager.close("candle-popup")
+          this.popupBox = undefined
+        }
         continue
       }
       const yPos = this.renderer.getYPosFromBeat(position.beat)

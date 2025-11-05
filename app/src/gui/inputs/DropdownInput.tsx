@@ -3,7 +3,7 @@ import { ReactIcon } from "../Icons"
 
 export interface DropdownInputProps extends DropdownInputOptions {
   value: string
-  onChange?: (value: string) => void
+  onChange?: (value: string, idx: number) => void
 }
 
 export interface DropdownInputOptions {
@@ -11,12 +11,20 @@ export interface DropdownInputOptions {
   style?: React.CSSProperties
   className?: string
   disabled?: boolean
+  transformers?: {
+    serialize: (value: string) => string
+    deserialize: (value: string) => string
+  }
 }
 
 export function DropdownInput(props: DropdownInputProps) {
   const [expanded, setExpanded] = useState(false)
   const viewRef = useRef<HTMLDivElement | null>(null)
   const listRef = useRef<HTMLDivElement | null>(null)
+  const transformers = props.transformers ?? {
+    serialize: (value: string) => value,
+    deserialize: (value: string) => value,
+  }
 
   useEffect(() => {
     const clickOutside = (e: MouseEvent) => {
@@ -48,7 +56,9 @@ export function DropdownInput(props: DropdownInputProps) {
       ref={viewRef}
     >
       <div className="dropdown-selected" onClick={() => setExpanded(!expanded)}>
-        <div className="dropdown-selected-text">{props.value}</div>
+        <div className="dropdown-selected-text">
+          {transformers.serialize(props.value)}
+        </div>
         <ReactIcon id="CHEVRON" width={12} />
       </div>
       <div
@@ -62,7 +72,7 @@ export function DropdownInput(props: DropdownInputProps) {
               className="dropdown-item"
               onClick={() => {
                 if (props.disabled) return
-                props.onChange?.(item)
+                props.onChange?.(transformers.deserialize(item), index)
                 setExpanded(false)
               }}
               style={{

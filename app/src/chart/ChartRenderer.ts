@@ -190,9 +190,11 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
         return
       if (
         this.chartManager.editTimingMode == EditTimingMode.Add &&
-        this.lastMousePos
+        this.lastMousePos &&
+        !PopupManager.isOpen("timing-event-popup")
       ) {
         this.timingTracks.placeGhostEvent()
+        event.preventDefault()
       } else if (
         this.chartManager.editTimingMode == EditTimingMode.Off &&
         Options.chart.mousePlacement &&
@@ -1154,7 +1156,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
           this.chartManager.clearSelections()
           this.chartManager.addNoteToSelection(notedata)
         }
-        PopupManager.openPopup(ContextMenuPopup(event))
+        PopupManager.open(ContextMenuPopup(event))
         event.preventDefault()
         event.stopImmediatePropagation()
         return

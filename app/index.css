@@ -1579,7 +1579,6 @@ input[type="range"] {
 }
 
 .popup-zoomer.selected {
-  filter: saturate(1.2) brightness(1.4);
   border: 0.05rem solid rgb(14, 83, 104);
 }
 
@@ -1592,7 +1591,8 @@ input[type="range"] {
   transition: 0.2s cubic-bezier(0.47, 0.02, 0, 0.95);
 }
 
-.animated .popup-zoomer {
+.animated .popup-zoomer,
+.animated .popup-area {
   animation: 0.15s popup-enter cubic-bezier(0.13, 0.61, 0.07, 0.98) forwards;
   transition: 0.2s cubic-bezier(0.47, 0.02, 0, 0.95);
 }
@@ -1608,7 +1608,7 @@ input[type="range"] {
   gap: 0.25rem;
   color: var(--text-color);
   white-space: nowrap;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   align-items: center;
 }
 
@@ -1642,18 +1642,25 @@ input[type="range"] {
 }
 
 .popup .popup-desc {
+  font-size: 0.7rem;
+  text-align: center;
+  color: var(--text-color-secondary);
+}
+
+.popup .popup-detail {
   font-size: 0.6rem;
   font-style: italic;
   text-align: center;
-  color: #757a89;
+  color: #898b92;
 }
 
-.animated .popup-desc {
+.animated .popup-detail {
   transition: 0.2s cubic-bezier(0.47, 0.02, 0, 0.95);
 }
 
 .popup .popup-title {
   text-align: center;
+  margin-bottom: 0.2rem;
 }
 
 .popup .popup-label {
@@ -1701,10 +1708,9 @@ input[type="range"] {
 }
 
 .popup-zoomer.selected .popup-options {
-  margin-top: 0.25rem;
+  margin-top: 0.75rem;
   transform: scale(1);
   height: 1.5rem;
-  filter: saturate(0.8) brightness(0.7);
 }
 
 .draggable-track {
@@ -1845,7 +1851,7 @@ input[type="range"] {
   flex-direction: row;
   column-gap: 0.5rem;
   padding: 0.25rem 0;
-  width: 100%;
+  width: 29.75rem;
 }
 
 .track-selector {
@@ -1872,7 +1878,7 @@ input[type="range"] {
     0 0.5px rgba(0, 0, 0, 0.9),
     0 0.2rem 0.25rem -3px rgba(0, 0, 0, 0.6);
   font-size: 0.8rem;
-  cursor: grab;
+  cursor: pointer;
   color: white;
 }
 

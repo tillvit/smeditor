@@ -414,6 +414,10 @@ export class Notefield extends Container implements ChartRendererComponent {
     this.ghostNote.alpha = 0.4
     this.ghostNote.x = this.getColumnX(note.col)
     this.ghostNote.y = this.renderer.getYPosFromBeat(note.beat)
+    this.ghostNote.visible =
+      Options.chart.mousePlacement &&
+      this.renderer.chartManager.getMode() == EditMode.Edit &&
+      this.renderer.chartManager.editTimingMode == EditTimingMode.Off
   }
 
   getElement(

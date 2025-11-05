@@ -88,17 +88,19 @@ export function Menubar(props: { app: App }) {
           />
         )
       })}
-      <button
-        className={"po-collapse " + (playbackCollapsed ? "" : "toggled")}
-        style={{ display: "none" }}
-        onClick={() => {
-          Options.general.showPlaybackOptions =
-            !Options.general.showPlaybackOptions
-        }}
-        ref={collapseButtonRef}
-      >
-        <ReactIcon id="CHEVRON" width={16} height={16} />
-      </button>
+      {Flags.playbackOptions && (
+        <button
+          className={"po-collapse " + (playbackCollapsed ? "" : "toggled")}
+          style={{ display: "none" }}
+          onClick={() => {
+            Options.general.showPlaybackOptions =
+              !Options.general.showPlaybackOptions
+          }}
+          ref={collapseButtonRef}
+        >
+          <ReactIcon id="CHEVRON" width={16} height={16} />
+        </button>
+      )}
     </div>
   )
 }
