@@ -1,4 +1,5 @@
 import { useContext, useEffect, useMemo, useState } from "react"
+import tippy from "tippy.js"
 import { isHoldNote } from "../../../chart/sm/NoteTypes"
 import { WindowContext, WindowData } from "../WindowManager"
 
@@ -176,13 +177,43 @@ function ExportNotedataWindowContent() {
                   }))
                 }}
               />
-              <label className="export-label" htmlFor={"en-o-" + name}>
+              <label
+                className="export-label"
+                htmlFor={"en-o-" + name}
+                ref={el => {
+                  if (!el) return
+                  const tooltip = OPTION_NAMES[name].tooltip
+                  if (!tooltip) return
+                  tippy(el, { content: tooltip })
+                }}
+              >
                 {OPTION_NAMES[name].label}
               </label>
             </div>
           ))}
         </div>
-        <pre className="export-output">{data}</pre>
+        <pre
+          className="export-output"
+          ref={el => {
+            if (!el) return
+            tippy(el, { content: "Click to copy to clipboard" })
+            tippy(el, {
+              content: "Copied!",
+              trigger: "click",
+              onShow(instance) {
+                instance.setProps({ trigger: "mouseenter" })
+              },
+              onHide(instance) {
+                instance.setProps({ trigger: "click" })
+              },
+            })
+          }}
+          onClick={() => {
+            navigator.clipboard.writeText(data)
+          }}
+        >
+          {data}
+        </pre>
       </div>
     </div>
   )
