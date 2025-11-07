@@ -189,9 +189,4 @@ export type TimingCache = {
 export type DeletableEvent = Partial<Cached<TimingEvent>> &
   Pick<TimingEvent, "type">
 
-export type ColumnType = "continuing" | "instant"
-
-export interface TimingColumn<Event extends TimingEvent> {
-  type: TimingEventType
-  events: Cached<Event>[]
-}
+export type TimingColumnType = "continuing" | "instant"

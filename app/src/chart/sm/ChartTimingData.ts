@@ -91,12 +91,8 @@ export class ChartTimingData extends TimingData {
   }
 
   copyAllToSimfile() {
-    const cachedColumns = Object.fromEntries(
-      Object.values(this.columns).map(col => [col.type, col])
-    )
-    const events = Object.values(cachedColumns)
-      .map(c => c.events)
-      .flat()
+    const cachedColumns = structuredClone(this.columns)
+    const events = Object.values(cachedColumns).flat()
 
     const cachedOffset = this.offset
     const cachedSimfileOffset = this.songTimingData.getOffset()
@@ -142,15 +138,8 @@ export class ChartTimingData extends TimingData {
   }
 
   copyColumnsToSimfile(columns: TimingEventType[]) {
-    const cachedColumns = Object.fromEntries(
-      columns
-        .map(type => this.columns[type])
-        .filter(col => col !== undefined)
-        .map(col => [col.type, col])
-    )
-    const events = Object.values(cachedColumns)
-      .map(c => c.events)
-      .flat()
+    const cachedColumns = structuredClone(this.columns)
+    const events = Object.values(cachedColumns).flat()
 
     let results: ReturnType<TimingData["_insert"]>
     ActionHistory.instance.run({
@@ -318,12 +307,7 @@ export class ChartTimingData extends TimingData {
   }
 
   deleteColumns(columns: TimingEventType[]) {
-    const cachedColumns = Object.fromEntries(
-      columns
-        .map(type => this.columns[type])
-        .filter(col => col !== undefined)
-        .map(col => [col.type, col])
-    )
+    const cachedColumns = structuredClone(this.columns)
 
     const hasTimeSig = columns.includes("TIMESIGNATURES")
     ActionHistory.instance.run({
@@ -351,9 +335,7 @@ export class ChartTimingData extends TimingData {
   }
 
   deleteAllChartSpecific() {
-    const cachedColumns = Object.fromEntries(
-      Object.values(this.columns).map(col => [col.type, col])
-    )
+    const cachedColumns = structuredClone(this.columns)
     const cachedOffset = this.offset
 
     ActionHistory.instance.run({

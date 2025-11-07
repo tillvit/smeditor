@@ -24,8 +24,7 @@ import {
   TickCountTimingEvent,
   TimeSignatureTimingEvent,
   TimingCache,
-  TimingColumn,
-  ColumnType as TimingColumnType,
+  TimingColumnType,
   TimingEvent,
   TimingEventType,
   TimingType,
@@ -41,9 +40,7 @@ export abstract class TimingData {
     beatsToSeconds: new Map(),
   }
   protected columns: {
-    [Type in TimingEventType]?: TimingColumn<
-      Extract<TimingEvent, { type: Type }>
-    >
+    [Type in TimingEventType]?: Cached<Extract<TimingEvent, { type: Type }>>[]
   } = {}
   protected offset?: number
 
@@ -269,7 +266,11 @@ export abstract class TimingData {
 
   abstract getColumn<Type extends TimingEventType>(
     type: Type
-  ): TimingColumn<Extract<TimingEvent, { type: Type }>>
+  ): Cached<Extract<TimingEvent, { type: Type }>>[]
+
+  getAllColumns() {
+    return this.columns
+  }
 
   parse(type: TimingType, data: string): void {
     if (type == "OFFSET") {
@@ -348,7 +349,7 @@ export abstract class TimingData {
       roundDigit(x, TIMING_DATA_PRECISION).toFixed(TIMING_DATA_PRECISION)
     switch (eventType) {
       case "ATTACKS": {
-        const events = this.columns[eventType]!.events
+        const events = this.columns[eventType]!
         str = events
           .map(
             event =>
@@ -359,7 +360,7 @@ export abstract class TimingData {
       }
       case "BGCHANGES":
       case "FGCHANGES": {
-        const events = this.columns[eventType]!.events
+        const events = this.columns[eventType]!
         str = events
           .map(event =>
             [
@@ -384,7 +385,7 @@ export abstract class TimingData {
       case "FAKES":
       case "SCROLLS":
       case "WARPS": {
-        const events = this.columns[eventType]!.events
+        const events = this.columns[eventType]!
         str = events
           .map(event =>
             [roundProp(event.beat), roundProp(event.value)].join("=")
@@ -393,7 +394,7 @@ export abstract class TimingData {
         break
       }
       case "STOPS": {
-        let events: StopTimingEvent[] = this.columns[eventType]!.events
+        let events: StopTimingEvent[] = this.columns[eventType]!
         if (fileType == "sm") {
           const warps = this.getTimingData("WARPS")
           const stopWarps: StopTimingEvent[] = warps.map(warp => {
@@ -414,7 +415,7 @@ export abstract class TimingData {
         break
       }
       case "COMBOS": {
-        const events = this.columns[eventType]!.events
+        const events = this.columns[eventType]!
         str = events
           .map(event => {
             if (event.hitMult == event.missMult) {
@@ -429,7 +430,7 @@ export abstract class TimingData {
       }
       case "LABELS":
       case "TICKCOUNTS": {
-        const events = this.columns[eventType]!.events
+        const events = this.columns[eventType]!
         str = events
           .map(event => [roundProp(event.beat), event.value].join("="))
           .join(",\n")
@@ -464,10 +465,7 @@ export abstract class TimingData {
   }
 
   protected createColumn(type: TimingEventType) {
-    this.columns[type] = {
-      type,
-      events: [],
-    }
+    this.columns[type] = []
   }
 
   private getTime<Event extends DeletableEvent>(event: Event) {
@@ -626,8 +624,8 @@ export abstract class TimingData {
 
     // Merge both two arrays
     let i = 0
-    while (events[0] && column.events[i]) {
-      const event = column.events[i]
+    while (events[0] && column[i]) {
+      const event = column[i]
       const eventsToInsert = []
       while (events[0] && this.getTime(event) >= this.getTime(events[0])) {
         eventsToInsert.push(events.shift()!)
@@ -636,7 +634,7 @@ export abstract class TimingData {
         i++
         continue
       }
-      column.events.splice(
+      column.splice(
         i,
         0,
         ...(eventsToInsert as any) // cache the items later
@@ -645,13 +643,13 @@ export abstract class TimingData {
 
       // Remove the original event if it shares the same second/beat as the last event
       if (this.getTime(eventsToInsert.at(-1)!) == this.getTime(event)) {
-        conflicts.push(...column.events.splice(i, 1))
+        conflicts.push(...column.splice(i, 1))
       } else {
         i++
       }
     }
     // Add the remaining items
-    column.events.push(...(events as any))
+    column.push(...(events as any))
     return conflicts
   }
 
@@ -665,11 +663,9 @@ export abstract class TimingData {
 
     let conflictIndex = 0
     let eventIndex = 0
-    while (events[conflictIndex] && column.events[eventIndex]) {
-      if (
-        this.compareEvents(events[conflictIndex], column.events[eventIndex])
-      ) {
-        removedEvents.push(...column.events.splice(eventIndex, 1))
+    while (events[conflictIndex] && column[eventIndex]) {
+      if (this.compareEvents(events[conflictIndex], column[eventIndex])) {
+        removedEvents.push(...column.splice(eventIndex, 1))
         conflictIndex++
       } else {
         eventIndex++
@@ -702,34 +698,34 @@ export abstract class TimingData {
   protected findConflictingEvents(type: TimingEventType): TimingEvent[] {
     const column = this.columns[type]
     if (!column) return []
-    switch (TimingData.getColumnType(column.type)) {
+    switch (TimingData.getColumnType(type)) {
       case "continuing": {
         const conflicts = []
 
         // Find the first event that is not a null event
         let i = 0
-        while (column.events[i] && this.isNullEvent(column.events[i])) {
-          conflicts.push(column.events[i])
+        while (column[i] && this.isNullEvent(column[i])) {
+          conflicts.push(column[i])
           i++
         }
 
         // Check conflicts with next events
-        let lastEvent = column.events[i]
+        let lastEvent = column[i]
         i++
-        for (; i < column.events.length; i++) {
+        for (; i < column.length; i++) {
           if (
-            lastEvent.beat == column.events[i].beat ||
-            this.isSimilar(lastEvent, column.events[i])
+            lastEvent.beat == column[i].beat ||
+            this.isSimilar(lastEvent, column[i])
           ) {
-            conflicts.push(column.events[i])
+            conflicts.push(column[i])
           } else {
-            lastEvent = column.events[i]
+            lastEvent = column[i]
           }
         }
         return conflicts
       }
       case "instant":
-        return column.events.filter(event => this.isNullEvent(event))
+        return column.filter(event => this.isNullEvent(event))
     }
   }
 
@@ -912,7 +908,7 @@ export abstract class TimingData {
       case "TIMESIGNATURES":
       case "COMBOS":
       case "FAKES":
-        return !!this.columns[type] && this.columns[type].events.length > 0
+        return !!this.columns[type] && this.columns[type].length > 0
     }
   }
 
@@ -1022,12 +1018,12 @@ export abstract class TimingData {
     useDefault = true
   ): Cached<Extract<TimingEvent, { type: Type }>> | undefined {
     const column = this.getColumn(type)
-    const event = column.events[bsearch(column.events, beat, a => a.beat)]
+    const event = column[bsearch(column, beat, a => a.beat)]
     if (!event) {
-      switch (TimingData.getColumnType(column.type)) {
+      switch (TimingData.getColumnType(type)) {
         case "continuing":
           if (useDefault)
-            return this.getDefaultEvent(column.type, 0) as Cached<
+            return this.getDefaultEvent(type, 0) as Cached<
               Extract<TimingEvent, { type: Type }>
             >
           else return undefined
@@ -1043,13 +1039,13 @@ export abstract class TimingData {
     if (!column) return
     switch (type) {
       case "DELAYS":
-        column.events.forEach(
+        column.forEach(
           event =>
             (event.second = this.getSecondsFromBeat(event.beat, "before"))
         )
         break
       case "ATTACKS":
-        column.events.forEach(
+        column.forEach(
           event => (event.beat = this.getBeatFromSeconds(event.second))
         )
         break
@@ -1065,7 +1061,7 @@ export abstract class TimingData {
       case "FAKES":
       case "BGCHANGES":
       case "FGCHANGES":
-        column.events.forEach(
+        column.forEach(
           event => (event.second = this.getSecondsFromBeat(event.beat))
         )
     }
@@ -1280,11 +1276,9 @@ export abstract class TimingData {
       if (!column) continue
       let conflictIndex = 0
       let eventIndex = 0
-      while (events[conflictIndex] && column.events[eventIndex]) {
-        if (
-          this.compareEvents(events[conflictIndex], column.events[eventIndex])
-        ) {
-          foundEvents.push(column.events[eventIndex])
+      while (events[conflictIndex] && column[eventIndex]) {
+        if (this.compareEvents(events[conflictIndex], column[eventIndex])) {
+          foundEvents.push(column[eventIndex])
           conflictIndex++
         } else {
           eventIndex++
@@ -1528,7 +1522,7 @@ export abstract class TimingData {
 
   getSpeedMult(beat: number, seconds: number): number {
     if (!isFinite(beat) || !isFinite(seconds)) return 0
-    const cache = this.getColumn("SPEEDS").events
+    const cache = this.getColumn("SPEEDS")
     if (cache.length == 0) return 1
     const i = this.binarySearchIndex(cache, "beat", beat)
     const event = cache[i]
@@ -1560,7 +1554,7 @@ export abstract class TimingData {
       .filter(type => type != "OFFSET")
       .forEach(type => this.updateEvents(type as TimingEventType))
     this._cache.sortedEvents = this.mergeColumns(
-      TIMING_EVENT_NAMES.map(type => this.getColumn(type).events)
+      TIMING_EVENT_NAMES.map(type => this.getColumn(type))
     )
   }
 
@@ -1574,7 +1568,7 @@ export abstract class TimingData {
   ): Cached<Extract<TimingEvent, { type: Type }>>[]
   getTimingData(...props: TimingEventType[]) {
     if (props.length == 0) return this._cache.sortedEvents!
-    return this.mergeColumns(props.map(prop => this.getColumn(prop).events))
+    return this.mergeColumns(props.map(prop => this.getColumn(prop)))
   }
 
   requiresSSC(): boolean {
