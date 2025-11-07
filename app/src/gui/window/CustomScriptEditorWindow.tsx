@@ -271,8 +271,8 @@ const LOG_COLORS = {
     text: "#ffffaa",
   },
   info: {
-    background: "#004466",
-    text: "#aaffff",
+    background: "",
+    text: "#676767ff",
   },
 }
 
@@ -281,9 +281,11 @@ function CustomScriptEditorContent() {
   const monacoRef = useRef<typeof import("monaco-editor") | null>(null)
   const app = useContext(WindowContext)!.app
   const worker = useRef<Worker | null>(null)
+  const [running, setRunning] = useState(false)
   const [logs, setLogs] = useState<
     ["log" | "error" | "warn" | "info", string][]
   >([])
+  const startTime = useRef<number>(0)
 
   function toString(object: any) {
     if (typeof object === "string") return object
@@ -298,13 +300,21 @@ function CustomScriptEditorContent() {
     const editor = editorRef.current
     const monaco = monacoRef.current
     if (!editor || !monaco) return
-    setLogs([])
-    console.log(editor.getModel()?.getValue())
+    worker.current?.terminate()
+    setLogs([["info", "Running..."]])
     const client = await monaco.languages.typescript
       .getTypeScriptWorker()
       .then(worker => worker())
+      .catch(err => {
+        setLogs(oldLogs => [
+          ...oldLogs,
+          ["error", "Compilation error: " + err.message],
+        ])
+        return null
+      })
+    if (!client) return
     const result = await client.getEmitOutput("file:///main.ts")
-    console.log(result.outputFiles[0].text)
+    startTime.current = performance.now()
     const w = CustomScriptRunner.run(
       app,
       {
@@ -315,12 +325,23 @@ function CustomScriptEditorContent() {
         keybinds: [],
         arguments: [],
       },
-      {},
+      [],
       (type, ...args) => {
         setLogs(oldLogs => [...oldLogs, [type, args.map(toString).join(" ")]])
+      },
+      () => {
+        setLogs(oldLogs => [
+          ...oldLogs,
+          [
+            "info",
+            `Finished running after ${(performance.now() - startTime.current).toFixed(2)} ms`,
+          ],
+        ])
+        setRunning(false)
       }
     )
     if (!w) return
+    setRunning(true)
     worker.current = w
   }
 
@@ -328,7 +349,6 @@ function CustomScriptEditorContent() {
     const keyDown = (e: KeyboardEvent) => {
       if (!editorRef.current?.getDomNode()?.contains(e.target as HTMLElement))
         return
-      console.log(e.key)
       if (e.key === "'" || e.key === '"') {
         setTimeout(() => {
           editorRef.current?.trigger("", "editor.action.triggerSuggest", {
@@ -371,6 +391,7 @@ function CustomScriptEditorContent() {
       />
       <div>Console</div>
       <pre
+        className="custom-console"
         style={{
           height: "150px",
           overflowY: "auto",
@@ -391,6 +412,7 @@ function CustomScriptEditorContent() {
                 color: text,
                 wordBreak: "break-word",
                 whiteSpace: "pre-wrap",
+                fontStyle: type === "info" ? "italic" : "normal",
               }}
             >
               {message}
@@ -398,7 +420,26 @@ function CustomScriptEditorContent() {
           )
         })}
       </pre>
-      <button onClick={run}>Test</button>
+      <button
+        className={running ? "delete" : ""}
+        onClick={() => {
+          if (running) {
+            worker.current?.terminate()
+            setLogs(oldLogs => [
+              ...oldLogs,
+              [
+                "info",
+                `Interrupted after ${(performance.now() - startTime.current).toFixed(2)} ms`,
+              ],
+            ])
+            setRunning(false)
+            return
+          }
+          run()
+        }}
+      >
+        {running ? "Stop" : "Test"}
+      </button>
     </div>
   )
 }

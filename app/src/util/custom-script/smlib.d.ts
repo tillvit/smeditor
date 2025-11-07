@@ -1393,61 +1393,12 @@ declare module "app/src/chart/stats/parity/ParityWebWorkerTypes" {
     lastUpdatedOldRowEnd: number
     lastUpdatedRowEnd: number
     rowUpdateTime: number
-    /**
-     * Gets the last beat of this chart. If the last beat is a hold, it includes the hold length.
-     *
-     * @return {number} The last beat of the chart.
-     * @memberof Chart
-     */
     lastUpdatedNodeStart: number
-    /**
-     * Gets the last second of this chart. If the last beat is a hold, it includes the hold length.
-     *
-     * @return {number} The last second of the chart.
-     * @memberof Chart
-     */
     lastUpdatedNodeEnd: number
-    /**
-     * Gets the second from a given beat.
-     * Convenience method for this.timingData.getSecondsFromBeat
-     *
-     * @param {number} beat
-     * @param {("noclamp" | "before" | "after" | "")} [option]
-     * @return {*}  {number}
-     * @memberof Chart
-     */
     nodeUpdateTime: number
-    /**
-     * Gets the beat from a given second.
-     * Convenience method for this.timingData.getBeatFromSeconds
-     *
-     * @param {number} seconds
-     * @return {*}  {number}
-     * @memberof Chart
-     */
     createdNodes: number
-    /**
-     * Gets the beat from a given effective beat.
-     * Convenience method for this.timingData.getBeatFromEffectiveBeat
-     *
-     * @param {number} effBeat
-     * @return {*}  {number}
-     * @memberof Chart
-     */
     createdEdges: number
-    /**
-     * Returns true if a beat is warped over (via WARPS, negative STOPS, etc.).
-     * @param {number} beat
-     * @return {*}  {boolean}
-     * @memberof Chart
-     */
     calculatedEdges: number
-    /**
-     * Returns true if a beat is marked as fake.
-     * @param {number} beat
-     * @return {*}  {boolean}
-     * @memberof Chart
-     */
     cachedEdges: number
     edgeUpdateTime: number
     cachedBestRows: number
@@ -1455,70 +1406,14 @@ declare module "app/src/chart/stats/parity/ParityWebWorkerTypes" {
     rowStatsUpdateTime: number
   }
   export interface ParityBaseMessage {
-    /**
-     * Adds a note to the notedata.
-     * @param {PartialNotedataEntry} note
-     * @param {boolean} [callListeners=true] Whether to call event listeners after adding the note
-     * @return {NotedataEntry} The computed note that was added
-     * @memberof Chart
-     */
     id: number
-    /**
-     * Adds notes to the notedata.
-     * @param {PartialNotedataEntry[]} notes
-     * @param {boolean} [callListeners=true] Whether to call event listeners after adding the notes
-     * @return {NotedataEntry[]} The computed notes that were added
-     * @memberof Chart
-     */
   }
-  /**
-   * Computes a note's eextra properties (second, quant, fake, warped).
-   * @param {PartialNotedataEntry} note
-   * @return {NotedataEntry} The computed note
-   * @memberof Chart
-   */
   export interface ParityInboundInitMessage extends ParityBaseMessage {
-    /**
-     * Modifies a note in the notedata.
-     * @param {PartialNotedataEntry} note
-     * @return {NotedataEntry} The modified note
-     * @memberof Chart
-     */
     type: "init"
-    /**
-     * Removes a note from the notedata.
-     * @param {PartialNotedataEntry} note
-     * @param {boolean} [callListeners=true] Whether to call event listeners after removing the note
-     * @return {NotedataEntry | undefined} The removed note, if it existed
-     * @memberof Chart
-     */
     gameType: string
-    /**
-     * Removes notes from the notedata.
-     * @param {PartialNotedataEntry[]} notes
-     * @param {boolean} [callListeners=true] Whether to call event listeners after removing the notes
-     * @return {NotedataEntry[]} The removed notes
-     * @memberof Chart
-     */
   }
-  /**
-   * Sets the notedata for the chart.
-   * @param {PartialNotedata} notedata
-   * @memberof Chart
-   */
   export interface ParityOutboundInitMessage extends ParityBaseMessage {
-    /**
-     * Gets the notedata for the chart.
-     * @returns {Notedata} The notedata of the chart.
-     * @memberof Chart
-     */
     type: "init"
-    /**
-     * Gets all rows in the chart.
-     *
-     * @return {RowData[]} The rows of the chart.
-     * @memberof Chart
-     */
   }
   export interface ParityInboundComputeMessage extends ParityBaseMessage {
     type: "compute"
@@ -1538,45 +1433,12 @@ declare module "app/src/chart/stats/parity/ParityWebWorkerTypes" {
   export interface ParityOutboundErrorMessage extends ParityBaseMessage {
     type: "error"
     error: string
-    /**
-     * Recomputes all notes in the chart.
-     * @memberof Chart
-     */
   }
-  /**
-   * Recalculates the rows in the chart.
-   * @param startBeat The start beat of the range to recalculate.
-   * @param endBeat The end beat of the range to recalculate.
-   * @memberof Chart
-   */
   export interface ParityOutboundGetDebugMessage extends ParityBaseMessage {
-    /**
-     * Gets the music path for this chart. If this chart does not have a music path, it returns the simfile's music path.
-     *
-     * @return {*}  {string}
-     * @memberof Chart
-     */
     type: "getDebug"
     data: ParityDebugData | null
-    /**
-     * Serializes the chart to a string.
-     *
-     * @param {("sm" | "ssc" | "smebak")} type The type of serialization to perform.
-     * @return {*}  {string} The serialized chart.
-     * @memberof Chart
-     */
   }
-  /**
-   * Returns whether or not this chart has SSC features.
-   * @return {boolean}
-   * @memberof Chart
-   */
   export type ParityInboundMessage =
-    /**
-     * Returns the number of columns in this chart.
-     * @return {number}
-     * @memberof Chart
-     */
     | ParityInboundInitMessage
     | ParityInboundComputeMessage
     | ParityInboundGetDebugMessage
@@ -2026,15 +1888,64 @@ declare module "app/src/chart/sm/Chart" {
             [key: string]: string
           }
     )
+    /**
+     * Gets the last beat of this chart. If the last beat is a hold, it includes the hold length.
+     *
+     * @return {number} The last beat of the chart.
+     * @memberof Chart
+     */
     getLastBeat(): number
+    /**
+     * Gets the last second of this chart. If the last beat is a hold, it includes the hold length.
+     *
+     * @return {number} The last second of the chart.
+     * @memberof Chart
+     */
     getLastSecond(): number
+    /**
+     * Gets the second from a given beat.
+     * Convenience method for this.timingData.getSecondsFromBeat
+     *
+     * @param {number} beat
+     * @param {("noclamp" | "before" | "after" | "")} [option]
+     * @return {*}  {number}
+     * @memberof Chart
+     */
     getSecondsFromBeat(
       beat: number,
       option?: "noclamp" | "before" | "after" | ""
     ): number
+    /**
+     * Gets the beat from a given second.
+     * Convenience method for this.timingData.getBeatFromSeconds
+     *
+     * @param {number} seconds
+     * @return {*}  {number}
+     * @memberof Chart
+     */
     getBeatFromSeconds(seconds: number): number
+    /**
+     * Gets the beat from a given effective beat.
+     * Convenience method for this.timingData.getBeatFromEffectiveBeat
+     *
+     * @param {number} effBeat
+     * @return {*}  {number}
+     * @memberof Chart
+     */
     getBeatFromEffectiveBeat(effBeat: number): number
+    /**
+     * Returns true if a beat is warped over (via WARPS, negative STOPS, etc.).
+     * @param {number} beat
+     * @return {*}  {boolean}
+     * @memberof Chart
+     */
     isBeatWarped(beat: number): boolean
+    /**
+     * Returns true if a beat is marked as fake.
+     * @param {number} beat
+     * @return {*}  {boolean}
+     * @memberof Chart
+     */
     isBeatFaked(beat: number): boolean
     private recalculateLastNote
     private getNoteIndex
@@ -2042,27 +1953,83 @@ declare module "app/src/chart/sm/Chart" {
     private addEditRange
     private callEventListeners
     private markRecalculateAll
+    /**
+     * Adds a note to the notedata.
+     * @param {PartialNotedataEntry} note
+     * @param {boolean} [callListeners=true] Whether to call event listeners after adding the note
+     * @return {NotedataEntry} The computed note that was added
+     * @memberof Chart
+     */
     addNote(note: PartialNotedataEntry, callListeners?: boolean): NotedataEntry
+    /**
+     * Adds notes to the notedata.
+     * @param {PartialNotedataEntry[]} notes
+     * @param {boolean} [callListeners=true] Whether to call event listeners after adding the notes
+     * @return {NotedataEntry[]} The computed notes that were added
+     * @memberof Chart
+     */
     addNotes(
       notes: PartialNotedataEntry[],
       callListeners?: boolean
     ): NotedataEntry[]
+    /**
+     * Computes a note's eextra properties (second, quant, fake, warped).
+     * @param {PartialNotedataEntry} note
+     * @return {NotedataEntry} The computed note
+     * @memberof Chart
+     */
     computeNote(note: PartialNotedataEntry): NotedataEntry
+    /**
+     * Modifies a note in the notedata.
+     * @param {PartialNotedataEntry} note
+     * @return {NotedataEntry} The modified note
+     * @memberof Chart
+     */
     modifyNote(
       note: PartialNotedataEntry,
       properties: Partial<NotedataEntry>,
       callListeners?: boolean
     ): void
+    /**
+     * Removes a note from the notedata.
+     * @param {PartialNotedataEntry} note
+     * @param {boolean} [callListeners=true] Whether to call event listeners after removing the note
+     * @return {NotedataEntry | undefined} The removed note, if it existed
+     * @memberof Chart
+     */
     removeNote(
       note: PartialNotedataEntry,
       callListeners?: boolean
     ): NotedataEntry | undefined
+    /**
+     * Removes notes from the notedata.
+     * @param {PartialNotedataEntry[]} notes
+     * @param {boolean} [callListeners=true] Whether to call event listeners after removing the notes
+     * @return {NotedataEntry[]} The removed notes
+     * @memberof Chart
+     */
     removeNotes(
       notes: PartialNotedataEntry[],
       callListeners?: boolean
     ): NotedataEntry[]
+    /**
+     * Sets the notedata for the chart.
+     * @param {PartialNotedata} notedata
+     * @memberof Chart
+     */
     setNotedata(notedata: PartialNotedata): void
+    /**
+     * Gets the notedata for the chart.
+     * @returns {Notedata} The notedata of the chart.
+     * @memberof Chart
+     */
     getNotedata(): Notedata
+    /**
+     * Gets all rows in the chart.
+     *
+     * @return {RowData[]} The rows of the chart.
+     * @memberof Chart
+     */
     getRows(): RowData[]
     /**
      * Returns all notes within the given range (inclusive)
@@ -2082,12 +2049,45 @@ declare module "app/src/chart/sm/Chart" {
      * @memberof Chart
      */
     getRowsInRange(startBeat: number, endBeat: number): RowData[]
+    /**
+     * Recomputes all notes in the chart.
+     * @memberof Chart
+     */
     recalculateNotes(): void
+    /**
+     * Recalculates the rows in the chart.
+     * @param startBeat The start beat of the range to recalculate.
+     * @param endBeat The end beat of the range to recalculate.
+     * @memberof Chart
+     */
     recalculateRows(startBeat?: number | null, endBeat?: number | null): void
+    /**
+     * Gets the music path for this chart. If this chart does not have a music path, it returns the simfile's music path.
+     *
+     * @return {*}  {string}
+     * @memberof Chart
+     */
     getMusicPath(): string
     toString(): string
+    /**
+     * Serializes the chart to a string.
+     *
+     * @param {("sm" | "ssc" | "smebak")} type The type of serialization to perform.
+     * @return {*}  {string} The serialized chart.
+     * @memberof Chart
+     */
     serialize(type: "sm" | "ssc" | "smebak"): string
+    /**
+     * Returns whether or not this chart has SSC features.
+     * @return {boolean}
+     * @memberof Chart
+     */
     requiresSSC(): boolean
+    /**
+     * Returns the number of columns in this chart.
+     * @return {number}
+     * @memberof Chart
+     */
     getColumnCount(): number
   }
 }

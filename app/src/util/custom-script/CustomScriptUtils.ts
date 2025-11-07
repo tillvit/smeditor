@@ -364,6 +364,7 @@ export function applyPayloadToSM(sm: Simfile, payload: SMPayload) {
     })
   })
   Object.assign(sm.timingData, payload.timingData)
+  sm.timingData.reloadCache()
 
   const oldCharts = new Set(Object.keys(sm.charts))
 
