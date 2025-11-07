@@ -37,6 +37,8 @@ export function initializeMonaco(
        */
       const ARGS: any;
 
+      const Foot: typeof import("app/src/chart/stats/parity/ParityDataTypes").Foot;
+
 
       /**
        * Create a new BPM timing event. A BPM timing event changes the song's tempo.
@@ -207,6 +209,7 @@ export function initializeMonaco(
     "app/src/chart/sm/Chart": ["Chart"],
     "app/src/chart/sm/Simfile": ["Simfile"],
     "app/src/chart/sm/NoteTypes": [
+      "NotedataEntryBase",
       "NotedataEntry",
       "Notedata",
       "PartialNotedataEntry",

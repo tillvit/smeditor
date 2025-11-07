@@ -355,6 +355,14 @@ export async function createSMFromPayload(payload: SMPayload) {
 export function applyPayloadToSM(sm: Simfile, payload: SMPayload) {
   sm.other_properties = payload.other_properties
   sm.properties = payload.properties
+  Object.values(payload.timingData.columns).forEach(events => {
+    events.sort((a, b) => {
+      if (a.type === "ATTACKS" && b.type === "ATTACKS") {
+        return (a.second ?? 0) - (b.second ?? 0)
+      }
+      return (a.beat ?? 0) - (b.beat ?? 0)
+    })
+  })
   Object.assign(sm.timingData, payload.timingData)
 
   const oldCharts = new Set(Object.keys(sm.charts))
@@ -395,6 +403,14 @@ export function applyPayloadToSM(sm: Simfile, payload: SMPayload) {
     // repopulate gameType
     chart.gameType = GameTypeRegistry.getGameType(chartData.gameTypeId)!
 
+    Object.values(chartData.timingData.columns).forEach(events => {
+      events.sort((a, b) => {
+        if (a.type === "ATTACKS" && b.type === "ATTACKS") {
+          return (a.second ?? 0) - (b.second ?? 0)
+        }
+        return (a.beat ?? 0) - (b.beat ?? 0)
+      })
+    })
     Object.assign(chart.timingData, chartData.timingData)
     chart.timingData.reloadCache()
     chart._id = key

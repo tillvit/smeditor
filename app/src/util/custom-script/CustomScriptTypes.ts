@@ -74,9 +74,16 @@ interface CustomScriptPayload {
   payload: string
 }
 
+interface CustomScriptClose {
+  type: "close"
+}
+
 interface CustomScriptLog {
-  type: "error" | "log" | "warn" | "info"
+  type: "error" | "log" | "warn"
   args: string[]
 }
 
-export type CustomScriptResult = CustomScriptPayload | CustomScriptLog
+export type CustomScriptResult =
+  | CustomScriptPayload
+  | CustomScriptLog
+  | CustomScriptClose

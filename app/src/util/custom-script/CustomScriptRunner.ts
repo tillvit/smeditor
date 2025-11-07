@@ -1,5 +1,4 @@
 import { App } from "../../App"
-import { WaterfallManager } from "../../gui/element/WaterfallManager"
 import { ActionHistory } from "../ActionHistory"
 import { EventHandler } from "../EventHandler"
 import { isSameRow } from "../Util"
@@ -24,7 +23,8 @@ export class CustomScriptRunner {
     logCallback?: (
       type: "log" | "error" | "warn" | "info",
       ...data: any[]
-    ) => void
+    ) => void,
+    onFinish?: () => void
   ) {
     if (!app.chartManager.loadedSM || !app.chartManager.loadedChart) return
     const noteSelection = app.chartManager.selection.notes
@@ -43,7 +43,6 @@ export class CustomScriptRunner {
     }
 
     const previousState = createSMPayload(app.chartManager.loadedSM)
-    console.log("Previous state:", previousState)
 
     const workerArgs: CustomScriptWorkerArgs = {
       smPayload: previousState,
@@ -57,14 +56,17 @@ export class CustomScriptRunner {
     const worker = new CustomScriptWorker()
     worker.postMessage(workerArgs)
     worker.onerror = e => {
-      WaterfallManager.createFormatted(
-        `Custom script "${script.name}" failed: ${e.message}`,
-        "error"
-      )
+      logCallback?.("error", "Validation failed: \n" + e.error.message)
       console.error("Custom script error:", e)
       worker.terminate()
+      onFinish?.()
     }
     worker.onmessage = (event: MessageEvent<CustomScriptResult>) => {
+      if (event.data.type == "close") {
+        worker.terminate()
+        onFinish?.()
+        return
+      }
       if (event.data.type != "payload") {
         if (["log", "error", "warn", "info"].includes(event.data.type)) {
           logCallback?.(event.data.type, ...event.data.args)
@@ -78,7 +80,9 @@ export class CustomScriptRunner {
       } catch (e: any) {
         console.error((e as Error).message)
         logCallback?.("error", "Validation failed: \n" + (e as Error).message)
+        onFinish?.()
         worker.terminate()
+        onFinish?.()
         return
       }
 
@@ -94,8 +98,8 @@ export class CustomScriptRunner {
           EventHandler.emit("timingModified")
         },
       })
-
       worker.terminate()
+      onFinish?.()
     }
 
     return worker

@@ -5,6 +5,7 @@ import {
   PartialNotedataEntry,
 } from "../../chart/sm/NoteTypes"
 import { TIMING_EVENT_NAMES as _TIMING_EVENT_NAMES } from "../../chart/sm/TimingTypes"
+import { Foot as _Foot } from "../../chart/stats/parity/ParityDataTypes"
 import { ActionHistory } from "../ActionHistory"
 import { EventHandler } from "../EventHandler"
 import { CustomScriptWorkerArgs } from "./CustomScriptTypes"
@@ -48,10 +49,6 @@ self.console = {
     oldConsole.warn(...args)
     self.postMessage({ type: "warn", args: args.map(toSerializable) })
   },
-  info: (...args: any[]) => {
-    oldConsole.info(...args)
-    self.postMessage({ type: "info", args: args.map(toSerializable) })
-  },
 }
 
 // @ts-expect-error no-unused-vars
@@ -60,6 +57,8 @@ const isHoldNote = _isHoldNote
 const isTapNote = _isTapNote
 // @ts-expect-error no-unused-vars
 const TIMING_EVENT_NAMES = _TIMING_EVENT_NAMES
+// @ts-expect-error no-unused-vars
+const Foot = _Foot
 
 // @ts-expect-error no-unused-vars
 function BPMEvent(beat: number, bpm: number) {
@@ -236,6 +235,33 @@ self.onmessage = async (event: MessageEvent<CustomScriptWorkerArgs>) => {
   // @ts-expect-error no-unused-vars
   const SELECTION = selectionNoteIndices.map(i => CHART.getNotedata()[i])
 
-  eval(codePayload)
+  try {
+    eval(codePayload)
+  } catch (err) {
+    const error = err as Error
+
+    // format stack trace
+    if (error.stack) {
+      let stack = error.stack
+        .replaceAll(/eval at [^]+?, <anonymous>/g, "main.js")
+        .split("\n")
+        .slice(0, -1)
+        .join("\n")
+      stack = stack.replaceAll(/eval \(([^]+)\)/g, (_, content) => {
+        return `${content}`
+      })
+      self.postMessage({
+        type: "error",
+        args: [stack],
+      })
+    } else {
+      self.postMessage({
+        type: "error",
+        args: [error.message],
+      })
+    }
+    self.postMessage({ type: "close" })
+    return
+  }
   self.postMessage({ type: "payload", payload: createSMPayload(SM) })
 }
