@@ -207,6 +207,8 @@ export class ChartManager {
         if ((<HTMLElement>e.target).classList.contains("inlineEdit")) return
         if (e.target instanceof HTMLTextAreaElement) return
         if (e.target instanceof HTMLInputElement) return
+        if ((<HTMLElement>e.target).classList.contains("native-edit-context"))
+          return
         if (this.mode != EditMode.Edit) return
         const data = this.copy()
         if (data) e.clipboardData?.setData("text/plain", data)
@@ -225,6 +227,8 @@ export class ChartManager {
         if ((<HTMLElement>e.target).classList.contains("inlineEdit")) return
         if (e.target instanceof HTMLTextAreaElement) return
         if (e.target instanceof HTMLInputElement) return
+        if ((<HTMLElement>e.target).classList.contains("native-edit-context"))
+          return
         if (this.mode != EditMode.Edit) return
         const data = this.copy()
         if (data) e.clipboardData?.setData("text/plain", data)
@@ -239,6 +243,8 @@ export class ChartManager {
         if ((<HTMLElement>e.target).classList.contains("inlineEdit")) return
         if (e.target instanceof HTMLTextAreaElement) return
         if (e.target instanceof HTMLInputElement) return
+        if ((<HTMLElement>e.target).classList.contains("native-edit-context"))
+          return
         if (this.mode != EditMode.Edit) return
         const clipboard = e.clipboardData?.getData("text/plain")
         if (clipboard) this.paste(clipboard, this.shiftPressed > 0)
@@ -605,6 +611,10 @@ export class ChartManager {
         if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
         if (event.target instanceof HTMLTextAreaElement) return
         if (event.target instanceof HTMLInputElement) return
+        if (
+          (<HTMLElement>event.target).classList.contains("native-edit-context")
+        )
+          return
         if (WindowManager.isWindowOpen("key-combo-selector")) return
         // Start editing note
         if (
@@ -2126,8 +2136,9 @@ export class ChartManager {
       this.setEventSelection(
         TIMING_EVENT_NAMES.flatMap(
           event =>
-            this.loadedChart!.timingData.getColumn(event)
-              .events as Cached<TimingEvent>[]
+            this.loadedChart!.timingData.getColumn(
+              event
+            ) as Cached<TimingEvent>[]
         ).filter(
           event =>
             event.beat >= this.startRegion! && event.beat <= this.endRegion!

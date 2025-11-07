@@ -15,7 +15,13 @@
 // import { _Window } from "./Window"
 // import { WindowData } from "./WindowManager"
 
-import { WindowData } from "./WindowManager"
+import { Editor } from "@monaco-editor/react"
+import { editor } from "monaco-editor"
+import { useContext, useEffect, useRef } from "react"
+import { initializeMonaco } from "../../util/custom-script/CustomScriptEditor"
+import { CustomScriptRunner } from "../../util/custom-script/CustomScriptRunner"
+import { Themes } from "../../util/Theme"
+import { WindowContext, WindowData } from "./WindowManager"
 
 // export class _CustomScriptEditorWindow extends _Window {
 //   app: App
@@ -252,7 +258,80 @@ import { WindowData } from "./WindowManager"
 // }
 
 function CustomScriptEditorContent() {
-  return <></>
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
+  const monacoRef = useRef<typeof import("monaco-editor") | null>(null)
+  const app = useContext(WindowContext)!.app
+
+  async function run() {
+    const editor = editorRef.current
+    const monaco = monacoRef.current
+    if (!editor || !monaco) return
+    console.log(editor.getModel()?.getValue())
+    const client = await monaco.languages.typescript
+      .getTypeScriptWorker()
+      .then(worker => worker())
+    const result = await client.getEmitOutput("file:///main.ts")
+    console.log(result.outputFiles[0].text)
+    CustomScriptRunner.run(
+      app,
+      {
+        name: "Custom Script",
+        tsCode: editor.getModel()?.getValue() ?? "",
+        jsCode: result.outputFiles[0].text,
+        description: "",
+        keybinds: [],
+        arguments: [],
+      },
+      {}
+    )
+  }
+
+  useEffect(() => {
+    const keyDown = (e: KeyboardEvent) => {
+      console.log(e.key)
+      if (e.key === "'" || e.key === '"') {
+        setTimeout(() => {
+          editorRef.current?.trigger("", "editor.action.triggerSuggest", {
+            auto: true,
+          })
+        }, 100)
+      }
+    }
+    document.addEventListener("keydown", keyDown)
+    return () => {
+      document.removeEventListener("keydown", keyDown)
+    }
+  }, [editorRef.current])
+
+  return (
+    <div className="flex-column-full">
+      <Editor
+        defaultLanguage="typescript"
+        beforeMount={monaco => {
+          initializeMonaco(monaco)
+          monacoRef.current = monaco
+        }}
+        onMount={e => {
+          editorRef.current = e
+          e.addCommand(
+            monacoRef.current!.KeyMod.WinCtrl | monacoRef.current!.KeyCode.KeyM,
+            () =>
+              editorRef.current?.trigger("", "editor.action.triggerSuggest", {})
+          )
+        }}
+        path="main.ts"
+        theme={Themes.isDarkTheme() ? "dark" : "light"}
+        options={{
+          fixedOverflowWidgets: true,
+          automaticLayout: true,
+          minimap: { enabled: false },
+          "semanticHighlighting.enabled": true,
+        }}
+        defaultValue="// the scripter"
+      />
+      <button onClick={run}>Test</button>
+    </div>
+  )
 }
 
 export function CustomScriptEditorWindow(): WindowData {
@@ -261,6 +340,6 @@ export function CustomScriptEditorWindow(): WindowData {
     width: 600,
     height: 500,
     id: "custom-scripts",
-    content: CustomScriptEditorContent(),
+    content: <CustomScriptEditorContent />,
   }
 }

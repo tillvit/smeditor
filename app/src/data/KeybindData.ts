@@ -12,7 +12,7 @@ import { AboutWindow } from "../gui/window/About/AboutWindow"
 import { CaptureWindow } from "../gui/window/Capture/CaptureWindow"
 import { ChangelogWindow } from "../gui/window/Changelog/ChangelogWindow"
 import { ChartListWindow } from "../gui/window/ChartList/ChartListWindow"
-import { CustomScriptEditorWindow } from "../gui/window/CustomScriptEditorWindow"
+
 import { EQWindow } from "../gui/window/EQ/EQWindow"
 import { ExportNotedataWindow } from "../gui/window/ExportNotedata/ExportNotedataWindow"
 import { InitialWindow } from "../gui/window/Initial/InitialWindow"
@@ -1707,9 +1707,12 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   },
   editCustomScripts: {
     label: "Edit custom scripts...",
-    combos: [],
+    combos: [{ mods: [Modifier.SHIFT], key: "G" }],
     disabled: false,
-    callback: () => {
+    callback: async () => {
+      const CustomScriptEditorWindow = (
+        await import("../gui/window/CustomScriptEditorWindow")
+      ).CustomScriptEditorWindow
       WindowManager.openWindow(CustomScriptEditorWindow())
     },
   },

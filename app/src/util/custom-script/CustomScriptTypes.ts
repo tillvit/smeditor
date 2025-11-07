@@ -1,4 +1,5 @@
 import { KeyCombo } from "../../data/KeybindData"
+import { SMPayload } from "./CustomScriptUtils"
 
 export interface CustomScript {
   name: string
@@ -10,7 +11,7 @@ export interface CustomScript {
 }
 
 export interface CustomScriptWorkerArgs {
-  smPayload: string
+  smPayload: SMPayload
   codePayload: string
   chartId: string
   selectionNoteIndices: number[]

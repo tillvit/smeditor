@@ -1,11 +1,27 @@
 import {
+  isHoldNote as _isHoldNote,
+  isTapNote as _isTapNote,
   PartialHoldNotedataEntry,
   PartialNotedataEntry,
 } from "../../chart/sm/NoteTypes"
+import { TIMING_EVENT_NAMES as _TIMING_EVENT_NAMES } from "../../chart/sm/TimingTypes"
 import { ActionHistory } from "../ActionHistory"
 import { EventHandler } from "../EventHandler"
 import { CustomScriptWorkerArgs } from "./CustomScriptTypes"
-import { createSMFromPayload, createSMPayload } from "./CustomScriptUtils"
+import {
+  createSMFromPayload,
+  createSMPayload,
+  WorkerWhitelist,
+  WorkerWhitelistProperties,
+} from "./CustomScriptUtils"
+
+// whitelist globals
+for (const key of Object.getOwnPropertyNames(self)) {
+  if (!WorkerWhitelist.includes(key as WorkerWhitelistProperties)) {
+    // @ts-expect-error no-explicit-any
+    self[key] = undefined
+  }
+}
 
 self.console = {
   ...console,
@@ -23,6 +39,13 @@ self.console = {
     self.postMessage({ type: "info", args })
   },
 }
+
+// @ts-expect-error no-unused-vars
+const isHoldNote = _isHoldNote
+// @ts-expect-error no-unused-vars
+const isTapNote = _isTapNote
+// @ts-expect-error no-unused-vars
+const TIMING_EVENT_NAMES = _TIMING_EVENT_NAMES
 
 // @ts-expect-error no-unused-vars
 function BPMEvent(beat: number, bpm: number) {
@@ -187,17 +210,18 @@ function FakeNote(beat: number, col: number): PartialNotedataEntry {
 }
 
 self.onmessage = async (event: MessageEvent<CustomScriptWorkerArgs>) => {
-  // @ts-expect-error no-unused-vars
   const { smPayload, codePayload, chartId, selectionNoteIndices, args } =
     event.data
   new EventHandler()
   new ActionHistory()
 
-  const sm = await createSMFromPayload(smPayload)
-  const chart = sm.charts[chartId]
   // @ts-expect-error no-unused-vars
-  const selection = selectionNoteIndices.map(i => chart.getNotedata()[i])
+  const ARGS = args
+  const SM = await createSMFromPayload(smPayload)
+  const CHART = SM.charts[chartId]
+  // @ts-expect-error no-unused-vars
+  const SELECTION = selectionNoteIndices.map(i => CHART.getNotedata()[i])
 
   eval(codePayload)
-  self.postMessage({ type: "payload", payload: createSMPayload(sm) })
+  self.postMessage({ type: "payload", payload: createSMPayload(SM) })
 }

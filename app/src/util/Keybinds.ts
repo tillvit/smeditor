@@ -49,6 +49,8 @@ export class Keybinds {
   static checkKey(event: KeyboardEvent, type: "keydown" | "keyup") {
     if (!this.enabled) return
     if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
+    if ((<HTMLElement>event.target).classList.contains("native-edit-context"))
+      return // code editor
     if (event.target instanceof HTMLTextAreaElement) return
     if (event.target instanceof HTMLInputElement) return
     if (event.target instanceof HTMLButtonElement) return

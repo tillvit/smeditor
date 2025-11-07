@@ -87,6 +87,10 @@ export class Simfile {
   }
 
   addChart(chart: Chart) {
+    if (chart._id && !this.charts[chart._id]) {
+      this.charts[chart._id] = chart
+      return
+    }
     const id = this.createChartID()
     this.charts[id] = chart
     chart._id = id

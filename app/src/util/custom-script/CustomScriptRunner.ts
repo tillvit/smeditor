@@ -8,7 +8,11 @@ import {
   CustomScriptResult,
   CustomScriptWorkerArgs,
 } from "./CustomScriptTypes"
-import { applyPayloadToSM, createSMPayload } from "./CustomScriptUtils"
+import {
+  applyPayloadToSM,
+  createSMPayload,
+  validatePayload,
+} from "./CustomScriptUtils"
 import CustomScriptWorker from "./CustomScriptWorker?worker"
 
 export class CustomScriptRunner {
@@ -30,6 +34,7 @@ export class CustomScriptRunner {
     }
 
     const previousState = createSMPayload(app.chartManager.loadedSM)
+    console.log("Previous state:", previousState)
 
     const workerArgs: CustomScriptWorkerArgs = {
       smPayload: previousState,
@@ -54,15 +59,24 @@ export class CustomScriptRunner {
     return new Promise(() => {
       worker.onmessage = (event: MessageEvent<CustomScriptResult>) => {
         if (event.data.type != "payload") {
-          console[event.data.type](...event.data.args)
+          if (["log", "error", "warn", "info"].includes(event.data.type)) {
+            console[event.data.type](...event.data.args)
+          }
           return
         }
         const newState = event.data.payload
-        console.log(newState)
+        const payload = validatePayload(newState)
+        if (!payload) {
+          console.error(
+            `Custom script "${script.name}" returned invalid payload:`
+          )
+          return
+        }
+        console.log(payload)
 
         ActionHistory.instance.run({
           action: () => {
-            applyPayloadToSM(app.chartManager.loadedSM!, newState)
+            applyPayloadToSM(app.chartManager.loadedSM!, payload)
             // assignPayloadToSM(app.chartManager.loadedSM!, newState)
             EventHandler.emit("chartModified")
             EventHandler.emit("timingModified")
