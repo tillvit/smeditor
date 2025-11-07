@@ -23,20 +23,34 @@ for (const key of Object.getOwnPropertyNames(self)) {
   }
 }
 
+const oldConsole = self.console
+
+function toSerializable(obj: any): any {
+  try {
+    return structuredClone(obj)
+  } catch {
+    return obj.toString()
+  }
+}
+
 self.console = {
   ...console,
   log: (...args: any[]) => {
+    oldConsole.log(...args)
     // forward logs to main thread
-    self.postMessage({ type: "log", args })
+    self.postMessage({ type: "log", args: args.map(toSerializable) })
   },
   error: (...args: any[]) => {
-    self.postMessage({ type: "error", args })
+    oldConsole.error(...args)
+    self.postMessage({ type: "error", args: args.map(toSerializable) })
   },
   warn: (...args: any[]) => {
-    self.postMessage({ type: "warn", args })
+    oldConsole.warn(...args)
+    self.postMessage({ type: "warn", args: args.map(toSerializable) })
   },
   info: (...args: any[]) => {
-    self.postMessage({ type: "info", args })
+    oldConsole.info(...args)
+    self.postMessage({ type: "info", args: args.map(toSerializable) })
   },
 }
 

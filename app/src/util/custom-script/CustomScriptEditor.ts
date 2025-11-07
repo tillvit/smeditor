@@ -276,7 +276,7 @@ export function initializeMonaco(
 
   monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
     ...monaco.languages.typescript.typescriptDefaults.getCompilerOptions(),
-    lib: ["es2020", "webworker"],
+    lib: ["es2022", "webworker"],
   })
 
   const legend = {

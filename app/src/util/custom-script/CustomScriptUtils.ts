@@ -73,8 +73,8 @@ export const WorkerWhitelist = [
 export type WorkerWhitelistProperties = (typeof WorkerWhitelist)[number]
 
 const NoteDataEntrySchema = z.object({
-  beat: z.number(),
-  col: z.number(),
+  beat: z.number().nonnegative(),
+  col: z.number().int().nonnegative(),
   type: z.enum(["Tap", "Hold", "Roll", "Mine", "Lift", "Fake"]),
   notemods: z.string().optional(),
   keysounds: z.string().optional(),
@@ -229,23 +229,36 @@ const TimingDataSchema = z.object({
   offset: z.number().optional(),
 })
 
-const ChartPayloadSchema = z.object({
-  chartName: z.string(),
-  chartStyle: z.string(),
-  gameTypeId: z.string().refine(id => {
-    return GameTypeRegistry.getGameType(id) !== undefined
-  }, "Invalid game type id"),
-  credit: z.string(),
-  description: z.string(),
-  difficulty: z.enum(CHART_DIFFICULTIES),
-  meter: z.number().int().nonnegative(),
-  meterF: z.number().nonnegative(),
-  _id: z.string(),
-  notedata: z.array(NoteDataEntrySchema),
-  timingData: TimingDataSchema,
-  radarValues: z.string(),
-  other_properties: z.record(z.string(), z.string()),
-})
+const ChartPayloadSchema = z
+  .object({
+    chartName: z.string(),
+    chartStyle: z.string(),
+    gameTypeId: z.string().refine(id => {
+      return GameTypeRegistry.getGameType(id) !== undefined
+    }, "Invalid game type id"),
+    credit: z.string(),
+    description: z.string(),
+    difficulty: z.enum(CHART_DIFFICULTIES),
+    meter: z.number().int().nonnegative(),
+    meterF: z.number().nonnegative(),
+    _id: z.string(),
+    notedata: z.array(NoteDataEntrySchema),
+    timingData: TimingDataSchema,
+    radarValues: z.string(),
+    other_properties: z.record(z.string(), z.string()),
+  })
+  .superRefine((chart, ctx) => {
+    const gameType = GameTypeRegistry.getGameType(chart.gameTypeId)!
+    for (const [i, entry] of chart.notedata.entries()) {
+      if (entry.col >= gameType.numCols) {
+        ctx.addIssue({
+          code: "invalid_value",
+          values: [i, entry.col, gameType.numCols],
+          message: `Notedata entry ${i} has invalid column ${entry.col} for game type ${gameType.id} (max ${gameType.numCols - 1})`,
+        })
+      }
+    }
+  })
 
 const SMPayloadSchema = z.object({
   timingData: TimingDataSchema,
@@ -323,8 +336,7 @@ export function createSMPayload(sm: Simfile): SMPayload {
 export function validatePayload(payload: any) {
   const result = SMPayloadSchema.safeParse(payload)
   if (!result.success) {
-    console.error("Payload validation failed:", z.prettifyError(result.error))
-    return null
+    throw new Error(z.prettifyError(result.error))
   }
   return result.data
 }
@@ -356,7 +368,6 @@ export function applyPayloadToSM(sm: Simfile, payload: SMPayload) {
       chart = new Chart(sm)
       chart._id = key
       sm.addChart(chart)
-      console.log("new chart created with id " + key)
     }
     if (usedIds.has(key)) {
       // duplicate id, create a new one

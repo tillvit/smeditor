@@ -17,7 +17,7 @@
 
 import { Editor } from "@monaco-editor/react"
 import { editor } from "monaco-editor"
-import { useContext, useEffect, useRef } from "react"
+import { useContext, useEffect, useRef, useState } from "react"
 import { initializeMonaco } from "../../util/custom-script/CustomScriptEditor"
 import { CustomScriptRunner } from "../../util/custom-script/CustomScriptRunner"
 import { Themes } from "../../util/Theme"
@@ -257,22 +257,55 @@ import { WindowContext, WindowData } from "./WindowManager"
 //   }
 // }
 
+const LOG_COLORS = {
+  log: {
+    background: "",
+    text: "",
+  },
+  error: {
+    background: "#660000",
+    text: "#ffaaaa",
+  },
+  warn: {
+    background: "#665500",
+    text: "#ffffaa",
+  },
+  info: {
+    background: "#004466",
+    text: "#aaffff",
+  },
+}
+
 function CustomScriptEditorContent() {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const monacoRef = useRef<typeof import("monaco-editor") | null>(null)
   const app = useContext(WindowContext)!.app
+  const worker = useRef<Worker | null>(null)
+  const [logs, setLogs] = useState<
+    ["log" | "error" | "warn" | "info", string][]
+  >([])
+
+  function toString(object: any) {
+    if (typeof object === "string") return object
+    try {
+      return JSON.stringify(object)
+    } catch (e) {
+      return String(object)
+    }
+  }
 
   async function run() {
     const editor = editorRef.current
     const monaco = monacoRef.current
     if (!editor || !monaco) return
+    setLogs([])
     console.log(editor.getModel()?.getValue())
     const client = await monaco.languages.typescript
       .getTypeScriptWorker()
       .then(worker => worker())
     const result = await client.getEmitOutput("file:///main.ts")
     console.log(result.outputFiles[0].text)
-    CustomScriptRunner.run(
+    const w = CustomScriptRunner.run(
       app,
       {
         name: "Custom Script",
@@ -282,12 +315,19 @@ function CustomScriptEditorContent() {
         keybinds: [],
         arguments: [],
       },
-      {}
+      {},
+      (type, ...args) => {
+        setLogs(oldLogs => [...oldLogs, [type, args.map(toString).join(" ")]])
+      }
     )
+    if (!w) return
+    worker.current = w
   }
 
   useEffect(() => {
     const keyDown = (e: KeyboardEvent) => {
+      if (!editorRef.current?.getDomNode()?.contains(e.target as HTMLElement))
+        return
       console.log(e.key)
       if (e.key === "'" || e.key === '"') {
         setTimeout(() => {
@@ -329,6 +369,35 @@ function CustomScriptEditorContent() {
         }}
         defaultValue="// the scripter"
       />
+      <div>Console</div>
+      <pre
+        style={{
+          height: "150px",
+          overflowY: "auto",
+          backgroundColor: "#1e1e1e",
+          color: "white",
+          margin: "0",
+          padding: "0.5rem",
+          fontSize: "0.675rem",
+        }}
+      >
+        {logs.map(([type, message], i) => {
+          const { background, text } = LOG_COLORS[type]
+          return (
+            <div
+              key={i}
+              style={{
+                backgroundColor: background,
+                color: text,
+                wordBreak: "break-word",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {message}
+            </div>
+          )
+        })}
+      </pre>
       <button onClick={run}>Test</button>
     </div>
   )

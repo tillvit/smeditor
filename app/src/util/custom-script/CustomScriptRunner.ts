@@ -11,12 +11,21 @@ import {
 import {
   applyPayloadToSM,
   createSMPayload,
+  SMPayload,
   validatePayload,
 } from "./CustomScriptUtils"
 import CustomScriptWorker from "./CustomScriptWorker?worker"
 
 export class CustomScriptRunner {
-  static async run(app: App, script: CustomScript, args: any) {
+  static run(
+    app: App,
+    script: CustomScript,
+    args: any,
+    logCallback?: (
+      type: "log" | "error" | "warn" | "info",
+      ...data: any[]
+    ) => void
+  ) {
     if (!app.chartManager.loadedSM || !app.chartManager.loadedChart) return
     const noteSelection = app.chartManager.selection.notes
     const notedata = app.chartManager.loadedChart.getNotedata()
@@ -55,42 +64,40 @@ export class CustomScriptRunner {
       console.error("Custom script error:", e)
       worker.terminate()
     }
-
-    return new Promise(() => {
-      worker.onmessage = (event: MessageEvent<CustomScriptResult>) => {
-        if (event.data.type != "payload") {
-          if (["log", "error", "warn", "info"].includes(event.data.type)) {
-            console[event.data.type](...event.data.args)
-          }
-          return
+    worker.onmessage = (event: MessageEvent<CustomScriptResult>) => {
+      if (event.data.type != "payload") {
+        if (["log", "error", "warn", "info"].includes(event.data.type)) {
+          logCallback?.(event.data.type, ...event.data.args)
         }
-        const newState = event.data.payload
-        const payload = validatePayload(newState)
-        if (!payload) {
-          console.error(
-            `Custom script "${script.name}" returned invalid payload:`
-          )
-          return
-        }
-        console.log(payload)
-
-        ActionHistory.instance.run({
-          action: () => {
-            applyPayloadToSM(app.chartManager.loadedSM!, payload)
-            // assignPayloadToSM(app.chartManager.loadedSM!, newState)
-            EventHandler.emit("chartModified")
-            EventHandler.emit("timingModified")
-          },
-          undo: () => {
-            applyPayloadToSM(app.chartManager.loadedSM!, previousState)
-            // assignPayloadToSM(app.chartManager.loadedSM!, previousState)
-            EventHandler.emit("chartModified")
-            EventHandler.emit("timingModified")
-          },
-        })
-
-        worker.terminate()
+        return
       }
-    })
+      const newState = event.data.payload
+      let payload: SMPayload
+      try {
+        payload = validatePayload(newState)
+      } catch (e: any) {
+        console.error((e as Error).message)
+        logCallback?.("error", "Validation failed: \n" + (e as Error).message)
+        worker.terminate()
+        return
+      }
+
+      ActionHistory.instance.run({
+        action: () => {
+          applyPayloadToSM(app.chartManager.loadedSM!, payload)
+          EventHandler.emit("chartModified")
+          EventHandler.emit("timingModified")
+        },
+        undo: () => {
+          applyPayloadToSM(app.chartManager.loadedSM!, previousState)
+          EventHandler.emit("chartModified")
+          EventHandler.emit("timingModified")
+        },
+      })
+
+      worker.terminate()
+    }
+
+    return worker
   }
 }
