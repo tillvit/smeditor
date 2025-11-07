@@ -56,7 +56,7 @@ export class DefaultOptions {
       enabled: false,
       showHighlights: true,
       showTech: true,
-      showCandles: true,
+      showCandles: false,
       showErrors: true,
       showDancingBot: true,
       leftHeelColor: "#0390fc60",
