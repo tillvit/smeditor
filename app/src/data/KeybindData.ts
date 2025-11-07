@@ -1078,7 +1078,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.modifySelection(note => {
-        if (note.type == "Hold" || note.type == "Roll") note.type = "Tap"
+        if (note.type == "Hold" || note.type == "Roll") {
+          Object.assign(note, { type: "Tap", hold: undefined })
+        }
         return note
       })
     },

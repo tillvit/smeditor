@@ -4,7 +4,7 @@ import { EditTimingMode } from "../../../chart/ChartManager"
 import {
   HOLD_NOTE_TYPES,
   HoldNoteType,
-  NoteType,
+  TapNoteType,
 } from "../../../chart/sm/NoteTypes"
 import { EventHandler } from "../../../util/EventHandler"
 import { Keybinds } from "../../../util/Keybinds"
@@ -13,7 +13,7 @@ export function StepsContainer(props: {
   app: App
   timingMode: EditTimingMode
 }) {
-  const [placeholders, setPlaceholders] = useState<NoteType[]>([])
+  const [placeholders, setPlaceholders] = useState<TapNoteType[]>([])
 
   useEffect(() => {
     const noteskinLoaded = () => {

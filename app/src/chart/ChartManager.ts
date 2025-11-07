@@ -40,6 +40,7 @@ import {
   bsearchEarliest,
   compareObjects,
   getNoteEnd,
+  shouldBlockKeybinds,
 } from "../util/Util"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { ChartRenderer } from "./ChartRenderer"
@@ -52,12 +53,12 @@ import { TimingWindowCollection } from "./play/TimingWindowCollection"
 import { Chart } from "./sm/Chart"
 import {
   HoldNotedataEntry,
-  NoteType,
   Notedata,
   NotedataEntry,
   PartialHoldNotedataEntry,
   PartialNotedata,
   PartialNotedataEntry,
+  TapNoteType,
   isHoldNote,
 } from "./sm/NoteTypes"
 import { serializeSMEData } from "./sm/SMEParser"
@@ -204,11 +205,7 @@ export class ChartManager {
     document.addEventListener(
       "cut",
       e => {
-        if ((<HTMLElement>e.target).classList.contains("inlineEdit")) return
-        if (e.target instanceof HTMLTextAreaElement) return
-        if (e.target instanceof HTMLInputElement) return
-        if ((<HTMLElement>e.target).classList.contains("native-edit-context"))
-          return
+        if (shouldBlockKeybinds(e)) return
         if (this.mode != EditMode.Edit) return
         const data = this.copy()
         if (data) e.clipboardData?.setData("text/plain", data)
@@ -224,11 +221,7 @@ export class ChartManager {
     document.addEventListener(
       "copy",
       e => {
-        if ((<HTMLElement>e.target).classList.contains("inlineEdit")) return
-        if (e.target instanceof HTMLTextAreaElement) return
-        if (e.target instanceof HTMLInputElement) return
-        if ((<HTMLElement>e.target).classList.contains("native-edit-context"))
-          return
+        if (shouldBlockKeybinds(e)) return
         if (this.mode != EditMode.Edit) return
         const data = this.copy()
         if (data) e.clipboardData?.setData("text/plain", data)
@@ -240,11 +233,7 @@ export class ChartManager {
     document.addEventListener(
       "paste",
       e => {
-        if ((<HTMLElement>e.target).classList.contains("inlineEdit")) return
-        if (e.target instanceof HTMLTextAreaElement) return
-        if (e.target instanceof HTMLInputElement) return
-        if ((<HTMLElement>e.target).classList.contains("native-edit-context"))
-          return
+        if (shouldBlockKeybinds(e)) return
         if (this.mode != EditMode.Edit) return
         const clipboard = e.clipboardData?.getData("text/plain")
         if (clipboard) this.paste(clipboard, this.shiftPressed > 0)
@@ -607,14 +596,7 @@ export class ChartManager {
       "keydown",
       (event: KeyboardEvent) => {
         const keyName = Keybinds.getKeyNameFromEvent(event)
-        if (this.mode != EditMode.Edit) return
-        if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
-        if (event.target instanceof HTMLTextAreaElement) return
-        if (event.target instanceof HTMLInputElement) return
-        if (
-          (<HTMLElement>event.target).classList.contains("native-edit-context")
-        )
-          return
+        if (shouldBlockKeybinds(event)) return
         if (WindowManager.isWindowOpen("key-combo-selector")) return
         // Start editing note
         if (
@@ -1548,8 +1530,7 @@ export class ChartManager {
         hold: hold.endBeat - hold.startBeat,
       }
       if (hold.endBeat - hold.startBeat == 0) {
-        note.type = "Tap"
-        Object.assign(note, { hold: undefined })
+        Object.assign(note, { hold: undefined, type: "Tap" })
       }
       this.loadedChart.addNote(note)
     } else {
@@ -1559,8 +1540,7 @@ export class ChartManager {
         hold: hold.endBeat - hold.startBeat,
       }
       if (hold.endBeat - hold.startBeat == 0) {
-        props.hold = undefined
-        props.type = "Tap"
+        Object.assign(props, { hold: undefined, type: "Tap" })
       }
       if (
         props.beat != hold.originalNote.beat ||
@@ -1583,7 +1563,7 @@ export class ChartManager {
         hold.endBeat - hold.startBeat == 0
           ? undefined
           : hold.endBeat - hold.startBeat,
-    }
+    } as PartialNotedataEntry
 
     const conflictingNotes = this.loadedChart.getNotedata().filter(note => {
       if (
@@ -1626,13 +1606,13 @@ export class ChartManager {
       (this.editNoteTypeIndex + 1 + numNoteTypes) % numNoteTypes
   }
 
-  getEditingNoteType(): NoteType | null {
+  getEditingNoteType(): TapNoteType | null {
     return (
       this.loadedChart?.gameType.editNoteTypes[this.editNoteTypeIndex] ?? null
     )
   }
 
-  setEditingNoteType(type: NoteType) {
+  setEditingNoteType(type: TapNoteType) {
     if (!this.loadedChart) return
     const types = this.loadedChart?.gameType.editNoteTypes
     const index = types.indexOf(type)

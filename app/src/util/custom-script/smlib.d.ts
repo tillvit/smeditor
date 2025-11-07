@@ -129,15 +129,18 @@ declare module "app/src/chart/sm/NoteTypes" {
   export type NoteType = TapNoteType | HoldNoteType
   export type HoldNoteType = (typeof HOLD_NOTE_TYPES)[number]
   export type TapNoteType = (typeof TAP_NOTE_TYPES)[number]
-  export interface PartialTapNotedataEntry {
+  export interface NotedataEntryBase {
     beat: number
     col: number
-    type: NoteType
     notemods?: string
     keysounds?: string
   }
-  export interface PartialHoldNotedataEntry extends PartialTapNotedataEntry {
+  export interface PartialTapNotedataEntry extends NotedataEntryBase {
+    type: TapNoteType
+  }
+  export interface PartialHoldNotedataEntry extends NotedataEntryBase {
     hold: number
+    type: HoldNoteType
   }
   export type PartialNotedataEntry =
     | PartialTapNotedataEntry
@@ -968,7 +971,7 @@ declare module "app/src/chart/gameTypes/pump/PumpGameLogic" {
   }
 }
 declare module "app/src/chart/gameTypes/GameTypeRegistry" {
-  import { NoteType } from "app/src/chart/sm/NoteTypes"
+  import { TapNoteType } from "app/src/chart/sm/NoteTypes"
   import { NotedataParser } from "app/src/chart/gameTypes/base/NotedataParser"
   export interface GameType {
     id: string
@@ -977,7 +980,7 @@ declare module "app/src/chart/gameTypes/GameTypeRegistry" {
     notefieldWidth: number
     columnNames: string[]
     parser: NotedataParser
-    editNoteTypes: NoteType[]
+    editNoteTypes: TapNoteType[]
     flipColumns: {
       horizontal: number[]
       vertical: number[]
@@ -1871,6 +1874,12 @@ declare module "app/src/chart/sm/Chart" {
     private _lastSecond
     private _startModify
     private _endModify
+    /**
+     * Creates a new Chart.
+     * @param {Simfile} sm The Simfile this chart belongs to
+     * @param {(string | { [key: string]: string })} [data] The data to load the chart from (used internally)
+     * @memberof Chart
+     */
     constructor(
       sm: Simfile,
       data?:
@@ -2469,11 +2478,11 @@ declare module "app/src/chart/ChartManager" {
   import { GameplayStats } from "app/src/chart/play/GameplayStats"
   import { Chart } from "app/src/chart/sm/Chart"
   import {
-    NoteType,
     Notedata,
     NotedataEntry,
     PartialNotedata,
     PartialNotedataEntry,
+    TapNoteType,
   } from "app/src/chart/sm/NoteTypes"
   import { Simfile } from "app/src/chart/sm/Simfile"
   import { Cached, TimingEvent } from "app/src/chart/sm/TimingTypes"
@@ -2644,8 +2653,8 @@ declare module "app/src/chart/ChartManager" {
     endEditing(col: number): void
     previousNoteType(): void
     nextNoteType(): void
-    getEditingNoteType(): NoteType | null
-    setEditingNoteType(type: NoteType): void
+    getEditingNoteType(): TapNoteType | null
+    setEditingNoteType(type: TapNoteType): void
     /**
      * Gets the current mode.
      *

@@ -233,6 +233,19 @@ export function isIFrame() {
   }
 }
 
+export function shouldBlockKeybinds(event: Event) {
+  if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return true
+  if ((<HTMLElement>event.target).classList.contains("custom-console"))
+    return true
+  if ((<HTMLElement>event.target).classList.contains("native-edit-context"))
+    // code editor
+    return true
+  if (event.target instanceof HTMLTextAreaElement) return true
+  if (event.target instanceof HTMLInputElement) return true
+  if (event.target instanceof HTMLButtonElement) return true
+  return false
+}
+
 declare global {
   const WorkerGlobalScope: any
 }

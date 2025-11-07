@@ -19,16 +19,20 @@ export type NoteType = TapNoteType | HoldNoteType
 export type HoldNoteType = (typeof HOLD_NOTE_TYPES)[number]
 export type TapNoteType = (typeof TAP_NOTE_TYPES)[number]
 
-export interface PartialTapNotedataEntry {
+export interface NotedataEntryBase {
   beat: number
   col: number
-  type: NoteType
   notemods?: string
   keysounds?: string
 }
 
-export interface PartialHoldNotedataEntry extends PartialTapNotedataEntry {
+export interface PartialTapNotedataEntry extends NotedataEntryBase {
+  type: TapNoteType
+}
+
+export interface PartialHoldNotedataEntry extends NotedataEntryBase {
   hold: number
+  type: HoldNoteType
 }
 
 export type PartialNotedataEntry =

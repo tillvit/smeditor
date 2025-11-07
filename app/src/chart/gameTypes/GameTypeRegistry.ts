@@ -1,4 +1,4 @@
-import { NoteType } from "../sm/NoteTypes"
+import { TapNoteType } from "../sm/NoteTypes"
 import { GameLogic } from "./base/GameLogic"
 import { NotedataParser } from "./base/NotedataParser"
 
@@ -16,7 +16,7 @@ export interface GameType {
   /** @internal */
   gameLogic: GameLogic
   parser: NotedataParser
-  editNoteTypes: NoteType[]
+  editNoteTypes: TapNoteType[]
   flipColumns: {
     horizontal: number[]
     vertical: number[]

@@ -15,6 +15,7 @@ import {
 } from "../data/KeybindData"
 import { WindowManager } from "../gui/window/WindowManager"
 import { EventHandler } from "./EventHandler"
+import { shouldBlockKeybinds } from "./Util"
 
 export class Keybinds {
   private static app: App
@@ -48,13 +49,7 @@ export class Keybinds {
 
   static checkKey(event: KeyboardEvent, type: "keydown" | "keyup") {
     if (!this.enabled) return
-    if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
-    if ((<HTMLElement>event.target).classList.contains("native-edit-context"))
-      return // code editor
-    if (event.target instanceof HTMLTextAreaElement) return
-    if (event.target instanceof HTMLInputElement) return
-    if (event.target instanceof HTMLButtonElement) return
-    if (["Meta", "Control", "Shift", "Alt"].includes(event.key)) return
+    if (shouldBlockKeybinds(event)) return
 
     const mods: Modifier[] = []
     for (let i = 0; i < MODPROPS.length; i++) {
