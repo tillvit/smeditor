@@ -198,6 +198,11 @@ self.onmessage = async (event: MessageEvent<CustomScriptWorkerArgs>) => {
   // @ts-expect-error no-unused-vars
   const selection = selectionNoteIndices.map(i => chart.getNotedata()[i])
 
-  eval(codePayload)
+  try {
+    const fn = new Function("sm", "selection", "args", codePayload);
+    fn(sm, selection, args);
+  } catch (e) {
+    self.postMessage({ type: "error", args: [e && e.message ? e.message : String(e)] });
+  }
   self.postMessage({ type: "payload", payload: createSMPayload(sm) })
 }
