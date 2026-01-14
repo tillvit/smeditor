@@ -656,6 +656,11 @@ export class ParityInternals {
       let minNodeCost = 0
       rowNodes.clear()
       const nodes = this.nodeRows[rowIndex]?.nodes ?? [this.initialNode]
+      if (nodes.length == 0) {
+        // there are no nodes at this row, can't proceed
+        console.log("No nodes at row", rowIndex, this.nodeRows[rowIndex].beat)
+        break
+      }
       for (const node of nodes) {
         const currentCost = this.cachedLowestCost.get(node.key)?.cost
         if (currentCost === undefined) {
@@ -729,8 +734,7 @@ export class ParityInternals {
 
     // this.cachedLowestCost = lowestCosts
 
-    this.bestPath =
-      this.cachedLowestCost.get(this.endNode.key)?.path.split("*") ?? []
+    this.bestPath = this.cachedLowestCost.get(this.endNode.key)?.path.split("*")
     this.bestPathCost = this.cachedLowestCost.get(this.endNode.key)?.cost ?? 0
 
     if (!this.bestPath) {
