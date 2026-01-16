@@ -1,4 +1,5 @@
 import { useContext, useEffect, useRef } from "react"
+import { GameType } from "../../../chart/gameTypes/GameTypeRegistry"
 import { Chart } from "../../../chart/sm/Chart"
 import {
   CHART_DIFFICULTIES,
@@ -22,7 +23,7 @@ import { WindowContext, WindowManager } from "../WindowManager"
 interface ChartListDetailsOptions {
   chart: Chart
   sm: Simfile
-  loadCharts: () => void
+  loadCharts: (gameType?: GameType) => void
   selectChart: (chart: Chart | null) => void
 }
 

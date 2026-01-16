@@ -20,10 +20,10 @@ export function ChartListWindowContent() {
   const [selectedChart, setSelectedChart] = useState<Chart | null>(null)
   const [hoveredChart, setHoveredChart] = useState<Chart | null>(null)
 
-  function loadCharts() {
+  function loadCharts(game?: GameType) {
     if (!windowData) return
     const charts = windowData.app.chartManager.loadedSM?.getChartsByGameType(
-      gameType.id
+      game?.id ?? gameType.id
     )
     if (charts) setCharts(charts)
     else setCharts([])
@@ -42,6 +42,7 @@ export function ChartListWindowContent() {
   function smLoaded() {
     setGameType(windowData!.app.chartManager.loadedChart?.gameType ?? gameType)
     setSm(windowData!.app.chartManager.loadedSM)
+    loadCharts(windowData!.app.chartManager.loadedChart?.gameType ?? gameType)
   }
 
   function chartLoaded() {
@@ -62,10 +63,6 @@ export function ChartListWindowContent() {
     windowData!.app.chartManager.loadChart(chart)
     setSelectedChart(chart)
   }
-
-  useEffect(() => {
-    loadCharts()
-  }, [gameType])
 
   useEffect(() => {
     loadCharts()
@@ -91,6 +88,7 @@ export function ChartListWindowContent() {
             const gt =
               GameTypeRegistry.getGameType(value.split(" ")[0]) ?? gameType
             setGameType(gt)
+            loadCharts(gt)
           }}
         />
       </div>
