@@ -4,7 +4,7 @@ import { PopupManager } from "../../popup/PopupManager"
 import { ColorPickerPopup } from "./ColorPickerPopup"
 
 export interface ColorInputProps extends ColorInputOptions {
-  value: Color
+  value: Color | string
   onChange?: (value: Color) => void
 }
 
@@ -15,13 +15,20 @@ export interface ColorInputOptions {
   width?: number
 }
 
+function convertColor(color: string | Color) {
+  if (typeof color === "string") {
+    return new Color(color)
+  }
+  return color
+}
+
 export function ColorInput(props: ColorInputProps) {
-  const [value, setValue] = useState(props.value)
+  const [value, setValue] = useState(convertColor(props.value))
   const pickerRef = useRef<HTMLDivElement>(null)
   const cachedColor = useRef(props.value)
 
   useEffect(() => {
-    setValue(props.value)
+    setValue(convertColor(props.value))
   }, [props.value])
 
   return (
