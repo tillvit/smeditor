@@ -385,7 +385,7 @@ export const DEFAULT_THEMES: Record<string, Theme> = {
     "navbar-bg-inactive": new Color("#10011dff"),
     "window-bg": new Color("#18012cff"),
     "window-border": new Color("#00000000"),
-    "secondary-bg": new Color("#160127ff"),
+    "secondary-bg": new Color("#11021eff"),
     "secondary-border": new Color("#18012bbb"),
     "secondary-bg-active": new Color("#310a52ff"),
     "secondary-bg-hover": new Color("#25033fff"),
