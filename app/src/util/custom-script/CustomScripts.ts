@@ -6,16 +6,16 @@ const DEFAULT_SCRIPTS: CustomScript[] = [
     name: "Normalize BPMs",
     description:
       "Adds scrolls to every BPM change to maintain a constant scroll speed. Uses the maximum BPM to determine the scroll speed.",
-    tsCode: `const bpms = chart.timingData.getTimingData("BPMS")
+    tsCode: `const bpms = CHART.timingData.getTimingData("BPMS")
 let maxBPM = 0
 for (const bpm of bpms) {
     if (bpm.value <= 0) continue
     maxBPM = Math.max(maxBPM, bpm.value)
 }
 const scrolls = bpms.map(bpm => ScrollEvent(bpm.beat, maxBPM / Math.abs(bpm.value)))
-chart.timingData.insertColumnEvents(scrolls)
+CHART.timingData.insertColumnEvents(scrolls)
 `,
-    jsCode: `const bpms = chart.timingData.getTimingData("BPMS");
+    jsCode: `const bpms = CHART.timingData.getTimingData("BPMS");
 let maxBPM = 0;
 for (const bpm of bpms) {
     if (bpm.value <= 0)
@@ -23,7 +23,7 @@ for (const bpm of bpms) {
     maxBPM = Math.max(maxBPM, bpm.value);
 }
 const scrolls = bpms.map(bpm => ScrollEvent(bpm.beat, maxBPM / Math.abs(bpm.value)));
-chart.timingData.insertColumnEvents(scrolls);
+CHART.timingData.insertColumnEvents(scrolls);
 `,
     arguments: [
       {
@@ -43,6 +43,10 @@ chart.timingData.insertColumnEvents(scrolls);
         name: "Yet Another Argument",
         description: "This is yet another argument",
         default: 42,
+        min: 0,
+        max: 100,
+        step: 1,
+        precision: 0,
       },
       {
         type: "slider",

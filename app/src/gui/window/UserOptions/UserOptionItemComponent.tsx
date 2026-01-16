@@ -54,6 +54,7 @@ export function UserOptionItemComponent(props: { item: UserOptionItem }) {
           id="REVERT"
           width={12}
           height={12}
+          className="revert"
           onClick={() => applyOption(Options.getDefaultOption(props.item.id))}
         />
       )}

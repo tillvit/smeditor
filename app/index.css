@@ -1035,6 +1035,19 @@ input[type="number"] {
   min-width: 0;
 }
 
+textarea {
+  background: var(--input-bg);
+  border: 0.05rem solid var(--input-border);
+  border-radius: 0.2rem;
+  padding: 0 0.2rem;
+  user-select: text;
+  caret-color: auto;
+  font-size: 0.8rem;
+  font-family: inherit;
+  color: inherit;
+  min-width: 0;
+}
+
 input[type="range"]:focus {
   outline: none;
 }
@@ -3329,4 +3342,62 @@ input[type="text"].theme-title {
   text-align: center;
   gap: 1rem;
   width: 75%;
+}
+
+.custom-script-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  height: 100%;
+}
+
+.custom-script-tab {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin: 0.6rem 0.25rem;
+  background: var(--secondary-bg);
+  border: 0.05rem solid var(--secondary-border);
+  border-radius: 0.25rem;
+  justify-content: space-around;
+}
+
+.custom-script-tab .div {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin: 0.6rem 0.25rem;
+  background: var(--secondary-bg);
+  border: 0.05rem solid var(--secondary-border);
+  border-radius: 0.25rem;
+  justify-content: space-around;
+}
+
+.monaco-editor {
+  position: absolute !important;
+}
+
+.custom-script-selector {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 10rem;
+  background: var(--secondary-bg);
+  border: 0.05rem solid var(--secondary-border);
+  border-radius: 0.25rem;
+}
+
+.custom-script-option {
+  cursor: pointer;
+  border-bottom: 0.05rem solid var(--secondary-border);
+  padding: 0.2rem 0.3rem;
+}
+
+.custom-script-option:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.custom-script-option.selected {
+  background-color: rgba(255, 255, 255, 0.2);
 }

@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react"
 
-export interface TextInputProps extends TextInputOptions {
+export interface MultilineTextInputProps extends MultilineTextInputOptions {
   value: string
   onChange?: (value: string) => void
 }
 
-export interface TextInputOptions {
+export interface MultilineTextInputOptions {
   style?: React.CSSProperties
   className?: string
   placeholder?: string
+  rows?: number
 }
 
-export function TextInput(props: TextInputProps) {
+export function MultilineTextInput(props: MultilineTextInputProps) {
   const [value, setValue] = useState(props.value)
 
   useEffect(() => {
@@ -19,17 +20,18 @@ export function TextInput(props: TextInputProps) {
   }, [props.value])
 
   return (
-    <input
-      type="text"
+    <textarea
       autoComplete="off"
-      placeholder={props.placeholder}
       spellCheck="false"
+      placeholder={props.placeholder ?? ""}
       className={`${props.className ?? ""}`}
       style={props.style}
       value={value}
       onChange={e => {
         setValue(e.target.value)
       }}
+      cols={20}
+      rows={props.rows ?? 5}
       onBlur={e => props.onChange?.(e.target.value)}
       onKeyDown={e => {
         if (e.key == "Enter") e.currentTarget.blur()

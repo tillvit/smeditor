@@ -2886,17 +2886,6 @@ declare module "app/src/chart/ChartManager" {
     copy(): string | undefined
   }
 }
-interface SecureFileSystemFileHandle extends FileSystemHandle {
-  readonly kind: "file"
-  /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/FileSystemFileHandle/createSyncAccessHandle) */
-  createSyncAccessHandle(): Promise<FileSystemSyncAccessHandle>
-  /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/FileSystemFileHandle/createWritable) */
-  createWritable(
-    options?: FileSystemCreateWritableOptions
-  ): Promise<FileSystemWritableFileStream>
-  /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/FileSystemFileHandle/getFile) */
-  getFile(): Promise<File>
-}
 interface FileSystemSyncAccessHandle {
   /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/FileSystemSyncAccessHandle/close) */
   close(): void

@@ -1,19 +1,16 @@
 import { ValueInputOptions } from "../gui/inputs/ValueInput"
 import { CustomScriptArgument } from "../util/custom-script/CustomScriptTypes"
 
-type CustomScriptInput<U extends CustomScriptArgument> = Omit<
-  ValueInputOptions,
-  "onChange"
-> & {
-  onChange: (argument: U, value: any) => void
-}
+export type CustomScriptInput<U extends CustomScriptArgument> =
+  ValueInputOptions & {
+    onChange: (argument: U, value: any) => void
+  }
 
-interface CustomScriptArgumentField<U extends CustomScriptArgument> {
+export interface CustomScriptArgumentField<U extends CustomScriptArgument> {
   name: string
+  key: keyof U
   description?: string
   input: CustomScriptInput<U> | ((arg: U) => CustomScriptInput<U>)
-  // reload all inputs on change
-  reload?: boolean
   getValue: (arg: U) => any
 }
 
@@ -25,6 +22,7 @@ export const ARGUMENT_FIELDS: {
   text: [
     {
       name: "Default",
+      key: "default",
       description: "Default value",
       getValue: arg => arg.default,
       input: {
@@ -39,6 +37,7 @@ export const ARGUMENT_FIELDS: {
     {
       name: "Default",
       description: "Default value",
+      key: "default",
       getValue: arg => arg.default,
       input: {
         type: "checkbox",
@@ -51,6 +50,7 @@ export const ARGUMENT_FIELDS: {
   color: [
     {
       name: "Default",
+      key: "default",
       description: "Default value",
       getValue: arg => arg.default,
       input: {
@@ -64,9 +64,9 @@ export const ARGUMENT_FIELDS: {
   number: [
     {
       name: "Minimum",
+      key: "min",
       description: "Minimum value",
       getValue: arg => arg.min,
-      reload: true,
       input: {
         type: "number",
         onChange: (arg, value) => {
@@ -82,9 +82,9 @@ export const ARGUMENT_FIELDS: {
     },
     {
       name: "Maximum",
+      key: "max",
       description: "Maximum value",
       getValue: arg => arg.max,
-      reload: true,
       input: {
         type: "number",
         onChange: (arg, value) => {
@@ -100,6 +100,7 @@ export const ARGUMENT_FIELDS: {
     },
     {
       name: "Step",
+      key: "step",
       description: "Step value when the arrow buttons are pressed",
       getValue: arg => arg.step,
       input: {
@@ -111,6 +112,7 @@ export const ARGUMENT_FIELDS: {
     },
     {
       name: "Default",
+      key: "default",
       description: "Default value",
       getValue: arg => {
         return arg.default
@@ -129,11 +131,14 @@ export const ARGUMENT_FIELDS: {
     },
     {
       name: "Precision",
+      key: "precision",
       description: "Number of decimal places to use",
       getValue: arg => arg.precision,
-      reload: true,
       input: {
         type: "number",
+        min: 0,
+        max: 6,
+        precision: 0,
         onChange: (arg, value) => {
           arg.precision = value
         },
@@ -143,9 +148,9 @@ export const ARGUMENT_FIELDS: {
   slider: [
     {
       name: "Minimum",
+      key: "min",
       description: "Minimum value",
       getValue: arg => arg.min,
-      reload: true,
       input: {
         type: "number",
         onChange: (arg, value) => {
@@ -158,9 +163,9 @@ export const ARGUMENT_FIELDS: {
     },
     {
       name: "Maximum",
+      key: "max",
       description: "Maximum value",
       getValue: arg => arg.max,
-      reload: true,
       input: {
         type: "number",
         onChange: (arg, value) => {
@@ -173,11 +178,12 @@ export const ARGUMENT_FIELDS: {
     },
     {
       name: "Default",
+      key: "default",
       description: "Default value",
       getValue: arg => arg.default,
       input: arg => {
         return {
-          type: "number",
+          type: "slider",
           min: arg.min,
           max: arg.max,
           onChange: (arg, value) => {
@@ -190,10 +196,10 @@ export const ARGUMENT_FIELDS: {
   dropdown: [
     {
       name: "Options",
+      key: "items",
       description:
         "Dropdown options. Seperate options with a comma. Arguments that are a number will be converted into a number.",
       getValue: arg => arg.items.join(","),
-      reload: true,
       input: {
         type: "text",
         onChange: (arg, value) => {
@@ -207,19 +213,28 @@ export const ARGUMENT_FIELDS: {
               }
               return option
             })
+          if (!arg.items.includes(arg.default)) {
+            arg.default = arg.items[0]
+          }
         },
       },
     },
     {
       name: "Default",
+      key: "default",
       description: "Default selected option",
       getValue: arg => arg.default,
       input: arg => {
         return {
           type: "dropdown",
-          items: arg.items || [],
+          values: arg.items.map(String) || [],
           advanced: false,
           onChange: (arg, value) => {
+            const number = Number(value)
+            if (!isNaN(number)) {
+              arg.default = number
+              return
+            }
             arg.default = value
           },
         }
@@ -258,6 +273,9 @@ export const DEFAULT_ARGUMENTS: {
     description: "",
     default: 0,
     step: 1,
+    min: 0,
+    max: 10,
+    precision: 3,
   },
   slider: {
     type: "slider",

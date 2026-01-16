@@ -44,11 +44,10 @@ export interface CustomScriptColorArgument extends CustomScriptBaseArgument {
 export interface CustomScriptNumberArgument extends CustomScriptBaseArgument {
   type: "number"
   default: number
-  min?: number
-  max?: number
-  step?: number
-  precision?: number
-  minPrecision?: number
+  min: number
+  max: number
+  step: number
+  precision: number
 }
 
 export interface CustomScriptTextArgument extends CustomScriptBaseArgument {

@@ -15,13 +15,12 @@
 // import { _Window } from "./Window"
 // import { WindowData } from "./WindowManager"
 
-import { Editor } from "@monaco-editor/react"
-import { editor } from "monaco-editor"
-import { useContext, useEffect, useRef, useState } from "react"
-import { initializeMonaco } from "../../util/custom-script/CustomScriptEditor"
-import { CustomScriptRunner } from "../../util/custom-script/CustomScriptRunner"
-import { Themes } from "../../util/Theme"
-import { WindowContext, WindowData } from "./WindowManager"
+import { useState } from "react"
+import { CustomScripts } from "../../../util/custom-script/CustomScripts"
+import { WindowData } from "../WindowManager"
+import { CustomScriptEditorTab } from "./CustomScriptEditorTab"
+import { CustomScriptMetadataTab } from "./CustomScriptMetadataTab"
+import { CustomScriptSelector } from "./CustomScriptSelector"
 
 // export class _CustomScriptEditorWindow extends _Window {
 //   app: App
@@ -257,198 +256,72 @@ import { WindowContext, WindowData } from "./WindowManager"
 //   }
 // }
 
-const LOG_COLORS = {
-  log: {
-    background: "",
-    text: "",
-  },
-  error: {
-    background: "#660000",
-    text: "#ffaaaa",
-  },
-  warn: {
-    background: "#665500",
-    text: "#ffffaa",
-  },
-  info: {
-    background: "",
-    text: "#676767ff",
-  },
-}
-
 function CustomScriptEditorContent() {
-  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
-  const monacoRef = useRef<typeof import("monaco-editor") | null>(null)
-  const app = useContext(WindowContext)!.app
-  const worker = useRef<Worker | null>(null)
-  const [running, setRunning] = useState(false)
-  const [logs, setLogs] = useState<
-    ["log" | "error" | "warn" | "info", string][]
-  >([])
-  const startTime = useRef<number>(0)
-
-  function toString(object: any) {
-    if (typeof object === "string") return object
-    try {
-      return JSON.stringify(object)
-    } catch (e) {
-      return String(object)
-    }
-  }
-
-  async function run() {
-    const editor = editorRef.current
-    const monaco = monacoRef.current
-    if (!editor || !monaco) return
-    worker.current?.terminate()
-    setLogs([["info", "Running..."]])
-    const client = await monaco.languages.typescript
-      .getTypeScriptWorker()
-      .then(worker => worker())
-      .catch(err => {
-        setLogs(oldLogs => [
-          ...oldLogs,
-          ["error", "Compilation error: " + err.message],
-        ])
-        return null
-      })
-    if (!client) return
-    const result = await client.getEmitOutput("file:///main.ts")
-    startTime.current = performance.now()
-    const w = CustomScriptRunner.run(
-      app,
-      {
-        name: "Custom Script",
-        tsCode: editor.getModel()?.getValue() ?? "",
-        jsCode: result.outputFiles[0].text,
-        description: "",
-        keybinds: [],
-        arguments: [],
-      },
-      [],
-      (type, ...args) => {
-        setLogs(oldLogs => [...oldLogs, [type, args.map(toString).join(" ")]])
-      },
-      () => {
-        setLogs(oldLogs => [
-          ...oldLogs,
-          [
-            "info",
-            `Finished running after ${(performance.now() - startTime.current).toFixed(2)} ms`,
-          ],
-        ])
-        setRunning(false)
-      }
-    )
-    if (!w) return
-    setRunning(true)
-    worker.current = w
-  }
-
-  useEffect(() => {
-    const keyDown = (e: KeyboardEvent) => {
-      if (!editorRef.current?.getDomNode()?.contains(e.target as HTMLElement))
-        return
-      if (e.key === "'" || e.key === '"') {
-        setTimeout(() => {
-          editorRef.current?.trigger("", "editor.action.triggerSuggest", {
-            auto: true,
-          })
-        }, 100)
-      }
-    }
-    document.addEventListener("keydown", keyDown)
-    return () => {
-      document.removeEventListener("keydown", keyDown)
-    }
-  }, [editorRef.current])
+  const [scripts, setScripts] = useState(CustomScripts.scripts)
+  const [scriptIndex, setScriptIndex] = useState(0)
+  const [tab, setTab] = useState<"metadata" | "editor">("metadata")
+  const script = scripts[scriptIndex] ?? null
 
   return (
-    <div className="flex-column-full">
-      <Editor
-        defaultLanguage="typescript"
-        beforeMount={monaco => {
-          initializeMonaco(monaco)
-          monacoRef.current = monaco
-        }}
-        onMount={e => {
-          editorRef.current = e
-          e.addCommand(
-            monacoRef.current!.KeyMod.WinCtrl | monacoRef.current!.KeyCode.KeyM,
-            () =>
-              editorRef.current?.trigger("", "editor.action.triggerSuggest", {})
-          )
-        }}
-        path="main.ts"
-        theme={Themes.isDarkTheme() ? "dark" : "light"}
-        options={{
-          fixedOverflowWidgets: true,
-          automaticLayout: true,
-          minimap: { enabled: false },
-          "semanticHighlighting.enabled": true,
-        }}
-        defaultValue="// the scripter"
+    <div className="flex-row" style={{ gap: "1rem" }}>
+      <CustomScriptSelector
+        scriptIndex={scriptIndex}
+        setScriptIndex={setScriptIndex}
+        scripts={scripts}
       />
-      <div>Console</div>
-      <pre
-        className="custom-console"
-        style={{
-          height: "150px",
-          overflowY: "auto",
-          backgroundColor: "#1e1e1e",
-          color: "white",
-          margin: "0",
-          padding: "0.5rem",
-          fontSize: "0.675rem",
-        }}
-      >
-        {logs.map(([type, message], i) => {
-          const { background, text } = LOG_COLORS[type]
-          return (
+      <div className="custom-script-container">
+        <div className="custom-script-tab">
+          <div
+            className={`tab-option ${tab == "metadata" ? "active" : ""}`}
+            onClick={() => setTab("metadata")}
+          >
+            Metadata
+          </div>
+          <div
+            className={`tab-option ${tab == "editor" ? "active" : ""}`}
+            onClick={() => setTab("editor")}
+          >
+            Editor
+          </div>
+        </div>
+        {script && (
+          <>
             <div
-              key={i}
+              className="custom-script-metadata"
               style={{
-                backgroundColor: background,
-                color: text,
-                wordBreak: "break-word",
-                whiteSpace: "pre-wrap",
-                fontStyle: type === "info" ? "italic" : "normal",
+                display: tab == "metadata" ? "block" : "none",
+                flex: 1,
+                height: 0,
+                overflow: "hidden",
               }}
             >
-              {message}
+              <CustomScriptMetadataTab
+                scriptIndex={scriptIndex}
+                scripts={scripts}
+                setScripts={setScripts}
+              />
             </div>
-          )
-        })}
-      </pre>
-      <button
-        className={running ? "delete" : ""}
-        onClick={() => {
-          if (running) {
-            worker.current?.terminate()
-            setLogs(oldLogs => [
-              ...oldLogs,
-              [
-                "info",
-                `Interrupted after ${(performance.now() - startTime.current).toFixed(2)} ms`,
-              ],
-            ])
-            setRunning(false)
-            return
-          }
-          run()
-        }}
-      >
-        {running ? "Stop" : "Test"}
-      </button>
+
+            <div
+              style={{ display: tab == "editor" ? "block" : "none", flex: 1 }}
+            >
+              <CustomScriptEditorTab
+                scriptIndex={scriptIndex}
+                scripts={scripts}
+              />
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }
 
 export function CustomScriptEditorWindow(): WindowData {
   return {
-    title: "Custom Scripts",
-    width: 600,
-    height: 500,
+    title: "Edit Custom Scripts",
+    width: 800,
+    height: 600,
     id: "custom-scripts",
     content: <CustomScriptEditorContent />,
   }
