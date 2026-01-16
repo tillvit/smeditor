@@ -111,7 +111,7 @@ function SyncWindowContent() {
           (tab, index) => (
             <div
               key={index}
-              className={`sync-tab-option ${activeTabIndex === index ? "active" : ""}`}
+              className={`tab-option ${activeTabIndex === index ? "active" : ""}`}
               onClick={() => swapTab(index)}
             >
               {tab}

@@ -2472,7 +2472,7 @@ input[type="checkbox"] {
   border-radius: 0.25rem;
 }
 
-.sync-tab-option {
+.tab-option {
   padding: 0.25rem 0.6rem;
   flex: 1;
   text-align: center;
@@ -2480,15 +2480,15 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-.sync-tab-option:hover {
+.tab-option:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.sync-tab-option.active {
+.tab-option.active {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-.animated .sync-tab-option {
+.animated .tab-option {
   transition: 0.1s cubic-bezier(0.215, 0.61, 0.355, 1);
 }
 
