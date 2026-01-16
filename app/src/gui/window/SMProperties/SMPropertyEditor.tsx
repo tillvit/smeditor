@@ -228,8 +228,8 @@ function SMPropertyGroup(props: {
   const sm = useSM(props.sm)
   return (
     <div className="sm-container">
-      <div className="sm-title">{props.data.title}</div>
-      <div className="sm-property-grid">
+      <div className="property-title">{props.data.title}</div>
+      <div className="property-grid">
         {props.data.items.map(item => {
           if (item.input.type == "path") {
             item.input.baseDir = dirname(windowData!.app.chartManager.smPath)

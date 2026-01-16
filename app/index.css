@@ -1006,15 +1006,16 @@ input.inlineEdit:focus {
   height: 100%;
 }
 
-.sm-property-grid {
+.property-grid {
   display: grid;
   row-gap: 0.2rem;
-  grid-template-columns: auto 16rem;
+  column-gap: 2rem;
+  grid-template-columns: max-content auto;
   align-items: center;
   flex: 1;
 }
 
-.sm-property-grid > div:not(.label) {
+.property-grid > div:not(.label) {
   display: flex;
   align-items: center;
 }
@@ -1915,7 +1916,7 @@ input[type="range"] {
   transition: 0.2s cubic-bezier(0, 0.91, 0.34, 1.05);
 }
 
-.sm-title {
+.property-title {
   font-weight: bold;
   margin-bottom: 0.2rem;
 }
@@ -2127,8 +2128,8 @@ input[type="range"] {
   cursor: pointer;
 }
 
-.pref-keybind .icon:hover,
-.pref-item .icon:hover {
+.pref-keybind .revert:hover,
+.pref-item .revert:hover {
   filter: brightness(1);
   color: var(--danger);
 }
