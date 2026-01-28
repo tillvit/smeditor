@@ -1,4 +1,4 @@
-import { Parser } from "expr-eval"
+import { Parser } from "expr-eval-fork"
 import { PartialNotedataEntry, isHoldNote } from "../chart/sm/NoteTypes"
 
 export const IS_OSX: boolean = navigator.userAgent.indexOf("Mac OS X") > -1

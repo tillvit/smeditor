@@ -1,10 +1,10 @@
-import { Parser } from "expr-eval"
 import tippy from "tippy.js"
 import { EditMode } from "../../chart/ChartManager"
 import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
 import { Keybinds } from "../../util/Keybinds"
 import { Options } from "../../util/Options"
+import { parseString } from "../../util/Util"
 import { Icons } from "../Icons"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
@@ -497,12 +497,13 @@ export class PlaybackOptionsWidget extends Widget {
       input.select()
     }
     input.onblur = () => {
-      const val = this.parseString(input)
+      let val = parseString(input.value)
       if (val == null) {
         spinner.currentValue = options.getValue()
         update(false)
         return
       }
+      if (!isFinite(val)) val = 0
       spinner.currentValue = val
       update()
     }
@@ -673,16 +674,6 @@ export class PlaybackOptionsWidget extends Widget {
       this.changeRow.classList.toggle("hidden", Options.chart.CMod)
       this.warpRow.classList.toggle("hidden", !Options.chart.CMod)
       this.fakeRow.classList.toggle("hidden", !Options.chart.CMod)
-    }
-  }
-
-  private parseString(el: HTMLInputElement) {
-    try {
-      const val = Parser.evaluate(el.value)
-      if (!isFinite(val)) return 0
-      return val
-    } catch {
-      return null
     }
   }
 }
