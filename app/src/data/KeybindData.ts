@@ -1799,7 +1799,11 @@ for (let i = 0; i < QUANTS.length; i++) {
         app.chartManager.getMode() != EditMode.Edit,
       callback: app => {
         app.chartManager.modifySelection(note => {
-          note.beat = app.chartManager.getClosestTick(note.beat, QUANT_NUM[i])
+          note.beat =
+            app.chartManager.loadedChart!.timingData.snapToClosestTick(
+              note.beat,
+              QUANTS[i]
+            )
           note.beat = Math.round(note.beat * 48) / 48
           return note
         })

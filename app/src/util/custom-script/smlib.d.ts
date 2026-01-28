@@ -775,6 +775,9 @@ declare module "app/src/chart/sm/TimingData" {
     getEffectiveBeat(beat: number): number
     getBeatFromEffectiveBeat(effBeat: number): number
     getSpeedMult(beat: number, seconds: number): number
+    snapToClosestTick(beat: number, snap: number): number
+    snapToPreviousTick(beat: number, snap: number): number
+    snapToNextTick(beat: number, snap: number): number
     reloadCache(types?: TimingType[]): void
     getBeatTiming(): BeatTimingCache[]
     getTimingData(): Cached<TimingEvent>[]
@@ -2730,7 +2733,6 @@ declare module "app/src/chart/ChartManager" {
     setEffectVolume(volume: number): void
     private setNoteIndex
     playPause(): void
-    getClosestTick(beat: number, quant: number): number
     snapToNearestTick(beat: number): void
     snapToPreviousTick(): void
     snapToNextTick(): void

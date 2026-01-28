@@ -143,8 +143,10 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
     const keyHandler = (event: KeyboardEvent) => {
       if (this.editingCol != -1) {
         const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-        const snapBeat =
-          Math.round(this.getBeatFromYPos(this.lastMousePos!.y) / snap) * snap
+        const snapBeat = this.chart.timingData.snapToClosestTick(
+          this.getBeatFromYPos(this.lastMousePos!.y),
+          snap
+        )
         this.chartManager.editHoldBeat(
           this.editingCol,
           snapBeat,
@@ -241,8 +243,10 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       this.lastMousePos = this.toLocal(event.global)
       if (this.editingCol != -1) {
         const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-        const snapBeat =
-          Math.round(this.getBeatFromYPos(this.lastMousePos.y) / snap) * snap
+        const snapBeat = this.chart.timingData.snapToClosestTick(
+          this.getBeatFromYPos(this.lastMousePos.y),
+          snap
+        )
         if (this.lastHoldBeat != snapBeat) {
           this.lastHoldBeat = snapBeat
           this.chartManager.editHoldBeat(
@@ -363,8 +367,10 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       this.chartManager.getMode() != EditMode.Play
     ) {
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-      const snapBeat =
-        Math.round(this.getBeatFromYPos(this.lastMousePos.y) / snap) * snap
+      const snapBeat = this.chart.timingData.snapToClosestTick(
+        this.getBeatFromYPos(this.lastMousePos.y),
+        snap
+      )
       let col = -1
       for (let i = 0; i < this.chart.gameType.numCols; i++) {
         const colWidth = this.chart.gameType.columnWidths[i]
@@ -1121,7 +1127,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       }
       const newBeat = this.getBeatFromYPos(position.y - dragYOffset)
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-      let snapBeat = Math.round(newBeat / snap) * snap
+      let snapBeat = this.chart.timingData.snapToClosestTick(newBeat, snap)
       if (Math.abs(snapBeat - newBeat) > Math.abs(newBeat - note.beat)) {
         snapBeat = note.beat
       }

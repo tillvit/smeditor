@@ -1535,6 +1535,55 @@ export abstract class TimingData {
     return progress * (event.value - prev) + prev
   }
 
+  snapToClosestTick(beat: number, snap: number) {
+    const beatOfMeasure = this.getBeatOfMeasure(beat)
+    const measureBeat = beat - beatOfMeasure
+    const newBeatOfMeasure = Math.round(beatOfMeasure / snap) * snap
+    return Math.max(0, measureBeat + newBeatOfMeasure)
+  }
+
+  snapToPreviousTick(beat: number, snap: number) {
+    const currentMeasure = Math.floor(this.getMeasure(beat))
+    const currentMeasureBeat = this.getBeatFromMeasure(currentMeasure)
+
+    const closestTick = Math.floor((beat - currentMeasureBeat) / snap) * snap
+    const nextTick =
+      Math.abs(closestTick - (beat - currentMeasureBeat)) < 0.0005
+        ? closestTick - snap
+        : closestTick
+    const newBeat = nextTick + currentMeasureBeat
+
+    // Check if we cross over the previous measure
+    if (nextTick < 0) {
+      const previousMeasureBeat = this.getBeatFromMeasure(currentMeasure - 1)
+      const closestMeasureTick =
+        Math.round((newBeat - previousMeasureBeat) / snap) * snap
+      return previousMeasureBeat + closestMeasureTick
+    }
+
+    return newBeat
+  }
+
+  snapToNextTick(beat: number, snap: number) {
+    const currentMeasure = Math.floor(this.getMeasure(beat))
+    const currentMeasureBeat = this.getBeatFromMeasure(currentMeasure)
+
+    const closestTick =
+      Math.floor((beat - currentMeasureBeat + 0.0005) / snap) * snap
+    const nextTick = closestTick + snap
+    const newBeat = nextTick + currentMeasureBeat
+
+    // Check if we cross over the next measure
+
+    const nextMeasureBeat = this.getBeatFromMeasure(currentMeasure + 1)
+
+    if (newBeat > nextMeasureBeat) {
+      return nextMeasureBeat
+    }
+
+    return newBeat
+  }
+
   reloadCache(types: TimingType[] = []) {
     let reloadColumns = types
     if (

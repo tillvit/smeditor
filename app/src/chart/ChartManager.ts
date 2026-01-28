@@ -388,7 +388,10 @@ export class ChartManager {
               )
             }
             const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-            const snapBeat = Math.round(tapBeat / snap) * snap
+            const snapBeat = this.loadedChart.timingData.snapToClosestTick(
+              tapBeat,
+              snap
+            )
             const hold = this.holdEditing[col]!
             const holdLength =
               Math.max(
@@ -1188,75 +1191,33 @@ export class ChartManager {
     EventHandler.emit("playStateChanged")
   }
 
-  getClosestTick(beat: number, quant: number) {
-    if (!this.loadedChart) return 0
-    const snap = Math.max(0.001, 4 / quant)
-    const beatOfMeasure = this.loadedChart.timingData.getBeatOfMeasure(beat)
-    const measureBeat = beat - beatOfMeasure
-    const newBeatOfMeasure = Math.round(beatOfMeasure / snap) * snap
-    return Math.max(0, measureBeat + newBeatOfMeasure)
-  }
-
   snapToNearestTick(beat: number) {
-    this.beat = Math.max(0, this.getClosestTick(beat, 4 / Options.chart.snap))
+    if (!this.loadedChart) return
+    this.beat = Math.max(
+      0,
+      this.loadedChart.timingData.snapToClosestTick(
+        beat,
+        Math.max(0.001, Options.chart.snap)
+      )
+    )
   }
 
   snapToPreviousTick() {
     if (!this.loadedChart) return
-    const snap = Math.max(0.001, Options.chart.snap)
-    const currentMeasure = Math.floor(
-      this.loadedChart.timingData.getMeasure(this.beat)
+    const snapBeat = this.loadedChart.timingData.snapToPreviousTick(
+      this.beat,
+      Math.max(0.001, Options.chart.snap)
     )
-    const currentMeasureBeat =
-      this.loadedChart.timingData.getBeatFromMeasure(currentMeasure)
-
-    const closestTick =
-      Math.floor((this.beat - currentMeasureBeat) / snap) * snap
-    const nextTick =
-      Math.abs(closestTick - (this.beat - currentMeasureBeat)) < 0.0005
-        ? closestTick - snap
-        : closestTick
-    const newBeat = nextTick + currentMeasureBeat
-
-    // Check if we cross over the previous measure
-    if (nextTick < 0) {
-      const previousMeasureBeat =
-        this.loadedChart.timingData.getBeatFromMeasure(currentMeasure - 1)
-      const closestMeasureTick =
-        Math.round((newBeat - previousMeasureBeat) / snap) * snap
-      this.beat = Math.max(0, previousMeasureBeat + closestMeasureTick)
-      return
-    }
-
-    this.beat = Math.max(0, newBeat)
+    this.beat = Math.max(0, snapBeat)
   }
 
   snapToNextTick() {
     if (!this.loadedChart) return
-    const snap = Math.max(0.001, Options.chart.snap)
-    const currentMeasure = Math.floor(
-      this.loadedChart.timingData.getMeasure(this.beat)
+    const snapBeat = this.loadedChart.timingData.snapToNextTick(
+      this.beat,
+      Math.max(0.001, Options.chart.snap)
     )
-    const currentMeasureBeat =
-      this.loadedChart.timingData.getBeatFromMeasure(currentMeasure)
-
-    const closestTick =
-      Math.floor((this.beat - currentMeasureBeat + 0.0005) / snap) * snap
-    const nextTick = closestTick + snap
-    const newBeat = nextTick + currentMeasureBeat
-
-    // Check if we cross over the next measure
-
-    const nextMeasureBeat = this.loadedChart.timingData.getBeatFromMeasure(
-      currentMeasure + 1
-    )
-
-    if (newBeat > nextMeasureBeat) {
-      this.beat = nextMeasureBeat
-      return
-    }
-
-    this.beat = newBeat
+    this.beat = Math.max(0, snapBeat)
   }
 
   previousSnap() {
@@ -1703,7 +1664,10 @@ export class ChartManager {
         this.time + Options.play.offset
       )
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-      const snapBeat = Math.round(tapBeat / snap) * snap
+      const snapBeat = this.loadedChart.timingData.snapToClosestTick(
+        tapBeat,
+        snap
+      )
       this.setNote(col, "key", snapBeat)
     }
   }
