@@ -14,10 +14,7 @@ export function PlaybackBar(props: {
     <div className="playback-bar">
       <button
         tabIndex={-1}
-        ref={el => {
-          if (!el) return
-          Keybinds.createKeybindTooltip(el)`Skip to start ${"jumpSongStart"}`
-        }}
+        ref={Keybinds.createReactKeybindTooltip`Skip to start ${"jumpSongStart"}`}
         disabled={props.state != EditMode.View && props.state != EditMode.Edit}
         onClick={e => {
           props.app.chartManager.beat = Math.max(
@@ -31,10 +28,7 @@ export function PlaybackBar(props: {
       </button>
       <button
         tabIndex={-1}
-        ref={el => {
-          if (!el) return
-          Keybinds.createKeybindTooltip(el)`Skip to end ${"jumpSongEnd"}`
-        }}
+        ref={Keybinds.createReactKeybindTooltip`Skip to end ${"jumpSongEnd"}`}
         disabled={props.state != EditMode.View && props.state != EditMode.Edit}
         onClick={e => {
           props.app.chartManager.beat =
@@ -48,10 +42,7 @@ export function PlaybackBar(props: {
       </button>
       <button
         tabIndex={-1}
-        ref={el => {
-          if (!el) return
-          Keybinds.createKeybindTooltip(el)`Play/Pause ${"playback"}`
-        }}
+        ref={Keybinds.createReactKeybindTooltip`Play/Pause ${"playback"}`}
         onClick={e => {
           if (
             props.app.chartManager.getMode() == EditMode.Record ||
@@ -79,10 +70,7 @@ export function PlaybackBar(props: {
       {!Flags.viewMode && Flags.recordMode && (
         <button
           tabIndex={-1}
-          ref={el => {
-            if (!el) return
-            Keybinds.createKeybindTooltip(el)`Record ${"recordMode"}`
-          }}
+          ref={Keybinds.createReactKeybindTooltip`Record ${"recordMode"}`}
           disabled={
             props.state != EditMode.Record && props.state != EditMode.Edit
           }
@@ -106,10 +94,7 @@ export function PlaybackBar(props: {
       {Flags.playMode && (
         <button
           tabIndex={-1}
-          ref={el => {
-            if (!el) return
-            Keybinds.createKeybindTooltip(el)`Playtest ${"playMode"}`
-          }}
+          ref={Keybinds.createReactKeybindTooltip`Playtest ${"playMode"}`}
           disabled={
             props.state != EditMode.Play && props.state != EditMode.Edit
           }

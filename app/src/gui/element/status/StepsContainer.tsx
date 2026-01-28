@@ -15,13 +15,9 @@ const PlaceHolderButton = memo(function (props: {
 }) {
   return (
     <button
-      ref={el => {
-        if (!el) return
-        console.log("creating tooltip for", props.noteType)
-        Keybinds.createKeybindTooltip(el)`${"\\" + props.noteType} ${
-          "noteType" + props.noteType
-        }`
-      }}
+      ref={Keybinds.createReactKeybindTooltip`${"\\" + props.noteType} ${
+        "noteType" + props.noteType
+      }`}
       data-note-type={props.noteType}
       tabIndex={-1}
       style={{ height: `3rem`, width: `3rem` }}

@@ -44,12 +44,7 @@ export function TimingContainer(props: {
     >
       <button
         tabIndex={-1}
-        ref={el => {
-          if (!el) return
-          Keybinds.createKeybindTooltip(
-            el
-          )`Add timing events ${"toggleAddTiming"}`
-        }}
+        ref={Keybinds.createReactKeybindTooltip`Add timing events ${"toggleAddTiming"}`}
         className={props.timingMode == EditTimingMode.Add ? "active" : ""}
         onClick={e => {
           if (props.app.chartManager.editTimingMode == EditTimingMode.Add)
@@ -99,10 +94,7 @@ export function TimingContainer(props: {
       </button>
       <button
         tabIndex={-1}
-        ref={el => {
-          if (!el) return
-          Keybinds.createKeybindTooltip(el)`Detect audio sync ${"detectSync"}`
-        }}
+        ref={Keybinds.createReactKeybindTooltip`Detect audio sync ${"detectSync"}`}
         onClick={e => {
           WindowManager.openWindow(SyncWindow())
           e.currentTarget.blur()

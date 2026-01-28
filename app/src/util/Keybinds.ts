@@ -477,6 +477,21 @@ export class Keybinds {
     }
   }
 
+  static createReactKeybindTooltip(
+    strings: TemplateStringsArray,
+    ...ids: string[]
+  ) {
+    return (ref: HTMLElement | null) => {
+      if (!ref || (ref as any)._tippy) return // hacky :(
+      tippy(ref, {
+        allowHTML: true,
+        onShow: inst => {
+          inst.setContent(this.evaluateTaggedTooltip(strings, ids))
+        },
+      })
+    }
+  }
+
   static disableKeybinds() {
     this.enabled = false
   }
