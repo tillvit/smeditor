@@ -1709,7 +1709,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   editCustomScripts: {
     label: "Edit custom scripts...",
     combos: [{ mods: [Modifier.SHIFT], key: "G" }],
-    disabled: false,
+    disabled: true,
     callback: async () => {
       const CustomScriptEditorWindow = (
         await import("../gui/window/CustomScript/CustomScriptEditorWindow")

@@ -1712,11 +1712,6 @@ export class ChartManager {
         }
       )
     }
-    // if (
-    //   this.loadedSM.requiresSSC() ||
-    //   true ||
-    //   (await FileHandler.getFileHandle(sscPath))
-    // ) {
     await FileHandler.writeFile(sscPath, this.loadedSM.serialize("ssc")).catch(
       err => {
         const message = err.message
@@ -1725,7 +1720,6 @@ export class ChartManager {
         }
       }
     )
-    // }
     await FileHandler.writeFile(
       this.getDataPath(),
       serializeSMEData(this.loadedSM)

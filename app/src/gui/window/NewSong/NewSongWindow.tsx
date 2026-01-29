@@ -49,7 +49,6 @@ function NewSongWindowContent() {
 
   async function createSong() {
     if (!smRef.current) return
-    console.log(smRef.current)
     windowData?.close()
     let folder = smRef.current.properties.TITLE!
     if (window.nw) {
@@ -57,7 +56,7 @@ function NewSongWindowContent() {
       const process = nw.require("process")
       const fileSelector = document.createElement("input")
       fileSelector.type = "file"
-      fileSelector.nwsaveas = folder + ".sm"
+      fileSelector.nwsaveas = folder + ".ssc"
       fileSelector.onchange = async () => {
         const fileName = path.basename(
           fileSelector.value,
@@ -66,6 +65,8 @@ function NewSongWindowContent() {
         folder = path.dirname(fileSelector.value)
         const smPath = path.join(folder, fileName + ".sm")
         await FileHandler.writeFile(smPath, smRef.current!.serialize("sm"))
+        const sscPath = path.join(folder, fileName + ".ssc")
+        await FileHandler.writeFile(sscPath, smRef.current!.serialize("ssc"))
         // Add the rest of the files
         await Promise.all(
           Object.entries(fileTable.current).map(entry => {
@@ -81,7 +82,7 @@ function NewSongWindowContent() {
             return FileHandler.writeFile(newPath, entry[1])
           })
         )
-        await windowData!.app.chartManager.loadSM(smPath)
+        await windowData!.app.chartManager.loadSM(sscPath)
         WindowManager.closeWindow("initial")
       }
       fileSelector.click()
