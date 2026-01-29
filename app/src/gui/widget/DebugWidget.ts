@@ -110,7 +110,9 @@ export class DebugWidget extends Widget {
     this.x = -this.manager.app.STAGE_WIDTH / 2 + 20
     this.y = -this.manager.app.STAGE_HEIGHT / 2 + 20
 
-    this.graphs.children.forEach(graph => graph.update())
+    if (Options.debug.showTimers) {
+      this.graphs.children.forEach(graph => graph.update())
+    }
 
     this.graphs.visible = Options.debug.showTimers
     this.fpsCounter.visible = Options.debug.showFPS
