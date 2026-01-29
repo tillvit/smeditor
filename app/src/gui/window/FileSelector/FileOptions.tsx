@@ -64,16 +64,18 @@ export function FileOptions() {
   }
 
   const handleRename = () => {
-    pickerData!.setEditingPath(selectedPath)
+    pickerData!.setEditingPath(pickerData!.selectedItem!.path)
   }
 
   const handleDelete = () => {
     const isFolder = pickerData!.selectedItem?.type === "directory"
     pickerData!.setBusy(true)
     ;(FileHandler.getStandardHandler() as WebFileHandler)
-      [isFolder ? "removeDirectory" : "removeFile"](selectedPath)
+      [
+        isFolder ? "removeDirectory" : "removeFile"
+      ](pickerData!.selectedItem!.path)
       .then(() => {
-        const path = dirname(selectedPath)
+        const path = dirname(pickerData!.selectedItem!.path)
         pickerData!.setSelectedItem(null)
         pickerData!.loadDirectory(path)
         pickerData!.setBusy(false)
@@ -91,14 +93,14 @@ export function FileOptions() {
       <button
         className="rename"
         onClick={handleRename}
-        disabled={selectedPath == null}
+        disabled={pickerData!.selectedItem == null}
       >
         <ReactIcon id="EDIT" width={16} /> Rename
       </button>
       <button
         className="delete"
         onClick={handleDelete}
-        disabled={selectedPath == null}
+        disabled={pickerData!.selectedItem == null}
       >
         <ReactIcon id="TRASH" width={16} /> Delete
       </button>
