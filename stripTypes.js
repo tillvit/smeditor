@@ -2,7 +2,11 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 const exclude = [
   "app/src/chart/gameTypes/noteskin/",
-  "app/src/chart/component/"
+  "app/src/chart/component/",
+  "app/src/chart/play/",
+  "app/src/chart/audio/",
+  "app/src/chart/ChartManager",
+  "app/src/chart/ChartRenderer",
 ]
 
 let fileContent = readFileSync("./app/src/util/custom-script/smlib.d.ts", "utf-8");
