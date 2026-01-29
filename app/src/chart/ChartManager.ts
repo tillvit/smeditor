@@ -61,7 +61,7 @@ import {
   TapNoteType,
   isHoldNote,
 } from "./sm/NoteTypes"
-import { serializeSMEData } from "./sm/SMEParser"
+import { requiresSMEData, serializeSMEData } from "./sm/SMEParser"
 import { Simfile } from "./sm/Simfile"
 import { Cached, TIMING_EVENT_NAMES, TimingEvent } from "./sm/TimingTypes"
 
@@ -1720,15 +1720,21 @@ export class ChartManager {
         }
       }
     )
-    await FileHandler.writeFile(
-      this.getDataPath(),
-      serializeSMEData(this.loadedSM)
-    ).catch(err => {
-      const message = err.message
-      if (!message.includes(errors.GONE[0])) {
-        error = message
-      }
-    })
+    if (
+      requiresSMEData(this.loadedSM) ||
+      (await FileHandler.getFileHandle(this.getDataPath())) // if sme already exists, we might want to clear it
+    ) {
+      console.log("Writing sme")
+      await FileHandler.writeFile(
+        this.getDataPath(),
+        serializeSMEData(this.loadedSM)
+      ).catch(err => {
+        const message = err.message
+        if (!message.includes(errors.GONE[0])) {
+          error = message
+        }
+      })
+    }
 
     if (error == null) {
       if (this.loadedSM.usesChartTiming()) {
