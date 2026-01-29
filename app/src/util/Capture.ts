@@ -1,7 +1,7 @@
 import { ArrayBufferTarget, Muxer } from "mp4-muxer"
 import { Ticker } from "pixi.js"
 import { App } from "../App"
-import { EditMode } from "../chart/ChartManager"
+import { EditMode, EditTimingMode } from "../chart/ChartManager"
 import { TIMING_WINDOW_AUTOPLAY } from "../chart/play/StandardTimingWindow"
 import { TimingWindowCollection } from "../chart/play/TimingWindowCollection"
 import { HoldNotedataEntry, isHoldNote } from "../chart/sm/NoteTypes"
@@ -256,6 +256,7 @@ export class Capture {
     const chart = this.app.chartManager.loadedChart!
     document.body.classList.remove("animated")
     this.app.chartManager.setMode(EditMode.View)
+    this.app.chartManager.editTimingMode = EditTimingMode.Off
     Flags.barlines = !this.options.hideBarlines
     this.app.capturing = true
     if (this.app.chartManager.chartAudio.isPlaying()) {

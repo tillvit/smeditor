@@ -102,7 +102,7 @@ export class StatusWidget extends Widget {
 
   update(): void {
     this.scale.set(1 / this.manager.chartManager.app.stage.scale.x)
-    this.visible = true
+    this.visible = !this.manager.chartManager.app.capturing
 
     const mode = this.manager.chartManager.getMode()
     const timingMode = this.manager.chartManager.editTimingMode

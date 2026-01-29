@@ -26,9 +26,15 @@ function CaptureWindowContent() {
     metronome: false,
     hideBarlines: false,
   })
-  const [startBeat, setStartBeat] = useState(0)
+  const [startBeat, setStartBeat] = useState(
+    windowData.app.chartManager.hasRange()
+      ? windowData.app.chartManager.startRegion!
+      : 0
+  )
   const [endBeat, setEndBeat] = useState(
-    windowData.app.chartManager.loadedChart!.getLastBeat()
+    windowData.app.chartManager.hasRange()
+      ? windowData.app.chartManager.endRegion!
+      : windowData.app.chartManager.loadedChart!.getLastBeat()
   )
   const [videoURL, setVideoURL] = useState<string | null>(null)
   const [videoSize, setVideoSize] = useState<number | null>(null)
