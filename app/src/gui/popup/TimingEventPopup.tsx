@@ -53,7 +53,6 @@ function TimingEventPopupContent(props: TimingEventPopupOptions) {
 
   useEffect(() => {
     if (popupData?.highlighted) {
-      console.log("Highlighting timing event", props.event)
       // Autoselect first textbox
       const firstInput = gridRef.current?.querySelector("input")
       if (firstInput) {

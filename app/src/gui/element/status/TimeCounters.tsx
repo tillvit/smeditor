@@ -53,6 +53,7 @@ export function TimeCounters(props: { app: App; state: EditMode }) {
 
   const updateTime = useCallback(
     (min?: string, sec?: string, millis?: string) => {
+      const time = props.app.chartManager.time
       min =
         min ??
         (time < 0 ? "-" : "") +
