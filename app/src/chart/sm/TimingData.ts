@@ -38,6 +38,7 @@ export abstract class TimingData {
   protected readonly _cache: TimingCache = {
     warpedBeats: new Map(),
     beatsToSeconds: new Map(),
+    beatsToEffectiveBeats: new Map(),
   }
   protected columns: {
     [Type in TimingEventType]?: Cached<Extract<TimingEvent, { type: Type }>>[]
@@ -132,6 +133,7 @@ export abstract class TimingData {
     this._cache.beatTiming = cache
     this._cache.warpedBeats.clear()
     this._cache.beatsToSeconds.clear()
+    this._cache.beatsToEffectiveBeats.clear()
   }
 
   private buildEffectiveBeatTimingDataCache() {
@@ -156,6 +158,7 @@ export abstract class TimingData {
     }
     cache[cache.length - 1].effectiveBeat = effBeat
     this._cache.effectiveBeatTiming = cache
+    this._cache.beatsToEffectiveBeats.clear()
   }
 
   private buildMeasureTimingCache() {
@@ -1494,11 +1497,18 @@ export abstract class TimingData {
       this.buildEffectiveBeatTimingDataCache()
     const cache = this._cache.effectiveBeatTiming!
     if (cache.length == 0) return beat
+    if (this._cache.beatsToEffectiveBeats.has(beat)) {
+      return this._cache.beatsToEffectiveBeats.get(beat)!
+    }
     const event = this.binarySearch(cache, "beat", beat)
-    if (cache[0] == event && event.beat > beat && event.beat > 0) return beat
+    if (cache[0] == event && event.beat > beat && event.beat > 0) {
+      this._cache.beatsToEffectiveBeats.set(beat, beat)
+      return beat
+    }
     let effBeat = event.effectiveBeat!
     const beats_left_over = beat - event.beat
     effBeat += beats_left_over * event.value
+    this._cache.beatsToEffectiveBeats.set(beat, effBeat)
     return effBeat
   }
 

@@ -184,6 +184,7 @@ export type TimingCache = {
   sortedEvents?: Cached<TimingEvent>[]
   warpedBeats: Map<number, boolean>
   beatsToSeconds: Map<string, number>
+  beatsToEffectiveBeats: Map<number, number>
 }
 
 export type DeletableEvent = Partial<Cached<TimingEvent>> &
