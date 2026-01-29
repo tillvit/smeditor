@@ -151,7 +151,7 @@ export class App {
 
     this.updateSize()
 
-    Ticker.shared.maxFPS = 0
+    Ticker.shared.maxFPS = Options.performance.maxFPS
     Ticker.shared.add(() => {
       // Update ChartRenderer every frame
       const updateStart = performance.now()

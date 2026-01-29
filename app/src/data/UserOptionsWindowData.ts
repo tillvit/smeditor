@@ -1,3 +1,4 @@
+import { Ticker } from "pixi.js"
 import { App } from "../App"
 import { TimingWindowCollection } from "../chart/play/TimingWindowCollection"
 import { ValueInputOptions } from "../gui/inputs/ValueInput"
@@ -962,6 +963,24 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           hardMax: 2 ** 31 - 1,
         },
         tooltip: "Requires a reload.",
+      },
+      {
+        type: "item",
+        label: "Max FPS",
+        id: "performance.maxFPS",
+        input: {
+          type: "slider",
+          min: 0,
+          step: 5,
+          max: 240,
+          hardMin: 0,
+          hardMax: 2 ** 31 - 1,
+          onChange: (_, value: number) => {
+            Ticker.shared.maxFPS = value
+          },
+        },
+        tooltip:
+          "Maximum framerate the app will run at. Set to 0 for unlimited.",
       },
     ],
   },

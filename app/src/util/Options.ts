@@ -167,6 +167,7 @@ export class DefaultOptions {
     lowDetailHolds: false,
     antialiasing: false,
     resolution: isWorker() ? 1 : window.devicePixelRatio,
+    maxFPS: 0,
   }
   static debug = {
     showFPS: false,
