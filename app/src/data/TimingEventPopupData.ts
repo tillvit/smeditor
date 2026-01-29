@@ -246,6 +246,13 @@ export const TIMING_POPUP_ROWS: { [key in TimingEventType]: Popup } = {
       "Applies a modifier to the playfield. Can specify the length of the applied attack in seconds or the end time of the attack.",
     rows: [
       {
+        label: "Mods",
+        key: "mods",
+        input: {
+          type: "text",
+        },
+      },
+      {
         label: "Timing type",
         key: "endType",
         input: {
@@ -263,13 +270,6 @@ export const TIMING_POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         input: {
           ...precisionSettings,
           type: "number",
-        },
-      },
-      {
-        label: "Mods",
-        key: "mods",
-        input: {
-          type: "text",
         },
       },
     ],

@@ -1,5 +1,12 @@
 import { DisplayObject } from "pixi.js"
-import { Fragment, useContext, useEffect, useMemo, useState } from "react"
+import {
+  Fragment,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { TIMING_EVENT_COLORS } from "../../chart/component/timing/TimingAreaContainer"
 import { TimingData } from "../../chart/sm/TimingData"
 import { Cached, TimingEvent } from "../../chart/sm/TimingTypes"
@@ -25,6 +32,7 @@ function TimingEventPopupContent(props: TimingEventPopupOptions) {
     [props.event.type]
   )
   const [event, setEvent] = useState(props.event)
+  const gridRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onTimingModified = () => {
@@ -33,7 +41,6 @@ function TimingEventPopupContent(props: TimingEventPopupOptions) {
         props.event.beat,
         false
       )
-      console.log(updatedEvent, props.event)
       if (!updatedEvent || updatedEvent.beat != props.event.beat) {
         popupData?.close()
         return
@@ -44,6 +51,17 @@ function TimingEventPopupContent(props: TimingEventPopupOptions) {
     return () => EventHandler.off("timingModified", onTimingModified)
   }, [])
 
+  useEffect(() => {
+    if (popupData?.highlighted) {
+      console.log("Highlighting timing event", props.event)
+      // Autoselect first textbox
+      const firstInput = gridRef.current?.querySelector("input")
+      if (firstInput) {
+        firstInput.select()
+      }
+    }
+  }, [popupData?.highlighted])
+
   return (
     <div
       className="flex-column-full"
@@ -53,7 +71,7 @@ function TimingEventPopupContent(props: TimingEventPopupOptions) {
       {schema.description && (
         <div className="popup-desc">{schema.description}</div>
       )}
-      <div className="popup-grid">
+      <div className="popup-grid" ref={gridRef}>
         {schema.rows.map((row, i) => {
           return (
             <Fragment key={i}>
