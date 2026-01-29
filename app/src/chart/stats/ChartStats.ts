@@ -81,8 +81,11 @@ export class ChartStats {
           this.queued = false
         }, UPDATE_INTERVAL)
         this.queued = true
+        return true
       }
+      return false
     }
+    return true
   }
 
   reset() {

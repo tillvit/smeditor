@@ -594,7 +594,7 @@ export class Chart {
       this.stats.reset()
       this.stats.calculate()
     } else {
-      this.stats.recalculate(start, end)
+      if (!this.stats.recalculate(start, end)) return
     }
     this._startModify = null
     this._endModify = null
