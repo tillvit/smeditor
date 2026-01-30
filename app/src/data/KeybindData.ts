@@ -237,17 +237,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Open song",
     combos: [{ key: "O", mods: [DEF_MOD] }],
     disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
-    callback: app => {
-      if (window.nw) {
-        const fileSelector = document.createElement("input")
-        fileSelector.type = "file"
-        fileSelector.accept = ".sm,.ssc"
-        fileSelector.onchange = () =>
-          app.chartManager.loadSM(fileSelector.value)
-        fileSelector.click()
-      } else {
-        WindowManager.openWindow(InitialWindow(false))
-      }
+    callback: () => {
+      WindowManager.openWindow(InitialWindow(false))
     },
   },
   songProperties: {
