@@ -9,6 +9,7 @@ export interface TextInputOptions {
   style?: React.CSSProperties
   className?: string
   placeholder?: string
+  disabled?: boolean
 }
 
 export function TextInput(props: TextInputProps) {
@@ -27,6 +28,7 @@ export function TextInput(props: TextInputProps) {
       className={`${props.className ?? ""}`}
       style={props.style}
       value={value}
+      disabled={props.disabled}
       onChange={e => {
         setValue(e.target.value)
       }}

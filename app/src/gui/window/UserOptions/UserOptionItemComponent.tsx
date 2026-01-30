@@ -3,6 +3,7 @@ import { useContext, useEffect, useState } from "react"
 import { UserOptionItem } from "../../../data/UserOptionsWindowData"
 import { EventHandler } from "../../../util/EventHandler"
 import { Options } from "../../../util/Options"
+import { tippySafe } from "../../../util/Util"
 import { ReactIcon } from "../../Icons"
 import { ValueInput } from "../../inputs/ValueInput"
 import { WindowContext } from "../WindowManager"
@@ -47,7 +48,14 @@ export function UserOptionItemComponent(props: { item: UserOptionItem }) {
   }, [props.item.id])
 
   return (
-    <div className="pref-item">
+    <div
+      className="pref-item"
+      ref={el => {
+        if (props.item.tooltip) {
+          tippySafe(el, { content: props.item.tooltip })
+        }
+      }}
+    >
       <div className="pref-item-label"> {props.item.label}</div>
       {deserializeValue(optionValue) != defaultValue && (
         <ReactIcon

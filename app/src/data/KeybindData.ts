@@ -19,6 +19,7 @@ import { GameplayKeybindWindow } from "../gui/window/Keybind/GameplayKeybindWind
 import { KeybindWindow } from "../gui/window/Keybind/KeybindWindow"
 import { NewSongWindow } from "../gui/window/NewSong/NewSongWindow"
 import { NoteskinWindow } from "../gui/window/NoteSkin/NoteskinWindow"
+
 import { SMPropertiesWindow } from "../gui/window/SMProperties/SMPropertiesWindow"
 import { SyncWindow } from "../gui/window/Sync/SyncWindow"
 import { ThemeSelectionWindow } from "../gui/window/Theme/ThemeSelectionWindow"
@@ -1715,6 +1716,17 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
         await import("../gui/window/CustomScript/CustomScriptEditorWindow")
       ).CustomScriptEditorWindow
       WindowManager.openWindow(CustomScriptEditorWindow())
+    },
+  },
+  setupWindow: {
+    label: "Initial Setup",
+    combos: [{ mods: [Modifier.SHIFT], key: "G" }],
+    disabled: false,
+    callback: async () => {
+      // circular import :(
+      const SetupWindow = (await import("../gui/window/Setup/SetupWindow"))
+        .SetupWindow
+      WindowManager.openWindow(SetupWindow())
     },
   },
 }

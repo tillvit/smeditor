@@ -5,6 +5,7 @@ export interface CheckboxInputProps extends CheckboxInputOptions {
 
 export interface CheckboxInputOptions {
   style?: React.CSSProperties
+  disabled?: boolean
   className?: string
 }
 export function CheckboxInput(props: CheckboxInputProps) {
@@ -12,6 +13,7 @@ export function CheckboxInput(props: CheckboxInputProps) {
     <input
       type="checkbox"
       checked={props.value}
+      disabled={props.disabled}
       className={`${props.className ?? ""}`}
       style={props.style}
       onChange={e => {

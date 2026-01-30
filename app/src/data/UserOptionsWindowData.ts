@@ -130,7 +130,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           },
           {
             type: "item",
-            label: "Smooth Animations",
+            label: "Smooth animations",
             id: "general.smoothAnimations",
             input: {
               type: "checkbox",

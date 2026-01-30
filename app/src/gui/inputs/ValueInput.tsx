@@ -39,6 +39,9 @@ import { TextInput, TextInputOptions, TextInputProps } from "./TextInput"
 
 interface CustomInputOptions {
   element: JSXElementConstructor<any>
+  disabled?: boolean
+  style?: React.CSSProperties
+  className?: string
 }
 
 interface CustomInputProps<T> extends CustomInputOptions {

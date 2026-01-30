@@ -11,6 +11,7 @@ export interface DisplaySliderInputOptions {
   sliderWidth?: number
   displayWidth?: number
   className?: string
+  disabled?: boolean
   transformers?: {
     serialize: (value: number) => number
     deserialize: (value: number) => number
@@ -34,6 +35,7 @@ export function DisplaySliderInput(props: DisplaySliderInputProps) {
         value={transformers.serialize(props.value)}
         min={min}
         max={max}
+        disabled={props.disabled}
         step={props.step}
         onChange={e => {
           props.onChange?.(transformers.deserialize(parseFloat(e.target.value)))

@@ -31,6 +31,7 @@ import { DebugWidget } from "./gui/widget/DebugWidget"
 import { ChangelogWindow } from "./gui/window/Changelog/ChangelogWindow"
 import { FileSelectorWindow } from "./gui/window/FileSelector/FileSelectorWindow"
 import { InitialWindow } from "./gui/window/Initial/InitialWindow"
+import { SetupWindow } from "./gui/window/Setup/SetupWindow"
 import {
   WindowManager,
   WindowManagerComponent,
@@ -255,6 +256,10 @@ export class App {
         return
       }
       WindowManager.openWindow(InitialWindow())
+
+      if (localStorage.getItem("setupCompleted") !== "true") {
+        WindowManager.openWindow(SetupWindow())
+      }
 
       if (window.nw) {
         const win = nw.Window.get()

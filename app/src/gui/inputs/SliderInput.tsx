@@ -17,6 +17,7 @@ export interface SliderInputOptions {
   style?: React.CSSProperties
   sliderWidth?: number
   displayWidth?: number
+  disabled?: boolean
   className?: string
   transformers?: {
     serialize: (value: number) => number
@@ -56,6 +57,7 @@ export function SliderInput(props: SliderInputProps) {
         value={value}
         min={min}
         max={max}
+        disabled={props.disabled}
         step={props.step}
         onChange={e => {
           setValue(parseFloat(e.target.value))
@@ -71,6 +73,7 @@ export function SliderInput(props: SliderInputProps) {
       <input
         type="text"
         value={displayValue}
+        disabled={props.disabled}
         style={{
           width: displayWidth / 16 + "rem",
         }}

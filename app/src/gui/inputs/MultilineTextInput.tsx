@@ -10,6 +10,7 @@ export interface MultilineTextInputOptions {
   className?: string
   placeholder?: string
   rows?: number
+  disabled?: boolean
 }
 
 export function MultilineTextInput(props: MultilineTextInputProps) {
@@ -25,6 +26,7 @@ export function MultilineTextInput(props: MultilineTextInputProps) {
       spellCheck="false"
       placeholder={props.placeholder ?? ""}
       className={`${props.className ?? ""}`}
+      disabled={props.disabled}
       style={props.style}
       value={value}
       onChange={e => {

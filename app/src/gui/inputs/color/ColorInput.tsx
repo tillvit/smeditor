@@ -13,6 +13,7 @@ export interface ColorInputOptions {
   className?: string
   height?: number
   width?: number
+  disabled?: boolean
 }
 
 function convertColor(color: string | Color) {
@@ -41,6 +42,7 @@ export function ColorInput(props: ColorInputProps) {
         }}
         ref={pickerRef}
         onClick={() => {
+          if (props.disabled) return
           cachedColor.current = value
           PopupManager.open(
             ColorPickerPopup(pickerRef.current!, value, val => {

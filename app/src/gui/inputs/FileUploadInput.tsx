@@ -11,6 +11,7 @@ export interface FileUploadInputOptions {
 export interface FileUploadInputProps extends FileUploadInputOptions {
   value: string
   baseDir?: string
+  disabled?: boolean
   onChange?: (value: File | undefined) => void
 }
 
@@ -35,6 +36,7 @@ export function FileUploadInput(props: FileUploadInputProps) {
     >
       <input
         type="text"
+        disabled={true}
         placeholder="click to select a file"
         defaultValue={props.value}
         style={{ flex: 1 }}
@@ -45,7 +47,7 @@ export function FileUploadInput(props: FileUploadInputProps) {
       />
       <button
         className="delete"
-        disabled={props.value == ""}
+        disabled={props.value == "" || props.disabled}
         onClick={() => props.onChange?.(undefined)}
       >
         <ReactIcon id="TRASH" width={12} />

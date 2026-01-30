@@ -15,7 +15,7 @@ import {
 } from "../data/KeybindData"
 import { WindowManager } from "../gui/window/WindowManager"
 import { EventHandler } from "./EventHandler"
-import { shouldBlockKeybinds } from "./Util"
+import { shouldBlockKeybinds, tippySafe } from "./Util"
 
 export class Keybinds {
   private static app: App
@@ -276,6 +276,14 @@ export class Keybinds {
     EventHandler.emit("keybindChanged", id)
   }
 
+  static setKeybinds(id: string, combos: KeyCombo[]) {
+    this.userKeybinds.set(id, combos)
+    this.checkIsDefault(id)
+    this.saveKeybinds()
+    this.buildConflictMap()
+    EventHandler.emit("keybindChanged", id)
+  }
+
   static removeKeybind(id: string, combo: KeyCombo) {
     if (!this.userKeybinds.has(id))
       this.userKeybinds.set(id, [...KEYBIND_DATA[id].combos])
@@ -482,8 +490,7 @@ export class Keybinds {
     ...ids: string[]
   ) {
     return (ref: HTMLElement | null) => {
-      if (!ref || (ref as any)._tippy) return // hacky :(
-      tippy(ref, {
+      tippySafe(ref, {
         allowHTML: true,
         onShow: inst => {
           inst.setContent(this.evaluateTaggedTooltip(strings, ids))

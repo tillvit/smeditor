@@ -11,6 +11,7 @@ export interface PathInputOptions {
   className?: string
   placeholder?: string
   baseDir?: string
+  disabled?: boolean
 }
 
 export interface PathInputProps extends PathInputOptions {
@@ -62,13 +63,14 @@ export function PathInput(props: PathInputProps) {
         defaultValue={props.value}
         style={{ flex: 1 }}
         onFocus={selectFile}
+        disabled={props.disabled}
         onKeyDown={e => {
           if (e.key == "Enter") e.currentTarget.blur()
         }}
       />
       <button
         className="delete"
-        disabled={props.value == ""}
+        disabled={props.value == "" || props.disabled}
         onClick={() => props.onChange?.(undefined)}
       >
         <ReactIcon id="TRASH" width={12} />

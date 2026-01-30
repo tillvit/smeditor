@@ -1,4 +1,5 @@
 import { Parser } from "expr-eval-fork"
+import tippy from "tippy.js"
 import { PartialNotedataEntry, isHoldNote } from "../chart/sm/NoteTypes"
 
 export const IS_OSX: boolean = navigator.userAgent.indexOf("Mac OS X") > -1
@@ -255,4 +256,12 @@ export function isWorker() {
     typeof WorkerGlobalScope !== "undefined" &&
     self instanceof WorkerGlobalScope
   )
+}
+
+export function tippySafe(
+  element: HTMLElement | null,
+  options: Parameters<typeof tippy>[1]
+) {
+  if (!element || (element as any)._tippy) return // hacky :(
+  tippy(element, options)
 }
