@@ -76,7 +76,7 @@ export const SETUP_OPTIONS = [
   {
     name: "Enable parity checking",
     description:
-      "When turned on, will display flow errors, left/right foot placements, candles, and the dancing bot. Useful for charts meant to be played on pad. Togglable using Shift + M.",
+      "When turned on, will display flow errors, left/right foot placements, candles, and the dancing bot. Useful for charts meant to be played on pad. Togglable using E.",
     option: "chart.parity.enabled",
     values: [
       { label: "Enabled", value: true },

@@ -2,11 +2,12 @@ import { useContext, useEffect, useState } from "react"
 import { EventHandler } from "../../../util/EventHandler"
 import { WindowContext, WindowData } from "../WindowManager"
 import { FinishPage } from "./pages/FinishPage"
+import { OffsetPage } from "./pages/OffsetPage"
 import { OptionsPage } from "./pages/OptionsPage"
 import { PresetPage } from "./pages/PresetPage"
 import { WelcomePage } from "./pages/WelcomePage"
 
-const PAGES = [WelcomePage, PresetPage, OptionsPage, FinishPage]
+const PAGES = [WelcomePage, PresetPage, OptionsPage, OffsetPage, FinishPage]
 
 export interface SetupPageProps {
   setValid: (valid: boolean) => void
