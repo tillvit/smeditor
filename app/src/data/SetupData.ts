@@ -55,7 +55,7 @@ export const SETUP_PRESETS: Record<string, SetupPreset> = {
 
 export const SETUP_OPTIONS = [
   {
-    name: "Reverse Scroll",
+    name: "Scroll direction",
     description: "Choose the direction that the playfield scrolls.",
     option: "chart.reverse",
     values: [

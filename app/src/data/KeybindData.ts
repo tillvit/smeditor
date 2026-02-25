@@ -1709,9 +1709,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       WindowManager.openWindow(CustomScriptEditorWindow())
     },
   },
-  setupWindow: {
-    label: "Initial Setup",
-    combos: [{ mods: [Modifier.SHIFT], key: "G" }],
+  openSetup: {
+    label: "Open Setup",
+    combos: [],
     disabled: false,
     callback: async () => {
       // circular import :(

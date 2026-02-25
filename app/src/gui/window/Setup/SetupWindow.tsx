@@ -28,7 +28,6 @@ function SetupWindowContent() {
       setPage(page + 1)
       setValid(false)
     } else {
-      console.log("Finished setup")
       windowData.close()
     }
   }
