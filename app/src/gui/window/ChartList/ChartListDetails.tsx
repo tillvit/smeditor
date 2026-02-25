@@ -213,7 +213,9 @@ export function ChartListDetails(props: ChartListDetailsOptions) {
         </div>
         <div className="chart-info-grid-item">
           <div className="title chart-info-grid-label">Peak NPS</div>
-          <div className="title chart-info-grid-count">4.13</div>
+          <div className="title chart-info-grid-count">
+            {chart.maxNPS.toFixed(2)}
+          </div>
         </div>
         <div className="chart-info-grid">
           {Object.entries(chart.noteCounts).map(entry => {

@@ -60,7 +60,7 @@ export function PathInput(props: PathInputProps) {
       <input
         type="text"
         placeholder={props.placeholder ?? "click to select a file"}
-        defaultValue={props.value}
+        value={props.value}
         style={{ flex: 1 }}
         onFocus={selectFile}
         disabled={props.disabled}

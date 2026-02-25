@@ -36,9 +36,9 @@ export function FileUploadInput(props: FileUploadInputProps) {
     >
       <input
         type="text"
-        disabled={true}
+        disabled={props.disabled}
         placeholder="click to select a file"
-        defaultValue={props.value}
+        value={props.value}
         style={{ flex: 1 }}
         onFocus={selectFile}
         onKeyDown={e => {

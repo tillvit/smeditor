@@ -15,6 +15,7 @@ type ChartProps = {
   noteCounts: Record<string, number>
   music: string | undefined
   parity?: ChartStats["parity"]
+  maxNPS: number
 }
 
 // readonly chart details
@@ -34,6 +35,7 @@ export function useChart(chart: Chart): ChartProps {
       noteCounts: chart.stats.noteCounts,
       music: chart.music,
       parity: chart.stats.parity,
+      maxNPS: chart.stats.getMaxNPS(),
     }
   }
 
