@@ -62,6 +62,7 @@ export function PathInput(props: PathInputProps) {
         placeholder={props.placeholder ?? "click to select a file"}
         value={props.value}
         style={{ flex: 1 }}
+        onChange={() => {}}
         onFocus={selectFile}
         disabled={props.disabled}
         onKeyDown={e => {
