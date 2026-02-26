@@ -363,6 +363,7 @@ declare module "app/src/chart/sm/TimingTypes" {
     sortedEvents?: Cached<TimingEvent>[]
     warpedBeats: Map<number, boolean>
     beatsToSeconds: Map<string, number>
+    beatsToEffectiveBeats: Map<number, number>
   }
   export type DeletableEvent = Partial<Cached<TimingEvent>> &
     Pick<TimingEvent, "type">
@@ -1352,6 +1353,7 @@ declare module "app/src/chart/sm/SMEParser" {
   import { Simfile } from "app/src/chart/sm/Simfile"
   import { SMEParityData } from "app/src/chart/sm/SMETypes"
   export function serializeSMEData(sm: Simfile): string
+  export function requiresSMEData(sm: Simfile): boolean
   export function getParityData(chart: Chart): SMEParityData
   export function loadSMEData(
     string: string,
