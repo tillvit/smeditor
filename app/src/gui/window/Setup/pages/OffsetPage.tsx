@@ -186,13 +186,14 @@ function OffsetSetup(props: {
             offset,
           })
           previousOffsets.current.push(offset)
-          props.update?.(previousOffsets.current.length)
+
           if (previousOffsets.current.length == 16) {
             if (stdDev(previousOffsets.current) < 70) {
               Options.play.offset -= median(previousOffsets.current) / 1000
             }
             previousOffsets.current = []
           }
+          props.update?.(previousOffsets.current.length)
         }
       }
     }
@@ -222,7 +223,7 @@ export function OffsetPage(props: SetupPageProps) {
   return (
     <div className="flex-column-full" style={{ flex: 1, height: 0 }}>
       <h3>Set up your offset</h3>
-      Press any key on every metronome beat.
+      Press any key when you hear the metronome.
       <div
         style={{
           display: "flex",
@@ -232,12 +233,22 @@ export function OffsetPage(props: SetupPageProps) {
         }}
       >
         <OffsetSetup
-          style={{ height: "5rem", marginTop: "0.5rem", width: "100%" }}
+          style={{
+            height: "5rem",
+            marginTop: "0.5rem",
+            marginBottom: "0.5rem",
+            width: "100%",
+          }}
           update={p => setNumPresses(p)}
         />
         <p>{numPresses}/16 presses</p>
       </div>
-      <div className="pref-item">
+      <div
+        className="pref-item"
+        style={{
+          marginTop: "1.5rem",
+        }}
+      >
         <label>Current offset:</label>
         <SliderInput
           value={offset}

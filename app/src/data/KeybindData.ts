@@ -1458,10 +1458,12 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
         action: app => {
           app!.chartManager.loadedSM!.properties.SAMPLESTART = newStart
           app!.chartManager.loadedSM!.properties.SAMPLELENGTH = newLength
+          EventHandler.emit("smModified")
         },
         undo: app => {
           app!.chartManager.loadedSM!.properties.SAMPLESTART = lastStart
           app!.chartManager.loadedSM!.properties.SAMPLELENGTH = lastLength
+          EventHandler.emit("smModified")
         },
       })
     },

@@ -1,10 +1,13 @@
-import { useContext } from "react"
+import { useContext, useEffect, useState } from "react"
 import { Fragment } from "react/jsx-runtime"
 import { Simfile } from "../../../chart/sm/Simfile"
 import { SimfileProperty } from "../../../chart/sm/SimfileTypes"
 import { AUDIO_EXT, IMG_EXT } from "../../../data/FileData"
+import { ActionHistory } from "../../../util/ActionHistory"
+import { EventHandler } from "../../../util/EventHandler"
 import { dirname } from "../../../util/Path"
 import { useSM } from "../../hooks/SMHook"
+import { NumberInput } from "../../inputs/NumberInput"
 import { ValueInput, ValueInputOptions } from "../../inputs/ValueInput"
 import { WindowContext } from "../WindowManager"
 
@@ -150,7 +153,62 @@ const NEW_SONG_DATA: SMPropertyGroupData[] = [
 ]
 
 function SampleInput() {
-  return <div></div>
+  const app = useContext(WindowContext)!.app
+  const sm = app.chartManager.loadedSM!
+  const data = useSM(sm)
+  const [start, setStart] = useState(parseFloat(data.SAMPLESTART ?? "0"))
+  const [length, setLength] = useState(parseFloat(data.SAMPLELENGTH ?? "10"))
+
+  useEffect(() => {
+    setStart(parseFloat(data.SAMPLESTART ?? "0"))
+    setLength(parseFloat(data.SAMPLELENGTH ?? "10"))
+  }, [data.SAMPLESTART, data.SAMPLELENGTH])
+
+  return (
+    <div>
+      <NumberInput
+        value={start}
+        min={0}
+        precision={3}
+        allowNull={false}
+        onChange={value => {
+          if (value == null) return
+          const oldValue = start
+          ActionHistory.instance.run({
+            action: () => {
+              sm.properties.SAMPLESTART = value.toString()
+              EventHandler.emit("smModified")
+            },
+            undo: () => {
+              sm.properties.SAMPLESTART = oldValue.toString()
+              EventHandler.emit("smModified")
+            },
+          })
+        }}
+      />
+      <NumberInput
+        value={start + length}
+        min={start}
+        precision={3}
+        allowNull={false}
+        onChange={value => {
+          if (value == null) return
+          const newLength = value - parseFloat(data.SAMPLESTART ?? "0")
+          const oldLength = length
+          ActionHistory.instance.run({
+            action: () => {
+              sm.properties.SAMPLELENGTH = newLength.toString()
+              EventHandler.emit("smModified")
+            },
+            undo: () => {
+              sm.properties.SAMPLELENGTH = oldLength.toString()
+              EventHandler.emit("smModified")
+            },
+          })
+        }}
+      />
+    </div>
+  )
 }
 
 // create: (_, sm, history) => {
