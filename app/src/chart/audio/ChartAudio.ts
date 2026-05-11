@@ -31,8 +31,8 @@ class ToggleableBiquadFilterNode extends BiquadFilterNode {
 export class ChartAudio {
   private readonly _audioAnalyzer: AnalyserNode
   private readonly _filteredAudioAnalyzer: AnalyserNode
-  private readonly _freqData: Uint8Array
-  private readonly _filteredFreqData: Uint8Array
+  private readonly _freqData: Uint8Array<ArrayBuffer>
+  private readonly _filteredFreqData: Uint8Array<ArrayBuffer>
   private readonly _gainNode: GainNode
   private readonly type
 
@@ -465,7 +465,7 @@ export class ChartAudio {
         resolve()
         return
       }
-      ;(async () => {
+      (async () => {
         try {
           resolve(await this._audioContext.decodeAudioData(data))
         } catch (e) {
@@ -475,11 +475,11 @@ export class ChartAudio {
             try {
               resolve(await oggdec.decodeOggData(data))
             } catch (err) {
-              reject(err)
+              reject(err as Error)
             }
             return
           }
-          reject(e)
+          reject(e as Error)
         }
       })()
     })

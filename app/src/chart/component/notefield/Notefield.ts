@@ -26,11 +26,9 @@ import {
 } from "../../play/TimingWindowCollection"
 import {
   HoldNotedataEntry,
-  HoldNoteType,
   isHoldNote,
   NotedataEntry,
   TapNotedataEntry,
-  TapNoteType,
 } from "../../sm/NoteTypes"
 import { HoldJudgementContainer } from "./HoldJudgementContainer"
 import { NoteContainer } from "./NoteContainer"
@@ -295,8 +293,7 @@ export class HoldObject extends Container {
     if (!this.loaded) return
     if (this.lastLength == length) return
     this.lastLength = length
-    const bbO =
-      this.metrics[`${this.note.type}BodyBottomOffset`]
+    const bbO = this.metrics[`${this.note.type}BodyBottomOffset`]
     const btO = this.metrics[`${this.note.type}BodyTopOffset`]
 
     const states = ["Active", "Inactive"] as const

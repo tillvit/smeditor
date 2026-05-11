@@ -127,6 +127,7 @@
       "@typescript-eslint/prefer-optional-chain": "warn",
       "@typescript-eslint/restrict-template-expressions": "off",
       "@typescript-eslint/restrict-plus-operands": "off",
+      "@typescript-eslint/no-extra-semi": "off",
       "no-constant-condition": [
         "error",
         {
