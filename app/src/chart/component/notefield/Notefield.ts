@@ -119,7 +119,7 @@ export class NoteObject extends Container {
   loadElement(note: TapNotedataEntry) {
     const element = this.nf.noteskin!.getElement(
       {
-        element: note.type as TapNoteType,
+        element: note.type,
         columnName: this.nf.getColumnName(note.col),
         columnNumber: note.col,
       },
@@ -221,7 +221,7 @@ export class HoldObject extends Container {
     if (this.loaded) return
     ;(this.elements as any) = {}
     for (const state of ["Active", "Inactive"] as const) {
-      ;(this.elements[state] as any) = {}
+      (this.elements[state] as any) = {}
       for (const part of ["BottomCap", "Body", "TopCap", "Head"] as const) {
         const element = this.getNoteskinElement(`${state} ${part}`)
         if (part == "BottomCap") {
@@ -239,7 +239,7 @@ export class HoldObject extends Container {
         } else {
           this.elements[state][part] = element
         }
-        ;(state == "Active" ? this.active : this.inactive).addChild(
+        (state == "Active" ? this.active : this.inactive).addChild(
           this.elements[state][part]
         )
       }
@@ -276,7 +276,7 @@ export class HoldObject extends Container {
     for (const state of states) {
       for (const item of items) {
         if ("tint" in this.elements[state][item]) {
-          ;(this.elements[state][item] as Sprite).tint = rgbtoHex(
+          (this.elements[state][item] as Sprite).tint = rgbtoHex(
             brightness * 255,
             brightness * 255,
             brightness * 255
@@ -296,8 +296,8 @@ export class HoldObject extends Container {
     if (this.lastLength == length) return
     this.lastLength = length
     const bbO =
-      this.metrics[`${this.note.type as HoldNoteType}BodyBottomOffset`]
-    const btO = this.metrics[`${this.note.type as HoldNoteType}BodyTopOffset`]
+      this.metrics[`${this.note.type}BodyBottomOffset`]
+    const btO = this.metrics[`${this.note.type}BodyTopOffset`]
 
     const states = ["Active", "Inactive"] as const
     const sign = length >= 0 ? 1 : -1
@@ -405,7 +405,7 @@ export class Notefield extends Container implements ChartRendererComponent {
   }
 
   setGhostNote(note?: NotedataEntry): void {
-    this.ghostNote?.destroy()
+    this.ghostNote?.destroy({ children: true })
     this.ghostNote = undefined
     this.ghostNoteEntry = note
     if (!note) return

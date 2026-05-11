@@ -128,7 +128,7 @@ export class TimingTrackContainer
   update(firstBeat: number, lastBeat: number) {
     if (this.renderer.chartManager.editTimingMode != EditTimingMode.Add) {
       this.ghostBox?.removeFromParent()
-      this.ghostBox?.destroy()
+      this.ghostBox?.destroy({ children: true })
       this.ghostBox = undefined
     }
 
@@ -742,7 +742,7 @@ export class TimingTrackContainer
       : this.getClosestTrack(pos.x)?.name
     if (!eventType) {
       this.ghostBox?.removeFromParent()
-      this.ghostBox?.destroy()
+      this.ghostBox?.destroy({ children: true })
       this.ghostBox = undefined
       return
     }

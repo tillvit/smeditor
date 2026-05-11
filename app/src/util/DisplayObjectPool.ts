@@ -59,7 +59,7 @@ export class DisplayObjectPool<T extends DisplayObject> extends Container<T> {
       date - this.pool[0]?._disabledTime >
       (this.options.destroyTimer ?? 5000)
     ) {
-      this.pool.shift()!.destroy()
+      this.pool.shift()!.destroy({ children: true })
     }
   }
 }

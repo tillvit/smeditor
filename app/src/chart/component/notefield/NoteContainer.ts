@@ -46,7 +46,7 @@ export class NoteContainer extends Container {
     if (this.notesDirty) {
       for (const [note, container] of this.arrowMap.entries()) {
         if (!notedata.includes(note)) {
-          container.destroy()
+          container.destroy({ children: true })
           this.arrowMap.delete(note)
         }
       }
@@ -100,7 +100,7 @@ export class NoteContainer extends Container {
 
     for (const [note, container] of this.arrowMap.entries()) {
       if (!this.shouldDisplayNote(note, firstBeat, lastBeat)) {
-        container.destroy()
+        container.destroy({ children: true })
         this.arrowMap.delete(note)
         continue
       }

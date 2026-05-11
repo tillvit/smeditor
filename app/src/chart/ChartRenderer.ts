@@ -1230,7 +1230,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
   reloadNotefield() {
     const newNotefield = new Notefield(this)
     this.addChildAt(newNotefield, this.children.indexOf(this.notefield))
-    this.notefield.destroy()
+    this.notefield.destroy({ children: true })
     this.notefield = newNotefield
   }
 
