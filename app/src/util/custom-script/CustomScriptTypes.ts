@@ -10,11 +10,20 @@ export interface CustomScript {
   keybinds: KeyCombo[]
 }
 
+interface CustomScriptSelectionData {
+  type: "notes" | "timing"
+  indices: number[]
+  range: {
+    start: { beat: number; second: number }
+    end: { beat: number; second: number }
+  }
+}
+
 export interface CustomScriptWorkerArgs {
   smPayload: SMPayload
   codePayload: string
   chartId: string
-  selectionNoteIndices: number[]
+  selection: CustomScriptSelectionData | null
   args: any[]
 }
 

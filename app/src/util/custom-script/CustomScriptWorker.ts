@@ -223,8 +223,7 @@ function FakeNote(beat: number, col: number): PartialNotedataEntry {
 }
 
 self.onmessage = async (event: MessageEvent<CustomScriptWorkerArgs>) => {
-  const { smPayload, codePayload, chartId, selectionNoteIndices, args } =
-    event.data
+  const { smPayload, codePayload, chartId, selection, args } = event.data
   new EventHandler()
   new ActionHistory()
 
@@ -233,7 +232,19 @@ self.onmessage = async (event: MessageEvent<CustomScriptWorkerArgs>) => {
   const SM = await createSMFromPayload(smPayload)
   const CHART = SM.charts[chartId]
   // @ts-expect-error no-unused-vars
-  const SELECTION = selectionNoteIndices.map(i => CHART.getNotedata()[i])
+  const SELECTION = selection
+    ? {
+        type: selection.type,
+        selection: selection.indices.map(i => {
+          if (selection.type === "notes") {
+            return CHART.getNotedata()[i]
+          } else {
+            return CHART.timingData.getTimingData()[i]
+          }
+        }),
+        range: selection.range,
+      }
+    : null
 
   try {
     eval(codePayload)

@@ -1,4 +1,4 @@
-import { Dispatch, Fragment, SetStateAction, useState } from "react"
+import { Dispatch, SetStateAction, useState } from "react"
 import {
   ARGUMENT_FIELDS,
   CustomScriptArgumentField,
@@ -76,10 +76,8 @@ export function CustomScriptArgumentComponent(props: {
         />
       </div>
       <div
-        className="property-grid"
         style={{
           display: expanded ? "" : "none",
-          rowGap: "0.5rem",
           marginLeft: "1.5rem",
           marginTop: "0.5rem",
           backgroundColor: "var(--secondary-bg)",
@@ -87,34 +85,49 @@ export function CustomScriptArgumentComponent(props: {
           borderRadius: "4px",
         }}
       >
-        <div className="label">Name</div>
-        <TextInput
-          value={props.argument.name}
-          onChange={value => {
-            props.argument.name = value
-            props.setArgument({ ...props.argument })
-          }}
-        />
-        <div className="label">Description</div>
-        <MultilineTextInput
-          value={props.argument.description}
-          rows={2}
-          onChange={value => {
-            props.argument.description = value
-          }}
-        />
-        <div className="label">Type</div>
-        <DropdownInput
-          values={["text", "checkbox", "color", "number", "dropdown", "slider"]}
-          value={props.argument.type}
-          onChange={value => {
-            props.setArgument({
-              ...DEFAULT_ARGUMENTS[value as CustomScriptArgument["type"]],
-              name: props.argument.name,
-              description: props.argument.description,
-            })
-          }}
-        />
+        <div className="pref-item">
+          <div className="pref-item-label label">Name</div>
+          <TextInput
+            style={{ width: "15rem" }}
+            value={props.argument.name}
+            onChange={value => {
+              props.argument.name = value
+              props.setArgument({ ...props.argument })
+            }}
+          />
+        </div>
+        <div className="pref-item">
+          <div className="pref-item-label label">Description</div>
+          <MultilineTextInput
+            style={{ width: "15rem" }}
+            value={props.argument.description}
+            rows={2}
+            onChange={value => {
+              props.argument.description = value
+            }}
+          />
+        </div>
+        <div className="pref-item">
+          <div className="pref-item-label label">Type</div>
+          <DropdownInput
+            values={[
+              "text",
+              "checkbox",
+              "color",
+              "number",
+              "dropdown",
+              "slider",
+            ]}
+            value={props.argument.type}
+            onChange={value => {
+              props.setArgument({
+                ...DEFAULT_ARGUMENTS[value as CustomScriptArgument["type"]],
+                name: props.argument.name,
+                description: props.argument.description,
+              })
+            }}
+          />
+        </div>
         {ARGUMENT_FIELDS[props.argument.type].map(field => {
           const f = field as CustomScriptArgumentField<
             Extract<CustomScriptArgument, { type: typeof props.argument.type }>
@@ -122,8 +135,8 @@ export function CustomScriptArgumentComponent(props: {
           const input = resolveInput(f, props.argument)
 
           return (
-            <Fragment key={field.name}>
-              <div className="label">{field.name}</div>
+            <div className="pref-item" key={field.name}>
+              <div className="pref-item-label label">{field.name}</div>
               <ValueInput
                 {...input}
                 value={props.argument[f.key] as any}
@@ -136,7 +149,7 @@ export function CustomScriptArgumentComponent(props: {
                   })
                 }}
               />
-            </Fragment>
+            </div>
           )
         })}
       </div>

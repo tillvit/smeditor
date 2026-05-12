@@ -16,8 +16,7 @@ export function initializeMonaco(
     import { Chart } from "app/src/chart/sm/Chart"
     import { Simfile } from "app/src/chart/sm/Simfile"
     import { NotedataEntry, PartialNotedataEntry, PartialHoldNotedataEntry} from "app/src/chart/sm/NoteTypes"
-    import { BPMTimingEvent, StopTimingEvent, WarpTimingEvent, DelayTimingEvent, ScrollTimingEvent, TickcountTimingEvent, FakeTimingEvent, LabelTimingEvent, SpeedTimingEvent, TimeSignatureTimingEvent, ComboTimingEvent, AttackTimingEvent, FGChangeTimingEvent, BGChangeTimingEvent } from "app/src/chart/sm/TimingTypes"
-
+    import { TimingEvent, BPMTimingEvent, StopTimingEvent, WarpTimingEvent, DelayTimingEvent, ScrollTimingEvent, TickcountTimingEvent, FakeTimingEvent, LabelTimingEvent, SpeedTimingEvent, TimeSignatureTimingEvent, ComboTimingEvent, AttackTimingEvent, FGChangeTimingEvent, BGChangeTimingEvent } from "app/src/chart/sm/TimingTypes"
 
     declare global {
       /**
@@ -28,10 +27,37 @@ export function initializeMonaco(
        * The current simfile being edited.
        */
       const SM: Simfile;
+
+      type RangeData = {
+        /** The start of the selection range in both beats and seconds. */
+        start: { beat: number, second: number };
+        /** The end of the selection range in both beats and seconds. */
+        end: { beat: number, second: number };
+      };
+
+      type SelectionData = {
+        /** The type of the current selection. "notes" if the selection is of notes, "timing" if the selection is of timing events */
+        type: "notes";
+        /** The array of selected objects. This will be a list of note objects or timing events. */
+        selection: NotedataEntry[];
+        /** The range of the selection in both beats and seconds. */
+        range: RangeData;
+      } | {
+        /** The type of the current selection. "notes" if the selection is of notes, "timing" if the selection is of timing events */
+        type: "timing";
+        /** The array of selected objects. This will be a list of note objects or timing events. */
+        selection: TimingEvent[];
+        /** The range of the selection in both beats and seconds. */
+        range: RangeData;
+      } | null;
+
       /**
-       * The currently selected notes in the editor. Returns [] if no notes are selected.
+       * Provides data about the current selection. If there is no selection, this will be null.\n
+       * - \`SELECTION.type\`: "notes" if the selection is of notes, "timing" if the selection is of timing events\n
+       * - \`SELECTION.selection\`: the array of selected objects, either NotedataEntry[] or TimingEvent[] depending on the type of selection\n
+       * - \`SELECTION.range\`: the range of the selection in both beats and seconds
        */
-      const SELECTION: NotedataEntry[];
+      const SELECTION: SelectionData;
       /**
        * The arguments passed to the script.
        */
@@ -286,7 +312,7 @@ export function initializeMonaco(
     tokenTypes: ["variable"],
     tokenModifiers: ["readonly"],
   }
-  const globals = ["SM", "CHART", "SELECTION", "ARGS"]
+  const globals = ["SM", "CHART", "SELECTION", "ARGS", "RANGE"]
 
   monaco.languages.registerDocumentSemanticTokensProvider("typescript", {
     getLegend: function () {

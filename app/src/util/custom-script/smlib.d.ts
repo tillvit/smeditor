@@ -452,6 +452,11 @@ declare module "app/src/chart/sm/TimingData" {
     parse(type: TimingType, data: string): void
     abstract getOffset(): number
     setOffset(offset: number): void
+    /**
+     * Serializes the timing data into a string that can be saved in an SM/SSC file.
+     * @param fileType The format to serialize for.
+     * @returns
+     */
     serialize(fileType: "sm" | "ssc" | "smebak"): string
     private formatProperty
     protected createColumn(type: TimingEventType): void
@@ -483,6 +488,14 @@ declare module "app/src/chart/sm/TimingData" {
       type: TimingEventType,
       events: DeletableEvent[]
     ): Cached<TimingEvent>[]
+    /**
+     * Returns the type of the column for a given timing event type.
+     * "continuing" columns are columns where the most recent event takes precedence (BPMS, SCROLLS, etc).
+     *
+     * "instant" columns are columns where events have an instant effect (STOPS, WARPS, etc).
+     * @param type
+     * @returns
+     */
     static getColumnType(type: TimingEventType): TimingColumnType
     protected findConflictingEvents(type: TimingEventType): TimingEvent[]
     protected parseEvents<Type extends TimingEventType>(
@@ -490,7 +503,22 @@ declare module "app/src/chart/sm/TimingData" {
       data: string
     ): void
     protected typeRequiresSSC(type: TimingEventType): boolean
+    /**
+     * Returns a default event for a given type and beat.
+     * @param type
+     * @param beat
+     * @returns
+     */
     getDefaultEvent(type: TimingEventType, beat: number): Cached<TimingEvent>
+    /**
+     * Gets the event at a given beat with the given type.
+     * For continuing events, will return the most recent event before the beat if there is no event at the beat. For instant events, will return undefined if there is no event at the beat.
+     *
+     * @param type The type of the event to get.
+     * @param beat The beat to get the event at.
+     * @param useDefault Whether to return a default event if there is no event at the beat. Only applies to continuing events.
+     * @returns
+     */
     getEventAtBeat<Type extends TimingEventType>(
       type: Type,
       beat: number,
@@ -521,35 +549,146 @@ declare module "app/src/chart/sm/TimingData" {
       removedEvents: Cached<TimingEvent>[]
       errors: TimingEvent[]
     }
+    /**
+     * Inserts events into the timing data.
+     * If you want to insert events while respecting split timing, use ChartTimingData.insertColumnEvents instead.
+     * @param events The events to insert.
+     */
     insert(events: TimingEvent[]): void
+    /**
+     * Modifies events in the timing data.
+     * If you want to modify events while respecting split timing, use ChartTimingData.modifyColumnEvents instead.
+     * @param events The events to modify, represented as pairs of [oldEvent, newEvent].
+     */
     modify(events: [TimingEvent, TimingEvent][]): void
+    /**
+     * Deletes events from the timing data.
+     * If you want to delete events while respecting split timing, use ChartTimingData.deleteColumnEvents instead.
+     * @param events
+     */
     delete(events: DeletableEvent[]): void
     findEvents(events: TimingEvent[]): Cached<TimingEvent>[]
+    /**
+     * Returns the beat for a given second.
+     * @param seconds
+     * @returns
+     */
     getBeatFromSeconds(seconds: number): number
+    /**
+     * Returns the seconds for a given beat.
+     * @param beat
+     * @param option Determines how to calculate the seconds when the beat is exactly on an event. "" is the default, "before" will return the seconds before a DELAY event, "after" will return the seconds after STOPS/DELAYS, and "noclamp" will return the unclamped seconds when negative bpms are used
+     * @returns
+     */
     getSecondsFromBeat(
       beat: number,
       option?: "noclamp" | "before" | "after" | ""
     ): number
+    /**
+     * Returns whether a given beat is warped over with a WARP event or a negative BPM.
+     * @param beat
+     * @returns
+     */
     isBeatWarped(beat: number): boolean
+    /**
+     * Returns whether a given beat is faked using a FAKE event.
+     * @param beat
+     * @returns
+     */
     isBeatFaked(beat: number): boolean
+    /**
+     * Gets the measure for a given beat.
+     * @param beat
+     * @returns
+     */
     getMeasure(beat: number): number
+    /**
+     * Gets the length of a division for a given beat.
+     * @param beat
+     * @returns
+     */
     getDivisionLength(beat: number): number
+    /**
+     * Returns a length of a measure in beats at a given beat.
+     * @param beat
+     * @returns
+     */
     getMeasureLength(beat: number): number
+    /**
+     * Gets the beat of the measure for a given beat.
+     * @param beat
+     * @returns
+     */
     getBeatOfMeasure(beat: number): number
+    /**
+     * Returns the beat for a given measure.
+     * @param measure
+     * @returns
+     */
     getBeatFromMeasure(measure: number): number
+    /**
+     * Gets the division number for a given beat within its measure.
+     * @param beat
+     * @returns
+     */
     getDivisionOfMeasure(beat: number): number
+    /**
+     * Generates measure beats within a range of beats. Each beat is of the form [beat, isMeasure], where isMeasure is true if the beat is the start of a measure.
+     * @param firstBeat
+     * @param lastBeat
+     */
     getMeasureBeats(
       firstBeat: number,
       lastBeat: number
     ): Generator<[number, boolean], void>
+    /**
+     * Returns the effective beat for a given beat, which is the beat adjusted for any SCROLL events.
+     * @param beat
+     * @returns
+     */
     getEffectiveBeat(beat: number): number
+    /**
+     * Returns the beat for a given effective beat, which is the beat adjusted for any SCROLL events. This is the inverse of getEffectiveBeat.
+     * Because of negative SCROLLS, there can be multiple beats that map to the same effective beat. In this case, this function will return the earliest beat that maps to the effective beat.
+     * @param effBeat
+     * @returns
+     */
     getBeatFromEffectiveBeat(effBeat: number): number
+    /**
+     * Returns the speed multiplier for a given beat and second.
+     * @param beat
+     * @param seconds
+     * @returns
+     */
     getSpeedMult(beat: number, seconds: number): number
+    /**
+     * Snaps a beat to the closest tick based on the given snap interval. This respects time signatures.
+     * @param beat
+     * @param snap
+     * @returns
+     */
     snapToClosestTick(beat: number, snap: number): number
+    /**
+     * Snaps a beat to the previous tick based on the given snap interval. This respects time signatures.
+     * @param beat
+     * @param snap
+     * @returns
+     */
     snapToPreviousTick(beat: number, snap: number): number
+    /**
+     * Snaps a beat to the next tick based on the given snap interval. This respects time signatures.
+     * @param beat
+     * @param snap
+     * @returns
+     */
     snapToNextTick(beat: number, snap: number): number
     reloadCache(types?: TimingType[]): void
     getBeatTiming(): BeatTimingCache[]
+    /**
+     * Returns all events of the given types, sorted by beat. If no types are given, returns all events of all types sorted by beat.
+     * @param props
+     * @returns
+     */
     getTimingData(): Cached<TimingEvent>[]
     getTimingData<Type extends TimingEventType>(
       ...props: Type[]
@@ -561,6 +700,10 @@ declare module "app/src/chart/sm/TimingData" {
         }
       >
     >[]
+    /**
+     * Returns true if any SSC features are used.
+     * @returns
+     */
     requiresSSC(): boolean
     destroy(): void
   }
@@ -1414,6 +1557,10 @@ declare module "app/src/chart/sm/SongTimingData" {
       }[]
     ): void
     createChartTimingData(chart: Chart): ChartTimingData
+    /**
+     * Return all events of a type in the song timing data. This will not include any chart-specific events.
+     * If you want to respect chart-specific timing events, use `ChartTimingData.getColumn()` instead.
+     */
     getColumn<Type extends TimingEventType>(
       type: Type
     ): NonNullable<
@@ -1490,6 +1637,11 @@ declare module "app/src/chart/sm/SongTimingData" {
           | undefined
       }[Type]
     >
+    /**
+     * Returns the offset for the song timing data. This will not return the chart-specific offset if it exists.
+     * If you want to get the effective offset for a chart, use `ChartTimingData.getOffset()` instead.
+     * @returns
+     */
     getOffset(): number
     reloadCache(types?: TimingType[]): void
     _setOffset(offset: number): void
@@ -1514,6 +1666,11 @@ declare module "app/src/chart/sm/ChartTimingData" {
         type: TimingEventType
       }[]
     ): void
+    /**
+     * Return all events of a type for the chart. If there is chart-specific timing data for the type, this will return that. Otherwise, it will return the song timing data for the type.
+     * @param type
+     * @returns
+     */
     getColumn<Type extends TimingEventType>(
       type: Type
     ): NonNullable<
@@ -1590,25 +1747,91 @@ declare module "app/src/chart/sm/ChartTimingData" {
           | undefined
       }[Type]
     >
+    /**
+     * Returns the offset for the chart. If there is a chart-specific offset, this will return that. Otherwise, it will return the song offset.
+     * @returns
+     */
     getOffset(): number
+    /**
+     * Returns true if there is any chart-specific timing data, including the offset and any timing event columns.
+     * @returns
+     */
     usesChartTiming(): boolean
     hasChartOffset(): boolean
+    /**
+     * Returns whether the specified timing event type has a chart-specific column.
+     * @param type
+     * @returns
+     */
     isPropertyChartSpecific(type: TimingEventType): boolean
+    /**
+     * Copies the chart offset to the song timing data.
+     * @returns
+     */
     copyOffsetToSimfile(): void
+    /**
+     * Removes the chart offset, making the timing data use the song offset.
+     * @returns
+     */
     removeChartOffset(): void
+    /**
+     * Copies all chart-specific timing data into the song timing data, converting chart-specific columns into song-specific columns.
+     * This will overwrite all timing data in the song timing data with the chart-specific timing data.
+     */
     copyAllToSimfile(): void
+    /**
+     * Copies the specified columns from the chart timing data into the song timing data, converting the column to a song-specific column.
+     * This will overwrite the events in the song timing data for the specified columns.
+     * @param columns
+     */
     copyColumnsToSimfile(columns: TimingEventType[]): void
+    /**
+     * Copies the specified columns from the song timing data into the chart timing data, converting the column to a chart-specific column.
+     * This will remove existing chart-specific timing data for the specified columns.
+     * @param columns
+     */
     copyColumnsFromSimfile(columns: TimingEventType[]): void
+    /**
+     * Copies all song timing data into the chart timing data. This will remove existing chart-specific timing data.
+     */
     copyAllFromSimfile(): void
+    /**
+     * Creates chart-specific columns for the specified timing event types, copying events from the song timing data.
+     * @param columns
+     */
     createChartColumns(columns: TimingEventType[]): void
+    /**
+     * Creates empty chart-specific columns for the specified timing event types.
+     */
     createEmptyData(): void
+    /**
+     * Deletes the specified columns from the chart timing data, converting the column to a song-specific column.
+     * @param columns
+     */
     deleteColumns(columns: TimingEventType[]): void
+    /**
+     * Deletes all chart-specific timing data, including all chart-specific columns and the chart offset if it exists.
+     */
     deleteAllChartSpecific(): void
     reloadCache(types?: TimingType[]): void
     private splitSM
     private splitSMPairs
+    /**
+     * Inserts timing events into the chart timing data.
+     * Events will be inserted into the song timing data if their column type is not chart-specific,
+     * and into the chart timing data if it is.
+     * @param events The events to be inserted.
+     */
     insertColumnEvents(events: TimingEvent[]): void
+    /**
+     * Modifies timing events in the chart timing data.
+     * @param events The events to be modified. Each event is represented as a pair, where the first element is the original event and the second element is the modified event.
+     */
     modifyColumnEvents(events: [TimingEvent, TimingEvent][]): void
+    /**
+     * Deletes timing events from the chart timing data.
+     * @param events The events to be deleted.
+     */
     deleteColumnEvents(events: DeletableEvent[]): void
   }
 }

@@ -302,6 +302,11 @@ export abstract class TimingData {
     })
   }
 
+  /**
+   * Serializes the timing data into a string that can be saved in an SM/SSC file.
+   * @param fileType The format to serialize for.
+   * @returns
+   */
   serialize(fileType: "sm" | "ssc" | "smebak"): string {
     if (fileType == "smebak") fileType = "ssc"
     this.reloadCache()
@@ -677,6 +682,14 @@ export abstract class TimingData {
     return removedEvents
   }
 
+  /**
+   * Returns the type of the column for a given timing event type.
+   * "continuing" columns are columns where the most recent event takes precedence (BPMS, SCROLLS, etc).
+   *
+   * "instant" columns are columns where events have an instant effect (STOPS, WARPS, etc).
+   * @param type
+   * @returns
+   */
   static getColumnType(type: TimingEventType): TimingColumnType {
     switch (type) {
       case "BPMS":
@@ -915,6 +928,12 @@ export abstract class TimingData {
     }
   }
 
+  /**
+   * Returns a default event for a given type and beat.
+   * @param type
+   * @param beat
+   * @returns
+   */
   getDefaultEvent(type: TimingEventType, beat: number): Cached<TimingEvent> {
     switch (type) {
       case "BPMS":
@@ -1015,6 +1034,15 @@ export abstract class TimingData {
     }
   }
 
+  /**
+   * Gets the event at a given beat with the given type.
+   * For continuing events, will return the most recent event before the beat if there is no event at the beat. For instant events, will return undefined if there is no event at the beat.
+   *
+   * @param type The type of the event to get.
+   * @param beat The beat to get the event at.
+   * @param useDefault Whether to return a default event if there is no event at the beat. Only applies to continuing events.
+   * @returns
+   */
   getEventAtBeat<Type extends TimingEventType>(
     type: Type,
     beat: number,
@@ -1201,6 +1229,11 @@ export abstract class TimingData {
     }
   }
 
+  /**
+   * Inserts events into the timing data.
+   * If you want to insert events while respecting split timing, use ChartTimingData.insertColumnEvents instead.
+   * @param events The events to insert.
+   */
   insert(events: TimingEvent[]): void {
     let results: ReturnType<TimingData["_insert"]>
     ActionHistory.instance.run({
@@ -1223,6 +1256,11 @@ export abstract class TimingData {
     })
   }
 
+  /**
+   * Modifies events in the timing data.
+   * If you want to modify events while respecting split timing, use ChartTimingData.modifyColumnEvents instead.
+   * @param events The events to modify, represented as pairs of [oldEvent, newEvent].
+   */
   modify(events: [TimingEvent, TimingEvent][]): void {
     let results: ReturnType<TimingData["_modify"]>
     ActionHistory.instance.run({
@@ -1248,6 +1286,11 @@ export abstract class TimingData {
     })
   }
 
+  /**
+   * Deletes events from the timing data.
+   * If you want to delete events while respecting split timing, use ChartTimingData.deleteColumnEvents instead.
+   * @param events
+   */
   delete(events: DeletableEvent[]): void {
     let results: ReturnType<TimingData["_delete"]>
     ActionHistory.instance.run({
@@ -1291,6 +1334,11 @@ export abstract class TimingData {
     return foundEvents
   }
 
+  /**
+   * Returns the beat for a given second.
+   * @param seconds
+   * @returns
+   */
   getBeatFromSeconds(seconds: number): number {
     if (!isFinite(seconds)) return 0
     if (this._cache.beatTiming == undefined) this.buildBeatTimingDataCache()
@@ -1305,6 +1353,12 @@ export abstract class TimingData {
     return event.beat + (timeElapsed * event.bpm) / 60
   }
 
+  /**
+   * Returns the seconds for a given beat.
+   * @param beat
+   * @param option Determines how to calculate the seconds when the beat is exactly on an event. "" is the default, "before" will return the seconds before a DELAY event, "after" will return the seconds after STOPS/DELAYS, and "noclamp" will return the unclamped seconds when negative bpms are used
+   * @returns
+   */
   getSecondsFromBeat(
     beat: number,
     option?: "noclamp" | "before" | "after" | ""
@@ -1350,6 +1404,11 @@ export abstract class TimingData {
     return Math.max(event.secondClamp, event.secondAfter + timeElapsed)
   }
 
+  /**
+   * Returns whether a given beat is warped over with a WARP event or a negative BPM.
+   * @param beat
+   * @returns
+   */
   isBeatWarped(beat: number): boolean {
     if (!isFinite(beat)) return false
     const flooredBeat = Math.floor(beat * 48) / 48
@@ -1377,6 +1436,11 @@ export abstract class TimingData {
     return false
   }
 
+  /**
+   * Returns whether a given beat is faked using a FAKE event.
+   * @param beat
+   * @returns
+   */
   isBeatFaked(beat: number): boolean {
     if (!isFinite(beat)) return false
     const flooredBeat = Math.floor(beat * 48) / 48
@@ -1392,6 +1456,11 @@ export abstract class TimingData {
     return false
   }
 
+  /**
+   * Gets the measure for a given beat.
+   * @param beat
+   * @returns
+   */
   getMeasure(beat: number): number {
     if (!isFinite(beat)) return 0
     if (this._cache.measureTiming == undefined) this.buildMeasureTimingCache()
@@ -1402,6 +1471,11 @@ export abstract class TimingData {
     return event.measure + deltaBeats / event.beatsPerMeasure
   }
 
+  /**
+   * Gets the length of a division for a given beat.
+   * @param beat
+   * @returns
+   */
   getDivisionLength(beat: number): number {
     if (!isFinite(beat)) return 1
     if (this._cache.measureTiming == undefined) this.buildMeasureTimingCache()
@@ -1411,6 +1485,11 @@ export abstract class TimingData {
     return event.divisionLength
   }
 
+  /**
+   * Returns a length of a measure in beats at a given beat.
+   * @param beat
+   * @returns
+   */
   getMeasureLength(beat: number): number {
     if (!isFinite(beat)) return 1
     if (this._cache.measureTiming == undefined) this.buildMeasureTimingCache()
@@ -1420,6 +1499,11 @@ export abstract class TimingData {
     return event.divisionLength * event.numDivisions
   }
 
+  /**
+   * Gets the beat of the measure for a given beat.
+   * @param beat
+   * @returns
+   */
   getBeatOfMeasure(beat: number): number {
     if (!isFinite(beat)) return 0
     if (this._cache.measureTiming == undefined) this.buildMeasureTimingCache()
@@ -1430,6 +1514,11 @@ export abstract class TimingData {
     return deltaBeats % event.beatsPerMeasure
   }
 
+  /**
+   * Returns the beat for a given measure.
+   * @param measure
+   * @returns
+   */
   getBeatFromMeasure(measure: number): number {
     if (!isFinite(measure)) return 0
     if (this._cache.measureTiming == undefined) this.buildMeasureTimingCache()
@@ -1440,11 +1529,21 @@ export abstract class TimingData {
     return event.beat + deltaMeasure * event.beatsPerMeasure
   }
 
+  /**
+   * Gets the division number for a given beat within its measure.
+   * @param beat
+   * @returns
+   */
   getDivisionOfMeasure(beat: number): number {
     if (!isFinite(beat)) return 0
     return this.getBeatOfMeasure(beat) / this.getDivisionLength(beat)
   }
 
+  /**
+   * Generates measure beats within a range of beats. Each beat is of the form [beat, isMeasure], where isMeasure is true if the beat is the start of a measure.
+   * @param firstBeat
+   * @param lastBeat
+   */
   *getMeasureBeats(
     firstBeat: number,
     lastBeat: number
@@ -1491,6 +1590,11 @@ export abstract class TimingData {
     }
   }
 
+  /**
+   * Returns the effective beat for a given beat, which is the beat adjusted for any SCROLL events.
+   * @param beat
+   * @returns
+   */
   getEffectiveBeat(beat: number): number {
     if (!isFinite(beat)) return 0
     if (this._cache.effectiveBeatTiming == undefined)
@@ -1512,6 +1616,12 @@ export abstract class TimingData {
     return effBeat
   }
 
+  /**
+   * Returns the beat for a given effective beat, which is the beat adjusted for any SCROLL events. This is the inverse of getEffectiveBeat.
+   * Because of negative SCROLLS, there can be multiple beats that map to the same effective beat. In this case, this function will return the earliest beat that maps to the effective beat.
+   * @param effBeat
+   * @returns
+   */
   getBeatFromEffectiveBeat(effBeat: number): number {
     if (!isFinite(effBeat)) return 0
     if (this._cache.effectiveBeatTiming == undefined)
@@ -1530,6 +1640,12 @@ export abstract class TimingData {
     return cache[i].beat + additionalBeats
   }
 
+  /**
+   * Returns the speed multiplier for a given beat and second.
+   * @param beat
+   * @param seconds
+   * @returns
+   */
   getSpeedMult(beat: number, seconds: number): number {
     if (!isFinite(beat) || !isFinite(seconds)) return 0
     const cache = this.getColumn("SPEEDS")
@@ -1545,6 +1661,12 @@ export abstract class TimingData {
     return progress * (event.value - prev) + prev
   }
 
+  /**
+   * Snaps a beat to the closest tick based on the given snap interval. This respects time signatures.
+   * @param beat
+   * @param snap
+   * @returns
+   */
   snapToClosestTick(beat: number, snap: number) {
     const beatOfMeasure = this.getBeatOfMeasure(beat)
     const measureBeat = beat - beatOfMeasure
@@ -1552,6 +1674,12 @@ export abstract class TimingData {
     return Math.max(0, measureBeat + newBeatOfMeasure)
   }
 
+  /**
+   * Snaps a beat to the previous tick based on the given snap interval. This respects time signatures.
+   * @param beat
+   * @param snap
+   * @returns
+   */
   snapToPreviousTick(beat: number, snap: number) {
     const currentMeasure = Math.floor(this.getMeasure(beat))
     const currentMeasureBeat = this.getBeatFromMeasure(currentMeasure)
@@ -1574,6 +1702,12 @@ export abstract class TimingData {
     return newBeat
   }
 
+  /**
+   * Snaps a beat to the next tick based on the given snap interval. This respects time signatures.
+   * @param beat
+   * @param snap
+   * @returns
+   */
   snapToNextTick(beat: number, snap: number) {
     const currentMeasure = Math.floor(this.getMeasure(beat))
     const currentMeasureBeat = this.getBeatFromMeasure(currentMeasure)
@@ -1611,7 +1745,7 @@ export abstract class TimingData {
       this.buildMeasureTimingCache()
     reloadColumns
       .filter(type => type != "OFFSET")
-      .forEach(type => this.updateEvents(type as TimingEventType))
+      .forEach(type => this.updateEvents(type))
     this._cache.sortedEvents = this.mergeColumns(
       TIMING_EVENT_NAMES.map(type => this.getColumn(type))
     )
@@ -1621,6 +1755,11 @@ export abstract class TimingData {
     return [...this._cache.beatTiming!]
   }
 
+  /**
+   * Returns all events of the given types, sorted by beat. If no types are given, returns all events of all types sorted by beat.
+   * @param props
+   * @returns
+   */
   getTimingData(): Cached<TimingEvent>[]
   getTimingData<Type extends TimingEventType>(
     ...props: Type[]
@@ -1630,6 +1769,10 @@ export abstract class TimingData {
     return this.mergeColumns(props.map(prop => this.getColumn(prop)))
   }
 
+  /**
+   * Returns true if any SSC features are used.
+   * @returns
+   */
   requiresSSC(): boolean {
     return TIMING_EVENT_NAMES.some(type => this.typeRequiresSSC(type))
   }

@@ -28,7 +28,7 @@ import {
 import { EventHandler } from "../util/EventHandler"
 import { Flags } from "../util/Flags"
 import { Keybinds } from "../util/Keybinds"
-import { clamp } from "../util/Math"
+import { clamp, maxArr, minArr } from "../util/Math"
 import { Options } from "../util/Options"
 import { basename, dirname, extname } from "../util/Path"
 import { tpsUpdate } from "../util/Performance"
@@ -1831,6 +1831,33 @@ export class ChartManager {
     return this.eventSelection.timingEvents.length > 0
   }
 
+  getRange() {
+    if (!this.hasRange()) return null
+
+    let startBeat = this.startRegion
+    let endBeat = this.endRegion
+    if (startBeat === undefined || endBeat === undefined) {
+      const selected =
+        this.selection.notes.length > 0
+          ? this.selection.notes
+          : this.eventSelection.timingEvents
+      const beats = selected.map(item => item.beat)
+      startBeat = minArr(beats)
+      endBeat = maxArr(beats)
+    }
+
+    return {
+      start: {
+        beat: startBeat,
+        second: this.loadedChart?.getSecondsFromBeat(startBeat) ?? 0,
+      },
+      end: {
+        beat: endBeat,
+        second: this.loadedChart?.getSecondsFromBeat(endBeat) ?? 0,
+      },
+    }
+  }
+
   hasRange() {
     return (
       this.selection.notes.length > 1 ||
@@ -2108,8 +2135,7 @@ export class ChartManager {
     for (const note of newNotes) {
       const lastNote = uniqueNotes.at(-1)
       if (
-        lastNote !== undefined &&
-        lastNote.beat == note.beat &&
+        lastNote?.beat == note.beat &&
         lastNote.col == note.col
       ) {
         continue

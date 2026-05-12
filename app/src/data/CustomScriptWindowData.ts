@@ -21,7 +21,7 @@ export const ARGUMENT_FIELDS: {
 } = {
   text: [
     {
-      name: "Default",
+      name: "Default value",
       key: "default",
       description: "Default value",
       getValue: arg => arg.default,
@@ -35,7 +35,7 @@ export const ARGUMENT_FIELDS: {
   ],
   checkbox: [
     {
-      name: "Default",
+      name: "Default value",
       description: "Default value",
       key: "default",
       getValue: arg => arg.default,
@@ -49,7 +49,7 @@ export const ARGUMENT_FIELDS: {
   ],
   color: [
     {
-      name: "Default",
+      name: "Default value",
       key: "default",
       description: "Default value",
       getValue: arg => arg.default,
@@ -111,7 +111,7 @@ export const ARGUMENT_FIELDS: {
       },
     },
     {
-      name: "Default",
+      name: "Default value",
       key: "default",
       description: "Default value",
       getValue: arg => {
@@ -177,7 +177,7 @@ export const ARGUMENT_FIELDS: {
       },
     },
     {
-      name: "Default",
+      name: "Default value",
       key: "default",
       description: "Default value",
       getValue: arg => arg.default,
@@ -220,7 +220,7 @@ export const ARGUMENT_FIELDS: {
       },
     },
     {
-      name: "Default",
+      name: "Default value",
       key: "default",
       description: "Default selected option",
       getValue: arg => arg.default,

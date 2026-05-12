@@ -1425,35 +1425,17 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() != EditMode.Edit ||
       !app.chartManager.hasRange(),
     callback: app => {
-      const chart = app.chartManager.loadedChart!
       const lastStart = app.chartManager.loadedSM!.properties.SAMPLESTART ?? "0"
       const lastLength =
         app.chartManager.loadedSM!.properties.SAMPLELENGTH ?? "10"
 
-      let newStart = ""
-      let newLength = ""
+      const range = app.chartManager.getRange()!
+      const newStart = roundDigit(range.start.second, 3).toString()
+      const newLength = roundDigit(
+        range.end.second - range.start.second,
+        3
+      ).toString()
 
-      //Try using the region
-      if (
-        app.chartManager.startRegion !== undefined &&
-        app.chartManager.endRegion !== undefined
-      ) {
-        const startSec = chart.getSecondsFromBeat(app.chartManager.startRegion)
-        const endSec = chart.getSecondsFromBeat(app.chartManager.endRegion)
-        newStart = roundDigit(startSec, 3).toString()
-        newLength = roundDigit(endSec - startSec, 3).toString()
-      } else {
-        //Use notes/events
-        const selected =
-          app.chartManager.selection.notes.length > 0
-            ? app.chartManager.selection.notes
-            : app.chartManager.eventSelection.timingEvents
-        const beats = selected.map(item => item.beat)
-        const startSec = chart.getSecondsFromBeat(minArr(beats))
-        const endSec = chart.getSecondsFromBeat(maxArr(beats))
-        newStart = roundDigit(startSec, 3).toString()
-        newLength = roundDigit(endSec - startSec, 3).toString()
-      }
       ActionHistory.instance.run({
         action: app => {
           app!.chartManager.loadedSM!.properties.SAMPLESTART = newStart
@@ -1703,7 +1685,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   editCustomScripts: {
     label: "Edit custom scripts...",
     combos: [{ mods: [Modifier.SHIFT], key: "G" }],
-    disabled: true,
+    disabled: false,
     callback: async () => {
       const CustomScriptEditorWindow = (
         await import("../gui/window/CustomScript/CustomScriptEditorWindow")
