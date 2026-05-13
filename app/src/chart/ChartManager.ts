@@ -1862,7 +1862,9 @@ export class ChartManager {
     return (
       this.selection.notes.length > 0 ||
       this.eventSelection.timingEvents.length > 0 ||
-      (this.startRegion !== undefined && this.endRegion !== undefined)
+      (this.startRegion !== undefined &&
+        this.endRegion !== undefined &&
+        this.startRegion != this.endRegion)
     )
   }
 
