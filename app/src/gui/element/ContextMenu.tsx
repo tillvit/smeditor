@@ -2,6 +2,7 @@ import { Point } from "pixi.js"
 import { useContext, useMemo, useState } from "react"
 import { EditMode } from "../../chart/ChartManager"
 import { MENUBAR_DATA } from "../../data/MenubarData"
+import { CustomScripts } from "../../util/custom-script/CustomScripts"
 import { PopupContext, PopupData } from "../popup/PopupManager"
 import { MenubarDropdown } from "./menubar/MenubarDropdown"
 import { MenubarSelection } from "./menubar/MenubarSelection"
@@ -11,12 +12,11 @@ const DEFAULT_KEYBINDS = ["cut", "copy", "paste", "pasteReplace"]
 export function ContextMenuPopupContent() {
   const popupData = useContext(PopupContext)
   const [activeItem, setActiveItem] = useState<string | null>(null)
-  const hasNoteSelection = useMemo(() => {
+  const hasRange = useMemo(() => {
     if (!popupData) return false
     const app = popupData.app
     return (
-      app.chartManager.getMode() == EditMode.Edit &&
-      app.chartManager.hasNoteSelection()
+      app.chartManager.getMode() == EditMode.Edit && app.chartManager.hasRange()
     )
   }, [])
 
@@ -38,7 +38,7 @@ export function ContextMenuPopupContent() {
           close={() => popupData.close()}
         />
       ))}
-      {hasNoteSelection && (
+      {hasRange && (
         <>
           <div className="separator" />
           {MENUBAR_DATA["selection"].options.slice(0, -4).map((option, i) => {
@@ -68,6 +68,31 @@ export function ContextMenuPopupContent() {
                 return <MenubarDropdown key={i} {...newProps} data={option} />
             }
           })}
+          {CustomScripts.scripts.length > 0 && (
+            <>
+              <div
+                className="separator"
+                key={"cs-sep"}
+                onClick={event => event.stopPropagation()}
+              />
+              <MenubarDropdown
+                key={"cs-dropdown"}
+                app={popupData.app}
+                id="cs-dropdown"
+                parentActive={activeItem}
+                setActive={setActiveItem}
+                close={() => popupData.close()}
+                data={{
+                  type: "dropdown",
+                  title: "Custom Scripts",
+                  options: MENUBAR_DATA["scripts"].options.slice(
+                    0,
+                    CustomScripts.scripts.length
+                  ),
+                }}
+              />
+            </>
+          )}
         </>
       )}
     </div>

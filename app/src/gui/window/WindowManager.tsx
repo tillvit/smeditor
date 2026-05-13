@@ -11,6 +11,7 @@ export interface WindowData {
   blocking?: boolean
   id: string
   content: ReactNode
+  closeListeners?: (() => Promise<void>)[]
 }
 
 interface WindowContextData extends WindowData {
@@ -20,6 +21,7 @@ interface WindowContextData extends WindowData {
   setDisableClose: (close: boolean) => void
   setBlocking: (blocking: boolean) => void
   center?: () => void
+  beforeClose: (listener: () => Promise<void>) => void
   app: App
 }
 
@@ -110,6 +112,10 @@ export function WindowManagerComponent({ app }: { app: App | null }) {
                 ...window,
                 isFocused: window.id == focusedWindow,
                 app,
+                beforeClose: (listener: () => Promise<void>) => {
+                  if (!window.closeListeners) window.closeListeners = []
+                  window.closeListeners.push(listener)
+                },
                 focus: () => {
                   setFocusedWindow(window.id)
                   setWindows(prev => {
@@ -119,7 +125,15 @@ export function WindowManagerComponent({ app }: { app: App | null }) {
                   })
                 },
                 close: () => {
-                  setWindows(prev => prev.filter(w => w.id !== window.id))
+                  if (window.closeListeners) {
+                    Promise.all(
+                      window.closeListeners.map(listener => listener())
+                    ).then(() => {
+                      setWindows(prev => prev.filter(w => w.id !== window.id))
+                    })
+                  } else {
+                    setWindows(prev => prev.filter(w => w.id !== window.id))
+                  }
                 },
                 setDisableClose: close => {
                   setWindows(prev =>

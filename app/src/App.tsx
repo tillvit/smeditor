@@ -38,6 +38,7 @@ import {
 } from "./gui/window/WindowManager"
 import { ActionHistory } from "./util/ActionHistory"
 import { BetterRoundedRect } from "./util/BetterRoundedRect"
+import { CustomScripts } from "./util/custom-script/CustomScripts"
 import { EventHandler } from "./util/EventHandler"
 import { FileHandler } from "./util/file-handler/FileHandler"
 import { Flags, loadFlags } from "./util/Flags"
@@ -102,6 +103,7 @@ export class App {
     tippy.setDefaultProps({ duration: [200, 100], theme: "sm" })
 
     Options.loadOptions()
+    CustomScripts.loadCustomScripts()
 
     Keybinds.load(this)
 

@@ -27,11 +27,12 @@ import { TimingDataWindow } from "../gui/window/TimingData/TimingDataWindow"
 import { UserOptionsWindow } from "../gui/window/UserOptions/UserOptionsWindow"
 import { WindowManager } from "../gui/window/WindowManager"
 import { ActionHistory } from "../util/ActionHistory"
+import { CustomScriptRunner } from "../util/custom-script/CustomScriptRunner"
 import { EventHandler } from "../util/EventHandler"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 import { Flags } from "../util/Flags"
-import { maxArr, minArr, roundDigit } from "../util/Math"
+import { roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
 import { basename, dirname } from "../util/Path"
 import {
@@ -1693,6 +1694,14 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       WindowManager.openWindow(CustomScriptEditorWindow())
     },
   },
+  stopAllScripts: {
+    label: "Stop all scripts",
+    combos: [],
+    disabled: false,
+    callback: () => {
+      CustomScriptRunner.stopAll()
+    },
+  },
   openSetup: {
     label: "Open Setup",
     combos: [],
@@ -1808,31 +1817,11 @@ for (const type of ["STOPS", "DELAYS"] as const) {
       app.chartManager.getMode() != EditMode.Edit ||
       !app.chartManager.hasRange(),
     callback: app => {
-      const chart = app.chartManager.loadedChart!
-      let startBeat = 0
-      let length = 0
+      const startBeat = app.chartManager.getRange()!.start.beat
+      const length =
+        app.chartManager.getRange()!.end.second -
+        app.chartManager.getRange()!.start.second
 
-      //Try using the region
-      if (
-        app.chartManager.startRegion !== undefined &&
-        app.chartManager.endRegion !== undefined
-      ) {
-        const startSec = chart.getSecondsFromBeat(app.chartManager.startRegion)
-        const endSec = chart.getSecondsFromBeat(app.chartManager.endRegion)
-        startBeat = app.chartManager.startRegion
-        length = endSec - startSec
-      } else {
-        //Use notes/events
-        const selected =
-          app.chartManager.selection.notes.length > 0
-            ? app.chartManager.selection.notes
-            : app.chartManager.eventSelection.timingEvents
-        const beats = selected.map(item => item.beat)
-        const startSec = chart.getSecondsFromBeat(minArr(beats))
-        const endSec = chart.getSecondsFromBeat(maxArr(beats))
-        startBeat = minArr(beats)
-        length = endSec - startSec
-      }
       app.chartManager.loadedChart!.timingData.insertColumnEvents([
         { type, beat: startBeat, value: length },
       ])
@@ -1849,26 +1838,11 @@ for (const type of ["WARPS", "FAKES"] as const) {
       app.chartManager.getMode() != EditMode.Edit ||
       !app.chartManager.hasRange(),
     callback: app => {
-      let startBeat = 0
-      let length = 0
+      const startBeat = app.chartManager.getRange()!.start.beat
+      const length =
+        app.chartManager.getRange()!.end.beat -
+        app.chartManager.getRange()!.start.beat
 
-      //Try using the region
-      if (
-        app.chartManager.startRegion !== undefined &&
-        app.chartManager.endRegion !== undefined
-      ) {
-        startBeat = app.chartManager.startRegion
-        length = app.chartManager.endRegion - app.chartManager.startRegion
-      } else {
-        //Use notes/events
-        const selected =
-          app.chartManager.selection.notes.length > 0
-            ? app.chartManager.selection.notes
-            : app.chartManager.eventSelection.timingEvents
-        const beats = selected.map(item => item.beat)
-        startBeat = minArr(beats)
-        length = maxArr(beats) - minArr(beats)
-      }
       app.chartManager.loadedChart!.timingData.insertColumnEvents([
         { type, beat: startBeat, value: length },
       ])

@@ -258,9 +258,8 @@ import { CustomScriptSelector } from "./CustomScriptSelector"
 
 function CustomScriptEditorContent() {
   const [scripts, setScripts] = useState(CustomScripts.scripts)
-  const [scriptIndex, setScriptIndex] = useState(0)
+  const [scriptIndex, setScriptIndex] = useState<number | null>(0)
   const [tab, setTab] = useState<"metadata" | "editor">("metadata")
-  const script = scripts[scriptIndex] ?? null
 
   return (
     <div className="flex-row" style={{ gap: "1rem" }}>
@@ -268,9 +267,31 @@ function CustomScriptEditorContent() {
         scriptIndex={scriptIndex}
         setScriptIndex={setScriptIndex}
         scripts={scripts}
+        setScripts={setScripts}
       />
       <div className="custom-script-container">
-        <div className="custom-script-tab">
+        {scriptIndex == null && (
+          <div
+            className="detail"
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "1rem",
+            }}
+          >
+            No script selected
+          </div>
+        )}
+        {/* we need to keep this as display none :( */}
+        <div
+          className="custom-script-tab"
+          style={{
+            display: scriptIndex !== null ? "" : "none",
+          }}
+        >
           <div
             className={`tab-option ${tab == "metadata" ? "active" : ""}`}
             onClick={() => setTab("metadata")}
@@ -284,34 +305,31 @@ function CustomScriptEditorContent() {
             Editor
           </div>
         </div>
-        {script && (
-          <>
-            <div
-              className="custom-script-metadata"
-              style={{
-                display: tab == "metadata" ? "block" : "none",
-                flex: 1,
-                height: 0,
-                overflow: "hidden",
-              }}
-            >
-              <CustomScriptMetadataTab
-                scriptIndex={scriptIndex}
-                scripts={scripts}
-                setScripts={setScripts}
-              />
-            </div>
 
-            <div
-              style={{ display: tab == "editor" ? "block" : "none", flex: 1 }}
-            >
-              <CustomScriptEditorTab
-                scriptIndex={scriptIndex}
-                scripts={scripts}
-              />
-            </div>
-          </>
-        )}
+        <>
+          <div
+            className="custom-script-metadata"
+            style={{
+              display: tab == "metadata" ? "block" : "none",
+              flex: 1,
+              height: 0,
+              overflow: "hidden",
+            }}
+          >
+            <CustomScriptMetadataTab
+              scriptIndex={scriptIndex}
+              scripts={scripts}
+              setScripts={setScripts}
+            />
+          </div>
+
+          <div style={{ display: tab == "editor" ? "block" : "none", flex: 1 }}>
+            <CustomScriptEditorTab
+              scriptIndex={scriptIndex}
+              scripts={scripts}
+            />
+          </div>
+        </>
       </div>
     </div>
   )

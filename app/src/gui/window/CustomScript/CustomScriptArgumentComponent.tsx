@@ -14,6 +14,7 @@ import { ValueInput } from "../../inputs/ValueInput"
 export function CustomScriptArgumentComponent(props: {
   argument: CustomScriptArgument
   setArgument: Dispatch<SetStateAction<CustomScriptArgument>>
+  removeArgument: () => void
 }) {
   const [expanded, setExpanded] = useState(false)
 
@@ -25,8 +26,6 @@ export function CustomScriptArgumentComponent(props: {
       ? field.input(argument)
       : field.input
   }
-
-  console.log(props.argument)
 
   return (
     <div>
@@ -67,12 +66,14 @@ export function CustomScriptArgumentComponent(props: {
           height={16}
           style={{ transform: "rotate(0deg)" }}
         />
-        <ReactIcon id="TRASH" width={16} height={16} className="revert" />
         <ReactIcon
-          id="CHEVRON"
+          id="TRASH"
           width={16}
           height={16}
-          style={{ transform: expanded ? "rotate(0deg)" : "rotate(-90deg)" }}
+          className="revert"
+          onClick={() => {
+            props.removeArgument()
+          }}
         />
       </div>
       <div

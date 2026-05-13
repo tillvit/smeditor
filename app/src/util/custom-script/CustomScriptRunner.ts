@@ -1,4 +1,7 @@
 import { App } from "../../App"
+import { WaterfallManager } from "../../gui/element/WaterfallManager"
+import { CustomScriptTriggerWindow } from "../../gui/window/CustomScript/CustomScriptTriggerWindow"
+import { WindowManager } from "../../gui/window/WindowManager"
 import { ActionHistory } from "../ActionHistory"
 import { EventHandler } from "../EventHandler"
 import { isSameRow } from "../Util"
@@ -16,17 +19,53 @@ import {
 import CustomScriptWorker from "./CustomScriptWorker?worker"
 
 export class CustomScriptRunner {
-  static run(
+  static MAX_LENGTH = 10000
+  static activeWorkers = new Set<Worker>()
+
+  static async runPrompt(
     app: App,
     script: CustomScript,
-    args: any,
     logCallback?: (
       type: "log" | "error" | "warn" | "info",
       ...data: any[]
     ) => void,
     onFinish?: () => void
   ) {
-    if (!app.chartManager.loadedSM || !app.chartManager.loadedChart) return
+    if (script.arguments.length == 0) {
+      return CustomScriptRunner.run(app, script, [], logCallback, onFinish)
+    }
+
+    return new Promise<Worker | undefined>(resolve => {
+      const window = CustomScriptTriggerWindow(script, args => {
+        resolve(
+          CustomScriptRunner.run(app, script, args, logCallback, onFinish)
+        )
+      })
+      WindowManager.openWindow(window)
+    })
+  }
+
+  static run(
+    app: App,
+    script: CustomScript,
+    args: (string | number | boolean)[],
+    logCallback?: (
+      type: "log" | "error" | "warn" | "info",
+      ...data: any[]
+    ) => void,
+    onFinish?: () => void
+  ) {
+    if (!app.chartManager.loadedSM || !app.chartManager.loadedChart) {
+      WaterfallManager.createFormatted("No SM loaded!", "warn")
+      onFinish?.()
+      return
+    }
+
+    if (script.jsCode === null) {
+      WaterfallManager.createFormatted("The script failed to run!", "error")
+      onFinish?.()
+      return
+    }
 
     let selectionData = null
 
@@ -89,11 +128,13 @@ export class CustomScriptRunner {
     }
 
     const worker = new CustomScriptWorker()
+    CustomScriptRunner.activeWorkers.add(worker)
     worker.postMessage(workerArgs)
     worker.onerror = e => {
       logCallback?.("error", "Validation failed: \n" + e.error.message)
       console.error("Custom script error:", e)
       worker.terminate()
+      CustomScriptRunner.activeWorkers.delete(worker)
       onFinish?.()
     }
     worker.onmessage = (event: MessageEvent<CustomScriptResult>) => {
@@ -134,9 +175,17 @@ export class CustomScriptRunner {
         },
       })
       worker.terminate()
+      CustomScriptRunner.activeWorkers.delete(worker)
       onFinish?.()
     }
 
     return worker
+  }
+
+  static stopAll() {
+    CustomScriptRunner.activeWorkers.forEach(worker => {
+      worker.terminate()
+    })
+    CustomScriptRunner.activeWorkers.clear()
   }
 }

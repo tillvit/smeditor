@@ -1,5 +1,8 @@
+import { KEYBIND_DATA } from "../../data/KeybindData"
+import { MENUBAR_DATA, MenuOption } from "../../data/MenubarData"
 import { WaterfallManager } from "../../gui/element/WaterfallManager"
-import { CustomScript } from "./CustomScriptTypes"
+import { CustomScriptRunner } from "./CustomScriptRunner"
+import { CustomScript, CustomScriptSchema } from "./CustomScriptTypes"
 
 const DEFAULT_SCRIPTS: CustomScript[] = [
   {
@@ -60,7 +63,7 @@ CHART.timingData.insertColumnEvents(scrolls);
         type: "dropdown",
         name: "Dropdown Argument",
         description: "This is a dropdown argument",
-        items: ["Option 1", "Option 2", "Option 3"],
+        values: ["Option 1", "Option 2", "Option 3"],
         default: "Option 1",
       },
       {
@@ -70,11 +73,11 @@ CHART.timingData.insertColumnEvents(scrolls);
         default: "#ffffff",
       },
     ],
-    keybinds: [],
   },
 ]
 
 export class CustomScripts {
+  static usedKeybindIds: string[] = []
   static _scripts: CustomScript[]
   static get scripts() {
     if (!this._scripts) {
@@ -98,44 +101,7 @@ export class CustomScripts {
       }
       for (const script of parsed) {
         try {
-          if (
-            typeof script.name !== "string" ||
-            typeof script.jsCode !== "string" ||
-            typeof script.tsCode !== "string" ||
-            typeof script.description !== "string" ||
-            !Array.isArray(script.arguments) ||
-            !Array.isArray(script.keybinds)
-          ) {
-            throw new Error("Invalid script format")
-          }
-          for (const arg of script.arguments) {
-            if (
-              !(
-                [
-                  "number",
-                  "checkbox",
-                  "color",
-                  "text",
-                  "dropdown",
-                  "slider",
-                ] as const
-              ).includes(arg.type)
-            ) {
-              throw new Error("Invalid argument type: " + arg.type)
-            }
-            if (
-              typeof arg.name !== "string" ||
-              typeof arg.description !== "string"
-            ) {
-              throw new Error("Invalid argument format")
-            }
-          }
-          for (const kbd of script.keybinds) {
-            if (typeof kbd.key !== "string" || !Array.isArray(kbd.mods)) {
-              throw new Error("Invalid keybind format")
-            }
-          }
-          scripts.push(script)
+          scripts.push(CustomScriptSchema.parse(script))
         } catch (error) {
           WaterfallManager.createFormatted(
             "Failed to load custom script: " + error,
@@ -150,9 +116,77 @@ export class CustomScripts {
         "error"
       )
     }
+    this.installScripts()
+  }
+
+  static installScripts() {
+    this.usedKeybindIds.forEach(id => {
+      delete KEYBIND_DATA[id]
+    })
+    this.usedKeybindIds = []
+    for (let i = 0; i < this.scripts.length; i++) {
+      const script = this.scripts[i]
+      let keybindId =
+        "customScript-" + Math.random().toString(36).substring(2, 15)
+      while (this.usedKeybindIds.includes(keybindId)) {
+        keybindId =
+          "customScript-" + Math.random().toString(36).substring(2, 15)
+      }
+      KEYBIND_DATA[keybindId] = {
+        label: script.name,
+        disabled: app =>
+          !app.chartManager.loadedSM || !app.chartManager.loadedChart,
+        combos: [],
+        callback: app => {
+          WaterfallManager.create(`Running custom script: ${script.name}`)
+          CustomScriptRunner.runPrompt(app, script, undefined, () => {
+            WaterfallManager.create(
+              `Finished running custom script: ${script.name}`
+            )
+          })
+        },
+      }
+      this.usedKeybindIds[i] = keybindId
+    }
+
+    if (this.usedKeybindIds.length > 0) {
+      MENUBAR_DATA.scripts.options = this.usedKeybindIds
+        .map(
+          id =>
+            ({
+              type: "selection",
+              id,
+            }) as MenuOption
+        )
+        .concat([
+          {
+            type: "separator",
+          },
+          {
+            type: "selection",
+            id: "editCustomScripts",
+          },
+          {
+            type: "selection",
+            id: "stopAllScripts",
+          },
+        ])
+    } else {
+      MENUBAR_DATA.scripts.options = [
+        {
+          type: "selection",
+          id: "editCustomScripts",
+        },
+        {
+          type: "selection",
+          id: "stopAllScripts",
+        },
+      ]
+    }
   }
 
   static saveCustomScripts() {
     localStorage.setItem("customScripts", JSON.stringify(this.scripts))
+    this.installScripts()
   }
 }

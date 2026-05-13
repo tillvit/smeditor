@@ -1,13 +1,13 @@
-import { KeyCombo } from "../../data/KeybindData"
+import z from "zod"
 import { SMPayload } from "./CustomScriptUtils"
 
 export interface CustomScript {
   name: string
   description: string
-  jsCode: string
+  jsCode: string | null
   tsCode: string
   arguments: CustomScriptArgument[]
-  keybinds: KeyCombo[]
+  // keybinds: KeyCombo[]
 }
 
 interface CustomScriptSelectionData {
@@ -24,7 +24,7 @@ export interface CustomScriptWorkerArgs {
   codePayload: string
   chartId: string
   selection: CustomScriptSelectionData | null
-  args: any[]
+  args: (string | number | boolean)[]
 }
 
 export type CustomScriptArgument =
@@ -66,8 +66,8 @@ export interface CustomScriptTextArgument extends CustomScriptBaseArgument {
 
 export interface CustomScriptDropdownArgument extends CustomScriptBaseArgument {
   type: "dropdown"
-  items: (string | number)[]
-  default: string | number
+  values: string[]
+  default: string
 }
 
 export interface CustomScriptSliderArgument extends CustomScriptBaseArgument {
@@ -95,3 +95,64 @@ export type CustomScriptResult =
   | CustomScriptPayload
   | CustomScriptLog
   | CustomScriptClose
+
+const CustomScriptArgumentSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("checkbox"),
+    name: z.string(),
+    description: z.string(),
+    default: z.boolean(),
+  }),
+  z.object({
+    type: z.literal("color"),
+    name: z.string(),
+    description: z.string(),
+    default: z.string(),
+  }),
+  z.object({
+    type: z.literal("number"),
+    name: z.string(),
+    description: z.string(),
+    default: z.number(),
+    min: z.number(),
+    max: z.number(),
+    step: z.number(),
+    precision: z.number(),
+  }),
+  z.object({
+    type: z.literal("text"),
+    name: z.string(),
+    description: z.string(),
+    default: z.string(),
+  }),
+  z.object({
+    type: z.literal("dropdown"),
+    name: z.string(),
+    description: z.string(),
+    values: z.array(z.string()),
+    default: z.string(),
+  }),
+  z.object({
+    type: z.literal("slider"),
+    name: z.string(),
+    description: z.string(),
+    default: z.number(),
+    min: z.number(),
+    max: z.number(),
+  }),
+])
+
+export const CustomScriptUploadSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  code: z.string(),
+  arguments: z.array(CustomScriptArgumentSchema),
+})
+
+export const CustomScriptSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  tsCode: z.string(),
+  jsCode: z.string().nullable(),
+  arguments: z.array(CustomScriptArgumentSchema),
+})

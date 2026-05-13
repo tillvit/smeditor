@@ -61,7 +61,7 @@ export function initializeMonaco(
       /**
        * The arguments passed to the script.
        */
-      const ARGS: any;
+      const ARGS: (string | number | boolean)[];
 
       const Foot: typeof import("app/src/chart/stats/parity/ParityDataTypes").Foot;
 

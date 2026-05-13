@@ -196,25 +196,15 @@ export const ARGUMENT_FIELDS: {
   dropdown: [
     {
       name: "Options",
-      key: "items",
-      description:
-        "Dropdown options. Seperate options with a comma. Arguments that are a number will be converted into a number.",
-      getValue: arg => arg.items.join(","),
+      key: "values",
+      description: "Dropdown options, separated by a comma.",
+      getValue: arg => arg.values.join(","),
       input: {
         type: "text",
         onChange: (arg, value) => {
-          arg.items = (value as string)
-            .split(",")
-            .map(option => option.trim())
-            .map(option => {
-              const number = Number(option)
-              if (!isNaN(number)) {
-                return number
-              }
-              return option
-            })
-          if (!arg.items.includes(arg.default)) {
-            arg.default = arg.items[0]
+          arg.values = (value as string).split(",").map(option => option.trim())
+          if (!arg.values.includes(arg.default)) {
+            arg.default = arg.values[0]
           }
         },
       },
@@ -227,14 +217,9 @@ export const ARGUMENT_FIELDS: {
       input: arg => {
         return {
           type: "dropdown",
-          values: arg.items.map(String) || [],
+          values: arg.values || [],
           advanced: false,
           onChange: (arg, value) => {
-            const number = Number(value)
-            if (!isNaN(number)) {
-              arg.default = number
-              return
-            }
             arg.default = value
           },
         }
@@ -289,7 +274,7 @@ export const DEFAULT_ARGUMENTS: {
     type: "dropdown",
     name: "Dropdown Argument",
     description: "",
-    items: ["Option 1", "Option 2", "Option 3"],
+    values: ["Option 1", "Option 2", "Option 3"],
     default: "Option 1",
   },
 }

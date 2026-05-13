@@ -1860,8 +1860,8 @@ export class ChartManager {
 
   hasRange() {
     return (
-      this.selection.notes.length > 1 ||
-      this.eventSelection.timingEvents.length > 1 ||
+      this.selection.notes.length > 0 ||
+      this.eventSelection.timingEvents.length > 0 ||
       (this.startRegion !== undefined && this.endRegion !== undefined)
     )
   }
@@ -2134,10 +2134,7 @@ export class ChartManager {
     const uniqueNotes: PartialNotedataEntry[] = []
     for (const note of newNotes) {
       const lastNote = uniqueNotes.at(-1)
-      if (
-        lastNote?.beat == note.beat &&
-        lastNote.col == note.col
-      ) {
+      if (lastNote?.beat == note.beat && lastNote.col == note.col) {
         continue
       }
       uniqueNotes.push(note)
