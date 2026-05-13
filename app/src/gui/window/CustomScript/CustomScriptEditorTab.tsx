@@ -85,6 +85,7 @@ export function CustomScriptEditorTab(props: {
       return
     }
     const jsCode = await compile()
+    console.log("Compiled code:", jsCode)
     if (!jsCode) {
       setLogs(oldLogs => [
         ...oldLogs,
@@ -97,7 +98,6 @@ export function CustomScriptEditorTab(props: {
     script.tsCode = tsCode
     script.jsCode = jsCode
 
-    startTime.current = performance.now()
     const w = await CustomScriptRunner.runPrompt(
       app,
       script,
@@ -113,6 +113,9 @@ export function CustomScriptEditorTab(props: {
           ],
         ])
         setRunning(false)
+      },
+      () => {
+        startTime.current = performance.now()
       }
     )
     if (!w) return

@@ -29,14 +29,17 @@ export class CustomScriptRunner {
       type: "log" | "error" | "warn" | "info",
       ...data: any[]
     ) => void,
-    onFinish?: () => void
+    onFinish?: () => void,
+    onStart?: () => void
   ) {
     if (script.arguments.length == 0) {
+      onStart?.()
       return CustomScriptRunner.run(app, script, [], logCallback, onFinish)
     }
 
     return new Promise<Worker | undefined>(resolve => {
       const window = CustomScriptTriggerWindow(script, args => {
+        onStart?.()
         resolve(
           CustomScriptRunner.run(app, script, args, logCallback, onFinish)
         )

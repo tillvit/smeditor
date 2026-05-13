@@ -56,7 +56,7 @@ export function CustomScriptMetadataTab(props: {
           {script.arguments.map((arg, index) => (
             <CustomScriptArgumentComponent
               argument={arg}
-              key={index + "-" + arg.name}
+              key={index}
               setArgument={newArg => {
                 props.setScripts(prev => {
                   const updatedScripts = [...prev]

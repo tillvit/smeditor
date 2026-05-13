@@ -1071,6 +1071,10 @@ input:focus {
   outline: 0.05rem solid var(--accent-color);
 }
 
+textarea:focus {
+  outline: 0.05rem solid var(--accent-color);
+}
+
 input.short {
   width: 2.5rem;
 }

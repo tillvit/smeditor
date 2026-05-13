@@ -49,7 +49,7 @@ export function initializeMonaco(
         selection: TimingEvent[];
         /** The range of the selection in both beats and seconds. */
         range: RangeData;
-      } | null;
+      };
 
       /**
        * Provides data about the current selection. If there is no selection, this will be null.\n
@@ -57,7 +57,7 @@ export function initializeMonaco(
        * - \`SELECTION.selection\`: the array of selected objects, either NotedataEntry[] or TimingEvent[] depending on the type of selection\n
        * - \`SELECTION.range\`: the range of the selection in both beats and seconds
        */
-      const SELECTION: SelectionData;
+      const SELECTION: SelectionData | null;
       /**
        * The arguments passed to the script.
        */
