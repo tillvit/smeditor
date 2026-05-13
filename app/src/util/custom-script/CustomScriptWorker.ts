@@ -1,10 +1,16 @@
+import { Chart } from "../../chart/sm/Chart"
 import {
   isHoldNote as _isHoldNote,
   isTapNote as _isTapNote,
+  NotedataEntry,
   PartialHoldNotedataEntry,
   PartialNotedataEntry,
 } from "../../chart/sm/NoteTypes"
-import { TIMING_EVENT_NAMES as _TIMING_EVENT_NAMES } from "../../chart/sm/TimingTypes"
+import { Simfile } from "../../chart/sm/Simfile"
+import {
+  TIMING_EVENT_NAMES as _TIMING_EVENT_NAMES,
+  TimingEvent,
+} from "../../chart/sm/TimingTypes"
 import { Foot as _Foot } from "../../chart/stats/parity/ParityDataTypes"
 import { ActionHistory } from "../ActionHistory"
 import { EventHandler } from "../EventHandler"
@@ -21,6 +27,7 @@ for (const key of Object.getOwnPropertyNames(self)) {
   if (!WorkerWhitelist.includes(key as WorkerWhitelistProperties)) {
     // @ts-expect-error no-explicit-any
     self[key] = undefined
+    delete (self as any)[key]
   }
 }
 
@@ -51,48 +58,35 @@ self.console = {
   },
 }
 
-// @ts-expect-error no-unused-vars
 const isHoldNote = _isHoldNote
-// @ts-expect-error no-unused-vars
 const isTapNote = _isTapNote
-// @ts-expect-error no-unused-vars
 const TIMING_EVENT_NAMES = _TIMING_EVENT_NAMES
-// @ts-expect-error no-unused-vars
 const Foot = _Foot
 
-// @ts-expect-error no-unused-vars
 function BPMEvent(beat: number, bpm: number) {
   return { type: "BPMS", beat, value: bpm }
 }
-// @ts-expect-error no-unused-vars
 function StopEvent(beat: number, seconds: number) {
   return { type: "STOPS", beat, value: seconds }
 }
-// @ts-expect-error no-unused-vars
 function WarpEvent(beat: number, beats: number) {
   return { type: "WARPS", beat, value: beats }
 }
-// @ts-expect-error no-unused-vars
 function DelayEvent(beat: number, seconds: number) {
   return { type: "DELAYS", beat, value: seconds }
 }
-// @ts-expect-error no-unused-vars
 function ScrollEvent(beat: number, factor: number) {
   return { type: "SCROLLS", beat, value: factor }
 }
-// @ts-expect-error no-unused-vars
 function TickCountEvent(beat: number, ticks: number) {
   return { type: "TICKCOUNTS", beat, value: ticks }
 }
-// @ts-expect-error no-unused-vars
 function FakeEvent(beat: number, beats: number) {
   return { type: "FAKES", beat, value: beats }
 }
-// @ts-expect-error no-unused-vars
 function LabelEvent(beat: number, label: string) {
   return { type: "LABELS", beat, value: label }
 }
-// @ts-expect-error no-unused-vars
 function SpeedEvent(
   beat: number,
   factor: number,
@@ -107,15 +101,12 @@ function SpeedEvent(
     unit: unit == "Beats" ? "B" : "T",
   }
 }
-// @ts-expect-error no-unused-vars
 function TimeSignatureEvent(beat: number, upper: number, lower: number) {
   return { type: "TIMESIGNATURES", beat, upper, lower }
 }
-// @ts-expect-error no-unused-vars
 function ComboEvent(beat: number, hitMult: number, missMult: number) {
   return { type: "COMBOS", beat, hitMult, missMult }
 }
-// @ts-expect-error no-unused-vars
 function AttackEvent(
   second: number,
   endType: "Length" | "End",
@@ -130,7 +121,6 @@ function AttackEvent(
     mods,
   }
 }
-// @ts-expect-error no-unused-vars
 function BGChangeEvent(
   beat: number,
   file: string,
@@ -159,7 +149,6 @@ function BGChangeEvent(
     color2,
   }
 }
-// @ts-expect-error no-unused-vars
 function FGChangeEvent(
   beat: number,
   file: string,
@@ -189,11 +178,9 @@ function FGChangeEvent(
   }
 }
 
-// @ts-expect-error no-unused-vars
 function TapNote(beat: number, col: number): PartialNotedataEntry {
   return { type: "Tap", beat, col }
 }
-// @ts-expect-error no-unused-vars
 function HoldNote(
   beat: number,
   col: number,
@@ -201,7 +188,6 @@ function HoldNote(
 ): PartialHoldNotedataEntry {
   return { type: "Hold", beat, col, hold: length }
 }
-// @ts-expect-error no-unused-vars
 function RollNote(
   beat: number,
   col: number,
@@ -209,42 +195,114 @@ function RollNote(
 ): PartialHoldNotedataEntry {
   return { type: "Roll", beat, col, hold: length }
 }
-// @ts-expect-error no-unused-vars
 function MineNote(beat: number, col: number): PartialNotedataEntry {
   return { type: "Mine", beat, col }
 }
-// @ts-expect-error no-unused-vars
 function LiftNote(beat: number, col: number): PartialNotedataEntry {
   return { type: "Lift", beat, col }
 }
-// @ts-expect-error no-unused-vars
 function FakeNote(beat: number, col: number): PartialNotedataEntry {
   return { type: "Fake", beat, col }
 }
+
+// define all functions in scope
+{
+  const props = [
+    ["isHoldNote", isHoldNote],
+    ["isTapNote", isTapNote],
+    ["TIMING_EVENT_NAMES", TIMING_EVENT_NAMES],
+    ["Foot", Foot],
+    ["BPMEvent", BPMEvent],
+    ["StopEvent", StopEvent],
+    ["WarpEvent", WarpEvent],
+    ["DelayEvent", DelayEvent],
+    ["ScrollEvent", ScrollEvent],
+    ["TickCountEvent", TickCountEvent],
+    ["FakeEvent", FakeEvent],
+    ["LabelEvent", LabelEvent],
+    ["SpeedEvent", SpeedEvent],
+    ["TimeSignatureEvent", TimeSignatureEvent],
+    ["ComboEvent", ComboEvent],
+    ["AttackEvent", AttackEvent],
+    ["BGChangeEvent", BGChangeEvent],
+    ["FGChangeEvent", FGChangeEvent],
+    ["TapNote", TapNote],
+    ["HoldNote", HoldNote],
+    ["RollNote", RollNote],
+    ["MineNote", MineNote],
+    ["LiftNote", LiftNote],
+    ["FakeNote", FakeNote],
+  ]
+  for (const [name, value] of props) {
+    // @ts-expect-error no-explicit-any
+    self[name] = value
+  }
+}
+
+type RangeData = {
+  /** The start of the selection range in both beats and seconds. */
+  start: { beat: number; second: number }
+  /** The end of the selection range in both beats and seconds. */
+  end: { beat: number; second: number }
+}
+
+type SelectionData =
+  | {
+      /** The type of the current selection. "notes" if the selection is of notes, "timing" if the selection is of timing events */
+      type: "notes"
+      /** The array of selected objects. This will be a list of note objects or timing events. */
+      selection: NotedataEntry[]
+      /** The range of the selection in both beats and seconds. */
+      range: RangeData
+    }
+  | {
+      /** The type of the current selection. "notes" if the selection is of notes, "timing" if the selection is of timing events */
+      type: "timing"
+      /** The array of selected objects. This will be a list of note objects or timing events. */
+      selection: TimingEvent[]
+      /** The range of the selection in both beats and seconds. */
+      range: RangeData
+    }
+
+interface WorkerArgs {
+  ARGS: (string | number | boolean)[]
+  SM: Simfile
+  CHART: Chart
+  SELECTION: SelectionData | null
+}
+
+type ArgWindow = WorkerArgs & typeof globalThis & Window
 
 self.onmessage = async (event: MessageEvent<CustomScriptWorkerArgs>) => {
   const { smPayload, codePayload, chartId, selection, args } = event.data
   new EventHandler()
   new ActionHistory()
 
-  // @ts-expect-error no-unused-vars
-  const ARGS = args
-  const SM = await createSMFromPayload(smPayload)
-  const CHART = SM.charts[chartId]
-  // @ts-expect-error no-unused-vars
-  const SELECTION = selection
-    ? {
-        type: selection.type,
-        selection: selection.indices.map(i => {
-          if (selection.type === "notes") {
-            return CHART.getNotedata()[i]
-          } else {
-            return CHART.timingData.getTimingData()[i]
-          }
-        }),
-        range: selection.range,
+  {
+    const win = self as ArgWindow
+    win.ARGS = args
+    win.SM = await createSMFromPayload(smPayload)
+    win.CHART = win.SM.charts[chartId]
+    if (selection) {
+      if (selection.type === "notes") {
+        const obj = win.CHART.getNotedata()
+        win.SELECTION = {
+          type: selection.type,
+          selection: selection.indices.map(i => obj[i]),
+          range: selection.range,
+        }
+      } else {
+        const obj = win.CHART.timingData.getTimingData()
+        win.SELECTION = {
+          type: selection.type,
+          selection: selection.indices.map(i => obj[i]),
+          range: selection.range,
+        }
       }
-    : null
+    } else {
+      win.SELECTION = null
+    }
+  }
 
   try {
     eval(codePayload)
@@ -274,5 +332,8 @@ self.onmessage = async (event: MessageEvent<CustomScriptWorkerArgs>) => {
     self.postMessage({ type: "close" })
     return
   }
-  self.postMessage({ type: "payload", payload: createSMPayload(SM) })
+  self.postMessage({
+    type: "payload",
+    payload: createSMPayload((self as ArgWindow).SM),
+  })
 }

@@ -85,7 +85,6 @@ export function CustomScriptEditorTab(props: {
       return
     }
     const jsCode = await compile()
-    console.log("Compiled code:", jsCode)
     if (!jsCode) {
       setLogs(oldLogs => [
         ...oldLogs,

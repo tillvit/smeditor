@@ -3,7 +3,7 @@ import smeLib from "./smlib.d.ts?raw"
 let initialized = false
 
 export function initializeMonaco(
-  monaco: typeof import("/Library/WebServer/Documents/smeditor/node_modules/monaco-editor/esm/vs/editor/editor.api")
+  monaco: typeof import("monaco-editor/esm/vs/editor/editor.api")
 ) {
   if (initialized) return
   initialized = true
