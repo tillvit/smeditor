@@ -112,42 +112,61 @@ export function CustomScriptSelector(props: {
             }
           }}
           onClick={() => {
-            const input = document.createElement("input")
-            input.type = "file"
-            input.accept = ".json"
-            input.onchange = e => {
-              const file = (e.target as HTMLInputElement).files?.[0]
-              if (!file) return
-              const reader = new FileReader()
-              reader.onload = () => {
-                try {
-                  const json = JSON.parse(reader.result as string)
-                  const schema = CustomScriptUploadSchema.parse(json)
-                  const newScript: CustomScript = {
-                    name: schema.name,
-                    description: schema.description,
-                    arguments: schema.arguments,
-                    tsCode: schema.code,
-                    jsCode: null,
-                  }
-                  props.setScripts(prev => {
-                    const newScripts = [...prev, newScript]
-                    CustomScripts.scripts.push(newScript)
-                    CustomScripts.saveCustomScripts()
-                    props.setScriptIndex(newScripts.length - 1)
-                    return newScripts
-                  })
-                } catch (err) {
-                  WaterfallManager.createFormatted(
-                    "Invalid script file!",
-                    "error"
-                  )
-                  console.error(err)
-                }
-              }
-              reader.readAsText(file)
-            }
-            input.click()
+            const confirmWindow = ConfirmationWindow({
+              title: "Upload Script",
+              message:
+                "Script files contain arbitrary code and can be dangerous. Only upload scripts from sources you trust.Are you sure you want to upload a script?",
+              buttonOptions: [
+                {
+                  label: "Cancel",
+                  callback: () => {},
+                  type: "default",
+                },
+                {
+                  label: "Ok",
+                  callback: () => {
+                    const input = document.createElement("input")
+                    input.type = "file"
+                    input.accept = ".json"
+                    input.onchange = e => {
+                      const file = (e.target as HTMLInputElement).files?.[0]
+                      if (!file) return
+                      const reader = new FileReader()
+                      reader.onload = () => {
+                        try {
+                          const json = JSON.parse(reader.result as string)
+                          const schema = CustomScriptUploadSchema.parse(json)
+                          const newScript: CustomScript = {
+                            name: schema.name,
+                            description: schema.description,
+                            arguments: schema.arguments,
+                            tsCode: schema.code,
+                            jsCode: null,
+                          }
+                          props.setScripts(prev => {
+                            const newScripts = [...prev, newScript]
+                            CustomScripts.scripts.push(newScript)
+                            CustomScripts.saveCustomScripts()
+                            props.setScriptIndex(newScripts.length - 1)
+                            return newScripts
+                          })
+                        } catch (err) {
+                          WaterfallManager.createFormatted(
+                            "Invalid script file!",
+                            "error"
+                          )
+                          console.error(err)
+                        }
+                      }
+                      reader.readAsText(file)
+                    }
+                    input.click()
+                  },
+                  type: "confirm",
+                },
+              ],
+            })
+            WindowManager.openWindow(confirmWindow)
           }}
         >
           <ReactIcon id="UPLOAD" width={16} height={16} />
