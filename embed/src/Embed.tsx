@@ -7,6 +7,7 @@ import { GameTypeRegistry } from "../../app/src/chart/gameTypes/GameTypeRegistry
 import { Simfile } from "../../app/src/chart/sm/Simfile"
 import { DropdownInput } from "../../app/src/gui/inputs/DropdownInput"
 import { FLAG_MAP } from "../../app/src/util/Flags"
+import { tippySafe } from "../../app/src/util/Util"
 
 createRoot(document.getElementById("embed")!).render(<Embed />)
 
@@ -144,7 +145,7 @@ function Embed() {
         readOnly
         ref={el => {
           if (!el) return
-          tippy(el, {
+          tippySafe(el, {
             content: "Click to copy to clipboard",
             placement: "bottom",
           })

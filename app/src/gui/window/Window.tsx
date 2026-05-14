@@ -40,6 +40,7 @@ export function Window(props: { focused: boolean }) {
 
   useLayoutEffect(() => {
     if (!windowElement.current) return
+    center()
     const resizeObserver = new ResizeObserver(() => {
       center()
       if (!windowData?.blocking) resizeObserver.disconnect()

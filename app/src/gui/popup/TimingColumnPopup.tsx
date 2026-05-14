@@ -1,12 +1,12 @@
 import { Color, Container } from "pixi.js"
 import { useContext, useEffect, useRef, useState } from "react"
-import tippy from "tippy.js"
 import { ChartTimingData } from "../../chart/sm/ChartTimingData"
 import { TimingEventType } from "../../chart/sm/TimingTypes"
 import { SPLIT_TIMING_DATA } from "../../data/SplitTimingData"
 import { blendPixiColors } from "../../util/Color"
 import { EventHandler } from "../../util/EventHandler"
 import { Themes } from "../../util/Theme"
+import { tippySafe } from "../../util/Util"
 import { PopupEditIndicator } from "./PopupEditIndicator"
 import { PopupContext, PopupData } from "./PopupManager"
 
@@ -40,11 +40,11 @@ function TimingColumnPopupContent(props: TimingColumnPopupOptions) {
 
   useEffect(() => {
     if (buttonOne.current)
-      tippy(buttonOne.current, {
+      tippySafe(buttonOne.current, {
         content: SPLIT_TIMING_DATA[columnType].buttonOne.tooltip,
       })
     if (buttonTwo.current)
-      tippy(buttonTwo.current, {
+      tippySafe(buttonTwo.current, {
         content: SPLIT_TIMING_DATA[columnType].buttonTwo.tooltip,
       })
   }, [columnType])

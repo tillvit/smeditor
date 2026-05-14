@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from "react"
-import tippy from "tippy.js"
 import { isHoldNote } from "../../../chart/sm/NoteTypes"
+import { tippySafe } from "../../../util/Util"
 import { WindowContext, WindowData } from "../WindowManager"
 
 const OPTION_NAMES: Record<string, { label: string; tooltip?: string }> = {
@@ -184,7 +184,7 @@ function ExportNotedataWindowContent() {
                   if (!el) return
                   const tooltip = OPTION_NAMES[name].tooltip
                   if (!tooltip) return
-                  tippy(el, { content: tooltip })
+                  tippySafe(el, { content: tooltip })
                 }}
               >
                 {OPTION_NAMES[name].label}
@@ -196,8 +196,8 @@ function ExportNotedataWindowContent() {
           className="export-output"
           ref={el => {
             if (!el) return
-            tippy(el, { content: "Click to copy to clipboard" })
-            tippy(el, {
+            tippySafe(el, { content: "Click to copy to clipboard" })
+            tippySafe(el, {
               content: "Copied!",
               trigger: "click",
               onShow(instance) {

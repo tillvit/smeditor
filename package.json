@@ -35,7 +35,7 @@
     "eslint-plugin-react": "^7.37.5",
     "husky": "^8.0.3",
     "lint-staged": "^15.5.2",
-    "nw": "^0.108.0-sdk",
+    "nw": "^0.91.0-sdk",
     "nw-builder": "^4.8.1",
     "prettier": "^3.0.1",
     "typescript": "^5.8.3",
@@ -128,6 +128,7 @@
       "@typescript-eslint/restrict-template-expressions": "off",
       "@typescript-eslint/restrict-plus-operands": "off",
       "@typescript-eslint/no-extra-semi": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
       "no-constant-condition": [
         "error",
         {

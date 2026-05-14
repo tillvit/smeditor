@@ -1,5 +1,5 @@
 import { ReactNode } from "react"
-import tippy from "tippy.js"
+import { tippySafe } from "../../../util/Util"
 
 export function SyncLabel(props: {
   text: string
@@ -16,7 +16,7 @@ export function SyncLabel(props: {
       }}
       ref={el => {
         if (!el) return
-        tippy(el, { content: props.tooltip })
+        tippySafe(el, { content: props.tooltip })
       }}
     >
       <div className="label">{props.text}</div>

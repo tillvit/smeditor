@@ -1,10 +1,9 @@
-import tippy from "tippy.js"
 import { EditMode } from "../../chart/ChartManager"
 import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
 import { Keybinds } from "../../util/Keybinds"
 import { Options } from "../../util/Options"
-import { parseString } from "../../util/Util"
+import { parseString, tippySafe } from "../../util/Util"
 import { Icons } from "../Icons"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
@@ -122,7 +121,7 @@ export class PlaybackOptionsWidget extends Widget {
 
     collapseButton.style.display = "none"
 
-    tippy(collapseButton, {
+    tippySafe(collapseButton, {
       onShow(instance) {
         instance.setContent(
           (view.classList.contains("collapsed") ? "Show " : "Hide ") +

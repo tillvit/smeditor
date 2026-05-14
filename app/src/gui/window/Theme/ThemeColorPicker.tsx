@@ -1,11 +1,11 @@
 import { Color } from "pixi.js"
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react"
-import tippy from "tippy.js"
 import {
   THEME_GENERATOR_LINKS,
   THEME_PROPERTY_DESCRIPTIONS,
   ThemeProperty,
 } from "../../../data/ThemeData"
+import { tippySafe } from "../../../util/Util"
 import { ReactIcon } from "../../Icons"
 import { ColorInput } from "../../inputs/color/ColorInput"
 
@@ -35,7 +35,7 @@ export function ThemeColorPicker(props: {
 
   useEffect(() => {
     if (!linkRef.current) return
-    tippy(linkRef.current, {
+    tippySafe(linkRef.current, {
       onShow(inst) {
         inst.setContent(linkedRef.current ? `Linked to ${link}` : "Unlinked")
       },
@@ -54,7 +54,7 @@ export function ThemeColorPicker(props: {
       ref={el => {
         if (!el) return
         if (THEME_PROPERTY_DESCRIPTIONS[props.id] != "")
-          tippy(el, {
+          tippySafe(el, {
             content: THEME_PROPERTY_DESCRIPTIONS[props.id],
           })
       }}

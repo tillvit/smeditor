@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react"
-import tippy from "tippy.js"
 import { App } from "../../../App"
 import { MENUBAR_DATA, MenuOption } from "../../../data/MenubarData"
 import { EventHandler } from "../../../util/EventHandler"
 import { Flags } from "../../../util/Flags"
 import { Options } from "../../../util/Options"
+import { tippySafe } from "../../../util/Util"
 import { ReactIcon } from "../../Icons"
 import { MenubarDropdown } from "./MenubarDropdown"
 
@@ -60,7 +60,7 @@ export function Menubar(props: { app: App }) {
 
   useEffect(() => {
     if (!collapseButtonRef.current) return
-    tippy(collapseButtonRef.current, {
+    tippySafe(collapseButtonRef.current, {
       onShow(instance) {
         instance.setContent(
           Options.general.showPlaybackOptions

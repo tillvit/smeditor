@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react"
-import tippy from "tippy.js"
 import { App } from "../../../App"
 import { EditTimingMode } from "../../../chart/ChartManager"
 import { EventHandler } from "../../../util/EventHandler"
 import { Keybinds } from "../../../util/Keybinds"
 import { roundDigit } from "../../../util/Math"
-import { parseString } from "../../../util/Util"
+import { parseString, tippySafe } from "../../../util/Util"
 import { ReactIcon } from "../../Icons"
 import { PopupManager } from "../../popup/PopupManager"
 import { SplitTimingPopup } from "../../popup/SplitTimingPopup"
@@ -61,7 +60,7 @@ export function TimingContainer(props: {
         tabIndex={-1}
         ref={el => {
           if (!el) return
-          tippy(el, {
+          tippySafe(el, {
             content: "Manage split timing",
           })
           splitRef.current = el
@@ -79,7 +78,7 @@ export function TimingContainer(props: {
         tabIndex={-1}
         ref={el => {
           if (!el) return
-          tippy(el, {
+          tippySafe(el, {
             content: "Toggle timing track visibility",
           })
         }}
