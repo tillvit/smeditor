@@ -1,4 +1,5 @@
 import { BitmapText, Container, Graphics } from "pixi.js"
+import { PopupManager } from "../../../gui/popup/PopupManager"
 import { SnapPopup } from "../../../gui/popup/SnapPopup"
 import { Options } from "../../../util/Options"
 import { ChartRenderer, ChartRendererComponent } from "../../ChartRenderer"
@@ -52,10 +53,15 @@ export class SnapContainer extends Container implements ChartRendererComponent {
 
       container.eventMode = "static"
       container.cursor = "pointer"
-      container.on("mouseenter", () => SnapPopup.open(graphic))
-      container.on("mousedown", () => SnapPopup.select())
+      container.on("mouseenter", () => PopupManager.open(SnapPopup(graphic)))
+      container.on("mousedown", e => {
+        PopupManager.highlight("snap-popup")
+        e.stopImmediatePropagation()
+        e.preventDefault()
+      })
       container.on("mouseleave", () => {
-        if (!SnapPopup.persistent) SnapPopup.close()
+        if (!PopupManager.isHighlighted("snap-popup"))
+          PopupManager.close("snap-popup")
       })
     }
   }

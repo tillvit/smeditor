@@ -28,14 +28,27 @@ export class ChartTimingData extends TimingData {
     super.callListeners(modifiedEvents)
   }
 
+  /**
+   * Return all events of a type for the chart. If there is chart-specific timing data for the type, this will return that. Otherwise, it will return the song timing data for the type.
+   * @param type
+   * @returns
+   */
   getColumn<Type extends TimingEventType>(type: Type) {
     return this.columns[type] ?? this.songTimingData.getColumn(type)
   }
 
+  /**
+   * Returns the offset for the chart. If there is a chart-specific offset, this will return that. Otherwise, it will return the song offset.
+   * @returns
+   */
   getOffset(): number {
     return this.offset ?? this.songTimingData.getOffset()
   }
 
+  /**
+   * Returns true if there is any chart-specific timing data, including the offset and any timing event columns.
+   * @returns
+   */
   usesChartTiming(): boolean {
     return this.offset !== undefined || Object.values(this.columns).length > 0
   }
@@ -44,10 +57,19 @@ export class ChartTimingData extends TimingData {
     return this.offset !== undefined
   }
 
+  /**
+   * Returns whether the specified timing event type has a chart-specific column.
+   * @param type
+   * @returns
+   */
   isPropertyChartSpecific(type: TimingEventType): boolean {
     return type in this.columns
   }
 
+  /**
+   * Copies the chart offset to the song timing data.
+   * @returns
+   */
   copyOffsetToSimfile() {
     if (this.offset === undefined) return
     const cachedOffset = this.offset
@@ -71,6 +93,11 @@ export class ChartTimingData extends TimingData {
     })
   }
 
+  /**
+   * Removes the chart offset, making the timing data use the song offset.
+   * @returns
+   */
+
   removeChartOffset() {
     if (this.offset === undefined) return
     const cachedOffset = this.offset
@@ -90,13 +117,14 @@ export class ChartTimingData extends TimingData {
     })
   }
 
+  /**
+   * Copies all chart-specific timing data into the song timing data, converting chart-specific columns into song-specific columns.
+   * This will overwrite all timing data in the song timing data with the chart-specific timing data.
+   */
+
   copyAllToSimfile() {
-    const cachedColumns = Object.fromEntries(
-      Object.values(this.columns).map(col => [col.type, col])
-    )
-    const events = Object.values(cachedColumns)
-      .map(c => c.events)
-      .flat()
+    const cachedColumns = structuredClone(this.columns)
+    const events = Object.values(cachedColumns).flat()
 
     const cachedOffset = this.offset
     const cachedSimfileOffset = this.songTimingData.getOffset()
@@ -141,16 +169,15 @@ export class ChartTimingData extends TimingData {
     })
   }
 
+  /**
+   * Copies the specified columns from the chart timing data into the song timing data, converting the column to a song-specific column.
+   * This will overwrite the events in the song timing data for the specified columns.
+   * @param columns
+   */
+
   copyColumnsToSimfile(columns: TimingEventType[]) {
-    const cachedColumns = Object.fromEntries(
-      columns
-        .map(type => this.columns[type])
-        .filter(col => col !== undefined)
-        .map(col => [col.type, col])
-    )
-    const events = Object.values(cachedColumns)
-      .map(c => c.events)
-      .flat()
+    const cachedColumns = structuredClone(this.columns)
+    const events = Object.values(cachedColumns).flat()
 
     let results: ReturnType<TimingData["_insert"]>
     ActionHistory.instance.run({
@@ -181,6 +208,12 @@ export class ChartTimingData extends TimingData {
       },
     })
   }
+
+  /**
+   * Copies the specified columns from the song timing data into the chart timing data, converting the column to a chart-specific column.
+   * This will remove existing chart-specific timing data for the specified columns.
+   * @param columns
+   */
 
   copyColumnsFromSimfile(columns: TimingEventType[]) {
     const hasTimeSig = columns.includes("TIMESIGNATURES")
@@ -214,6 +247,9 @@ export class ChartTimingData extends TimingData {
     })
   }
 
+  /**
+   * Copies all song timing data into the chart timing data. This will remove existing chart-specific timing data.
+   */
   copyAllFromSimfile() {
     const cachedColumns = Object.fromEntries(
       TIMING_EVENT_NAMES.map(type => [type, this.columns[type]])
@@ -256,6 +292,10 @@ export class ChartTimingData extends TimingData {
     })
   }
 
+  /**
+   * Creates chart-specific columns for the specified timing event types, copying events from the song timing data.
+   * @param columns
+   */
   createChartColumns(columns: TimingEventType[]) {
     const hasTimeSig = columns.includes("TIMESIGNATURES")
     ActionHistory.instance.run({
@@ -284,6 +324,9 @@ export class ChartTimingData extends TimingData {
     })
   }
 
+  /**
+   * Creates empty chart-specific columns for the specified timing event types.
+   */
   createEmptyData() {
     const missingColumns = TIMING_EVENT_NAMES.filter(
       type => !this.columns[type]
@@ -317,13 +360,12 @@ export class ChartTimingData extends TimingData {
     })
   }
 
+  /**
+   * Deletes the specified columns from the chart timing data, converting the column to a song-specific column.
+   * @param columns
+   */
   deleteColumns(columns: TimingEventType[]) {
-    const cachedColumns = Object.fromEntries(
-      columns
-        .map(type => this.columns[type])
-        .filter(col => col !== undefined)
-        .map(col => [col.type, col])
-    )
+    const cachedColumns = structuredClone(this.columns)
 
     const hasTimeSig = columns.includes("TIMESIGNATURES")
     ActionHistory.instance.run({
@@ -350,10 +392,11 @@ export class ChartTimingData extends TimingData {
     })
   }
 
+  /**
+   * Deletes all chart-specific timing data, including all chart-specific columns and the chart offset if it exists.
+   */
   deleteAllChartSpecific() {
-    const cachedColumns = Object.fromEntries(
-      Object.values(this.columns).map(col => [col.type, col])
-    )
+    const cachedColumns = structuredClone(this.columns)
     const cachedOffset = this.offset
 
     ActionHistory.instance.run({
@@ -413,6 +456,12 @@ export class ChartTimingData extends TimingData {
     return { chartEvents, smEvents }
   }
 
+  /**
+   * Inserts timing events into the chart timing data.
+   * Events will be inserted into the song timing data if their column type is not chart-specific,
+   * and into the chart timing data if it is.
+   * @param events The events to be inserted.
+   */
   insertColumnEvents(events: TimingEvent[]): void {
     const { smEvents, chartEvents } = this.splitSM(events)
 
@@ -452,6 +501,10 @@ export class ChartTimingData extends TimingData {
     })
   }
 
+  /**
+   * Modifies timing events in the chart timing data.
+   * @param events The events to be modified. Each event is represented as a pair, where the first element is the original event and the second element is the modified event.
+   */
   modifyColumnEvents(events: [TimingEvent, TimingEvent][]): void {
     const { smEvents, chartEvents } = this.splitSMPairs(events)
 
@@ -500,6 +553,10 @@ export class ChartTimingData extends TimingData {
     })
   }
 
+  /**
+   * Deletes timing events from the chart timing data.
+   * @param events The events to be deleted.
+   */
   deleteColumnEvents(events: DeletableEvent[]): void {
     const { smEvents, chartEvents } = this.splitSM(events)
 

@@ -187,7 +187,7 @@ export class ScrollDebug extends Container implements ChartRendererComponent {
     for (const [scroll, item] of this.scrollMap.entries()) {
       if (!item.marked) {
         this.scrollMap.delete(scroll)
-        item.destroy()
+        item.destroy({ children: true })
         continue
       }
     }

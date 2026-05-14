@@ -14,10 +14,10 @@ import { CoreUpdateNotification } from "../gui/notification/CoreUpdateNotificati
 import { OfflineUpdateNotification } from "../gui/notification/OfflineUpdateNotification"
 import { DebugWidget } from "../gui/widget/DebugWidget"
 import { WidgetManager } from "../gui/widget/WidgetManager"
-import { ChartListWindow } from "../gui/window/ChartListWindow"
-import { ConfirmationWindow } from "../gui/window/ConfirmationWindow"
-import { InitialWindow } from "../gui/window/InitialWindow"
-import { KeyComboWindow } from "../gui/window/KeyComboWindow"
+import { ChartListWindow } from "../gui/window/ChartList/ChartListWindow"
+import { ConfirmationWindow } from "../gui/window/Confirmation/ConfirmationWindow"
+import { InitialWindow } from "../gui/window/Initial/InitialWindow"
+import { WindowManager } from "../gui/window/WindowManager"
 import { ActionHistory } from "../util/ActionHistory"
 import {
   decodeNotes,
@@ -28,7 +28,7 @@ import {
 import { EventHandler } from "../util/EventHandler"
 import { Flags } from "../util/Flags"
 import { Keybinds } from "../util/Keybinds"
-import { clamp } from "../util/Math"
+import { clamp, maxArr, minArr } from "../util/Math"
 import { Options } from "../util/Options"
 import { basename, dirname, extname } from "../util/Path"
 import { tpsUpdate } from "../util/Performance"
@@ -40,6 +40,7 @@ import {
   bsearchEarliest,
   compareObjects,
   getNoteEnd,
+  shouldBlockKeybinds,
 } from "../util/Util"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { ChartRenderer } from "./ChartRenderer"
@@ -52,15 +53,15 @@ import { TimingWindowCollection } from "./play/TimingWindowCollection"
 import { Chart } from "./sm/Chart"
 import {
   HoldNotedataEntry,
-  NoteType,
   Notedata,
   NotedataEntry,
   PartialHoldNotedataEntry,
   PartialNotedata,
   PartialNotedataEntry,
+  TapNoteType,
   isHoldNote,
 } from "./sm/NoteTypes"
-import { serializeSMEData } from "./sm/SMEParser"
+import { requiresSMEData, serializeSMEData } from "./sm/SMEParser"
 import { Simfile } from "./sm/Simfile"
 import { Cached, TIMING_EVENT_NAMES, TimingEvent } from "./sm/TimingTypes"
 
@@ -204,9 +205,7 @@ export class ChartManager {
     document.addEventListener(
       "cut",
       e => {
-        if ((<HTMLElement>e.target).classList.contains("inlineEdit")) return
-        if (e.target instanceof HTMLTextAreaElement) return
-        if (e.target instanceof HTMLInputElement) return
+        if (shouldBlockKeybinds(e)) return
         if (this.mode != EditMode.Edit) return
         const data = this.copy()
         if (data) e.clipboardData?.setData("text/plain", data)
@@ -222,9 +221,7 @@ export class ChartManager {
     document.addEventListener(
       "copy",
       e => {
-        if ((<HTMLElement>e.target).classList.contains("inlineEdit")) return
-        if (e.target instanceof HTMLTextAreaElement) return
-        if (e.target instanceof HTMLInputElement) return
+        if (shouldBlockKeybinds(e)) return
         if (this.mode != EditMode.Edit) return
         const data = this.copy()
         if (data) e.clipboardData?.setData("text/plain", data)
@@ -236,9 +233,7 @@ export class ChartManager {
     document.addEventListener(
       "paste",
       e => {
-        if ((<HTMLElement>e.target).classList.contains("inlineEdit")) return
-        if (e.target instanceof HTMLTextAreaElement) return
-        if (e.target instanceof HTMLInputElement) return
+        if (shouldBlockKeybinds(e)) return
         if (this.mode != EditMode.Edit) return
         const clipboard = e.clipboardData?.getData("text/plain")
         if (clipboard) this.paste(clipboard, this.shiftPressed > 0)
@@ -349,9 +344,7 @@ export class ChartManager {
       this.noChartTextB.tint = 0x556677
     })
     this.noChartTextB.on("mousedown", () => {
-      this.app.windowManager.openWindow(
-        new ChartListWindow(app, GameTypeRegistry.getGameType("dance-single"))
-      )
+      WindowManager.openWindow(ChartListWindow())
     })
     this.noChartTextA.visible = false
     this.noChartTextB.visible = false
@@ -395,7 +388,10 @@ export class ChartManager {
               )
             }
             const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-            const snapBeat = Math.round(tapBeat / snap) * snap
+            const snapBeat = this.loadedChart.timingData.snapToClosestTick(
+              tapBeat,
+              snap
+            )
             const hold = this.holdEditing[col]!
             const holdLength =
               Math.max(
@@ -603,11 +599,8 @@ export class ChartManager {
       "keydown",
       (event: KeyboardEvent) => {
         const keyName = Keybinds.getKeyNameFromEvent(event)
-        if (this.mode != EditMode.Edit) return
-        if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
-        if (event.target instanceof HTMLTextAreaElement) return
-        if (event.target instanceof HTMLInputElement) return
-        if (KeyComboWindow.active) return
+        if (shouldBlockKeybinds(event)) return
+        if (WindowManager.isWindowOpen("key-combo-selector")) return
         // Start editing note
         if (
           event.code.startsWith("Digit") &&
@@ -679,8 +672,9 @@ export class ChartManager {
       (event: KeyboardEvent) => {
         if (this.mode != EditMode.Play && this.mode != EditMode.Record) return
         if (event.key == "Escape") {
-          this.setMode(this.lastMode)
           this.chartAudio.pause()
+          this.setMode(this.lastMode)
+          EventHandler.emit("playStateChanged")
         }
       },
       true
@@ -737,27 +731,38 @@ export class ChartManager {
     OfflineUpdateNotification.close()
     // Save confirmation
     if (ActionHistory.instance.isDirty()) {
-      const window = new ConfirmationWindow(
-        this.app,
-        "Save",
-        "Do you wish to save the current file?",
-        [
-          {
-            label: "Cancel",
-            type: "default",
-          },
-          {
-            label: "No",
-            type: "default",
-          },
-          {
-            label: "Yes",
-            type: "confirm",
-          },
-        ]
-      )
-      this.app.windowManager.openWindow(window)
-      const option = await window.resolved
+      const option = await new Promise(resolve => {
+        WindowManager.openWindow(
+          ConfirmationWindow({
+            title: "Save",
+            message: "Do you wish to save the current file?",
+            buttonOptions: [
+              {
+                label: "Cancel",
+                type: "default",
+                callback: () => {
+                  resolve("Cancel")
+                },
+              },
+              {
+                label: "No",
+                type: "default",
+                callback: () => {
+                  resolve("No")
+                },
+              },
+              {
+                label: "Yes",
+                type: "confirm",
+                callback: () => {
+                  resolve("Yes")
+                },
+              },
+            ],
+          })
+        )
+      })
+
       if (option == "Cancel") return
       if (option == "Yes") this.save()
       if (option == "No") await this.removeAutosaves()
@@ -787,24 +792,33 @@ export class ChartManager {
       const sscPath = this.getSMPath(".ssc")
       if (await FileHandler.hasFile(sscPath)) {
         if (Options.general.loadSSC == "Prompt") {
-          const window = new ConfirmationWindow(
-            this.app,
-            "Use SSC File",
-            "An SSC file was found. Do you wish to use the SSC file instead?",
-            [
-              {
-                label: "No",
-                type: "default",
-              },
-              {
-                label: "Yes",
-                type: "confirm",
-              },
-            ],
-            "You can change the default behavior in settings"
-          )
-          this.app.windowManager.openWindow(window)
-          const option = await window.resolved
+          const option = await new Promise(resolve => {
+            WindowManager.openWindow(
+              ConfirmationWindow({
+                title: "Use SSC File",
+                message:
+                  "An SSC file was found. Do you wish to use the SSC file instead?",
+                buttonOptions: [
+                  {
+                    label: "No",
+                    type: "default",
+                    callback: () => {
+                      resolve("No")
+                    },
+                  },
+                  {
+                    label: "Yes",
+                    type: "confirm",
+                    callback: () => {
+                      resolve("Yes")
+                    },
+                  },
+                ],
+                detail: "You can change the default behavior in settings",
+              })
+            )
+          })
+
           if (option == "Yes") this.smPath = sscPath
         } else if (Options.general.loadSSC == "Always") {
           WaterfallManager.create("Loading available SSC file")
@@ -819,23 +833,31 @@ export class ChartManager {
 
     const autosavePath = this.getSMPath(".smebak")
     if (await FileHandler.hasFile(autosavePath)) {
-      const window = new ConfirmationWindow(
-        this.app,
-        "Autosave",
-        "An autosave was found. Do you wish to load the autosave?",
-        [
-          {
-            label: "No",
-            type: "default",
-          },
-          {
-            label: "Yes",
-            type: "confirm",
-          },
-        ]
-      )
-      this.app.windowManager.openWindow(window)
-      const option = await window.resolved
+      const option = await new Promise(resolve => {
+        WindowManager.openWindow(
+          ConfirmationWindow({
+            title: "Load Autosave",
+            message: "An autosave was found. Do you wish to load the autosave?",
+            buttonOptions: [
+              {
+                label: "No",
+                type: "default",
+                callback: () => {
+                  resolve("No")
+                },
+              },
+              {
+                label: "Yes",
+                type: "confirm",
+                callback: () => {
+                  resolve("Yes")
+                },
+              },
+            ],
+          })
+        )
+      })
+
       if (option == "Yes") {
         loadPath = autosavePath
       }
@@ -848,7 +870,7 @@ export class ChartManager {
         "Couldn't load the file at " + loadPath,
         "error"
       )
-      this.app.windowManager.openWindow(new InitialWindow(this.app))
+      WindowManager.openWindow(InitialWindow())
       this.loadingText.visible = false
       return
     }
@@ -867,6 +889,7 @@ export class ChartManager {
     this.noChartTextA.visible = true
     this.noChartTextB.visible = true
     this.editTimingMode = EditTimingMode.Off
+    EventHandler.emit("timingModeChanged")
 
     EventHandler.emit("smLoaded")
     await this.loadChart()
@@ -1165,77 +1188,36 @@ export class ChartManager {
       this.chartAudio.pause()
       this._beat = this.loadedChart?.getBeatFromSeconds(this.time) ?? 0
     } else this.chartAudio.play()
-  }
-
-  getClosestTick(beat: number, quant: number) {
-    if (!this.loadedChart) return 0
-    const snap = Math.max(0.001, 4 / quant)
-    const beatOfMeasure = this.loadedChart.timingData.getBeatOfMeasure(beat)
-    const measureBeat = beat - beatOfMeasure
-    const newBeatOfMeasure = Math.round(beatOfMeasure / snap) * snap
-    return Math.max(0, measureBeat + newBeatOfMeasure)
+    EventHandler.emit("playStateChanged")
   }
 
   snapToNearestTick(beat: number) {
-    this.beat = Math.max(0, this.getClosestTick(beat, 4 / Options.chart.snap))
+    if (!this.loadedChart) return
+    this.beat = Math.max(
+      0,
+      this.loadedChart.timingData.snapToClosestTick(
+        beat,
+        Math.max(0.001, Options.chart.snap)
+      )
+    )
   }
 
   snapToPreviousTick() {
     if (!this.loadedChart) return
-    const snap = Math.max(0.001, Options.chart.snap)
-    const currentMeasure = Math.floor(
-      this.loadedChart.timingData.getMeasure(this.beat)
+    const snapBeat = this.loadedChart.timingData.snapToPreviousTick(
+      this.beat,
+      Math.max(0.001, Options.chart.snap)
     )
-    const currentMeasureBeat =
-      this.loadedChart.timingData.getBeatFromMeasure(currentMeasure)
-
-    const closestTick =
-      Math.floor((this.beat - currentMeasureBeat) / snap) * snap
-    const nextTick =
-      Math.abs(closestTick - (this.beat - currentMeasureBeat)) < 0.0005
-        ? closestTick - snap
-        : closestTick
-    const newBeat = nextTick + currentMeasureBeat
-
-    // Check if we cross over the previous measure
-    if (nextTick < 0) {
-      const previousMeasureBeat =
-        this.loadedChart.timingData.getBeatFromMeasure(currentMeasure - 1)
-      const closestMeasureTick =
-        Math.round((newBeat - previousMeasureBeat) / snap) * snap
-      this.beat = Math.max(0, previousMeasureBeat + closestMeasureTick)
-      return
-    }
-
-    this.beat = Math.max(0, newBeat)
+    this.beat = Math.max(0, snapBeat)
   }
 
   snapToNextTick() {
     if (!this.loadedChart) return
-    const snap = Math.max(0.001, Options.chart.snap)
-    const currentMeasure = Math.floor(
-      this.loadedChart.timingData.getMeasure(this.beat)
+    const snapBeat = this.loadedChart.timingData.snapToNextTick(
+      this.beat,
+      Math.max(0.001, Options.chart.snap)
     )
-    const currentMeasureBeat =
-      this.loadedChart.timingData.getBeatFromMeasure(currentMeasure)
-
-    const closestTick =
-      Math.floor((this.beat - currentMeasureBeat + 0.0005) / snap) * snap
-    const nextTick = closestTick + snap
-    const newBeat = nextTick + currentMeasureBeat
-
-    // Check if we cross over the next measure
-
-    const nextMeasureBeat = this.loadedChart.timingData.getBeatFromMeasure(
-      currentMeasure + 1
-    )
-
-    if (newBeat > nextMeasureBeat) {
-      this.beat = nextMeasureBeat
-      return
-    }
-
-    this.beat = newBeat
+    this.beat = Math.max(0, snapBeat)
   }
 
   previousSnap() {
@@ -1509,8 +1491,7 @@ export class ChartManager {
         hold: hold.endBeat - hold.startBeat,
       }
       if (hold.endBeat - hold.startBeat == 0) {
-        note.type = "Tap"
-        Object.assign(note, { hold: undefined })
+        Object.assign(note, { hold: undefined, type: "Tap" })
       }
       this.loadedChart.addNote(note)
     } else {
@@ -1520,8 +1501,7 @@ export class ChartManager {
         hold: hold.endBeat - hold.startBeat,
       }
       if (hold.endBeat - hold.startBeat == 0) {
-        props.hold = undefined
-        props.type = "Tap"
+        Object.assign(props, { hold: undefined, type: "Tap" })
       }
       if (
         props.beat != hold.originalNote.beat ||
@@ -1544,7 +1524,7 @@ export class ChartManager {
         hold.endBeat - hold.startBeat == 0
           ? undefined
           : hold.endBeat - hold.startBeat,
-    }
+    } as PartialNotedataEntry
 
     const conflictingNotes = this.loadedChart.getNotedata().filter(note => {
       if (
@@ -1587,13 +1567,13 @@ export class ChartManager {
       (this.editNoteTypeIndex + 1 + numNoteTypes) % numNoteTypes
   }
 
-  getEditingNoteType(): NoteType | null {
+  getEditingNoteType(): TapNoteType | null {
     return (
       this.loadedChart?.gameType.editNoteTypes[this.editNoteTypeIndex] ?? null
     )
   }
 
-  setEditingNoteType(type: NoteType) {
+  setEditingNoteType(type: TapNoteType) {
     if (!this.loadedChart) return
     const types = this.loadedChart?.gameType.editNoteTypes
     const index = types.indexOf(type)
@@ -1625,6 +1605,8 @@ export class ChartManager {
         this.setNoteIndex()
         this.chartAudio.pause()
       }
+      EventHandler.emit("playStateChanged")
+      EventHandler.emit("modeChanged")
       return
     }
     if (this.mode == EditMode.View || this.mode == EditMode.Edit)
@@ -1654,14 +1636,17 @@ export class ChartManager {
       this.loadedChart.gameType.gameLogic.startPlay(this)
       this.chartAudio.play()
       this.chartView.startPlay()
+      EventHandler.emit("playStateChanged")
     } else if (this.mode == EditMode.Record) {
       this.chartAudio.seek(Math.max(0, this.time) - 1)
       this.chartAudio.play()
+      EventHandler.emit("playStateChanged")
     } else {
       this.chartView.endPlay()
 
       notedata.forEach(note => (note.gameplay = undefined))
     }
+    EventHandler.emit("modeChanged")
   }
 
   /**
@@ -1679,7 +1664,10 @@ export class ChartManager {
         this.time + Options.play.offset
       )
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-      const snapBeat = Math.round(tapBeat / snap) * snap
+      const snapBeat = this.loadedChart.timingData.snapToClosestTick(
+        tapBeat,
+        snap
+      )
       this.setNote(col, "key", snapBeat)
     }
   }
@@ -1724,13 +1712,22 @@ export class ChartManager {
         }
       )
     }
+    await FileHandler.writeFile(sscPath, this.loadedSM.serialize("ssc")).catch(
+      err => {
+        const message = err.message
+        if (!message.includes(errors.GONE[0])) {
+          error = message
+        }
+      }
+    )
     if (
-      this.loadedSM.requiresSSC() ||
-      (await FileHandler.getFileHandle(sscPath))
+      requiresSMEData(this.loadedSM) ||
+      (await FileHandler.getFileHandle(this.getDataPath())) // if sme already exists, we might want to clear it
     ) {
+      console.log("Writing sme")
       await FileHandler.writeFile(
-        sscPath,
-        this.loadedSM.serialize("ssc")
+        this.getDataPath(),
+        serializeSMEData(this.loadedSM)
       ).catch(err => {
         const message = err.message
         if (!message.includes(errors.GONE[0])) {
@@ -1738,15 +1735,6 @@ export class ChartManager {
         }
       })
     }
-    await FileHandler.writeFile(
-      this.getDataPath(),
-      serializeSMEData(this.loadedSM)
-    ).catch(err => {
-      const message = err.message
-      if (!message.includes(errors.GONE[0])) {
-        error = message
-      }
-    })
 
     if (error == null) {
       if (this.loadedSM.usesChartTiming()) {
@@ -1843,11 +1831,40 @@ export class ChartManager {
     return this.eventSelection.timingEvents.length > 0
   }
 
+  getRange() {
+    if (!this.hasRange()) return null
+
+    let startBeat = this.startRegion
+    let endBeat = this.endRegion
+    if (startBeat === undefined || endBeat === undefined) {
+      const selected =
+        this.selection.notes.length > 0
+          ? this.selection.notes
+          : this.eventSelection.timingEvents
+      const beats = selected.map(item => item.beat)
+      startBeat = minArr(beats)
+      endBeat = maxArr(beats)
+    }
+
+    return {
+      start: {
+        beat: startBeat,
+        second: this.loadedChart?.getSecondsFromBeat(startBeat) ?? 0,
+      },
+      end: {
+        beat: endBeat,
+        second: this.loadedChart?.getSecondsFromBeat(endBeat) ?? 0,
+      },
+    }
+  }
+
   hasRange() {
     return (
-      this.selection.notes.length > 1 ||
-      this.eventSelection.timingEvents.length > 1 ||
-      (this.startRegion !== undefined && this.endRegion !== undefined)
+      this.selection.notes.length > 0 ||
+      this.eventSelection.timingEvents.length > 0 ||
+      (this.startRegion !== undefined &&
+        this.endRegion !== undefined &&
+        this.startRegion != this.endRegion)
     )
   }
 
@@ -2092,8 +2109,9 @@ export class ChartManager {
       this.setEventSelection(
         TIMING_EVENT_NAMES.flatMap(
           event =>
-            this.loadedChart!.timingData.getColumn(event)
-              .events as Cached<TimingEvent>[]
+            this.loadedChart!.timingData.getColumn(
+              event
+            ) as Cached<TimingEvent>[]
         ).filter(
           event =>
             event.beat >= this.startRegion! && event.beat <= this.endRegion!
@@ -2118,11 +2136,7 @@ export class ChartManager {
     const uniqueNotes: PartialNotedataEntry[] = []
     for (const note of newNotes) {
       const lastNote = uniqueNotes.at(-1)
-      if (
-        lastNote !== undefined &&
-        lastNote.beat == note.beat &&
-        lastNote.col == note.col
-      ) {
+      if (lastNote?.beat == note.beat && lastNote.col == note.col) {
         continue
       }
       uniqueNotes.push(note)

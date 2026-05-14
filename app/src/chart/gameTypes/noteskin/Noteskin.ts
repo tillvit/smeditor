@@ -82,11 +82,9 @@ export interface NoteskinOptions {
   hideIcons?: string[]
 }
 
-export interface NoteskinElement {}
+export type NoteskinSprite = Container
 
-export type NoteskinSprite = NoteskinElement & Container
-
-export type NoteskinHoldTail = NoteskinElement & VertCropSprite
+export type NoteskinHoldTail = VertCropSprite
 
 export type NoteskinEvent =
   | PressEvent
@@ -334,7 +332,9 @@ export class Noteskin {
   onUpdate(item: NoteskinSprite, cb: (renderer: ChartRenderer) => void) {
     const c = { item, cb }
     this.updateHooks.add(c)
-    item.once("destroyed", () => this.updateHooks.delete(c))
+    item.once("destroyed", () => {
+      this.updateHooks.delete(c)
+    })
   }
 
   broadcast<Type extends NoteskinEventNames>(

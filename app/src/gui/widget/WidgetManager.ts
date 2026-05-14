@@ -23,13 +23,13 @@ export class WidgetManager extends Container {
     this.chartManager = chartManager
     this.addChild(new NoteLayoutWidget(this))
     this.addChild(new PlayInfoWidget(this))
-    this.addChild(new StatusWidget(this))
     this.addChild(new DebugWidget(this))
     this.addChild(new DensityWidget(this))
     this.addChild(new PlaybackOptionsWidget(this))
     this.addChild(new FacingLayoutWidget(this))
     this.addChild(new CaptureStatusWidget(this))
     this.addChild(new DancingBotWidget(this))
+    this.addChild(new StatusWidget(this))
 
     this.zIndex = 2
   }

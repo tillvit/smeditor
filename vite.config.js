@@ -1,7 +1,9 @@
 import dynamicImportVariables from '@rollup/plugin-dynamic-import-vars';
+import react from '@vitejs/plugin-react';
 import { execSync } from 'child_process';
-import { resolve } from 'path';
+import { join, resolve } from 'path';
 import { defineConfig } from "vite";
+import monacoEditorEsmPlugin from 'vite-plugin-monaco-editor-esm';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vitejs.dev/config/
@@ -17,6 +19,13 @@ export default defineConfig(() => {
     base: "/smeditor/",
     appType: "mpa",
     plugins: [
+      react(),
+      monacoEditorEsmPlugin({
+        languageWorkers: ['typescript', 'editorWorkerService'],
+        customDistPath: (root, outDir) => {
+          return join(root, outDir)
+        }
+      }),
       VitePWA({
         registerType: "autoUpdate",
         manifestFilename: "manifest.json",
@@ -42,7 +51,7 @@ export default defineConfig(() => {
           globPatterns: ['**/*.{js,css,html}', 'assets/**/*'],
           globIgnores: ['**/*.mp4'],
           ignoreURLParametersMatching: [/^flags/, /^url/, /^chartIndex/, /^chartType/],
-          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
           navigateFallback: null,
         }
       }),
@@ -53,7 +62,7 @@ export default defineConfig(() => {
     build: {
       target: "esnext",
       rollupOptions: {
-        plugins: [dynamicImportVariables({})],
+        plugins: [dynamicImportVariables({warnOnError: true})],
         input: {
           main: resolve(__dirname, 'index.html'),
           app: resolve(__dirname, 'app/index.html'),

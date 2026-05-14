@@ -1,4 +1,9 @@
+import {
+  TIMING_DATA_DISPLAY_PRECISION,
+  TIMING_DATA_PRECISION,
+} from "../chart/sm/TimingData"
 import { TimingEventType } from "../chart/sm/TimingTypes"
+import { ValueInputOptions } from "../gui/inputs/ValueInput"
 
 interface Popup {
   rows: PopupRow[]
@@ -9,38 +14,15 @@ interface Popup {
 export interface PopupRow {
   label: string
   key: string
-  input: PopupInput
+  input: ValueInputOptions
 }
 
-type PopupInput =
-  | PopupInputSpinner
-  | PopupInputText
-  | PopupInputDropdown
-  | PopupInputCheckbox
+const precisionSettings = {
+  precision: TIMING_DATA_PRECISION,
+  minPrecision: TIMING_DATA_DISPLAY_PRECISION,
+}
 
-interface PopupInputSpinner {
-  type: "spinner"
-  step?: number | null
-  precision?: number
-  minPrecision?: number | null
-  min?: number
-  max?: number
-}
-interface PopupInputText {
-  type: "text"
-}
-interface PopupInputDropdown {
-  type: "dropdown"
-  items: string[]
-  transformers?: {
-    serialize: (value: string) => string
-    deserialize: (value: string) => string
-  }
-}
-interface PopupInputCheckbox {
-  type: "checkbox"
-}
-export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
+export const TIMING_POPUP_ROWS: { [key in TimingEventType]: Popup } = {
   BPMS: {
     title: "BPM Event",
     rows: [
@@ -48,7 +30,8 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         label: "Tempo",
         key: "value",
         input: {
-          type: "spinner",
+          ...precisionSettings,
+          type: "number",
         },
       },
     ],
@@ -62,7 +45,8 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         label: "Seconds",
         key: "value",
         input: {
-          type: "spinner",
+          ...precisionSettings,
+          type: "number",
         },
       },
     ],
@@ -76,7 +60,8 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         label: "Beats",
         key: "value",
         input: {
-          type: "spinner",
+          ...precisionSettings,
+          type: "number",
           min: 0,
           step: 1 / 48,
         },
@@ -92,7 +77,8 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         label: "Seconds",
         key: "value",
         input: {
-          type: "spinner",
+          ...precisionSettings,
+          type: "number",
         },
       },
     ],
@@ -105,7 +91,8 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         label: "Multiplier",
         key: "value",
         input: {
-          type: "spinner",
+          ...precisionSettings,
+          type: "number",
         },
       },
     ],
@@ -119,7 +106,7 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         label: "Ticks",
         key: "value",
         input: {
-          type: "spinner",
+          type: "number",
           step: 1,
           precision: 0,
           minPrecision: null,
@@ -137,7 +124,8 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         label: "Beats",
         key: "value",
         input: {
-          type: "spinner",
+          ...precisionSettings,
+          type: "number",
           min: 0,
           step: 1 / 48,
         },
@@ -166,14 +154,16 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         label: "Multiplier",
         key: "value",
         input: {
-          type: "spinner",
+          ...precisionSettings,
+          type: "number",
         },
       },
       {
         label: "Ease time",
         key: "delay",
         input: {
-          type: "spinner",
+          ...precisionSettings,
+          type: "number",
           min: 0,
         },
       },
@@ -182,10 +172,10 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         key: "unit",
         input: {
           type: "dropdown",
-          items: ["Beats", "Seconds"],
+          values: ["Beats", "Seconds"],
           transformers: {
-            serialize: (value: string) => (value == "B" ? "Beats" : "Seconds"),
-            deserialize: (value: string) => (value == "Beats" ? "B" : "T"),
+            serialize: value => (value == "B" ? "Beats" : "Seconds"),
+            deserialize: value => (value == "Beats" ? "B" : "T"),
           },
         },
       },
@@ -199,7 +189,7 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         label: "Upper",
         key: "upper",
         input: {
-          type: "spinner",
+          type: "number",
           step: 1,
           precision: 0,
           minPrecision: null,
@@ -210,7 +200,7 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         label: "Lower",
         key: "lower",
         input: {
-          type: "spinner",
+          type: "number",
           step: 1,
           precision: 0,
           minPrecision: null,
@@ -229,7 +219,7 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         label: "Hit multiplier",
         key: "hitMult",
         input: {
-          type: "spinner",
+          type: "number",
           step: 1,
           precision: 0,
           minPrecision: null,
@@ -240,7 +230,7 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         label: "Miss multiplier",
         key: "missMult",
         input: {
-          type: "spinner",
+          type: "number",
           step: 1,
           precision: 0,
           minPrecision: null,
@@ -256,14 +246,21 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
       "Applies a modifier to the playfield. Can specify the length of the applied attack in seconds or the end time of the attack.",
     rows: [
       {
+        label: "Mods",
+        key: "mods",
+        input: {
+          type: "text",
+        },
+      },
+      {
         label: "Timing type",
         key: "endType",
         input: {
           type: "dropdown",
-          items: ["Length", "End"],
+          values: ["Length", "End"],
           transformers: {
-            serialize: (value: string) => (value == "LEN" ? "Length" : "End"),
-            deserialize: (value: string) => (value == "Length" ? "LEN" : "END"),
+            serialize: value => (value == "LEN" ? "Length" : "End"),
+            deserialize: value => (value == "Length" ? "LEN" : "END"),
           },
         },
       },
@@ -271,14 +268,8 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         label: "Seconds",
         key: "value",
         input: {
-          type: "spinner",
-        },
-      },
-      {
-        label: "Mods",
-        key: "mods",
-        input: {
-          type: "text",
+          ...precisionSettings,
+          type: "number",
         },
       },
     ],
@@ -298,7 +289,7 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         label: "Update rate",
         key: "updateRate",
         input: {
-          type: "spinner",
+          type: "number",
           precision: 3,
           min: 0,
         },
@@ -376,7 +367,7 @@ export const POPUP_ROWS: { [key in TimingEventType]: Popup } = {
         label: "Update rate",
         key: "updateRate",
         input: {
-          type: "spinner",
+          type: "number",
           precision: 3,
           min: 0,
         },

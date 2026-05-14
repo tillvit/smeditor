@@ -28,10 +28,19 @@ export class SongTimingData extends TimingData {
     return newData
   }
 
+  /**
+   * Return all events of a type in the song timing data. This will not include any chart-specific events.
+   * If you want to respect chart-specific timing events, use `ChartTimingData.getColumn()` instead.
+   */
   getColumn<Type extends TimingEventType>(type: Type) {
     return this.columns[type]!
   }
 
+  /**
+   * Returns the offset for the song timing data. This will not return the chart-specific offset if it exists.
+   * If you want to get the effective offset for a chart, use `ChartTimingData.getOffset()` instead.
+   * @returns
+   */
   getOffset(): number {
     return this.offset
   }

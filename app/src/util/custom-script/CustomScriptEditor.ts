@@ -1,34 +1,11 @@
-import * as monaco from "monaco-editor"
-
-import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker"
-import cssWorker from "monaco-editor/esm/vs/language/css/css.worker?worker"
-import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker"
-import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker"
-import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker"
-
 import smeLib from "./smlib.d.ts?raw"
-
-self.MonacoEnvironment = {
-  getWorker(_, label) {
-    if (label === "json") {
-      return new jsonWorker()
-    }
-    if (label === "css" || label === "scss" || label === "less") {
-      return new cssWorker()
-    }
-    if (label === "html" || label === "handlebars" || label === "razor") {
-      return new htmlWorker()
-    }
-    if (label === "typescript" || label === "javascript") {
-      return new tsWorker()
-    }
-    return new editorWorker()
-  },
-}
 
 let initialized = false
 
-function initializeMonaco() {
+export function initializeMonaco(
+  monaco: typeof import("monaco-editor/esm/vs/editor/editor.api")
+) {
+  if (initialized) return
   initialized = true
   monaco.languages.typescript.typescriptDefaults.addExtraLib(
     smeLib,
@@ -38,25 +15,57 @@ function initializeMonaco() {
     `
     import { Chart } from "app/src/chart/sm/Chart"
     import { Simfile } from "app/src/chart/sm/Simfile"
-    import { NotedataEntry, PartialNotedataEntry, PartialHoldNotedataEntry } from "app/src/chart/sm/NoteTypes"
-    import { BPMTimingEvent, StopTimingEvent, WarpTimingEvent, DelayTimingEvent, ScrollTimingEvent, TickcountTimingEvent, FakeTimingEvent, LabelTimingEvent, SpeedTimingEvent, TimeSignatureTimingEvent, ComboTimingEvent, AttackTimingEvent, FGChangeTimingEvent, BGChangeTimingEvent } from "app/src/chart/sm/TimingTypes"
+    import { NotedataEntry, PartialNotedataEntry, PartialHoldNotedataEntry} from "app/src/chart/sm/NoteTypes"
+    import { TimingEvent, BPMTimingEvent, StopTimingEvent, WarpTimingEvent, DelayTimingEvent, ScrollTimingEvent, TickcountTimingEvent, FakeTimingEvent, LabelTimingEvent, SpeedTimingEvent, TimeSignatureTimingEvent, ComboTimingEvent, AttackTimingEvent, FGChangeTimingEvent, BGChangeTimingEvent } from "app/src/chart/sm/TimingTypes"
+
     declare global {
       /**
        * The current chart being edited.
        */
-      const chart: Chart;
+      const CHART: Chart;
       /**
        * The current simfile being edited.
        */
-      const sm: Simfile;
+      const SM: Simfile;
+
+      type RangeData = {
+        /** The start of the selection range in both beats and seconds. */
+        start: { beat: number, second: number };
+        /** The end of the selection range in both beats and seconds. */
+        end: { beat: number, second: number };
+      };
+
+      type SelectionData = {
+        /** The type of the current selection. "notes" if the selection is of notes, "timing" if the selection is of timing events */
+        type: "notes";
+        /** The array of selected objects. This will be a list of note objects or timing events. */
+        selection: NotedataEntry[];
+        /** The range of the selection in both beats and seconds. */
+        range: RangeData;
+      } | {
+        /** The type of the current selection. "notes" if the selection is of notes, "timing" if the selection is of timing events */
+        type: "timing";
+        /** The array of selected objects. This will be a list of note objects or timing events. */
+        selection: TimingEvent[];
+        /** The range of the selection in both beats and seconds. */
+        range: RangeData;
+      };
+
       /**
-       * The currently selected notes in the editor. Returns [] if no notes are selected.
+       * Provides data about the current selection. If there is no selection, this will be null.\n
+       * - \`SELECTION.type\`: "notes" if the selection is of notes, "timing" if the selection is of timing events\n
+       * - \`SELECTION.selection\`: the array of selected objects, either NotedataEntry[] or TimingEvent[] depending on the type of selection\n
+       * - \`SELECTION.range\`: the range of the selection in both beats and seconds
        */
-      const selection: NotedataEntry[];
+      const SELECTION: SelectionData | null;
       /**
        * The arguments passed to the script.
        */
-      const args: any;
+      const ARGS: (string | number | boolean)[];
+
+      const Foot: typeof import("app/src/chart/stats/parity/ParityDataTypes").Foot;
+
+
       /**
        * Create a new BPM timing event. A BPM timing event changes the song's tempo.
        *
@@ -168,7 +177,7 @@ function initializeMonaco() {
        * Creates a tap note.
        *
        * @param {number} beat The beat at which to place the tap note.
-       * @param {number} col The column of the tap note.
+       * @param {number} col The column of the tap note (0-indexed).
        * @return PartialNotedataEntry
        */
       function TapNote(beat: number, col: number): PartialNotedataEntry
@@ -176,7 +185,7 @@ function initializeMonaco() {
        * Creates a hold note.
        *
        * @param {number} beat The beat at which to place the hold note.
-       * @param {number} col The column of the hold note.
+       * @param {number} col The column of the hold note (0-indexed).
        * @param {number} length The length of the hold note in beats.
        * @return PartialHoldNotedataEntry
        */
@@ -185,7 +194,7 @@ function initializeMonaco() {
        * Creates a roll note.
        *
        * @param {number} beat The beat at which to place the roll note.
-       * @param {number} col The column of the roll note.
+       * @param {number} col The column of the roll note (0-indexed).
        * @param {number} length The length of the roll note in beats.
        * @return PartialHoldNotedataEntry
        */
@@ -194,7 +203,7 @@ function initializeMonaco() {
        * Creates a mine note.
        *
        * @param {number} beat The beat at which to place the mine note.
-       * @param {number} col The column of the mine note.
+       * @param {number} col The column of the mine note (0-indexed).
        * @return PartialNotedataEntry
        */
       function MineNote(beat: number, col: number): PartialNotedataEntry
@@ -202,7 +211,7 @@ function initializeMonaco() {
        * Creates a lift note.
        *
        * @param {number} beat The beat at which to place the lift note.
-       * @param {number} col The column of the lift note.
+       * @param {number} col The column of the lift note (0-indexed).
        * @return PartialNotedataEntry
        */
       function LiftNote(beat: number, col: number): PartialNotedataEntry
@@ -210,16 +219,83 @@ function initializeMonaco() {
        * Creates a fake note.
        *
        * @param {number} beat The beat at which to place the fake note.
-       * @param {number} col The column of the fake note.
+       * @param {number} col The column of the fake note (0-indexed).
        * @return PartialNotedataEntry
        */
       function FakeNote(beat: number, col: number): PartialNotedataEntry
     }
 
+
     export {}
   `,
     "file:///ScriptUtils.d.ts"
   )
+
+  const typeImports = {
+    "app/src/chart/sm/Chart": ["Chart"],
+    "app/src/chart/sm/Simfile": ["Simfile"],
+    "app/src/chart/sm/NoteTypes": [
+      "NotedataEntryBase",
+      "NotedataEntry",
+      "Notedata",
+      "PartialNotedataEntry",
+      "PartialHoldNotedataEntry",
+      "NoteType",
+      "HoldNoteType",
+      "TapNoteType",
+      "PartialTapNotedataEntry",
+      "PartialHoldNotedataEntry",
+      "TapNotedataEntry",
+      "HoldNotedataEntry",
+      "Foot",
+      "FootOverride",
+    ],
+    "app/src/chart/sm/TimingTypes": [
+      "TIMING_EVENT_NAMES",
+      "TimingEvent",
+      "Cached",
+      "BPMTimingEvent",
+      "StopTimingEvent",
+      "WarpTimingEvent",
+      "DelayTimingEvent",
+      "ScrollTimingEvent",
+      "TickCountTimingEvent",
+      "FakeTimingEvent",
+      "LabelTimingEvent",
+      "SpeedTimingEvent",
+      "TimeSignatureTimingEvent",
+      "ComboTimingEvent",
+      "AttackTimingEvent",
+      "FGChangeTimingEvent",
+      "BGChangeTimingEvent",
+    ],
+  }
+
+  const constImports = {
+    "app/src/chart/sm/NoteTypes": ["isHoldNote", "isTapNote"],
+    "app/src/chart/sm/TimingTypes": ["TIMING_EVENT_NAMES"],
+  }
+
+  let importString = ""
+  for (const [path, types] of Object.entries(typeImports)) {
+    for (const type of types) {
+      importString += `type ${type} = import("${path}").${type};\n`
+    }
+  }
+  for (const [path, types] of Object.entries(constImports)) {
+    for (const type of types) {
+      importString += `const ${type}: typeof import("${path}").${type};\n`
+    }
+  }
+  importString = `declare global {
+    ${importString}
+    }
+    export {}`
+  monaco.languages.typescript.typescriptDefaults.addExtraLib(
+    importString,
+    "file:///TypeImports.d.ts"
+  )
+
   monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
     ...monaco.languages.typescript.typescriptDefaults.getDiagnosticsOptions(),
     noSemanticValidation: false,
@@ -229,14 +305,14 @@ function initializeMonaco() {
 
   monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
     ...monaco.languages.typescript.typescriptDefaults.getCompilerOptions(),
-    lib: ["es2020"],
+    lib: ["es2022", "webworker"],
   })
 
   const legend = {
     tokenTypes: ["variable"],
     tokenModifiers: ["readonly"],
   }
-  const globals = ["sm", "chart", "selection", "args"]
+  const globals = ["SM", "CHART", "SELECTION", "ARGS", "RANGE"]
 
   monaco.languages.registerDocumentSemanticTokensProvider("typescript", {
     getLegend: function () {
@@ -285,6 +361,7 @@ function initializeMonaco() {
       {
         token: "variable.readonly",
         foreground: "#56ddffff",
+        fontStyle: "bold",
       },
     ],
   })
@@ -297,53 +374,54 @@ function initializeMonaco() {
       {
         token: "variable.readonly",
         foreground: "#006bb3",
+        fontStyle: "bold",
       },
     ],
   })
 }
 
-export type CustomEditor = ReturnType<typeof createEditor>
+// export type CustomEditor = ReturnType<typeof createEditor>
 
-export function createEditor(
-  parent: HTMLElement,
-  value: string,
-  theme: "light" | "dark"
-) {
-  if (!initialized) initializeMonaco()
-  const model = monaco.editor.createModel(
-    value,
-    "typescript",
-    monaco.Uri.parse(`file:///main.ts`)
-  )
+// export function createEditor(
+//   parent: HTMLElement,
+//   value: string,
+//   theme: "light" | "dark"
+// ) {
+//   if (!initialized) initializeMonaco()
+//   const model = monaco.editor.createModel(
+//     value,
+//     "typescript",
+//     monaco.Uri.parse(`file:///main.ts`)
+//   )
 
-  const editor = monaco.editor.create(parent, {
-    model,
-    automaticLayout: true,
-    theme,
-    minimap: { enabled: false },
-    "semanticHighlighting.enabled": true,
-  })
+//   const editor = monaco.editor.create(parent, {
+//     model,
+//     automaticLayout: true,
+//     theme,
+//     minimap: { enabled: false },
+//     "semanticHighlighting.enabled": true,
+//   })
 
-  return {
-    transpile: async () => {
-      const client = await monaco.languages.typescript
-        .getTypeScriptWorker()
-        .then(worker => worker())
-      const result = await client.getEmitOutput("file:///main.ts")
-      return result.outputFiles[0].text
-    },
-    getTS: () => {
-      return model.getValue()
-    },
-    setJS: (code: string) => {
-      model.setValue(code)
-    },
-    swapTheme(theme: "light" | "dark") {
-      monaco.editor.setTheme(theme)
-    },
-    destroy: () => {
-      model.dispose()
-      editor.dispose()
-    },
-  }
-}
+//   return {
+//     transpile: async () => {
+//       const client = await monaco.languages.typescript
+//         .getTypeScriptWorker()
+//         .then(worker => worker())
+//       const result = await client.getEmitOutput("file:///main.ts")
+//       return result.outputFiles[0].text
+//     },
+//     getTS: () => {
+//       return model.getValue()
+//     },
+//     setJS: (code: string) => {
+//       model.setValue(code)
+//     },
+//     swapTheme(theme: "light" | "dark") {
+//       monaco.editor.setTheme(theme)
+//     },
+//     destroy: () => {
+//       model.dispose()
+//       editor.dispose()
+//     },
+//   }
+// }

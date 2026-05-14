@@ -70,12 +70,15 @@ export class WebFileHandler implements BaseFileHandler {
       const file = item as FileSystemFileEntry
       if (file.name == ".DS_Store") return
       else
-        file.file(async file => {
-          const fileHandle = await dirHandle.getFileHandle(file.name, {
-            create: true,
+        return new Promise(resolve =>
+          file.file(async file => {
+            const fileHandle = await dirHandle.getFileHandle(file.name, {
+              create: true,
+            })
+            await this.writeHandle(fileHandle, file)
+            resolve()
           })
-          await this.writeHandle(fileHandle, file)
-        })
+        )
     } else if (item.isDirectory) {
       const dirReader = (<FileSystemDirectoryEntry>item).createReader()
       const newDir = await dirHandle.getDirectoryHandle(item.name, {
@@ -84,13 +87,16 @@ export class WebFileHandler implements BaseFileHandler {
       for await (const existingHandle of newDir.values()) {
         await newDir.removeEntry(existingHandle.name, { recursive: true })
       }
-      dirReader.readEntries(async entries => {
-        const promises = []
-        for (let i = 0; i < entries.length; i++) {
-          promises.push(this.uploadFiles(entries[i], newDir))
-        }
-        await Promise.all(promises)
-      })
+      return new Promise(resolve =>
+        dirReader.readEntries(async entries => {
+          const promises = []
+          for (let i = 0; i < entries.length; i++) {
+            promises.push(this.uploadFiles(entries[i], newDir))
+          }
+          await Promise.all(promises)
+          resolve()
+        })
+      )
     }
   }
 
@@ -112,17 +118,19 @@ export class WebFileHandler implements BaseFileHandler {
       }
     }
 
+    const uploadedFiles: { type: "file" | "directory"; path: string }[] = []
     const queue = []
     for (let i = 0; i < items.length; i++) {
       const item = items[i].webkitGetAsEntry()
       if (!item) continue
+      uploadedFiles.push({
+        type: item.isDirectory ? "directory" : "file",
+        path: prefix == "" ? item.name : prefix + "/" + item.name,
+      })
       queue.push(this.uploadFiles(item, prefix))
     }
-    let returnVal = undefined
-    if (items.length == 1 && items[0].webkitGetAsEntry()!.isDirectory)
-      returnVal = items[0].webkitGetAsEntry()!.name
     await Promise.all(queue)
-    return returnVal
+    return uploadedFiles
   }
 
   async uploadDir(
@@ -381,7 +389,6 @@ export class WebFileHandler implements BaseFileHandler {
   }
 
   async renameDirectory(path: string, pathTo: string) {
-    if (pathTo.startsWith(path)) return
     try {
       const baseFromDirHandle = await this.getDirectoryHandle(dirname(path))
       const baseToDirHandle = await this.getDirectoryHandle(dirname(pathTo), {
@@ -441,8 +448,6 @@ export class WebFileHandler implements BaseFileHandler {
         break
       }
     }
-
-    if (samePartsLength == 0) return to
 
     let outputParts = []
     for (let i = samePartsLength; i < fromParts.length; i++) {

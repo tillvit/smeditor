@@ -1,5 +1,7 @@
+import { Ticker } from "pixi.js"
 import { App } from "../App"
 import { TimingWindowCollection } from "../chart/play/TimingWindowCollection"
+import { ValueInputOptions } from "../gui/inputs/ValueInput"
 import { Options } from "../util/Options"
 
 export type UserOption = UserOptionGroup | UserOptionSubgroup | UserOptionItem
@@ -12,100 +14,21 @@ export interface UserOptionGroup {
   disable?: (app: App) => boolean
 }
 
-interface UserOptionSubgroup {
+export interface UserOptionSubgroup {
   type: "subgroup"
   label?: string
   children: UserOption[]
   disable?: (app: App) => boolean
 }
 
-interface UserOptionItem {
+export interface UserOptionItem {
   type: "item"
   id: string
   label: string
   tooltip?: string
-  input: UserOptionInput<any>
+  input: ValueInputOptions & { onChange?: (app: App, value: any) => void }
   disable?: (app: App) => boolean
 }
-
-interface UserOptionTextInput {
-  type: "text"
-  transformers?: {
-    serialize: (value: string) => string
-    deserialize: (value: string) => string
-  }
-  onChange?: (app: App, value: string) => void
-}
-
-type UserOptionDropdownInput<T> =
-  | {
-      type: "dropdown"
-      items: readonly string[]
-      advanced: false
-      onChange?: (app: App, value: string | number) => void
-    }
-  | {
-      type: "dropdown"
-      items: readonly number[]
-      advanced: false
-      onChange?: (app: App, value: string | number) => void
-    }
-  | {
-      type: "dropdown"
-      items: T[]
-      advanced: true
-      transformers: {
-        serialize: (value: string | number | boolean) => T
-        deserialize: (value: T) => string | number | boolean
-      }
-      onChange?: (app: App, value: string | number | boolean) => void
-    }
-
-interface UserOptionNumberInput {
-  type: "number"
-  step: number
-  precision?: number
-  minPrecision?: number
-  min?: number
-  max?: number
-  transformers?: {
-    serialize: (value: number) => number
-    deserialize: (value: number) => number
-  }
-  onChange?: (app: App, value: number) => void
-}
-
-interface UserOptionSliderInput {
-  type: "slider"
-  step?: number
-  min?: number
-  max?: number
-  hardMax?: number
-  hardMin?: number
-  transformers?: {
-    serialize: (value: number) => number
-    deserialize: (value: number) => number
-  }
-  onChange?: (app: App, value: number) => void
-}
-
-interface UserOptionCheckboxInput {
-  type: "checkbox"
-  onChange?: (app: App, value: boolean) => void
-}
-
-interface UserOptionColorInput {
-  type: "color"
-  onChange?: (app: App, value: string) => void
-}
-
-type UserOptionInput<T> =
-  | UserOptionTextInput
-  | UserOptionDropdownInput<T>
-  | UserOptionNumberInput
-  | UserOptionCheckboxInput
-  | UserOptionSliderInput
-  | UserOptionColorInput
 
 export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
   {
@@ -207,7 +130,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           },
           {
             type: "item",
-            label: "Smooth Animations",
+            label: "Smooth animations",
             id: "general.smoothAnimations",
             input: {
               type: "checkbox",
@@ -228,8 +151,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             id: "general.loadSSC",
             input: {
               type: "dropdown",
-              items: ["Prompt", "Always", "Never"],
-              advanced: false,
+              values: ["Prompt", "Always", "Never"],
             },
             tooltip:
               "Automatically select .ssc files instead of .sm files when available.",
@@ -884,6 +806,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               min: -1,
               step: 0.001,
               max: 1,
+              precision: 3,
               hardMin: -(2 ** 31 - 1),
               hardMax: 2 ** 31 - 1,
             },
@@ -899,6 +822,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               min: -1,
               step: 0.001,
               max: 1,
+              precision: 3,
               hardMin: -(2 ** 31 - 1),
               hardMax: 2 ** 31 - 1,
             },
@@ -914,6 +838,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               min: -1,
               step: 0.001,
               max: 1,
+              precision: 3,
               hardMin: -(2 ** 31 - 1),
               hardMax: 2 ** 31 - 1,
             },
@@ -954,8 +879,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
             label: "Timing window collection",
             input: {
               type: "dropdown",
-              advanced: false,
-              get items(): string[] {
+              get values(): string[] {
                 return Object.keys(TimingWindowCollection.getCollections())
               },
               onChange(app, value) {
@@ -980,6 +904,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               type: "slider",
               min: 0,
               step: 0.001,
+              precision: 3,
               max: 2,
               hardMax: 2 ** 31 - 1,
             },
@@ -993,6 +918,7 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
               type: "slider",
               min: 0,
               step: 0.001,
+              precision: 3,
               max: 1,
               hardMax: 2 ** 31 - 1,
             },
@@ -1007,6 +933,15 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
     id: "performance",
     label: "Performance",
     children: [
+      {
+        type: "item",
+        label: "Low detail holds",
+        id: "performance.lowDetailHolds",
+        input: {
+          type: "checkbox",
+        },
+        tooltip: "Simplify drawing holds. Massively improves performance.",
+      },
       {
         type: "item",
         label: "Antialiasing",
@@ -1028,6 +963,24 @@ export const USER_OPTIONS_WINDOW_DATA: UserOption[] = [
           hardMax: 2 ** 31 - 1,
         },
         tooltip: "Requires a reload.",
+      },
+      {
+        type: "item",
+        label: "Max FPS",
+        id: "performance.maxFPS",
+        input: {
+          type: "slider",
+          min: 0,
+          step: 5,
+          max: 240,
+          hardMin: 0,
+          hardMax: 2 ** 31 - 1,
+          onChange: (_, value: number) => {
+            Ticker.shared.maxFPS = value
+          },
+        },
+        tooltip:
+          "Maximum framerate the app will run at. Set to 0 for unlimited.",
       },
     ],
   },

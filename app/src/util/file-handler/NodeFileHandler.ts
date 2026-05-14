@@ -30,7 +30,7 @@ export class NodeFileHandler implements BaseFileHandler {
     const items = event.dataTransfer!.items
     // TODO: make dropping files load sm
     console.log(items)
-    return ""
+    return []
   }
 
   async getDirectoryHandle(
@@ -180,8 +180,7 @@ export class NodeFileHandler implements BaseFileHandler {
         encoded.byteOffset + encoded.byteLength
       ) as ArrayBuffer
     }
-    const writable = await handle.createWritable()
-    await writable.truncate(0)
+    const writable = await handle.createWritable({ keepExistingData: false })
     await writable.write(buf)
     await writable.close()
   }

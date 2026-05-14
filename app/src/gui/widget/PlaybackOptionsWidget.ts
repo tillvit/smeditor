@@ -1,10 +1,9 @@
-import { Parser } from "expr-eval"
-import tippy from "tippy.js"
 import { EditMode } from "../../chart/ChartManager"
 import { EventHandler } from "../../util/EventHandler"
 import { Flags } from "../../util/Flags"
 import { Keybinds } from "../../util/Keybinds"
 import { Options } from "../../util/Options"
+import { parseString, tippySafe } from "../../util/Util"
 import { Icons } from "../Icons"
 import { Widget } from "./Widget"
 import { WidgetManager } from "./WidgetManager"
@@ -122,7 +121,7 @@ export class PlaybackOptionsWidget extends Widget {
 
     collapseButton.style.display = "none"
 
-    tippy(collapseButton, {
+    tippySafe(collapseButton, {
       onShow(instance) {
         instance.setContent(
           (view.classList.contains("collapsed") ? "Show " : "Hide ") +
@@ -402,7 +401,7 @@ export class PlaybackOptionsWidget extends Widget {
 
   createSpinner(options: SpinnerOptions) {
     const container = document.createElement("div")
-    container.classList.add("po-spinner")
+    container.classList.add("pm-spinner")
 
     const getStep = (ev: WheelEvent | MouseEvent) => {
       let step = Options.general.spinnerStep
@@ -419,7 +418,7 @@ export class PlaybackOptionsWidget extends Widget {
     }
 
     const btnMinus = document.createElement("button")
-    btnMinus.classList.add("po-spinner-btn")
+    btnMinus.classList.add("pm-spinner-btn")
     btnMinus.innerText = "-"
 
     btnMinus.onclick = ev => {
@@ -430,7 +429,7 @@ export class PlaybackOptionsWidget extends Widget {
     }
 
     const btnPlus = document.createElement("button")
-    btnPlus.classList.add("po-spinner-btn")
+    btnPlus.classList.add("pm-spinner-btn")
     btnPlus.innerText = "+"
 
     btnPlus.onclick = ev => {
@@ -441,7 +440,7 @@ export class PlaybackOptionsWidget extends Widget {
     }
 
     const input = document.createElement("input")
-    input.classList.add("po-spinner-input")
+    input.classList.add("pm-spinner-input")
     input.type = "text"
 
     const update = (trigger = true) => {
@@ -497,12 +496,13 @@ export class PlaybackOptionsWidget extends Widget {
       input.select()
     }
     input.onblur = () => {
-      const val = this.parseString(input)
+      let val = parseString(input.value)
       if (val == null) {
         spinner.currentValue = options.getValue()
         update(false)
         return
       }
+      if (!isFinite(val)) val = 0
       spinner.currentValue = val
       update()
     }
@@ -634,7 +634,7 @@ export class PlaybackOptionsWidget extends Widget {
       this.enteredMain = true
       this.view.style.height = ""
       this.collapseButton.style.display = ""
-      document.getElementById("menubar")?.appendChild(this.collapseButton)
+      // document.getElementById("menubar")?.appendChild(this.collapseButton)
     }
 
     for (const spinner of this.registeredSpinners) {
@@ -673,16 +673,6 @@ export class PlaybackOptionsWidget extends Widget {
       this.changeRow.classList.toggle("hidden", Options.chart.CMod)
       this.warpRow.classList.toggle("hidden", !Options.chart.CMod)
       this.fakeRow.classList.toggle("hidden", !Options.chart.CMod)
-    }
-  }
-
-  private parseString(el: HTMLInputElement) {
-    try {
-      const val = Parser.evaluate(el.value)
-      if (!isFinite(val)) return 0
-      return val
-    } catch {
-      return null
     }
   }
 }

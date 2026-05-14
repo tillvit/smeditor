@@ -1,4 +1,5 @@
-import { Parser } from "expr-eval"
+import { Parser } from "expr-eval-fork"
+import tippy from "tippy.js"
 import { PartialNotedataEntry, isHoldNote } from "../chart/sm/NoteTypes"
 
 export const IS_OSX: boolean = navigator.userAgent.indexOf("Mac OS X") > -1
@@ -233,6 +234,19 @@ export function isIFrame() {
   }
 }
 
+export function shouldBlockKeybinds(event: Event) {
+  if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return true
+  if ((<HTMLElement>event.target).classList.contains("custom-console"))
+    return true
+  if ((<HTMLElement>event.target).classList.contains("native-edit-context"))
+    // code editor
+    return true
+  if (event.target instanceof HTMLTextAreaElement) return true
+  if (event.target instanceof HTMLInputElement) return true
+  if (event.target instanceof HTMLButtonElement) return true
+  return false
+}
+
 declare global {
   const WorkerGlobalScope: any
 }
@@ -242,4 +256,12 @@ export function isWorker() {
     typeof WorkerGlobalScope !== "undefined" &&
     self instanceof WorkerGlobalScope
   )
+}
+
+export function tippySafe(
+  element: HTMLElement | null,
+  options: Parameters<typeof tippy>[1]
+) {
+  if (!element || (element as any)._tippy) return // hacky :(
+  tippy(element, options)
 }

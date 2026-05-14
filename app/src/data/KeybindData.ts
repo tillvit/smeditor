@@ -8,28 +8,31 @@ import {
   FootOverride,
 } from "../chart/stats/parity/ParityDataTypes"
 import { WaterfallManager } from "../gui/element/WaterfallManager"
-import { AboutWindow } from "../gui/window/AboutWindow"
-import { CaptureWindow } from "../gui/window/CaptureWindow"
-import { ChangelogWindow } from "../gui/window/ChangelogWindow"
-import { ChartListWindow } from "../gui/window/ChartListWindow"
-import { EQWindow } from "../gui/window/EQWindow"
-import { ExportNotedataWindow } from "../gui/window/ExportNotedataWindow"
-import { GameplayKeybindWindow } from "../gui/window/GameplayKeybindWindow"
-import { InitialWindow } from "../gui/window/InitialWindow"
-import { KeybindWindow } from "../gui/window/KeybindWindow"
-import { NewSongWindow } from "../gui/window/NewSongWindow"
-import { NoteskinWindow } from "../gui/window/NoteskinWindow"
-import { OffsetWindow } from "../gui/window/OffsetWindow"
-import { SMPropertiesWindow } from "../gui/window/SMPropertiesWindow"
-import { SyncWindow } from "../gui/window/SyncWindow"
-import { ThemeEditorWindow } from "../gui/window/ThemeEditorWindow"
-import { ThemeSelectionWindow } from "../gui/window/ThemeSelectionWindow"
-import { TimingDataWindow } from "../gui/window/TimingDataWindow"
-import { UserOptionsWindow } from "../gui/window/UserOptionsWindow"
+import { AboutWindow } from "../gui/window/About/AboutWindow"
+import { CaptureWindow } from "../gui/window/Capture/CaptureWindow"
+import { ChangelogWindow } from "../gui/window/Changelog/ChangelogWindow"
+import { ChartListWindow } from "../gui/window/ChartList/ChartListWindow"
+import { EQWindow } from "../gui/window/EQ/EQWindow"
+import { ExportNotedataWindow } from "../gui/window/ExportNotedata/ExportNotedataWindow"
+import { InitialWindow } from "../gui/window/Initial/InitialWindow"
+import { GameplayKeybindWindow } from "../gui/window/Keybind/GameplayKeybindWindow"
+import { KeybindWindow } from "../gui/window/Keybind/KeybindWindow"
+import { NewSongWindow } from "../gui/window/NewSong/NewSongWindow"
+import { NoteskinWindow } from "../gui/window/NoteSkin/NoteskinWindow"
+
+import { SMPropertiesWindow } from "../gui/window/SMProperties/SMPropertiesWindow"
+import { SyncWindow } from "../gui/window/Sync/SyncWindow"
+import { ThemeSelectionWindow } from "../gui/window/Theme/ThemeSelectionWindow"
+import { TimingDataWindow } from "../gui/window/TimingData/TimingDataWindow"
+import { UserOptionsWindow } from "../gui/window/UserOptions/UserOptionsWindow"
+import { WindowManager } from "../gui/window/WindowManager"
 import { ActionHistory } from "../util/ActionHistory"
+import { CustomScriptRunner } from "../util/custom-script/CustomScriptRunner"
 import { EventHandler } from "../util/EventHandler"
+import { FileHandler } from "../util/file-handler/FileHandler"
+import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 import { Flags } from "../util/Flags"
-import { maxArr, minArr, roundDigit } from "../util/Math"
+import { roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
 import { basename, dirname } from "../util/Path"
 import {
@@ -41,8 +44,6 @@ import {
   QUANT_NUM,
   QUANTS,
 } from "../util/Util"
-import { FileHandler } from "../util/file-handler/FileHandler"
-import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 
 export interface Keybind {
   label: string
@@ -228,8 +229,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "New song",
     combos: [{ key: "N", mods: [DEF_MOD] }],
     disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
-    callback: app => {
-      app.windowManager.openWindow(new NewSongWindow(app))
+    callback: () => {
+      WindowManager.openWindow(NewSongWindow())
     },
   },
   openSong: {
@@ -237,17 +238,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Open song",
     combos: [{ key: "O", mods: [DEF_MOD] }],
     disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
-    callback: app => {
-      if (window.nw) {
-        const fileSelector = document.createElement("input")
-        fileSelector.type = "file"
-        fileSelector.accept = ".sm,.ssc"
-        fileSelector.onchange = () =>
-          app.chartManager.loadSM(fileSelector.value)
-        fileSelector.click()
-      } else {
-        app.windowManager.openWindow(new InitialWindow(app, false))
-      }
+    callback: () => {
+      WindowManager.openWindow(InitialWindow(false))
     },
   },
   songProperties: {
@@ -255,7 +247,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Open song properties",
     combos: [{ key: "O", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
-    callback: app => app.windowManager.openWindow(new SMPropertiesWindow(app)),
+    callback: () => WindowManager.openWindow(SMPropertiesWindow()),
   },
   save: {
     label: "Save...",
@@ -288,17 +280,14 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Export to notedata",
     combos: [{ key: "E", mods: [DEF_MOD, Modifier.SHIFT] }],
     disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
-    callback: app =>
-      app.windowManager.openWindow(
-        new ExportNotedataWindow(app, app.chartManager.selection.notes)
-      ),
+    callback: () => WindowManager.openWindow(ExportNotedataWindow()),
   },
   capture: {
     label: "Export video...",
     combos: [],
     disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
-    callback: app => {
-      app.windowManager.openWindow(new CaptureWindow(app))
+    callback: () => {
+      WindowManager.openWindow(CaptureWindow())
     },
   },
   previousSong: {
@@ -434,13 +423,13 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Open chart list",
     combos: [{ key: "O", mods: [DEF_MOD, Modifier.SHIFT] }],
     disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
-    callback: app => app.windowManager.openWindow(new ChartListWindow(app)),
+    callback: () => WindowManager.openWindow(ChartListWindow()),
   },
   timingDataRow: {
     label: "Edit timing data at row",
     combos: [{ key: "T", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartView || !Flags.openWindows,
-    callback: app => app.windowManager.openWindow(new TimingDataWindow(app)),
+    callback: () => WindowManager.openWindow(TimingDataWindow()),
   },
   selectRegion: {
     label: "Select region",
@@ -894,13 +883,13 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Equalizer",
     combos: [{ key: "E", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartAudio || !Flags.openWindows,
-    callback: app => app.windowManager.openWindow(new EQWindow(app)),
+    callback: () => WindowManager.openWindow(EQWindow()),
   },
   detectSync: {
     label: "Detect audio sync",
     combos: [{ key: "L", mods: [Modifier.SHIFT] }],
     disabled: app => !app.chartManager.chartAudio || !Flags.openWindows,
-    callback: app => app.windowManager.openWindow(new SyncWindow(app)),
+    callback: () => WindowManager.openWindow(SyncWindow()),
   },
   previousNoteType: {
     label: "Previous note type",
@@ -996,8 +985,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Edit options",
     combos: [{ key: ",", mods: [DEF_MOD] }],
     disabled: () => !Flags.openWindows || !Flags.openWindows,
-    callback: app => {
-      app.windowManager.openWindow(new UserOptionsWindow(app))
+    callback: () => {
+      WindowManager.openWindow(UserOptionsWindow())
     },
   },
   keybinds: {
@@ -1005,8 +994,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Edit keybinds",
     combos: [],
     disabled: () => !Flags.openWindows || !Flags.openWindows,
-    callback: app => {
-      app.windowManager.openWindow(new KeybindWindow(app))
+    callback: () => {
+      WindowManager.openWindow(KeybindWindow())
     },
   },
   gameplayKeybinds: {
@@ -1014,8 +1003,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Edit gameplay keybinds",
     combos: [],
     disabled: () => !Flags.openWindows || !Flags.openWindows,
-    callback: app => {
-      app.windowManager.openWindow(new GameplayKeybindWindow(app))
+    callback: () => {
+      WindowManager.openWindow(GameplayKeybindWindow())
     },
   },
   themes: {
@@ -1023,9 +1012,11 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Edit themes",
     combos: [],
     disabled: () =>
-      !Flags.openWindows || !Flags.openWindows || ThemeEditorWindow.isOpen,
-    callback: app => {
-      app.windowManager.openWindow(new ThemeSelectionWindow(app))
+      !Flags.openWindows ||
+      !Flags.openWindows ||
+      WindowManager.isWindowOpen("theme-editor"),
+    callback: () => {
+      WindowManager.openWindow(ThemeSelectionWindow())
     },
   },
   convertHoldsRolls: {
@@ -1079,7 +1070,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => {
       app.chartManager.modifySelection(note => {
-        if (note.type == "Hold" || note.type == "Roll") note.type = "Tap"
+        if (note.type == "Hold" || note.type == "Roll") {
+          Object.assign(note, { type: "Tap", hold: undefined })
+        }
         return note
       })
     },
@@ -1425,12 +1418,6 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.deleteSelection()
     },
   },
-  adjustOffset: {
-    label: "Adjust offset",
-    combos: [],
-    disabled: () => !Flags.openWindows,
-    callback: app => app.windowManager.openWindow(new OffsetWindow(app)),
-  },
   setSongPreview: {
     label: "Set as song preview",
     combos: [],
@@ -1439,43 +1426,27 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       app.chartManager.getMode() != EditMode.Edit ||
       !app.chartManager.hasRange(),
     callback: app => {
-      const chart = app.chartManager.loadedChart!
       const lastStart = app.chartManager.loadedSM!.properties.SAMPLESTART ?? "0"
       const lastLength =
         app.chartManager.loadedSM!.properties.SAMPLELENGTH ?? "10"
 
-      let newStart = ""
-      let newLength = ""
+      const range = app.chartManager.getRange()!
+      const newStart = roundDigit(range.start.second, 3).toString()
+      const newLength = roundDigit(
+        range.end.second - range.start.second,
+        3
+      ).toString()
 
-      //Try using the region
-      if (
-        app.chartManager.startRegion !== undefined &&
-        app.chartManager.endRegion !== undefined
-      ) {
-        const startSec = chart.getSecondsFromBeat(app.chartManager.startRegion)
-        const endSec = chart.getSecondsFromBeat(app.chartManager.endRegion)
-        newStart = roundDigit(startSec, 3).toString()
-        newLength = roundDigit(endSec - startSec, 3).toString()
-      } else {
-        //Use notes/events
-        const selected =
-          app.chartManager.selection.notes.length > 0
-            ? app.chartManager.selection.notes
-            : app.chartManager.eventSelection.timingEvents
-        const beats = selected.map(item => item.beat)
-        const startSec = chart.getSecondsFromBeat(minArr(beats))
-        const endSec = chart.getSecondsFromBeat(maxArr(beats))
-        newStart = roundDigit(startSec, 3).toString()
-        newLength = roundDigit(endSec - startSec, 3).toString()
-      }
       ActionHistory.instance.run({
         action: app => {
           app!.chartManager.loadedSM!.properties.SAMPLESTART = newStart
           app!.chartManager.loadedSM!.properties.SAMPLELENGTH = newLength
+          EventHandler.emit("smModified")
         },
         undo: app => {
           app!.chartManager.loadedSM!.properties.SAMPLESTART = lastStart
           app!.chartManager.loadedSM!.properties.SAMPLELENGTH = lastLength
+          EventHandler.emit("smModified")
         },
       })
     },
@@ -1548,17 +1519,17 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Open Changelog",
     combos: [],
     disabled: () => !Flags.openWindows,
-    callback: app => {
-      app.windowManager.openWindow(new ChangelogWindow(app))
+    callback: () => {
+      WindowManager.openWindow(ChangelogWindow())
     },
   },
 
   noteskinWindow: {
     label: "Noteskins...",
-    bindLabel: "Open Noteskin Window",
+    bindLabel: "Open noteskin selection",
     combos: [{ mods: [Modifier.SHIFT], key: "N" }],
     disabled: app => !app.chartManager.chartView || !Flags.openWindows,
-    callback: app => app.windowManager.openWindow(new NoteskinWindow(app)),
+    callback: () => WindowManager.openWindow(NoteskinWindow()),
   },
   previousChart: {
     label: "Previous chart",
@@ -1608,6 +1579,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       } else {
         app.chartManager.editTimingMode = EditTimingMode.Edit
       }
+      EventHandler.emit("timingModeChanged")
     },
   },
   toggleAddTiming: {
@@ -1622,14 +1594,15 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       } else {
         app.chartManager.editTimingMode = EditTimingMode.Edit
       }
+      EventHandler.emit("timingModeChanged")
     },
   },
   about: {
     label: "About",
     combos: [],
     disabled: () => !Flags.openWindows,
-    callback: app => {
-      app.windowManager.openWindow(new AboutWindow(app))
+    callback: () => {
+      WindowManager.openWindow(AboutWindow())
     },
   },
   enableParity: {
@@ -1710,14 +1683,36 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       window.nw.Window.open(window.location.href)
     },
   },
-  // editCustomScripts: {
-  //   label: "Edit custom scripts...",
-  //   combos: [],
-  //   disabled: false,
-  //   callback: app => {
-  //     app.windowManager.openWindow(new CustomScriptEditorWindow(app))
-  //   },
-  // },
+  editCustomScripts: {
+    label: "Edit custom scripts...",
+    combos: [{ mods: [Modifier.SHIFT], key: "G" }],
+    disabled: false,
+    callback: async () => {
+      const CustomScriptEditorWindow = (
+        await import("../gui/window/CustomScript/CustomScriptEditorWindow")
+      ).CustomScriptEditorWindow
+      WindowManager.openWindow(CustomScriptEditorWindow())
+    },
+  },
+  stopAllScripts: {
+    label: "Stop all scripts",
+    combos: [],
+    disabled: false,
+    callback: () => {
+      CustomScriptRunner.stopAll()
+    },
+  },
+  openSetup: {
+    label: "Open Setup",
+    combos: [],
+    disabled: false,
+    callback: async () => {
+      // circular import :(
+      const SetupWindow = (await import("../gui/window/Setup/SetupWindow"))
+        .SetupWindow
+      WindowManager.openWindow(SetupWindow())
+    },
+  },
 }
 
 // Dynamically add keybinds
@@ -1800,7 +1795,11 @@ for (let i = 0; i < QUANTS.length; i++) {
         app.chartManager.getMode() != EditMode.Edit,
       callback: app => {
         app.chartManager.modifySelection(note => {
-          note.beat = app.chartManager.getClosestTick(note.beat, QUANT_NUM[i])
+          note.beat =
+            app.chartManager.loadedChart!.timingData.snapToClosestTick(
+              note.beat,
+              QUANTS[i]
+            )
           note.beat = Math.round(note.beat * 48) / 48
           return note
         })
@@ -1818,31 +1817,11 @@ for (const type of ["STOPS", "DELAYS"] as const) {
       app.chartManager.getMode() != EditMode.Edit ||
       !app.chartManager.hasRange(),
     callback: app => {
-      const chart = app.chartManager.loadedChart!
-      let startBeat = 0
-      let length = 0
+      const startBeat = app.chartManager.getRange()!.start.beat
+      const length =
+        app.chartManager.getRange()!.end.second -
+        app.chartManager.getRange()!.start.second
 
-      //Try using the region
-      if (
-        app.chartManager.startRegion !== undefined &&
-        app.chartManager.endRegion !== undefined
-      ) {
-        const startSec = chart.getSecondsFromBeat(app.chartManager.startRegion)
-        const endSec = chart.getSecondsFromBeat(app.chartManager.endRegion)
-        startBeat = app.chartManager.startRegion
-        length = endSec - startSec
-      } else {
-        //Use notes/events
-        const selected =
-          app.chartManager.selection.notes.length > 0
-            ? app.chartManager.selection.notes
-            : app.chartManager.eventSelection.timingEvents
-        const beats = selected.map(item => item.beat)
-        const startSec = chart.getSecondsFromBeat(minArr(beats))
-        const endSec = chart.getSecondsFromBeat(maxArr(beats))
-        startBeat = minArr(beats)
-        length = endSec - startSec
-      }
       app.chartManager.loadedChart!.timingData.insertColumnEvents([
         { type, beat: startBeat, value: length },
       ])
@@ -1859,26 +1838,11 @@ for (const type of ["WARPS", "FAKES"] as const) {
       app.chartManager.getMode() != EditMode.Edit ||
       !app.chartManager.hasRange(),
     callback: app => {
-      let startBeat = 0
-      let length = 0
+      const startBeat = app.chartManager.getRange()!.start.beat
+      const length =
+        app.chartManager.getRange()!.end.beat -
+        app.chartManager.getRange()!.start.beat
 
-      //Try using the region
-      if (
-        app.chartManager.startRegion !== undefined &&
-        app.chartManager.endRegion !== undefined
-      ) {
-        startBeat = app.chartManager.startRegion
-        length = app.chartManager.endRegion - app.chartManager.startRegion
-      } else {
-        //Use notes/events
-        const selected =
-          app.chartManager.selection.notes.length > 0
-            ? app.chartManager.selection.notes
-            : app.chartManager.eventSelection.timingEvents
-        const beats = selected.map(item => item.beat)
-        startBeat = minArr(beats)
-        length = maxArr(beats) - minArr(beats)
-      }
       app.chartManager.loadedChart!.timingData.insertColumnEvents([
         { type, beat: startBeat, value: length },
       ])

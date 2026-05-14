@@ -66,6 +66,12 @@ export class Chart {
   private _startModify: number | null = null
   private _endModify: number | null = null
 
+  /**
+   * Creates a new Chart.
+   * @param {Simfile} sm The Simfile this chart belongs to
+   * @param {(string | { [key: string]: string })} [data] The data to load the chart from (used internally)
+   * @memberof Chart
+   */
   constructor(sm: Simfile, data?: string | { [key: string]: string }) {
     this.timingData = sm.timingData.createChartTimingData(this)
     this.timingData.reloadCache()
@@ -166,14 +172,35 @@ export class Chart {
     this.recalculateStats()
   }
 
+  /**
+   * Gets the last beat of this chart. If the last beat is a hold, it includes the hold length.
+   *
+   * @return {number} The last beat of the chart.
+   * @memberof Chart
+   */
   getLastBeat() {
     return this._lastBeat
   }
 
+  /**
+   * Gets the last second of this chart. If the last beat is a hold, it includes the hold length.
+   *
+   * @return {number} The last second of the chart.
+   * @memberof Chart
+   */
   getLastSecond() {
     return this._lastSecond
   }
 
+  /**
+   * Gets the second from a given beat.
+   * Convenience method for this.timingData.getSecondsFromBeat
+   *
+   * @param {number} beat
+   * @param {("noclamp" | "before" | "after" | "")} [option]
+   * @return {*}  {number}
+   * @memberof Chart
+   */
   getSecondsFromBeat(
     beat: number,
     option?: "noclamp" | "before" | "after" | ""
@@ -181,18 +208,46 @@ export class Chart {
     return this.timingData.getSecondsFromBeat(beat, option)
   }
 
+  /**
+   * Gets the beat from a given second.
+   * Convenience method for this.timingData.getBeatFromSeconds
+   *
+   * @param {number} seconds
+   * @return {*}  {number}
+   * @memberof Chart
+   */
   getBeatFromSeconds(seconds: number): number {
     return this.timingData.getBeatFromSeconds(seconds)
   }
 
+  /**
+   * Gets the beat from a given effective beat.
+   * Convenience method for this.timingData.getBeatFromEffectiveBeat
+   *
+   * @param {number} effBeat
+   * @return {*}  {number}
+   * @memberof Chart
+   */
   getBeatFromEffectiveBeat(effBeat: number): number {
     return this.timingData.getBeatFromEffectiveBeat(effBeat)
   }
 
+  /**
+   * Returns true if a beat is warped over (via WARPS, negative STOPS, etc.).
+   * @param {number} beat
+   * @return {*}  {boolean}
+   * @memberof Chart
+   */
   isBeatWarped(beat: number): boolean {
     return this.timingData.isBeatWarped(beat)
   }
 
+  /**
+   * Returns true if a beat is marked as fake.
+   * @param {number} beat
+   * @return {*}  {boolean}
+   * @memberof Chart
+   */
   isBeatFaked(beat: number): boolean {
     return this.timingData.isBeatFaked(beat)
   }
@@ -255,6 +310,13 @@ export class Chart {
     this._endModify = null
   }
 
+  /**
+   * Adds a note to the notedata.
+   * @param {PartialNotedataEntry} note
+   * @param {boolean} [callListeners=true] Whether to call event listeners after adding the note
+   * @return {NotedataEntry} The computed note that was added
+   * @memberof Chart
+   */
   addNote(note: PartialNotedataEntry, callListeners = true): NotedataEntry {
     const computedNote = this.insertNote(note)
     this.addEditRange(note.beat, getNoteEnd(note))
@@ -262,6 +324,13 @@ export class Chart {
     return computedNote
   }
 
+  /**
+   * Adds notes to the notedata.
+   * @param {PartialNotedataEntry[]} notes
+   * @param {boolean} [callListeners=true] Whether to call event listeners after adding the notes
+   * @return {NotedataEntry[]} The computed notes that were added
+   * @memberof Chart
+   */
   addNotes(
     notes: PartialNotedataEntry[],
     callListeners = true
@@ -280,6 +349,12 @@ export class Chart {
     return computedNotes
   }
 
+  /**
+   * Computes a note's eextra properties (second, quant, fake, warped).
+   * @param {PartialNotedataEntry} note
+   * @return {NotedataEntry} The computed note
+   * @memberof Chart
+   */
   computeNote(note: PartialNotedataEntry): NotedataEntry {
     return Object.assign(note, {
       warped: this.timingData.isBeatWarped(note.beat),
@@ -291,6 +366,12 @@ export class Chart {
     })
   }
 
+  /**
+   * Modifies a note in the notedata.
+   * @param {PartialNotedataEntry} note
+   * @return {NotedataEntry} The modified note
+   * @memberof Chart
+   */
   modifyNote(
     note: PartialNotedataEntry,
     properties: Partial<NotedataEntry>,
@@ -312,6 +393,13 @@ export class Chart {
     if (callListeners) this.callEventListeners()
   }
 
+  /**
+   * Removes a note from the notedata.
+   * @param {PartialNotedataEntry} note
+   * @param {boolean} [callListeners=true] Whether to call event listeners after removing the note
+   * @return {NotedataEntry | undefined} The removed note, if it existed
+   * @memberof Chart
+   */
   removeNote(
     note: PartialNotedataEntry,
     callListeners = true
@@ -324,6 +412,13 @@ export class Chart {
     return removedNote[0]
   }
 
+  /**
+   * Removes notes from the notedata.
+   * @param {PartialNotedataEntry[]} notes
+   * @param {boolean} [callListeners=true] Whether to call event listeners after removing the notes
+   * @return {NotedataEntry[]} The removed notes
+   * @memberof Chart
+   */
   removeNotes(
     notes: PartialNotedataEntry[],
     callListeners = true
@@ -342,9 +437,14 @@ export class Chart {
       maxArr(computedNotes.map(note => getNoteEnd(note)))
     )
     if (callListeners) this.callEventListeners()
-    return computedNotes as NotedataEntry[]
+    return computedNotes
   }
 
+  /**
+   * Sets the notedata for the chart.
+   * @param {PartialNotedata} notedata
+   * @memberof Chart
+   */
   setNotedata(notedata: PartialNotedata) {
     this.notedata = notedata.map(note => this.computeNote(note))
     // Recalculate everything
@@ -352,10 +452,21 @@ export class Chart {
     this.callEventListeners()
   }
 
+  /**
+   * Gets the notedata for the chart.
+   * @returns {Notedata} The notedata of the chart.
+   * @memberof Chart
+   */
   getNotedata(): Notedata {
     return this.notedata
   }
 
+  /**
+   * Gets all rows in the chart.
+   *
+   * @return {RowData[]} The rows of the chart.
+   * @memberof Chart
+   */
   getRows(): RowData[] {
     return this.notedataRows
   }
@@ -393,10 +504,20 @@ export class Chart {
     )
   }
 
+  /**
+   * Recomputes all notes in the chart.
+   * @memberof Chart
+   */
   recalculateNotes() {
     this.notedata = this.notedata.map(note => this.computeNote(note))
   }
 
+  /**
+   * Recalculates the rows in the chart.
+   * @param startBeat The start beat of the range to recalculate.
+   * @param endBeat The end beat of the range to recalculate.
+   * @memberof Chart
+   */
   recalculateRows(
     startBeat: number | null = null,
     endBeat: number | null = null
@@ -473,12 +594,18 @@ export class Chart {
       this.stats.reset()
       this.stats.calculate()
     } else {
-      this.stats.recalculate(start, end)
+      if (!this.stats.recalculate(start, end)) return
     }
     this._startModify = null
     this._endModify = null
   }
 
+  /**
+   * Gets the music path for this chart. If this chart does not have a music path, it returns the simfile's music path.
+   *
+   * @return {*}  {string}
+   * @memberof Chart
+   */
   getMusicPath(): string {
     return this.music ?? this.sm.properties.MUSIC ?? ""
   }
@@ -487,6 +614,13 @@ export class Chart {
     return this.difficulty + " " + this.meter
   }
 
+  /**
+   * Serializes the chart to a string.
+   *
+   * @param {("sm" | "ssc" | "smebak")} type The type of serialization to perform.
+   * @return {*}  {string} The serialized chart.
+   * @memberof Chart
+   */
   serialize(type: "sm" | "ssc" | "smebak"): string {
     let str =
       "//---------------" +
@@ -594,6 +728,11 @@ export class Chart {
     if (callListeners) this.recalculateStats()
   }
 
+  /**
+   * Returns whether or not this chart has SSC features.
+   * @return {boolean}
+   * @memberof Chart
+   */
   requiresSSC(): boolean {
     return (
       this.chartName !== "" ||
@@ -604,6 +743,11 @@ export class Chart {
     )
   }
 
+  /**
+   * Returns the number of columns in this chart.
+   * @return {number}
+   * @memberof Chart
+   */
   getColumnCount(): number {
     return this.gameType.numCols
   }

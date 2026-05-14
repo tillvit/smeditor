@@ -24,6 +24,14 @@ export class EventHandler extends EventEmitter {
     EventHandler.instance.on(event, fn, context)
   }
 
+  static once(
+    event: string | symbol,
+    fn: (...args: any[]) => void,
+    context?: any
+  ) {
+    EventHandler.instance.once(event, fn, context)
+  }
+
   static off(
     event: string | symbol,
     fn?: (...args: any[]) => void,

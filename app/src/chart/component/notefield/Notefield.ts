@@ -26,11 +26,9 @@ import {
 } from "../../play/TimingWindowCollection"
 import {
   HoldNotedataEntry,
-  HoldNoteType,
   isHoldNote,
   NotedataEntry,
   TapNotedataEntry,
-  TapNoteType,
 } from "../../sm/NoteTypes"
 import { HoldJudgementContainer } from "./HoldJudgementContainer"
 import { NoteContainer } from "./NoteContainer"
@@ -119,7 +117,7 @@ export class NoteObject extends Container {
   loadElement(note: TapNotedataEntry) {
     const element = this.nf.noteskin!.getElement(
       {
-        element: note.type as TapNoteType,
+        element: note.type,
         columnName: this.nf.getColumnName(note.col),
         columnNumber: note.col,
       },
@@ -158,18 +156,24 @@ export class HoldObject extends Container {
 
   private wasActive = false
   private lastLength: number | null = null
+  private lastBrightness: number | null = null
 
   private elements!: HoldElements
+  private lowDetailHold: Sprite
 
   private readonly metrics
   private readonly ns
   readonly nf
   private loaded = false
 
+  private loadLowDetail = this.toggleLowDetail.bind(this)
+
   constructor(notefield: Notefield, note: HoldNotedataEntry) {
     super()
     const active = new Container()
     const inactive = new Container()
+
+    const lowDetailHold = new Sprite(Texture.WHITE)
 
     this.note = note
     this.ns = notefield.noteskin!
@@ -180,15 +184,34 @@ export class HoldObject extends Container {
 
     this.active = active
     this.inactive = inactive
+    this.lowDetailHold = lowDetailHold
+    this.lowDetailHold.anchor.x = 0.5
+    this.lowDetailHold.width = 48
 
-    this.addChild(inactive, active)
+    this.addChild(lowDetailHold, inactive, active)
 
     if (notefield.noteskin === undefined) {
-      EventHandler.on("noteskinLoaded", () => {
+      EventHandler.once("noteskinLoaded", () => {
         this.loadElements()
       })
     } else {
       this.loadElements()
+    }
+
+    EventHandler.on("userOptionUpdated", this.loadLowDetail)
+    this.on("destroyed", () => {
+      EventHandler.off("userOptionUpdated", this.loadLowDetail)
+    })
+  }
+
+  toggleLowDetail(id: string) {
+    if (id != "performance.lowDetailHolds") return
+    const lowDetail = Options.performance.lowDetailHolds
+    this.lowDetailHold.visible = lowDetail
+    for (const state of ["Active", "Inactive"] as const) {
+      for (const part of ["Body", "TopCap", "BottomCap"] as const) {
+        this.elements[state][part].visible = !Options.performance.lowDetailHolds
+      }
     }
   }
 
@@ -196,7 +219,7 @@ export class HoldObject extends Container {
     if (this.loaded) return
     ;(this.elements as any) = {}
     for (const state of ["Active", "Inactive"] as const) {
-      ;(this.elements[state] as any) = {}
+      (this.elements[state] as any) = {}
       for (const part of ["BottomCap", "Body", "TopCap", "Head"] as const) {
         const element = this.getNoteskinElement(`${state} ${part}`)
         if (part == "BottomCap") {
@@ -214,12 +237,13 @@ export class HoldObject extends Container {
         } else {
           this.elements[state][part] = element
         }
-        ;(state == "Active" ? this.active : this.inactive).addChild(
+        (state == "Active" ? this.active : this.inactive).addChild(
           this.elements[state][part]
         )
       }
     }
     this.loaded = true
+    this.toggleLowDetail("performance.lowDetailHolds")
   }
 
   getNoteskinElement(element: string) {
@@ -243,12 +267,14 @@ export class HoldObject extends Container {
 
   setBrightness(brightness: number) {
     if (!this.loaded) return
+    if (this.lastBrightness == brightness) return
+    this.lastBrightness = brightness
     const states = ["Active", "Inactive"] as const
     const items = ["Body", "TopCap", "BottomCap"] as const
     for (const state of states) {
       for (const item of items) {
         if ("tint" in this.elements[state][item]) {
-          ;(this.elements[state][item] as Sprite).tint = rgbtoHex(
+          (this.elements[state][item] as Sprite).tint = rgbtoHex(
             brightness * 255,
             brightness * 255,
             brightness * 255
@@ -256,15 +282,19 @@ export class HoldObject extends Container {
         }
       }
     }
+    this.lowDetailHold.tint = rgbtoHex(
+      brightness * 255,
+      brightness * 255,
+      brightness * 255
+    )
   }
 
   setLength(length: number) {
     if (!this.loaded) return
     if (this.lastLength == length) return
     this.lastLength = length
-    const bbO =
-      this.metrics[`${this.note.type as HoldNoteType}BodyBottomOffset`]
-    const btO = this.metrics[`${this.note.type as HoldNoteType}BodyTopOffset`]
+    const bbO = this.metrics[`${this.note.type}BodyBottomOffset`]
+    const btO = this.metrics[`${this.note.type}BodyTopOffset`]
 
     const states = ["Active", "Inactive"] as const
     const sign = length >= 0 ? 1 : -1
@@ -301,6 +331,8 @@ export class HoldObject extends Container {
       this.elements[state].BottomCap.y *= sign
       this.elements[state].TopCap.y *= sign
     }
+    this.lowDetailHold.height = Math.max(0, absLength + bbO - btO)
+    this.lowDetailHold.y = sign == -1 ? -this.lowDetailHold.height : 0
   }
 }
 
@@ -370,7 +402,7 @@ export class Notefield extends Container implements ChartRendererComponent {
   }
 
   setGhostNote(note?: NotedataEntry): void {
-    this.ghostNote?.destroy()
+    this.ghostNote?.destroy({ children: true })
     this.ghostNote = undefined
     this.ghostNoteEntry = note
     if (!note) return
@@ -379,6 +411,10 @@ export class Notefield extends Container implements ChartRendererComponent {
     this.ghostNote.alpha = 0.4
     this.ghostNote.x = this.getColumnX(note.col)
     this.ghostNote.y = this.renderer.getYPosFromBeat(note.beat)
+    this.ghostNote.visible =
+      Options.chart.mousePlacement &&
+      this.renderer.chartManager.getMode() == EditMode.Edit &&
+      this.renderer.chartManager.editTimingMode == EditTimingMode.Off
   }
 
   getElement(

@@ -24,6 +24,7 @@ export class DefaultOptions {
     showPlaybackOptions: true,
     loadSSC: "Prompt",
     theme: "default",
+    statusMeasures: false,
   }
   static chart = {
     CMod: false,
@@ -55,7 +56,7 @@ export class DefaultOptions {
       enabled: false,
       showHighlights: true,
       showTech: true,
-      showCandles: true,
+      showCandles: false,
       showErrors: true,
       showDancingBot: true,
       leftHeelColor: "#0390fc60",
@@ -163,8 +164,10 @@ export class DefaultOptions {
     } as { [key: string]: string },
   }
   static performance = {
+    lowDetailHolds: false,
     antialiasing: false,
     resolution: isWorker() ? 1 : window.devicePixelRatio,
+    maxFPS: 0,
   }
   static debug = {
     showFPS: false,

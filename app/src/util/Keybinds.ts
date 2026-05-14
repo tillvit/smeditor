@@ -13,6 +13,9 @@ import {
   MODPROPS,
   SPECIAL_KEYS,
 } from "../data/KeybindData"
+import { WindowManager } from "../gui/window/WindowManager"
+import { EventHandler } from "./EventHandler"
+import { shouldBlockKeybinds, tippySafe } from "./Util"
 
 export class Keybinds {
   private static app: App
@@ -20,16 +23,19 @@ export class Keybinds {
   private static userGameplayKeybinds: Map<string, (string[] | null)[]> =
     new Map()
   private static enabled = true
+  private static userKeybindKeymap: Map<string, [string, number][]> = new Map()
 
   static load(app: App) {
     this.app = app
     try {
       this.loadKeybinds()
+      this.buildConflictMap()
     } catch (e: any) {
       console.error("Failed to load user keybinds!")
       console.error(e.stack)
       this.userKeybinds.clear()
       this.userGameplayKeybinds.clear()
+      this.userKeybindKeymap.clear()
     }
 
     window.addEventListener("keydown", (e: KeyboardEvent) =>
@@ -43,11 +49,7 @@ export class Keybinds {
 
   static checkKey(event: KeyboardEvent, type: "keydown" | "keyup") {
     if (!this.enabled) return
-    if ((<HTMLElement>event.target).classList.contains("inlineEdit")) return
-    if (event.target instanceof HTMLTextAreaElement) return
-    if (event.target instanceof HTMLInputElement) return
-    if (event.target instanceof HTMLButtonElement) return
-    if (["Meta", "Control", "Shift", "Alt"].includes(event.key)) return
+    if (shouldBlockKeybinds(event)) return
 
     const mods: Modifier[] = []
     for (let i = 0; i < MODPROPS.length; i++) {
@@ -73,12 +75,8 @@ export class Keybinds {
       )
       if (matchedColumn != -1) {
         event.preventDefault()
-        if (
-          this.app.windowManager.getFocusedWindow()?.options?.win_id ==
-          "keybind_options"
-        )
-          return
-        if (this.app.windowManager.isBlocked()) return
+        if (WindowManager.getFocusedWindow() == "keybind_options") return
+        if (WindowManager.isBlocking()) return
         this.app.chartManager[type == "keydown" ? "judgeCol" : "judgeColUp"](
           matchedColumn
         )
@@ -101,12 +99,8 @@ export class Keybinds {
     if (matches.length > 0) {
       if (matches.every(match => match.preventDefault != false))
         event.preventDefault()
-      if (
-        this.app.windowManager.getFocusedWindow()?.options?.win_id ==
-        "keybind_options"
-      )
-        return
-      if (this.app.windowManager.isBlocked()) return
+      if (WindowManager.getFocusedWindow() == "keybind_options") return
+      if (WindowManager.isBlocking()) return
       for (const match of matches) {
         let disabled = match.disabled
         if (disabled instanceof Function) disabled = disabled(this.app)
@@ -278,6 +272,16 @@ export class Keybinds {
     this.userKeybinds.get(id)?.push(combo)
     this.checkIsDefault(id)
     this.saveKeybinds()
+    this.buildConflictMap()
+    EventHandler.emit("keybindChanged", id)
+  }
+
+  static setKeybinds(id: string, combos: KeyCombo[]) {
+    this.userKeybinds.set(id, combos)
+    this.checkIsDefault(id)
+    this.saveKeybinds()
+    this.buildConflictMap()
+    EventHandler.emit("keybindChanged", id)
   }
 
   static removeKeybind(id: string, combo: KeyCombo) {
@@ -289,11 +293,38 @@ export class Keybinds {
     )
     this.checkIsDefault(id)
     this.saveKeybinds()
+    this.buildConflictMap()
+    EventHandler.emit("keybindChanged", id)
   }
 
   static revertKeybind(id: string) {
     this.userKeybinds.delete(id)
     this.saveKeybinds()
+    this.buildConflictMap()
+    EventHandler.emit("keybindChanged", id)
+  }
+
+  static buildConflictMap() {
+    this.userKeybindKeymap.clear()
+    Object.keys(KEYBIND_DATA).forEach(keybindID => {
+      Keybinds.getCombosForKeybind(keybindID).forEach((combo, index) => {
+        const comboString = Keybinds.getComboString(combo)
+        if (!this.userKeybindKeymap.has(comboString))
+          this.userKeybindKeymap.set(comboString, [])
+        this.userKeybindKeymap.get(comboString)!.push([keybindID, index])
+      })
+    })
+  }
+
+  static getConflicts(combo: KeyCombo) {
+    return this.userKeybindKeymap.get(this.getComboString(combo)) ?? []
+  }
+
+  static getGameplayConflicts(key: string, gameTypeId: string) {
+    // probably don't need to populate a map
+    return Keybinds.getKeysForGameType(gameTypeId)
+      .map((keys, i) => (keys.includes(key) ? i : -1))
+      .filter(i => i !== -1)
   }
 
   static revertGameplayKeybind(id: string, col: number) {
@@ -304,6 +335,7 @@ export class Keybinds {
       }
     }
     this.saveKeybinds()
+    EventHandler.emit("gameplayKeybindChanged", id)
   }
 
   static setGameplayKeybind(id: string, col: number, key: string) {
@@ -320,6 +352,7 @@ export class Keybinds {
     this.userGameplayKeybinds.get(id)![col]!.push(key)
     this.checkIsDefaultGameplay(id, col)
     this.saveKeybinds()
+    EventHandler.emit("gameplayKeybindChanged", id)
   }
 
   static removeGameplayKeybind(id: string, col: number, key: string) {
@@ -338,6 +371,7 @@ export class Keybinds {
       [col]!.filter(k => k != key)
     this.checkIsDefaultGameplay(id, col)
     this.saveKeybinds()
+    EventHandler.emit("gameplayKeybindChanged", id)
   }
 
   static checkIsDefault(id: string) {
@@ -443,6 +477,20 @@ export class Keybinds {
   static createKeybindTooltip(element: Element) {
     return (strings: TemplateStringsArray, ...ids: string[]) => {
       tippy(element, {
+        allowHTML: true,
+        onShow: inst => {
+          inst.setContent(this.evaluateTaggedTooltip(strings, ids))
+        },
+      })
+    }
+  }
+
+  static createReactKeybindTooltip(
+    strings: TemplateStringsArray,
+    ...ids: string[]
+  ) {
+    return (ref: HTMLElement | null) => {
+      tippySafe(ref, {
         allowHTML: true,
         onShow: inst => {
           inst.setContent(this.evaluateTaggedTooltip(strings, ids))

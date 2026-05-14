@@ -7,6 +7,7 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
+import { PopupManager } from "../../../gui/popup/PopupManager"
 import { TechErrorPopup } from "../../../gui/popup/TechErrorPopup"
 import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
 import { BezierAnimator } from "../../../util/BezierEasing"
@@ -63,6 +64,7 @@ export class TechErrorIndicators
   private previousBottomVisible = false
 
   private rowMap = new Map<number, { boxes: TechBox[]; highlight: Sprite }>()
+  private popupBox?: TechBox
 
   children: Container[] = []
 
@@ -326,47 +328,32 @@ export class TechErrorIndicators
             box.unignore()
           }
 
-          if (
-            TechErrorPopup.getError()?.beat == position.beat &&
-            TechErrorPopup.getError()?.error == error
-          ) {
-            TechErrorPopup.attach(box)
-          }
-
           box.cursor = "pointer"
           box.on("mouseenter", () => {
             if (this.renderer.isDragSelecting()) return
-            if (
-              TechErrorPopup.getError()?.beat == position.beat &&
-              TechErrorPopup.getError()?.error == error
-            ) {
-              return
-            }
-
-            if (TechErrorPopup.active) TechErrorPopup.close()
+            PopupManager.close("tech-error-popup")
             if (this.renderer.chartManager.getMode() == EditMode.Edit) {
-              TechErrorPopup.open({
-                box: box,
-                beat: position.beat,
-                error: error,
-                ignored: false,
-                chart,
-              })
+              PopupManager.open(
+                TechErrorPopup({
+                  box: box,
+                  beat: position.beat,
+                  error: error,
+                  ignored: false,
+                  chart,
+                })
+              )
+              this.popupBox = box
             }
           })
           box.on("mouseleave", () => {
-            if (
-              TechErrorPopup.getError()?.beat != position.beat ||
-              TechErrorPopup.getError()?.error != error
-            ) {
-              return
-            }
-            TechErrorPopup.close()
+            PopupManager.close("tech-error-popup")
+            this.popupBox = undefined
           })
           box.on("pointerdown", e => {
             if (isRightClick(e)) {
               return
             }
+            e.preventDefault()
             e.stopImmediatePropagation()
             if (chart.isErrorIgnored(error, position.beat)) {
               chart.deleteErrorIgnore(error, position.beat)
@@ -387,9 +374,11 @@ export class TechErrorIndicators
         this.rowMap.delete(i)
         boxes.forEach(box => {
           this.boxPool.destroyChild(box)
+          if (this.popupBox == box) {
+            PopupManager.close("tech-error-popup")
+            this.popupBox = undefined
+          }
         })
-        if (TechErrorPopup.getError()?.beat == position.beat)
-          TechErrorPopup.close()
         this.highlightPool.destroyChild(highlight)
 
         continue

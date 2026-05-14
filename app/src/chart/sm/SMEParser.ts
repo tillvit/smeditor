@@ -25,6 +25,23 @@ export function serializeSMEData(sm: Simfile): string {
   return JSON.stringify(data)
 }
 
+export function requiresSMEData(sm: Simfile): boolean {
+  const charts = sm.getAllChartsByGameType()
+  for (const gameType in charts) {
+    for (const chart of charts[gameType]) {
+      for (const note of chart.getNotedata()) {
+        if (note.parity?.override) {
+          return true
+        }
+      }
+      if (chart.ignoredErrors.size > 0) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
 export function getParityData(chart: Chart): SMEParityData {
   const overrides: [number, number, FootOverride][] = []
   for (const note of chart.getNotedata()) {

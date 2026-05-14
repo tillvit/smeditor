@@ -116,7 +116,7 @@ export function colorToHsla(color: Color) {
     h /= 6
   }
 
-  return [h, s, l, a]
+  return [h * 360, s * 100, l * 100, a * 100]
 }
 
 export function colorToHsva(color: Color) {
@@ -149,7 +149,18 @@ export function colorToHsva(color: Color) {
     h /= 6
   }
 
-  return [h, s, v, a]
+  return [h * 360, s * 100, v * 100, a * 100]
+}
+
+// range 0-255
+export function colorToRgba(color: Color) {
+  const c = color.toRgba()
+  return {
+    r: c.r * 255,
+    g: c.g * 255,
+    b: c.b * 255,
+    a: c.a,
+  }
 }
 
 export function colorFallback(

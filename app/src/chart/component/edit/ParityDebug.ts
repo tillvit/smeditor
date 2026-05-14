@@ -365,7 +365,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
         rowObj.detail.tint = rowObj.text.tint
         rowObj.detail.visible = false
         rowObj.highlights.forEach(highlight => {
-          highlight.box.destroy()
+          highlight.box.destroy({ children: true })
         })
         rowObj.nodePool.children.forEach(nodeObject => {
           nodeObject.deactivate()
@@ -503,7 +503,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
               nodeObject.zIndex = 0
               nodeObject.detail.visible = false
               nodeObject.connections.children.forEach(connection => {
-                connection.destroy()
+                connection.destroy({ children: true })
               })
               nodeObject.connections.removeChildren()
               setTint()
@@ -608,7 +608,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
         rowObj.hitbox.on("pointerout", () => {
           rowObj.detail.visible = false
           rowObj.highlights.forEach(highlight => {
-            highlight.box.destroy()
+            highlight.box.destroy({ children: true })
           })
           rowObj.highlights = []
           rowObj.statusRows.forEach(statusRow => {
@@ -632,7 +632,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       ) {
         this.rowMap.delete(row)
         this.rowPool.destroyChild(rowObj)
-        if (this.activeNode && this.activeNode.parent === rowObj.nodePool) {
+        if (this.activeNode?.parent === rowObj.nodePool) {
           this.activeNode.deactivate()
           this.activeNode = undefined
         }

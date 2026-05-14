@@ -45,7 +45,7 @@ export class SelectionNoteContainer extends Container {
           })
 
         container.x = this.notefield.getColumnX(newNote.col)
-        container.wrapper.destroy()
+        container.wrapper.destroy({ children: true })
         container.wrapper.alpha = 0.4
         container.wrapper = this.notefield.createNote(newNote)
         const objectBounds = container.wrapper.getBounds()
@@ -100,7 +100,7 @@ export class SelectionNoteContainer extends Container {
           firstBeat ||
         note.beat + beatShift > lastBeat
       ) {
-        container.destroy()
+        container.destroy({ children: true })
         this.arrowMap.delete(note)
         continue
       }

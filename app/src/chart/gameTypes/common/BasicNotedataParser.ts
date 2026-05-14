@@ -6,6 +6,7 @@ import {
   PartialHoldNotedataEntry,
   PartialNotedata,
   PartialNotedataEntry,
+  TapNotedataEntry,
 } from "../../sm/NoteTypes"
 import { NotedataParser } from "../base/NotedataParser"
 import { GameType } from "../GameTypeRegistry"
@@ -125,7 +126,7 @@ export class BasicNotedataParser extends NotedataParser {
               beat: beat,
               col: col,
               type: NOTE_TYPE_LOOKUP[type],
-            } satisfies PartialNotedataEntry
+            } as TapNotedataEntry
             if (entry.type == undefined) {
               console.log(
                 "Unknown note type " + type + " at beat " + beat + " col " + col

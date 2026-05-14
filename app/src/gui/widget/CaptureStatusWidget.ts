@@ -85,12 +85,8 @@ export class CaptureStatusWidget extends Widget {
     }
     this.visible = true
 
-    this.scale.set(
-      Options.performance.resolution * Options.general.uiScale * 0.7
-    )
-    this.position.y =
-      this.manager.app.STAGE_HEIGHT / 2 -
-      32 * Options.performance.resolution * Options.general.uiScale * 0.7
+    this.scale.set(window.devicePixelRatio * Options.general.uiScale * 0.7)
+    this.position.y = this.manager.app.STAGE_HEIGHT / 2 - 32 * this.scale.y
 
     const measure =
       this.manager.chartManager.loadedChart?.timingData?.getMeasure(

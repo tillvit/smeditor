@@ -87,6 +87,10 @@ export class Simfile {
   }
 
   addChart(chart: Chart) {
+    if (chart._id && !this.charts[chart._id]) {
+      this.charts[chart._id] = chart
+      return
+    }
     const id = this.createChartID()
     this.charts[id] = chart
     chart._id = id
@@ -169,6 +173,7 @@ export class Simfile {
       )
       str += this.formatProperty("GENRE", this.properties.GENRE)
       str += this.formatProperty("CREDIT", this.properties.CREDIT)
+      str += this.formatProperty("ORIGIN", this.properties.ORIGIN)
       str += this.formatProperty("MUSIC", this.properties.MUSIC ?? "")
       str += this.formatProperty("BANNER", this.properties.BANNER)
       str += this.formatProperty("BACKGROUND", this.properties.BACKGROUND)

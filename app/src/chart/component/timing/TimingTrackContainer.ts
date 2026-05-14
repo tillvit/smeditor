@@ -7,6 +7,7 @@ import {
   Sprite,
   Texture,
 } from "pixi.js"
+import { PopupManager } from "../../../gui/popup/PopupManager"
 import { TimingColumnPopup } from "../../../gui/popup/TimingColumnPopup"
 import { TimingEventPopup } from "../../../gui/popup/TimingEventPopup"
 import { BetterRoundedRect } from "../../../util/BetterRoundedRect"
@@ -96,6 +97,8 @@ export class TimingTrackContainer
   private timingDirty = false
   private tracksDirty = true
 
+  private popupEvent?: Cached<TimingEvent>
+
   constructor(renderer: ChartRenderer) {
     super()
     this.renderer = renderer
@@ -125,7 +128,7 @@ export class TimingTrackContainer
   update(firstBeat: number, lastBeat: number) {
     if (this.renderer.chartManager.editTimingMode != EditTimingMode.Add) {
       this.ghostBox?.removeFromParent()
-      this.ghostBox?.destroy()
+      this.ghostBox?.destroy({ children: true })
       this.ghostBox = undefined
     }
 
@@ -174,27 +177,38 @@ export class TimingTrackContainer
     timingTypeBtn.eventMode = "static"
 
     timingTypeBtn.on("mouseenter", () => {
-      if (!TimingColumnPopup.persistent)
-        TimingColumnPopup.open({
-          attach: timingTypeBtn,
-          type: type as TimingEventType,
-          timingData: this.renderer.chart.timingData,
-        })
+      if (!PopupManager.isHighlighted("timing-column-popup"))
+        PopupManager.open(
+          TimingColumnPopup({
+            attach: timingTypeBtn,
+            type: type as TimingEventType,
+            timingData: this.renderer.chart.timingData,
+          })
+        )
     })
     timingTypeBtn.on("mouseleave", () => {
-      if (!TimingColumnPopup.persistent) TimingColumnPopup.close()
+      if (!PopupManager.isHighlighted("timing-column-popup"))
+        PopupManager.close("timing-column-popup")
     })
 
-    timingTypeBtn.on("pointerdown", () => {
-      if (!TimingColumnPopup.persistent) {
-        TimingColumnPopup.select()
+    timingTypeBtn.on("pointerdown", e => {
+      if (!PopupManager.isHighlighted("timing-column-popup")) {
+        PopupManager.highlight("timing-column-popup")
+        e.preventDefault()
+        e.stopPropagation()
       } else {
-        TimingColumnPopup.open({
-          attach: timingTypeBtn,
-          type: type as TimingEventType,
-          timingData: this.renderer.chart.timingData,
-        })
-        TimingColumnPopup.select()
+        PopupManager.close("timing-column-popup")
+        PopupManager.open(
+          TimingColumnPopup({
+            attach: timingTypeBtn,
+            type: type as TimingEventType,
+            timingData: this.renderer.chart.timingData,
+          }),
+          true
+        )
+        PopupManager.highlight("timing-column-popup")
+        e.preventDefault()
+        e.stopPropagation()
       }
     })
 
@@ -229,23 +243,26 @@ export class TimingTrackContainer
     box.selection.height = 25
     box.selection.position = box.backgroundObj.position
 
-    if (TimingEventPopup.active) {
+    if (this.popupEvent) {
       // check if the event is the same as the one in the popup
-      const currentEvent = TimingEventPopup.getEvent()
       if (
-        currentEvent.type == "ATTACKS" &&
+        this.popupEvent.type == "ATTACKS" &&
         event.type == "ATTACKS" &&
-        currentEvent.second == event.second
+        this.popupEvent.second == event.second
       ) {
-        TimingEventPopup.attach(box)
+        PopupManager.updatePopupOptions("timing-event-popup", {
+          attach: box,
+        })
       }
       if (
-        currentEvent.type != "ATTACKS" &&
+        this.popupEvent.type != "ATTACKS" &&
         event.type != "ATTACKS" &&
-        currentEvent.type == event.type &&
-        currentEvent.beat == event.beat
+        this.popupEvent.type == event.type &&
+        this.popupEvent.beat == event.beat
       ) {
-        TimingEventPopup.attach(box)
+        PopupManager.updatePopupOptions("timing-event-popup", {
+          attach: box,
+        })
       }
     }
   }
@@ -253,25 +270,35 @@ export class TimingTrackContainer
   private addDragListeners(box: TimingBox, event: Cached<TimingEvent>) {
     box.cursor = "pointer"
     box.on("mouseenter", () => {
-      if (TimingEventPopup.persistent) return
+      if (PopupManager.isHighlighted("timing-event-popup")) return
       if (this.renderer.chartManager.eventSelection.timingEvents.length > 0)
         return
       if (this.renderer.isDragSelecting()) return
 
-      if (TimingEventPopup.active) TimingEventPopup.close()
+      if (PopupManager.isOpen("timing-event-popup"))
+        PopupManager.close("timing-event-popup")
       if (this.renderer.chartManager.getMode() == EditMode.Edit) {
-        TimingEventPopup.open({
-          box: box,
-          timingData: this.getTargetTimingData(box.event),
-          modifyBox: false,
-          onConfirm: () => {
-            this.renderer.chartManager.removeEventFromSelection(event)
-          },
-        })
+        PopupManager.open(
+          TimingEventPopup({
+            box: box,
+            event: box.event,
+            timingData: this.getTargetTimingData(box.event),
+            newEvent: false,
+            onConfirm: () => {
+              this.renderer.chartManager.removeEventFromSelection(event)
+            },
+          }),
+          true
+        )
+        this.popupEvent = structuredClone(event)
       }
     })
     box.on("mouseleave", () => {
-      if (!TimingEventPopup.persistent) TimingEventPopup.close()
+      if (
+        !PopupManager.isHighlighted("timing-event-popup") &&
+        PopupManager.isOpen("timing-event-popup")
+      )
+        PopupManager.close("timing-event-popup")
     })
 
     let initialPosY = 0
@@ -288,10 +315,13 @@ export class TimingTrackContainer
         }
         return
       }
-      TimingEventPopup.close()
+      PopupManager.close("timing-event-popup")
       const newBeat = this.renderer.getBeatFromYPos(position.y)
       const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-      let snapBeat = Math.round(newBeat / snap) * snap
+      let snapBeat = this.renderer.chart.timingData.snapToClosestTick(
+        newBeat,
+        snap
+      )
       if (Math.abs(snapBeat - newBeat) > Math.abs(newBeat - timingEvent.beat)) {
         snapBeat = timingEvent.beat!
       }
@@ -311,10 +341,11 @@ export class TimingTrackContainer
       if (isRightClick(e)) {
         this.renderer.chartManager.clearSelections()
         this.renderer.chartManager.addEventToSelection(event)
-        TimingEventPopup.close()
+        PopupManager.close("timing-event-popup")
         return
       }
       e.stopImmediatePropagation()
+      e.preventDefault()
       if (this.renderer.chartManager.isEventInSelection(event)) {
         if (e.getModifierState("Control") || e.getModifierState("Meta"))
           this.renderer.chartManager.removeEventFromSelection(event)
@@ -327,30 +358,37 @@ export class TimingTrackContainer
           this.renderer.chartManager.clearSelections()
         this.renderer.chartManager.addEventToSelection(event)
       }
+      let openOverride = false
       if (
         this.renderer.chartManager.getMode() == EditMode.Edit &&
         this.renderer.chartManager.eventSelection.timingEvents.length == 1
       ) {
-        if (TimingEventPopup.options?.box != box) {
-          TimingEventPopup.close()
-          TimingEventPopup.open({
-            box: box,
-            timingData: this.getTargetTimingData(box.event),
-            modifyBox: false,
-            onConfirm: () => {
-              this.renderer.chartManager.removeEventFromSelection(event)
-            },
-          })
+        if (PopupManager.getPopupOptions("timing-event-popup")?.attach != box) {
+          PopupManager.close("timing-event-popup")
+          PopupManager.open(
+            TimingEventPopup({
+              box: box,
+              event: box.event,
+              timingData: this.getTargetTimingData(box.event),
+              newEvent: false,
+              onConfirm: () => {
+                this.renderer.chartManager.removeEventFromSelection(event)
+              },
+            }),
+            true
+          )
+          this.popupEvent = structuredClone(event)
+          openOverride = true // jank
         }
       }
       if (
-        TimingEventPopup.active &&
+        (PopupManager.isOpen("timing-event-popup") || openOverride) &&
         !e.getModifierState("Control") &&
         !e.getModifierState("Meta") &&
         !e.getModifierState("Shift")
-      )
-        TimingEventPopup.select()
-      else TimingEventPopup.close()
+      ) {
+        PopupManager.highlight("timing-event-popup")
+      } else PopupManager.close("timing-event-popup")
       initialPosY = box.y!
       movedEvent = event
       if (this.renderer.chartManager.editTimingMode == EditTimingMode.Add)
@@ -490,7 +528,7 @@ export class TimingTrackContainer
     }
 
     if (!editingTiming) {
-      TimingColumnPopup.close()
+      PopupManager.close("timing-column-popup")
     }
 
     this.tracks.children.forEach(track => {
@@ -584,10 +622,18 @@ export class TimingTrackContainer
           !Options.chart.timingEventOrder.right.includes(event.type))
       ) {
         this.timingBoxMap.delete(event)
-        if (TimingEventPopup.options?.box == box) {
-          TimingEventPopup.detach()
-        } else if (!TimingEventPopup.persistent) {
-          TimingEventPopup.close()
+        if (PopupManager.getPopupOptions("timing-event-popup")?.attach == box) {
+          const bounds = box.getBounds()
+          PopupManager.updatePopupOptions("timing-event-popup", {
+            attach: new Point(
+              bounds.x + bounds.width / 2,
+              Math.max(0, bounds.y) +
+                document.getElementById("pixi")!.offsetTop +
+                9
+            ),
+          })
+        } else if (!PopupManager.isHighlighted("timing-event-popup")) {
+          PopupManager.close("timing-event-popup")
         }
         this.boxPool.destroyChild(box)
         continue
@@ -683,16 +729,20 @@ export class TimingTrackContainer
 
   updateGhostEvent(pos: Point) {
     const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-    const snapBeat =
-      Math.round(this.renderer.getBeatFromYPos(pos.y) / snap) * snap
+    const snapBeat = this.renderer.chart.timingData.snapToClosestTick(
+      this.renderer.getBeatFromYPos(pos.y),
+      snap
+    )
     const hasGhostPopup =
-      TimingEventPopup.active && TimingEventPopup.options?.box == this.ghostBox
+      PopupManager.isOpen("timing-event-popup") &&
+      PopupManager.getPopupOptions("timing-event-popup")?.attach ==
+        this.ghostBox?.backgroundObj
     const eventType = hasGhostPopup
       ? this.ghostBox!.event.type
       : this.getClosestTrack(pos.x)?.name
     if (!eventType) {
       this.ghostBox?.removeFromParent()
-      this.ghostBox?.destroy()
+      this.ghostBox?.destroy({ children: true })
       this.ghostBox = undefined
       return
     }
@@ -791,15 +841,18 @@ export class TimingTrackContainer
       return
     }
     this.renderer.chartManager.clearSelections()
-    TimingEventPopup.open({
-      box: this.ghostBox,
-      timingData: this.getTargetTimingData(this.ghostBox.event),
-      modifyBox: true,
-      onConfirm: event => {
-        this.getTargetTimingData(this.ghostBox!.event).insert([event])
-      },
-    })
-    TimingEventPopup.select()
+    PopupManager.open(
+      TimingEventPopup({
+        box: this.ghostBox.backgroundObj,
+        event: this.ghostBox.event,
+        timingData: this.getTargetTimingData(this.ghostBox.event),
+        newEvent: true,
+        onConfirm: event => {
+          this.getTargetTimingData(this.ghostBox!.event).insert([event])
+        },
+      })
+    )
+    PopupManager.highlight("timing-event-popup")
   }
 
   getClosestTrack(x: number) {
