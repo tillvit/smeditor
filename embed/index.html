@@ -1,6 +1,29 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>self["MonacoEnvironment"] = (function (paths) {
+          return {
+            globalAPI: false,
+            getWorkerUrl : function (moduleId, label) {
+              var result =  paths[label];
+              if (/^((http:)|(https:)|(file:)|(\/\/))/.test(result)) {
+                var currentUrl = String(window.location);
+                var currentOrigin = currentUrl.substr(0, currentUrl.length - window.location.hash.length - window.location.search.length - window.location.pathname.length);
+                if (result.substring(0, currentOrigin.length) !== currentOrigin) {
+                  var js = '/*' + label + '*/importScripts("' + result + '");';
+                  var blob = new Blob([js], { type: 'application/javascript' });
+                  return URL.createObjectURL(blob);
+                }
+              }
+              return result;
+            }
+          };
+        })({
+  "typescript": "/smeditor/monacoeditorwork/ts.worker.bundle.js",
+  "editorWorkerService": "/smeditor/monacoeditorwork/editor.worker.bundle.js",
+  "javascript": "/smeditor/monacoeditorwork/ts.worker.bundle.js"
+});</script>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
@@ -14,38 +37,11 @@
     <link rel="icon" type="image/mp4" href="/smeditor/assets/icon/favicon.ico" />
     <title>SMEditor</title>
     <script type="module" crossorigin src="/smeditor/embed.js"></script>
-    <link rel="modulepreload" crossorigin href="/smeditor/Simfile-DgZSKnU-.js">
+    <link rel="modulepreload" crossorigin href="/smeditor/Simfile-DV8JsF9n.js">
     <link rel="stylesheet" crossorigin href="/smeditor/assets/Simfile-Bi8zDpmu.css">
-    <link rel="stylesheet" crossorigin href="/smeditor/assets/embed-wBqBHkTf.css">
+    <link rel="stylesheet" crossorigin href="/smeditor/assets/embed-Db0Ydtqc.css">
   <link rel="manifest" href="/smeditor/manifest.json"></head>
   <body>
-    <div id="embed">
-      <h1>Embed SMEditor</h1>
-      <input id="output-url" unselectable readonly />
-      <div id="option-container">
-        <h3>Options</h3>
-        <div id="option-bar">
-          <div class="option">
-            SM URL
-            <input
-              id="sm-url"
-              placeholder="https://example.com/song.sm"
-              type="url"
-              pattern="https?://.*.(sm|ssc)"
-              spellcheck="false"
-              autocomplete="off"
-            />
-            <div id="loading-output"></div>
-          </div>
-          <div id="chart-container" class="option">Chart</div>
-        </div>
-        <div id="option-grid-toggles">
-          <button id="enable-all">Enable All</button>
-          <button id="disable-all">Disable All</button>
-        </div>
-        <div id="option-grid"></div>
-      </div>
-      <iframe id="output-iframe"></iframe>
-    </div>
+    <div id="embed"></div>
   </body>
 </html>
