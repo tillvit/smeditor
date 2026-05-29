@@ -223,7 +223,8 @@ export class BasicNotedataParser extends NotedataParser {
           skin: noteSkin,
         }
         // attributes
-        // P/8 = fake
+        // P = autoplay
+        // 8 = fake
         // 2 = vanish
         // 9 = sudden
 
