@@ -67,6 +67,7 @@ export function ChartListWindowContent() {
   useEffect(() => {
     loadCharts()
     setSelectedChart(windowData!.app.chartManager.loadedChart!)
+    setGameType(windowData!.app.chartManager.loadedChart?.gameType ?? gameType)
     EventHandler.on("smLoadedAfter", smLoaded)
     EventHandler.on("chartLoaded", chartLoaded)
     return () => {
