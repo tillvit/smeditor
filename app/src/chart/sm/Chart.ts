@@ -358,7 +358,10 @@ export class Chart {
   computeNote(note: PartialNotedataEntry): NotedataEntry {
     return Object.assign(note, {
       warped: this.timingData.isBeatWarped(note.beat),
-      fake: note.type == "Fake" || this.timingData.isBeatFaked(note.beat),
+      fake:
+        note.type == "Fake" ||
+        note.extra?.isFake ||
+        this.timingData.isBeatFaked(note.beat),
       second: this.timingData.getSecondsFromBeat(note.beat),
       quant: Math.round(
         getDivision(this.timingData.getBeatOfMeasure(note.beat))
