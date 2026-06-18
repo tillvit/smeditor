@@ -95,7 +95,10 @@ export class NoteWrapper extends Container {
       if (this.object.note.type == "Lift") {
         this.liftIcon.visible = true
       }
-      if (this.object.note.type == "Fake" || this.object.note.extra?.isFake) {
+      if (
+        this.object.note.type == "Fake" ||
+        this.object.note.extra?.computed?.fake
+      ) {
         this.fakeIcon.visible = cr.chartManager.getMode() != EditMode.Play
       }
     })

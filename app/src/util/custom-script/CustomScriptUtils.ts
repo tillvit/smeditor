@@ -72,32 +72,43 @@ export const WorkerWhitelist = [
 
 export type WorkerWhitelistProperties = (typeof WorkerWhitelist)[number]
 
-const ExtraAttributesSchema = z.object({
-  notemods: z.string().optional(),
-  keysounds: z.string().optional(),
-  holdType: z.string().optional(),
-  stepp1: z
-    .object({
-      type: z.string(),
-      attribute: z.string(),
-      fake: z.boolean(),
-    })
-    .optional(),
-  xsanity: z
-    .object({
-      type: z.string(),
-      attribute: z.string(),
-      skin: z.string(),
-    })
-    .optional(),
-  isFake: z.boolean().optional(),
+const ExtraStepP1AttributesSchema = z.object({
+  type: z.literal("stepp1"),
+  noteType: z.string(),
+  attribute: z.string(),
+  fake: z.boolean(),
+})
+
+const ExtraXsanityAttributesSchema = z.object({
+  type: z.literal("xsanity"),
+  noteType: z.string(),
+  skin: z.string(),
+  attribute: z.string(),
+})
+
+const ExtraOutfoxAttributesSchema = z.object({
+  type: z.literal("outfox"),
+  holdType: z.string(),
+  source: z.enum(["fake", "original"]),
+  notemods: z.string(),
+  keysounds: z.string(),
+})
+
+const ExtraNoteAttributesSchema = z.union([
+  ExtraStepP1AttributesSchema,
+  ExtraXsanityAttributesSchema,
+  ExtraOutfoxAttributesSchema,
+])
+
+const ExtraNoteDataSchema = z.object({
+  attributes: ExtraNoteAttributesSchema,
 })
 
 const NoteDataEntrySchema = z.object({
   beat: z.number().nonnegative(),
   col: z.number().int().nonnegative(),
   type: z.enum(["Tap", "Hold", "Roll", "Mine", "Lift", "Fake"]),
-  extra: ExtraAttributesSchema.optional(),
+  extra: ExtraNoteDataSchema.optional(),
   hold: z.number().optional(),
   faked: z.boolean().optional(),
   warped: z.boolean().optional(),

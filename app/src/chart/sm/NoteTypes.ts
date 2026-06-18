@@ -19,27 +19,44 @@ export type NoteType = TapNoteType | HoldNoteType
 export type HoldNoteType = (typeof HOLD_NOTE_TYPES)[number]
 export type TapNoteType = (typeof TAP_NOTE_TYPES)[number]
 
-export interface ExtraAttributes {
-  notemods: string
-  keysounds: string
-  holdType: string
-  stepp1: {
-    type: string
-    attribute: string
+export interface ExtraNoteData {
+  attributes: ExtraNoteAttributes
+  computed?: {
     fake: boolean
   }
-  xsanity: {
-    type: string
-    skin: string
-    attribute: string
-  }
-  isFake: boolean
 }
+
+export interface ExtraStepP1Attributes {
+  type: "stepp1"
+  noteType: string
+  attribute: string
+  fake: boolean
+}
+
+export interface ExtraXsanityAttributes {
+  type: "xsanity"
+  noteType: string
+  skin: string
+  attribute: string
+}
+
+export interface ExtraOutfoxAttributes {
+  type: "outfox"
+  holdType: string
+  source: "fake" | "original"
+  notemods: string
+  keysounds: string
+}
+
+export type ExtraNoteAttributes =
+  | ExtraStepP1Attributes
+  | ExtraXsanityAttributes
+  | ExtraOutfoxAttributes
 
 export interface NotedataEntryBase {
   beat: number
   col: number
-  extra?: Partial<ExtraAttributes>
+  extra?: ExtraNoteData
 }
 
 export interface PartialTapNotedataEntry extends NotedataEntryBase {

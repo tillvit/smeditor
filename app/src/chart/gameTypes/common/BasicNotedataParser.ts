@@ -1,7 +1,8 @@
-import { lcm, lcm2, roundDigit } from "../../../util/Math"
-import { getDivision } from "../../../util/Util"
+import { lcm, lcm2 } from "../../../util/Math"
+import { getDivision, isSameRow } from "../../../util/Util"
 import {
-  ExtraAttributes,
+  ExtraNoteAttributes,
+  ExtraNoteData,
   isHoldNote,
   NoteType,
   PartialHoldNotedataEntry,
@@ -41,19 +42,15 @@ export class BasicNotedataParser extends NotedataParser {
     if (notedata.length == 0) return ""
     const measures = []
     let nIndex = 0
-    const holdEnds: { col: number; beat: number; holdType?: string }[] =
-      notedata
-        .filter(isHoldNote)
-        .map(hold => {
-          return {
-            col: hold.col,
-            beat: hold.beat + hold.hold,
-            holdType: hold.extra?.xsanity
-              ? `{3${hold.extra.xsanity.skin}${hold.extra.xsanity.attribute}}`
-              : hold.extra?.holdType,
-          }
-        })
-        .sort((a, b) => a.beat - b.beat)
+    const holdEnds = notedata
+      .filter(isHoldNote)
+      .map(note => {
+        return {
+          holdEnd: note.beat + note.hold,
+          note,
+        }
+      })
+      .sort((a, b) => a.holdEnd - b.holdEnd)
     const lastNote = notedata.at(-1)!
     const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
     let numMeasures = Math.ceil(lastBeat / 4)
@@ -65,34 +62,26 @@ export class BasicNotedataParser extends NotedataParser {
         measureNotes.push(notedata[nIndex++])
       }
       const measureHoldNotes = []
-      while (holdEnds[0]?.beat < measure * 4 + 4) {
+      while (holdEnds[0]?.holdEnd < measure * 4 + 4) {
         measureHoldNotes.push(holdEnds.shift()!)
       }
       const division = Math.max(
         4,
         lcm2(
           lcm(measureNotes.map(note => getDivision(note.beat))),
-          lcm(measureHoldNotes.map(note => getDivision(note.beat)))
+          lcm(measureHoldNotes.map(note => getDivision(note.note.beat)))
         )
       )
       for (let div = 0; div < division; div++) {
         const beat = measure * 4 + (4 / division) * div
         const row = new Array(gameType.numCols).fill("0")
-        while (
-          roundDigit(measureNotes[0]?.beat ?? -1, 3) == roundDigit(beat, 3)
-        ) {
+        while (isSameRow(beat, measureNotes[0]?.beat ?? -1)) {
           const note = measureNotes.shift()!
-          // row[note.col] = NOTE_TYPE_LOOKUP_REV[note.type]
-          // if (note.extra?.notemods) row[note.col] += `{${note.extra.notemods}}`
-          // if (note.extra?.keysounds)
-          //   row[note.col] += `[${note.extra.keysounds}]`
           row[note.col] = this.serializeNote(note)
         }
-        while (
-          roundDigit(measureHoldNotes[0]?.beat ?? -1, 3) == roundDigit(beat, 3)
-        ) {
-          const note = measureHoldNotes.shift()!
-          row[note.col] = note.holdType ?? "3"
+        while (isSameRow(beat, measureHoldNotes[0]?.holdEnd ?? -1)) {
+          const note = measureHoldNotes.shift()!.note
+          row[note.col] = this.serializeHoldEnd(note)
         }
         measureString += row.join("") + "\n"
       }
@@ -102,23 +91,46 @@ export class BasicNotedataParser extends NotedataParser {
   }
 
   serializeNote(note: PartialNotedataEntry) {
-    const keysoundStr = note.extra?.keysounds ? `[${note.extra.keysounds}]` : ""
-    if (note.extra?.stepp1 !== undefined) {
-      const stepP1 = note.extra.stepp1
-      const fake = stepP1.fake ? "1" : "0"
+    if (!note.extra) {
+      return NOTE_TYPE_LOOKUP_REV[note.type]
+    }
 
-      if (stepP1.attribute == "" && !stepP1.fake) {
-        return stepP1.type
+    switch (note.extra?.attributes.type) {
+      case "outfox": {
+        const keysoundStr = note.extra?.attributes.keysounds
+          ? `[${note.extra.attributes.keysounds}]`
+          : ""
+        const notemodStr = note.extra?.attributes.notemods
+          ? `{${note.extra.attributes.notemods}}`
+          : ""
+        let noteStr = NOTE_TYPE_LOOKUP_REV[note.type]
+        if (note.extra.attributes.source == "fake") {
+          noteStr = "J" + noteStr
+        }
+        return noteStr + notemodStr + keysoundStr
       }
+      case "stepp1": {
+        const fake = note.extra.attributes.fake ? "1" : "0"
+        if (
+          note.extra.attributes.attribute == "" &&
+          !note.extra.attributes.fake
+        ) {
+          return note.extra.attributes.type
+        }
 
-      return `{${stepP1.type}|${stepP1.attribute}|${fake}|0}${keysoundStr}`
+        return `{${note.extra.attributes.type}|${note.extra.attributes.attribute}|${fake}|0}`
+      }
+      case "xsanity": {
+        return `{${note.extra.attributes.type}${note.extra.attributes.skin}${note.extra.attributes.attribute}}`
+      }
     }
-    if (note.extra?.xsanity !== undefined) {
-      return `{${note.extra.xsanity.type}${note.extra.xsanity.skin}${note.extra.xsanity.attribute}}${keysoundStr}`
+  }
+
+  serializeHoldEnd(note: PartialHoldNotedataEntry) {
+    if (note.extra?.attributes.type == "outfox") {
+      return note.extra.attributes.holdType || "3"
     }
-    const notemodStr = note.extra?.notemods ? `{${note.extra.notemods}}` : ""
-    const noteStr = NOTE_TYPE_LOOKUP_REV[note.type]
-    return noteStr + notemodStr + keysoundStr
+    return "3"
   }
 
   parseNote(
@@ -127,11 +139,30 @@ export class BasicNotedataParser extends NotedataParser {
     col: number,
     holds: (PartialNotedataEntry | undefined)[]
   ): PartialNotedataEntry | undefined {
+    const registerHold = (entry: PartialNotedataEntry) => {
+      if (holds[col]) {
+        console.log(
+          "Missing end of hold/roll for note " + JSON.stringify(holds[col])
+        )
+        holds[col].type = "Tap"
+      }
+      holds[col] = entry
+    }
+
+    const endHold = () => {
+      if (holds[col]) {
+        (holds[col] as PartialHoldNotedataEntry).hold = beat - holds[col].beat
+        holds[col] = undefined
+      } else {
+        console.log("Extra end of hold/roll at beat " + beat + " col " + col)
+      }
+    }
+
     // assume that we don't have notemods + {} notes
     if (note[0] == "{") {
-      const keysoundMatch = note.match(/\[([^\]]*?)\]/)
-      const extra = {} as Partial<ExtraAttributes>
-      if (keysoundMatch) extra.keysounds = keysoundMatch[1]
+      const extra: ExtraNoteData = {
+        attributes: {} as ExtraNoteAttributes,
+      }
 
       // stepp1 {type|attribute|fake|reserved}
       const stepP1Match = note.match(/{(.)\|(.)\|(.)\|(.)\}/)
@@ -139,14 +170,13 @@ export class BasicNotedataParser extends NotedataParser {
         const type = stepP1Match[1]
         const attribute = stepP1Match[2]
         const fake = stepP1Match[3] == "1"
-        extra.stepp1 = {
-          type,
+        extra.attributes = {
+          type: "stepp1",
+          noteType: type,
           attribute,
           fake,
         }
-        if (fake) {
-          extra.isFake = true
-        }
+
         switch (type) {
           case "X":
           case "Y":
@@ -170,16 +200,10 @@ export class BasicNotedataParser extends NotedataParser {
               beat: beat,
               col: col,
               type: "Hold",
-              extra: extra,
-            }
-            if (holds[col]) {
-              console.log(
-                "Missing end of hold/roll for note " +
-                  JSON.stringify(holds[col])
-              )
-            }
-            holds[col] = entry as PartialNotedataEntry
-            break
+              extra,
+            } as PartialNotedataEntry
+            registerHold(entry)
+            return entry
           }
           case "H":
           case "F":
@@ -217,11 +241,13 @@ export class BasicNotedataParser extends NotedataParser {
         const noteType = note[1]
         const noteSkin = note[2]
         const attribute = note[3]
-        extra.xsanity = {
-          type: noteType,
-          attribute,
+        extra.attributes = {
+          type: "xsanity",
+          noteType,
           skin: noteSkin,
+          attribute,
         }
+
         // attributes
         // P = autoplay
         // 8 = fake
@@ -233,27 +259,15 @@ export class BasicNotedataParser extends NotedataParser {
         // everything else is standard
         let type = NOTE_TYPE_LOOKUP[noteType]
         if (noteType == "3") {
-          if (holds[col]) {
-            (holds[col] as PartialHoldNotedataEntry).hold =
-              beat - holds[col].beat
-            holds[col] = undefined
-            return
-          } else {
-            console.log(
-              "Extra end of hold/roll at beat " + beat + " col " + col
-            )
-          }
+          endHold()
+          return
         }
 
-        if (noteType == "q") {
-          type = "Fake"
-        }
+        if (noteType == "q") type = "Fake"
+
         if (type == undefined) {
           console.warn("Unknown note type " + noteType + " at beat " + beat)
           return
-        }
-        if (attribute == "P" || attribute == "8") {
-          extra.isFake = true
         }
 
         const entry = {
@@ -264,35 +278,65 @@ export class BasicNotedataParser extends NotedataParser {
         } as PartialNotedataEntry
 
         if (noteType == "2" || noteType == "4") {
-          if (holds[col]) {
-            console.log(
-              "Missing end of hold/roll for note " + JSON.stringify(holds[col])
-            )
-          }
-          holds[col] = entry
+          registerHold(entry)
         }
         return entry
       }
 
       console.warn("Unknown note " + note + " at beat " + beat)
+      return
     } else {
-      const keysoundMatch = note.match(/\[([^\]]*?)\]/)
-      const noteModsMatch = note.match(/\{([^}]*?)\}/)
-      const extra = {} as Partial<ExtraAttributes>
-      if (keysoundMatch) extra.keysounds = keysoundMatch[1]
-      if (noteModsMatch) extra.notemods = noteModsMatch[1]
-      if (keysoundMatch || noteModsMatch) {
-        console.log("Parsing note with extra attributes:", extra)
+      const tokens = this.parseTokens(note)
+      const keysounds = tokens.find(
+        token => token.startsWith("[") && token.endsWith("]")
+      )
+      const notemods = tokens.find(
+        token => token.startsWith("{") && token.endsWith("}")
+      )
+      const mainToken = tokens[0]
+      let extra: ExtraNoteData | undefined = undefined
+      if (keysounds || notemods) {
+        extra = {
+          attributes: {
+            type: "outfox",
+            keysounds: keysounds ? keysounds.slice(1, -1) : "",
+            notemods: notemods ? notemods.slice(1, -1) : "",
+            holdType: "",
+            source: "original",
+          },
+        }
       }
 
       // lifthold/minehold
-      if (note[0] == "D") {
-        if (note[1] == "L" || note[1] == "M") {
+      if (mainToken[0] == "D") {
+        if (mainToken[1] == "L" || mainToken[1] == "M") {
           if (holds[col]) {
             (holds[col] as PartialHoldNotedataEntry).hold =
               beat - holds[col].beat
-            if (!holds[col].extra) holds[col].extra = {}
-            holds[col].extra.holdType = note
+            if (!holds[col].extra) {
+              holds[col].extra = extra ?? {
+                attributes: {
+                  type: "outfox",
+                  keysounds: "",
+                  notemods: "",
+                  holdType: "",
+                  source: "original",
+                },
+              }
+            } else {
+              if (holds[col].extra?.attributes.type != "outfox") {
+                console.warn(
+                  "Tried to use outfox endholds on note with attribute " +
+                    holds[col].extra?.attributes.type +
+                    " at beat " +
+                    beat +
+                    " col " +
+                    col
+                )
+              } else {
+                holds[col].extra.attributes.holdType = note.slice(0, 2)
+              }
+            }
             holds[col] = undefined
           } else {
             console.log(
@@ -304,19 +348,69 @@ export class BasicNotedataParser extends NotedataParser {
           console.log("Unknown note type " + note + " at beat " + beat)
           return
         }
+      } else if (mainToken[0] == "J") {
+        // outfox with different note type source
+        const entry = {
+          beat: beat,
+          col: col,
+          type: NOTE_TYPE_LOOKUP[mainToken[1]],
+          extra: extra ?? {
+            attributes: {
+              type: "outfox",
+              keysounds: "",
+              notemods: "",
+              holdType: "",
+              source: "fake",
+            },
+          },
+        } as TapNotedataEntry
+        if (entry.type == undefined) {
+          console.log(
+            "Unknown note type " +
+              mainToken +
+              " at beat " +
+              beat +
+              " col " +
+              col
+          )
+          return
+        }
+        if (mainToken[1] == "2" || mainToken[1] == "4") {
+          registerHold(entry)
+        }
+        console.log(entry)
+        return entry
       } else {
         if (note != "0" && note != "3") {
           const entry = {
             beat: beat,
             col: col,
-            type: NOTE_TYPE_LOOKUP[note],
+            type: NOTE_TYPE_LOOKUP[mainToken],
             extra: extra,
           } as TapNotedataEntry
-          if (["X", "Y", "Z", "x", "y", "z"].includes(note)) {
-            entry.extra!.stepp1 = {
-              type: note,
-              attribute: "",
-              fake: false,
+          if (["X", "Y", "Z", "x", "y", "z"].includes(mainToken)) {
+            if (
+              entry.extra?.attributes.type &&
+              entry.extra?.attributes.type != "stepp1"
+            ) {
+              console.warn(
+                "Tried to use stepP1 attributes on note with attribute " +
+                  entry.extra.attributes.type +
+                  " at beat " +
+                  beat +
+                  " col " +
+                  col
+              )
+            }
+            if (!entry.extra) {
+              entry.extra = {
+                attributes: {
+                  type: "stepp1",
+                  noteType: note,
+                  attribute: "",
+                  fake: false,
+                },
+              }
             }
           }
           if (entry.type == undefined) {
@@ -326,29 +420,68 @@ export class BasicNotedataParser extends NotedataParser {
             return
           }
           if (note == "2" || note == "4") {
-            if (holds[col]) {
-              console.log(
-                "Missing end of hold/roll for note " +
-                  JSON.stringify(holds[col])
-              )
-            }
-            holds[col] = entry
+            registerHold(entry)
           }
           return entry
         }
         if (note == "3") {
-          if (holds[col]) {
-            (holds[col] as PartialHoldNotedataEntry).hold =
-              beat - holds[col].beat
-            holds[col] = undefined
-          } else {
-            console.log(
-              "Extra end of hold/roll at beat " + beat + " col " + col
-            )
-          }
+          endHold()
+          return
         }
       }
     }
+  }
+
+  parseTokens(row: string): string[] {
+    const bracketData = {
+      type: "",
+      count: 0,
+      token: "",
+    }
+    const PAIR_TOKENS = ["D", "J"]
+    const tokens = []
+    for (let i = 0; i < row.length; i++) {
+      const char = row[i]
+      // handle brackets
+      if (char == "{" || char == "[") {
+        if (bracketData.count == 0) {
+          bracketData.type = char
+        }
+        if (bracketData.type == char) {
+          bracketData.count++
+        }
+        bracketData.token += char
+      } else if (char == "}" || char == "]") {
+        if (bracketData.type == "{" && char == "}") {
+          bracketData.count--
+        } else if (bracketData.type == "[" && char == "]") {
+          bracketData.count--
+        }
+        bracketData.token += char
+
+        if (bracketData.count == 0) {
+          const token = bracketData.token
+          bracketData.token = ""
+          tokens.push(token)
+        }
+      } else if (bracketData.count > 0) {
+        bracketData.token += char
+      } else {
+        // Token pairs
+        if (PAIR_TOKENS.includes(char)) {
+          const nextChar = row[i + 1]
+          if (!nextChar) {
+            console.warn("Pair char " + char + " at end of row")
+            continue
+          }
+          tokens.push(char + nextChar)
+          i++
+          continue
+        }
+        tokens.push(char)
+      }
+    }
+    return tokens
   }
 
   parseRow(
@@ -358,11 +491,8 @@ export class BasicNotedataParser extends NotedataParser {
     holds: (PartialNotedataEntry | undefined)[]
   ): PartialNotedata {
     const notes: PartialNotedata = []
-    const tokens = row
-      .trim()
-      .matchAll(/\{[^}]*?\}|\[[^\]]*?\]|[^[\]{}D]|D./g)
-      .toArray()
-      .map(match => match[0])
+    const tokens = this.parseTokens(row.trim())
+    // console.log(row, tokens)
     let useNoteMods = false
     if (tokens.filter(token => token[0] != "[").length > gameType.numCols) {
       // too many tokens, treat {} as notemods
@@ -380,37 +510,29 @@ export class BasicNotedataParser extends NotedataParser {
     }
 
     let col = 0
-    for (const token of tokens) {
-      if (token[0] == "{") {
-        if (useNoteMods) {
-          const lastNote = notes.at(-1)
-          if (!lastNote) {
-            console.warn("Notemod without preceding note", token[0])
-            continue
-          } else {
-            if (lastNote.extra == undefined) lastNote.extra = {}
-            lastNote.extra.notemods = token.slice(1, -1)
-          }
-        } else {
-          const note = this.parseNote(token, beat, col, holds)
-          if (note) notes.push(note)
-          col++
+
+    const isAppendableToken = (token: string) => {
+      if (token[0] == "[") return true
+      if (token[0] == "{" && useNoteMods) return true
+      return false
+    }
+
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i]
+      if (!isAppendableToken(token)) {
+        let currentChunk = token
+        // append following {}, [] tokens to current chunk
+        while (i + 1 < tokens.length && isAppendableToken(tokens[i + 1])) {
+          currentChunk += tokens[i + 1]
+          i++
         }
-      } else if (token[0] == "[") {
-        const lastNote = notes.at(-1)
-        if (!lastNote) {
-          console.warn("Keysound without preceding note", token[0])
-          continue
-        } else {
-          if (lastNote.extra == undefined) lastNote.extra = {}
-          lastNote.extra.keysounds = token.slice(1, -1)
-        }
-      } else {
-        const note = this.parseNote(token, beat, col, holds)
+
+        const note = this.parseNote(currentChunk, beat, col, holds)
         if (note) notes.push(note)
         col++
       }
     }
+
     return notes
   }
 
@@ -505,6 +627,14 @@ export class BasicNotedataParser extends NotedataParser {
           gameType,
           holds
         ).forEach(note => notedata.push(note))
+      }
+    }
+
+    for (let c = 0; c < holds.length; c++) {
+      const h = holds[c]
+      if (h) {
+        h.type = "Tap"
+        console.log("Missing end of hold/roll for note " + JSON.stringify(h))
       }
     }
 
