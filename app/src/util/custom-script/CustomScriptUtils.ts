@@ -74,6 +74,7 @@ export type WorkerWhitelistProperties = (typeof WorkerWhitelist)[number]
 
 const ExtraStepP1AttributesSchema = z.object({
   type: z.literal("stepp1"),
+  holdEndType: z.string().optional(),
   noteType: z.string(),
   attribute: z.string(),
   fake: z.boolean(),
@@ -81,6 +82,7 @@ const ExtraStepP1AttributesSchema = z.object({
 
 const ExtraXsanityAttributesSchema = z.object({
   type: z.literal("xsanity"),
+  holdEndType: z.string().optional(),
   noteType: z.string(),
   skin: z.string(),
   attribute: z.string(),
@@ -88,7 +90,7 @@ const ExtraXsanityAttributesSchema = z.object({
 
 const ExtraOutfoxAttributesSchema = z.object({
   type: z.literal("outfox"),
-  holdType: z.string(),
+  holdEndType: z.string().optional(),
   source: z.enum(["fake", "original"]),
   notemods: z.string(),
   keysounds: z.string(),

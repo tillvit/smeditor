@@ -69,7 +69,7 @@ export class BasicNotedataParser extends NotedataParser {
         4,
         lcm2(
           lcm(measureNotes.map(note => getDivision(note.beat))),
-          lcm(measureHoldNotes.map(note => getDivision(note.note.beat)))
+          lcm(measureHoldNotes.map(note => getDivision(note.holdEnd)))
         )
       )
       for (let div = 0; div < division; div++) {
@@ -115,22 +115,19 @@ export class BasicNotedataParser extends NotedataParser {
           note.extra.attributes.attribute == "" &&
           !note.extra.attributes.fake
         ) {
-          return note.extra.attributes.type
+          return note.extra.attributes.noteType
         }
 
-        return `{${note.extra.attributes.type}|${note.extra.attributes.attribute}|${fake}|0}`
+        return `{${note.extra.attributes.noteType}|${note.extra.attributes.attribute}|${fake}|0}`
       }
       case "xsanity": {
-        return `{${note.extra.attributes.type}${note.extra.attributes.skin}${note.extra.attributes.attribute}}`
+        return `{${note.extra.attributes.noteType}${note.extra.attributes.skin}${note.extra.attributes.attribute}}`
       }
     }
   }
 
   serializeHoldEnd(note: PartialHoldNotedataEntry) {
-    if (note.extra?.attributes.type == "outfox") {
-      return note.extra.attributes.holdType || "3"
-    }
-    return "3"
+    return note.extra?.attributes.holdEndType ?? "3"
   }
 
   parseNote(
@@ -149,9 +146,12 @@ export class BasicNotedataParser extends NotedataParser {
       holds[col] = entry
     }
 
-    const endHold = () => {
+    const endHold = (holdEndType?: string) => {
       if (holds[col]) {
         (holds[col] as PartialHoldNotedataEntry).hold = beat - holds[col].beat
+        if (holdEndType && holds[col]?.extra) {
+          holds[col].extra.attributes.holdEndType = holdEndType
+        }
         holds[col] = undefined
       } else {
         console.log("Extra end of hold/roll at beat " + beat + " col " + col)
@@ -259,7 +259,7 @@ export class BasicNotedataParser extends NotedataParser {
         // everything else is standard
         let type = NOTE_TYPE_LOOKUP[noteType]
         if (noteType == "3") {
-          endHold()
+          endHold(note)
           return
         }
 
@@ -301,7 +301,6 @@ export class BasicNotedataParser extends NotedataParser {
             type: "outfox",
             keysounds: keysounds ? keysounds.slice(1, -1) : "",
             notemods: notemods ? notemods.slice(1, -1) : "",
-            holdType: "",
             source: "original",
           },
         }
@@ -319,7 +318,6 @@ export class BasicNotedataParser extends NotedataParser {
                   type: "outfox",
                   keysounds: "",
                   notemods: "",
-                  holdType: "",
                   source: "original",
                 },
               }
@@ -334,7 +332,7 @@ export class BasicNotedataParser extends NotedataParser {
                     col
                 )
               } else {
-                holds[col].extra.attributes.holdType = note.slice(0, 2)
+                holds[col].extra.attributes.holdEndType = note.slice(0, 2)
               }
             }
             holds[col] = undefined
@@ -359,7 +357,6 @@ export class BasicNotedataParser extends NotedataParser {
               type: "outfox",
               keysounds: "",
               notemods: "",
-              holdType: "",
               source: "fake",
             },
           },

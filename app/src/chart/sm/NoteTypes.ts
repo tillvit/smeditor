@@ -28,6 +28,7 @@ export interface ExtraNoteData {
 
 export interface ExtraStepP1Attributes {
   type: "stepp1"
+  holdEndType?: string
   noteType: string
   attribute: string
   fake: boolean
@@ -35,6 +36,7 @@ export interface ExtraStepP1Attributes {
 
 export interface ExtraXsanityAttributes {
   type: "xsanity"
+  holdEndType?: string
   noteType: string
   skin: string
   attribute: string
@@ -42,7 +44,7 @@ export interface ExtraXsanityAttributes {
 
 export interface ExtraOutfoxAttributes {
   type: "outfox"
-  holdType: string
+  holdEndType?: string
   source: "fake" | "original"
   notemods: string
   keysounds: string
