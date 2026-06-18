@@ -238,7 +238,7 @@ export class ChartRenderer extends Container<ChartRendererComponent> {
       }
     })
 
-    this.on("mousemove", event => {
+    this.on("pointermove", event => {
       // Process selection
       this.lastMousePos = this.toLocal(event.global)
       if (this.editingCol != -1) {

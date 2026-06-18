@@ -220,7 +220,7 @@ export class TechErrorIndicators
         this.renderer.chartManager.beat = nextBeat
       }
     })
-    this.topCounter.eventMode = "static"
+    this.topCounter.eventMode = "dynamic"
     this.topCounter.cursor = "pointer"
 
     this.bottomCounter.on("pointerover", () => {
@@ -255,7 +255,7 @@ export class TechErrorIndicators
         this.renderer.chartManager.beat = nextBeat
       }
     })
-    this.bottomCounter.eventMode = "static"
+    this.bottomCounter.eventMode = "dynamic"
     this.bottomCounter.cursor = "pointer"
 
     this.topCounter.scale.set(1.25)
@@ -329,7 +329,7 @@ export class TechErrorIndicators
           }
 
           box.cursor = "pointer"
-          box.on("mouseenter", () => {
+          box.on("pointerenter", () => {
             if (this.renderer.isDragSelecting()) return
             PopupManager.close("tech-error-popup")
             if (this.renderer.chartManager.getMode() == EditMode.Edit) {
@@ -345,7 +345,7 @@ export class TechErrorIndicators
               this.popupBox = box
             }
           })
-          box.on("mouseleave", () => {
+          box.on("pointerleave", () => {
             PopupManager.close("tech-error-popup")
             this.popupBox = undefined
           })
@@ -361,7 +361,7 @@ export class TechErrorIndicators
               chart.addErrorIgnore(error, position.beat)
             }
           })
-          box.eventMode = "static"
+          box.eventMode = "dynamic"
         }
         this.rowMap.set(rowIdx, { boxes, highlight })
       }

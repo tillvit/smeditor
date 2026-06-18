@@ -149,19 +149,19 @@ export class BaseTimelineWidget extends Widget {
     this.on("destroyed", () => clearInterval(interval))
 
     this.eventMode = "static"
-    this.on("mousedown", event => {
+    this.on("pointerdown", event => {
       this.mouseDown = true
       this.handleMouse(event)
     })
-    this.on("mousemove", event => {
+    this.on("pointermove", event => {
       if (this.mouseDown) this.handleMouse(event, true)
     })
 
-    this.on("mouseup", () => {
+    this.on("pointerup", () => {
       this.mouseDown = false
     })
 
-    this.on("mouseleave", () => {
+    this.on("pointerleave", () => {
       this.mouseDown = false
     })
 
@@ -240,7 +240,7 @@ export class BaseTimelineWidget extends Widget {
     let overlayStartY = this.getYFromBeat(overlayStart)
     let overlayEndY = this.getYFromBeat(overlayEnd)
     if (overlayStartY > overlayEndY) {
-      ;[overlayStartY, overlayEndY] = [overlayEndY, overlayStartY]
+      [overlayStartY, overlayEndY] = [overlayEndY, overlayStartY]
     }
 
     this.overlay.y = overlayStartY - this.backing.height / 2
@@ -258,7 +258,7 @@ export class BaseTimelineWidget extends Widget {
       let startY = this.getYFromBeat(selectionStart)
       let endY = this.getYFromBeat(selectionEnd)
       if (startY > endY) {
-        ;[startY, endY] = [endY, startY]
+        [startY, endY] = [endY, startY]
       }
 
       this.selectionOverlay.y = startY - this.backing.height / 2

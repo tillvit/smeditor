@@ -53,13 +53,13 @@ export class SnapContainer extends Container implements ChartRendererComponent {
 
       container.eventMode = "static"
       container.cursor = "pointer"
-      container.on("mouseenter", () => PopupManager.open(SnapPopup(graphic)))
-      container.on("mousedown", e => {
+      container.on("pointerenter", () => PopupManager.open(SnapPopup(graphic)))
+      container.on("pointerdown", e => {
         PopupManager.highlight("snap-popup")
         e.stopImmediatePropagation()
         e.preventDefault()
       })
-      container.on("mouseleave", () => {
+      container.on("pointerleave", () => {
         if (!PopupManager.isHighlighted("snap-popup"))
           PopupManager.close("snap-popup")
       })

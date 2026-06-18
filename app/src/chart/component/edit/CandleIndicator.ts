@@ -121,7 +121,7 @@ export class CandleIndicator
 
         box.bg.tint = darkColor
 
-        box.on("mouseenter", () => {
+        box.on("pointerenter", () => {
           if (this.renderer.isDragSelecting()) return
 
           PopupManager.close("candle-popup")
@@ -130,12 +130,12 @@ export class CandleIndicator
             this.popupBox = box
           }
         })
-        box.on("mouseleave", () => {
+        box.on("pointerleave", () => {
           PopupManager.close("candle-popup")
           this.popupBox = undefined
         })
 
-        box.eventMode = "static"
+        box.eventMode = "dynamic"
 
         highlight.width = this.renderer.chart.gameType.notefieldWidth + 80
         highlight.tint = darkColor

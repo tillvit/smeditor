@@ -46,15 +46,15 @@ export class DensityWidget extends BaseTimelineWidget {
       }
     })
 
-    this.on("mouseleave", () => {
+    this.on("pointerleave", () => {
       this.hideNpsDisplay()
     })
 
-    this.on("mouseenter", () => {
+    this.on("pointerenter", () => {
       this.showNpsDisplay()
     })
 
-    this.on("mousemove", event => {
+    this.on("pointermove", event => {
       this.updateNpsDisplay(event)
     })
 

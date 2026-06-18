@@ -59,20 +59,20 @@ export class PlayInfoWidget extends Widget {
     this.addChild(this.backgroundLines)
     this.eventMode = "static"
 
-    this.on("mousedown", () => {
+    this.on("pointerdown", () => {
       if (this.manager.chartManager.getMode() == EditMode.Play) return
       this.drag = true
       this.dragStart = Date.now()
       BezierAnimator.stop("play-widget")
     })
 
-    window.addEventListener("mousemove", event => {
+    window.addEventListener("pointermove", event => {
       if (this.drag) {
         this.showEase += event.movementY / -400
       }
     })
 
-    window.addEventListener("mouseup", () => {
+    window.addEventListener("pointerup", () => {
       if (this.drag) {
         if (Date.now() - this.dragStart > 400) {
           this.toggled = this.showEase > 0.5
@@ -94,7 +94,7 @@ export class PlayInfoWidget extends Widget {
       this.drag = false
     })
 
-    this.on("mouseenter", () => {
+    this.on("pointerenter", () => {
       if (
         !this.toggled &&
         this.manager.chartManager.getMode() != EditMode.Play
@@ -113,7 +113,7 @@ export class PlayInfoWidget extends Widget {
       }
     })
 
-    this.on("mouseleave", () => {
+    this.on("pointerleave", () => {
       if (
         !this.toggled &&
         this.manager.chartManager.getMode() != EditMode.Play
@@ -250,14 +250,14 @@ export class PlayInfoWidget extends Widget {
     alignSongContainer.addChild(alignSongBg, alignSongText)
 
     alignSongContainer.eventMode = "static"
-    alignSongContainer.addEventListener("mouseenter", () => {
+    alignSongContainer.addEventListener("pointerenter", () => {
       alignSongBg.alpha = 0.6
     })
-    alignSongContainer.addEventListener("mousedown", event => {
+    alignSongContainer.addEventListener("pointerdown", event => {
       event.stopImmediatePropagation()
       this.adjustOffset("song")
     })
-    alignSongContainer.addEventListener("mouseleave", () => {
+    alignSongContainer.addEventListener("pointerleave", () => {
       alignSongBg.alpha = 0.3
     })
     this.statText.addChild(alignSongContainer)
@@ -275,10 +275,10 @@ export class PlayInfoWidget extends Widget {
     alignGlobalBg.pivot.x = (WIDGET_WIDTH / 2 - 10) / 2
     alignGlobalBg.pivot.y = 15
     alignGlobalBg.eventMode = "static"
-    alignGlobalContainer.addEventListener("mouseenter", () => {
+    alignGlobalContainer.addEventListener("pointerenter", () => {
       alignGlobalBg.alpha = 0.6
     })
-    alignGlobalContainer.addEventListener("mouseleave", () => {
+    alignGlobalContainer.addEventListener("pointerleave", () => {
       alignGlobalBg.alpha = 0.3
     })
 
@@ -293,14 +293,14 @@ export class PlayInfoWidget extends Widget {
     assignTint(alignGlobalText, "text-color")
 
     alignGlobalContainer.eventMode = "static"
-    alignGlobalContainer.addEventListener("mouseenter", () => {
+    alignGlobalContainer.addEventListener("pointerenter", () => {
       alignGlobalBg.alpha = 0.6
     })
-    alignGlobalContainer.addEventListener("mousedown", event => {
+    alignGlobalContainer.addEventListener("pointerdown", event => {
       event.stopImmediatePropagation()
       this.adjustOffset("global")
     })
-    alignGlobalContainer.addEventListener("mouseleave", () => {
+    alignGlobalContainer.addEventListener("pointerleave", () => {
       alignGlobalBg.alpha = 0.3
     })
     this.statText.addChild(alignGlobalContainer)

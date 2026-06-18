@@ -177,7 +177,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
       hitbox.width = text.width + 10
       hitbox.height = text.height + 10
       hitbox.alpha = 0
-      hitbox.eventMode = "static"
+      hitbox.eventMode = "dynamic"
 
       sideContainer.addChild(hitbox, text, detail)
       newChild.addChild(sideContainer, nodePool)
@@ -511,7 +511,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
             }
             nodeObject.activate = activate
             nodeObject.deactivate = deactivate
-            nodeObject.eventMode = "static"
+            nodeObject.eventMode = "dynamic"
 
             nodeObject.on("pointerover", () => {
               activate()
@@ -526,7 +526,7 @@ export class ParityDebug extends Container implements ChartRendererComponent {
                 this.activeNode?.deactivate()
                 this.activeNode = nodeObject
                 nodeObject.connections.children.forEach(connection => {
-                  connection.eventMode = "static"
+                  connection.eventMode = "dynamic"
                 })
               }
               event.stopImmediatePropagation()

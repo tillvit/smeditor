@@ -174,9 +174,9 @@ export class TimingTrackContainer
 
     timingTypeBtn.alpha = 0.4
     timingTypeBtn.name = "timingTypeBtn"
-    timingTypeBtn.eventMode = "static"
+    timingTypeBtn.eventMode = "dynamic"
 
-    timingTypeBtn.on("mouseenter", () => {
+    timingTypeBtn.on("pointerenter", () => {
       if (!PopupManager.isHighlighted("timing-column-popup"))
         PopupManager.open(
           TimingColumnPopup({
@@ -186,7 +186,7 @@ export class TimingTrackContainer
           })
         )
     })
-    timingTypeBtn.on("mouseleave", () => {
+    timingTypeBtn.on("pointerleave", () => {
       if (!PopupManager.isHighlighted("timing-column-popup"))
         PopupManager.close("timing-column-popup")
     })
@@ -230,7 +230,7 @@ export class TimingTrackContainer
       lastAnchor: undefined,
       animationId: undefined,
       zIndex: event.beat,
-      eventMode: "static",
+      eventMode: "dynamic",
     })
     box.textObj.text = this.getLabelFromEvent(event)
     box.textObj.anchor.set(0.5, 0.55)
@@ -269,7 +269,7 @@ export class TimingTrackContainer
 
   private addDragListeners(box: TimingBox, event: Cached<TimingEvent>) {
     box.cursor = "pointer"
-    box.on("mouseenter", () => {
+    box.on("pointerenter", () => {
       if (PopupManager.isHighlighted("timing-event-popup")) return
       if (this.renderer.chartManager.eventSelection.timingEvents.length > 0)
         return
@@ -293,7 +293,7 @@ export class TimingTrackContainer
         this.popupEvent = structuredClone(event)
       }
     })
-    box.on("mouseleave", () => {
+    box.on("pointerleave", () => {
       if (
         !PopupManager.isHighlighted("timing-event-popup") &&
         PopupManager.isOpen("timing-event-popup")
@@ -535,7 +535,7 @@ export class TimingTrackContainer
       const timingBtn = track.btns.getChildByName<Container>("timingTypeBtn")
       const timingBtnText = timingBtn?.children[1] as BitmapText
       if (timingBtn) {
-        timingBtn.eventMode = editingTiming ? "static" : "none"
+        timingBtn.eventMode = editingTiming ? "dynamic" : "none"
       }
       if (timingBtnText) {
         timingBtnText.text =
