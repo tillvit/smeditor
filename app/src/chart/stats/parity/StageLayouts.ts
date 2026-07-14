@@ -243,11 +243,11 @@ export const STAGE_LAYOUTS: { [id: string]: StageLayout } = {
   "pump-single": new StageLayout(
     "pump-single",
     [
-      { x: -2.5, y: -1, rotation: -Math.PI / 4 }, // Down Left
-      { x: -2.5, y: 1, rotation: Math.PI / 4 }, // Up Left
-      { x: -1.5, y: 0, rotation: Math.PI / 2 }, // Center
-      { x: -0.5, y: 1, rotation: (Math.PI / 4) * 3 }, // Up Right
-      { x: -0.5, y: -1, rotation: (-Math.PI / 4) * 3 }, // Down Right
+      { x: -1, y: -1, rotation: -Math.PI / 4 }, // Down Left
+      { x: -1, y: 1, rotation: Math.PI / 4 }, // Up Left
+      { x: 0, y: 0, rotation: Math.PI / 2 }, // Center
+      { x: 1, y: 1, rotation: (Math.PI / 4) * 3 }, // Up Right
+      { x: 1, y: -1, rotation: (-Math.PI / 4) * 3 }, // Down Right
     ],
     [],
     [],
