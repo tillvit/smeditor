@@ -1,5 +1,10 @@
 [
   {
+    "version": "2.0.1",
+    "date": 1784056541160,
+    "changelog": "## Changes\n  - Revamped note parser\n    - Added compatibility for StepP1/XSanity SSC files (you can't edit the extra data but SMEditor will be able to load/save them)\n  - Allow parity checking to be used on pump gamemodes \n    - Note that the same tech rules from dance still apply so the notation may be weird\n  - Changed the main page a bit\n## Fixes\n  - Fixed Chart List window not opening with the game mode of the current chart"
+  },
+  {
     "version": "2.0.0",
     "date": 1756994963319,
     "changelog": "Sorry for the extremely late update, there's a lot to unpack here!\n\n## New Stuff\n - **Custom Scripts** - You can now create custom scripts to automate anything inside the editor! There are some already included scripts as examples.\n - Rewrote half of the UI to use React, please let me know if you see any performance issues!\n   - This will hopefully make future development easier :)\n - Added a first-time setup helper that configures a lot of stuff for you\n\n## Changes\n - **Changed the default file type to be SSC**. This will still save SM files if possible (this is mostly to prevent confusion when you try to load the SM version of a file and stuff is missing).\n - Reworked the split timing window to hopefully not be as confusing\n - Clicking on a timing event will auto-select the first input\n - Changed \"Open Song\" to open the Recent Songs window instead of the file picker\n - Added a max FPS option\n - Added an option to make holds low detail to save FPS\n - Changed it so data.sme will not get saved if it doesn't need to\n - Changed a few colors in the dusk theme\n## Fixes\n - Fixed the status bar in captured video being too small / wrong size\n - Fixed some stats not being calculated\n - Fixed a few memory leaks\n - Fixed holds going backwards sometimes\n - Fixed the Debug widget being updated while not visible\n - Fixed the parity engine completely giving up when there are no valid foot placements"

@@ -72,12 +72,45 @@ export const WorkerWhitelist = [
 
 export type WorkerWhitelistProperties = (typeof WorkerWhitelist)[number]
 
+const ExtraStepP1AttributesSchema = z.object({
+  type: z.literal("stepp1"),
+  holdEndType: z.string().optional(),
+  noteType: z.string(),
+  attribute: z.string(),
+  fake: z.boolean(),
+})
+
+const ExtraXsanityAttributesSchema = z.object({
+  type: z.literal("xsanity"),
+  holdEndType: z.string().optional(),
+  noteType: z.string(),
+  skin: z.string(),
+  attribute: z.string(),
+})
+
+const ExtraOutfoxAttributesSchema = z.object({
+  type: z.literal("outfox"),
+  holdEndType: z.string().optional(),
+  source: z.enum(["fake", "original"]),
+  notemods: z.string(),
+  keysounds: z.string(),
+})
+
+const ExtraNoteAttributesSchema = z.union([
+  ExtraStepP1AttributesSchema,
+  ExtraXsanityAttributesSchema,
+  ExtraOutfoxAttributesSchema,
+])
+
+const ExtraNoteDataSchema = z.object({
+  attributes: ExtraNoteAttributesSchema,
+})
+
 const NoteDataEntrySchema = z.object({
   beat: z.number().nonnegative(),
   col: z.number().int().nonnegative(),
   type: z.enum(["Tap", "Hold", "Roll", "Mine", "Lift", "Fake"]),
-  notemods: z.string().optional(),
-  keysounds: z.string().optional(),
+  extra: ExtraNoteDataSchema.optional(),
   hold: z.number().optional(),
   faked: z.boolean().optional(),
   warped: z.boolean().optional(),
@@ -398,7 +431,7 @@ export function applyPayloadToSM(sm: Simfile, payload: SMPayload) {
       "radarValues",
       "other_properties",
     ] as const) {
-      ;(chart as any)[key] = chartData[key]
+      (chart as any)[key] = chartData[key]
     }
 
     // repopulate gameType

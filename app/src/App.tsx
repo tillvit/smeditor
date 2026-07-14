@@ -404,7 +404,7 @@ export class App {
   }
 
   registerListeners() {
-    this.view.addEventListener("mousedown", () => {
+    this.view.addEventListener("pointerdown", () => {
       WindowManager.unfocusAll()
     })
 

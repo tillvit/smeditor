@@ -49,18 +49,25 @@ export type NotefieldObject = NoteObject | HoldObject
 
 export class NoteWrapper extends Container {
   object: NotefieldObject
-  icon
+  liftIcon
+  fakeIcon
   constructor(object: NotefieldObject) {
     super()
     this.object = object
 
-    this.icon = new Sprite(ICONS[object.note.type])
-    this.icon.anchor.set(0.5)
-    this.icon.scale.set(0.3)
-    this.icon.alpha = 0.8
-    this.icon.visible = false
+    this.liftIcon = new Sprite(ICONS["Lift"])
+    this.liftIcon.anchor.set(0.5)
+    this.liftIcon.scale.set(0.3)
+    this.liftIcon.alpha = 0.8
+    this.liftIcon.visible = false
 
-    this.addChild(object, this.icon)
+    this.fakeIcon = new Sprite(ICONS["Fake"])
+    this.fakeIcon.anchor.set(0.5)
+    this.fakeIcon.scale.set(0.3)
+    this.fakeIcon.alpha = 0.8
+    this.fakeIcon.visible = false
+
+    this.addChild(object, this.liftIcon, this.fakeIcon)
 
     if (object.nf.noteskin === undefined) {
       EventHandler.on("noteskinLoaded", () => this.loadEventHandler())
@@ -72,7 +79,8 @@ export class NoteWrapper extends Container {
   loadEventHandler() {
     this.object.nf.noteskin!.onUpdate(this, cr => {
       if (!Options.chart.drawIcons) {
-        this.icon.visible = false
+        this.liftIcon.visible = false
+        this.fakeIcon.visible = false
         return
       }
       if (
@@ -80,12 +88,18 @@ export class NoteWrapper extends Container {
           this.object.note.type
         )
       ) {
-        this.icon.visible = false
+        this.liftIcon.visible = false
+        this.fakeIcon.visible = false
         return
       }
-      this.icon.visible = true
-      if (this.object.note.type == "Fake") {
-        this.icon.visible = cr.chartManager.getMode() != EditMode.Play
+      if (this.object.note.type == "Lift") {
+        this.liftIcon.visible = true
+      }
+      if (
+        this.object.note.type == "Fake" ||
+        this.object.note.extra?.computed?.fake
+      ) {
+        this.fakeIcon.visible = cr.chartManager.getMode() != EditMode.Play
       }
     })
   }

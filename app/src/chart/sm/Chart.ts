@@ -356,9 +356,31 @@ export class Chart {
    * @memberof Chart
    */
   computeNote(note: PartialNotedataEntry): NotedataEntry {
+    if (note.extra) {
+      if (!note.extra.computed) note.extra.computed = { fake: false }
+      switch (note.extra.attributes.type) {
+        case "stepp1":
+          note.extra.computed.fake = note.extra.attributes.fake
+          break
+        case "xsanity": {
+          note.extra.computed.fake =
+            note.extra.attributes.attribute == "P" ||
+            note.extra.attributes.attribute == "8"
+          break
+        }
+        case "outfox": {
+          note.extra.computed.fake = note.extra.attributes.source == "fake"
+          break
+        }
+      }
+    }
+
     return Object.assign(note, {
       warped: this.timingData.isBeatWarped(note.beat),
-      fake: note.type == "Fake" || this.timingData.isBeatFaked(note.beat),
+      fake:
+        note.type == "Fake" ||
+        note.extra?.computed?.fake ||
+        this.timingData.isBeatFaked(note.beat),
       second: this.timingData.getSecondsFromBeat(note.beat),
       quant: Math.round(
         getDivision(this.timingData.getBeatOfMeasure(note.beat))

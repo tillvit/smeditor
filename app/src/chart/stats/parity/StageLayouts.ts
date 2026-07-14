@@ -240,4 +240,36 @@ export const STAGE_LAYOUTS: { [id: string]: StageLayout } = {
     [1, 5],
     [0, 3, 4, 7]
   ),
+  "pump-single": new StageLayout(
+    "pump-single",
+    [
+      { x: -1, y: -1, rotation: -Math.PI / 4 }, // Down Left
+      { x: -1, y: 1, rotation: Math.PI / 4 }, // Up Left
+      { x: 0, y: 0, rotation: Math.PI / 2 }, // Center
+      { x: 1, y: 1, rotation: (Math.PI / 4) * 3 }, // Up Right
+      { x: 1, y: -1, rotation: (-Math.PI / 4) * 3 }, // Down Right
+    ],
+    [],
+    [],
+    [0, 1, 3, 4]
+  ),
+  "pump-double": new StageLayout(
+    "pump-double",
+    [
+      { x: -2.5, y: -1, rotation: -Math.PI / 4 }, // P1 Down Left
+      { x: -2.5, y: 1, rotation: Math.PI / 4 }, // P1 Up Left
+      { x: -1.5, y: 0, rotation: Math.PI / 2 }, // P1 Center
+      { x: -0.5, y: 1, rotation: (Math.PI / 4) * 3 }, // P1 Up Right
+      { x: -0.5, y: -1, rotation: (-Math.PI / 4) * 3 }, // P1 Down Right
+
+      { x: 0.5, y: -1, rotation: -Math.PI / 4 }, // P2 Down Left
+      { x: 0.5, y: 1, rotation: Math.PI / 4 }, // P2 Up Left
+      { x: 1.5, y: 0, rotation: Math.PI / 2 }, // P2 Center
+      { x: 2.5, y: 1, rotation: (Math.PI / 4) * 3 }, // P2 Up Right
+      { x: 2.5, y: -1, rotation: (-Math.PI / 4) * 3 }, // P2 Down Right
+    ],
+    [3, 6],
+    [4, 5],
+    [0, 1, 8, 9]
+  ),
 }

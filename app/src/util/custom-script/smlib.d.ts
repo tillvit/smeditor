@@ -129,11 +129,41 @@ declare module "app/src/chart/sm/NoteTypes" {
   export type NoteType = TapNoteType | HoldNoteType
   export type HoldNoteType = (typeof HOLD_NOTE_TYPES)[number]
   export type TapNoteType = (typeof TAP_NOTE_TYPES)[number]
+  export interface ExtraNoteData {
+    attributes: ExtraNoteAttributes
+    computed?: {
+      fake: boolean
+    }
+  }
+  export interface ExtraStepP1Attributes {
+    type: "stepp1"
+    holdEndType?: string
+    noteType: string
+    attribute: string
+    fake: boolean
+  }
+  export interface ExtraXsanityAttributes {
+    type: "xsanity"
+    holdEndType?: string
+    noteType: string
+    skin: string
+    attribute: string
+  }
+  export interface ExtraOutfoxAttributes {
+    type: "outfox"
+    holdEndType?: string
+    source: "fake" | "original"
+    notemods: string
+    keysounds: string
+  }
+  export type ExtraNoteAttributes =
+    | ExtraStepP1Attributes
+    | ExtraXsanityAttributes
+    | ExtraOutfoxAttributes
   export interface NotedataEntryBase {
     beat: number
     col: number
-    notemods?: string
-    keysounds?: string
+    extra?: ExtraNoteData
   }
   export interface PartialTapNotedataEntry extends NotedataEntryBase {
     type: TapNoteType
@@ -830,11 +860,30 @@ declare module "app/src/chart/gameTypes/common/BasicGameLogic" {
   }
 }
 declare module "app/src/chart/gameTypes/common/BasicNotedataParser" {
-  import { PartialNotedata } from "app/src/chart/sm/NoteTypes"
+  import {
+    PartialHoldNotedataEntry,
+    PartialNotedata,
+    PartialNotedataEntry,
+  } from "app/src/chart/sm/NoteTypes"
   import { NotedataParser } from "app/src/chart/gameTypes/base/NotedataParser"
   import { GameType } from "app/src/chart/gameTypes/GameTypeRegistry"
   export class BasicNotedataParser extends NotedataParser {
     serialize(notedata: PartialNotedata, gameType: GameType): string
+    serializeNote(note: PartialNotedataEntry): string
+    serializeHoldEnd(note: PartialHoldNotedataEntry): string
+    parseNote(
+      note: string,
+      beat: number,
+      col: number,
+      holds: (PartialNotedataEntry | undefined)[]
+    ): PartialNotedataEntry | undefined
+    parseTokens(row: string): string[]
+    parseRow(
+      row: string,
+      beat: number,
+      gameType: GameType,
+      holds: (PartialNotedataEntry | undefined)[]
+    ): PartialNotedata
     fromString(data: string, gameType: GameType): PartialNotedata
   }
 }

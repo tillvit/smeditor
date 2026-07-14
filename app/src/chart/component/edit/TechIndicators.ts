@@ -112,7 +112,7 @@ export class TechIndicators
           // box.backgroundObj.height = 25
           // box.backgroundObj.position.x = -box.backgroundObj.width / 2
           // box.backgroundObj.position.y = -25 / 2
-          box.on("mouseenter", () => {
+          box.on("pointerenter", () => {
             if (this.renderer.isDragSelecting()) return
             PopupManager.close("tech-popup")
             if (this.renderer.chartManager.getMode() == EditMode.Edit) {
@@ -120,12 +120,12 @@ export class TechIndicators
               this.popupBox = box
             }
           })
-          box.on("mouseleave", () => {
+          box.on("pointerleave", () => {
             PopupManager.close("tech-popup")
             this.popupBox = undefined
           })
 
-          box.eventMode = "static"
+          box.eventMode = "dynamic"
         }
         this.rowMap.set(i, boxes)
       }
