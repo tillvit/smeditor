@@ -52,7 +52,7 @@ export class BasicNotedataParser extends NotedataParser {
       })
       .sort((a, b) => a.holdEnd - b.holdEnd)
     const lastNote = notedata.at(-1)!
-    const lastBeat = lastNote.beat + (isHoldNote(lastNote) ? lastNote.hold : 0)
+    const lastBeat = Math.max(lastNote.beat, holdEnds.at(-1)?.holdEnd ?? 0)
     let numMeasures = Math.ceil(lastBeat / 4)
     if (lastBeat % 4 == 0) numMeasures++
     for (let measure = 0; measure < numMeasures; measure++) {
