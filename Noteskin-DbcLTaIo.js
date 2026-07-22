@@ -1,4 +1,4 @@
-import{aD as w,aE as N,C as p,a2 as f,O as C,aF as y,a as V,a4 as r,T as a,a8 as E,B,l as Q}from"./Simfile-BuAoBjS-.js";import{A as u}from"./AnimatedSprite-CykouNxf.js";import{l as D,s as T,r as x,B as c,H as h}from"./app.js";import{H as d}from"./HoldBody-BHIHNspX.js";const H="/smeditor/assets/frame-YdtqxpuN.png",L="/smeditor/assets/parts-CcNv_Je6.png",P=`45
+import{aD as w,aE as N,C as p,a2 as f,O as C,aF as y,a as V,a4 as r,T as a,a8 as E,B,l as Q}from"./Simfile-DIPFgGq7.js";import{A as u}from"./AnimatedSprite-C3LFcgHr.js";import{l as D,s as T,r as x,B as c,H as h}from"./app.js";import{H as d}from"./HoldBody-Dohsvhal.js";const H="/smeditor/assets/frame-YdtqxpuN.png",L="/smeditor/assets/parts-CcNv_Je6.png",P=`45
 -16.0    0.0  0 0.75
 -11.31 -11.31 0 0.75
   0.0  -16.0  0 0.75
