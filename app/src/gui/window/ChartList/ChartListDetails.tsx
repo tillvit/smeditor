@@ -173,7 +173,22 @@ export function ChartListDetails(props: ChartListDetailsOptions) {
           />
           <InlineTextInput
             value={chart.meter.toString()}
-            onChange={v => setProperty("meter", parseInt(v) || 1)}
+            onChange={v => {
+              const cachedMeter = props.chart.meter
+              const cachedMeterF = props.chart.meterF
+              ActionHistory.instance.run({
+                action: () => {
+                  props.chart.meter = parseInt(v) || 1
+                  props.chart.meterF = parseFloat(v) || 1
+                  EventHandler.emit("chartModified")
+                },
+                undo: () => {
+                  props.chart.meter = cachedMeter
+                  props.chart.meterF = cachedMeterF
+                  EventHandler.emit("chartModified")
+                },
+              })
+            }}
             style={{ width: "4rem", textOverflow: "clip", textAlign: "right" }}
           />
         </div>
