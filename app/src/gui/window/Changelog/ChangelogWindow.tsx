@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import Markdown from "react-markdown"
-import { WindowData } from "../WindowManager"
+import { WindowContext, WindowData } from "../WindowManager"
 
 export interface CoreVersion {
   version: string
@@ -17,6 +17,7 @@ function LinkRenderer(props: any) {
 }
 
 function ChangelogWindowContent() {
+  const windowData = useContext(WindowContext)
   const [versions, setVersions] = useState<string[]>([])
   useEffect(() => {
     fetch("/smeditor/assets/app/changelog.json")
@@ -43,7 +44,7 @@ function ChangelogWindowContent() {
         <button
           className="confirm"
           onClick={() => {
-            window.close()
+            windowData?.close()
           }}
         >
           Close
