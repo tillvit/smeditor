@@ -181,6 +181,7 @@ export class NodeFileHandler implements BaseFileHandler {
       ) as ArrayBuffer
     }
     const writable = await handle.createWritable({ keepExistingData: false })
+    await writable.truncate(0)
     await writable.write(buf)
     await writable.close()
   }
