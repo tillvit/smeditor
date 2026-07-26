@@ -48,6 +48,7 @@ export function ChartListWindowContent() {
   function chartLoaded() {
     setSelectedChart(windowData!.app.chartManager.loadedChart ?? null)
     smLoaded()
+    loadCharts(windowData!.app.chartManager.loadedChart?.gameType ?? gameType)
   }
 
   function selectChart(chart: Chart | null) {
