@@ -68,6 +68,7 @@ export function ChartListWindowContent() {
     loadCharts()
     setSelectedChart(windowData!.app.chartManager.loadedChart!)
     setGameType(windowData!.app.chartManager.loadedChart?.gameType ?? gameType)
+    loadCharts(windowData!.app.chartManager.loadedChart?.gameType ?? gameType)
     EventHandler.on("smLoadedAfter", smLoaded)
     EventHandler.on("chartLoaded", chartLoaded)
     return () => {
