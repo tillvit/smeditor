@@ -1376,8 +1376,11 @@ export class ChartManager {
     )
       return
     if (Options.chart.forceSnapNotes) {
-      const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-      beat = Math.round(beat / snap) * snap
+      const snapBeat = this.loadedChart.timingData.snapToClosestTick(
+        this.beat,
+        Math.max(0.001, Options.chart.snap)
+      )
+      beat = snapBeat
     }
     beat = Math.max(0, Math.round(beat * 48) / 48)
 
