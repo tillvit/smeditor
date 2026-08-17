@@ -27,6 +27,13 @@ export function ChartListWindowContent() {
     )
     if (charts) setCharts(charts)
     else setCharts([])
+    if (windowData.app.chartManager.loadedChart) {
+      if (charts?.includes(windowData.app.chartManager.loadedChart)) {
+        setSelectedChart(windowData.app.chartManager.loadedChart)
+      } else {
+        setSelectedChart(null)
+      }
+    }
   }
 
   function getGameTypeString(gameType: GameType) {
@@ -46,7 +53,7 @@ export function ChartListWindowContent() {
   }
 
   function chartLoaded() {
-    setSelectedChart(windowData!.app.chartManager.loadedChart ?? null)
+    setGameType(windowData!.app.chartManager.loadedChart?.gameType ?? gameType)
     smLoaded()
     loadCharts(windowData!.app.chartManager.loadedChart?.gameType ?? gameType)
   }
