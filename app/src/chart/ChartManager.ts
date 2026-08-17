@@ -1532,7 +1532,10 @@ export class ChartManager {
     const conflictingNotes = this.loadedChart.getNotedata().filter(note => {
       if (
         note.beat == hold.originalNote!.beat &&
-        note.col == hold.originalNote!.col
+        note.col == hold.originalNote!.col &&
+        isHoldNote(hold.originalNote!) &&
+        isHoldNote(note) &&
+        note.hold == hold.originalNote.hold
       )
         return false
       if (note.col != col) return false
