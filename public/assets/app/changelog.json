@@ -1,5 +1,10 @@
 [
   {
+    "version": "2.0.2",
+    "date": 1787012196120,
+    "changelog": "## Changes\n  - Changed Shift up/down in the menu to not clear the previous notes\n## Fixes\n  - Fixed hold ends not saving if they aren't the last note in the chart\n  - Fixed files on the desktop app not being able to get smaller, preventing chart deletion\n  - Fixed being able to place two notes on the same beat and column by extending a hold upwards\n  - The METERF tag now updates correctly when editing the meter\n  - Fixed some note snapping involving time signatures when force snapping is on\n  - Fixed the chart list window for real hopefully\n  - Fixed the entire window closing when closing the Changelog Window (wtf)\n"
+  },
+  {
     "version": "2.0.1",
     "date": 1784056541160,
     "changelog": "## Changes\n  - Revamped note parser\n    - Added compatibility for StepP1/XSanity SSC files (you can't edit the extra data but SMEditor will be able to load/save them)\n  - Allow parity checking to be used on pump gamemodes \n    - Note that the same tech rules from dance still apply so the notation may be weird\n  - Changed the main page a bit\n## Fixes\n  - Fixed Chart List window not opening with the game mode of the current chart"
