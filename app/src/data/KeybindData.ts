@@ -1731,7 +1731,7 @@ for (const numMeasures of [4, 2, 1]) {
       app.chartManager.modifySelection(note => {
         note.beat -= mLength * numMeasures
         return note
-      }, true)
+      })
     },
   }
   KEYBIND_DATA[`shiftDown${numMeasures}m`] = {
@@ -1747,7 +1747,7 @@ for (const numMeasures of [4, 2, 1]) {
       app.chartManager.modifySelection(note => {
         note.beat += mLength * numMeasures
         return note
-      }, true)
+      })
     },
   }
 }
@@ -1771,7 +1771,7 @@ for (let i = 0; i < QUANTS.length; i++) {
       app.chartManager.modifySelection(note => {
         note.beat -= QUANTS[i]
         return note
-      }, true),
+      }),
   }
   KEYBIND_DATA[`shiftDown${QUANT_NAMES[i]}`] = {
     label: `${QUANT_NAMES[i]}`,
@@ -1782,7 +1782,7 @@ for (let i = 0; i < QUANTS.length; i++) {
       app.chartManager.modifySelection(note => {
         note.beat += QUANTS[i]
         return note
-      }, true),
+      }),
   }
 
   if (i != QUANTS.length - 1) {

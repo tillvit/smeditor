@@ -1376,8 +1376,11 @@ export class ChartManager {
     )
       return
     if (Options.chart.forceSnapNotes) {
-      const snap = Options.chart.snap == 0 ? 1 / 48 : Options.chart.snap
-      beat = Math.round(beat / snap) * snap
+      const snapBeat = this.loadedChart.timingData.snapToClosestTick(
+        this.beat,
+        Math.max(0.001, Options.chart.snap)
+      )
+      beat = snapBeat
     }
     beat = Math.max(0, Math.round(beat * 48) / 48)
 
@@ -1529,7 +1532,10 @@ export class ChartManager {
     const conflictingNotes = this.loadedChart.getNotedata().filter(note => {
       if (
         note.beat == hold.originalNote!.beat &&
-        note.col == hold.originalNote!.col
+        note.col == hold.originalNote!.col &&
+        isHoldNote(hold.originalNote!) &&
+        isHoldNote(note) &&
+        note.hold == hold.originalNote.hold
       )
         return false
       if (note.col != col) return false

@@ -148,28 +148,6 @@ export class NodeFileHandler implements BaseFileHandler {
   }
 
   async writeFile(path: FileSystemFileHandle | string, data: File | string) {
-    let fileHandle
-    if (typeof path == "string") {
-      fileHandle = await this.getFileHandle(path, { create: true })
-      if (!fileHandle) {
-        WaterfallManager.createFormatted(
-          "Failed to write to " + path + "!",
-          "error"
-        )
-        return
-      }
-    } else {
-      fileHandle = path
-    }
-    await this.writeHandle(fileHandle, data)
-    return
-  }
-
-  async removeFile(path: string): Promise<void> {
-    await fs.unlink(path)
-  }
-
-  private async writeHandle(handle: FileSystemFileHandle, data: Blob | string) {
     let buf: ArrayBuffer
     if (data instanceof Blob) {
       buf = await data.arrayBuffer()
@@ -180,9 +158,23 @@ export class NodeFileHandler implements BaseFileHandler {
         encoded.byteOffset + encoded.byteLength
       ) as ArrayBuffer
     }
-    const writable = await handle.createWritable({ keepExistingData: false })
-    await writable.write(buf)
-    await writable.close()
+    const pathStr =
+      typeof path === "string"
+        ? path
+        : (await (path as fsa.FileSystemFileHandle).getFile()).path
+    if (!pathStr) throw new DOMException(...GONE)
+    await fs.writeFile(pathStr, Buffer.from(buf)).catch((err: any) => {
+      console.error("Failed to write file " + pathStr + ": " + err)
+      WaterfallManager.createFormatted(
+        "Failed to write to " + pathStr + "!",
+        "error"
+      )
+      throw err
+    })
+  }
+
+  async removeFile(path: string): Promise<void> {
+    await fs.unlink(path)
   }
 
   getRelativePath(from: string, to: string) {
