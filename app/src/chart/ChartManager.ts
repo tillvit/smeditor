@@ -40,6 +40,7 @@ import {
   bsearchEarliest,
   compareObjects,
   getNoteEnd,
+  isSameRow,
   shouldBlockKeybinds,
 } from "../util/Util"
 import { FileHandler } from "../util/file-handler/FileHandler"
