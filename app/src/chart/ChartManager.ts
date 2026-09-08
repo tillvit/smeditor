@@ -1494,7 +1494,7 @@ export class ChartManager {
         type: hold.roll ? "Roll" : "Hold",
         hold: hold.endBeat - hold.startBeat,
       }
-      if (hold.endBeat - hold.startBeat == 0) {
+      if (isSameRow(hold.startBeat, hold.endBeat)) {
         Object.assign(note, { hold: undefined, type: "Tap" })
       }
       this.loadedChart.addNote(note)
@@ -1504,7 +1504,7 @@ export class ChartManager {
         type: hold.roll ? "Roll" : "Hold",
         hold: hold.endBeat - hold.startBeat,
       }
-      if (hold.endBeat - hold.startBeat == 0) {
+      if (isSameRow(hold.startBeat, hold.endBeat)) {
         Object.assign(props, { hold: undefined, type: "Tap" })
       }
       if (
@@ -1518,16 +1518,14 @@ export class ChartManager {
     hold.originalNote = {
       beat: hold.startBeat,
       col: col,
-      type:
-        hold.endBeat - hold.startBeat == 0
-          ? "Tap"
-          : hold.roll
-            ? "Roll"
-            : "Hold",
-      hold:
-        hold.endBeat - hold.startBeat == 0
-          ? undefined
-          : hold.endBeat - hold.startBeat,
+      type: isSameRow(hold.startBeat, hold.endBeat)
+        ? "Tap"
+        : hold.roll
+          ? "Roll"
+          : "Hold",
+      hold: isSameRow(hold.startBeat, hold.endBeat)
+        ? undefined
+        : hold.endBeat - hold.startBeat,
     } as PartialNotedataEntry
 
     const conflictingNotes = this.loadedChart.getNotedata().filter(note => {
@@ -1536,7 +1534,7 @@ export class ChartManager {
         note.col == hold.originalNote!.col &&
         isHoldNote(hold.originalNote!) &&
         isHoldNote(note) &&
-        note.hold == hold.originalNote.hold
+        isSameRow(note.hold, hold.originalNote.hold)
       )
         return false
       if (note.col != col) return false
