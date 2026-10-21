@@ -1378,7 +1378,7 @@ export class ChartManager {
       return
     if (Options.chart.forceSnapNotes) {
       const snapBeat = this.loadedChart.timingData.snapToClosestTick(
-        this.beat,
+        beat,
         Math.max(0.001, Options.chart.snap)
       )
       beat = snapBeat
