@@ -222,6 +222,31 @@ export function CustomScriptEditorTab(props: {
             () =>
               editorRef.current?.trigger("", "editor.action.triggerSuggest", {})
           )
+          e.addAction({
+            id: "custom-paste",
+            label: "Paste",
+            keybindings: [
+              monacoRef.current!.KeyMod.CtrlCmd |
+                monacoRef.current!.KeyCode.KeyV,
+            ],
+            run: async ed => {
+              try {
+                const text = await navigator.clipboard.readText()
+                const selection = ed.getSelection()
+                const selectionRange = {
+                  startLineNumber: selection!.startLineNumber,
+                  startColumn: selection!.startColumn,
+                  endLineNumber: selection!.endLineNumber,
+                  endColumn: selection!.endColumn,
+                }
+                ed.executeEdits("custom-paste", [
+                  { range: selectionRange, text, forceMoveMarkers: true },
+                ])
+              } catch (err) {
+                console.error("Custom paste failed:", err)
+              }
+            },
+          })
         }}
         onChange={e => {
           if (!e) return
