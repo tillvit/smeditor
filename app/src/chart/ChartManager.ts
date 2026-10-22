@@ -586,7 +586,7 @@ export class ChartManager {
     window.addEventListener(
       "keyup",
       (event: KeyboardEvent) => {
-        if (this.mode != EditMode.Edit) return
+        if (this.mode != EditMode.Edit && this.mode != EditMode.Record) return
         const keyName = Keybinds.getKeyNameFromEvent(event)
         for (let i = 0; i < (this.loadedChart?.gameType.numCols ?? 4); i++) {
           const key = Keybinds.getCombosForKeybind("placeNote" + (i + 1))
@@ -613,18 +613,21 @@ export class ChartManager {
           !event.metaKey &&
           !event.altKey &&
           !event.ctrlKey &&
-          this.isInEditMode()
+          this.loadedChart &&
+          (this.mode == EditMode.Edit || this.mode == EditMode.Record)
         ) {
           for (let i = 0; i < (this.loadedChart?.gameType.numCols ?? 4); i++) {
-            console.log(Keybinds.getCombosForKeybind("placeNote" + (i + 1)))
             const key = Keybinds.getCombosForKeybind("placeNote" + (i + 1))
               .map(x => x.key)
               .includes(keyName)
             if (key) {
-              console.log(
-                `Starting editing note in column ${i} at beat ${this.beat}`
-              )
-              this.setNote(i, "key")
+              let tapBeat = this.beat
+              if (this.mode == EditMode.Record) {
+                tapBeat = this.loadedChart.getBeatFromSeconds(
+                  this.time + Options.play.offset
+                )
+              }
+              this.setNote(i, "key", tapBeat)
               event.preventDefault()
               event.stopImmediatePropagation()
               break
@@ -1762,7 +1765,6 @@ export class ChartManager {
       requiresSMEData(this.loadedSM) ||
       (await FileHandler.getFileHandle(this.getDataPath())) // if sme already exists, we might want to clear it
     ) {
-      console.log("Writing sme")
       await FileHandler.writeFile(
         this.getDataPath(),
         serializeSMEData(this.loadedSM)
