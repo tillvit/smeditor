@@ -39,7 +39,6 @@ export function ThemeEditorWindowContent() {
   }
 
   function onChange(id: ThemeProperty, color: Color) {
-    console.log(id, color)
     const newTheme = Themes.getCurrentTheme()
     newTheme[id] = color
     const updatedTheme = updateLinks(id, newTheme)

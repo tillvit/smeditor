@@ -41,8 +41,6 @@ export function CaptureOptionsView(props: {
     return sizeEstimate
   }
 
-  console.log(props.captureOptions, props.startBeat, props.endBeat)
-
   return (
     <div
       className="capture-options-container"

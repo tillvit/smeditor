@@ -586,11 +586,15 @@ export class ChartManager {
     window.addEventListener(
       "keyup",
       (event: KeyboardEvent) => {
-        if (this.mode != EditMode.Edit) return
-        if (event.code.startsWith("Digit")) {
-          let col = parseInt(event.code.slice(5)) - 1
-          if (col == -1) col = 9 // 0 key to 10th column
-          this.endEditing(col)
+        if (this.mode != EditMode.Edit && this.mode != EditMode.Record) return
+        const keyName = Keybinds.getKeyNameFromEvent(event)
+        for (let i = 0; i < (this.loadedChart?.gameType.numCols ?? 4); i++) {
+          const key = Keybinds.getCombosForKeybind("placeNote" + (i + 1))
+            .map(x => x.key)
+            .includes(keyName)
+          if (key) {
+            this.endEditing(i)
+          }
         }
       },
       true
@@ -604,19 +608,30 @@ export class ChartManager {
         if (WindowManager.isWindowOpen("key-combo-selector")) return
         // Start editing note
         if (
-          event.code.startsWith("Digit") &&
           !event.repeat &&
           !event.ctrlKey &&
           !event.metaKey &&
           !event.altKey &&
-          !event.ctrlKey
+          !event.ctrlKey &&
+          this.loadedChart &&
+          (this.mode == EditMode.Edit || this.mode == EditMode.Record)
         ) {
-          let col = parseInt(event.code.slice(5)) - 1
-          if (col == -1) col = 9 // 0 key to 10th column
-          if (col < (this.loadedChart?.gameType.numCols ?? 4)) {
-            this.setNote(col, "key")
-            event.preventDefault()
-            event.stopImmediatePropagation()
+          for (let i = 0; i < (this.loadedChart?.gameType.numCols ?? 4); i++) {
+            const key = Keybinds.getCombosForKeybind("placeNote" + (i + 1))
+              .map(x => x.key)
+              .includes(keyName)
+            if (key) {
+              let tapBeat = this.beat
+              if (this.mode == EditMode.Record) {
+                tapBeat = this.loadedChart.getBeatFromSeconds(
+                  this.time + Options.play.offset
+                )
+              }
+              this.setNote(i, "key", tapBeat)
+              event.preventDefault()
+              event.stopImmediatePropagation()
+              break
+            }
           }
         }
         if (!this.holdEditing.every(x => x == undefined)) {
@@ -639,8 +654,12 @@ export class ChartManager {
                 .map(x => x.key)
                 .includes(keyName)
             ) {
+              let disabled = KEYBIND_DATA[keybind].disabled
+              if (disabled instanceof Function) disabled = disabled(this.app)
+              if (disabled) continue
               event.preventDefault()
               event.stopImmediatePropagation()
+
               KEYBIND_DATA[keybind].callback(this.app)
               for (let col = 0; col < this.holdEditing.length; col++) {
                 if (
@@ -1378,7 +1397,7 @@ export class ChartManager {
       return
     if (Options.chart.forceSnapNotes) {
       const snapBeat = this.loadedChart.timingData.snapToClosestTick(
-        this.beat,
+        beat,
         Math.max(0.001, Options.chart.snap)
       )
       beat = snapBeat
@@ -1532,9 +1551,10 @@ export class ChartManager {
       if (
         isSameRow(note.beat, hold.originalNote!.beat) &&
         note.col == hold.originalNote!.col &&
-        isHoldNote(hold.originalNote!) &&
-        isHoldNote(note) &&
-        isSameRow(note.hold, hold.originalNote.hold)
+        ((isHoldNote(hold.originalNote!) &&
+          isHoldNote(note) &&
+          isSameRow(note.hold, hold.originalNote.hold)) ||
+          (!isHoldNote(hold.originalNote!) && !isHoldNote(note)))
       )
         return false
       if (note.col != col) return false
@@ -1654,6 +1674,22 @@ export class ChartManager {
     EventHandler.emit("modeChanged")
   }
 
+  hasLoadedChart(): boolean {
+    return !!this.loadedChart && !!this.chartView
+  }
+
+  hasLoadedSM(): boolean {
+    return !!this.loadedSM
+  }
+
+  isInEditMode(): boolean {
+    return this.mode == EditMode.Edit
+  }
+
+  isInMovableMode(): boolean {
+    return this.mode == EditMode.Edit || this.mode == EditMode.View
+  }
+
   /**
    * Judges a key down on a certain column.
    * Places notes if the current mode is Record Mode.
@@ -1729,7 +1765,6 @@ export class ChartManager {
       requiresSMEData(this.loadedSM) ||
       (await FileHandler.getFileHandle(this.getDataPath())) // if sme already exists, we might want to clear it
     ) {
-      console.log("Writing sme")
       await FileHandler.writeFile(
         this.getDataPath(),
         serializeSMEData(this.loadedSM)

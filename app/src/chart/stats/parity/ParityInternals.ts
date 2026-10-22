@@ -307,7 +307,7 @@ export class ParityInternals {
       if (note.type == "Mine") {
         if (
           this.isSameSecond(note.second, lastColumnSecond) &&
-          rows.length > 0
+          lastColumnSecond != null
         ) {
           if (note.fake) {
             nextFakeMines[note.col] = note.second
@@ -517,7 +517,7 @@ export class ParityInternals {
       if (rowIndex + 1 >= updatedRows.newEndIdx) {
         const curRow = this.nodeRows[rowIndex + 1]
 
-        if (curRow && curRow.nodes.length == newNodes.size) {
+        if (curRow?.nodes.length == newNodes.size) {
           curRow.nodes.sort()
           newNodesArray.sort()
           let same = true

@@ -1,5 +1,6 @@
 import { App } from "../App"
 import { EditMode, EditTimingMode } from "../chart/ChartManager"
+import { GameTypeRegistry } from "../chart/gameTypes/GameTypeRegistry"
 import { isHoldNote } from "../chart/sm/NoteTypes"
 import {
   FEET_LABELS,
@@ -32,7 +33,7 @@ import { EventHandler } from "../util/EventHandler"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 import { Flags } from "../util/Flags"
-import { roundDigit } from "../util/Math"
+import { maxArr, roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
 import { basename, dirname } from "../util/Path"
 import {
@@ -49,6 +50,8 @@ export interface Keybind {
   label: string
   bindLabel?: string
   combos: KeyCombo[]
+  preventMultipleCombos?: boolean
+  preventModifiers?: boolean
   visible?: boolean | ((app: App) => boolean)
   disabled: boolean | ((app: App) => boolean)
   disableRepeat?: boolean
@@ -122,36 +125,28 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Play/Pause",
     combos: [{ key: "Space", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => app.chartManager.playPause(),
   },
   decreaseSnap: {
     label: "Decrease snap",
     combos: [{ key: "Left", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => app.chartManager.previousSnap(),
   },
   increaseSnap: {
     label: "Increase snap",
     combos: [{ key: "Right", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => app.chartManager.nextSnap(),
   },
   cursorUp: {
     label: "Move cursor up",
     combos: [{ key: "Up", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => {
       if (Options.chart.scroll.invertReverseScroll && Options.chart.reverse)
         app.chartManager.snapToNextTick()
@@ -162,9 +157,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Move cursor down",
     combos: [{ key: "Down", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => {
       if (Options.chart.scroll.invertReverseScroll && Options.chart.reverse)
         app.chartManager.snapToPreviousTick()
@@ -174,7 +167,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   increaseScrollSpeed: {
     label: "Increase scroll speed",
     combos: [{ key: "Up", mods: [Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app => !app.chartManager.hasLoadedChart(),
     callback: () =>
       (Options.chart.speed = Math.max(
         10,
@@ -184,7 +177,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   decreaseScrollSpeed: {
     label: "Decrease scroll speed",
     combos: [{ key: "Down", mods: [Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app => !app.chartManager.hasLoadedChart(),
     callback: () =>
       (Options.chart.speed = Math.max(
         10,
@@ -194,7 +187,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   zoomIn: {
     label: "Zoom in",
     combos: [{ key: "+", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app => !app.chartManager.hasLoadedChart(),
     callback: () => {
       Options.chart.zoom += 0.1
       WaterfallManager.create(
@@ -205,7 +198,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   zoomOut: {
     label: "Zoom out",
     combos: [{ key: "-", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app => !app.chartManager.hasLoadedChart(),
     callback: () => {
       Options.chart.zoom = Math.max(0.1, Options.chart.zoom - 0.1)
       WaterfallManager.create(
@@ -216,7 +209,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   zoomDefault: {
     label: "Reset zoom",
     combos: [{ key: "0", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app => !app.chartManager.hasLoadedChart(),
     callback: () => {
       Options.chart.zoom = 1
       WaterfallManager.create(
@@ -228,7 +221,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "New song...",
     bindLabel: "New song",
     combos: [{ key: "N", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
+    disabled: app => !app.chartManager.hasLoadedSM() || !Flags.openWindows,
     callback: () => {
       WindowManager.openWindow(NewSongWindow())
     },
@@ -237,7 +230,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Open song...",
     bindLabel: "Open song",
     combos: [{ key: "O", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
+    disabled: app => !app.chartManager.hasLoadedSM() || !Flags.openWindows,
     callback: () => {
       WindowManager.openWindow(InitialWindow(false))
     },
@@ -246,7 +239,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Song properties...",
     bindLabel: "Open song properties",
     combos: [{ key: "O", mods: [Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
+    disabled: app => !app.chartManager.hasLoadedSM() || !Flags.openWindows,
     callback: () => WindowManager.openWindow(SMPropertiesWindow()),
   },
   save: {
@@ -254,7 +247,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Save",
     combos: [{ key: "S", mods: [DEF_MOD] }],
     disabled: app =>
-      !app.chartManager.loadedSM ||
+      !app.chartManager.hasLoadedSM() ||
       app.chartManager.smPath.startsWith("https://") ||
       app.chartManager.smPath.startsWith("http://"),
     callback: app => app.chartManager.save(),
@@ -265,7 +258,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     visible: () => !window.nw,
     disabled: app =>
       !!window.nw ||
-      !app.chartManager.loadedSM ||
+      !app.chartManager.hasLoadedSM() ||
       app.chartManager.smPath.startsWith("https://") ||
       app.chartManager.smPath.startsWith("http://"),
     callback: app => {
@@ -279,13 +272,13 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Export to notedata...",
     bindLabel: "Export to notedata",
     combos: [{ key: "E", mods: [DEF_MOD, Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
+    disabled: app => !app.chartManager.hasLoadedChart() || !Flags.openWindows,
     callback: () => WindowManager.openWindow(ExportNotedataWindow()),
   },
   capture: {
     label: "Export video...",
     combos: [],
-    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
+    disabled: app => !app.chartManager.hasLoadedChart() || !Flags.openWindows,
     callback: () => {
       WindowManager.openWindow(CaptureWindow())
     },
@@ -294,7 +287,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Previous song in pack",
     combos: [{ key: "F5", mods: [Modifier.SHIFT] }],
     disabled: app =>
-      !app.chartManager.loadedSM ||
+      !app.chartManager.hasLoadedSM() ||
       app.chartManager.smPath.startsWith("https://") ||
       app.chartManager.smPath.startsWith("http://"),
     callback: app => {
@@ -359,7 +352,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Next song in pack",
     combos: [{ key: "F6", mods: [Modifier.SHIFT] }],
     disabled: app =>
-      !app.chartManager.loadedSM ||
+      !app.chartManager.hasLoadedSM() ||
       app.chartManager.smPath.startsWith("https://") ||
       app.chartManager.smPath.startsWith("http://"),
     callback: app => {
@@ -422,20 +415,20 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Chart list",
     bindLabel: "Open chart list",
     combos: [{ key: "O", mods: [DEF_MOD, Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.loadedSM || !Flags.openWindows,
+    disabled: app => !app.chartManager.hasLoadedSM() || !Flags.openWindows,
     callback: () => WindowManager.openWindow(ChartListWindow()),
   },
   timingDataRow: {
     label: "Edit timing data at row",
     combos: [{ key: "T", mods: [Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.chartView || !Flags.openWindows,
+    disabled: app => !app.chartManager.hasLoadedChart() || !Flags.openWindows,
     callback: () => WindowManager.openWindow(TimingDataWindow()),
   },
   selectRegion: {
     label: "Select region",
     combos: [{ key: "Tab", mods: [] }],
     disabled: app =>
-      !app.chartManager.loadedChart &&
+      !app.chartManager.hasLoadedChart() &&
       app.chartManager.getMode() != EditMode.Edit,
     callback: app => app.chartManager.selectRegion(),
   },
@@ -524,9 +517,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   rateUp: {
     label: "Increase playback rate",
     combos: [{ key: "Right", mods: [Modifier.SHIFT] }],
-    disabled: app =>
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+    disabled: app => !app.chartManager.isInMovableMode(),
     callback: () => {
       Options.audio.rate += 0.05
       WaterfallManager.create(
@@ -537,9 +528,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   rateDown: {
     label: "Decrease playback rate",
     combos: [{ key: "Left", mods: [Modifier.SHIFT] }],
-    disabled: app =>
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+    disabled: app => !app.chartManager.isInMovableMode(),
     callback: () => {
       Options.audio.rate = Math.max(Options.audio.rate - 0.05, 0.1)
       WaterfallManager.create(
@@ -550,7 +539,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   rateDefault: {
     label: "Reset playback rate",
     combos: [],
-    disabled: false,
+    disabled: app => !app.chartManager.isInMovableMode(),
     callback: () => {
       Options.audio.rate = 1
       WaterfallManager.create(
@@ -562,9 +551,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Previous stream",
     combos: [{ key: "Up", mods: [DEF_MOD] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => {
       const streamPoints: number[] = []
       for (const stream of app.chartManager.loadedChart!.stats.streams) {
@@ -584,9 +571,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Next stream",
     combos: [{ key: "Down", mods: [DEF_MOD] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => {
       const streamPoints: number[] = []
       for (const stream of app.chartManager.loadedChart!.stats.streams) {
@@ -609,9 +594,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       { key: ";", mods: [] },
     ],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => {
       const beat = app.chartManager.beat
       if (Options.chart.scroll.invertReverseScroll && Options.chart.reverse) {
@@ -634,9 +617,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       { key: "'", mods: [] },
     ],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => {
       const beat = app.chartManager.beat
       if (Options.chart.scroll.invertReverseScroll && Options.chart.reverse) {
@@ -656,45 +637,35 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Previous note",
     combos: [{ key: ",", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => app.chartManager.previousNote(),
   },
   nextNote: {
     label: "Next note",
     combos: [{ key: ".", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => app.chartManager.nextNote(),
   },
   jumpChartStart: {
     label: "Jump to first note",
     combos: [],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => app.chartManager.firstNote(),
   },
   jumpChartEnd: {
     label: "Jump to last note",
     combos: [],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => app.chartManager.lastNote(),
   },
   jumpSongStart: {
     label: "Jump to song start",
     combos: [{ key: "Home", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app =>
       (app.chartManager.beat = Math.max(
         0,
@@ -705,9 +676,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Jump to song end",
     combos: [{ key: "End", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app =>
       (app.chartManager.beat = app.chartManager.loadedChart!.getBeatFromSeconds(
         app.chartManager.chartAudio.getSongLength()
@@ -717,9 +686,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Jump to previous candle",
     combos: [],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record ||
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.isInMovableMode() ||
       !app.chartManager.loadedChart?.stats.parity ||
       !Options.chart.parity.enabled,
     callback: app => {
@@ -739,9 +707,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Jump to next candle",
     combos: [],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record ||
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.isInMovableMode() ||
       !app.chartManager.loadedChart?.stats.parity ||
       !Options.chart.parity.enabled,
     callback: app => {
@@ -761,9 +728,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Jump to previous error",
     combos: [],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record ||
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.isInMovableMode() ||
       !app.chartManager.loadedChart?.stats.parity ||
       !Options.chart.parity.enabled,
     callback: app => {
@@ -780,9 +746,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Jump to next error",
     combos: [],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record ||
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.isInMovableMode() ||
       !app.chartManager.loadedChart?.stats.parity ||
       !Options.chart.parity.enabled,
     callback: app => {
@@ -895,18 +860,14 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Previous note type",
     combos: [{ key: "N", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInEditMode(),
     callback: app => app.chartManager.previousNoteType(),
   },
   nextNoteType: {
     label: "Next note type",
     combos: [{ key: "M", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() == EditMode.Play ||
-      app.chartManager.getMode() == EditMode.Record,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInEditMode(),
     callback: app => app.chartManager.nextNoteType(),
   },
   undo: {
@@ -931,7 +892,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   mousePlacement: {
     label: "Enable Mouse Note Placement",
     combos: [{ key: "M", mods: [Modifier.SHIFT] }],
-    disabled: false,
+    disabled: app =>
+      !app.chartManager.hasLoadedSM() || !app.chartManager.isInEditMode(),
     callback: () => {
       Options.chart.mousePlacement = !Options.chart.mousePlacement
       WaterfallManager.create(
@@ -943,7 +905,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Enter/Exit Play Mode",
     combos: [{ key: "P", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView ||
+      !app.chartManager.hasLoadedChart() ||
       app.chartManager.getMode() == EditMode.Record ||
       !Flags.playMode,
     callback: app => app.chartManager.setMode(EditMode.Play),
@@ -952,7 +914,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Enter/Exit Record Mode",
     combos: [{ key: "R", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView ||
+      !app.chartManager.hasLoadedChart() ||
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.View ||
       !Flags.recordMode,
@@ -962,7 +924,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Play from start",
     combos: [{ key: "P", mods: [Modifier.SHIFT] }],
     disabled: app =>
-      !app.chartManager.chartView ||
+      !app.chartManager.hasLoadedChart() ||
       app.chartManager.getMode() == EditMode.Record ||
       !Flags.playMode,
     callback: app => {
@@ -974,7 +936,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Record from start",
     combos: [{ key: "R", mods: [Modifier.SHIFT] }],
     disabled: app =>
-      !app.chartManager.chartView ||
+      !app.chartManager.hasLoadedChart() ||
       app.chartManager.getMode() == EditMode.Play ||
       app.chartManager.getMode() == EditMode.View ||
       !Flags.recordMode,
@@ -1024,8 +986,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Convert holds to rolls",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.hasNoteSelection() ||
+      !app.chartManager.isInEditMode(),
     callback: app => {
       app.chartManager.modifySelection(note => {
         if (note.type == "Hold") note.type = "Roll"
@@ -1038,8 +1001,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Convert rolls to holds",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.hasNoteSelection() ||
+      !app.chartManager.isInEditMode(),
     callback: app => {
       app.chartManager.modifySelection(note => {
         if (note.type == "Roll") note.type = "Hold"
@@ -1051,8 +1015,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Swap holds and rolls",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.hasNoteSelection() ||
+      !app.chartManager.isInEditMode(),
     callback: app => {
       app.chartManager.modifySelection(note => {
         if (note.type == "Hold") note.type = "Roll"
@@ -1066,8 +1031,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Convert holds/rolls to taps",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.hasNoteSelection() ||
+      !app.chartManager.isInEditMode(),
     callback: app => {
       app.chartManager.modifySelection(note => {
         if (note.type == "Hold" || note.type == "Roll") {
@@ -1082,8 +1048,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Convert taps to mines",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.hasNoteSelection() ||
+      !app.chartManager.isInEditMode(),
     callback: app => {
       app.chartManager.modifySelection(note => {
         if (note.type == "Tap") note.type = "Mine"
@@ -1096,8 +1063,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Convert taps to lifts",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.hasNoteSelection() ||
+      !app.chartManager.isInEditMode(),
     callback: app => {
       app.chartManager.modifySelection(note => {
         if (note.type == "Tap") note.type = "Lift"
@@ -1110,8 +1078,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Convert taps to fakes",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.hasNoteSelection() ||
+      !app.chartManager.isInEditMode(),
     callback: app => {
       app.chartManager.modifySelection(note => {
         if (note.type == "Tap") note.type = "Fake"
@@ -1124,8 +1093,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Mirror horizontally",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.hasNoteSelection() ||
+      !app.chartManager.isInEditMode(),
     callback: app => {
       app.chartManager.modifySelection(note => {
         note.col =
@@ -1141,8 +1111,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Mirror vertically",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.hasNoteSelection() ||
+      !app.chartManager.isInEditMode(),
     callback: app => {
       app.chartManager.modifySelection(note => {
         note.col =
@@ -1156,8 +1127,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     bindLabel: "Mirror both",
     combos: [],
     disabled: app =>
-      app.chartManager.selection.notes.length == 0 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.hasNoteSelection() ||
+      !app.chartManager.isInEditMode(),
     callback: app => {
       app.chartManager.modifySelection(note => {
         note.col =
@@ -1173,7 +1145,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   selectBeforeCursor: {
     label: "Select before cursor",
     combos: [{ key: "Home", mods: [Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.loadedChart,
+    disabled: app =>
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => {
       if (app.chartManager.editTimingMode == EditTimingMode.Off) {
         app.chartManager.setNoteSelection(
@@ -1193,7 +1166,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   selectAfterCursor: {
     label: "Select after cursor",
     combos: [{ key: "End", mods: [Modifier.SHIFT] }],
-    disabled: app => !app.chartManager.loadedChart,
+    disabled: app =>
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => {
       if (app.chartManager.editTimingMode == EditTimingMode.Off) {
         app.chartManager.setNoteSelection(
@@ -1213,7 +1187,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   selectAll: {
     label: "Select all",
     combos: [{ key: "A", mods: [DEF_MOD] }],
-    disabled: app => !app.chartManager.loadedChart,
+    disabled: app =>
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInMovableMode(),
     callback: app => {
       if (app.chartManager.editTimingMode == EditTimingMode.Off) {
         app.chartManager.setNoteSelection(
@@ -1231,7 +1206,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [],
     disabled: app =>
       app.chartManager.selection.notes.length < 2 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.isInEditMode(),
     callback: app => {
       const baseBeat = Math.min(
         ...app.chartManager.selection.notes.map(note => note.beat)
@@ -1252,7 +1227,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [],
     disabled: app =>
       app.chartManager.selection.notes.length < 2 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.isInEditMode(),
     callback: app => {
       const baseBeat = Math.min(
         ...app.chartManager.selection.notes.map(note => note.beat)
@@ -1273,7 +1248,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [],
     disabled: app =>
       app.chartManager.selection.notes.length < 2 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.isInEditMode(),
     callback: app => {
       const baseBeat = Math.min(
         ...app.chartManager.selection.notes.map(note => note.beat)
@@ -1294,7 +1269,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [],
     disabled: app =>
       app.chartManager.selection.notes.length < 2 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.isInEditMode(),
     callback: app => {
       const baseBeat = Math.min(
         ...app.chartManager.selection.notes.map(note => note.beat)
@@ -1315,7 +1290,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [],
     disabled: app =>
       app.chartManager.selection.notes.length < 2 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.isInEditMode(),
     callback: app => {
       const baseBeat = Math.min(
         ...app.chartManager.selection.notes.map(note => note.beat)
@@ -1336,7 +1311,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [],
     disabled: app =>
       app.chartManager.selection.notes.length < 2 ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.isInEditMode(),
     callback: app => {
       const baseBeat = Math.min(
         ...app.chartManager.selection.notes.map(note => note.beat)
@@ -1359,9 +1334,9 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
       { key: "Delete", mods: [] },
     ],
     disabled: app =>
-      app.chartManager.getMode() != EditMode.Edit ||
-      (app.chartManager.selection.notes.length == 0 &&
-        app.chartManager.eventSelection.timingEvents.length == 0),
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.isInEditMode() ||
+      !app.chartManager.hasSelection(),
     callback: app => {
       app.chartManager.deleteSelection()
       app.chartManager.deleteEventSelection()
@@ -1372,8 +1347,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ mods: [DEF_MOD], key: "V" }],
     preventDefault: false,
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInEditMode(),
     callback: async app => {
       const data = await navigator.clipboard.readText()
       app.chartManager.paste(data)
@@ -1384,8 +1358,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ mods: [DEF_MOD, Modifier.SHIFT], key: "V" }],
     preventDefault: false,
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInEditMode(),
     callback: async app => {
       const data = await navigator.clipboard.readText()
       app.chartManager.paste(data, true)
@@ -1396,8 +1369,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ mods: [DEF_MOD], key: "C" }],
     preventDefault: false,
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.isInEditMode() ||
       !app.chartManager.hasSelection(),
     callback: async app => {
       const data = app.chartManager.copy()
@@ -1409,8 +1382,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     combos: [{ mods: [DEF_MOD], key: "X" }],
     preventDefault: false,
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.isInEditMode() ||
       !app.chartManager.hasSelection(),
     callback: async app => {
       const data = app.chartManager.copy()
@@ -1422,8 +1395,8 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Set as song preview",
     combos: [],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.isInEditMode() ||
       !app.chartManager.hasRange(),
     callback: app => {
       const lastStart = app.chartManager.loadedSM!.properties.SAMPLESTART ?? "0"
@@ -1471,8 +1444,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Switch to Taps",
     combos: [],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInEditMode(),
     callback: app => {
       app.chartManager.setEditingNoteType("Tap")
     },
@@ -1481,8 +1453,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Switch to Lifts",
     combos: [],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInEditMode(),
     callback: app => {
       app.chartManager.setEditingNoteType("Lift")
     },
@@ -1491,8 +1462,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Switch to Mines",
     combos: [],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInEditMode(),
     callback: app => {
       app.chartManager.setEditingNoteType("Mine")
     },
@@ -1501,8 +1471,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Switch to Fakes",
     combos: [],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInEditMode(),
     callback: app => {
       app.chartManager.setEditingNoteType("Fake")
     },
@@ -1528,13 +1497,13 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Noteskins...",
     bindLabel: "Open noteskin selection",
     combos: [{ mods: [Modifier.SHIFT], key: "N" }],
-    disabled: app => !app.chartManager.chartView || !Flags.openWindows,
+    disabled: app => !app.chartManager.hasLoadedChart() || !Flags.openWindows,
     callback: () => WindowManager.openWindow(NoteskinWindow()),
   },
   previousChart: {
     label: "Previous chart",
     combos: [{ key: "F5", mods: [] }],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app => !app.chartManager.hasLoadedChart(),
     callback: app => {
       if (!app.chartManager.loadedSM?.charts || !app.chartManager.loadedChart)
         return
@@ -1552,7 +1521,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
   nextChart: {
     label: "Next chart",
     combos: [{ key: "F6", mods: [] }],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app => !app.chartManager.hasLoadedChart(),
     callback: app => {
       if (!app.chartManager.loadedSM?.charts || !app.chartManager.loadedChart)
         return
@@ -1571,8 +1540,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Toggle Edit Timing",
     combos: [{ key: "T", mods: [] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInEditMode(),
     callback: app => {
       if (app.chartManager.editTimingMode != EditTimingMode.Off) {
         app.chartManager.editTimingMode = EditTimingMode.Off
@@ -1586,8 +1554,7 @@ export const KEYBIND_DATA: { [key: string]: Keybind } = {
     label: "Toggle Add Timing",
     combos: [{ key: "T", mods: [Modifier.ALT] }],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit,
+      !app.chartManager.hasLoadedChart() || !app.chartManager.isInEditMode(),
     callback: app => {
       if (app.chartManager.editTimingMode != EditTimingMode.Add) {
         app.chartManager.editTimingMode = EditTimingMode.Add
@@ -1723,7 +1690,10 @@ for (const numMeasures of [4, 2, 1]) {
     bindLabel:
       `Shift up by ${numMeasures} measure` + (numMeasures == 1 ? "" : ""),
     combos: [],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.hasNoteSelection() ||
+      !app.chartManager.isInEditMode(),
     callback: app => {
       const firstBeat = app.chartManager.selection.notes[0].beat
       const mLength =
@@ -1739,7 +1709,10 @@ for (const numMeasures of [4, 2, 1]) {
     bindLabel:
       `Shift down by ${numMeasures} measure` + (numMeasures == 1 ? "" : ""),
     combos: [],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.hasNoteSelection() ||
+      !app.chartManager.isInEditMode(),
     callback: app => {
       const firstBeat = app.chartManager.selection.notes[0].beat
       const mLength =
@@ -1756,7 +1729,8 @@ for (let i = 0; i < QUANTS.length; i++) {
   KEYBIND_DATA[`quant` + QUANT_NUM[i]] = {
     label: `Switch to ${QUANT_NAMES[i]}s`,
     combos: [],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.hasLoadedChart() && !app.chartManager.isInEditMode(),
     callback: () => {
       Options.chart.snap = QUANTS[i]
     },
@@ -1766,7 +1740,10 @@ for (let i = 0; i < QUANTS.length; i++) {
     label: `${QUANT_NAMES[i]}`,
     bindLabel: `Shift up by ${QUANT_NAMES[i]}`,
     combos: [],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.hasNoteSelection() ||
+      !app.chartManager.isInEditMode(),
     callback: app =>
       app.chartManager.modifySelection(note => {
         note.beat -= QUANTS[i]
@@ -1777,7 +1754,10 @@ for (let i = 0; i < QUANTS.length; i++) {
     label: `${QUANT_NAMES[i]}`,
     bindLabel: `Shift down by ${QUANT_NAMES[i]}`,
     combos: [],
-    disabled: app => !app.chartManager.chartView,
+    disabled: app =>
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.hasNoteSelection() ||
+      !app.chartManager.isInEditMode(),
     callback: app =>
       app.chartManager.modifySelection(note => {
         note.beat += QUANTS[i]
@@ -1791,8 +1771,9 @@ for (let i = 0; i < QUANTS.length; i++) {
       bindLabel: `Quantize to ${QUANT_NAMES[i]}s`,
       combos: [],
       disabled: app =>
-        app.chartManager.selection.notes.length == 0 ||
-        app.chartManager.getMode() != EditMode.Edit,
+        !app.chartManager.hasLoadedChart() ||
+        !app.chartManager.hasNoteSelection() ||
+        !app.chartManager.isInEditMode(),
       callback: app => {
         app.chartManager.modifySelection(note => {
           note.beat =
@@ -1813,8 +1794,8 @@ for (const type of ["STOPS", "DELAYS"] as const) {
     label: `Convert to ${type[0]}${type.slice(1).toLowerCase()}`,
     combos: [],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.isInEditMode() ||
       !app.chartManager.hasRange(),
     callback: app => {
       const startBeat = app.chartManager.getRange()!.start.beat
@@ -1834,8 +1815,8 @@ for (const type of ["WARPS", "FAKES"] as const) {
     label: `Convert to ${type[0]}${type.slice(1).toLowerCase()}`,
     combos: [],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.isInEditMode() ||
       !app.chartManager.hasRange(),
     callback: app => {
       const startBeat = app.chartManager.getRange()!.start.beat
@@ -1909,8 +1890,8 @@ for (const foot of ["None", "Left", "Right"] as const) {
     label: `Mark as ${foot}`,
     combos: [],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.isInEditMode() ||
       !app.chartManager.hasNoteSelection(),
     callback: markOverride(foot),
   }
@@ -1926,9 +1907,33 @@ for (const foot of [
     label: `Mark as ${FEET_LABELS_LONG[foot]}`,
     combos: [],
     disabled: app =>
-      !app.chartManager.chartView ||
-      app.chartManager.getMode() != EditMode.Edit ||
+      !app.chartManager.hasLoadedChart() ||
+      !app.chartManager.isInEditMode() ||
       !app.chartManager.hasNoteSelection(),
     callback: markOverride(foot),
+  }
+}
+
+for (
+  let i = 0;
+  i <
+  maxArr(Object.values(GameTypeRegistry.getTypes()).map(type => type.numCols));
+  i++
+) {
+  const combos = []
+  if (i < 9) {
+    combos.push({ key: `${i + 1}`, mods: [] })
+  }
+  if (i == 9) {
+    combos.push({ key: "0", mods: [] })
+  }
+
+  KEYBIND_DATA[`placeNote${i + 1}`] = {
+    label: `Place note in column ${i + 1}`,
+    combos,
+    preventMultipleCombos: true,
+    preventModifiers: true,
+    disabled: true,
+    callback: () => {},
   }
 }

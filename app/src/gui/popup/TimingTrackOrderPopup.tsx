@@ -29,13 +29,11 @@ function DraggableTrack(props: {
     if ((event.nativeEvent.target as HTMLElement).closest(".icon")) return
     const copy = element.cloneNode(true) as HTMLDivElement
     const popup = element.closest(".popup") as HTMLDivElement
-    console.log(copy, popup)
     if (!popup) return
     copy.style.position = "fixed"
     const elementBounds = element.getBoundingClientRect()
     const popupBounds = popup.getBoundingClientRect()
     if (!initialX || !initialY) {
-      console.log(elementBounds.left, popupBounds.left)
       dragOffsetX.current = event.clientX - elementBounds.left
       dragOffsetY.current = event.clientY - elementBounds.top
       copy.style.left = elementBounds.left - popupBounds.left + "px"

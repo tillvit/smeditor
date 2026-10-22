@@ -1,5 +1,10 @@
 [
   {
+    "version": "2.0.3",
+    "date": 1792696787947,
+    "changelog": "## Changes\n  - You can now rebind the note placement keys from 1-9 in the Keybinds window under Edit.\n  - The export recording window now saves your previous export settings when you start a render\n## Fixes\n  - Fixed hold extending/shortening bugs (double notes, notes disappearing on 0 hold length, etc)\n  - Fixed placing notes with the mouse always placing at the receptor if force snap notes is on\n  - Fixed mines sometimes not being attached to the right rows for parity calculation \n  - Fixed not being able to paste in the custom script editor on the app\n  - Fixed some actions being triggerable in the wrong states (being able to move in record mode, editing without a selection)\n  - Fixed global offset not applying if using the 1-9 keys in record mode"
+  },
+  {
     "version": "2.0.2",
     "date": 1787012196120,
     "changelog": "## Changes\n  - Changed Shift up/down in the menu to not clear the previous notes\n## Fixes\n  - Fixed hold ends not saving if they aren't the last note in the chart\n  - Fixed files on the desktop app not being able to get smaller, preventing chart deletion\n  - Fixed being able to place two notes on the same beat and column by extending a hold upwards\n  - The METERF tag now updates correctly when editing the meter\n  - Fixed some note snapping involving time signatures when force snapping is on\n  - Fixed the chart list window for real hopefully\n  - Fixed the entire window closing when closing the Changelog Window (wtf)\n"

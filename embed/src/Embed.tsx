@@ -41,7 +41,6 @@ function Embed() {
       url.searchParams.set("chartIndex", chartIndex + "")
     if (flags.size > 0)
       url.searchParams.set("flags", [...flags.values()].join(""))
-    console.log(url.toString(), smURL, chartType, chartIndex)
     setOutputUrl(url.toString())
   }
 

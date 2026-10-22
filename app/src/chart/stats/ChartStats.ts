@@ -62,7 +62,6 @@ export class ChartStats {
   }
 
   private _recalculate(startBeat: number, endBeat: number) {
-    console.log(`Recalculating stats for ${startBeat}-${endBeat}`)
     this.analyzers.forEach(a => {
       a.recalculate(startBeat, endBeat)
     })

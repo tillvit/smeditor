@@ -357,7 +357,6 @@ export class WebFileHandler implements BaseFileHandler {
     await zip.generateAsync({ type: "blob" }).then(async blob => {
       if (!window.showSaveFilePicker) {
         // showSaveFilePicker bugged on FF
-        console.log(blob)
         const downloadelem = document.createElement("a")
         const url = URL.createObjectURL(blob)
         document.body.appendChild(downloadelem)

@@ -16,16 +16,7 @@ function CaptureWindowContent() {
   const windowData = useContext(WindowContext)!
   const [captureOptions, setCaptureOptions] = useState<
     Omit<CaptureOptions, "startTime" | "endTime">
-  >({
-    aspectRatio: 4 / 3,
-    videoHeight: 720,
-    fps: 60,
-    bitrate: 4e6,
-    playbackRate: 1,
-    assistTick: false,
-    metronome: false,
-    hideBarlines: false,
-  })
+  >(Capture.getSavedOptions())
   const [startBeat, setStartBeat] = useState(
     windowData.app.chartManager.hasRange()
       ? windowData.app.chartManager.startRegion!

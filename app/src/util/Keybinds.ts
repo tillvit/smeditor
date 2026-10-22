@@ -268,8 +268,11 @@ export class Keybinds {
   static setKeybind(id: string, combo: KeyCombo) {
     if (!this.userKeybinds.has(id))
       this.userKeybinds.set(id, [...KEYBIND_DATA[id].combos])
-
-    this.userKeybinds.get(id)?.push(combo)
+    if (KEYBIND_DATA[id].preventMultipleCombos) {
+      this.userKeybinds.set(id, [combo])
+    } else {
+      this.userKeybinds.get(id)?.push(combo)
+    }
     this.checkIsDefault(id)
     this.saveKeybinds()
     this.buildConflictMap()

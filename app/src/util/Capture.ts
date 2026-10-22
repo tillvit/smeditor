@@ -1,5 +1,6 @@
 import { ArrayBufferTarget, Muxer } from "mp4-muxer"
 import { Ticker } from "pixi.js"
+import * as z from "zod"
 import { App } from "../App"
 import { EditMode, EditTimingMode } from "../chart/ChartManager"
 import { TIMING_WINDOW_AUTOPLAY } from "../chart/play/StandardTimingWindow"
@@ -15,6 +16,17 @@ export interface CaptureCallbackData {
   totalFrames: number
   currentVideoFrame: VideoFrame | null
 }
+
+const SavedCaptureOptionsSchema = z.object({
+  aspectRatio: z.number(),
+  videoHeight: z.number(),
+  fps: z.number(),
+  bitrate: z.number(),
+  playbackRate: z.number(),
+  assistTick: z.boolean(),
+  metronome: z.boolean(),
+  hideBarlines: z.boolean(),
+})
 
 export interface CaptureOptions {
   aspectRatio: number
@@ -49,14 +61,7 @@ export class Capture {
 
   constructor(app: App, options?: Partial<CaptureOptions>) {
     this.options = {
-      aspectRatio: 4 / 3,
-      videoHeight: 1080,
-      fps: 60,
-      bitrate: 4e7,
-      playbackRate: 1,
-      assistTick: false,
-      metronome: false,
-      hideBarlines: false,
+      ...Capture.getSavedOptions(),
       startTime: 0,
       endTime: 10,
       ...options,
@@ -223,6 +228,7 @@ export class Capture {
 
   async start(): Promise<string> {
     console.time("capture")
+    this.saveOptions()
 
     const videoEncoderOptions = {
       codec: "avc1.420028",
@@ -322,8 +328,6 @@ export class Capture {
       audioBuf.sampleRate,
       this.options.playbackRate
     )
-
-    console.log(this.ac.state)
 
     return new Promise((resolve, reject) => {
       this.recording = true
@@ -453,8 +457,8 @@ export class Capture {
                 videoFrame.close()
               })
           }
-        } catch (e) {
-          reject(e)
+        } catch (e: any) {
+          reject(e as Error)
           this.stop()
         }
       }, 10)
@@ -494,6 +498,43 @@ export class Capture {
     this.options.onFinish?.(url)
 
     return url
+  }
+
+  static getSavedOptions() {
+    const DEFAULT_OPTIONS = {
+      aspectRatio: 4 / 3,
+      videoHeight: 1080,
+      fps: 60,
+      bitrate: 4e7,
+      playbackRate: 1,
+      assistTick: false,
+      metronome: false,
+      hideBarlines: false,
+    }
+    const opt = localStorage.getItem("captureOptions")
+    if (!opt) return DEFAULT_OPTIONS
+    try {
+      const parsed = JSON.parse(opt)
+      const result = SavedCaptureOptionsSchema.safeParse(parsed)
+      if (!result.success) return DEFAULT_OPTIONS
+      return result.data
+    } catch (e) {
+      return DEFAULT_OPTIONS
+    }
+  }
+
+  saveOptions() {
+    const opt = {
+      aspectRatio: this.options.aspectRatio,
+      videoHeight: this.options.videoHeight,
+      fps: this.options.fps,
+      bitrate: this.options.bitrate,
+      playbackRate: this.options.playbackRate,
+      assistTick: this.options.assistTick,
+      metronome: this.options.metronome,
+      hideBarlines: this.options.hideBarlines,
+    }
+    localStorage.setItem("captureOptions", JSON.stringify(opt))
   }
 
   get currentRenderFrame() {

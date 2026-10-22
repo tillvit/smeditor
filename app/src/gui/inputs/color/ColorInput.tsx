@@ -47,7 +47,6 @@ export function ColorInput(props: ColorInputProps) {
           PopupManager.open(
             ColorPickerPopup(pickerRef.current!, value, val => {
               setValue(val)
-              console.log(val)
               props.onChange?.(val)
             })
           )

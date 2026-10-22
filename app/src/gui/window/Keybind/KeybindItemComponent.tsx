@@ -25,7 +25,7 @@ export function KeybindItemComponent(props: { item: KeybindItem }) {
       return
     WindowManager.openWindow(
       KeyComboWindow({
-        allowMods: true,
+        allowMods: !KEYBIND_DATA[props.item.id].preventModifiers,
         callback: combo => {
           Keybinds.setKeybind(props.item.id, combo)
         },

@@ -431,7 +431,7 @@ export function applyPayloadToSM(sm: Simfile, payload: SMPayload) {
       "radarValues",
       "other_properties",
     ] as const) {
-      (chart as any)[key] = chartData[key]
+      ;(chart as any)[key] = chartData[key]
     }
 
     // repopulate gameType
@@ -457,7 +457,6 @@ export function applyPayloadToSM(sm: Simfile, payload: SMPayload) {
   const deletedCharts = oldCharts.difference(usedIds)
   for (const id of deletedCharts) {
     sm.removeChart(sm.charts[id])
-    console.log("removed chart with id " + id)
   }
 
   return sm
