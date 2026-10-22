@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useState } from "react"
+import { Dispatch, SetStateAction } from "react"
 import { CaptureOptions } from "../../../util/Capture"
 import { DisplaySliderInput } from "../../inputs/DisplaySliderInput"
 import { DropdownInput } from "../../inputs/DropdownInput"
@@ -8,6 +8,45 @@ const ASPECT_MAP = {
   "4 / 3": 4 / 3,
   "16 / 9": 16 / 9,
   "16 / 10": 16 / 10,
+}
+
+const PRESET_MAP = {
+  Minimal: {
+    videoHeight: 360,
+    fps: 24,
+    bitrate: 1e6,
+  },
+  Low: {
+    videoHeight: 480,
+    fps: 30,
+    bitrate: 2.5e6,
+  },
+  Medium: {
+    videoHeight: 720,
+    fps: 60,
+    bitrate: 4e6,
+  },
+  High: {
+    videoHeight: 1080,
+    fps: 60,
+    bitrate: 8e6,
+  },
+}
+
+function detectPreset(
+  options: Omit<CaptureOptions, "startTime" | "endTime">
+): string {
+  for (const key in PRESET_MAP) {
+    const preset = PRESET_MAP[key as keyof typeof PRESET_MAP]
+    if (
+      options.videoHeight === preset.videoHeight &&
+      options.fps === preset.fps &&
+      options.bitrate === preset.bitrate
+    ) {
+      return key
+    }
+  }
+  return "Custom"
 }
 
 function getAspectString(aspect: number): string {
@@ -25,51 +64,18 @@ export function CaptureVideoOptions(props: {
     SetStateAction<Omit<CaptureOptions, "startTime" | "endTime">>
   >
 }) {
-  const [preset, setPreset] = useState("Medium")
-
   return (
     <div className="capture-options">
       <div className="capture-options-label">Video Options</div>
       <CaptureOptionLabel label={"Quality Preset"}>
         <DropdownInput
-          value={preset}
+          value={detectPreset(props.captureOptions)}
           values={["Minimal", "Low", "Medium", "High"]}
           onChange={value => {
-            setPreset(value)
-            switch (value) {
-              case "Minimal":
-                props.setCaptureOptions(prev => ({
-                  ...prev,
-                  videoHeight: 360,
-                  fps: 24,
-                  bitrate: 1e6,
-                }))
-                break
-              case "Low":
-                props.setCaptureOptions(prev => ({
-                  ...prev,
-                  videoHeight: 480,
-                  fps: 30,
-                  bitrate: 2.5e6,
-                }))
-                break
-              case "Medium":
-                props.setCaptureOptions(prev => ({
-                  ...prev,
-                  videoHeight: 720,
-                  fps: 60,
-                  bitrate: 4e6,
-                }))
-                break
-              case "High":
-                props.setCaptureOptions(prev => ({
-                  ...prev,
-                  videoHeight: 1080,
-                  fps: 60,
-                  bitrate: 8e6,
-                }))
-                break
-            }
+            props.setCaptureOptions(prev => ({
+              ...prev,
+              ...PRESET_MAP[value as keyof typeof PRESET_MAP],
+            }))
           }}
         />
       </CaptureOptionLabel>
@@ -82,7 +88,6 @@ export function CaptureVideoOptions(props: {
               ...prev,
               videoHeight: parseInt(value),
             }))
-            setPreset("Custom")
           }}
         />
       </CaptureOptionLabel>
@@ -95,7 +100,6 @@ export function CaptureVideoOptions(props: {
               ...prev,
               fps: parseInt(value),
             }))
-            setPreset("Custom")
           }}
         />
       </CaptureOptionLabel>
@@ -123,7 +127,6 @@ export function CaptureVideoOptions(props: {
               ...prev,
               bitrate: value,
             }))
-            setPreset("Custom")
           }}
         />
       </CaptureOptionLabel>
