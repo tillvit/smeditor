@@ -612,7 +612,8 @@ export class ChartManager {
           !event.ctrlKey &&
           !event.metaKey &&
           !event.altKey &&
-          !event.ctrlKey
+          !event.ctrlKey &&
+          this.isInEditMode()
         ) {
           for (let i = 0; i < (this.loadedChart?.gameType.numCols ?? 4); i++) {
             console.log(Keybinds.getCombosForKeybind("placeNote" + (i + 1)))
