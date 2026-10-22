@@ -650,8 +650,12 @@ export class ChartManager {
                 .map(x => x.key)
                 .includes(keyName)
             ) {
+              let disabled = KEYBIND_DATA[keybind].disabled
+              if (disabled instanceof Function) disabled = disabled(this.app)
+              if (disabled) continue
               event.preventDefault()
               event.stopImmediatePropagation()
+
               KEYBIND_DATA[keybind].callback(this.app)
               for (let col = 0; col < this.holdEditing.length; col++) {
                 if (
@@ -1664,6 +1668,22 @@ export class ChartManager {
       notedata.forEach(note => (note.gameplay = undefined))
     }
     EventHandler.emit("modeChanged")
+  }
+
+  hasLoadedChart(): boolean {
+    return !!this.loadedChart && !!this.chartView
+  }
+
+  hasLoadedSM(): boolean {
+    return !!this.loadedSM
+  }
+
+  isInEditMode(): boolean {
+    return this.mode == EditMode.Edit
+  }
+
+  isInMovableMode(): boolean {
+    return this.mode == EditMode.Edit || this.mode == EditMode.View
   }
 
   /**
