@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { GameTypeRegistry } from "../../../chart/gameTypes/GameTypeRegistry"
 import {
   KEYBIND_DATA,
   KEY_DISPLAY_OVERRIDES,
@@ -6,6 +7,7 @@ import {
 } from "../../../data/KeybindData"
 import { MENUBAR_DATA, MenuOption } from "../../../data/MenubarData"
 import { Keybinds } from "../../../util/Keybinds"
+import { maxArr } from "../../../util/Math"
 import { capitalize } from "../../../util/Util"
 import { DropdownInput } from "../../inputs/DropdownInput"
 import {
@@ -25,6 +27,15 @@ interface KeybindInserts {
 const KEYBIND_BLACKLIST = ["cut", "copy", "paste", "pasteReplace"]
 const KEYBIND_INSERTS: Record<string, KeybindInserts[]> = {
   edit: [
+    {
+      ids: new Array(
+        maxArr(
+          Object.values(GameTypeRegistry.getTypes()).map(type => type.numCols)
+        )
+      )
+        .fill(0)
+        .map((_, index) => "placeNote" + (index + 1)),
+    },
     {
       ids: ["delete"],
       after: "redo",

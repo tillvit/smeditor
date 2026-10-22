@@ -1,5 +1,6 @@
 import { App } from "../App"
 import { EditMode, EditTimingMode } from "../chart/ChartManager"
+import { GameTypeRegistry } from "../chart/gameTypes/GameTypeRegistry"
 import { isHoldNote } from "../chart/sm/NoteTypes"
 import {
   FEET_LABELS,
@@ -32,7 +33,7 @@ import { EventHandler } from "../util/EventHandler"
 import { FileHandler } from "../util/file-handler/FileHandler"
 import { WebFileHandler } from "../util/file-handler/WebFileHandler"
 import { Flags } from "../util/Flags"
-import { roundDigit } from "../util/Math"
+import { maxArr, roundDigit } from "../util/Math"
 import { Options } from "../util/Options"
 import { basename, dirname } from "../util/Path"
 import {
@@ -49,6 +50,8 @@ export interface Keybind {
   label: string
   bindLabel?: string
   combos: KeyCombo[]
+  preventMultipleCombos?: boolean
+  preventModifiers?: boolean
   visible?: boolean | ((app: App) => boolean)
   disabled: boolean | ((app: App) => boolean)
   disableRepeat?: boolean
@@ -1930,5 +1933,29 @@ for (const foot of [
       app.chartManager.getMode() != EditMode.Edit ||
       !app.chartManager.hasNoteSelection(),
     callback: markOverride(foot),
+  }
+}
+
+for (
+  let i = 0;
+  i <
+  maxArr(Object.values(GameTypeRegistry.getTypes()).map(type => type.numCols));
+  i++
+) {
+  const combos = []
+  if (i < 9) {
+    combos.push({ key: `${i + 1}`, mods: [] })
+  }
+  if (i == 9) {
+    combos.push({ key: "0", mods: [] })
+  }
+
+  KEYBIND_DATA[`placeNote${i + 1}`] = {
+    label: `Place note in column ${i + 1}`,
+    combos,
+    preventMultipleCombos: true,
+    preventModifiers: true,
+    disabled: true,
+    callback: () => {},
   }
 }

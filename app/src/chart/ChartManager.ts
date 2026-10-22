@@ -587,10 +587,14 @@ export class ChartManager {
       "keyup",
       (event: KeyboardEvent) => {
         if (this.mode != EditMode.Edit) return
-        if (event.code.startsWith("Digit")) {
-          let col = parseInt(event.code.slice(5)) - 1
-          if (col == -1) col = 9 // 0 key to 10th column
-          this.endEditing(col)
+        const keyName = Keybinds.getKeyNameFromEvent(event)
+        for (let i = 0; i < (this.loadedChart?.gameType.numCols ?? 4); i++) {
+          const key = Keybinds.getCombosForKeybind("placeNote" + (i + 1))
+            .map(x => x.key)
+            .includes(keyName)
+          if (key) {
+            this.endEditing(i)
+          }
         }
       },
       true
@@ -604,19 +608,26 @@ export class ChartManager {
         if (WindowManager.isWindowOpen("key-combo-selector")) return
         // Start editing note
         if (
-          event.code.startsWith("Digit") &&
           !event.repeat &&
           !event.ctrlKey &&
           !event.metaKey &&
           !event.altKey &&
           !event.ctrlKey
         ) {
-          let col = parseInt(event.code.slice(5)) - 1
-          if (col == -1) col = 9 // 0 key to 10th column
-          if (col < (this.loadedChart?.gameType.numCols ?? 4)) {
-            this.setNote(col, "key")
-            event.preventDefault()
-            event.stopImmediatePropagation()
+          for (let i = 0; i < (this.loadedChart?.gameType.numCols ?? 4); i++) {
+            console.log(Keybinds.getCombosForKeybind("placeNote" + (i + 1)))
+            const key = Keybinds.getCombosForKeybind("placeNote" + (i + 1))
+              .map(x => x.key)
+              .includes(keyName)
+            if (key) {
+              console.log(
+                `Starting editing note in column ${i} at beat ${this.beat}`
+              )
+              this.setNote(i, "key")
+              event.preventDefault()
+              event.stopImmediatePropagation()
+              break
+            }
           }
         }
         if (!this.holdEditing.every(x => x == undefined)) {
@@ -1532,9 +1543,10 @@ export class ChartManager {
       if (
         isSameRow(note.beat, hold.originalNote!.beat) &&
         note.col == hold.originalNote!.col &&
-        isHoldNote(hold.originalNote!) &&
-        isHoldNote(note) &&
-        isSameRow(note.hold, hold.originalNote.hold)
+        ((isHoldNote(hold.originalNote!) &&
+          isHoldNote(note) &&
+          isSameRow(note.hold, hold.originalNote.hold)) ||
+          (!isHoldNote(hold.originalNote!) && !isHoldNote(note)))
       )
         return false
       if (note.col != col) return false
