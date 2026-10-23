@@ -17,7 +17,7 @@
     "guide:preview": "vitepress preview guide"
   },
   "devDependencies": {
-    "@rollup/plugin-dynamic-import-vars": "^2.1.5",
+    "@rollup/plugin-dynamic-import-vars": "^2.1.2",
     "@types/file-saver": "^2.0.5",
     "@types/howler": "^2.2.7",
     "@types/node": "^20.4.8",
@@ -48,7 +48,7 @@
     "@pixi/filter-adjustment": "^5.0.0",
     "@types/dom-webcodecs": "^0.1.11",
     "@vitejs/plugin-react": "^5.0.1",
-    "base85": "^3.2.0",
+    "base85": "^3.1.0",
     "bezier-easing": "^2.1.0",
     "buffer": "^6.0.3",
     "expr-eval-fork": "^3.0.1",
@@ -91,8 +91,7 @@
     "extends": [
       "eslint:recommended",
       "plugin:@typescript-eslint/recommended",
-      "plugin:@typescript-eslint/recommended-requiring-type-checking",
-      "prettier"
+      "plugin:@typescript-eslint/recommended-requiring-type-checking"
     ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
