@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run core:build-editor && npm run core:build && npm run guide:build",
-    "core:build": "tsc && vite build",
+    "core:build": "tsc && vite build && touch dist/.nojekyll",
     "core:build-editor": "tsc --outFile app/src/util/custom-script/smlib.d.ts --emitDeclarationOnly --declaration  --stripInternal --isolatedModules false --noEmit false && node stripTypes.js",
     "app:dev": "nw ./nw --debug",
     "app:build": "node nwbuild.js",
