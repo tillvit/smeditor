@@ -48,7 +48,7 @@
     "@pixi/filter-adjustment": "^5.0.0",
     "@types/dom-webcodecs": "^0.1.11",
     "@vitejs/plugin-react": "^5.0.1",
-    "base85": "^3.1.0",
+    "base85": "^3.2.0",
     "bezier-easing": "^2.1.0",
     "buffer": "^6.0.3",
     "expr-eval-fork": "^3.0.1",
